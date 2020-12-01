@@ -353,6 +353,11 @@ The content can be anything.
   @include shadow-variant(regular);
 }
 
+body.dark-theme .tile {
+  background-color: $c-dt-tile-background;
+  box-shadow: 0 1px 3px 0 lighten($c-dt-tile-background, 10%);
+}
+
 .tile-header {
   height: 50px;
   padding: 0 0 0 15px;
@@ -534,6 +539,61 @@ The content can be anything.
 
 }
 
+body.dark-theme .tile-header {
+  background-color: $c-dt-tile-header;
+
+  .headline {
+    color: $c-dt-tile-text;
+    a {
+      color: $c-dt-tile-text;
+    }
+
+    .select2-container .select2-choice {
+      background-color: $c-dt-tile-header;
+      color: $c-dt-tile-text;
+    }
+  }
+
+  .dropdown-toggle {
+    color: $c-dt-dropdown-toggle-text;
+  }
+
+  .status,
+  .link {
+    color: $c-dt-tile-header-actions-text;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: $c-blue-27;
+    }
+  }
+
+  .tab.active {
+    border-left-color: $c-dt-tile-border;
+    border-right-color: $c-dt-tile-border;
+    border-bottom: none;
+    background-color: $c-dt-tile-background;
+  }
+}
+
+body.dark-theme .tile-header-nav {
+  > li {
+
+    > a {
+      color: $c-dt-tile-text;
+    }
+
+    &:hover,
+    &:focus,
+    &.active {
+      > a {
+        color: $c-dt-tile-text;
+      }
+    }
+  }
+}
+
 .tile-header-nav, .tile-header-actions {
   height: 100%;
 
@@ -564,6 +624,13 @@ The content can be anything.
   border-top: 1px solid $c-gray-20;
 }
 
+body.dark-theme .tile-content:not(.tile-content-birt-page) {
+  border-color: $c-dt-tile-top-border;
+  background-color: $c-dt-tile-background;
+
+  @include box-shadow(inset 0px 10px 4px -8px $c-dt-tile-shadow);
+}
+
 .tile-footer {
   padding: 10px;
   border-top: 1px solid $c-gray-20;
@@ -575,10 +642,19 @@ The content can be anything.
   }
 }
 
+body.dark-theme .tile-footer {
+  border-color: $c-dt-tile-border;
+  background-color: $c-dt-tile-background;
+}
+
 .tile-notification {
   padding: 15px 30px;
   font-size: $fs-regular;
   border-top: 1px solid $c-gray-20;
+}
+
+body.dark-theme .tile-notification {
+  border-color: $c-dt-tile-border;
 }
 
 @each $conf in $states {
@@ -687,6 +763,10 @@ The content can be anything.
   line-height: 1px;
 }
 
+body.dark-theme .tile-separator {
+  background-color: $c-dt-tile-border;
+}
+
 .tile-content-forms {
   padding: 30px;
 
@@ -702,6 +782,10 @@ The content can be anything.
   }
 }
 
+body.dark-theme .tile-content-forms {
+  background-color: $c-dt-tile-background;
+}
+
 .tile-content-padded {
   padding: 15px;
 }
@@ -713,4 +797,9 @@ The content can be anything.
   color: #338dc7;
   padding: 15px 30px;
   font-size: 14px;
+}
+
+.tile-info-box {
+  padding: 10px 0 10px;
+  border-bottom: 1px solid #cccdcd;
 }

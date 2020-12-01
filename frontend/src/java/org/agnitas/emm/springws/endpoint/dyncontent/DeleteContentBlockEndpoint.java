@@ -13,31 +13,30 @@ package org.agnitas.emm.springws.endpoint.dyncontent;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.dyncontent.service.ContentModel;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.DeleteContentBlockRequest;
 import org.agnitas.emm.springws.jaxb.DeleteContentBlockResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.agnitas.service.UserActivityLogService;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class DeleteContentBlockEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class DeleteContentBlockEndpoint extends BaseEndpoint {
 
-	@Resource
 	private DynamicTagContentService dynamicTagContentService;
-	@Resource
-	private ObjectFactory objectFactory;
-	@Resource
-	private UserActivityLogService userActivityLogService;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		DeleteContentBlockRequest request = (DeleteContentBlockRequest) arg0;
-		DeleteContentBlockResponse response = objectFactory.createDeleteContentBlockResponse();
+	public DeleteContentBlockEndpoint(DynamicTagContentService dynamicTagContentService) {
+		this.dynamicTagContentService = dynamicTagContentService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteContentBlockRequest")
+	public @ResponsePayload DeleteContentBlockResponse deleteContentBlock(@RequestPayload DeleteContentBlockRequest request) {
+		DeleteContentBlockResponse response = new DeleteContentBlockResponse();
 
 		ContentModel model = new ContentModel();
 		model.setCompanyId(Utils.getUserCompany());
@@ -49,5 +48,4 @@ public class DeleteContentBlockEndpoint extends AbstractMarshallingPayloadEndpoi
 
 		return response;
 	}
-
 }

@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.Company;
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
@@ -23,7 +24,6 @@ import org.agnitas.util.Tuple;
 import com.agnitas.beans.ComCompany;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
-import com.agnitas.emm.premium.web.PremiumFeature;
 
 public interface ComCompanyDao {
 	
@@ -57,16 +57,7 @@ public interface ComCompanyDao {
 	
 	List<ComCompany> getAllActiveCompaniesWithoutMasterCompany();
 	
-	/**
-	 * Deletes the given company from the database.
-	 * 
-	 * @param comp the company to delete.
-	 */
-	void deleteCompany(Company comp);
-	
-	void deleteCompany(@VelocityCheck int companyID);
-	
-	void updateCompanyStatus(int companyID, String status);
+	void updateCompanyStatus(int companyID, CompanyStatus status);
 
 	/**
 	 * This method gets a list with all NOT DELETED companies IDs from DB.
@@ -105,18 +96,18 @@ public interface ComCompanyDao {
 	boolean addExecutiveAdmin(int companyID, int executiveAdminID);
 
 	//get all active companies
-	List<CompanyEntry> getActiveCompaniesLight();
+	List<CompanyEntry> getActiveCompaniesLight(boolean allowTransitionStatus);
 	
 	//get only own company and companies created by own company + status = active
-	List<CompanyEntry> getActiveOwnCompaniesLight(@VelocityCheck int companyId);
+	List<CompanyEntry> getActiveOwnCompaniesLight(@VelocityCheck int companyId, boolean allowTransitionStatus);
 
 	CompanyEntry getCompanyLight(int id);
 
 	Set<Permission> getCompanyPermissions(int companyID);
 
-	void setupPremiumFeaturePermissions(Set<String> allowedPremiumFeatures, Set<String> unAllowedPremiumFeatures2);
+	void setupPremiumFeaturePermissions(Set<String> allowedPremiumFeatures, Set<String> unAllowedPremiumFeatures, String comment);
 
-	void createCompanyPermission(int companyID, Permission permission);
+	void createCompanyPermission(int companyID, Permission permission, String comment);
 
 	boolean hasCompanyPermission(int companyID, Permission permission);
 
@@ -129,10 +120,8 @@ public interface ComCompanyDao {
     Map<String, Object> getCompanySettings(int companyID);
 
 	List<Map<String, Object>> getReferenceTableSettings(int companyID);
-
-	void changeFeatureRights(PremiumFeature feature, int companyID, boolean activate);
 	
-	void changeFeatureRights(String featureName, int companyID, boolean activate);
+	void changeFeatureRights(String featureName, int companyID, boolean activate, String comment);
 
 	int getPriorityCount(@VelocityCheck int companyId);
 
@@ -151,8 +140,6 @@ public interface ComCompanyDao {
 	boolean isCompanyNameUnique(String shortname);
 	
 	List<Integer> getOpenEMMCompanyForClosing();
-
-	void addMissingForeignKeysForPreventTableDrop();
 	
 	int getParenCompanyId(int companyId);
 	

@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.company.dto;
 
-
 public class CompanySettingsDto {
 
     private String technicalContacts;
@@ -31,8 +30,11 @@ public class CompanySettingsDto {
     private int business;
     private int maxAdminMails;
     private boolean hasTwoFactorAuthentication;
-    private int maxFailedLoginAttempts;
-    private int blockIpTime;
+    
+    private String loginlockSettingsName;
+    private String passwordPolicyName;
+    private int passwordExpireDays;
+    private int hostauthCookieExpireDays;
 
     public boolean isHasMailTracking() {
         return hasMailTracking;
@@ -178,21 +180,36 @@ public class CompanySettingsDto {
 		this.maxAdminMails = maxAdminMails;
 	}
 
-	public final int getMaxFailedLoginAttempts() {
-		return maxFailedLoginAttempts;
+	public final String getLoginlockSettingsName() {
+		return loginlockSettingsName;
 	}
 
-	public final void setMaxFailedLoginAttempts(int maxFailedLoginAttempts) {
-		this.maxFailedLoginAttempts = maxFailedLoginAttempts;
-	}
-
-	public final int getBlockIpTime() {
-		return blockIpTime;
-	}
-
-	public final void setBlockIpTime(final int blockIpTime) {
-		this.blockIpTime = blockIpTime;
+	public final void setLoginlockSettingsName(String loginlockSettingsName) {
+		this.loginlockSettingsName = loginlockSettingsName;
 	}
 	
+	public final String getPasswordPolicyName() {
+		return this.passwordPolicyName;
+	}
+	
+	public final void setPasswordPolicyName(final String name) {
+		this.passwordPolicyName = name;
+	}
+
+	public final int getPasswordExpireDays() {
+		return passwordExpireDays;
+	}
+
+	public final void setPasswordExpireDays(final int days) {
+		this.passwordExpireDays = days;
+	}
+
+	public final int getHostauthCookieExpireDays() {
+		return hostauthCookieExpireDays;
+	}
+
+	public final void setHostauthCookieExpireDays(final int hostauthCookieExpireDays) {
+		this.hostauthCookieExpireDays = hostauthCookieExpireDays;
+	}
 	 
 }

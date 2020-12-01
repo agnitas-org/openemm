@@ -24,6 +24,7 @@ import com.agnitas.emm.core.target.eql.ast.BinaryOperatorRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.BooleanExpressionTargetRuleEqlNode;
 import com.agnitas.emm.core.target.eql.ast.ClickedInMailingRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.EmptyRelationalEqlNode;
+import com.agnitas.emm.core.target.eql.ast.RelationalInfixOperator;
 import com.agnitas.emm.core.target.eql.ast.NotOperatorBooleanEqlNode;
 import com.agnitas.emm.core.target.eql.ast.NumericConstantAtomEqlNode;
 import com.agnitas.emm.core.target.eql.ast.OpenedMailingRelationalEqlNode;
@@ -165,7 +166,7 @@ public final class ShiftNotDownTransform {
 			final RelationalBooleanEqlNode trackingVetoExclusionNode1 = new RelationalBooleanEqlNode(
 					new BinaryOperatorRelationalEqlNode(
 							new AtomExpressionalEqlNode(new ProfileFieldAtomEqlNode("$tracking_veto", node.getStartLocation())),			// "$" marks this as internally generated identifier
-							BinaryOperatorRelationalEqlNode.InfixOperator.EQ, 
+							RelationalInfixOperator.EQ, 
 							new AtomExpressionalEqlNode(new NumericConstantAtomEqlNode("0", node.getStartLocation())),	
 							null));				// Date format is not used in this comparison
 			

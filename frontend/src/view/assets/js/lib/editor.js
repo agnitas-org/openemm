@@ -83,7 +83,11 @@
 
 
   Editor.prototype.decorate = function() {
-    this.editor.setTheme("ace/theme/chrome");
+    if($("body").hasClass("dark-theme")) {
+      this.editor.setTheme("ace/theme/idle_fingers");
+    } else {
+      this.editor.setTheme("ace/theme/chrome");
+    }
     this.editor.session.setUseWrapMode(true);
     this.editor.session.setWrapLimitRange(null, null);
     this.editor.setBehavioursEnabled(true);
@@ -133,7 +137,11 @@
 
 
   EditorText.prototype.decorate = function() {
-    this.editor.setTheme("ace/theme/chrome");
+    if($("body").hasClass("dark-theme")) {
+      this.editor.setTheme("ace/theme/idle_fingers");
+    } else {
+      this.editor.setTheme("ace/theme/chrome");
+    }
     this.editor.session.setUseWrapMode(false);
     this.editor.session.setWrapLimitRange(null, null);
     this.editor.setBehavioursEnabled(true);
@@ -158,7 +166,11 @@
   EditorEql.prototype.constructor = EditorEql;
   
   EditorEql.prototype.decorate = function() {
-    this.editor.setTheme("ace/theme/chrome");
+    if($("body").hasClass("dark-theme")) {
+      this.editor.setTheme("ace/theme/idle_fingers");
+    } else {
+      this.editor.setTheme("ace/theme/chrome");
+    }
     this.editor.session.setUseWrapMode(false);
     this.editor.session.setWrapLimitRange(null, null);
     this.editor.setBehavioursEnabled(true);

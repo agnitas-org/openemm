@@ -46,13 +46,14 @@
 	<!-- Wait 10 seconds after system startup and run JobQueueService repeatedly 
 		every 60 seconds (keep in mind to set active status in config_tbl) -->
 	<bean id="JobQueueTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerFactoryBean">
+		<property name="name" value="JobQueueTrigger-bean" />
 		<property name="jobDetail" ref="JobQueueJob" />
 		<property name="startDelay" value="10000" />
 		<property name="repeatInterval" value="60000" />
 	</bean>
 	
 	<bean name="QuartzScheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
-		<property name="schedulerName" value="emmScheduler" />        
+		<property name="schedulerName" value="quartzScheduler" />        
 		<property name="triggers">
 			<list>
 				<ref bean="JobQueueTrigger" />

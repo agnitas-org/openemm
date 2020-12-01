@@ -10,18 +10,9 @@
 
 package org.agnitas.service.impl;
 
+import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
-
-import javax.annotation.Resource;
-
-import org.agnitas.actions.EmmAction;
-import org.agnitas.actions.impl.EmmActionImpl;
-import org.agnitas.dao.EmmActionDao;
-import org.agnitas.dao.EmmActionOperationDao;
-import org.agnitas.dao.EmmActionType;
-import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationActivateDoubleOptInParameters;
@@ -39,6 +30,13 @@ import com.agnitas.emm.core.action.operations.ActionOperationUnsubscribeCustomer
 import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonObject;
+import org.agnitas.actions.EmmAction;
+import org.agnitas.actions.impl.EmmActionImpl;
+import org.agnitas.dao.EmmActionDao;
+import org.agnitas.dao.EmmActionOperationDao;
+import org.agnitas.dao.EmmActionType;
+import org.agnitas.util.importvalues.MailType;
+import org.apache.commons.lang3.StringUtils;
 
 public class ActionImporter extends BaseImporterExporter {
 	@Resource(name="EmmActionDao")

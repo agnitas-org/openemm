@@ -25,7 +25,6 @@ public final class FormHelper {
 		form.setUseForAdminAndTestDelivery(target.isAdminTestDelivery());
 		form.setEql(target.getEQL());
 		form.setLocked(target.isLocked());
-		form.setSimpleStructure(target.isSimpleStructured());
 	}
 
 	public static final void formPropertiesToTargetGroup(final ComTarget target, final QueryBuilderTargetGroupForm form) {

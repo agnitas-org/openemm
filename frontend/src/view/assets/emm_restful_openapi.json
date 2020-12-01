@@ -1,0 +1,4113 @@
+{
+  "openapi" : "3.0.0",
+  "info" : {
+    "title" : "EMM Restful API",
+    "description" : "This is the EMM Restful API",
+    "contact" : {
+      "email" : "info@agnitas.ag"
+    },
+    "version" : "1.0.0"
+  },
+  "servers" : [ {
+    "url" : "https://<emm_system_url>/restful"
+  } ],
+  "tags" : [ {
+    "name" : "Documentation",
+    "description" : "OpenAPI documentation"
+  }, {
+    "name" : "Mailing",
+    "description" : "Everything about mailings"
+  }, {
+    "name" : "Content",
+    "description" : "Everything about contents"
+  }, {
+    "name" : "Component",
+    "description" : "Everything about components"
+  }, {
+    "name" : "Mediapool",
+    "description" : "Everything about mediapool items (Not included in OpenEMM)"
+  }, {
+    "name" : "Mailinglist",
+    "description" : "Everything about mailinglists"
+  }, {
+    "name" : "Recipient",
+    "description" : "Everything about recipients"
+  }, {
+    "name" : "Binding",
+    "description" : "Everything about bindings"
+  }, {
+    "name" : "Blacklist",
+    "description" : "Everything about blacklists"
+  }, {
+    "name" : "Reference",
+    "description" : "Everything about references (Not included in OpenEMM)"
+  }, {
+    "name" : "Send",
+    "description" : "Everything about mailing delivery"
+  } ],
+  "paths" : {
+    "/openapi" : {
+      "get" : {
+        "tags" : [ "Documentation" ],
+        "responses" : {
+          "200" : {
+            "description" : "This OpenAPI definition document",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mailing" : {
+      "get" : {
+        "tags" : [ "Mailing" ],
+        "summary" : "Get a list of all existing mailings",
+        "operationId" : "getMailings",
+        "responses" : {
+          "200" : {
+            "description" : "list of all existing mailings",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Mailing" ],
+        "summary" : "Write new mailing data",
+        "description" : "Write new mailing data. Does not update existing mailing objects.",
+        "operationId" : "postMailing",
+        "requestBody" : {
+          "description" : "Mailing data to add This is the complete EMM mailing JSON object",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MailingItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Basic mailing information of created mailing"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/mailing/{mailing_id}" : {
+      "get" : {
+        "tags" : [ "Mailing" ],
+        "summary" : "Read existing mailing data",
+        "description" : "Read existing mailing data",
+        "operationId" : "getMailingById",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Mailing data",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Mailing" ],
+        "summary" : "Update mailing",
+        "description" : "Update existing mailing data",
+        "operationId" : "putMailing",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to update",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Mailing data to update",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MailingInfoItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Simple information text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Mailing" ],
+        "summary" : "Delete mailing",
+        "description" : "Delete existing mailing",
+        "operationId" : "deleteMailing",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to delete",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple information text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/content/{mailing_id}" : {
+      "get" : {
+        "tags" : [ "Content" ],
+        "summary" : "Read all existing content items for a single mailing",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get the contents for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "All the content items of the given mailing",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/DynContentItem"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Content" ],
+        "summary" : "Create or update mailing content",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to create or update the contents for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Data of new mailing content item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DynContentItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mailing content item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DynContentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Content" ],
+        "summary" : "Create new mailing content (no update)",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to create the content for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Data of new mailing content item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DynContentItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mailing content item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DynContentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/content/{mailing_id}/{content_id}" : {
+      "get" : {
+        "tags" : [ "Content" ],
+        "summary" : "Read a single existing mailing content",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get the contents for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "content_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Single content item of the given mailing",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DynContentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Content" ],
+        "summary" : "Create or update mailing content",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to create or update the contents for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "content_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mailing content item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DynContentItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated mailing content item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DynContentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Content" ],
+        "summary" : "Delete single existing mailing content",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to delete the content of",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "content_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/content/{mailing_id}/{content_name}" : {
+      "get" : {
+        "tags" : [ "Content" ],
+        "summary" : "Read existing mailing content",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get the contents for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "content_name",
+          "in" : "path",
+          "description" : "Name of the mailing content to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Single content item of the given mailing",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DynContentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Content" ],
+        "summary" : "Create or update mailing content",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to create or update the contents for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "content_name",
+          "in" : "path",
+          "description" : "Name of the mailing content to create or update",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mailing content item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DynContentItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mailing content item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DynContentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Content" ],
+        "summary" : "Delete single existing mailing content",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to delete the content for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "content_name",
+          "in" : "path",
+          "description" : "Name of the mailing content to delete",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/component/{mailing_id}" : {
+      "get" : {
+        "tags" : [ "Component" ],
+        "summary" : "Read all existing component items for a single mailing",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get the components for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "All the component items of the given mailing",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ComponentItem"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Component" ],
+        "summary" : "Create or update mailing component",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to create or update the components for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Data of new mailing component item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ComponentItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mailing component item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ComponentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Component" ],
+        "summary" : "Create new mailing component (no update)",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to create the component for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Data of new mailing component item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ComponentItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mailing component item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ComponentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/component/{mailing_id}/{component_id}" : {
+      "get" : {
+        "tags" : [ "Component" ],
+        "summary" : "Read a single existing mailing component",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get the components for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "component_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Single component item of the given mailing",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ComponentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Component" ],
+        "summary" : "Create or update mailing component",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to create or update the components for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "component_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mailing component item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ComponentItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated mailing component item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ComponentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Component" ],
+        "summary" : "Delete single existing mailing component",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to delete the component of",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "component_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/component/{mailing_id}/{component_name}" : {
+      "get" : {
+        "tags" : [ "Component" ],
+        "summary" : "Read existing mailing component",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to get the components for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "component_name",
+          "in" : "path",
+          "description" : "Name of the mailing component to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Single component item of the given mailing",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ComponentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Component" ],
+        "summary" : "Create or update mailing component",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to create or update the components for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "component_name",
+          "in" : "path",
+          "description" : "Name of the mailing component to create or update",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mailing component item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ComponentItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mailing component item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ComponentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Component" ],
+        "summary" : "Delete single existing mailing component",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to delete the component for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "component_name",
+          "in" : "path",
+          "description" : "Name of the mailing component to delete",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/mediapool" : {
+      "get" : {
+        "tags" : [ "Mediapool" ],
+        "summary" : "Read all existing mediapool items (Not included in OpenEMM)",
+        "responses" : {
+          "200" : {
+            "description" : "All the mediapool items",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/MediapoolItem"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Mediapool" ],
+        "summary" : "Create or update mediapool item (Not included in OpenEMM)",
+        "requestBody" : {
+          "description" : "Data of new mediapool item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MediapoolItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mediapool item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MediapoolItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Mediapool" ],
+        "summary" : "Create new mediapool item (no update) (Not included in OpenEMM)",
+        "requestBody" : {
+          "description" : "Data of new mediapool item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MediapoolItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mediapool item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MediapoolItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/mediapool/{mediapool_id}" : {
+      "get" : {
+        "tags" : [ "Mediapool" ],
+        "summary" : "Read a single existing mediapool item (Not included in OpenEMM)",
+        "parameters" : [ {
+          "name" : "mediapool_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mediapool item to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Single mediapool item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MediapoolItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Mediapool" ],
+        "summary" : "Create or update mediapool item (Not included in OpenEMM)",
+        "parameters" : [ {
+          "name" : "mediapool_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mediapool item to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mediapool item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MediapoolItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated mediapool item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MediapoolItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Mediapool" ],
+        "summary" : "Delete single existing mediapool item (Not included in OpenEMM)",
+        "parameters" : [ {
+          "name" : "mediapool_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mediapool item to delete",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/mediapool/{mediapool_name}" : {
+      "get" : {
+        "tags" : [ "Mediapool" ],
+        "summary" : "Read existing mediapool item (Not included in OpenEMM)",
+        "parameters" : [ {
+          "name" : "mediapool_name",
+          "in" : "path",
+          "description" : "Name of the mediapool item to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Single mediapool item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MediapoolItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Mediapool" ],
+        "summary" : "Create or update mediapool item (Not included in OpenEMM)",
+        "parameters" : [ {
+          "name" : "mediapool_name",
+          "in" : "path",
+          "description" : "Name of the mediapool item to create or update",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mediapool item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MediapoolItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mediapool item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MediapoolItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Mediapool" ],
+        "summary" : "Delete single existing mediapool item (Not included in OpenEMM)",
+        "parameters" : [ {
+          "name" : "mediapool_name",
+          "in" : "path",
+          "description" : "Name of the mediapool item to delete",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/mailinglist" : {
+      "get" : {
+        "tags" : [ "Mailinglist" ],
+        "summary" : "Read all existing mailinglist data",
+        "description" : "Read existing mailinglist data",
+        "operationId" : "getMailinglist",
+        "responses" : {
+          "200" : {
+            "description" : "search results matching criteria",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/MailinglistItem"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Mailinglist" ],
+        "summary" : "Create or update mailinglist data",
+        "requestBody" : {
+          "description" : "Mailinglist data to add",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MailinglistItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mailinglist item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MailinglistItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Mailinglist" ],
+        "summary" : "Write new mailinglist data",
+        "description" : "Write new mailinglist data. Does not update existing mailinglist objects.",
+        "operationId" : "postMailinglist",
+        "requestBody" : {
+          "description" : "Mailinglist data to add",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MailinglistItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "item created"
+          },
+          "400" : {
+            "description" : "invalid input, object invalid"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/mailinglist/{mailinglist_id}" : {
+      "get" : {
+        "tags" : [ "Mailinglist" ],
+        "summary" : "Read a single existing mailinglist item",
+        "parameters" : [ {
+          "name" : "mailinglist_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailinglist to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Mailinglist item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MailinglistItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Mailinglist" ],
+        "summary" : "Create or update mailinglist",
+        "parameters" : [ {
+          "name" : "mailinglist_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailinglist to create or update",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mailinglist item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MailinglistItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated mailing content item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MailinglistItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Mailinglist" ],
+        "summary" : "Delete single existing mailing content",
+        "parameters" : [ {
+          "name" : "mailinglist_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailinglist to delete",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/mailinglist/{mailinglist_name}" : {
+      "get" : {
+        "tags" : [ "Mailinglist" ],
+        "summary" : "Read a single existing mailinglist item",
+        "parameters" : [ {
+          "name" : "mailinglist_name",
+          "in" : "path",
+          "description" : "Name of the mailinglist to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Mailinglist item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MailinglistItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Mailinglist" ],
+        "summary" : "Create or update mailinglist",
+        "parameters" : [ {
+          "name" : "mailinglist_name",
+          "in" : "path",
+          "description" : "Name of the mailinglist to create or update",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mailinglist item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MailinglistItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated mailinglist item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MailinglistItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Mailinglist" ],
+        "summary" : "Delete single existing mailing content",
+        "parameters" : [ {
+          "name" : "mailinglist_name",
+          "in" : "path",
+          "description" : "Name of the mailinglist to delete",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/recipient" : {
+      "put" : {
+        "tags" : [ "Recipient" ],
+        "summary" : "Create or update recipient entry",
+        "requestBody" : {
+          "description" : "Data of new recipient entry",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecipientItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new recipient entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecipientItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Recipient" ],
+        "summary" : "Create new recipient entry (no update)",
+        "requestBody" : {
+          "description" : "Data of new recipient entry",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecipientItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new recipient entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecipientItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/recipient/{customer_id}" : {
+      "get" : {
+        "tags" : [ "Recipient" ],
+        "summary" : "Read a single existing recipient entry",
+        "parameters" : [ {
+          "name" : "customer_id",
+          "in" : "path",
+          "description" : "Numeric ID of the recipient entry",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Single recipient entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecipientItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Recipient" ],
+        "summary" : "Create or update recipient entry",
+        "parameters" : [ {
+          "name" : "customer_id",
+          "in" : "path",
+          "description" : "Numeric ID of the recipient entry to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing recipient entry",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecipientItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated recipient entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecipientItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Recipient" ],
+        "summary" : "Delete single existing recipient entry",
+        "parameters" : [ {
+          "name" : "customer_id",
+          "in" : "path",
+          "description" : "Numeric ID of the recipient entry to delete",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/recipient/{email}" : {
+      "get" : {
+        "tags" : [ "Recipient" ],
+        "summary" : "Read a single existing recipient entry",
+        "parameters" : [ {
+          "name" : "email",
+          "in" : "path",
+          "description" : "Email of the recipient entry",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Single recipient entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecipientItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Recipient" ],
+        "summary" : "Create or update recipient entry",
+        "parameters" : [ {
+          "name" : "email",
+          "in" : "path",
+          "description" : "Email of the recipient entry to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing recipient entry",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecipientItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated recipient entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecipientItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Recipient" ],
+        "summary" : "Delete single existing recipient entry",
+        "parameters" : [ {
+          "name" : "email",
+          "in" : "path",
+          "description" : "Email of the recipient entry to delete",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/binding/{customer_id}" : {
+      "get" : {
+        "tags" : [ "Binding" ],
+        "summary" : "Read all existing binding entries for a single recipient",
+        "parameters" : [ {
+          "name" : "customer_id",
+          "in" : "path",
+          "description" : "Numeric ID of the recipient to get all binding entries for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Array of binding entries",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/BindingItem"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Binding" ],
+        "summary" : "Create or update binding entry",
+        "parameters" : [ {
+          "name" : "customer_id",
+          "in" : "path",
+          "description" : "Numeric ID of the recipient to create or update binding entry for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing binding entry",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BindingItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated binding entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BindingItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Binding" ],
+        "summary" : "Create new binding entry (no Update)",
+        "parameters" : [ {
+          "name" : "customer_id",
+          "in" : "path",
+          "description" : "Numeric ID of the recipient to create binding entry for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Data for new binding entry",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BindingItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated binding entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BindingItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Binding" ],
+        "summary" : "Delete all existing binding entries for a recipient",
+        "parameters" : [ {
+          "name" : "customer_id",
+          "in" : "path",
+          "description" : "Numeric ID of the recipient to delete all binding entries for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/binding/{email}" : {
+      "get" : {
+        "tags" : [ "Binding" ],
+        "summary" : "Read all existing binding entries for a single recipient",
+        "parameters" : [ {
+          "name" : "email",
+          "in" : "path",
+          "description" : "Email address of the recipient to get all binding entries for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Array of binding entries",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/BindingItem"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Binding" ],
+        "summary" : "Create or update binding entry",
+        "parameters" : [ {
+          "name" : "email",
+          "in" : "path",
+          "description" : "Email address of the recipient to create or update binding entry for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing binding entry",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BindingItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated binding entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BindingItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Binding" ],
+        "summary" : "Create new binding entry (no Update)",
+        "parameters" : [ {
+          "name" : "email",
+          "in" : "path",
+          "description" : "Email address of the recipient to create binding entry for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Data for new binding entry",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BindingItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated binding entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BindingItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Binding" ],
+        "summary" : "Delete all existing binding entries for a recipient",
+        "parameters" : [ {
+          "name" : "email",
+          "in" : "path",
+          "description" : "Email address of the recipient to delete all binding entries for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/binding/{customer_id}/{mailinglist_id}" : {
+      "get" : {
+        "tags" : [ "Binding" ],
+        "summary" : "Read a single existing binding entry for a single recipient",
+        "parameters" : [ {
+          "name" : "customer_id",
+          "in" : "path",
+          "description" : "Numeric ID of the recipient to get binding entry for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "mailinglist_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailinglist to get the binding entry for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Binding entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BindingItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Binding" ],
+        "summary" : "Delete a single binding entry for a recipient",
+        "parameters" : [ {
+          "name" : "customer_id",
+          "in" : "path",
+          "description" : "Numeric ID of the recipient to delete binding entry for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "mailinglist_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailinglist to delete the binding entry for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/binding/{email}/{mailinglist_id}" : {
+      "get" : {
+        "tags" : [ "Binding" ],
+        "summary" : "Read a single existing binding entry for a single recipient",
+        "parameters" : [ {
+          "name" : "email",
+          "in" : "path",
+          "description" : "Email address of the recipient to get binding entry for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "mailinglist_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailinglist to get the binding entry for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Binding entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BindingItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Binding" ],
+        "summary" : "Delete a single binding entry for a recipient",
+        "parameters" : [ {
+          "name" : "email",
+          "in" : "path",
+          "description" : "Email address of the recipient to get binding entry for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "mailinglist_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailinglist to delete the binding entry for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/blacklist" : {
+      "get" : {
+        "tags" : [ "Blacklist" ],
+        "summary" : "Read all existing blacklist data",
+        "description" : "Read existing blacklist data",
+        "operationId" : "getBlacklist",
+        "responses" : {
+          "200" : {
+            "description" : "search results matching criteria",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/BlacklistItem"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Blacklist" ],
+        "summary" : "Create or update blacklist data",
+        "requestBody" : {
+          "description" : "Blacklist data to add",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BlacklistItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new blacklist item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BlacklistItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Blacklist" ],
+        "summary" : "Write new blacklist data",
+        "description" : "Write new blacklist data. Does not update existing blacklist objects.",
+        "operationId" : "postBlacklist",
+        "requestBody" : {
+          "description" : "Blacklist data to add",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BlacklistItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "item created"
+          },
+          "400" : {
+            "description" : "invalid input, object invalid"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/blacklist/{email}" : {
+      "get" : {
+        "tags" : [ "Blacklist" ],
+        "summary" : "Read a single existing blacklist item",
+        "parameters" : [ {
+          "name" : "email",
+          "in" : "path",
+          "description" : "Email address to get data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "email item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BlacklistItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Blacklist" ],
+        "summary" : "Create or update mailinglist",
+        "parameters" : [ {
+          "name" : "email",
+          "in" : "path",
+          "description" : "Email address to create or update in blacklist",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mailinglist item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BlacklistItem"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated blacklist item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BlacklistItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Blacklist" ],
+        "summary" : "Delete single existing mailing content",
+        "parameters" : [ {
+          "name" : "email",
+          "in" : "path",
+          "description" : "Email address to delete from blacklist",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/reference/{reference_table_id}" : {
+      "get" : {
+        "tags" : [ "Reference" ],
+        "summary" : "Read all existing reference data of a reference table (Not included in OpenEMM)",
+        "description" : "Read existing reference data",
+        "operationId" : "getReferencesByTableID",
+        "parameters" : [ {
+          "name" : "reference_table_id",
+          "in" : "path",
+          "description" : "Numeric ID of the reference table to get data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "search results matching criteria",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid reference table id"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Reference" ],
+        "summary" : "Create or update reference data (Not included in OpenEMM)",
+        "operationId" : "putReferenceByTableID",
+        "parameters" : [ {
+          "name" : "reference_table_id",
+          "in" : "path",
+          "description" : "Numeric ID of the reference table to get data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Reference data to add",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new reference item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid reference table id"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Reference" ],
+        "summary" : "Write new reference data (Not included in OpenEMM)",
+        "description" : "Write new reference data. Does not update existing reference objects.",
+        "operationId" : "postReferenceByTableID",
+        "parameters" : [ {
+          "name" : "reference_table_id",
+          "in" : "path",
+          "description" : "Numeric ID of the reference table to add data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Reference data to add",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "item created"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid reference table id"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/reference/{reference_table_name}" : {
+      "get" : {
+        "tags" : [ "Reference" ],
+        "summary" : "Read all existing reference data of a reference table (Not included in OpenEMM)",
+        "description" : "Read existing reference data",
+        "operationId" : "getReferencesByTableName",
+        "parameters" : [ {
+          "name" : "reference_table_name",
+          "in" : "path",
+          "description" : "Name of the reference table to get data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "search results matching criteria",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid reference table name"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Reference" ],
+        "summary" : "Create or update reference data (Not included in OpenEMM)",
+        "operationId" : "putReferenceByTableName",
+        "parameters" : [ {
+          "name" : "reference_table_name",
+          "in" : "path",
+          "description" : "Name of the reference table to get data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Reference data to add",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new reference item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid reference table name"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Reference" ],
+        "summary" : "Write new reference data (Not included in OpenEMM)",
+        "description" : "Write new reference data. Does not update existing reference objects.",
+        "operationId" : "postReferenceByTableName",
+        "parameters" : [ {
+          "name" : "reference_table_name",
+          "in" : "path",
+          "description" : "Name of the reference table to add data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Reference data to add",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "item created"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid reference table name"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/reference/{reference_table_id}/{reference_item_key}" : {
+      "get" : {
+        "tags" : [ "Reference" ],
+        "summary" : "Read a single existing reference item (Not included in OpenEMM)",
+        "parameters" : [ {
+          "name" : "reference_table_id",
+          "in" : "path",
+          "description" : "Numeric ID of the reference table to get data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "reference_item_key",
+          "in" : "path",
+          "description" : "Key of the reference item to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Reference item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Reference" ],
+        "summary" : "Create or update reference (Not included in OpenEMM)",
+        "parameters" : [ {
+          "name" : "reference_table_id",
+          "in" : "path",
+          "description" : "Numeric ID of the reference table to create data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "reference_item_key",
+          "in" : "path",
+          "description" : "Numeric ID of the reference to create or update",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing reference item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of reference item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Reference" ],
+        "summary" : "Delete single existing mailing content (Not included in OpenEMM)",
+        "parameters" : [ {
+          "name" : "reference_table_id",
+          "in" : "path",
+          "description" : "Numeric ID of the reference table to delete data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "reference_item_key",
+          "in" : "path",
+          "description" : "Numeric ID of the reference to delete",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/reference/{reference_table_name}/{reference_item_key}" : {
+      "get" : {
+        "tags" : [ "Reference" ],
+        "summary" : "Read a single existing reference item (Not included in OpenEMM)",
+        "parameters" : [ {
+          "name" : "reference_table_name",
+          "in" : "path",
+          "description" : "Numeric ID of the reference table to get data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "reference_item_key",
+          "in" : "path",
+          "description" : "Key of the reference item to get",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Reference item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Reference" ],
+        "summary" : "Create or update reference (Not included in OpenEMM)",
+        "parameters" : [ {
+          "name" : "reference_table_name",
+          "in" : "path",
+          "description" : "Numeric ID of the reference table to create data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "reference_item_key",
+          "in" : "path",
+          "description" : "Numeric ID of the reference to create or update",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing reference item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of reference item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Reference" ],
+        "summary" : "Delete single existing mailing content (Not included in OpenEMM)",
+        "parameters" : [ {
+          "name" : "reference_table_name",
+          "in" : "path",
+          "description" : "Numeric ID of the reference table to delete data for",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "reference_item_key",
+          "in" : "path",
+          "description" : "Numeric ID of the reference to delete",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/send/{mailing_id}" : {
+      "put" : {
+        "summary" : "Send an existing mailing",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to send",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing reference item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/body"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Simple information text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Send an existing mailing",
+        "parameters" : [ {
+          "name" : "mailing_id",
+          "in" : "path",
+          "description" : "Numeric ID of the mailing to send",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing reference item",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/body_1"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Simple information text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "DynContentItem" : {
+        "required" : [ "content", "name" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "description" : "Only for read methods. Items to create or update may not have a predefined id.",
+            "example" : 4711
+          },
+          "name" : {
+            "type" : "string",
+            "example" : "My_Special_Content_Name"
+          },
+          "disableLinkExtension" : {
+            "type" : "boolean",
+            "example" : false
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ContentItem"
+            }
+          }
+        }
+      },
+      "ContentItem" : {
+        "required" : [ "text" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "description" : "Only for read methods. Items to create or update may not have a predefined id.",
+            "example" : 4712
+          },
+          "target_id" : {
+            "type" : "integer",
+            "description" : "If not set or 0 this means \"for all recipients\"",
+            "example" : 4713
+          },
+          "order" : {
+            "type" : "integer",
+            "description" : "Priority order of this content, if multiple targetgroups are matching for this name",
+            "example" : 1
+          },
+          "text" : {
+            "type" : "string",
+            "example" : "Html content or other text part"
+          }
+        }
+      },
+      "ComponentItem" : {
+        "required" : [ "name", "type" ],
+        "type" : "object",
+        "properties" : {
+          "component_id" : {
+            "type" : "integer",
+            "description" : "Only for read methods. Items to create or update may not have a predefined id.",
+            "example" : 4711
+          },
+          "name" : {
+            "type" : "string",
+            "example" : "My_Special_Component_Name.png"
+          },
+          "description" : {
+            "type" : "string",
+            "example" : "My special component"
+          },
+          "type" : {
+            "type" : "integer",
+            "description" : "Template(0), Image(1), Attachment(3), PersonalizedAttachment(4), HostedImage(5), PrecAAttachement(7), ThumbnailImage(8)"
+          },
+          "target_id" : {
+            "type" : "integer",
+            "description" : "If not set or 0 this means \"for all recipients\"",
+            "example" : 4713
+          },
+          "url" : {
+            "type" : "string",
+            "example" : "My special component"
+          },
+          "url_id" : {
+            "type" : "integer",
+            "description" : "If not set or 0 this means \"for all recipients\"",
+            "example" : 4714
+          },
+          "mimetype" : {
+            "type" : "string",
+            "description" : "Mimetype for emm_block or bin_block",
+            "example" : "image/png"
+          },
+          "emm_block" : {
+            "type" : "string",
+            "description" : "Any text based content",
+            "example" : "My content text"
+          },
+          "bin_block" : {
+            "type" : "string",
+            "description" : "Binary content zipped and coded in base64",
+            "example" : "ABCDEFGHIJKLMNOPQRSTUVWXYZ+abcdefghijklmnopqrstuvwxyz/1234567890="
+          }
+        }
+      },
+      "MediapoolItem" : {
+        "required" : [ "content", "filename", "mimetype" ],
+        "type" : "object",
+        "properties" : {
+          "mediapoolelement_id" : {
+            "type" : "integer",
+            "description" : "Only for read methods. Items to create or update may not have a predefined id.",
+            "example" : 4711
+          },
+          "filename" : {
+            "type" : "string",
+            "example" : "My_Special_Mediapool_Name.png"
+          },
+          "title" : {
+            "type" : "string",
+            "example" : "My special title"
+          },
+          "category_id" : {
+            "type" : "integer",
+            "description" : "Id of the mediapool category to asign this item to",
+            "example" : 4713
+          },
+          "type" : {
+            "type" : "integer",
+            "description" : "Template(0), Image(1), Attachment(3), PersonalizedAttachment(4), HostedImage(5), PrecAAttachement(7), ThumbnailImage(8)"
+          },
+          "link" : {
+            "type" : "string",
+            "example" : "https://link.domain/param=123"
+          },
+          "keywords" : {
+            "type" : "string",
+            "description" : "Comma separated keywords for tagging",
+            "example" : "4714"
+          },
+          "mimetype" : {
+            "type" : "string",
+            "description" : "Mimetype for emm_block or bin_block",
+            "example" : "image/png"
+          },
+          "content" : {
+            "type" : "string",
+            "description" : "Binary content zipped and coded in base64",
+            "example" : "ABCDEFGHIJKLMNOPQRSTUVWXYZ+abcdefghijklmnopqrstuvwxyz/1234567890="
+          }
+        }
+      },
+      "MailinglistItem" : {
+        "required" : [ "name" ],
+        "type" : "object",
+        "properties" : {
+          "mailinglist_id" : {
+            "type" : "integer",
+            "description" : "Only for read methods. Items to create or update may not have a predefined id.",
+            "example" : 4711
+          },
+          "name" : {
+            "type" : "string",
+            "example" : "My_Mailinglist"
+          },
+          "description" : {
+            "type" : "string",
+            "example" : "My special mailinglist"
+          },
+          "creation_date" : {
+            "type" : "string",
+            "description" : "Date-time of creation (ISO-8601). Only for read methods. Items to create or update may not have a creation_date.",
+            "example" : "2017-07-21T17:32:28Z"
+          },
+          "change_date" : {
+            "type" : "string",
+            "description" : "Date-time of latest change (ISO-8601). Only for read methods. Items to create or update may not have a change_date.",
+            "example" : "2017-07-21T17:32:28Z"
+          }
+        }
+      },
+      "RecipientItem" : {
+        "required" : [ "email" ],
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "example" : "Email address"
+          },
+          "firstname" : {
+            "type" : "string",
+            "example" : "Firstname"
+          },
+          "lastname" : {
+            "type" : "string",
+            "example" : "Lastname"
+          },
+          "creation_date" : {
+            "type" : "string",
+            "description" : "Date-time of creation (ISO-8601). Only for read methods. Items to create or update may not have a creation_date.",
+            "example" : "2017-07-21T17:32:28Z"
+          }
+        }
+      },
+      "BindingItem" : {
+        "required" : [ "mailinglist_id", "user_status" ],
+        "type" : "object",
+        "properties" : {
+          "mailinglist_id" : {
+            "type" : "integer",
+            "description" : "Id of the referenced mailinglist",
+            "example" : 4711
+          },
+          "user_type" : {
+            "type" : "string",
+            "description" : "Letter to identify the recipient type. Default is \"W\". (ALL_RECIPIENTS(\"E\"), ADMIN_RECIPIENT(\"A\"), TEST_RECIPIENT(\"T\"), TEST_VIP_RECIPIENT(\"t\"), NORMAL_RECIPIENT(\"W\"), NORMAL_VIP_RECIPIENT(\"w\"))",
+            "example" : "W"
+          },
+          "user_status" : {
+            "type" : "integer",
+            "description" : "Subscription status of recipient. (Active(1), Bounce(2), AdminOut(3), UserOut(4), WaitForConfirm(5), Blacklisted(6), Suspend(7))",
+            "example" : 1
+          },
+          "user_remark" : {
+            "type" : "string",
+            "description" : "Descriptive text for this binding entry",
+            "example" : "Subscription by import"
+          },
+          "referrer" : {
+            "type" : "string",
+            "description" : "Http referrer for later analysis",
+            "example" : "https:/shopsite.de/"
+          },
+          "entry_mailing_id" : {
+            "type" : "integer",
+            "description" : "Mailing id which lead to this subscription",
+            "example" : 4712
+          },
+          "exit_mailing_id" : {
+            "type" : "integer",
+            "description" : "Mailing id which lead to this unsubscription",
+            "example" : 4712
+          },
+          "creation_date" : {
+            "type" : "string",
+            "description" : "Date-time of creation (ISO-8601). Only for read methods. Items to create or update may not have a creation_date.",
+            "example" : "2017-07-21T17:32:28Z"
+          },
+          "change_date" : {
+            "type" : "string",
+            "description" : "Date-time of change (ISO-8601). Only for read methods. Items to create or update may not have a creation_date.",
+            "example" : "2018-07-21T17:32:28Z"
+          }
+        }
+      },
+      "BlacklistItem" : {
+        "required" : [ "email", "reason" ],
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "example" : "Email address to blacklist"
+          },
+          "reason" : {
+            "type" : "string",
+            "example" : "Reason for blacklisting"
+          },
+          "date" : {
+            "type" : "string",
+            "description" : "Date-time of creation (ISO-8601). Only for read methods. Items to create or update may not have a creation_date.",
+            "example" : "2017-07-21T17:32:28Z"
+          }
+        }
+      },
+      "MailingInfoItem" : {
+        "required" : [ "mailinglist_id", "shortname" ],
+        "type" : "object",
+        "properties" : {
+          "shortname" : {
+            "type" : "string",
+            "description" : "Mailing name"
+          },
+          "description" : {
+            "type" : "string",
+            "description" : "Mailing description"
+          },
+          "mailinglist_id" : {
+            "type" : "integer",
+            "description" : "Numeric ID of the mailinglist to set for this mailing"
+          }
+        }
+      },
+      "MailingItem" : {
+        "required" : [ "mailinglist_id", "shortname" ],
+        "type" : "object",
+        "properties" : {
+          "version" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "integer"
+          },
+          "shortname" : {
+            "type" : "string"
+          },
+          "mailinglist_id" : {
+            "type" : "integer"
+          },
+          "mailinglist_shortname" : {
+            "type" : "string"
+          },
+          "mailingtype" : {
+            "type" : "string"
+          },
+          "components" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ComponentItem"
+            }
+          },
+          "contents" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ContentItem"
+            }
+          }
+        }
+      },
+      "body" : {
+        "required" : [ "content", "name" ],
+        "type" : "object",
+        "properties" : {
+          "send_type" : {
+            "type" : "string",
+            "description" : "Type of recipients used for this send action. (WORLD(\"W\"), TEST(\"T\"), ADMIN(\"A\"), DATE_BASED(\"R\"), ACTION_BASED(\"E\"))",
+            "example" : "W"
+          },
+          "send_date" : {
+            "type" : "string",
+            "description" : "Date-time of sending (ISO-8601)",
+            "example" : "2017-07-21T17:32:28Z"
+          }
+        }
+      },
+      "body_1" : {
+        "required" : [ "content", "name" ],
+        "type" : "object",
+        "properties" : {
+          "send_type" : {
+            "type" : "string",
+            "description" : "Type of recipients used for this send action. (WORLD(\"W\"), TEST(\"T\"), ADMIN(\"A\"), DATE_BASED(\"R\"), ACTION_BASED(\"E\"))",
+            "example" : "W"
+          },
+          "send_date" : {
+            "type" : "string",
+            "description" : "Date-time of sending (ISO-8601)",
+            "example" : "2017-07-21T17:32:28Z"
+          }
+        }
+      }
+    }
+  }
+}

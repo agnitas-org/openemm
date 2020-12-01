@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveMailingParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.userform.service.UserFormExecutionService;
@@ -116,6 +117,11 @@ public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation 
 			logger.error("archive problem: " + e, e);
 			return false;
 		}
+	}
+
+	@Override
+	public ActionOperationType processedType() {
+        return ActionOperationType.GET_ARCHIVE_MAILING;
 	}
 
 	private Page generateBackEndPreview(int mailingID, int customerID) {

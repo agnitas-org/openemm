@@ -54,7 +54,6 @@ import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.FloatValidator;
 import org.apache.log4j.Logger;
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -62,6 +61,7 @@ import org.springframework.util.CollectionUtils;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.commons.encrypt.ProfileFieldEncryptor;
+import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonWriter;
 
@@ -78,6 +78,9 @@ public class DbUtilities {
 
 	public static final int ORACLE_TIMESTAMPTZ_TYPECODE = -101;
 
+	// All characters (except digits) allowed in a target expression
+	public static final String TARGET_EXPRESSION_NON_NUMERIC_CHARACTERS = "!( )&|";
+
 	public static int readoutInOutputStream(JdbcTemplate jdbcTemplate, String statementString, OutputStream outputStream, String encoding, char separator, Character stringQuote) throws Exception {
 		return readoutInOutputStream(jdbcTemplate.getDataSource(), statementString, outputStream, encoding, separator, stringQuote);
 	}
@@ -91,6 +94,12 @@ public class DbUtilities {
 	public static int readoutInOutputStream(DataSource dataSource, String statementString, List<String> csvColumnNames, OutputStream outputStream, String encoding, char separator, Character stringQuote) throws Exception {
 		try (final Connection connection = dataSource.getConnection()) {
 			return readoutInOutputStream(connection, statementString, csvColumnNames, outputStream, encoding, separator, stringQuote);
+		}
+	}
+
+	public static int readoutInOutputStream(DataSource dataSource, String statementString, List<Object> statementParameter, List<String> csvColumnNames, OutputStream outputStream, String encoding, char separator, Character stringQuote) throws Exception {
+		try (final Connection connection = dataSource.getConnection()) {
+			return readoutInOutputStream(connection, statementString, statementParameter, csvColumnNames, outputStream, encoding, separator, stringQuote);
 		}
 	}
 
@@ -154,6 +163,20 @@ public class DbUtilities {
 			}
 
 			return csvWriter.getWrittenLines() - 1;
+		}
+	}
+
+    public static int readoutInOutputStream(Connection connection, String statementString, List<Object> statementParameter, List<String> csvColumnNames, OutputStream outputStream, String encoding, char separator, Character stringQuote) throws Exception {
+		try (PreparedStatement statement = connection.prepareStatement(statementString)) {
+			if (statementParameter != null && statementParameter.size() > 0) {
+				int parameterIndex = 0;
+				for (Object parameter: statementParameter) {
+					statement.setObject(++parameterIndex, parameter);
+				}
+			}
+			try (ResultSet resultSet = statement.executeQuery()) {
+				return readoutInOutputStream(csvColumnNames, resultSet, outputStream, encoding, separator, stringQuote);
+			}
 		}
 	}
 
@@ -244,6 +267,69 @@ public class DbUtilities {
 
 						return itemCount;
 					}
+				}
+			}
+		}
+	}
+
+	public static JsonArray readoutInJsonArray(DataSource dataSource, String statementString, List<String> dataColumns) throws Exception {
+		try (final Connection connection = dataSource.getConnection()) {
+			try (Statement statement = connection.createStatement()) {
+				try (ResultSet resultSet = statement.executeQuery(statementString)) {
+					ResultSetMetaData metaData = resultSet.getMetaData();
+					
+					if (dataColumns == null) {
+						dataColumns = new ArrayList<>();
+						for (int i = 1; i <= metaData.getColumnCount(); i++) {
+							dataColumns.add(metaData.getColumnName(i));
+						}
+					}
+					
+					JsonArray jsonArray = new JsonArray();
+					while (resultSet.next()) {
+						JsonObject jsonObject = new JsonObject();
+						for (int i = 1; i <= metaData.getColumnCount(); i++) {
+							String propertyName = dataColumns.get(i -1);
+							SimpleDataType simpleDataType = DbColumnType.getSimpleDataType(metaData.getColumnTypeName(i), metaData.getScale(i));
+							if (metaData.getColumnType(i) == Types.BLOB
+									|| metaData.getColumnType(i) == Types.BINARY
+									|| metaData.getColumnType(i) == Types.VARBINARY
+									|| metaData.getColumnType(i) == Types.LONGVARBINARY) {
+								Blob blob = resultSet.getBlob(i);
+								if (resultSet.wasNull()) {
+									jsonObject.add(propertyName, null);
+								} else {
+									try (InputStream input = blob.getBinaryStream()) {
+										byte[] data = IOUtils.toByteArray(input);
+										jsonObject.add(propertyName, Base64.getEncoder().encodeToString(data));
+									}
+								}
+							} else if (simpleDataType == SimpleDataType.Date) {
+								if ("0000-00-00 00:00:00".equals(resultSet.getString(i))) {
+									jsonObject.add(propertyName, null);
+								} else {
+									Date value = resultSet.getTimestamp(i);
+									jsonObject.add(propertyName, value);
+								}
+							} else if (simpleDataType == SimpleDataType.DateTime) {
+								if ("0000-00-00 00:00:00".equals(resultSet.getString(i))) {
+									jsonObject.add(propertyName, null);
+								} else {
+									Date value = resultSet.getTimestamp(i);
+									jsonObject.add(propertyName, value);
+								}
+							} else if (simpleDataType == SimpleDataType.Float) {
+								jsonObject.add(propertyName, resultSet.getBigDecimal(i).doubleValue());
+							} else if (simpleDataType == SimpleDataType.Numeric) {
+								jsonObject.add(propertyName, resultSet.getBigDecimal(i).intValue());
+							} else {
+								jsonObject.add(propertyName, resultSet.getString(i));
+							}
+						}
+						jsonArray.add(jsonObject);
+					}
+
+					return jsonArray;
 				}
 			}
 		}
@@ -1124,7 +1210,11 @@ public class DbUtilities {
 								}
 								numericScale = resultSet.getInt("numeric_scale");
 								if (resultSet.wasNull()) {
-									numericScale = -1;
+									if ("float".equalsIgnoreCase(dataType) || "double".equalsIgnoreCase(dataType)) {
+										numericScale = 0;
+									} else {
+										numericScale = -1;
+									}
 								}
 								isNullable = resultSet.getString("is_nullable").equalsIgnoreCase("yes");
 
@@ -1168,7 +1258,7 @@ public class DbUtilities {
 						}
 
 						// Watchout: Oracle's timestamp datatype is "TIMESTAMP(6)", so remove the bracket value
-						String sql = "SELECT column_name, COALESCE(substr(data_type, 1, instr(data_type, '(') - 1), data_type) as data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ?";
+						String sql = "SELECT column_name, COALESCE(SUBSTR(data_type, 1, INSTR(data_type, '(') - 1), data_type) AS data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ? ORDER BY column_name";
 						try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 							preparedStatement.setString(1, tableName.toUpperCase());
 
@@ -1210,7 +1300,7 @@ public class DbUtilities {
 							}
 						}
 		        	} else {
-		        		String sql = "SELECT column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND lower(table_name) = lower(?)";
+		        		String sql = "SELECT column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND LOWER(table_name) = LOWER(?) ORDER BY column_name";
 
 		        		try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 							preparedStatement.setString(1, tableName);
@@ -1434,7 +1524,13 @@ public class DbUtilities {
 			}
 
 			String dbType;
-			if (("NUMERIC".equalsIgnoreCase(fieldType) || "NUMBER".equalsIgnoreCase(fieldType) || "INTEGER".equalsIgnoreCase(fieldType)) && length <= 0) {
+			if ("NUMERIC".equalsIgnoreCase(fieldType) || "NUMBER".equalsIgnoreCase(fieldType) || "INTEGER".equalsIgnoreCase(fieldType)) {
+				if (isOracle) {
+					dbType = "NUMBER(38)";
+				} else {
+					dbType = "INTEGER";
+				}
+			} else if ("FLOAT".equalsIgnoreCase(fieldType)) {
 				if (isOracle) {
 					dbType = "NUMBER";
 				} else {
@@ -1446,8 +1542,10 @@ public class DbUtilities {
 				} else {
 					dbType = "VARCHAR";
 				}
-			} else if ("DATE".equalsIgnoreCase(fieldType) || "TIMESTAMP".equalsIgnoreCase(fieldType)) {
+			} else if ("DATE".equalsIgnoreCase(fieldType)) {
 				dbType = "DATE";
+			} else if ("DATETIME".equalsIgnoreCase(fieldType) || "TIMESTAMP".equalsIgnoreCase(fieldType)) {
+				dbType = "TIMESTAMP";
 			} else {
 				throw new Exception("Invalid fieldtype");
 			}
@@ -1467,16 +1565,26 @@ public class DbUtilities {
 			if (StringUtils.isNotEmpty(fieldDefault)) {
 				if (fieldType.equalsIgnoreCase("VARCHAR")) {
 					addColumnStatement += " DEFAULT '" + fieldDefault + "'";
-				} else if (fieldType.equalsIgnoreCase("DATE")) {
+				} else if (fieldType.equalsIgnoreCase("DATE") || fieldType.equalsIgnoreCase("DATETIME")) {
 					addColumnStatement += " DEFAULT " + getDateDefaultValue(fieldDefault, fieldDefaultDateFormat, isOracle);
 				} else {
 					addColumnStatement += " DEFAULT " + fieldDefault;
+				}
+			} else {
+				if(fieldType.equalsIgnoreCase("DATETIME")) {
+					if(!notNull) {
+						addColumnStatement += " DEFAULT null";
+					}
 				}
 			}
 
 			// Maybe null
 			if (notNull) {
 				addColumnStatement += " NOT NULL";
+			} else {
+				if(fieldType.equalsIgnoreCase("DATETIME")) {
+					addColumnStatement += " NULL";
+				}
 			}
 
 			addColumnStatement += ")";
@@ -1491,6 +1599,21 @@ public class DbUtilities {
 		}
 	}
 
+	public static boolean dropTable(DataSource dataSource, String tablename) {
+		if (StringUtils.isBlank(tablename)) {
+			return false;
+		} else {
+			try {
+				new JdbcTemplate(dataSource).execute("TRUNCATE TABLE " + tablename);
+				new JdbcTemplate(dataSource).execute("DROP TABLE " + tablename);
+				return true;
+			} catch (Exception e) {
+				logger.error("Cannot truncate/drop table: " + tablename, e);
+				return false;
+			}
+		}
+	}
+	
 	public static boolean dropColumnFromDbTable(DataSource dataSource, String tablename, String fieldname) throws Exception {
 		if (StringUtils.isBlank(fieldname)) {
 			return false;
@@ -1508,7 +1631,7 @@ public class DbUtilities {
 			String dropColumnStatement = "ALTER TABLE " + tablename + " DROP COLUMN " + fieldname.toLowerCase();
 
 			try {
-				new JdbcTemplate(dataSource).update(dropColumnStatement);
+				new JdbcTemplate(dataSource).execute(dropColumnStatement);
 				return true;
 			} catch (Exception e) {
 				logger.error("Cannot drop db column: " + dropColumnStatement, e);
@@ -1553,11 +1676,17 @@ public class DbUtilities {
 					dbType = new DbColumnType("VARCHAR", length, -1, -1, !notNull);
 				} else {
 					String dbTypeString;
-					if ("INTEGER".equalsIgnoreCase(fieldType) && length <= 0) {
+					if ("INTEGER".equalsIgnoreCase(fieldType)) {
 						if (isOracle) {
 							dbTypeString = "NUMBER";
 						} else {
 							dbTypeString = "INTEGER";
+						}
+					} else if ("FLOAT".equalsIgnoreCase(fieldType)) {
+						if (isOracle) {
+							dbTypeString = "NUMBER";
+						} else {
+							dbTypeString = "FLOAT";
 						}
 					} else if (fieldType.equalsIgnoreCase("VARCHAR")) {
 						if (isOracle) {
@@ -1567,6 +1696,8 @@ public class DbUtilities {
 						}
 					} else if (fieldType.equalsIgnoreCase("DATE")) {
 						dbTypeString = "DATE";
+					} else if ("DATETIME".equalsIgnoreCase(fieldType) || "TIMESTAMP".equalsIgnoreCase(fieldType)) {
+						dbTypeString = "TIMESTAMP";
 					} else {
 						throw new Exception("Invalid fieldtype");
 					}
@@ -1667,7 +1798,7 @@ public class DbUtilities {
 				}
 			}
 		} else if (dataType.equalsIgnoreCase("NUMBER") || dataType.equalsIgnoreCase("INTEGER") || dataType.equalsIgnoreCase("FLOAT") || dataType.equalsIgnoreCase("DOUBLE")) {
-			return new FloatValidator().isValid(defaultValue);
+			return AgnUtils.isNumberValid(defaultValue);
 		} else {
 			return true;
 		}
@@ -2123,6 +2254,21 @@ public class DbUtilities {
 	            }
         	}
             return true;
+        }
+    }
+
+	public static List<String> getTableIndexNames(DataSource dataSource, String tableName) {
+    	if (checkDbVendorIsOracle(dataSource)) {
+            String query = "SELECT index_name FROM user_ind_columns WHERE LOWER(table_name) = ?";
+            return new JdbcTemplate(dataSource).queryForList(query, String.class, tableName.toLowerCase());
+        } else {
+            String query = "SHOW INDEX FROM " + tableName.toLowerCase();
+			final List<Map<String, Object>> result = new JdbcTemplate(dataSource).queryForList(query);
+			List<String> returnList = new ArrayList<>();
+            for (Map<String, Object> row : result) {
+            	returnList.add((String) row.get("table_name"));
+            }
+            return returnList;
         }
     }
 
@@ -2650,5 +2796,91 @@ public class DbUtilities {
 
 		String result = StringUtils.join(columns, " = ?, ") + " = ? ";
 		return addCommaBefore ? ", " + result : result;
+	}
+
+	public static long getTableStorageSize(DataSource dataSource, String tableName) throws Exception {
+		if (dataSource == null) {
+			throw new Exception("Invalid empty dataSource for getTableStorageSize");
+		} else if (StringUtils.isBlank(tableName)) {
+			throw new Exception("Invalid empty tableName for getTableStorageSize");
+		} else {
+			try {
+				try (final Connection connection = dataSource.getConnection()) {
+					if (checkDbVendorIsOracle(connection)) {
+						List<String> indexNames = getTableIndexNames(dataSource, tableName);
+						String sql = "SELECT SUM(bytes) FROM user_segments WHERE segment_name IN (UPPER(?)" + AgnUtils.repeatString(", UPPER(?)", indexNames.size()) + ")";
+						try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+							preparedStatement.setString(1, tableName);
+							for (int i = 0; i < indexNames.size(); i++) {
+								preparedStatement.setString(2 + i, indexNames.get(i));
+							}
+							try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+								if (resultSet.next()) {
+									return resultSet.getLong(1);
+								} else {
+									throw new Exception("Invalid data for: " + tableName);
+								}
+							}
+						}
+		        	} else {
+		        		String sql = "SELECT data_length + data_free FROM information_schema.tables WHERE LOWER(table_name) = LOWER(?)";
+		        		try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+							preparedStatement.setString(1, tableName);
+							try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+								if (resultSet.next()) {
+									return resultSet.getLong(1);
+								} else {
+									throw new Exception("Invalid data for: " + tableName);
+								}
+							}
+						}
+		        	}
+				}
+			} catch (Exception e) {
+				throw e;
+			}
+		}
+	}
+
+	public static String createTargetExpressionRestriction(final boolean isOracle) {
+		return createTargetExpressionRestriction(isOracle, null);
+	}
+
+	public static String createTargetExpressionRestriction(final boolean isOracle, final String mailingTableName) {
+		final StringBuilder targetExpressionRestriction = new StringBuilder();
+
+		final String appendMailingTableName = mailingTableName == null ? "" : mailingTableName + ".";
+
+		if (isOracle) {
+			// Works three times faster than an MySQL-incompatible REGEXP_INSTR() version
+			targetExpressionRestriction.append("INSTR(':' || ");
+
+			// Replace all non-numeric characters with a colon character
+			targetExpressionRestriction.append("TRANSLATE(")
+					.append(appendMailingTableName)
+					.append("target_expression, '")
+					.append(TARGET_EXPRESSION_NON_NUMERIC_CHARACTERS)
+					.append("', '")
+					.append(StringUtils.repeat(":", TARGET_EXPRESSION_NON_NUMERIC_CHARACTERS.length()))
+					.append("')");
+
+			targetExpressionRestriction.append(" || ':', ':' || ? || ':') <> 0");
+		} else {
+			// Works three times faster than an MySQL-incompatible REGEXP_INSTR() version
+			// MySQL: "||" is NOT concatenation, but an boolean expression. Concatenation is done by "concat()"
+			targetExpressionRestriction.append("INSTR(CONCAT(':', ");
+
+			// Replace all non-numeric characters with a colon character
+			targetExpressionRestriction.append(StringUtils.repeat("REPLACE(", TARGET_EXPRESSION_NON_NUMERIC_CHARACTERS.length()))
+					.append(appendMailingTableName).append("target_expression");
+			for (int i = 0; i < TARGET_EXPRESSION_NON_NUMERIC_CHARACTERS.length(); i++) {
+				targetExpressionRestriction.append(", '")
+						.append(TARGET_EXPRESSION_NON_NUMERIC_CHARACTERS.charAt(i))
+						.append("', ':')");
+			}
+
+			targetExpressionRestriction.append(", ':'), CONCAT(':', ?, ':')) <> 0");
+		}
+		return targetExpressionRestriction.toString();
 	}
 }

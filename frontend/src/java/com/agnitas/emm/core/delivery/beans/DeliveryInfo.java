@@ -13,20 +13,12 @@ package com.agnitas.emm.core.delivery.beans;
 import java.util.Date;
 
 public class DeliveryInfo {
-    private int id;
     private Date timestamp;
     private String relay;
     private String dsn;
     private String status;
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
+    private String mailerHost;
+    
     public Date getTimestamp() {
         return timestamp;
     }
@@ -58,4 +50,12 @@ public class DeliveryInfo {
     public void setStatus(String status) {
         this.status = status;
     }
+
+	public String getMailerHost() {
+		return mailerHost;
+	}
+
+	public void setMailerHost(String mailerHost) {
+		this.mailerHost = mailerHost;
+	}
 }

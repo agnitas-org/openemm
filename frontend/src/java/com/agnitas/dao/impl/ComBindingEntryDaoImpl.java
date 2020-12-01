@@ -18,6 +18,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.agnitas.beans.BindingEntry;
+import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.impl.BindingEntryImpl;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.ComTarget;
 import com.agnitas.dao.ComBindingEntryDao;
@@ -28,19 +46,6 @@ import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
 import com.agnitas.emm.core.report.bean.PlainBindingEntry;
 import com.agnitas.emm.core.report.bean.impl.CompositeBindingEntryImpl;
 import com.agnitas.emm.core.report.bean.impl.PlainBindingEntryImpl;
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.BindingEntryImpl;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jdbc.core.RowMapper;
 
 public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEntryDao {
 	
@@ -48,10 +53,16 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	private static final transient Logger logger = Logger.getLogger(ComBindingEntryDaoImpl.class);
 	
 	private ComRecipientDao recipientDao;
+	private ConfigService configService;
 	
 	@Required
 	public final void setRecipientDao(final ComRecipientDao dao) {
 		this.recipientDao = Objects.requireNonNull(dao, "Recipient DAO is null");
+	}
+	
+	@Required
+	public final void setConfigService(final ConfigService service) {
+		this.configService = Objects.requireNonNull(service, "ConfigService is null");
 	}
 
 	@Override
@@ -179,6 +190,8 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 				return false;
 			} else if (entry.getMailinglistID() <= 0) {
 				return false;
+			} else if (!mailinglistExists(companyID, entry.getMailinglistID())) {
+				return false;
 			} else {
 				if (checkAssignedProfileFieldIsSet(entry, companyID)) {
 					// Check for valid UserStatus code
@@ -217,6 +230,10 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 		} catch (Exception e) {
 			return false;
 		}
+	}
+
+	private boolean mailinglistExists(@VelocityCheck int companyID, int mailinglistID) {
+		return selectInt(logger, "SELECT COUNT(*) FROM mailinglist_tbl WHERE company_id = ? AND mailinglist_id = ?", companyID, mailinglistID) > 0;
 	}
 
 	private final boolean checkAssignedProfileFieldIsSet(final BindingEntry entry, final int companyID) {
@@ -389,23 +406,39 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 		// Check for valid UserStatus code
 		UserStatus.getUserStatusByID(userStatus);
 		
-		String sql = "UPDATE customer_" + companyId + "_binding_tbl " + "SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP WHERE customer_id IN (SELECT customer_id FROM customer_" + companyId + "_tbl WHERE email LIKE ?)";
-		update(logger, sql, userStatus, remark, emailPattern);
+		final boolean useNewWildcards = this.configService.getBooleanValue(ConfigValue.Development.UseNewBlacklistWildcards, companyId);
+		
+		if(useNewWildcards) {
+			final String escapeClause = isOracleDB() ? " ESCAPE '\\'" : "";
+			
+			final String customerIdByPatternSubselect = String.format(
+					"SELECT customer_id FROM customer_%d_tbl WHERE email LIKE REPLACE(REPLACE(?, '_', '\\_'), '*', '%%') %s", 
+					companyId,
+					escapeClause);
+			
+			final String sql = String.format("UPDATE customer_%d_binding_tbl SET user_status=?, user_remark=?, timestamp=CURRENT_TIMESTAMP WHERE customer_id IN (%s)", 
+					companyId,
+					customerIdByPatternSubselect);
+			
+			update(logger, sql, userStatus, remark, emailPattern);
+		} else {
+			String sql = "UPDATE customer_" + companyId + "_binding_tbl " + "SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP WHERE customer_id IN (SELECT customer_id FROM customer_" + companyId + "_tbl WHERE email LIKE ?)";
+			update(logger, sql, userStatus, remark, emailPattern);
+		}
 	}
 	
 	@Override
 	public void lockBindings(int companyId, List<SimpleEntry<Integer, Integer>> cmPairs) {
-		StringBuffer selForUpd = new StringBuffer("select * from customer_" + companyId + "_binding_tbl where (customer_id,mailinglist_id) in (");
-		boolean first = true;
-		for (SimpleEntry<Integer, Integer> entry : cmPairs) {
-			if (!first) {
-				selForUpd.append(",");
-			}
-			selForUpd.append("("+entry.getKey()+","+entry.getValue()+")");
-			first = false;
+		if (CollectionUtils.isNotEmpty(cmPairs)) {
+			String customerAndMailinglistInClause = cmPairs.stream()
+					.map(pair -> "("  + pair.getKey() + "," + pair.getValue() + ")")
+					.collect(Collectors.joining(","));
+
+			String query = "SELECT * FROM customer_" + companyId + "_binding_tbl WHERE (customer_id, mailinglist_id) " +
+					"IN (" + customerAndMailinglistInClause + ") FOR UPDATE";
+
+			select(logger, query);
 		}
-		selForUpd.append(") for update");
-		select(logger, selForUpd.toString());
 	}
 
 	private String getBindingTableName(int companyId) {

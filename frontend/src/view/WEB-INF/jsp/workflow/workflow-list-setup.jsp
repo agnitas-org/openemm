@@ -18,7 +18,7 @@
 <c:set var="agnBreadcrumbsRootKey" 	value="Workflow" 			scope="request" />
 <c:set var="agnHelpKey" 			value="workflow" 			scope="request" />
 
-<emm:ShowByPermission token="workflow.edit">
+<emm:ShowByPermission token="workflow.change">
     <c:set var="createNewItemUrl" scope="request">
         <html:rewrite page='/workflow/create.action'/>
     </c:set>

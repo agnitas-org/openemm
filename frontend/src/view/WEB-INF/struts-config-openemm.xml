@@ -21,12 +21,16 @@
 			<forward name="preview.6" path="/WEB-INF/jsp/mailing/preview_html.jsp" />
 			<forward name="cancel_generation_question" path="mailing_cancel_generation_question_ajax" />
 			<forward name="cancel_generation_deny" path="mailing_cancel_generation_deny" />
+			<forward name="resume_generation_question" path="mailing_resume_generation_question_ajax" />
+			<forward name="resume_generation_by_copy_question" path="mailing_resume_generation_by_copy_question_ajax" />
 			<forward name="view_delstatbox" path="/WEB-INF/jsp/mailing/delivery_stat.jsp" />
 			<forward name="preview_errors" path="/WEB-INF/jsp/mailing/preview_errors.jsp" />
 			<forward name="header_errors" path="/WEB-INF/jsp/mailing/header_errors.jsp" />
 			<forward name="progress" path="mailing_send_progress" />
             <forward name="ajax_send2" path="mailing_send2_ajax" />
 			<forward name="ajax_progress" path="mailing_send_progress_ajax" />
+            <forward name="messages" path="messages"/>
+			<forward name="list" path="/mailingbase.do?action=1" />
 		</action>
 	</action-mappings>
 </struts-config>

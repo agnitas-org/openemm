@@ -14,9 +14,9 @@ import java.io.InputStream;
 
 public interface MailingImporter {
 	
-	ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, boolean importGridTemplateAllowed, boolean isGrid) throws Exception;
+	ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, boolean importGridTemplateAllowed, boolean overwriteTemplate, boolean isGrid) throws Exception;
 
-	ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean importGridTemplateAllowed, boolean isGrid) throws Exception;
+	ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean importGridTemplateAllowed, boolean overwriteTemplate, boolean isGrid) throws Exception;
 	
-	ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean importGridTemplateAllowed, boolean checkIsTemplate, boolean isGrid) throws Exception;
+	ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean importGridTemplateAllowed, boolean overwriteTemplate, boolean checkIsTemplate, boolean isGrid) throws Exception;
 }

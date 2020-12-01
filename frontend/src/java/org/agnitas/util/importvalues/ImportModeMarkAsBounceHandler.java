@@ -22,6 +22,7 @@ import org.agnitas.util.DbColumnType;
 import org.apache.log4j.Logger;
 
 import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class ImportModeMarkAsBounceHandler implements ImportModeHandler {
     @SuppressWarnings("unused")
@@ -59,17 +60,22 @@ public class ImportModeMarkAsBounceHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign) throws Exception {
+	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, MediaTypes mediatype) throws Exception {
 		// Mark customers bounced in binding table if current status is active
 		if (mailingListIdsToAssign != null) {
 			Map<Integer, Integer> mailinglistAssignStatistics = new HashMap<>();
 	    	for (int mailingListId : mailingListIdsToAssign) {
-	    		int changed = importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailingListId, UserStatus.Active.getStatusCode(), UserStatus.Bounce.getStatusCode(), "Mass Bounce by Admin");
+	    		int changed = importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Active.getStatusCode(), UserStatus.Bounce.getStatusCode(), "Mass Bounce by Admin");
 	    		mailinglistAssignStatistics.put(mailingListId, changed);
 	    	}
 			return mailinglistAssignStatistics;
 		} else {
 			return null;
 		}
+	}
+
+	@Override
+	public int handleBlacklist(ImportProfile importProfile, String temporaryImportTableName) {
+		return importRecipientsDao.removeBlacklistedEmails(temporaryImportTableName, importProfile.getCompanyId());
 	}
 }

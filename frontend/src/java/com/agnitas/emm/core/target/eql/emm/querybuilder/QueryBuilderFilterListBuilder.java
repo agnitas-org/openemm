@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.SafeString;
@@ -24,7 +25,7 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComProfileFieldDao;
 
 import net.sf.json.JSONSerializer;
@@ -53,16 +54,16 @@ public class QueryBuilderFilterListBuilder {
 	 * @throws QueryBuilderFilterListBuilderException on errors creating filter list
 	 */
 	public String buildFilterListJson(final ComAdmin admin) throws QueryBuilderFilterListBuilderException {
-		final List<ComProfileField> profileFields = listProfileFields(admin.getCompanyID());
-		createIndependentFilters(profileFields);
+		final List<ProfileField> profileFields = listProfileFields(admin.getCompanyID());
+		createIndependentFilters(profileFields, admin);
 
 		final List<Map<String, Object>> map = createFilterList(profileFields, admin);
 		
 		return JSONSerializer.toJSON(map).toString();
 	}
 
-	private void createIndependentFilters(List<ComProfileField> profileFields) {
-		profileFields.addAll(queryBuilderConfiguration.getIndependentFields());
+	private void createIndependentFilters(final List<ProfileField> profileFields, final ComAdmin admin) {
+		profileFields.addAll(queryBuilderConfiguration.getIndependentFields(AgnUtils.isMailTrackingAvailable(admin)));
 	}
 
 	/**
@@ -72,25 +73,27 @@ public class QueryBuilderFilterListBuilder {
 	 * 
 	 * @return list of filter settings for JSON encoding
 	 */
-	private List<Map<String, Object>> createFilterList(final List<ComProfileField> profileFields, ComAdmin admin) {
+	private List<Map<String, Object>> createFilterList(final List<ProfileField> profileFields, ComAdmin admin) {
 
 		// TODO: Respect unknown profile fields somehow
 		
 		final List<Map<String, Object>> filterList = new ArrayList<>();
 		
-		for(ComProfileField profileField : profileFields) {
+		for(ProfileField profileField : profileFields) {
 			final Map<String, Object> filter = new HashMap<>();
 			
 			filter.put("id", profileField.getShortname().toLowerCase());
 			filter.put("label", getLabel(profileField, admin.getLocale()));
 			
-			final SimpleDataType dataType = DbColumnType.getSimpleDataType(profileField.getDataType());
+			final SimpleDataType dataType = DbColumnType.getSimpleDataType(profileField.getDataType(), profileField.getNumericScale());
 			switch(dataType) {
 			case Numeric:
+			case Float:
 				filter.put("type", "double");
 				break;
 				
 			case Date:
+			case DateTime:
 				filter.put("type", "date");
 				break;
 				
@@ -106,7 +109,7 @@ public class QueryBuilderFilterListBuilder {
 		return filterList;
 	}
 
-	private String getLabel(ComProfileField profileField, Locale locale) {
+	private String getLabel(ProfileField profileField, Locale locale) {
 		String label = profileField.getLabel();
 		return StringUtils.isNotBlank(label) ? SafeString.getLocaleString(label, locale) : profileField.getShortname();
 	}
@@ -120,7 +123,7 @@ public class QueryBuilderFilterListBuilder {
 	 * 
 	 * @throws QueryBuilderFilterListBuilderException on errors listing profile fields
 	 */
-	private List<ComProfileField> listProfileFields(final int companyID) throws QueryBuilderFilterListBuilderException {
+	private List<ProfileField> listProfileFields(final int companyID) throws QueryBuilderFilterListBuilderException {
 		try {
 			return profileFieldDao.getComProfileFields(companyID);
 		} catch(final Exception e) {

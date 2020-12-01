@@ -16,6 +16,8 @@ import java.util.Set;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+
 /**
  * Bean containing data of import profile (import profile contains recipient
  * import information that can be reused during several imports)
@@ -344,11 +346,19 @@ public interface ImportProfile {
 
 	void setAutoMapping(boolean autoMapping);
 
-	boolean isCsvImport();
-
-	void setCsvImport(boolean isCsvImport);
-
 	List<Integer> getMailinglistIds();
 
 	void setMailinglists(List<Integer> mailinglists);
+
+	MediaTypes getMediatype();
+	
+	void setMediatype(MediaTypes mediatype);
+
+	int getMediatypeCode();
+
+	void setMediatypeCode(int mediatypeCode);
+	
+	String getDatatype();
+
+	void setDatatype(String datatype);
 }

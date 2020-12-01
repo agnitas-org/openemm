@@ -10,28 +10,29 @@
 
 package org.agnitas.backend;
 
-/** Keep track of configured tracker to add to for url tracking
+/**
+ * Keep track of configured tracker to add to for url tracking
  */
 public class Tracker {
-	private String	name;
-	private String	code;
+	private String name;
+	private String code;
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param name the name of the tracker
 	 * @param code the tracker specific code to use
 	 */
-	public Tracker (String nName, String nCode) {
+	public Tracker(String nName, String nCode) {
 		name = nName;
 		code = nCode;
 	}
-		
-	public String getName () {
+
+	public String getName() {
 		return name;
 	}
-		
-	public String getCode () {
+
+	public String getCode() {
 		return code;
 	}
 }

@@ -10,28 +10,31 @@
 
 package org.agnitas.emm.springws.endpoint.binding;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.binding.service.BindingModel;
 import org.agnitas.emm.core.binding.service.BindingService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.emm.springws.jaxb.SetSubscriberBindingRequest;
 import org.agnitas.emm.springws.jaxb.SetSubscriberBindingResponse;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class SetSubscriberBindingEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class SetSubscriberBindingEndpoint extends BaseEndpoint {
 
-	@Resource
 	private BindingService bindingService;
-	@Resource
-	private ObjectFactory objectFactory;
-	
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		SetSubscriberBindingRequest request = (SetSubscriberBindingRequest) arg0;
-		SetSubscriberBindingResponse response = objectFactory.createSetSubscriberBindingResponse();
-		
+
+	public SetSubscriberBindingEndpoint(@Qualifier("BindingService") BindingService bindingService) {
+		this.bindingService = bindingService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "SetSubscriberBindingRequest")
+	public @ResponsePayload SetSubscriberBindingResponse setSubscriberBinding(@RequestPayload SetSubscriberBindingRequest request) throws Exception {
+		SetSubscriberBindingResponse response = new SetSubscriberBindingResponse();
+
 		BindingModel model = parseModel(request);
 		
 		bindingService.setBinding(model);
@@ -51,5 +54,4 @@ public class SetSubscriberBindingEndpoint extends AbstractMarshallingPayloadEndp
 		model.setExitMailingId(request.getExitMailingID());
 		return model;
 	}
-
 }

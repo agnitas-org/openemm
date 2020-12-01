@@ -12,9 +12,6 @@ package com.agnitas.emm.core.target.eql;
 
 import java.util.Objects;
 
-import org.agnitas.target.TargetRepresentation;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.ComTarget;
 import com.agnitas.emm.core.target.eql.ast.BooleanExpressionTargetRuleEqlNode;
 import com.agnitas.emm.core.target.eql.ast.analysis.RequireMailtrackingSyntaxTreeAnalyzer;
@@ -28,11 +25,6 @@ import com.agnitas.emm.core.target.eql.codegen.resolver.ReferenceTableResolveExc
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeGeneratorCallback;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeGeneratorCallbackFactory;
-import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConversionException;
-import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConverter;
-import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConverterFactory;
-import com.agnitas.emm.core.target.eql.emm.legacy.TargetRepresentationToEqlConversionException;
-import com.agnitas.emm.core.target.eql.emm.legacy.TargetRepresentationToEqlConverter;
 import com.agnitas.emm.core.target.eql.parser.EqlParser;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
@@ -49,100 +41,19 @@ public class EqlFacade {
 	/** Code generator. */
 	private final CodeGenerator codeGenerator;
 
-	/** Converter for {@link TargetRepresentation} to EQL code. */
-	private TargetRepresentationToEqlConverter legacyToEqlConverter;
-		
 	private final SqlCodeGeneratorCallbackFactory sqlCodeGeneratorCallbackFactory;
 	private final BeanShellCodeGeneratorCallbackFactory beanShellCodeGeneratorCallbackFactory;
-	
-	private final EqlToTargetRepresentationConverterFactory eqlToTargetRepresentationConverterFactory;
-	
+		
 	/**
 	 * Creates a new EQL facade instance.
 	 */
-	public EqlFacade(final EqlParser eqlParser, final CodeGenerator codeGenerator, final SqlCodeGeneratorCallbackFactory sqlCodeGeneratorCallbackFactory, final BeanShellCodeGeneratorCallbackFactory beanShellCodeGeneratorCallbackFactory, final EqlToTargetRepresentationConverterFactory eqlToTargetRepresentationConverterFactory) {
+	public EqlFacade(final EqlParser eqlParser, final CodeGenerator codeGenerator, final SqlCodeGeneratorCallbackFactory sqlCodeGeneratorCallbackFactory, final BeanShellCodeGeneratorCallbackFactory beanShellCodeGeneratorCallbackFactory) {
 		this.eqlParser = Objects.requireNonNull(eqlParser, "EqlParser is null");
 		this.codeGenerator = Objects.requireNonNull(codeGenerator, "Code generator is null");
 		this.sqlCodeGeneratorCallbackFactory = Objects.requireNonNull(sqlCodeGeneratorCallbackFactory, "SQL code generator callback factory is null");
 		this.beanShellCodeGeneratorCallbackFactory = Objects.requireNonNull(beanShellCodeGeneratorCallbackFactory, "BeanShell code generator callback factory is null");
-		this.eqlToTargetRepresentationConverterFactory = Objects.requireNonNull(eqlToTargetRepresentationConverterFactory, "EQL to TargetRepresentation converter factory is null");
-	}
-	
-	/**
-	 * Converts a {@link TargetRepresentation} instance to EQL code.
-	 * 
-	 * @param target target group to convert
-	 * 
-	 * @return EQL code from given target group
-	 * 
-	 * @throws TargetRepresentationToEqlConversionException on errors during conversion
-	 */
-	public String convertTargetRepresentationToEql(ComTarget target) throws TargetRepresentationToEqlConversionException {
-		int companyId = target.getCompanyID();
-		if (companyId == 0) {
-			// Migrate listsplit targetgroups available for all clients
-			companyId = 1;
-		}
-		return convertTargetRepresentationToEql(target.getTargetStructure(), companyId);
-	}
-	
-	/**
-	 * Converts a {@link TargetRepresentation} instance to EQL code. Follows three-valued logic.
-	 * 
-	 * @param representation {@link TargetRepresentation} to convert
-	 * @param companyId company ID to use for conversion
-	 * 
-	 * @return EQL code from given {@link TargetRepresentation}
-	 * 
-	 * @throws TargetRepresentationToEqlConversionException on errors during conversion
-	 */
-	public String convertTargetRepresentationToEql(TargetRepresentation representation, int companyId) throws TargetRepresentationToEqlConversionException {
-		return this.legacyToEqlConverter.convertToEql(representation, companyId);
 	}
 
-	/**
-	 * Converts a {@link TargetRepresentation} instance to EQL code.
-	 *
-	 * @param representation {@link TargetRepresentation} to convert
-	 * @param companyId company ID to use for conversion
-	 * @param disableThreeValuedLogic whether ({@code true}) or not ({@code false}) disable three-valued logic (generate
-	 *                                an EQL having additional conditions in order to make sure that negated expression
-	 *                                selects everything that direct expression doesn't)
-	 *
-	 * @return EQL code from given {@link TargetRepresentation}
-	 *
-	 * @throws TargetRepresentationToEqlConversionException on errors during conversion
-	 */
-	public String convertTargetRepresentationToEql(TargetRepresentation representation, int companyId, boolean disableThreeValuedLogic) throws TargetRepresentationToEqlConversionException {
-		return this.legacyToEqlConverter.convertToEql(representation, companyId, disableThreeValuedLogic);
-	}
-
-	/**
-	 * Converts EQL code to legacy {@link TargetRepresentation}. Since not every EQL code is convertible to {@link TargetRepresentation} this method can
-	 * throw an {@link EqlToTargetRepresentationConversionException}. The company ID is required for resolving the types of mailings or profile fields.
-	 * 
-	 * @param eql EQL code to convert
-	 * @param companyId company ID
-	 * 
-	 * @return {@link TargetRepresentation} generated from given EQL
-	 * 
-	 * @throws EqlParserException on errors parsing the EQL code
-	 * @throws EqlToTargetRepresentationConversionException on errors converting EQL
-	 */
-	public final TargetRepresentation convertEqlToTargetRepresentation(final String eql, final int companyId) throws EqlParserException, EqlToTargetRepresentationConversionException {
-		final BooleanExpressionTargetRuleEqlNode eqlNode = this.eqlParser.parseEql(eql);
-		
-		
-		try {
-			final EqlToTargetRepresentationConverter converter = this.eqlToTargetRepresentationConverterFactory.newConverter(companyId);
-			
-			return converter.convertToTargetRepresentation(eqlNode);
-		} catch(final EqlToTargetRepresentationConversionException e) {
-			throw e;
-		} catch(final ProfileFieldResolveException e) {
-			throw new EqlToTargetRepresentationConversionException("Error converting EQL to TargetRepresentation", e);
-		}
-	}
 	
 	/**
 	 * Converts the given EQL code to SQL.
@@ -228,6 +139,28 @@ public class EqlFacade {
 	/**
 	 * Converts the given EQL code to BeanShell.
 	 * 
+	 * @param eql EQL code
+	 * @param companyId company ID
+	 * 
+	 * @return BeanShell code
+	 * 
+	 * @throws EqlParserException on errors parsing the EQL code
+	 * @throws CodeGeneratorException on errors generating BeanShell code
+	 * @throws ProfileFieldResolveException on errors resolving profile fields
+	 */
+	public final String convertEqlToBeanShellExpression(final String eql, final int companyId) throws EqlParserException, CodeGeneratorException, ProfileFieldResolveException {
+		final BooleanExpressionTargetRuleEqlNode node = this.eqlParser.parseEql(eql);
+		
+		final BeanShellCodeGeneratorCallback callback = this.beanShellCodeGeneratorCallbackFactory.newCodeGeneratorCallback(companyId);
+		this.codeGenerator.generateCode(node, callback);
+
+		return callback.getBeanShellCode();
+		
+	}
+	
+	/**
+	 * Converts EQL code of given target group to BeanShell.
+	 * 
 	 * @param target target group
 	 * 
 	 * @return BeanShell code
@@ -237,12 +170,7 @@ public class EqlFacade {
 	 * @throws ProfileFieldResolveException on errors resolving profile fields
 	 */
 	public final String convertEqlToBeanShellExpression(final ComTarget target) throws EqlParserException, CodeGeneratorException, ProfileFieldResolveException {
-		final BooleanExpressionTargetRuleEqlNode node = this.eqlParser.parseEql(target.getEQL());
-		
-		final BeanShellCodeGeneratorCallback callback = this.beanShellCodeGeneratorCallbackFactory.newCodeGeneratorCallback(target.getCompanyID());
-		this.codeGenerator.generateCode(node, callback);
-
-		return callback.getBeanShellCode();
+		return convertEqlToBeanShellExpression(target.getEQL(), target.getCompanyID());
 	}
 	
 
@@ -255,15 +183,4 @@ public class EqlFacade {
 		return new EqlAnalysisResult(mailtrackingAnalyzer.isMailtrackingRequired());
 	}
 
-	
-	// -------------------------------------------------------------------------------------------------------------------------------------- Dependency Injection
-	/**
-	 * Sets the {@link TargetRepresentation}-to-EQL-converter.
-	 * 
-	 * @param converter converter from {@link TargetRepresentation} to EQL
-	 */
-	@Required
-	public void setTargetRepresentationToEqlConverter(TargetRepresentationToEqlConverter converter) {
-		this.legacyToEqlConverter = converter;
-	}
 }

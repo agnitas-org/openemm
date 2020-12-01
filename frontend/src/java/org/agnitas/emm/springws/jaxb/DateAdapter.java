@@ -18,29 +18,33 @@ import java.util.Date;
 
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
-public class DateAdapter extends XmlAdapter<String, Date>{
-	
-	private static final String AGN_FORMAT = "yyyy-MM-dd HH:mm:ss zzz";
-	
-	@Override
-	public String marshal(Date dt) throws Exception {
+import org.agnitas.emm.springws.exception.DateFormatException;
+
+public class DateAdapter extends XmlAdapter<String, Date> {
+    private static final String AGN_FORMAT = "yyyy-MM-dd HH:mm:ss zzz";
+
+    @Override
+    public String marshal(Date dt) throws Exception {
         return new SimpleDateFormat(AGN_FORMAT).format(dt);
     }
 
-	@Override
-	public Date unmarshal(String s) throws Exception {
-		try {
-			// Format "YYYY-MM-DDThh:mm:ssZ" / "YYYY-MM-DDThh:mm:ss+hh:mm" / "YYYY-MM-DDThh:mm:ss-hh:mm"
-			return Date.from(ZonedDateTime.parse(s).toInstant());
-		} catch(Exception e) {
-			try {
-				// Format "YYYY-MM-DDThh:mm:ss" (uses current timezone of the server)
-				final LocalDateTime parsedWithoutTimezone = LocalDateTime.parse(s);
-				return Date.from(parsedWithoutTimezone.atZone(ZoneId.systemDefault()).toInstant());
-			} catch(Exception e2) {
-				return new SimpleDateFormat(AGN_FORMAT).parse(s);
-			}
-		}
+    @Override
+    public Date unmarshal(String s) throws Exception {
+        try {
+            // Format "YYYY-MM-DDThh:mm:ssZ" / "YYYY-MM-DDThh:mm:ss+hh:mm" / "YYYY-MM-DDThh:mm:ss-hh:mm"
+            return Date.from(ZonedDateTime.parse(s).toInstant());
+        } catch (Exception e1) {
+            try {
+                // Format "YYYY-MM-DDThh:mm:ss" (uses current timezone of the server)
+                final LocalDateTime parsedWithoutTimezone = LocalDateTime.parse(s);
+                return Date.from(parsedWithoutTimezone.atZone(ZoneId.systemDefault()).toInstant());
+            } catch (Exception e2) {
+            	try {
+					return new SimpleDateFormat(AGN_FORMAT).parse(s);
+				} catch (Exception e3) {
+            	    throw new DateFormatException();
+				}
+            }
+        }
     }
-
 }

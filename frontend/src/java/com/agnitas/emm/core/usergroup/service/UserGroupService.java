@@ -10,16 +10,18 @@
 
 package com.agnitas.emm.core.usergroup.service;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
+import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 
 public interface UserGroupService {
@@ -38,7 +40,15 @@ public interface UserGroupService {
     
     List<String> getAdminNamesOfGroup(int userGroupId, @VelocityCheck int companyId);
     
+    List<String> getGroupNamesUsingGroup(int userGroupId, @VelocityCheck int companyId);
+    
     boolean deleteUserGroup(int userGroupId, ComAdmin admin);
     
     Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(ComAdmin admin, int groupId, int groupCompanyId);
+
+	List<AdminGroup> getAdminGroupsByCompanyId(int companyID);
+
+	Collection<AdminGroup> getAdminGroupsByCompanyIdAndDefault(int companyID, AdminGroup adminGroup);
+
+	AdminGroup getAdminGroup(int userGroupId, int companyID);
 }

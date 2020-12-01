@@ -19,6 +19,30 @@ public interface EmmLayoutBase {
     int LIVEPREVIEW_POSITION_BOTTOM = 1;
     int LIVEPREVIEW_POSITION_DEACTIVATE = 2;
 
+    enum ThemeType {
+    	STANDARD(0),
+		DARK_MODE(1);
+
+    	final int code;
+
+		ThemeType(final int code) {
+    		this.code = code;
+		}
+
+		public int getCode() {
+    		return this.code;
+		}
+
+		public static ThemeType valueOf(final int code) {
+    		for(ThemeType type : values()) {
+    			if(type.getCode() == code) {
+    				return type;
+				}
+			}
+			throw new IllegalArgumentException("Unsupported code of EmmLayoutBase type!");
+		}
+	}
+
 	/**
 	 * @return the id
 	 */
@@ -89,4 +113,13 @@ public interface EmmLayoutBase {
 	 */
 	void setLivepreviewPosition(int livepreviewPosition);
 
+	/**
+	 * @return the themeType
+	 */
+	ThemeType getThemeType();
+
+	/**
+	 * @param themeType the themeType to set
+	 */
+	void setThemeType(ThemeType themeType);
 }

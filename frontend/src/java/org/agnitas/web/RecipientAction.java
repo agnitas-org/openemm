@@ -10,6 +10,17 @@
 
 package org.agnitas.web;
 
+import static com.agnitas.beans.ProfileField.MODE_EDIT_EDITABLE;
+import static com.agnitas.web.ComRecipientAction.ACTION_SAVE_BACK_TO_LIST;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_CUSTOMER_ID;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_EMAIL;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_MAILTYPE;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_TITLE;
+import static org.agnitas.emm.core.recipient.RecipientUtils.MAX_SELECTED_FIELDS_COUNT;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -27,35 +38,18 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.sql.DataSource;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.delivery.service.DeliveryService;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.target.eql.EqlFacade;
-import com.agnitas.emm.core.target.eql.codegen.DateValueFormatFaultyCodeException;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.util.html.xssprevention.HtmlXSSPreventer;
-import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
-import com.agnitas.emm.util.html.xssprevention.http.DefaultHtmlCheckErrorToActionErrorsMapper;
-import com.agnitas.emm.util.streams.struts.ActionMessageCollector;
-import com.agnitas.util.MapUtils;
 import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.ProfileField;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.factory.BindingEntryFactory;
 import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.beans.impl.ViciousFormDataException;
-import org.agnitas.dao.MailingDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -63,23 +57,18 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.service.ColumnInfoService;
-import org.agnitas.service.RecipientBeanQueryWorker;
 import org.agnitas.service.RecipientQueryBuilder;
 import org.agnitas.service.RecipientSqlOptions;
 import org.agnitas.service.WebStorage;
-import org.agnitas.service.impl.DataType;
+import org.agnitas.target.ConditionalOperator;
+import org.agnitas.target.PseudoColumn;
 import org.agnitas.target.TargetFactory;
-import org.agnitas.target.TargetNodeFactory;
-import org.agnitas.target.TargetRepresentationFactory;
-import org.agnitas.target.impl.TargetNodeDate;
-import org.agnitas.target.impl.TargetNodeIntervalMailing;
-import org.agnitas.target.impl.TargetNodeNumeric;
-import org.agnitas.target.impl.TargetNodeString;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.HttpUtils;
-import org.agnitas.util.SqlPreparedStatementManager;
 import org.agnitas.web.forms.FormSearchParams;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -95,16 +84,23 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
-import static com.agnitas.web.ComRecipientAction.ACTION_SAVE_BACK_TO_LIST;
-import static org.agnitas.beans.ProfileField.MODE_EDIT_EDITABLE;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_CUSTOMER_ID;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_EMAIL;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_MAILTYPE;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_TITLE;
-import static org.agnitas.emm.core.recipient.RecipientUtils.MAX_SELECTED_FIELDS_COUNT;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.delivery.service.DeliveryService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.target.eql.EqlFacade;
+import com.agnitas.emm.core.target.eql.codegen.DateValueFormatFaultyCodeException;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.util.html.xssprevention.HtmlXSSPreventer;
+import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
+import com.agnitas.emm.util.html.xssprevention.http.DefaultHtmlCheckErrorToActionErrorsMapper;
+import com.agnitas.emm.util.streams.struts.ActionMessageCollector;
+import com.agnitas.util.MapUtils;
 
 /**
  * Handles all actions on recipients profile.
@@ -124,21 +120,16 @@ public class RecipientAction extends StrutsActionBase {
 
 	protected Map<String, Future<PaginatedListImpl<DynaBean>>> futureHolder = null;
 	protected ComMailinglistService mailinglistService;
-	protected MailingDao mailingDao;
+	protected MailingService mailingService;
 
-	/** DAO accessing target groups. */
-	protected ComTargetDao targetDao;
     protected RecipientService recipientService;
 	protected ComRecipientDao recipientDao;
 	protected BlacklistService blacklistService;
-	protected TargetRepresentationFactory targetRepresentationFactory;
-	protected TargetNodeFactory targetNodeFactory;
 	protected ExecutorService workerExecutorService;
 	protected RecipientQueryBuilder recipientQueryBuilder;
 	protected ColumnInfoService columnInfoService;
 	protected RecipientFactory recipientFactory;
 	protected BindingEntryFactory bindingEntryFactory;
-	protected DataSource dataSource;
 	protected ConfigService configService;
     protected TargetFactory targetFactory;
     protected ComTargetService targetService;
@@ -227,6 +218,7 @@ public class RecipientAction extends StrutsActionBase {
 		try {
 			switch (aForm.getAction()) {
 			case ACTION_LIST:
+				setPseudoRuleAttributes(request);
 				session.setAttribute(SEARCH_PARAMS, aForm.generateSearchParams());
 				saveTargetGroupIfNecessary(aForm, errors, messages, admin, rulesValidationErrors);
 				AgnUtils.setAdminDateTimeFormatPatterns(request);
@@ -253,7 +245,7 @@ public class RecipientAction extends StrutsActionBase {
 			case ACTION_SAVE:
 				destination = saveRecipientAndGetDestination(request, errors, messages, mapping, aForm, this::loadDataAndForwardToView);
 
-				if("messages".equals(destination.getName())) {
+				if("messages".equals(destination.getName()) || "confirm_save".equals(destination.getName())) {
 					return destination;
 				}
 				break;
@@ -275,16 +267,15 @@ public class RecipientAction extends StrutsActionBase {
 					}
 		            
 					aForm.setRecipientID(0);
-					if (saveRecipient(aForm, request, errors)) {
+					final ActionForward saveDestination = saveRecipient(aForm, request, errors, mapping);
+					if (saveDestination == null) {
 						aForm.setAction(RecipientAction.ACTION_LIST);
 	                	AgnUtils.setAdminDateTimeFormatPatterns(request);
 						destination = mapping.findForward("list");
 						messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
 					} else {
-						errors.add("NewRecipient", new ActionMessage("error.subscriber.insert_in_db_error"));
-						aForm.setAction(RecipientAction.ACTION_VIEW);
-						AgnUtils.setAdminDateTimeFormatPatterns(request);
-						destination = mapping.findForward("view");
+						saveErrors(request, errors);
+						return saveDestination;
 					}
 					defineMailinglistAttributes(request, admin);
 				} else {
@@ -362,7 +353,7 @@ public class RecipientAction extends StrutsActionBase {
 			request.setAttribute("isRecipientEmailInUseWarningEnabled", configService.getBooleanValue(ConfigValue.RecipientEmailInUseWarning, AgnUtils.getCompanyID(request)));
 		}
 
-		List<LightweightMailing> lightweightIntervalMailings = mailingDao.getLightweightIntervalMailings(AgnUtils.getCompanyID(request));
+		List<LightweightMailing> lightweightIntervalMailings = mailingService.getLightweightIntervalMailings(admin);
 		request.setAttribute("interval_mailings", lightweightIntervalMailings);
 
         request.setAttribute("rulesValidationErrors", rulesValidationErrors);
@@ -381,6 +372,10 @@ public class RecipientAction extends StrutsActionBase {
         aForm.setSaveTargetVisible(false);
 
         return destination;
+	}
+	
+	protected void setPseudoRuleAttributes(final HttpServletRequest request) {
+		request.setAttribute("COLUMN_INTERVAL_MAILING", PseudoColumn.INTERVAL_MAILING);
 	}
 	
 	private boolean validateForm(ComAdmin admin, RecipientForm form, ActionMessages errors) throws Exception {
@@ -406,7 +401,7 @@ public class RecipientAction extends StrutsActionBase {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED)) {
 			List<ProfileField> columnInfos = columnInfoService.getColumnInfos(admin.getCompanyID(), admin.getAdminID());
 			//validate profile fields with string type
-			List<String> columnNames = getEditableColumnNames(columnInfos, DataType.VARCHAR);
+			List<String> columnNames = getEditableColumnNames(columnInfos, DbColumnType.GENERIC_TYPE_VARCHAR);
 			return validateIfFieldsDoesNotContainHtmlTags(form, columnNames, errors);
 		}
 		return true;
@@ -491,10 +486,11 @@ public class RecipientAction extends StrutsActionBase {
 	}
 	
 	private ActionForward processListOverviewLoading(RecipientForm aForm, ActionMapping mapping, HttpServletRequest request, ActionMessages errors, ActionMessages messages) throws Exception {
+		final ComAdmin admin = AgnUtils.getAdmin(request);
 		ActionForward destination = mapping.findForward("loading");
 		String key = FUTURE_TASK + "@" + request.getSession(false).getId();
 		
-		Map<String, String> fieldsMap = getRecipientFieldsNames(AgnUtils.getCompanyID(request), AgnUtils.getAdminId(request));
+		Map<String, String> fieldsMap = getRecipientFieldsNames(admin.getCompanyID(), admin.getAdminID());
 		Set<String> recipientDbColumns = fieldsMap.keySet();
 		request.setAttribute("fieldsMap", fieldsMap);
 
@@ -526,8 +522,8 @@ public class RecipientAction extends StrutsActionBase {
 				PaginatedListImpl<DynaBean> resultingList = future.get();
 
 				request.setAttribute("recipientList", resultingList);
-				defineMailinglistAttributes(request, AgnUtils.getAdmin(request));
-				request.setAttribute("targets", targetDao.getTargetLights(AgnUtils.getCompanyID(request)));
+				defineMailinglistAttributes(request, admin);
+				request.setAttribute("targets", targetService.getTargetLights(admin));
 				
 				AgnUtils.setAdminDateTimeFormatPatterns(request);
 
@@ -664,7 +660,8 @@ public class RecipientAction extends StrutsActionBase {
 			LocalDate now = LocalDate.now();
 
 			for (ProfileField field : fields) {
-				if ("DATE".equalsIgnoreCase(field.getDataType()) && DbUtilities.isNowKeyword(field.getDefaultValue())) {
+				boolean isDateField = DbColumnType.GENERIC_TYPE_DATE.equalsIgnoreCase(field.getDataType()) || DbColumnType.GENERIC_TYPE_DATETIME.equalsIgnoreCase(field.getDataType());
+				if (isDateField && DbUtilities.isNowKeyword(field.getDefaultValue())) {
 					aForm.setColumn(field.getColumn() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, Integer.toString(now.getDayOfMonth()));
 					aForm.setColumn(field.getColumn() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, Integer.toString(now.getMonthValue()));
 					aForm.setColumn(field.getColumn() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, Integer.toString(now.getYear()));
@@ -770,7 +767,7 @@ public class RecipientAction extends StrutsActionBase {
 	 *            HTTP request
 	 * @throws Exception
 	 */
-	protected boolean saveRecipient(RecipientForm aForm, HttpServletRequest request, ActionMessages errors) throws Exception {
+	protected ActionForward saveRecipient(RecipientForm aForm, HttpServletRequest request, ActionMessages errors, ActionMapping actionMapping) throws Exception {
         throw new UnsupportedOperationException();
 	}
 
@@ -957,68 +954,52 @@ public class RecipientAction extends StrutsActionBase {
 			aForm.setOrder(direction);
 		}
 
-		SqlPreparedStatementManager sqlStatementManagerForDataSelect = recipientQueryBuilder.getSQLStatement(AgnUtils.getAdmin(request), getOptions(request, aForm), targetRepresentationFactory, targetNodeFactory);
-		String selectDataStatement = sqlStatementManagerForDataSelect.getPreparedSqlString().replaceAll("cust[.]bind", "bind").replace("lower(cust.email)", "cust.email");
-		if (logger.isInfoEnabled()) {
-			logger.info("Recipient Select data SQL statement: " + selectDataStatement);
-		}
-
-		return workerExecutorService.submit(new RecipientBeanQueryWorker(
-			recipientDao,
-			AgnUtils.getCompanyID(request),
-			recipientDbColumns,
-			selectDataStatement,
-			sqlStatementManagerForDataSelect.getPreparedSqlParameters(),
-			sort,
-			AgnUtils.sortingDirectionToBoolean(direction),
-			pageNumber,
-			rownums
-		));
+		return workerExecutorService.submit(recipientService.getRecipientWorker(request, aForm, recipientDbColumns, sort, direction, pageNumber, rownums));
 	}
-	
-	protected RecipientSqlOptions getOptions(HttpServletRequest request, RecipientForm form) {
+
+	protected RecipientSqlOptions.Builder prepareBuilder(HttpServletRequest request, RecipientForm form) {
 		RecipientSqlOptions.Builder builder = RecipientSqlOptions.builder();
 		builder.setCheckParenthesisBalance(form.checkParenthesisBalance());
 
 		String sort = request.getParameter("sort");
 		if (sort == null) {
 			sort = form.getSort();
-			
+
 			if (logger.isDebugEnabled()) {
 				logger.debug("request parameter sort = null");
 				logger.debug("using form parameter sort = " + sort);
 			}
 		}
-		
+
 		String direction = request.getParameter("dir");
 		if (direction == null) {
 			direction = form.getOrder();
-			
+
 			if (logger.isDebugEnabled()) {
 				logger.debug("request parameter dir = null");
 				logger.debug("using form parameter order = " + direction);
 			}
 		}
-		
+
 		builder.setSort(sort)
 				.setDirection(direction)
 				.setUseAdvancedSearch(true, form);
-		
+
 		if (request.getParameter("listID") != null) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("parameter listID = " + request.getParameter("listID"));
 			}
-			
+
 			form.setListID(NumberUtils.toInt(request.getParameter("listID")));
 		}
 		builder.setListId(form.getListID());
-		
-		
+
+
 		if (request.getParameter("targetID") != null) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("parameter targetID = " + request.getParameter("targetID"));
 			}
-			
+
 			form.setTargetID(Integer.parseInt(request.getParameter("targetID")));
 		}
 		builder.setTargetId(form.getTargetID());
@@ -1059,8 +1040,11 @@ public class RecipientAction extends StrutsActionBase {
 		}
 		builder.setUserStatus(form.getUser_status());
 
+		return builder;
+	}
 
-		return builder.build();
+	protected RecipientSqlOptions getOptions(HttpServletRequest request, RecipientForm form) {
+		return prepareBuilder(request, form).build();
 	}
 	
 	private boolean updateRecipientFormProperties(HttpServletRequest request, RecipientForm form) {
@@ -1103,8 +1087,8 @@ public class RecipientAction extends StrutsActionBase {
 				}
 				String type = "unknownType";
 				if ("CURRENT_TIMESTAMP".equalsIgnoreCase(column)) {
-        			type = "DATE";
-        		} else if (TargetNodeIntervalMailing.PSEUDO_COLUMN_NAME.equalsIgnoreCase(column)) {
+        			type = DbColumnType.GENERIC_TYPE_DATE;
+				} else if (PseudoColumn.INTERVAL_MAILING.isThisPseudoColumn(column)) {
         			type = "INTERVAL_MAILING";
         		} else {
 					try {
@@ -1116,17 +1100,17 @@ public class RecipientAction extends StrutsActionBase {
 
 				form.setColumnName(index, column);
 
-				if (type.equalsIgnoreCase("VARCHAR") || type.equalsIgnoreCase("VARCHAR2") || type.equalsIgnoreCase("CHAR")) {
-					form.setValidTargetOperators(index, TargetNodeString.getValidOperators());
+				if (type.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_VARCHAR) || type.equalsIgnoreCase("VARCHAR2") || type.equalsIgnoreCase("CHAR")) {
+					form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForString());
 					form.setColumnType(index, TargetForm.COLUMN_TYPE_STRING);
-				} else if (type.equalsIgnoreCase("INTEGER") || type.equalsIgnoreCase("DOUBLE") || type.equalsIgnoreCase("NUMBER")) {
-					form.setValidTargetOperators(index, TargetNodeNumeric.getValidOperators());
+				} else if (type.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_INTEGER) || type.equalsIgnoreCase("DOUBLE") || type.equalsIgnoreCase("NUMBER")) {
+					form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForNumber());
 					form.setColumnType(index, TargetForm.COLUMN_TYPE_NUMERIC);
-				} else if (type.equalsIgnoreCase("DATE")) {
-					form.setValidTargetOperators(index, TargetNodeDate.getValidOperators());
+				} else if (type.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATE) || type.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATETIME)) {
+					form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForDate());
 					form.setColumnType(index, TargetForm.COLUMN_TYPE_DATE);
 				} else if (type.equalsIgnoreCase("INTERVAL_MAILING")) {
-					form.setValidTargetOperators(index, TargetNodeIntervalMailing.getValidOperators());
+					form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForMailingOperators());
 					form.setColumnType(index, TargetForm.COLUMN_TYPE_INTERVAL_MAILING);
 				}
 			} else {
@@ -1379,7 +1363,11 @@ public class RecipientAction extends StrutsActionBase {
         final ComAdmin admin = AgnUtils.getAdmin(request);
         validateForm(admin, form, errors);
         if (errors.isEmpty()) {
-            saveRecipient(form, request, errors);
+            final ActionForward saveForward = saveRecipient(form, request, errors, mapping);
+            if(saveForward != null) {
+            	saveErrors(request, errors);
+            	return saveForward;
+			}
             messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
             return successfulDestinationFunction.apply(request, mapping, form);
         } else {
@@ -1402,16 +1390,26 @@ public class RecipientAction extends StrutsActionBase {
         if (errorCount != errors.size()) {
             return 0;
         }
-        ComTarget newTarget = targetFactory.newTarget();
+        
+        final ComTarget newTarget = targetFactory.newTarget();
         newTarget.setId(0);
         newTarget.setTargetName(aForm.getTargetShortname());
         newTarget.setTargetDescription(aForm.getTargetDescription());
-        newTarget.setTargetStructure(recipientQueryBuilder.createTargetRepresentationFromForm(aForm, targetRepresentationFactory, targetNodeFactory, admin.getCompanyID()));
-        newTarget.setEQL(eqlFacade.convertTargetRepresentationToEql(newTarget.getTargetStructure(), admin.getCompanyID()));
         newTarget.setCompanyID(admin.getCompanyID());
+        
+    	final String eqlFromForm = recipientQueryBuilder.createEqlFromForm(aForm, admin.getCompanyID());
+    	newTarget.setEQL(eqlFromForm);
 
-		ComTarget target = targetDao.getTarget(aForm.getTargetID(), admin.getCompanyID());
+		final ComTarget target = loadTargetGroupOrNull(aForm.getTargetID(), admin.getCompanyID());
 		return targetService.saveTarget(admin, newTarget, target, validationErrors, this::writeUserActivityLog);
+    }
+    
+    private final ComTarget loadTargetGroupOrNull(final int targetId, final int companyId) {
+    	try {
+    		return targetService.getTargetGroup(targetId, companyId);
+    	} catch(final UnknownTargetGroupIdException e) {
+    		return null;
+    	}
     }
 
 	protected void writeRecipientChangeLog(ComAdmin admin, RecipientForm form, String description) {
@@ -1442,40 +1440,27 @@ public class RecipientAction extends StrutsActionBase {
 		this.futureHolder = futureHolder;
 	}
 
+    @Required
 	public void setMailinglistService(ComMailinglistService mailinglistService) {
 		this.mailinglistService = mailinglistService;
 	}
 
-	public void setMailingDao(MailingDao mailingDao) {
-		this.mailingDao = mailingDao;
+    @Required
+	public void setMailingService(MailingService mailingService) {
+		this.mailingService = mailingService;
 	}
 
-	/**
-	 * Sets DAO accessing target groups.
-	 *
-	 * @param targetDao DAO accessing target groups
-	 */
-	@Required
-	public void setTargetDao(ComTargetDao targetDao) {
-		this.targetDao = targetDao;
-	}
-
+    @Required
 	public void setRecipientDao(ComRecipientDao recipientDao) {
 		this.recipientDao = recipientDao;
 	}
 
-	public void setTargetRepresentationFactory(TargetRepresentationFactory targetRepresentationFactory) {
-		this.targetRepresentationFactory = targetRepresentationFactory;
-	}
-
-	public void setTargetNodeFactory(TargetNodeFactory targetNodeFactory) {
-		this.targetNodeFactory = targetNodeFactory;
-	}
-
+    @Required
 	public void setWorkerExecutorService(ExecutorService workerExecutorService) {
 		this.workerExecutorService = workerExecutorService;
 	}
 
+    @Required
 	public void setTargetFactory(TargetFactory targetFactory) {
 		this.targetFactory = targetFactory;
 	}
@@ -1485,20 +1470,19 @@ public class RecipientAction extends StrutsActionBase {
 		this.recipientQueryBuilder = recipientQueryBuilder;
 	}
 
+    @Required
 	public void setColumnInfoService(ColumnInfoService columnInfoService) {
 		this.columnInfoService = columnInfoService;
 	}
 
+    @Required
 	public void setRecipientFactory(RecipientFactory recipientFactory) {
 		this.recipientFactory = recipientFactory;
 	}
 
+    @Required
 	public void setBindingEntryFactory(BindingEntryFactory bindingEntryFactory) {
 		this.bindingEntryFactory = bindingEntryFactory;
-	}
-
-	public void setDataSource(DataSource dataSource) {
-		this.dataSource = dataSource;
 	}
 
     /**

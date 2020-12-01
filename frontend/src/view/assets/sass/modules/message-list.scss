@@ -6,6 +6,10 @@
   }
 }
 
+.message-list > li + li {
+  border-color: $c-dt-tile-border;
+}
+
 .message-list-item {
   position: relative;
   display: block;
@@ -49,6 +53,10 @@
   }
 }
 
+body.dark-theme .message-list-item .description{
+  color: $c-dt-msg-list-text;
+}
+
 .message-list-loader {
   position: absolute;
   bottom: 0; left: 0; right: 0;
@@ -61,4 +69,8 @@
   border-top: 1px solid $c-gray-11;
   text-align: center;
   font-size: 30px;
+}
+
+body.dark-theme .message-list-loader {
+  background-color: $c-dt-msg-list-loader-background;
 }

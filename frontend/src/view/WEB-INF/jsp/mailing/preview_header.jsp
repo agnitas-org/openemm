@@ -1,18 +1,25 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page import="org.agnitas.preview.ModeType" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
 
 <%--@elvariable id="mailingSendForm" type="com.agnitas.web.ComMailingSendForm"--%>
 <%--@elvariable id="components" type="java.util.List<org.agnitas.beans.MailingComponent>"--%>
 <%--@elvariable id="isTagFailureInFromAddress" type="java.lang.Boolean"--%>
 <%--@elvariable id="isTagFailureInSubject" type="java.lang.Boolean"--%>
+<%--@elvariable id="previewRecipients" type="java.util.Map<java.lang.Integer, java.lang.String>"--%>
+<%--@elvariable id="availableTargetGroups" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
+<%--@elvariable id="previewHeaderAvailable" type="java.lang.Boolean"--%>
+<c:set var="RECIPIENT_MODE" value="<%= ModeType.RECIPIENT %>"/>
+<c:set var="TARGET_GROUP_MODE" value="<%= ModeType.TARGET_GROUP %>"/>
 
 <c:set var="storedFieldsScope" value="${mailingSendForm.mailingID}"/>
 
 <div id="mailing-preview-header" class="mailing-preview-header">
-    <table class="table-list" data-controller="preview-header">
+    <table class="table-list" data-controller="preview-header-new">
         <tr>
             <c:choose>
                 <c:when test="${isTagFailureInFromAddress}">
@@ -24,42 +31,38 @@
                     <th><bean:message key="ecs.From"/></th>
                 </c:otherwise>
             </c:choose>
-            <td><b><bean:write name="mailingSendForm" property="senderPreview"/></b></td>
+            <td><b><bean:write name="mailingSendForm" property="previewForm.senderEmail"/></b></td>
         </tr>
         <tr>
             <th><bean:message key="To"/></th>
-            <td>
-                <ul>
-                    <li>
-                        <label for="preview_customer_ATID" class="radio-inline"></label>
-                        <agn:agnRadio styleId="preview_customer_ATID" property="useCustomerEmail"  value="false"
-                                      data-action="change-preview-customer-options" data-stored-field="${storedFieldsScope}"/>
-                        <select id="selectPreviewCustomerATID" name="previewCustomerATID" class="js-select"
-                                data-action="change-header-data">
-                            <option value="0" <c:if test="${mailingSendForm.previewCustomerATID == 0}">selected="selected"</c:if>><bean:message key="default.select.email"/></option>
-                            <c:forEach var="recipient" items="${previewRecipients}">
-                                <option value="${recipient.key}"
-                                    ${mailingSendForm.previewCustomerATID == recipient.key
-                                    or mailingSendForm.previewCustomerID == recipient.key ? 'selected="selected"' : ''}>
-                                ${recipient.value}
-                                </option>
+            <td><b>
+                <c:choose>
+                    <c:when test="${mailingSendForm.previewForm.modeType == TARGET_GROUP_MODE}">
+                        <c:if test="${mailingSendForm.previewForm.targetGroupId eq 0}">
+                            <bean:message key="statistic.all_subscribers"/>
+                        </c:if>
+                        <c:forEach items="${availableTargetGroups}" var="targetGroup">
+                            <c:if test="${mailingSendForm.previewForm.targetGroupId eq targetGroup.id}">
+                                ${targetGroup.targetName}
+                            </c:if>
+                        </c:forEach>
+                    </c:when>
+
+                    <c:otherwise>
+                        <c:if test="${mailingSendForm.previewForm.useCustomerEmail}">
+                            ${mailingSendForm.previewForm.customerEmail}
+                        </c:if>
+                        <c:if test="${not mailingSendForm.previewForm.useCustomerEmail}">
+                            <c:forEach var="customer" items="${previewRecipients}">
+                                <c:if test="${mailingSendForm.previewForm.customerATID eq customer.key
+                                                            or mailingSendForm.previewForm.customerID eq customer.key}">
+                                    ${customer.value}
+                                </c:if>
                             </c:forEach>
-                        </select>
-                    </li>
-                    <li>
-                        <label for="preview_customer_Email" class="radio-inline"></label>
-                        <agn:agnRadio styleId="preview_customer_Email" property="useCustomerEmail" value="true" data-action="change-preview-customer-options" data-stored-field="${storedFieldsScope}"/>
-                        <div class="input-group align-middle inline-block" style="max-width: 300px;">
-                            <div class="input-group-controls">
-                                <agn:agnText styleId="textPreviewCustomerEmail" property='previewCustomerEmail' styleClass="form-control" data-stored-field="${storedFieldsScope}"/>
-                            </div>
-                            <div class="input-group-btn">
-                                <button id="buttonPreviewCustomerEmail" type="button" class="btn btn-regular" data-form-submit><bean:message key="default.enter.email"/></button>
-                            </div>
-                        </div>
-                    </li>
-                </ul>
-            </td>
+                        </c:if>
+                    </c:otherwise>
+                </c:choose>
+            </b></td>
         </tr>
         <tr>
             <c:choose>
@@ -72,11 +75,23 @@
                     <th><bean:message key="mailing.Subject"/></th>
                 </c:otherwise>
             </c:choose>
-            <td><b><bean:write name="mailingSendForm" property="subjectPreview"/></b></td>
+            <td><b><bean:write name="mailingSendForm" property="previewForm.subject"/></b></td>
         </tr>
 
         <c:forEach var="component" items="${components}" varStatus="status">
-            <emm:CustomerMatchTarget customerID="${mailingSendForm.previewCustomerID}" targetID="${component.targetID}">
+            <c:set var="isVisibleComponent" value="${false}"/>
+            <c:choose>
+                <c:when test="${mailingSendForm.previewForm.modeType == TARGET_GROUP_MODE}">
+                    <c:set var="isVisibleComponent" value="${component.targetID eq mailingSendForm.previewForm.targetGroupId}"/>
+                </c:when>
+                <c:otherwise>
+                    <emm:CustomerMatchTarget customerID="${mailingSendForm.previewForm.customerID}" targetID="${component.targetID}">
+                        <c:set var="isVisibleComponent" value="${true}"/>
+                    </emm:CustomerMatchTarget>
+                </c:otherwise>
+            </c:choose>
+
+            <c:if test="${isVisibleComponent}">
                 <tr>
                     <th class="align-top">
                         <c:if test="${status.first}">
@@ -85,13 +100,15 @@
                     </th>
                     <td class="align-top">
                         <agn:agnLink
-                            page="/sc?compID=${component.id}&mailingID=${mailingSendForm.mailingID}&customerID=${mailingSendForm.previewCustomerID}" data-prevent-load="">
+                                page="/sc?compID=${component.id}&mailingID=${mailingSendForm.mailingID}
+                                &customerID=${mailingSendForm.previewForm.customerID}
+                                &targetGroupID=${mailingSendForm.previewForm.targetGroupId}" data-prevent-load="">
                             ${component.componentName}
                             <span class="badge"><i class="icon icon-download"></i></span>
                         </agn:agnLink>
                     </td>
                 </tr>
-            </emm:CustomerMatchTarget>
+            </c:if>
         </c:forEach>
     </table>
 </div>

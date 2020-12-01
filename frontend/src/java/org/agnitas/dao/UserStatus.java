@@ -44,6 +44,15 @@ public enum UserStatus {
 		throw new UnknownUserStatusException(id);
 	}
 	
+	public static UserStatus getUserStatusByName(String name) throws UnknownUserStatusException {
+		for (UserStatus userStatus : UserStatus.values()) {
+			if (userStatus.name().equalsIgnoreCase(name)) {
+				return userStatus;
+			}
+		}
+		return null;
+	}
+	
 	public static List<Integer> getAvailableStatusCodeList() {
 		return Arrays.stream(UserStatus.values()).map(UserStatus::getStatusCode).collect(Collectors.toList());
 	}

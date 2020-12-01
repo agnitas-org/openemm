@@ -11,5 +11,5 @@
 package com.agnitas.service;
 
 public interface AgnDynTagGroupResolverFactory {
-    AgnDynTagGroupResolver create(int mailingId);
+    AgnDynTagGroupResolver create(int companyID, int mailingID);
 }

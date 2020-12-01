@@ -11,20 +11,20 @@
 package org.agnitas.backend.dao;
 
 public class Tools {
-	static protected boolean isin (String needle, String user, String[] haystack) {
+	static protected boolean isin(String needle, String user, String[] haystack) {
 		if ((needle != null) && (haystack != null) && (haystack.length > 0)) {
-			if ((user != null) && (user.length () > 0)) {
+			if ((user != null) && (user.length() > 0)) {
 				for (String element : haystack) {
-					if ((element != null) && needle.equals (user + "@" + element)) {
+					if ((element != null) && needle.equals(user + "@" + element)) {
 						return true;
 					}
 				}
-				if (needle.equals (user + "@")) {
+				if (needle.equals(user + "@")) {
 					return true;
 				}
 			}
 			for (String element : haystack) {
-				if ((element != null) && needle.equals (element)) {
+				if ((element != null) && needle.equals(element)) {
 					return true;
 				}
 			}

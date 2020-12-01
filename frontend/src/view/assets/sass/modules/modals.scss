@@ -39,6 +39,11 @@
   @include shadow-variant(hardest);
 }
 
+body.dark-theme .modal-content {
+  color:     $c-dt-modal-text;
+  background-color: $c-dt-modal-background;
+}
+
 .modal-backdrop {
   position: fixed;
   top    : 0;
@@ -88,6 +93,21 @@
   }
 }
 
+body.dark-theme .modal-header {
+  background-color: $c-dt-modal-background;
+  border-color: $c-dt-modal-border;
+
+  .close-icon {
+    color: $c-dt-modal-text;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: darken($c-dt-modal-text, 20%);
+    }
+  }
+}
+
 .modal-title {
   max-width: calc(90% - 20px);
   float: left;
@@ -99,6 +119,10 @@
   font-weight: $fw-semi;
 
   @include text-overflow();
+}
+
+body.dark-theme .modal-title {
+ color: $c-dt-modal-text;
 }
 
 .modal-body {
@@ -122,6 +146,10 @@
 
   border-top: 1px solid $c-gray-11;
 
+}
+
+body.dark-theme .modal-footer {
+  border-color: $c-dt-modal-border;
 }
 
 .modal-separator {
@@ -372,6 +400,13 @@
     }
   }
 }
+body.dark-theme .modal-header-nav {
+  > li {
+    > a {
+      color: $c-dt-modal-text;
+    }
+  }
+}
 
 .modal-news{
 
@@ -412,7 +447,17 @@
       }
     }
   }
+}
 
+body.dark-theme .modal-news {
+  .modal-body {
+    .news-tab {
+      .news-content {
+        background-color: $c-dt-modal-background;
+        color: $c-dt-modal-text;
+      }
+    }
+  }
 }
 
 

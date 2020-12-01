@@ -2,6 +2,8 @@
 <%@ page import="org.agnitas.beans.MailingComponent" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page import="com.agnitas.web.ComMailingAttachmentsAction" %>
+<%@ page import="org.apache.commons.lang.ArrayUtils" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -146,31 +148,24 @@
                                 <th></th>
                                 </thead>
 
+                                <%--@elvariable id="attachments" type="java.util.List<org.agnitas.beans.MailingComponent>"--%>
                                 <tbody>
-                                <% int i = 1;
-                                    boolean isFirst = true; %>
-                                <% if (isFirst) {
-                                    isFirst = false; %>
-                                <% } %>
-                                <% MailingComponent comp = null; %>
-
-                                <logic:iterate id="attachment" collection="${attachments}" scope="request">
-                                    <% comp = (MailingComponent) pageContext.getAttribute("attachment"); %>
+                                <logic:iterate id="attachment" collection="${attachments}" scope="request" type="org.agnitas.beans.MailingComponent">
                                     <tr>
-                                        <td><%= comp.getComponentName() %></td>
+                                        <td>${attachment.componentName}</td>
                                         <td>
-                                            <html:select property='<%= "target" + comp.getId() %>'
-                                                         value="<%= String.valueOf(comp.getTargetID()) %>"
-                                                         styleId='<%= "target" + comp.getId() %>' styleClass="form-control js-select">
+                                            <html:select property="target${attachment.id}"
+                                                         value="${attachment.targetID}"
+                                                         styleId="target${attachment.id}" styleClass="form-control js-select">
                                                 <html:option value="0"><bean:message key="statistic.all_subscribers"/></html:option>
                                                 <c:forEach var="target" items="${targets}">
                                                     <html:option value="${target.id}">${target.targetName}</html:option>
                                                 </c:forEach>
                                             </html:select>
                                         </td>
-                                        <td><%= AgnUtils.bytesToKbStr(comp.getBinaryBlock().length) %> <bean:message key="default.KByte"/></td>
-                                        <td><%= AgnUtils.bytesToKbStr(AgnUtils.encodeBase64(comp.getBinaryBlock()).length()) %> <bean:message key="default.KByte"/></td>
-                                        <td><span class="badge"><%= comp.getMimeType() %></span></td>
+                                        <td><%= AgnUtils.bytesToKbStr(ArrayUtils.getLength(attachment.getBinaryBlock())) %> <bean:message key="default.KByte"/></td>
+                                        <td><%= AgnUtils.bytesToKbStr(StringUtils.length(AgnUtils.encodeBase64(attachment.getBinaryBlock()))) %> <bean:message key="default.KByte"/></td>
+                                        <td><span class="badge">${attachment.mimeType}</span></td>
                                         <td class="table-actions">
                                             <logic:equal name="mailingAttachmentsForm" property="worldMailingSend" value="false">
                                                 <c:set var="messageDelete" scope="page">
@@ -186,7 +181,7 @@
                                             <c:set var="messageDownload" scope="page">
                                                 <bean:message key='button.Download'/>
                                             </c:set>
-                                            <agn:agnLink styleClass="btn btn-regular btn-primary" data-tooltip="${messageDownload}" data-prevent-load="" page='<%= "/dc?compID=" + comp.getId() %>'>
+                                            <agn:agnLink styleClass="btn btn-regular btn-primary" data-tooltip="${messageDownload}" data-prevent-load="" page="/dc?compID=${attachment.id}">
                                                 <i class="icon icon-cloud-download"></i>
                                             </agn:agnLink>
                                         </td>

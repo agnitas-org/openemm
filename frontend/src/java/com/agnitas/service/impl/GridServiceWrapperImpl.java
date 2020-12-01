@@ -17,6 +17,11 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
 import com.agnitas.emm.core.mailing.service.ComMailingGridService;
@@ -25,10 +30,6 @@ import com.agnitas.emm.grid.grid.beans.ComTemplateSettings;
 import com.agnitas.emm.grid.grid.service.ComGridTemplateService;
 import com.agnitas.emm.grid.grid.service.MailingCreationOptions;
 import com.agnitas.service.GridServiceWrapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 @Component("GridServiceWrapper")
 public class GridServiceWrapperImpl implements GridServiceWrapper {
@@ -88,7 +89,13 @@ public class GridServiceWrapperImpl implements GridServiceWrapper {
 
     @Override
     public void restoreGridMailingUndo(int undoId, ComMailing mailing) {
-        checkAndRun(mailingGridService, (dummy) -> mailingGridService.restoreGridMailingUndo(undoId, mailing));
+        checkAndRun(mailingGridService, (dummy) -> {
+			try {
+				mailingGridService.restoreGridMailingUndo(undoId, mailing);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		});
     }
 
     private <T> T checkAndReturn(Object service, Supplier<T> supplier) {

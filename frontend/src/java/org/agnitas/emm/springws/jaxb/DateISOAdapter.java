@@ -18,11 +18,17 @@ import java.util.Date;
 
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
+import org.agnitas.emm.springws.exception.DateFormatException;
+
 public class DateISOAdapter extends XmlAdapter<String, Date> {
 
     @Override
     public Date unmarshal(String s) throws Exception {
-        return Date.from(ZonedDateTime.parse(s).toInstant());
+        try {
+            return Date.from(ZonedDateTime.parse(s).toInstant());
+        } catch (Exception e) {
+            throw new DateFormatException();
+        }
     }
 
     @Override

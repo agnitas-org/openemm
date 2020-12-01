@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.admin.form;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import org.apache.log4j.Logger;
@@ -31,7 +33,7 @@ public class AdminForm {
     private String passwordConfirm;
     private Locale adminLocale = Locale.GERMANY;
     private String adminTimezone = "Europe/Berlin";
-    private int groupID = 0;
+    private List<Integer> groupIDs = new ArrayList<>();
     private int layoutBaseId;
     private String initialCompanyName;
     private String adminPhone;
@@ -117,12 +119,12 @@ public class AdminForm {
         this.adminTimezone = adminTimezone;
     }
 
-    public int getGroupID() {
-        return groupID;
+    public List<Integer> getGroupIDs() {
+        return groupIDs;
     }
 
-    public void setGroupID(int groupID) {
-        this.groupID = groupID;
+    public void setGroupIDs(List<Integer> groupIDs) {
+        this.groupIDs = groupIDs;
     }
 
     public String getStatEmail() {

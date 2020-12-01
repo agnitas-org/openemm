@@ -10,6 +10,8 @@
 
 package org.agnitas.emm.core.velocity;
 
+import com.agnitas.emm.core.velocity.AgnVelocityUberspector;
+
 /**
  * Implementation of {@link AbstractVelocityWrapper} using the
  * {@link AgnVelocityUberspector}.

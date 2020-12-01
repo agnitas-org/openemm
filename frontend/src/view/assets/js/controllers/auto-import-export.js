@@ -236,10 +236,13 @@ AGN.Lib.Controller.new('auto-import-export', function () {
         saveToJson();
     });
 
-    this.addAction({'click': 'check-ftp-server'}, function () {
-        document.getElementById('action_method').value='checkConnectionStatus';
-        document.getElementById('recipient-autoimport-form').submit();
-        return false;
+    this.addAction({click: 'select-customer-fields'}, function() {
+        AGN.Lib.Modal.createFromTemplate({}, 'modal-select-customer-fields');
+        $('#modalSelectedProfileFields').select2('val', $('#selectedProfileFields').val());
+    });
+
+    this.addAction({click: 'save-selected-customer-fields'}, function() {
+        $('#selectedProfileFields').select2('val', $('#modalSelectedProfileFields').val());
     });
 
     this.addDomInitializer('auto-import-export-init', function ($el) {

@@ -58,6 +58,10 @@ public class DashboardServiceImpl implements DashboardService {
         this.summaryDataSetFactory = summaryDataSetFactory;
     }
 
+    public ComMailingDao getMailingDao() {
+        return mailingDao;
+    }
+
     @Override
     public PaginatedListImpl<Map<String, Object>> getMailings(ComAdmin admin, String sort, String direction, int rownums) {
         return mailingDao.getDashboardMailingList(admin.getCompanyID(), admin.getAdminID(), sort, direction, rownums);

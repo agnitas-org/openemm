@@ -67,11 +67,6 @@ public class MailingContentServiceImpl implements MailingContentService {
         this.actionDao = actionDao;
     }
 
-    @Override
-    public Mailing getMailing(@VelocityCheck int companyId, int mailingId) {
-        return mailingDao.getMailing(mailingId, companyId);
-    }
-
     private void removeAbsentDynContent(DynamicTag oldDynamicTag, DynamicTag newDynamicTag) {
         List<Integer> idForRemoving = getIdForRemoving(oldDynamicTag, newDynamicTag);
         idForRemoving.forEach(contentId -> {

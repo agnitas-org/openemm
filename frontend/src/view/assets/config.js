@@ -1,4 +1,5 @@
 /* <%@ page contentType="application/javascript" %> */
+/* <%@ page import="org.agnitas.util.AgnUtils" %> */
 /* <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %> */
 /* <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common" prefix="emm" %> */
 
@@ -29,5 +30,16 @@ window.agnResolveRelativeUrl = function(relativeUrl, excludeSessionId) {
 /*   </c:when>
      <c:otherwise> */
        window.agnTimeZoneId = '${timeZoneId}';
+/*   </c:otherwise>
+</c:choose> */
+
+/* <c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN%>" />
+   <c:set var="adminLocale" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN].locale}" />*/
+/* <c:choose>
+     <c:when test="${empty adminLocale}"> */
+       window.adminLocale = navigator.language;
+/*   </c:when>
+     <c:otherwise> */
+       window.adminLocale = '${adminLocale}'.replace('_', '-');
 /*   </c:otherwise>
 </c:choose> */

@@ -12,8 +12,6 @@
 
 <%--@elvariable id="recipientsReportForm" type="com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm"--%>
 <%--@elvariable id="reportsList" type="org.displaytag.pagination.PaginatedList"--%>
-<%--@elvariable id="dateFormatPattern" type="java.lang.String"--%>
-<%--@elvariable id="adminDateTimeFormatPattern" type="java.lang.String"--%>
 
 <mvc:form servletRelativeAction="/recipientsreport/list.action" modelAttribute="recipientsReportForm">
     <input type="hidden" name="page" value="${reportsList.pageNumber}"/>
@@ -116,13 +114,13 @@
                         <li>
                             <p>
                                 <label class="label"><mvc:message code="operator.between"/></label>
-                                <input type="text" name="filterDateStart.date" value="${recipientsReportForm.filterDateStart.date}" data-filter-date-min="" class="form-control js-datepicker js-datepicker-left" data-datepicker-options="format: '${fn:toLowerCase(dateFormatPattern)}'">
+                                <input type="text" name="filterDateStart.date" value="${recipientsReportForm.filterDateStart.date}" data-filter-date-min="" class="form-control js-datepicker js-datepicker-left" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}'">
                             </p>
                         </li>
                         <li>
                             <p>
                                 <label class="label"><mvc:message code="default.and"/></label>
-                                <input type="text" name="filterDateFinish.date" value="${recipientsReportForm.filterDateFinish.date}" data-filter-date-max="" class="form-control js-datepicker js-datepicker-left" data-datepicker-options="format: '${fn:toLowerCase(dateFormatPattern)}'">
+                                <input type="text" name="filterDateFinish.date" value="${recipientsReportForm.filterDateFinish.date}" data-filter-date-max="" class="form-control js-datepicker js-datepicker-left" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}'">
                             </p>
                         </li>
                         <li class="divider"></li>
@@ -159,8 +157,7 @@
                         <tr class="empty"><td colspan="{0}"><mvc:message code="noResultsFound"/></td></tr>
                     </display:setProperty>
 
-                    <display:column sortable="true" titleKey="report.mailing.statistics.reportdatum" property="reportDate" sortProperty="report_date"
-                                    format="{0,date,${adminDateTimeFormatPattern}}" headerClass="js-table-sort js-filter-date"/>
+                    <display:column sortable="true" titleKey="report.mailing.statistics.reportdatum" property="reportDateFormatted" sortProperty="report_date" headerClass="js-table-sort js-filter-date"/>
 
                     <display:column sortable="true" titleKey="default.Type" headerClass="js-table-sort js-filter-type" sortProperty="type">
                         <mvc:message code="${report.type.messageKey}"/>

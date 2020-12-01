@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.emm.core.birtreport.dto.FilterType;
 import com.agnitas.reporting.birt.external.beans.BirtReportCompareStatRow;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
@@ -553,14 +553,14 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
     }
 
     public String getPredefineMailingName(int mailingFilter, int predefineMailingId, @VelocityCheck int companyId) {
-        if ((BirtReportSettingsUtils.FILTER_ARCHIVE_VALUE != mailingFilter) &&
-                (BirtReportSettingsUtils.FILTER_MAILINGLIST_VALUE != mailingFilter)) {
+        if ((FilterType.FILTER_ARCHIVE.getKey() != mailingFilter) &&
+                (FilterType.FILTER_MAILINGLIST.getKey() != mailingFilter)) {
             return "";
         }
         String sql = "";
-        if (BirtReportSettingsUtils.FILTER_ARCHIVE_VALUE == mailingFilter) {
+        if (FilterType.FILTER_ARCHIVE.getKey() == mailingFilter) {
             sql = "select shortname from campaign_tbl where campaign_id = ? and company_id = ?";
-        } else if (BirtReportSettingsUtils.FILTER_MAILINGLIST_VALUE == mailingFilter) {
+        } else if (FilterType.FILTER_MAILINGLIST.getKey() == mailingFilter) {
             sql = "select shortname from mailinglist_tbl where mailinglist_id = ? and company_id = ?";
         }
         return select(logger, sql, String.class, predefineMailingId, companyId);

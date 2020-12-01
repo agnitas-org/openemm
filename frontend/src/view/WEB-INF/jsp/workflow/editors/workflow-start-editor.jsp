@@ -3,8 +3,9 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartEventType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStop" %>
-<%@ page import="org.agnitas.target.TargetNode" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
+<%@ page import="org.agnitas.target.ConditionalOperator" %>
+<%@ page import="org.agnitas.target.ChainOperator" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
@@ -39,10 +40,10 @@
 <c:set var="operators" value="<%= WorkflowDecision.DECISION_OPERATORS %>"/>
 <c:set var="operatorsTypeSupportMap" value="<%= WorkflowDecision.OPERATOR_TYPE_SUPPORT_MAP %>"/>
 
-<c:set var="equalOperator" value="<%= TargetNode.OPERATOR_EQ %>"/>
+<c:set var="equalOperator" value="<%= ConditionalOperator.EQ %>"/>
 
-<c:set var="CHAIN_OPERATOR_AND" value="<%= TargetNode.CHAIN_OPERATOR_AND %>"/>
-<c:set var="CHAIN_OPERATOR_OR" value="<%= TargetNode.CHAIN_OPERATOR_OR %>"/>
+<c:set var="CHAIN_OPERATOR_AND" value="<%= ChainOperator.AND.getOperatorCode() %>"/>
+<c:set var="CHAIN_OPERATOR_OR" value="<%= ChainOperator.OR.getOperatorCode() %>"/>
 
 <c:set var="RECIPIENT_EMM" value="1"/>
 <c:set var="RECIPIENT_CUSTOM" value="2"/>
@@ -230,7 +231,7 @@
                                                     <select id="newRule_primaryOperator" class="primary-operator" data-action="start-rule-operator-change">
                                                         <logic:iterate collection="${operators}" id="operator">
                                                             <c:set var="types" value="${operatorsTypeSupportMap[operator]}"/>
-                                                            <option data-types="${types}" value="${operator.operatorCode}">${operator.operatorSymbol}</option>
+                                                            <option data-types="${types}" value="${operator.operatorCode}">${operator.eqlSymbol}</option>
                                                         </logic:iterate>
                                                     </select>
                                                 </td>
@@ -293,7 +294,7 @@
                     <div class="col-sm-8">
                         <select id="dateProfileField" name="dateProfileField" class="form-control js-select">
                             <logic:iterate id="profileField" collection="${profileFields}">
-                                <c:if test="${profileField.dataType == 'DATE'}">
+                                <c:if test="${profileField.dataType == 'DATE' or profileField.dataType == 'DATETIME'}">
                                     <option value="${profileField.column}">${profileField.shortname}</option>
                                 </c:if>
                             </logic:iterate>
@@ -311,7 +312,7 @@
                         <div class="col-sm-8">
                             <div class="input-group">
                                 <div class="input-group-addon">
-                                    <span class="addon">${equalOperator.operatorSymbol}</span>
+                                    <span class="addon">${equalOperator.eqlSymbol}</span>
                                     <input id="dateFieldOperator" type="hidden" name="dateFieldOperator"
                                            value="${equalOperator.operatorCode}"/>
                                 </div>

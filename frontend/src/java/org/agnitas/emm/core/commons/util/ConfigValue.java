@@ -13,7 +13,7 @@ package org.agnitas.emm.core.commons.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.util.AgnUtils;
 
 public class ConfigValue {
@@ -27,12 +27,20 @@ public class ConfigValue {
 
 	/** Full version number of deployed application version **/
 	public static final ConfigValue ApplicationVersion = new ConfigValue("ApplicationVersion");
+	/** ApplicationType of deployed application **/
+	public static final ConfigValue ApplicationType = new ConfigValue("ApplicationType");
+	/** ApplicationType of deployed application **/
+	public static final ConfigValue BuildTime = new ConfigValue("BuildTime");
+	/** ApplicationType of deployed application **/
+	public static final ConfigValue BuildHost = new ConfigValue("BuildHost");
+	/** ApplicationType of deployed application **/
+	public static final ConfigValue BuildUser = new ConfigValue("BuildUser");
 	/** Show legacy-text in application logo **/
-	public static final ConfigValue IsLegacyInstance = new ConfigValue("legacy.version");
+	public static final ConfigValue IsLegacyInstance = new ConfigValue("legacy.version", "false");
 	/** Show beta-text in application logo **/
-	public static final ConfigValue IsBetaInstance = new ConfigValue("beta.version");
+	public static final ConfigValue IsBetaInstance = new ConfigValue("beta.version", "false");
 	/** Remove versionsign from emm application sites **/
-	public static final ConfigValue IsLiveInstance = new ConfigValue("live.version");
+	public static final ConfigValue IsLiveInstance = new ConfigValue("live.version", "true");
 
 	public static final ConfigValue SystemSaltFile = new ConfigValue("system.salt.file", "${HOME}/conf/keys/emm.salt");
 
@@ -48,7 +56,6 @@ public class ConfigValue {
 	
 	public static final ConfigValue BirtErrorPage = new ConfigValue("birt.errorPage", "/webcontent/birt/pages/common/Error.jsp");
 	public static final ConfigValue BirtHostUser = new ConfigValue("birt.host.user", "console");
-	public static final ConfigValue BirtPluginDirectory = new ConfigValue("birt.plugin.directory", "${HOME}/birt-plugins");
 	/** Url of the birt application to go deeper in some statistic values **/
 	public static final ConfigValue BirtDrilldownUrl = new ConfigValue("birt.drilldownurl");
 
@@ -90,8 +97,6 @@ public class ConfigValue {
 	public static final ConfigValue WkhtmlToImageToolPath = new ConfigValue("system.wkhtmltoimage", "/usr/bin/wkhtmltoimage");
 	
 	public static final ConfigValue UseLatestCkEditor = new ConfigValue("useLatestCkEditor", "true");
-
-	public static final ConfigValue EmmPluginsHome = new ConfigValue("plugins.home", "${HOME}/emm-plugins");
 
 	public static final ConfigValue System_Licence = new ConfigValue("system.licence"); // LicenseID
 	/** License types: SaaS, Inhouse **/
@@ -147,6 +152,8 @@ public class ConfigValue {
 	/** Config value for configuration of host authentication. */
 	public static final ConfigValue HostAuthentication = new ConfigValue("host_authentication.authentication", "true");
 	public static final ConfigValue HostAuthenticationHostIdCookieName = new ConfigValue("host_authentication.hostIdCookie.name", "com.agnitas.emm.host_id");
+	public static final ConfigValue HostAuthenticationHostIdCookieExpireDays = new ConfigValue("host_authentication.hostIdCookie.expireDays", "180");
+	public static final ConfigValue HostauthenticationCookiesHttpsOnly = new ConfigValue("hostauthentication.cookies.https.only", "true");
 
 	/** Maximum age of pending host authentications in minutes. */
 	public static final ConfigValue PendingHostAuthenticationMaxAgeMinutes = new ConfigValue("host_authentication.max_pending_age_minutes", "1440");
@@ -155,20 +162,11 @@ public class ConfigValue {
 	public static final ConfigValue ExternalMeasureSystemBaseLinkMailing = new ConfigValue("externalmeasuresystem.baselinkMailing");
 
 	public static final ConfigValue UserActivityLog_Expire = new ConfigValue("system.UserActivityLog.Expire", "180");
-	public static final ConfigValue WebserviceUsageLog_Expire = new ConfigValue("system.WebserviceUsageLog.Expire", "180");
-
-	public static final ConfigValue SupervisorBinding_Expire = new ConfigValue("system.SupervisorBinding.Expire", "180");
+	public static final ConfigValue SupervisorBinding_Expire = new ConfigValue("system.SupervisorBinding.Expire", "365");
 	public static final ConfigValue SupervisorGrant_Expire = new ConfigValue("system.SupervisorGrant.Expire", "180");
 
 	public static final ConfigValue DontWriteLatestDatasourceId = new ConfigValue("system.DontWriteLatestDatasourceId");
 
-	public static final ConfigValue WebserviceDatasourceGroupId = new ConfigValue("webservice.DatasourceGroupId", "6");
-	
-	// TODO This is a temporary config value and will be removed after successful rollout of webservice user permissions
-	public static final ConfigValue WebserviceEnablePermissions = new ConfigValue("webservice.enablePermissions", "false");
-	
-	
-	
 	/* TODO (EMM-6234) Remove after complete migration. */
 	public static final ConfigValue MigrateTargetGroupsOnStartup = new ConfigValue("targetgroups.migrateOnStartup", "false");
 
@@ -196,12 +194,6 @@ public class ConfigValue {
 	/** Default number of allowed user */
 	public static final ConfigValue UserAllowed = new ConfigValue("UserAllowed", "1000");
 	
-	/** Allow company to use webservice "SendServiceMailing". */
-	public static final ConfigValue WebserviceEnableSendServiceMailing = new ConfigValue("webservice.SendServiceMailing");
-
-	/** Bulk size limit for webservices. */
-	public static final ConfigValue WebserviceBulkSizeLimit = new ConfigValue("webservice.bulk_size_limit");
-
 	/** Enable / disable historization of profile fields. */
 	public static final ConfigValue RecipientProfileFieldHistory = new ConfigValue("recipient.profile_history");
 
@@ -225,9 +217,6 @@ public class ConfigValue {
 	public static final ConfigValue UseUnsharpRecipientQuery = new ConfigValue("performance.recipient_unsharp_query"); // TODO: Quick hack for CONRAD-371 */
 
 	public static final ConfigValue HeatmapProxy = new ConfigValue("system.heatmap.proxy");
-
-	/** Maximum mailing attachment size (in Bytes) (Default 2 MB) **/
-	public static final ConfigValue AttachmentMaxSize = new ConfigValue("attachment.maxSize", "2097152");
 
 	/** Maximum number of rows included in an import file for classic import **/
 	public static final ConfigValue ClassicImportMaxRows = new ConfigValue("import.classic.maxRows", "200000");
@@ -263,6 +252,16 @@ public class ConfigValue {
 
 	/** Use login permission granted by user. */
 	public static final ConfigValue SupervisorRequiresLoginPermission = new ConfigValue("supervisor.requiresLoginPermission", "false");
+
+	/** Password policy to use. */
+	public static final ConfigValue PasswordPolicy = new ConfigValue("password.policy", PasswordPolicies.DEFAULT_POLICY.getPolicyName());
+	
+	/** Password policy for supervisors to use. */
+	public static final ConfigValue SupervisorPasswordPolicy = new ConfigValue("password.policy.supervisor", PasswordPolicies.DEFAULT_POLICY.getPolicyName());
+	
+	
+	/** Default expiration of delivery-tracking */
+	public static final ConfigValue ExpireDeliveryTracking = new ConfigValue("expire.deliverytracking", "30");
 	
 	/** Default expire date (currently 3 years) */
 	public static final ConfigValue DefaultExpireDays = new ConfigValue("expire.default", "1100");
@@ -307,6 +306,8 @@ public class ConfigValue {
 	public static final ConfigValue MailAddress_UploadSupport = new ConfigValue("mailaddress.upload.support");
 	/** Email address to inform of new uploaded files **/
 	public static final ConfigValue MailAddress_UploadDatabase = new ConfigValue("mailaddress.upload.database");
+	/** Email address to inform of new uploaded files **/
+	public static final ConfigValue MailAddress_InfoCleaner = new ConfigValue("mailaddress.info.cleaner");
 
 	/** Sender address **/
 	public static final ConfigValue Mailaddress_Sender = new ConfigValue("mailaddress.sender");
@@ -382,13 +383,11 @@ public class ConfigValue {
 	/** Url of the birt statistic application. "birt.url" must have context "/birt", because of css-definitions in rptdesign-files **/
 	public static final ConfigValue BirtUrl = new ConfigValue("birt.url");
 
-	public static final ConfigValue HostauthenticationCookiesHttpsOnly = new ConfigValue("hostauthentication.cookies.https.only", "true");
-
 	public static final ConfigValue ManualInstallPath = new ConfigValue("manual_install_path", "${HOME}/webapps/manual");
 
 	public static final ConfigValue DBCleaner_Send_Statistics_Mail = new ConfigValue("dbcleaner.send_statistics_mail", "true");
 	public static final ConfigValue CleanMasterCompany = new ConfigValue("clean.mastercompany", "false");
-
+	
 	public static final ConfigValue PushNotificationsEnabled = new ConfigValue("webpush.push_notification");
 	public static final ConfigValue PushNotificationProviderCredentials = new ConfigValue("webpush.provider_credentials");
 	public static final ConfigValue PushNotificationFileSinkBaseDirectory = new ConfigValue("webpush.filesink_basedir");
@@ -494,8 +493,6 @@ public class ConfigValue {
 	public static final ConfigValue UseBindingHistoryForRecipientStatistics = new ConfigValue("UseBindingHistoryForRecipientStatistics", "false");
 
 	public static final ConfigValue CdnImageRedirectLinkBase = new ConfigValue("CdnImageRedirectLinkBase");
-	public static final ConfigValue CdnMediaImageRedirectLinkBase = new ConfigValue("CdnMediaImageRedirectLinkBase");
-	public static final ConfigValue CdnMediaBgImageRedirectLinkBase = new ConfigValue("CdnMediaBgImageRedirectLinkBase");
 	
 	/**
 	 * Maximum overall size of mediapool per company in bytes (1610612736 = 1,5 GB)
@@ -511,9 +508,11 @@ public class ConfigValue {
 	public static final ConfigValue MaximumNumberOfEntriesForColumnDrop = new ConfigValue("recipient.MaximumNumberOfEntriesForColumnDrop", "750000");
 	public static final ConfigValue MaximumNumberOfEntriesForDefaultValueChange = new ConfigValue("recipient.MaximumNumberOfEntriesForDefaultValueChange", "750000");
 	
-	public static final ConfigValue PermissionSystem = new ConfigValue("permission.system", "old");
-
 	public static final ConfigValue UpdateInformationLink = new ConfigValue("UpdateInformationLink", "https://www.agnitas.de");
+	
+	public static final ConfigValue AdvancedHardbounceActivationStatus = new ConfigValue("ahv:is-enabled");
+	
+	public static final ConfigValue OptimzedMailingGenerationStatus = new ConfigValue("omg:is-enabled");
 	
 	/** All config values related to Facebook. */
 	public static final class Facebook {
@@ -524,7 +523,7 @@ public class ConfigValue {
 		public static final ConfigValue FacebookLeadAdsAppSecret = new ConfigValue("facebook.leadads.app.secret");
 	}
 	
-	/** All config  values realted to login tracking. */
+	/** All config  values related to login tracking. */
 	public static final class LoginTracking {
 		/** Maximum number of failed logins (Web UI). */
 		public static final ConfigValue WebuiMaxFailedAttempts = new ConfigValue("loginTracking.webui.maxFails", "10");
@@ -539,6 +538,37 @@ public class ConfigValue {
 		public static final ConfigValue LoginTrackingWebserviceIpBlockTimeSeconds = new ConfigValue("loginTracking.webservices.ipBlockTimeSeconds", "300");
 	}
 	
+	/** All config values related to webservices. */
+	public static final class Webservices {
+
+		public static final ConfigValue WebserviceUsageLog_Expire = new ConfigValue("system.WebserviceUsageLog.Expire", "180");
+		
+		public static final ConfigValue WebserviceDatasourceGroupId = new ConfigValue("webservice.DatasourceGroupId", "6");
+		
+		// TODO This is a temporary config value and will be removed after successful rollout of webservice user permissions
+		public static final ConfigValue WebserviceEnablePermissions = new ConfigValue("webservice.enablePermissions", "false");
+		
+		/** Allow company to use webservice "SendServiceMailing". */
+		public static final ConfigValue WebserviceEnableSendServiceMailing = new ConfigValue("webservice.SendServiceMailing"); // TODO Can be replaced by WS permission
+		
+		/** Bulk size limit for webservices. */
+		public static final ConfigValue WebserviceBulkSizeLimit = new ConfigValue("webservice.bulk_size_limit");
+		
+		/** Bulk data size limit for webservices. */
+		public static final ConfigValue WebserviceBulkDataSizeLimit = new ConfigValue("webservice.bulk_data_size_limit", "0");		// Total size of requested data in bytes, 0: unlimited
+
+		public static final ConfigValue WebservicesUrl = new ConfigValue("webservices.url");
+		
+	}
+	
+	/**
+	 * Collection of config value for development purpose only.
+	 */
+	public static final class Development {
+		// TODO Remove after rollout EMM-7992
+		public static final ConfigValue UseNewBlacklistWildcards = new ConfigValue("development.use_new_blacklist_wildcards", "false");		
+	}
+
 	// Fallback values for backend
 	public static final ConfigValue MailOut_Loglevel = new ConfigValue("mailout.ini.loglevel");
 	public static final ConfigValue MailOut_MailDir = new ConfigValue("mailout.ini.maildir");
@@ -555,123 +585,16 @@ public class ConfigValue {
 	public static final ConfigValue MailOut_EOL = new ConfigValue("mailout.ini.eol");
 	public static final ConfigValue MailOut_Mailer = new ConfigValue("mailout.ini.mailer");
 	public static final ConfigValue MailOut_DirectDir = new ConfigValue("mailout.ini.directdir");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_Loglevel instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_Loglevel = new ConfigValue("mailgun.ini.loglevel");
 
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_MailDir instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_MailDir = new ConfigValue("mailgun.ini.maildir");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_DefaultEncoding instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_DefaultEncoding = new ConfigValue("mailgun.ini.default_encoding");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_DefaultCharset instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_DefaultCharset = new ConfigValue("mailgun.ini.default_charset");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_Blocksize instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_Blocksize = new ConfigValue("mailgun.ini.blocksize");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_MetaDir instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_MetaDir = new ConfigValue("mailgun.ini.metadir");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_Xmlback instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_Xmlback = new ConfigValue("mailgun.ini.xmlback");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_AccountLogfile instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_AccountLogfile = new ConfigValue("mailgun.ini.account_logfile");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_Xmlvalidate instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_Xmlvalidate = new ConfigValue("mailgun.ini.xmlvalidate");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_Domain instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_Domain = new ConfigValue("mailgun.ini.domain");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_Boundary instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_Boundary = new ConfigValue("mailgun.ini.boundary");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_MailLogNumber instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_MailLogNumber = new ConfigValue("mailgun.ini.mail_log_number");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_EOL instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_EOL = new ConfigValue("mailgun.ini.eol");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_Mailer instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_Mailer = new ConfigValue("mailgun.ini.mailer");
-	
-	/**
-	 * Only needed for migration purposes
-	 * @deprecated Use MailOut_DirectDir instead
-	 */
-	@Deprecated
-	public static final ConfigValue MailGun_DirectDir = new ConfigValue("mailgun.ini.directdir");
+	/** How long a result should be available upon job completion in minutes **/
+	public static final ConfigValue ExportSubscriberToFtp_JobsStatusExpireMinutes = new ConfigValue("exportSubscriberToFtp.jobs.statusExpireMinutes", "15");
+	/** FTP client maximum time to wait for a connection in seconds **/
+	public static final ConfigValue ExportSubscriberToFtp_ConnectionTimeoutSeconds = new ConfigValue("exportSubscriberToFtp.connection.timeoutSeconds", "300");
 
 	/**
 	 * This Key allows the DKIM key deactivation in backend for special companies
 	 */
 	public static final ConfigValue DkimGlobalActivation = new ConfigValue("dkim-global-key", "true");
-
-	public static final ConfigValue WebservicesUrl = new ConfigValue("webservices.url");
-
-	/**
-	 * TODO: To be removed after migration for EMM-7052 is done on all systems
-	 */
-	public static final ConfigValue CompanyValuesMigrated = new ConfigValue("CompanyValuesMigrated");
 
 	public static final ConfigValue ExpireStatistics = new ConfigValue("expire.statistics", "1100");
 
@@ -691,6 +614,7 @@ public class ConfigValue {
 
 	public static final ConfigValue LoginIframe_Show = new ConfigValue("login.iframe.show", "true");
 
+	/** Languages for help balloons. This is not the language list for online help / manual, but for GUI help balloons **/
 	public static final ConfigValue OnlineHelpLanguages = new ConfigValue("onlinehelp.languages", "de;en;fr");
 
 	/**
@@ -702,7 +626,6 @@ public class ConfigValue {
 	public static final ConfigValue TriggerDialogMasId = new ConfigValue("triggerdialog.masId");
 	public static final ConfigValue TriggerDialogMasClientId = new ConfigValue("triggerdialog.masClientId");
 	public static final ConfigValue TriggerDialogUrl = new ConfigValue("triggerdialog.url");
-	public static final ConfigValue TriggerDialogUsername = new ConfigValue("triggerdialog.username");
 	public static final ConfigValue TriggerDialogPassword = new ConfigValue("triggerdialog.password");
 	public static final ConfigValue TriggerDialogSsoUrl = new ConfigValue("triggerdialog.ssoUrl");
 	public static final ConfigValue TriggerDialogSsoSharedSecret = new ConfigValue("triggerdialog.ssoSharedSecret");
@@ -712,6 +635,8 @@ public class ConfigValue {
 	public static final ConfigValue TriggerDialogSsoLastname = new ConfigValue("triggerdialog.ssoLastname");
 
 	public static final ConfigValue SsoLoginHeaderType = new ConfigValue("system.SsoLoginHeaderType");
+
+	public static final ConfigValue UseSpringMvcFormController = new ConfigValue("UseSpringMvcFormController", "false");
 
 	private final String name;
 	private final String defaultValue;
@@ -760,4 +685,17 @@ public class ConfigValue {
 		throw new RuntimeException("Unknown config value name: " + name);
 	}
 	
+	@Override
+	public final int hashCode() {
+		return this.name.hashCode();
+	}
+	
+	@Override
+	public final boolean equals(final Object obj) {
+		if(obj instanceof ConfigValue) {
+			return name.equals(((ConfigValue) obj).name);
+		} else {
+			return false;
+		}
+	}
 }

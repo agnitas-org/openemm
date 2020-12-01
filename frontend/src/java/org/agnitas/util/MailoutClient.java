@@ -10,8 +10,6 @@
 
 package	org.agnitas.util;
 
-import java.util.ResourceBundle;
-
 /**
  * MailoutClient
  *
@@ -25,9 +23,11 @@ public class MailoutClient {
 	private static String	hostname = "nfsserver";
 	private static int	portnumber = 8089;
 	private Log		log = null;
+	private Systemconfig	syscfg = null;
 	
 	private void setupLogger (int loglevel) {
 		log = new Log ("mailoutclient", loglevel);
+		syscfg = new Systemconfig ();
 	}
 
 	/**
@@ -54,47 +54,10 @@ public class MailoutClient {
 	 */
 	public void invoke (String command, String option) {
 		String		message = "blank";
-		String		host = null;
-		int		port = -1;
-
-		try {
-			ResourceBundle	rsc;
-			String		portValue;
-
-			rsc = ResourceBundle.getBundle ("emm");
-			if (rsc.containsKey ("system.mailout")) {
-				host = rsc.getString ("system.mailout");
-			} else 	if (rsc.containsKey ("system.mailgun")) {
-				host = rsc.getString ("system.mailgun");
-			} else {
-				host = "nfsserver";
-			}
-			if (rsc.containsKey ("port.mailout")) {
-				portValue = rsc.getString ("port.mailout");
-			} else if (rsc.containsKey ("port.mailgun")) {
-				portValue = rsc.getString ("port.mailgun");
-			} else {
-				portValue = null;
-			}
-			if (portValue != null) {
-				port = Integer.parseInt (portValue);
-				if (port <= 0) {
-					port = -1;
-				}
-			}
-		} catch (java.util.MissingResourceException e) {
-			log.out (Log.DEBUG, "invoke", "No emm resource found, using default " + hostname + ":" + portnumber);
-		} catch (Exception e) {
-			log.out (Log.VERBOSE, "invoke", "Failed parsing resources: " + e.toString ());
-		}
-		if (host == null) {
-			host = hostname;
-		}
-		if (port == -1) {
-			port = portnumber;
-		}
-		log.out (Log.INFO, "invoke", "Connecting to " + host);
+		String		host = syscfg.get ("mailout-server", "openemm".equals (System.getenv ("USER")) ? "localhost" : hostname);
+		int		port = syscfg.get ("mailout-port", portnumber);
 		
+		log.out (Log.INFO, "invoke", "Connecting to " + host + ":" + port);
 		try {
 			message = (String) XMLRPCClient.invoke (host, port, 30 * 1000, "Merger.remote_control", command, option);
 		} catch (Exception e) {

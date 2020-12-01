@@ -16,7 +16,7 @@ package com.agnitas.emm.core.mailing.service;
 public interface MailingStopService {
 
 	/**
-	 * Stops generation / delivery of regular mailings.
+	 * Stops generation / delivery of mailings.
 	 * 
 	 * If mailing is in generation or delivery stage, generation or delivery is paused and can be resumed.
 	 * If mailing is scheduled, but has not reached generation stage, the mailing is aborted and can be
@@ -31,33 +31,35 @@ public interface MailingStopService {
 	 * 
 	 * @throws MailingStopServiceException on errors processing stop request
 	 */
-	public boolean stopRegularMailing(final int companyID, final int mailingID, final boolean includeUnscheduled) throws MailingStopServiceException;
+	public boolean stopMailing(final int companyID, final int mailingID, final boolean includeUnscheduled) throws MailingStopServiceException;
 	
-	public boolean resumeRegularMailing(final int companyID, final int mailingID) throws MailingStopServiceException;
+	public boolean resumeMailing(final int companyID, final int mailingID) throws MailingStopServiceException;
 	
 	public int copyMailingForResume(final int companyID, final int mailingID, final String shortnameOfCopy, final String descriptionOfCopy) throws MailingStopServiceException;
 	
-	/**
-	 * Checks if generation / delivery of regular mailing can be stopped.
-	 * 
-	 * Returns <code>false</code> if mailing is not a regular mailing or regular mailing cannot be stopped.
-	 *   
-	 * @param companyID company ID
-	 * @param mailingID mailing ID
-	 * 
-	 * @return <code>true</code> if mailing is a regular mailing and can be stopped
-	 */
-	public boolean canStopRegularMailing(final int companyID, final int mailingID);
+	public boolean isStopped(final int mailingID);
 	
 	/**
-	 * Checks if generation / delivery of regular mailing can be resumed.
+	 * Checks if generation / delivery of mailing can be stopped.
 	 * 
-	 * Returns <code>false</code> if mailing is not a regular mailing or regular mailing cannot be resumed.
+	 * Returns <code>false</code> if mailing cannot be stopped.
 	 *   
 	 * @param companyID company ID
 	 * @param mailingID mailing ID
 	 * 
-	 * @return <code>true</code> if mailing is a regular mailing and can be resumed
+	 * @return <code>true</code> if mailing can be stopped
 	 */
-	public boolean canResumeRegularMailing(final int companyID, final int mailingID);
+	public boolean canStopMailing(final int companyID, final int mailingID);
+	
+	/**
+	 * Checks if generation / delivery of mailing can be resumed.
+	 * 
+	 * Returns <code>false</code> if mailing cannot be resumed.
+	 *   
+	 * @param companyID company ID
+	 * @param mailingID mailing ID
+	 * 
+	 * @return <code>true</code> if mailing can be resumed
+	 */
+	public boolean canResumeMailing(final int companyID, final int mailingID);
 }

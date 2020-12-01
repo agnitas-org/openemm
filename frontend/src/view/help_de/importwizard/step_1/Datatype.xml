@@ -1,0 +1,32 @@
+<HelpBalloon>
+	<title>Datentyp</title>
+	<content><![CDATA[Der EMM unterstützt gegenwärtig zwei Datenformate für den Import. Sie können entweder CSV-Dateien oder JSON-Dateien importieren.
+
+Bei CSV-Daten können Sie zwischen mehreren Trennzeichen wählen und wahlweise mit oder ohne Texterkennungszeichen importieren.
+Die Kopfzeile enthält die Spaltenbezeichner und jeder Datensatz beginnt in einer neuen Zeile.
+
+Beispiel: Sie importieren zwei Datensätze mit den Spalten EMAIL, FIRSTNAME und LASTNAME, als Trennzeichen wird ein Semikolon verwendet.
+"email";"firstname";"lastname";
+"tester1@example.com";"Testname1";"Testermann1";
+"tester2@example.com";"Testname2";"Testermann2";
+
+Bei JSON-Daten ist darauf zu achten, dass sie als ein JSON-Array von JSON-Objecten angelegt wurden. Der Aufbau ist dabei klar definiert.
+
+Beispiel: Sie importieren zwei Datensätze mit den Spalten EMAIL, FIRSTNAME und LASTNAME
+
+<pre>
+[
+	{
+		"email": "tester1@example.com",
+		"firstname": "Testname1",
+		"lastname": "Testermann1"
+	},
+	{
+		"email": "tester2@example.com",
+		"firstname": "Testname2",
+		"lastname": "Testermann2"
+	}
+]
+</pre>
+]]></content>
+</HelpBalloon>

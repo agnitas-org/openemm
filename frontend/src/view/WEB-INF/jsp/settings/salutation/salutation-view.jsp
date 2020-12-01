@@ -91,16 +91,6 @@
             <emm:ShowByPermission token="recipient.gender.extended">
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label for="recipient-salutation-miss" class="control-label">
-                            GENDER=3 (<bean:message key="recipient.gender.3.short"/>)
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <html:text readonly="${dontEdit}" styleId="recipient-salutation-miss" styleClass="form-control" property="salMiss" />
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="col-sm-4">
                         <label for="recipient-salutation-practice" class="control-label">
                             GENDER=4 (<bean:message key="PracticeShort"/>)
                         </label>

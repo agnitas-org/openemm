@@ -10,8 +10,13 @@
   border-radius: 2px;
 }
 
+body.dark-theme .well {
+  color: $c-dt-secondary-text;
+  border-color: $c-dt-border;
+}
+
 .well.no-border{
-  border-width: 0px;
+  border-width: 0;
 }
 
 // contextual variants

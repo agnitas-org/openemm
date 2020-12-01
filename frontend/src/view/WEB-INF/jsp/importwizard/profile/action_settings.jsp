@@ -1,23 +1,27 @@
 <%@ page language="java"
          import="org.agnitas.beans.Recipient"
          contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page import="org.agnitas.util.importvalues.ImportMode" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 
 <% pageContext.setAttribute("MAILTYPE_TEXT", Recipient.MAILTYPE_TEXT); %>
 <% pageContext.setAttribute("MAILTYPE_HTML", Recipient.MAILTYPE_HTML); %>
 <% pageContext.setAttribute("MAILTYPE_HTML_OFFLINE", Recipient.MAILTYPE_HTML_OFFLINE); %>
+
+<c:set var="importModeUpdateOnly" value="<%= ImportMode.UPDATE%>"/>
 
 <%--@elvariable id="importProfileForm" type="org.agnitas.web.forms.ImportProfileForm"--%>
 <%--@elvariable id="isCustomerIdImportNotAllowed" type="java.lang.Boolean"--%>
 
 <html:hidden property="numberOfRowsChanged"/>
 
-<div class="tile">
+<div class="tile" data-field="toggle-vis">
     <div class="tile-header">
         <a href="#" class="headline" data-toggle-tile="#recipient-import-process-settings">
             <i class="tile-toggle icon icon-angle-up"></i>
@@ -33,13 +37,21 @@
                 </label>
             </div>
             <div class="col-sm-8">
-                <html:select styleId="import_mode_select" styleClass="form-control" property="profile.importMode">
+                <agn:agnSelect styleId="import_mode_select" styleClass="form-control" property="profile.importMode" data-field-vis="">
                     <c:forEach var="importMode" items="${importProfileForm.importModes}">
-                        <html:option value="${importMode.intValue}">
+                        <c:if test="${importMode == importModeUpdateOnly}">
+                            <c:set var="hideAttr" value="#selectMailTypeFormGroup"/>
+                            <c:set var="showAttr" value=""/>
+                        </c:if>
+                        <c:if test="${importMode != importModeUpdateOnly}">
+                            <c:set var="hideAttr" value=""/>
+                            <c:set var="showAttr" value="#selectMailTypeFormGroup"/>
+                        </c:if>
+                        <agn:agnOption value="${importMode.intValue}" data-field-vis-hide="${hideAttr}" data-field-vis-show="${showAttr}">
                             <bean:message key="${importMode.messageKey}"/>
-                        </html:option>
+                        </agn:agnOption>
                     </c:forEach>
-                </html:select>
+                </agn:agnSelect>
             </div>
         </div>
 
@@ -91,6 +103,7 @@
 	            </div>
 	        </div>
         </emm:ShowByPermission>
+        
         <emm:ShowByPermission token="import.mode.duplicates">
 	        <div class="form-group">
 	            <div class="col-sm-4">
@@ -108,7 +121,8 @@
 	            </div>
 	        </div>
 		</emm:ShowByPermission>
-        <div class="form-group">
+		
+        <div class="form-group" id="selectMailTypeFormGroup">
             <div class="col-sm-4">
                 <label class="control-label">
                     <label for="import_mailingtype"><bean:message key="recipient.mailingtype"/></label>
@@ -129,6 +143,26 @@
                 </html:select>
             </div>
         </div>
+        
+        <emm:ShowByPermission token="import.mediatype">
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <label for="import_mediatype"><bean:message key="import.recipient.mediatype"/></label>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/MediaType.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                <html:select styleId="import_mediatype" styleClass="form-control" property="profile.mediatypeCode">
+                	<c:forEach var="mediatype" items="${mediatypes}">
+                        <html:option value="${mediatype.mediaCode}">
+                            <bean:message key="mailing.MediaType.${mediatype.mediaCode}"/>
+                        </html:option>
+                    </c:forEach>
+                </html:select>
+            </div>
+        </div>
+		</emm:ShowByPermission>
 
         <div class="form-group">
             <div class="col-sm-4">

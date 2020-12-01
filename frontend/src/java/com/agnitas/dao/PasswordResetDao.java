@@ -17,9 +17,11 @@ public interface PasswordResetDao {
 
 	public void save(int adminID, String tokenHash, Date validUntil, String remoteAddr);
 
-	public boolean existsPasswordResetTokenHash(String username, String tokenHash);
-
 	public void remove(int adminID);
 
 	public void riseErrorCount(int adminID);
+
+	boolean existsPasswordResetTokenHash(String username, String tokenHash);
+
+	boolean isValidPasswordResetTokenHash(String username, String tokenHash);
 }

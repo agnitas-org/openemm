@@ -103,20 +103,9 @@ public class ComBirtReportImpl implements ComBirtReport {
 	public void calculateSendDate() {
         if (isTriggeredByMailing()) {
             return;
-        } else {
-        	BirtReportType birtReportType = BirtReportType.getTypeByCode(getReportType());
-	        if (birtReportType == BirtReportType.TYPE_MONTHLY_FIRST) {
-	        	nextStart = DateUtilities.calculateNextJobStart(intervalpattern);
-	        } else if (birtReportType == BirtReportType.TYPE_MONTHLY_15TH) {
-	        	nextStart = DateUtilities.calculateNextJobStart(intervalpattern);
-	        } else if (birtReportType == BirtReportType.TYPE_MONTHLY_LAST) {
-	        	nextStart = DateUtilities.calculateNextJobStart(intervalpattern);
-	        } else if (birtReportType == BirtReportType.TYPE_WEEKLY || birtReportType == BirtReportType.TYPE_BIWEEKLY) {
-	        	nextStart = DateUtilities.calculateNextJobStart(intervalpattern);
-	        } else {
-	        	nextStart = DateUtilities.calculateNextJobStart(intervalpattern);
-	        }
         }
+
+        nextStart = DateUtilities.calculateNextJobStart(intervalpattern);
     }
 
     @Override

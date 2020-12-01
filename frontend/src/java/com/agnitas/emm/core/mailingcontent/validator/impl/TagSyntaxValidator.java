@@ -13,14 +13,17 @@ package com.agnitas.emm.core.mailingcontent.validator.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import com.agnitas.beans.ComAdmin;
 import org.agnitas.preview.AgnTagError;
 import org.agnitas.preview.TagSyntaxChecker;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
@@ -30,6 +33,7 @@ import com.agnitas.web.mvc.Popups;
 @Order(3)
 public class TagSyntaxValidator implements DynTagValidator {
     private static final Logger logger = Logger.getLogger(TagSyntaxValidator.class);
+    private static final Pattern TAG_WRONG_SPACES_PATTERN = Pattern.compile("(\\[\\s+agn)|(\\/\\s+\\])");
 
     private TagSyntaxChecker tagSyntaxChecker;
 
@@ -58,6 +62,8 @@ public class TagSyntaxValidator implements DynTagValidator {
 
                     hasNoErrors = false;
                 }
+
+                validateTagSpaces(contentBlock.getContent(), popups);
             }
         } catch (Exception e) {
             String description = String.format("dyn tag id: %d, dyn tag name: %s", dynTagDto.getId(), dynTagDto.getName());
@@ -65,5 +71,18 @@ public class TagSyntaxValidator implements DynTagValidator {
         }
 
         return hasNoErrors;
+    }
+
+    private void validateTagSpaces(String content, Popups popups) {
+        Matcher matcher = TAG_WRONG_SPACES_PATTERN.matcher(content);
+        while (matcher.find()) {
+            String tagName = "";
+            if (StringUtils.equals("[ agn", matcher.group())) {
+                tagName = StringUtils.substring(content, matcher.start(), content.indexOf("]", matcher.start()) + 1);
+            } else if (StringUtils.equals("/ ]", matcher.group())) {
+                tagName = StringUtils.substring(content, content.lastIndexOf("[agn", matcher.end()), matcher.end());
+            }
+            popups.warning("warning.mailing.agntags", tagName);
+        }
     }
 }

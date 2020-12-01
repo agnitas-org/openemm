@@ -25,6 +25,7 @@ import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.exceptions.FormNotFoundException;
 import org.agnitas.util.AgnUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -36,7 +37,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.UserFormDao;
@@ -48,11 +48,13 @@ import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLeve
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
+import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.emm.core.userform.exception.BlacklistedDeviceException;
 import com.agnitas.emm.core.userform.service.UserFormExecutionResult;
 import com.agnitas.emm.core.userform.service.UserFormExecutionService;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
+import com.agnitas.util.LinkUtils;
 
 public final class UserFormExecutionServiceImpl implements UserFormExecutionService, ApplicationContextAware {
 	
@@ -66,7 +68,8 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	private ComCompanyDao companyDao;
 	private ComRecipientDao recipientDao;
 	private MailingContentTypeCache mailingContentTypeCache;
-	
+	private FormTrackableLinkDao trackableLinkDao;
+
 	private ApplicationContext applicationContext;
 
 	@Override
@@ -159,11 +162,17 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 			try {
 				return extensibleUIDService.parse(uidString);
 			} catch (DeprecatedUIDVersionException e) {
-				logger.warn(String.format("Deprecated UID version of UID: %s", uidString), e);
+				if(logger.isInfoEnabled()) {
+					logger.info(String.format("Deprecated UID version of UID: %s", uidString), e);
+				}
 			} catch (UIDParseException e) {
-				logger.warn(String.format("Error parsing UID: %s", uidString), e);
+				if(logger.isInfoEnabled()) {
+					logger.info(String.format("Error parsing UID: %s", uidString), e);
+				}
 			} catch (InvalidUIDException e) {
-				logger.warn(String.format("Invalid UID: %s", uidString), e);
+				if(logger.isInfoEnabled()) {
+					logger.info(String.format("Invalid UID: %s", uidString), e);
+				}
 			}
 		}
 		return null;
@@ -177,7 +186,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		return uidString;
 	}
 
-	private final void logFormAccess(final UserForm userForm, final ComExtensibleUID uid, String remoteAddress, final int deviceID, final DeviceClass deviceClass, final int clientID) throws Exception {
+	private void logFormAccess(final UserForm userForm, final ComExtensibleUID uid, String remoteAddress, final int deviceID, final DeviceClass deviceClass, final int clientID) throws Exception {
 		Integer mailingIdInt = null;
 		Integer customerIdInt = null;
 		
@@ -192,7 +201,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 
 		// only count statistics if form exists
 		if (deviceID != ComDeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
-			final ComTrackableUserFormLink formStatisticsDummyLink = userFormDao.getDummyUserFormTrackableLinkForStatisticCount(userForm.getCompanyID(), userForm.getId());
+			final ComTrackableUserFormLink formStatisticsDummyLink = trackableLinkDao.getDummyUserFormTrackableLinkForStatisticCount(userForm.getCompanyID(), userForm.getId());
 			if (formStatisticsDummyLink != null) {
 				if (uid != null) {
 					final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, configService, mailingContentTypeCache);
@@ -201,12 +210,12 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 						remoteAddress = null;
 					}
 				}
-				userFormDao.logUserFormCallInDB(userForm.getCompanyID(), userForm.getId(), formStatisticsDummyLink.getId(), mailingIdInt, customerIdInt, remoteAddress, deviceClass, deviceID, clientID);
+				trackableLinkDao.logUserFormCallInDB(userForm.getCompanyID(), userForm.getId(), formStatisticsDummyLink.getId(), mailingIdInt, customerIdInt, remoteAddress, deviceClass, deviceID, clientID);
 			}
 		}
 	}
 	
-	private final UserForm loadUserForm(final String formName, final int companyID) throws Exception {
+	private UserForm loadUserForm(final String formName, final int companyID) throws Exception {
 		final UserForm userForm = userFormDao.getUserFormByName(formName, companyID);
 
 		// Show "form not found" page if form is actually not found or if it's inactive.
@@ -217,7 +226,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		return userForm;
 	}
 	
-	private final void populateRequestParametersAsVelocityParameters(final HttpServletRequest request, final CaseInsensitiveMap<String, Object> params) {
+	private void populateRequestParametersAsVelocityParameters(final HttpServletRequest request, final CaseInsensitiveMap<String, Object> params) {
 		params.put("requestParameters", AgnUtils.getReqParameters(request));
 		params.put("_request", request);
 
@@ -226,13 +235,13 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		}
 	}
 	
-	private final void populateMobileDeviceParametersAsVelocityParameters(final int mobileID, final CaseInsensitiveMap<String, Object> params, final HttpServletRequest request) {
+	private void populateMobileDeviceParametersAsVelocityParameters(final int mobileID, final CaseInsensitiveMap<String, Object> params, final HttpServletRequest request) {
 		params.put("mobileDevice", String.valueOf(mobileID));
 		// just to be sure
 		request.setAttribute("mobileDevice", String.valueOf(mobileID));
 	}
 	
-	private final UserFormExecutionResult doExecuteForm(final UserForm userForm, final EmmActionOperationErrors actionOperationErrors, final CaseInsensitiveMap<String, Object> params, final HttpServletRequest request) throws Exception {
+	private UserFormExecutionResult doExecuteForm(final UserForm userForm, final EmmActionOperationErrors actionOperationErrors, final CaseInsensitiveMap<String, Object> params, final HttpServletRequest request) throws Exception {
 		String responseContent = userForm.evaluateForm(applicationContext, params, actionOperationErrors);
 		String responseMimeType = determineSuccessResponseMimeType(userForm, params);
 
@@ -249,7 +258,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		return new UserFormExecutionResult(responseContent, responseMimeType);
 	}
 	
-	private final String determineSuccessResponseMimeType(final UserForm userForm, final CaseInsensitiveMap<String, Object> params) {
+	private String determineSuccessResponseMimeType(final UserForm userForm, final CaseInsensitiveMap<String, Object> params) {
 		final String formMimeType = (String)params.get(FORM_MIMETYPE_PARAM_NAME);
 	
 		
@@ -267,7 +276,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	 */
 	protected String addRedirectLinks(String content, String uidString, UserForm userForm) throws Exception {
 		// create the redirect link for each trackable link or use extensions on direct link
-		Map<String, ComTrackableUserFormLink> trackableLinks = userFormDao.getUserFormTrackableLinks(userForm.getId(), userForm.getCompanyID());
+		Map<String, ComTrackableUserFormLink> trackableLinks = trackableLinkDao.getUserFormTrackableLinks(userForm.getId(), userForm.getCompanyID());
 		for (ComTrackableUserFormLink link : trackableLinks.values()) {
 			String replaceFromString = "href=\"" + link.getFullUrl() + "\"";
 
@@ -279,7 +288,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 				}
 				rdirLinkString += "\"";
 				content = content.replace(replaceFromString, rdirLinkString);
-			} else if (link.getProperties() != null && link.getProperties().size() > 0) {
+			} else if (CollectionUtils.size(link.getProperties()) > 0) {
 				// Use link extensions for direct link
 				content = content.replace(replaceFromString, "href=\"" + createDirectLinkWithOptionalExtensions(uidString, link) + "\"");
 			}
@@ -288,13 +297,13 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		return content;
 	}
 	
-	private String createDirectLinkWithOptionalExtensions(String uidString, ComTrackableUserFormLink comTrackableUserFormLink) throws UIDParseException, InvalidUIDException, DeprecatedUIDVersionException, UnsupportedEncodingException {
+	private String createDirectLinkWithOptionalExtensions(String uidString, ComTrackableUserFormLink comTrackableUserFormLink) throws UnsupportedEncodingException {
 		String linkString = comTrackableUserFormLink.getFullUrl();
 		CaseInsensitiveMap<String, Object> cachedRecipientData = null;
 		for (LinkProperty linkProperty : comTrackableUserFormLink.getProperties()) {
-			if (linkProperty.getPropertyType() == PropertyType.LinkExtension) {
+			if (LinkUtils.isExtension(linkProperty)) {
 				String propertyValue = linkProperty.getPropertyValue();
-				if (propertyValue != null && propertyValue.contains("##")) {
+				if (StringUtils.contains(propertyValue, "##")) {
 					if (cachedRecipientData == null && StringUtils.isNotBlank(uidString)) {
 						final ComExtensibleUID uid = decodeUidString(uidString);
 						cachedRecipientData = recipientDao.getCustomerDataFromDb(uid.getCompanyID(), uid.getCustomerID());
@@ -306,7 +315,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 					propertyValue = replacedPropertyValue;
 				}
 				// Extend link properly (watch out for html-anchors etc.)
-				linkString = AgnUtils.addUrlParameter(linkString, linkProperty.getPropertyName(), propertyValue == null ? "" : propertyValue, "UTF-8");
+				linkString = AgnUtils.addUrlParameter(linkString, linkProperty.getPropertyName(), StringUtils.defaultString(propertyValue), "UTF-8");
 			}
 		}
 		return linkString;
@@ -317,9 +326,8 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	 * 
 	 * @param params a map containing the form values.
 	 * @return true==success false==error
-	 * @throws Exception
 	 */
-	protected boolean evaluateFormEndAction(HttpServletRequest request, UserForm userForm, Map<String, Object> params, final EmmActionOperationErrors errors) throws Exception {
+	protected boolean evaluateFormEndAction(HttpServletRequest request, UserForm userForm, Map<String, Object> params, final EmmActionOperationErrors errors) {
 		if (userForm == null || userForm.getEndActionID() == 0) {
 			return false;
 		}
@@ -330,12 +338,12 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	/**
 	 * For user form that requires error handling adds the error messages (including velocity errors) to response context.
 	 *
+	 * @param userForm
 	 * @param params
 	 * @param responseContent html content to be sent in response (could be changed inside the method).
 	 * @return responseContent
-	 * @throws Exception
 	 */
-	protected String handleEndActionErrors(UserForm userForm, CaseInsensitiveMap<String, Object> params, String responseContent) throws Exception {
+	protected String handleEndActionErrors(UserForm userForm, CaseInsensitiveMap<String, Object> params, String responseContent) {
 		if (userForm != null && userForm.isSuccessUseUrl()) {
 			// no error handling, return original content
 			return responseContent;
@@ -402,5 +410,10 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	@Required
 	public void setMailingContentTypeCache(MailingContentTypeCache mailingContentTypeCache) {
 		this.mailingContentTypeCache = mailingContentTypeCache;
+	}
+
+	@Required
+	public void setTrackableLinkDao(FormTrackableLinkDao trackableLinkDao) {
+		this.trackableLinkDao = trackableLinkDao;
 	}
 }

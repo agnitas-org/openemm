@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Änderung im Datumsfeld</title>
+	<content><![CDATA[Es werden alle Datens&auml;tze exportiert, f&uuml;r die das Datum im gew&auml;hlten Feld in den definierten Zeitraum f&auml;llt. Um den aktuellen Tag als Grenze zu verwenden, wird "0" eingegeben.]]></content>
+</HelpBalloon>

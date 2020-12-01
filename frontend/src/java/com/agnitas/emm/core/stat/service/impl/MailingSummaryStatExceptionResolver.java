@@ -10,12 +10,11 @@
 
 package com.agnitas.emm.core.stat.service.impl;
 
-import org.agnitas.emm.springws.exceptionresolver.CommonExceptionResolver;
+import org.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 
 
-public class MailingSummaryStatExceptionResolver extends
-		CommonExceptionResolver {
+public class MailingSummaryStatExceptionResolver extends AbstractEmmExceptionResolver {
 
 	@Override
 	protected SoapFaultDefinition getFaultDefinition(Object endpoint,

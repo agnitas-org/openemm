@@ -14,8 +14,8 @@ package org.agnitas.util.importvalues;
  * Values for checkForDuplicates property of import profile
  */
 public enum CheckForDuplicates {
-	COMPLETE(1, "import.doublechecking.full"),
-	NO_CHECK(2, "import.doublechecking.none");
+	COMPLETE(1, "default.Yes"),
+	NO_CHECK(2, "default.No");
 
 	/**
 	 * int value for db storage

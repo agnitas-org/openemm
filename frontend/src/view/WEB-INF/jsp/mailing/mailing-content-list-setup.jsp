@@ -7,6 +7,7 @@
 
 <%--@elvariable id="mailingContentForm" type="com.agnitas.web.ComMailingContentForm"--%>
 <%--@elvariable id="limitedRecipientOverview" type="java.lang.Boolean"--%>
+<%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 
 <c:set var="ACTION_LIST" value="<%= MailingBaseAction.ACTION_LIST %>" />
 <c:set var="ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>" />
@@ -95,6 +96,9 @@
             </c:when>
             <c:otherwise>
                 <c:choose>
+				    <c:when test="${isPostMailing}">
+						<c:set var="agnNavigationKey" value="mailingView_post" scope="request" />
+					</c:when>
                     <c:when test="${limitedRecipientOverview}">
                         <c:set var="agnNavigationKey" 		value="mailingView_DisabledMailinglist"     scope="request" />
                     </c:when>
@@ -137,7 +141,7 @@
         <jsp:param name="isMailingUndoAvailable" value="${mailingContentForm.isMailingUndoAvailable}"/>
     </jsp:include>
 
-    <c:if test="${mailingContentForm.mailingID ne 0}">
+    <c:if test="${mailingContentForm.mailingID ne 0 and not isPostMailing}">
         <%-- View dropdown --%>
 
         <emm:instantiate var="element" type="java.util.LinkedHashMap">

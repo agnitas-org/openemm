@@ -16,7 +16,9 @@ import java.util.Locale;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
 import org.agnitas.emm.springws.security.authorities.EndpointAuthority;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.ws.context.MessageContext;
+import org.springframework.ws.server.endpoint.MethodEndpoint;
 import org.springframework.ws.soap.SoapBody;
 import org.springframework.ws.soap.SoapHeaderElement;
 import org.springframework.ws.soap.SoapMessage;
@@ -36,10 +38,16 @@ public final class PermissionCheckingEndpointInterceptor implements SoapEndpoint
 
 	@Override
 	public final boolean handleRequest(final MessageContext messageContext, final Object endpoint) throws Exception {
-		final Class<?> endpointClass = endpoint.getClass();
-		final String endpointName = endpointNameFromClass(endpointClass);
+		final String endpointName;
+		if (endpoint instanceof MethodEndpoint) {
+			// Make first letter uppercase
+			endpointName = StringUtils.capitalize(((MethodEndpoint) endpoint).getMethod().getName());
+		} else {
+			final Class<?> endpointClass = endpoint. getClass();
+			endpointName = endpointNameFromClass(endpointClass);
+		}
 		
-		if(Utils.isAuthorityGranted(new EndpointAuthority(endpointName)) || Utils.isAuthorityGranted(AllEndpointsAuthority.INSTANCE)) {
+		if (Utils.isAuthorityGranted(new EndpointAuthority(endpointName)) || Utils.isAuthorityGranted(AllEndpointsAuthority.INSTANCE)) {
 			return true;
 		} else {
             final SoapBody response = ((SoapMessage) messageContext.getResponse()).getSoapBody();

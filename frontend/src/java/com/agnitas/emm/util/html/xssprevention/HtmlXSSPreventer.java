@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import au.id.jericho.lib.html.Attribute;
 import au.id.jericho.lib.html.Attributes;
 import au.id.jericho.lib.html.EndTag;
+import au.id.jericho.lib.html.HTMLElements;
 import au.id.jericho.lib.html.Source;
 import au.id.jericho.lib.html.StartTag;
 import au.id.jericho.lib.html.Tag;
@@ -33,8 +34,11 @@ public final class HtmlXSSPreventer {
 	 * IMPORTANT: Keep this class stateless!!!
 	 */
 	
-    public static final String[] ALLOWED_HTML_TAGS = { "u", "i", "b", "sup", "sub", "strong", "em" };
-    
+    private static final String[] ALLOWED_HTML_TAGS = { "u", "i", "b", "sup", "sub", "strong", "em" };
+
+    @SuppressWarnings("unchecked")
+	private static final Set<String> END_TAG_REQUIRED_ELEMENTS = HTMLElements.getEndTagRequiredElementNames();
+
     public static void checkString(final String string) throws XSSHtmlException {
 		checkString(string, ALLOWED_HTML_TAGS);
 	}
@@ -113,9 +117,11 @@ public final class HtmlXSSPreventer {
 	
 	// -------------------------------------------------------------------------------------------------------- Checks related to start and end tags
 	private static void checkUnclosedTags(final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
-		if(!openedTags.isEmpty()) {
-			for(final String tagName : openedTags) {
-				errors.add(new UnclosedTagError(tagName));
+		if (!openedTags.isEmpty()) {
+			for (final String tagName : openedTags) {
+				if (END_TAG_REQUIRED_ELEMENTS.contains(tagName.toLowerCase())) {
+					errors.add(new UnclosedTagError(tagName));
+				}
 			}
 		}
 	}

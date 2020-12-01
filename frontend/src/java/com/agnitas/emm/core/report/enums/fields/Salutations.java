@@ -20,7 +20,6 @@ public enum Salutations implements DatabaseField<Integer, Salutations> {
     MISTER(0, "Mr.", "recipient.gender.0.short"),
     MISSUS(1, "Mrs.", "recipient.gender.1.short"),
     UNKNOWN(2, "Unknown", "recipient.gender.2.short"),
-    MISS(3, "Miss", "recipient.gender.3.short"),
     PRACTICE(4, "Practice", "recipient.gender.4.short"),
     COMPANY(5, "Company", "recipient.gender.5.short");
 

@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page import="org.agnitas.util.importvalues.ImportMode" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
@@ -8,7 +9,7 @@
 
 <c:set var="isMailingListSelectionEditable" value="${importProfileForm.profile.actionForNewRecipients eq 0}"/>
 
-<div id="recipient-autoimport-mailinglists-tile" class="tile">
+<div id="recipient-autoimport-mailinglists-tile" class="tile" data-hide-by-select="#import_mode_select" data-hide-by-select-values="<%= ImportMode.TO_BLACKLIST.getIntValue() %>">
     <div class="tile-header">
         <a href="#" class="headline" data-toggle-tile="#tile-recipient-autoimport-mailinglists">
             <i class="tile-toggle icon icon-angle-up"></i>

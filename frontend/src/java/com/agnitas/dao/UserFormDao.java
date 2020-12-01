@@ -12,31 +12,32 @@ package com.agnitas.dao;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.userform.service.UserFormFilter;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 
-import com.agnitas.beans.LinkProperty;
+import com.agnitas.emm.core.commons.ActivenessStatus;
 import com.agnitas.userform.bean.UserForm;
-import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 
 /**
  * interface for user form functions
  */
 public interface UserFormDao {
+
     /**
      * Saves or updates userForm.
      *
      * @param form
      *          The userForm that should be saved.
      * @return Saved userForm id.
-     * @throws Exception 
+     * @throws Exception
      */
     int storeUserForm(UserForm form) throws Exception;
+    
+	int createUserForm(@VelocityCheck int companyId, UserForm userForm);
+	
+	void updateUserForm(@VelocityCheck int companyId, UserForm form);
 
 	int updateActiveness(@VelocityCheck int companyId, Collection<Integer> formIds, boolean isActive);
 
@@ -79,62 +80,17 @@ public interface UserFormDao {
 	 * Ids and shortnames of all {@link UserForm} which uses action
 	 */
 	List<Tuple<Integer, String>> getUserFormNamesByActionID(int companyID, int actionID);
+	
+	List<Tuple<Integer, String>> getImportNamesByActionID(int companyID, int actionID);
 
-    UserForm getUserForm(int formID, @VelocityCheck int companyID) throws Exception;
+	UserForm getUserForm(int formID, @VelocityCheck int companyID);
 
 	UserForm getUserFormByName(String name, @VelocityCheck int companyID) throws Exception;
 
 	String getUserFormName(int formId, @VelocityCheck int companyId);
 
-	Map<String, ComTrackableUserFormLink> getUserFormTrackableLinks(int formID, @VelocityCheck int companyID);
-	
-    /**
-     * Deletes a trackable link.
-     *
-     * @return true==success
-     *         false==error
-     */
-	boolean deleteUserFormTrackableLink(int linkID, @VelocityCheck int companyID);
-
-    /**
-     * Getter for property trackableLink by link id and company id.
-     * @param linkID - id of the link
-     */
-    ComTrackableUserFormLink getUserFormTrackableLink(int linkID) throws Exception;
-
-   /**
-    * Saves a trackableLink.
-    * @param link - id of link
-    */
-    int storeUserFormTrackableLink(ComTrackableUserFormLink link);
-
-	/**
-	 * Logs a click for trackable link in rdir_log_userform_tbl
-	 *
-	 * @param link the link which was clicked.
-	 * @param customerID the id of the recipient who clicked the link.
-	 * @param remoteAddr the ip address of the recipient. 
-	 * @return True on success.
-	 */
-	boolean logUserFormTrackableLinkClickInDB(ComTrackableUserFormLink link, Integer customerID, Integer mailingID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
-	
-	boolean logUserFormCallInDB(@VelocityCheck int companyID, int formID, int linkID, Integer mailingID, Integer customerID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
-	
-	List<LinkProperty> getUserFormTrackableLinkProperties(ComTrackableUserFormLink link);
-
-	void deleteUserFormTrackableLinkProperties(int linkID);
-
-	void storeUserFormTrackableLinkProperties(ComTrackableUserFormLink link);
-	
-	ComTrackableUserFormLink getDummyUserFormTrackableLinkForStatisticCount(@VelocityCheck int companyID, int formID) throws Exception;
-
-	/**
-	 * The same as {@link UserFormDao#getUserForms(int)} but also
-	 * fills {@link UserForm#getStartActionID()} and {@link UserForm#getEndActionID()}
-	 */
-	PaginatedListImpl<UserForm> getUserFormsWithActionIDs(String sortColumn, String sortDirection, int pageNumber,
-														  int pageSize, Boolean activenessFilter, @VelocityCheck int companyID);
-	
 	PaginatedListImpl<UserForm> getUserFormsWithActionIdsNew(String sortColumn, String sortDirection, int pageNumber,
-			int pageSize, UserFormFilter filter, @VelocityCheck int companyID);
+															 int pageSize, ActivenessStatus filter, @VelocityCheck int companyID);
+	
+	boolean existsUserForm(@VelocityCheck int copmanyId, int userFormId);
 }

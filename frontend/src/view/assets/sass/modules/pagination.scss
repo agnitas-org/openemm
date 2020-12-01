@@ -172,6 +172,51 @@ parent: pagination
   }
 }
 
+body.dark-theme .pagination {
+  > li {
+    > a,
+    > span {
+      color: $c-dt-pagination-text;
+      background-color: $c-dt-pagination-background;
+      border-color: $c-dt-pagination-border;
+    }
+  }
+
+  > li > a,
+  > li > span {
+    &:hover,
+    &:focus {
+      color: $c-dt-pagination-text;
+      background-color: $c-dt-pagination-active-background;
+      border-color: $c-dt-pagination-active-border;
+    }
+  }
+
+  > .active > a,
+  > .active > span {
+    &,
+    &:hover,
+    &:focus {
+      color: $c-dt-pagination-text;
+      background-color: $c-dt-pagination-active-background;
+      border-color: $c-dt-pagination-active-border;
+    }
+  }
+
+  > .disabled {
+    > span,
+    > span:hover,
+    > span:focus,
+    > a,
+    > a:hover,
+    > a:focus {
+      color: $c-dt-pagination-disabled-text;
+      background-color: $c-dt-pagination-disabled-background;
+      border-color: $c-dt-pagination-border;
+    }
+  }
+}
+
 // Sizing
 // --------------------------------------------------
 // pagination-size($padding-vertical, $padding-horizontal, $font-size, $border-radius)

@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.agnitas.actions.EmmAction;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationParameters;
@@ -53,15 +55,10 @@ public class EmmActionImpl implements EmmAction {
     protected int type;
     
     /**
-     * Number of forms , which use this Action
-     */
-    private int used;
-
-    /**
      * Names of forms , which use this Action
      */
-    protected String formNames;
-    
+    protected List<String> formNameList = new ArrayList<>();
+
     protected Timestamp changeDate;
     
     protected Timestamp creationDate;
@@ -183,25 +180,25 @@ public class EmmActionImpl implements EmmAction {
 
     @Override
 	public int getUsed() {
-		return used;
-	}
-
-    @Override
-	public void setUsed(int used) {
-		this.used = used;
+		return CollectionUtils.size(formNameList);
 	}
 
     @Override
     public String getFormNames() {
-        return formNames;
+        return StringUtils.join(formNameList, "; ");
     }
 
     @Override
-    public void setFormNames(String formNames) {
-        this.formNames = formNames;
+    public List<String> getFormNameList() {
+        return formNameList;
     }
 
-	@Override
+    @Override
+    public void setFormNameList(List<String> formNameList) {
+        this.formNameList = formNameList;
+    }
+
+    @Override
 	public Timestamp getChangeDate() {
 		return changeDate;
 	}

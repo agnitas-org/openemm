@@ -29,8 +29,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.dao.FormComponent;
-import com.agnitas.dao.FormComponent.FormComponentType;
+import com.agnitas.beans.FormComponent;
+import com.agnitas.beans.FormComponent.FormComponentType;
 
 /**
  * This servlet loads and shows a image from the form_component_tbl.
@@ -156,7 +156,7 @@ public class ShowFormImageServlet extends HttpServlet {
 			}
 
 			// check for noCaching
-			boolean thumbnail = uriParts.length >= 4 && "thb".equalsIgnoreCase(uriParts[uriParts.length - 4]) || uriParts.length >= 5 && "nc".equalsIgnoreCase(uriParts[uriParts.length - 5]);
+			boolean thumbnail = uriParts.length >= 4 && "thb".equalsIgnoreCase(uriParts[uriParts.length - 4]) || uriParts.length >= 5 && "thb".equalsIgnoreCase(uriParts[uriParts.length - 5]);
 			
 			// check for noCaching
 			boolean noCache = uriParts.length >= 4 && "nc".equalsIgnoreCase(uriParts[uriParts.length - 4]) || uriParts.length >= 5 && "nc".equalsIgnoreCase(uriParts[uriParts.length - 5]);
@@ -278,84 +278,5 @@ public class ShowFormImageServlet extends HttpServlet {
 		
 		/** The mimeType. */
 		public String mimeType;
-	}
-	
-	/**
-	 * Gets the form image link.
-	 *
-	 * @param rdirDomain the rdir domain
-	 * @param licenseID the license id
-	 * @param companyID the company id
-	 * @param formID the form id
-	 * @param name the name
-	 * @param noCaching the no caching
-	 * @return the form image link
-	 */
-	public static String getFormImageLink(String rdirDomain, int licenseID, int companyID, int formID, String name, boolean noCaching) {
-		StringBuilder urlStringBuilder = new StringBuilder(rdirDomain);
-		urlStringBuilder.append("/formImage/");
-		
-		if (noCaching) {
-			urlStringBuilder.append("nc/");
-		}
-		
-		urlStringBuilder.append(licenseID);
-		urlStringBuilder.append("/");
-		urlStringBuilder.append(companyID);
-		urlStringBuilder.append("/");
-		urlStringBuilder.append(formID);
-		urlStringBuilder.append("/");
-		urlStringBuilder.append(name);
-		
-		return urlStringBuilder.toString();
-	}
-	
-	/**
-	 * Gets the form image link.
-	 *
-	 * @param rdirDomain the rdir domain
-	 * @param companyID the company id
-	 * @param formID the form id
-	 * @param name the name
-	 * @param noCaching the no caching
-	 * @return the form image link
-	 */
-	public static String getFormImageLink(String rdirDomain, int companyID, int formID, String name, boolean noCaching) {
-		StringBuilder urlStringBuilder = new StringBuilder(rdirDomain);
-		urlStringBuilder.append("/formImage/");
-		
-		if (noCaching) {
-			urlStringBuilder.append("nc/");
-		}
-		
-		urlStringBuilder.append(companyID);
-		urlStringBuilder.append("/");
-		urlStringBuilder.append(formID);
-		urlStringBuilder.append("/");
-		urlStringBuilder.append(name);
-		
-		return urlStringBuilder.toString();
-	}
-	
-	/**
-	 * Gets the form image thumbnail link.
-	 *
-	 * @param rdirDomain the rdir domain
-	 * @param companyID the company id
-	 * @param formID the form id
-	 * @param name the name
-	 * @return the form image link
-	 */
-	public static String getFormImageThumbnailLink(String rdirDomain, int companyID, int formID, String name) {
-		StringBuilder urlStringBuilder = new StringBuilder(rdirDomain);
-		urlStringBuilder.append("/formImage/");
-		urlStringBuilder.append("thb/");
-		urlStringBuilder.append(companyID);
-		urlStringBuilder.append("/");
-		urlStringBuilder.append(formID);
-		urlStringBuilder.append("/");
-		urlStringBuilder.append(name);
-		
-		return urlStringBuilder.toString();
 	}
 }

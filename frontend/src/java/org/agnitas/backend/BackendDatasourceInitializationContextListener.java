@@ -23,7 +23,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
  * This context listener instantiates the backend datsource
  */
 public class BackendDatasourceInitializationContextListener implements ServletContextListener {
-	private static final transient Logger logger = Logger.getLogger( BackendDatasourceInitializationContextListener.class);
+	private static final transient Logger logger = Logger.getLogger(BackendDatasourceInitializationContextListener.class);
 
 	@Override
 	public void contextInitialized(ServletContextEvent event) {
@@ -38,7 +38,7 @@ public class BackendDatasourceInitializationContextListener implements ServletCo
 			logger.error("Cannot set Datasource in DBase for Backend. Backend will try to create its own datasource from emm.properties data", e);
 		}
 	}
-	
+
 	@Override
 	public void contextDestroyed(ServletContextEvent arg0) {
 		// nothing to do

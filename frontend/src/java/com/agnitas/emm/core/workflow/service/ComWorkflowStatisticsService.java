@@ -26,8 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetOperator;
+import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.SafeString;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -126,16 +125,14 @@ public class ComWorkflowStatisticsService {
 		}
 
 		String operator = "";
-		for (TargetOperator targetOperator : TargetNode.ALL_OPERATORS) {
+		for (ConditionalOperator targetOperator : ConditionalOperator.values()) {
 			if (targetOperator.getOperatorCode() == startIcon.getDateFieldOperator()) {
-				operator = targetOperator.getOperatorSymbol();
+				operator = targetOperator.getEqlSymbol();
 			}
 		}
 
-		List<Integer> recipients = recipientDao.getDateMatchingRecipients(companyId, allDates, startIcon.getDateProfileField(),
+		return recipientDao.getDateMatchingRecipients(companyId, allDates, startIcon.getDateProfileField(),
 				operator, startIcon.getDateFieldValue(), startIcon.getDateFormat());
-
-		return recipients;
 	}
 
 	private void generateParametersStatistics(int companyId, int workflowID, WorkflowGraph workflowGraph) {

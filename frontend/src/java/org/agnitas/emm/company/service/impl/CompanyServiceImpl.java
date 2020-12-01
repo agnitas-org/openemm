@@ -47,13 +47,13 @@ public final class CompanyServiceImpl implements CompanyService {
 	}
 
 	@Override
-	public List<CompanyEntry> getActiveCompanyEntries() {
-		return companyDao.getActiveCompaniesLight();
+	public List<CompanyEntry> getActiveCompanyEntries(boolean allowTransitionStatus) {
+		return companyDao.getActiveCompaniesLight(allowTransitionStatus);
 	}
 	
 	@Override
-	public List<CompanyEntry> getActiveOwnCompanyEntries(@VelocityCheck int companyId) {
-		return companyDao.getActiveOwnCompaniesLight(companyId);
+	public List<CompanyEntry> getActiveOwnCompanyEntries(@VelocityCheck int companyId, boolean allowTransitionStatus) {
+		return companyDao.getActiveOwnCompaniesLight(companyId, allowTransitionStatus);
 	}
 
 	@Override

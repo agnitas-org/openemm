@@ -10,27 +10,31 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddMailingFromTemplateRequest;
 import org.agnitas.emm.springws.jaxb.AddMailingFromTemplateResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 
-public class AddMailingFromTemplateEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class AddMailingFromTemplateEndpoint extends BaseEndpoint {
 
-	@Resource
 	private MailingService mailingService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		AddMailingFromTemplateRequest request = (AddMailingFromTemplateRequest) arg0;
+	public AddMailingFromTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddMailingFromTemplateRequest")
+	public @ResponsePayload AddMailingFromTemplateResponse addMailingFromTemplate(@RequestPayload AddMailingFromTemplateRequest request) {
+		AddMailingFromTemplateResponse response = new AddMailingFromTemplateResponse();
 
 		MailingModel model = new MailingModel();
 		model.setCompanyId(Utils.getUserCompany());
@@ -39,9 +43,7 @@ public class AddMailingFromTemplateEndpoint extends AbstractMarshallingPayloadEn
 		model.setDescription(request.getDescription());
 		model.setAutoUpdate(request.isAutoUpdate());
 
-		AddMailingFromTemplateResponse response = objectFactory.createAddMailingFromTemplateResponse();
 		response.setMailingID(mailingService.addMailingFromTemplate(model));
 		return response;
 	}
-
 }

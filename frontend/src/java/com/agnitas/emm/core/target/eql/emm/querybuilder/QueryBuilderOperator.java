@@ -11,18 +11,17 @@
 package com.agnitas.emm.core.target.eql.emm.querybuilder;
 
 import com.agnitas.emm.core.target.eql.ast.BinaryOperatorExpressionalEqlNode;
-import com.agnitas.emm.core.target.eql.ast.BinaryOperatorRelationalEqlNode;
-import com.agnitas.emm.core.target.eql.ast.BinaryOperatorRelationalEqlNode.InfixOperator;
+import com.agnitas.emm.core.target.eql.ast.RelationalInfixOperator;
 import com.agnitas.emm.core.target.eql.ast.PrefixRelationalOperator;
 import com.agnitas.emm.core.target.eql.codegen.DataType;
 
 public enum QueryBuilderOperator {
-	EQ("equal", 						BinaryOperatorRelationalEqlNode.InfixOperator.EQ,		true,	true,	true),
-	NEQ("not_equal", 					BinaryOperatorRelationalEqlNode.InfixOperator.NEQ,		true,	true,	true),
-	LT("less", 							BinaryOperatorRelationalEqlNode.InfixOperator.LT,		true,	true,	false),
-	LEQ("less_or_equal",	 			BinaryOperatorRelationalEqlNode.InfixOperator.LEQ,		true,	true,	false),
-	GT("greater", 						BinaryOperatorRelationalEqlNode.InfixOperator.GT,		true,	true,	false),
-	GEQ("greater_or_equal",	 			BinaryOperatorRelationalEqlNode.InfixOperator.GEQ,		true,	true,	false),
+	EQ("equal", 						RelationalInfixOperator.EQ,		true,	true,	true),
+	NEQ("not_equal", 					RelationalInfixOperator.NEQ,		true,	true,	true),
+	LT("less", 							RelationalInfixOperator.LT,		true,	true,	false),
+	LEQ("less_or_equal",	 			RelationalInfixOperator.LEQ,		true,	true,	false),
+	GT("greater", 						RelationalInfixOperator.GT,		true,	true,	false),
+	GEQ("greater_or_equal",	 			RelationalInfixOperator.GEQ,		true,	true,	false),
 	EMPTY("is_empty",	 				null,													true,	true,	true),
 	NOT_EMPTY("is_not_empty",	 		null,													true,	true,	true),
 	MOD("mod",	 	            		BinaryOperatorExpressionalEqlNode.InfixOperator.MOD, 	true,	false,	false),
@@ -32,8 +31,8 @@ public enum QueryBuilderOperator {
 	NOT_CONTAINS("not_contains",		PrefixRelationalOperator.CONTAINS,						false,	true,	false),
 	STARTS_WITH("begins_with",			PrefixRelationalOperator.STARTS_WITH,					false,	true,	false),
 	NOT_STARTS_WITH("not_begins_with",	PrefixRelationalOperator.STARTS_WITH,					false,	true,	false),
-	BEFORE("before",					BinaryOperatorRelationalEqlNode.InfixOperator.LT,		false,	false,	true),
-	AFTER("after",						BinaryOperatorRelationalEqlNode.InfixOperator.GT,		false,	false,	true);
+	BEFORE("before",					RelationalInfixOperator.LT,		false,	false,	true),
+	AFTER("after",						RelationalInfixOperator.GT,		false,	false,	true);
 
 	private final String queryBuilderName;
 	private final Object eqlOperator;
@@ -81,7 +80,7 @@ public enum QueryBuilderOperator {
 		return null;
 	}
 
-	public static final QueryBuilderOperator findByEqlOperator(final InfixOperator eqlOperator) {
+	public static final QueryBuilderOperator findByEqlOperator(final RelationalInfixOperator eqlOperator) {
 		for(QueryBuilderOperator op : values()) {
 			if(op.eqlOperator == eqlOperator) {
 				return op;
@@ -91,7 +90,7 @@ public enum QueryBuilderOperator {
 		return null;
 	}
 	
-	public static final QueryBuilderOperator findByEqlOperator(final InfixOperator eqlOperator, DataType dataType) {
+	public static final QueryBuilderOperator findByEqlOperator(final RelationalInfixOperator eqlOperator, DataType dataType) {
 		for(QueryBuilderOperator op : values()) {
 			if(op.eqlOperator == eqlOperator) {
 				boolean support = false;

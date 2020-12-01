@@ -31,13 +31,6 @@ public interface ComHostAuthenticationService {
 	 * @return true, if host authentication is enabled for given company ID, otherwise false
 	 */
 	boolean isHostAuthenticationEnabled( int companyID);
-	
-	/**
-	 * Create a new random (and hopefully unique) host ID.
-	 * 
-	 * @return host ID
-	 */
-	String createHostId();
 
 	/**
 	 * Checks, if there is a successful authentication for user and host.
@@ -93,5 +86,7 @@ public interface ComHostAuthenticationService {
 	 * Removes all expired data for host authentication. 
 	 */
 	void removeAllExpiredData();
+
+	void removeAuthentictedHost(String hostId);
 	
 }

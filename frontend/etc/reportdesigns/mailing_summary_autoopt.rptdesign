@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">MailingSummaryDataCube.MailingSummaryDataSet.x</property>
@@ -45,12 +45,14 @@
     <property name="units">in</property>
     <method name="initialize"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.org.eclipse.birt.report.model.api.util);
-importPackage(org.eclipse.birt.chart.model.attribute.impl);
+importPackage(Packages.org.eclipse.birt.chart.model.attribute.impl);
 importPackage(Packages.com.agnitas.messages);
 importPackage(Packages.org.apache.commons.lang);
 
 var isCSVFormat = reportContext.getOutputFormat() == "csv";
 var isPDFFormat = reportContext.getOutputFormat() == "pdf";
+
+reportContext.setGlobalVariable("isDarkmode", params["darkmode"]);
 
 var showNet = params["showNet"] == true;
 var showGross = params["showGross"] == true;
@@ -64,10 +66,9 @@ reportContext.setPersistentGlobalVariable("showNet", new Boolean(showNet));
 reportContext.setPersistentGlobalVariable("showGross", new Boolean(showGross));
 
 optimizationDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.TotalOptimizationDataSet();
-optimizationDataSet.prepareOptimizationReport(params["optimizationID"], params["companyID"], "ALL_SUBSCRIBERS", params["showSoftbounces"]);
+optimizationDataSet.prepareOptimizationReport(params["optimizationID"], params["companyID"], params["showSoftbounces"]);
 
 var autoOptData = new AutoOptimizationDataSet().getData(params["optimizationID"], params["companyID"]);
-
 
 var trackingExists = true;
 if(params["trackingAllowed"].value) {
@@ -93,24 +94,59 @@ mailingSummaryDataDefinition[CommonKeys.REVENUE] 					= {"position": 14, "color"
 mailingSummaryDataDefinition[CommonKeys.OPENERS_PC_AND_MOBILE] 		= {"translationKey": "report.opens.pc.and.mobileWithNote"};
 mailingSummaryDataDefinition[CommonKeys.CLICKER_PC_AND_MOBILE] 		= {"translationKey": "statistic.clicker.multiple"};
 
-function getPaletteColor(index) {
-	var colors = [
-		"#ffc000",
-		"#92d050",
-		"#0071b9",
-		"#f5770f",
-		"#41641a",		
-		"#a91b1b",
-		"#009999"		
-	];
+var chartPalette;
+if (params['darkmode'] == true) {
+    chartPalette = [
+        "#41641A", //reserved for winner
+        "#0071B9",
+        "#009999",
+        "#92D04F",
+        "#64C3FF",
+        "#FFC000",
+        "#888A85",
+        "#FF8676"
+    ];
+} else {
+    chartPalette = [
+        "#41641A", //reserved for winner
+        "#0071B9",
+        "#009999",
+        "#92D04F",
+        "#64C3FF",
+        "#FFC000",
+        "#888A85",
+        "#2E3436"
+    ];
+}
 
-	return translateColor(colors[index % colors.length]);
+
+// color
+function getPaletteColor(index) {
+	return index < 0 || index > chartPalette.length ? "#0071B9" : chartPalette[index];
 }
 
 function getPaletteColorByGroupId(groupId) {
-	return getPaletteColor(groupId + 1);
+	if (isWinnerMailing(groupId)) {
+		return translateColor(getPaletteColor(0)); //color-dark-green
+	} else {
+		return translateColor(getPaletteColor(groupId + 2));
+	}
 }
 
+function translateColor(colorRgb) {
+	var red = "0x" + colorRgb.substr(1, 2);
+	var green = "0x" + colorRgb.substr(3, 2);
+	var blue = "0x" + colorRgb.substr(5, 2);
+
+	return ColorDefinitionImpl.create(red, green, blue);
+}
+
+function getColorDefinition(styleName) {
+	var color = ColorUtil.format(reportContext.getDesignHandle().findStyle(styleName).getColor().getRGB(), ColorUtil.HTML_FORMAT);
+	return translateColor(color);
+};
+
+//autooptimization groups data
 function getMailingGroupName(groupId) {
 	switch (groupId) {
 		case -1:
@@ -152,6 +188,30 @@ function getMailingIdByGroupId(groupId) {
 	}
 }
 
+function getGroupIdByName(name) {	
+	if (tr("Sum") == name) {
+		return -1;
+	}
+	
+	if (autoOptData.getTestGroup1() == name) {
+		return 1;
+	}
+	if (autoOptData.getTestGroup2() == name) {
+		return 2;
+	}
+	if (autoOptData.getTestGroup3() == name) {
+		return 3;
+	}
+	if (autoOptData.getTestGroup4() == name) {
+		return 4;
+	}
+	if (autoOptData.getTestGroup5() == name) {
+		return 5;
+	}
+	
+	return 0;
+};
+
 function isWinnerMailing(groupId) {
 	return getMailingIdByGroupId(groupId) == autoOptData.getWinnerId();
 }
@@ -165,21 +225,24 @@ function getMailingGroupNameTitle(groupId, baseGroupId) {
 	return name;
 }
 
-
-function translateColor(colorRgb) {
-	var red = "0x" + colorRgb.substr(1, 2);
-	var green = "0x" + colorRgb.substr(3, 2);
-	var blue = "0x" + colorRgb.substr(5, 2);
-
-	return ColorDefinitionImpl.create(red, green, blue);
-}
-
 // percentage representation
 function hasPercentageRepresentation(categoryKey) {
 	if (mailingSummaryDataDefinition[categoryKey] &amp;&amp; mailingSummaryDataDefinition[categoryKey]["hasNoPercentageRepresentation"]) {
 		return !mailingSummaryDataDefinition[categoryKey]["hasNoPercentageRepresentation"];
 	}
 	return true;
+}
+
+function calculatePercent(value, totalValue) {
+	if (totalValue > 0) {
+		return (value / totalValue) * 100;
+	}
+	
+	return 0;
+}
+
+function formatPercent(percent) {
+	return new Packages.java.text.DecimalFormat("##0.0").format(percent);
 }
 
 // position
@@ -189,7 +252,6 @@ function getKeyFiguresRowPosition(categoryKey, categoryIndex) {
 	}
 	return parseInt(1000000 + categoryIndex);  // Bump to the end
 };
-
 
 function getCrossTableColumnPosition(groupId) {
 	if (groupId == CommonKeys.OPTIMIZATION_SUMMARY_GROUP_ID) {
@@ -211,38 +273,43 @@ function getKeyFiguresColumnPosition(groupId) {
 	return parseInt(groupId + 2);  // Bump to the end
 };
 
-// color
-function getColorDefinition(styleName) {
-	var color = ColorUtil.format(reportContext.getDesignHandle().findStyle(styleName).getColor().getRGB(), ColorUtil.HTML_FORMAT);	
-	var rgb = reportContext.getDesignHandle().findStyle(styleName).getColor().getRGB();
-	
-	var red = "0x"+color.substr(1,2);
-	var green =  "0x"+color.substr(3,2);
-	var blue =  "0x"+color.substr(5,2);
-	
-	return ColorDefinitionImpl.create(red, green, blue);
-};
+function getKeyFiguresColumnPositionByName(name) {
+	return getKeyFiguresColumnPosition(parseInt(getGroupIdByName(name)));
+}
 
+//wrap
+function wrap(str, width) {
+	var length;
 
-function isDataDefinitionContainsColor(categoryKey) {
-	return mailingSummaryDataDefinition[categoryKey] &amp;&amp; mailingSummaryDataDefinition[categoryKey]["color"]
-};
-
-function getColorByCategory(categoryKey) {
-	if (isDataDefinitionContainsColor(categoryKey)) {
-		return getColorDefinition(mailingSummaryDataDefinition[categoryKey]["color"]);
+	if (str.length instanceof Function) {
+		length = str.length();
+	} else {
+		length = str.length;
 	}
-	return getColorDefinition("color-blue");
-};
+
+	if (length <= width) {
+		return str;
+	}
+
+	return str.substring(0, width) + "\n" + wrap(str.substring(width, length), width);
+}
+
+//format date
+function formatDate(dateValue) {
+	if (dateValue == null) {
+		return "";
+	}
+	if (reportContext.getLocale().getLanguage() == "de") {
+		return new Packages.java.text.SimpleDateFormat("dd.MM.yyyy").format(dateValue);	
+	} else {
+		return new Packages.java.text.SimpleDateFormat("yyyy-MM-dd").format(dateValue);
+	}
+}
 
 // translation
 function tr(key) {
 	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
 }
-
-function isDataDefinitionContainsTranslation(categoryKey) {
-	return mailingSummaryDataDefinition[categoryKey] &amp;&amp; mailingSummaryDataDefinition[categoryKey]["translationKey"]
-};
 
 function getTranslationByCategory(categoryKey) {
 	if (isDataDefinitionContainsTranslation(categoryKey)) {
@@ -251,18 +318,43 @@ function getTranslationByCategory(categoryKey) {
 	return tr(categoryKey)
 };
 
+function isDataDefinitionContainsTranslation(categoryKey) {
+	return mailingSummaryDataDefinition[categoryKey] &amp;&amp; mailingSummaryDataDefinition[categoryKey]["translationKey"]
+};
+
+//chart series and tooltips
+function getSeriesTooltips(categoryKey, value, rate) {
+	if (hasPercentageRepresentation(categoryKey)) {
+		return makeLabelWithPercent(value, rate);
+	} else {
+		return value;
+	}
+}
+
+function makeLabelWithPercent(value, rate) {
+    curValue = Packages.java.text.NumberFormat.getNumberInstance(reportContext.getLocale()).parse(value);
+    percent = Packages.java.text.NumberFormat.getNumberInstance(reportContext.getLocale()).parse(rate) * 100;
+	return formatPercent(percent) + '%; ' + value;
+}
+
 
 reportContext.setGlobalVariable("mailingSummaryDataDefinition", mailingSummaryDataDefinition);
 reportContext.setGlobalVariable("hasPercentageRepresentationFunction", hasPercentageRepresentation);
 reportContext.setGlobalVariable("getKeyFiguresRowPositionFunction", getKeyFiguresRowPosition);
 reportContext.setGlobalVariable("getKeyFiguresColumnPositionFunction", getKeyFiguresColumnPosition);
 reportContext.setGlobalVariable("getCrossTableColumnPositionFunction", getCrossTableColumnPosition);
-reportContext.setGlobalVariable("isDataDefinitionContainsColorFunction", isDataDefinitionContainsColor);
 reportContext.setGlobalVariable("getPaletteColorByGroupIdFunction", getPaletteColorByGroupId);
 reportContext.setGlobalVariable("tr", tr);
-reportContext.setGlobalVariable("isDataDefinitionContainsTranslationFunction", isDataDefinitionContainsTranslation);
+reportContext.setGlobalVariable("wrap", wrap);
+reportContext.setGlobalVariable("formatDate", formatDate);
 reportContext.setGlobalVariable("getTranslationByCategoryFunction", getTranslationByCategory);
 reportContext.setGlobalVariable("getMailingGroupNameFunction", getMailingGroupName);
+reportContext.setGlobalVariable("getSeriesTooltipsFunction", getSeriesTooltips);
+reportContext.setGlobalVariable("calculatePercentFunction", calculatePercent);
+reportContext.setGlobalVariable("formatPercentFunction", formatPercent);
+reportContext.setGlobalVariable("getGroupIdByNameFunction", getGroupIdByName);
+reportContext.setGlobalVariable("getKeyFiguresColumnPositionByNameFunction", getKeyFiguresColumnPositionByName);
+
 ]]></method>
     <method name="afterRender"><![CDATA[optimizationDataSet.destroy();]]></method>
     <property name="iconFile">/templates/blank_report.gif</property>
@@ -389,6 +481,19 @@ reportContext.setGlobalVariable("getMailingGroupNameFunction", getMailingGroupNa
             <property name="controlType">check-box</property>
             <structure name="format"/>
         </scalar-parameter>
+        <scalar-parameter name="darkmode" id="1905">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">boolean</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">false</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">check-box</property>
+            <structure name="format"/>
+        </scalar-parameter>
     </parameters>
     <data-sources>
         <script-data-source name="DummyDataSource" id="7"/>
@@ -441,6 +546,11 @@ reportContext.setGlobalVariable("getMailingGroupNameFunction", getMailingGroupNa
                     <property name="name">avgMailSize</property>
                     <property name="dataType">float</property>
                 </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">sendDate</property>
+                    <property name="dataType">date</property>
+                </structure>
             </list-property>
             <list-property name="columnHints">
                 <structure>
@@ -469,6 +579,9 @@ reportContext.setGlobalVariable("getMailingGroupNameFunction", getMailingGroupNa
                 </structure>
                 <structure>
                     <property name="columnName">avgMailSize</property>
+                </structure>
+                <structure>
+                    <property name="columnName">sendDate</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -518,6 +631,11 @@ reportContext.setGlobalVariable("getMailingGroupNameFunction", getMailingGroupNa
                         <property name="name">avgMailSize</property>
                         <property name="dataType">float</property>
                     </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">sendDate</property>
+                        <property name="dataType">date</property>
+                    </structure>
                 </list-property>
             </structure>
             <property name="dataSource">DummyDataSource</property>
@@ -544,6 +662,7 @@ if( currentrow < optimizationMailings.size() ) {
 	row["groupId"] = dataRow.getGroupId();
 	row["targetGroupId"] = dataRow.getTargetGroupId();
 	row["avgMailSize"] = dataRow.getAvgMailSize();
+	row["sendDate"] = dataRow.getSendDate();	
 	currentrow++;
 	return true;
 }
@@ -773,9 +892,11 @@ if( currentrow < mailingSummaryData.size() ) {
 
 	categoryIndex = dataRow.getCategoryindex();
 	targetIndex = dataRow.getTargetgroupindex();
+	groupId = dataRow.getGroupId();
 
 	row["categoryKey"] = dataRow.getCategory();
 	row["category_index"] = categoryIndex;
+	row["groupId"] = groupId;	
 	switch (categoryIndex) {
 		case CommonKeys.CLICKER_PC_AND_MOBILE_INDEX:
 			row["category"] = tr("statistic.clicker.multiple");
@@ -794,28 +915,34 @@ if( currentrow < mailingSummaryData.size() ) {
 			break;
 	}
 	
+	
 	// do some i18n stuff
 	if (targetIndex > 1) {
 		row["targetgroup"] = dataRow.getTargetgroup();
-		
 	} else {
 		row["targetgroup"] = tr("statistic.all_subscribers");
+	}
+
+	if (groupId == CommonKeys.OPTIMIZATION_SUMMARY_GROUP_ID) {
 		if (categoryIndex == CommonKeys.DELIVERED_EMAILS_INDEX) {
-			total_sent = parseInt(reportContext.getGlobalVariable("total_sent"));
-			reportContext.setGlobalVariable("total_sent", total_sent + parseInt(dataRow.getCount()));
+			total_sent = parseInt(dataRow.getCount());
+			reportContext.setGlobalVariable("total_sent", total_sent);
 		}
 		if (categoryIndex == CommonKeys.DELIVERED_EMAILS_DELIVERED_INDEX) {
-			total_delivered = parseInt(reportContext.getGlobalVariable("total_delivered"));
-			reportContext.setGlobalVariable("total_delivered", total_delivered + parseInt(dataRow.getCount()));
+			total_delivered = parseInt(dataRow.getCount());
+			reportContext.setGlobalVariable("total_delivered", total_delivered);
 		}
+		row["mailingName"] = tr("Sum");
+	} else if (groupId == CommonKeys.OPTIMIZATION_WINNER_GROUP_ID) {
+		row["mailingName"] = tr("mailing.autooptimization");
+	} else {
+		row["mailingName"] = dataRow.getMailingName();
 	}
 	row["targetgroupId"] = dataRow.getTargetgroupindex();
 	row["value"] = dataRow.getCount();
 	row["rate"] = dataRow.getRate() == -1 ? 0 : dataRow.getRate();
 	row["deliveredRate"] = dataRow.getDeliveredRate() == -1 ? 0 : dataRow.getDeliveredRate();
-	row["mailingId"] = dataRow.getMailingId();
-	row["mailingName"] = dataRow.getMailingName();
-	row["groupId"] = dataRow.getGroupId();
+	row["mailingId"] = dataRow.getMailingId();	
 
 	row["isWinner"] = dataRow.isWinner();
 	row["baseMailingName"] = dataRow.getBaseMailingName();
@@ -890,16 +1017,25 @@ return false;]]></method>
                 <tabular-measure-group name="Summary Field" id="1296">
                     <property name="measures">
                         <tabular-measure name="value" id="1297">
+                            <property name="function">max</property>
+                            <property name="isCalculated">false</property>
                             <expression name="measureExpression" type="javascript">dataSetRow["value"]</expression>
-                            <property name="dataType">integer</property>
+                            <property name="dataType">float</property>
+                            <property name="isVisible">true</property>
                         </tabular-measure>
                         <tabular-measure name="rate" id="1298">
+                            <property name="function">max</property>
+                            <property name="isCalculated">false</property>
                             <expression name="measureExpression" type="javascript">dataSetRow["rate"]</expression>
                             <property name="dataType">float</property>
+                            <property name="isVisible">true</property>
                         </tabular-measure>
                         <tabular-measure name="deliveredRate" id="1323">
+                            <property name="function">max</property>
+                            <property name="isCalculated">false</property>
                             <expression name="measureExpression" type="javascript">dataSetRow["deliveredRate"]</expression>
                             <property name="dataType">float</property>
+                            <property name="isVisible">true</property>
                         </tabular-measure>
                     </property>
                 </tabular-measure-group>
@@ -974,8 +1110,51 @@ return false;]]></method>
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">subject</property>
+                                <property name="name">mailingSubject</property>
                                 <expression name="expression" type="javascript">dataSetRow["subject"]</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                            <structure>
+                                <property name="name">mailingName</property>
+                                <text-property name="displayName">mailingName</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["mailingName"]</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                            <structure>
+                                <property name="name">mailingId</property>
+                                <text-property name="displayName">mailingId</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["mailingId"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">targetGroupId</property>
+                                <text-property name="displayName">targetGroupId</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["targetGroupId"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">subjectPrefix</property>
+                                <expression name="expression" type="javascript">tr("mailing.Subject")</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                            <structure>
+                                <property name="name">mailingSubjectName</property>
+                                <expression name="expression" type="javascript">if (row["isWinner"]) {tr("resultMailing")} else {row["mailingName"]}</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                            <structure>
+                                <property name="name">senDate</property>
+                                <expression name="expression" type="javascript">if (dataSetRow["sendDate"] == null) {tr("statistic.DeliveryStatus.0")} else {formatDate(dataSetRow["sendDate"])}</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                            <structure>
+                                <property name="name">namePrefix</property>
+                                <expression name="expression" type="javascript">tr("Mailing")</expression>
                                 <property name="dataType">string</property>
                                 <property name="allowExport">true</property>
                             </structure>
@@ -1000,40 +1179,48 @@ return false;]]></method>
                         <column id="1221"/>
                         <column id="1222"/>
                         <header>
-                            <row id="1188">
+                            <row id="1879">
                                 <property name="style">table-head</property>
-                                <cell id="1189">
+                                <cell id="1880">
                                     <text-data id="1227">
                                         <property name="textAlign">left</property>
                                         <expression name="valueExpr">tr("General2")</expression>
                                     </text-data>
                                 </cell>
-                                <cell id="1191"/>
+                                <cell id="1881"/>
+                            </row>
+                            <row id="1188">
+                                <cell id="1189">
+                                    <text-data id="1882">
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">tr("birt.Target")</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="1191">
+                                    <data id="1887">
+                                        <property name="textAlign">left</property>
+                                        <property name="resultSetColumn">targetGroupName</property>
+                                    </data>
+                                </cell>
                             </row>
                         </header>
                         <detail>
                             <row id="1201">
                                 <cell id="1202">
-                                    <text-data id="1250">
-                                        <expression name="valueExpr">if (row["isWinner"]) {tr("resultMailing")} else {tr("mailing.Subject") + " " + tr("Mailing") + " " + row["groupId"]}</expression>
-                                        <property name="contentType">html</property>
-                                    </text-data>
-                                </cell>
-                                <cell id="1204">
-                                    <data id="1251">
-                                        <property name="resultSetColumn">subject</property>
+                                    <data id="1888">
+                                        <property name="display">inline</property>
+                                        <property name="resultSetColumn">namePrefix</property>
+                                    </data>
+                                    <data id="1889">
+                                        <property name="fontWeight">bold</property>
+                                        <property name="display">inline</property>
+                                        <property name="resultSetColumn">mailingSubjectName</property>
                                     </data>
                                 </cell>
-                            </row>
-                            <row id="1236">
-                                <cell id="1237">
-                                    <text-data id="1243">
-                                        <expression name="valueExpr">tr("birt.Target")</expression>
-                                    </text-data>
-                                </cell>
-                                <cell id="1238">
-                                    <data id="1245">
-                                        <property name="resultSetColumn">targetGroupName</property>
+                                <cell id="1204">
+                                    <data id="1885">
+                                        <property name="resultSetColumn">mailingSubject</property>
                                     </data>
                                 </cell>
                             </row>
@@ -1044,8 +1231,21 @@ return false;]]></method>
                                     </text-data>
                                 </cell>
                                 <cell id="1231">
-                                    <data id="1246">
+                                    <data id="1886">
                                         <property name="resultSetColumn">avgMailSize</property>
+                                    </data>
+                                </cell>
+                            </row>
+                            <row id="1895">
+                                <cell id="1896">
+                                    <text-data id="1901">
+                                        <expression name="valueExpr">tr('mailing.senddate')</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="1897">
+                                    <data id="1903">
+                                        <property name="resultSetColumn">senDate</property>
                                     </data>
                                 </cell>
                             </row>
@@ -1055,6 +1255,7 @@ return false;]]></method>
                 <cell id="1260">
                     <property name="style">half-width</property>
                     <grid id="1261">
+                        <property name="style">table</property>
                         <property name="dataSet">OptimizationSummaryDataSet</property>
                         <list-property name="boundDataColumns">
                             <structure>
@@ -1122,6 +1323,12 @@ return false;]]></method>
                                 <text-property name="displayName">categoryKey</text-property>
                                 <expression name="expression" type="javascript">dataSetRow["categoryKey"]</expression>
                                 <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">tooltip</property>
+                                <expression name="expression" type="javascript">getSeriesTooltips(dataSetRow["categoryKey"], dataSetRow["value"], dataSetRow["rate"])</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
                             </structure>
                         </list-property>
                         <structure name="toc"/>
@@ -1275,7 +1482,7 @@ return false;]]></method>
       <Insets>
         <Top>3.0</Top>
         <Left>3.0</Left>
-        <Bottom>3.0</Bottom>
+        <Bottom>5.0</Bottom>
         <Right>3.0</Right>
       </Insets>
       <Row>-1</Row>
@@ -1300,6 +1507,18 @@ return false;]]></method>
         <Blue>255</Blue>
       </Background>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -1334,7 +1553,7 @@ return false;]]></method>
         <Thickness>1</Thickness>
         <Color>
           <Transparency>255</Transparency>
-          <Red>0</Red>
+          <Red>255</Red>
           <Green>0</Green>
           <Blue>0</Blue>
         </Color>
@@ -1379,7 +1598,7 @@ return false;]]></method>
       <WrappingSize>0.0</WrappingSize>
       <MaxPercent>0.33</MaxPercent>
       <TitlePercent>0.6</TitlePercent>
-      <Ellipsis>1</Ellipsis>
+      <Ellipsis>40</Ellipsis>
     </Children>
     <Bounds>
       <Left>0.0</Left>
@@ -1409,23 +1628,27 @@ return false;]]></method>
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
     </Background>
     <Visible>true</Visible>
+    <Cursor>
+      <Type>Auto</Type>
+    </Cursor>
   </Block>
   <Dimension>Two_Dimensional</Dimension>
   <Script>importPackage(Packages.org.eclipse.birt.chart.model.attribute.impl);
 importPackage(Packages.org.eclipse.birt.chart.model.attribute);
 importPackage(Packages.org.eclipse.birt.report.model.api.util);
 importPackage(Packages.org.eclipse.birt.chart.model.data.impl);
+importPackage(Packages.org.eclipse.birt.chart.computation);
 importPackage(Packages.com.agnitas.messages);
 importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.java.util);
 importPackage(Packages.java.text);
-importPackage(Packages.org.apache.commons.lang);
+importPackage(Packages.org.apache.commons.lang3);
 
 var	ignoredBarIndexes = {}
 
@@ -1455,8 +1678,8 @@ function beforeGeneration(chart, icsc) {
  		 	ignoredBarIndexes[i] = 0;
  		 }
 	}
-	chart.setSeriesThickness(30);
-
+	chart.setSeriesThickness(60);
+	
 	//max = reportContext.getPersistentGlobalVariable(&quot;total_sent&quot;);
 	max = reportContext.getPersistentGlobalVariable(&quot;maxValue&quot;);
 	if (max > 0) {
@@ -1478,42 +1701,43 @@ function beforeGeneration(chart, icsc) {
 function beforeDrawDataPointLabel(dph, label, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
 	var externalScriptableContext = icsc.getExternalContext().getScriptable();
+	var calculatePercent = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;calculatePercentFunction&quot;);
+	var formatPercent = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;formatPercentFunction&quot;);	
+	var getGroupIdByName = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getGroupIdByNameFunction&quot;);
 
-	var totalSent = parseInt(reportContext.getGlobalVariable(&quot;total_sent&quot;));
-	var totalDelivered = parseInt(getGlobalVariable(&quot;total_delivered&quot;));	
+	
 	var values = new String(label.getCaption().getValue()).split(&quot;;&quot;);
-	var groupId = parseInt(values[1]);
-	if (groupId == CommonKeys.OPTIMIZATION_SUMMARY_GROUP_ID) {
-		// code to display the percent value
-		currentValue = values[0]; // series value				
-		if (!(dph.getIndex() in ignoredBarIndexes)) {	
-			totalSentNumber = new Number(totalSent);
-			totalDeliveredNumber = new Number(totalDelivered);
-			curValue = Packages.java.text.NumberFormat.getNumberInstance(getLocale()).parse(currentValue);
-			if (totalDeliveredNumber > 0) {
-				if(curValue >= totalDeliveredNumber){
-					percent = (curValue / totalSentNumber) * 100; //Hack for all sent and all delivered number (percentages should be calculated from totalSentNumber instead of totalDeliveredNumber
-				} else {
-					percent = (curValue / totalDeliveredNumber) * 100;
-				}
-			} else {
-				percent = 0;
-			}
-			formatter = new Packages.java.text.DecimalFormat(&quot;##0.0&quot;);
-			percentFormatted = formatter.format(percent);
-			label.getCaption().setValue(currentValue + ' (' + percentFormatted +'%)');
-		} else {
-			label.getCaption().setValue(currentValue);
-		}
-	} else {
+	groupId = getGroupIdByName(values[1]); //get group ID from name
+	var currentValue = values[0]; // series value		
+
+	if (groupId != CommonKeys.OPTIMIZATION_SUMMARY_GROUP_ID) {
 		//do not show series label for other groups ids
 		label.getCaption().setValue('');
+	} else if (!(dph.getIndex() in ignoredBarIndexes)) {		
+		// code to display the percent value
+		var totalSent = new Number(parseInt(reportContext.getGlobalVariable(&quot;total_sent&quot;)));
+		var totalDelivered = new Number(parseInt(getGlobalVariable(&quot;total_delivered&quot;)));
+		
+		curValue = Packages.java.text.NumberFormat.getNumberInstance(getLocale()).parse(currentValue);
+		var percent = 0;
+		if(curValue >= totalDelivered){
+			percent = calculatePercent(curValue, totalSent);
+		} else {
+			percent = calculatePercent(curValue, totalDelivered);
+		}
+		label.getCaption().setValue(formatPercent(percent) + '%; ' + currentValue);
+	} else {
+		label.getCaption().setValue(currentValue);
+	}
+	
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 };
 
 /**
  * Called before drawing each datapoint graphical representation or marker.
- * 
+ *
  * @param dph
  *            DataPointHints
  * @param fill
@@ -1525,10 +1749,11 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 function beforeDrawDataPoint( dph, fill, icsc )
 {
 	var getPaletteColor = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getPaletteColorByGroupIdFunction&quot;);
+	var getGroupIdByName = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getGroupIdByNameFunction&quot;);
 
 	var context = icsc.getExternalContext().getObject();
-	var groupId = parseInt(dph.getSeriesDisplayValue());
-	var color = getPaletteColor(groupId, context);
+	var groupId = getGroupIdByName(dph.getSeriesDisplayValue());
+	var color = getPaletteColor(groupId);
 	fill.set(color.getRed(), color.getGreen(), color.getBlue());
 }
 
@@ -1545,6 +1770,7 @@ function beforeDrawDataPoint( dph, fill, icsc )
 
 function beforeDrawAxisLabel( axis, label, icsc )
 {
+	var reportContext = icsc.getExternalContext().getObject();
 	var getTranslationByCategory = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getTranslationByCategoryFunction&quot;);
 
 	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
@@ -1555,6 +1781,10 @@ function beforeDrawAxisLabel( axis, label, icsc )
 		var translated = StringUtils.abbreviate(getTranslationByCategory(caption.getValue()), 30);
 	 	caption.setValue(translated);
 	 	axis.setLabel(label);
+	}
+	
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -1572,17 +1802,59 @@ function beforeDrawAxisLabel( axis, label, icsc )
 
 function beforeDrawLegendItem( lerh, bounds, icsc )
 {
-	var getMailingGroupName = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getMailingGroupNameFunction&quot;);
+	var reportContext = icsc.getExternalContext().getObject();
 	var getPaletteColor = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getPaletteColorByGroupIdFunction&quot;);
+	var getGroupIdByName = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getGroupIdByNameFunction&quot;);
 
 	var curr = lerh.getLabel().getCaption();
-	var groupId = parseInt(curr.getValue());
+	var name = curr.getValue();
 	
-	var seriesName = getMailingGroupName(groupId);
-	lerh.getLabel().getCaption().setValue(seriesName);
-	
+	groupId = getGroupIdByName(name);
+	lerh.getLabel().getCaption().setValue(StringUtils.abbreviate(name, 35));
+		
 	var color = getPaletteColor(groupId);
 	lerh.getFill().set(color.getRed(), color.getGreen(), color.getBlue());
+	
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		curr.getColor().set(255, 255, 255);
+	}
+}
+
+/**
+ * Called before the chart is rendered.
+ * 
+ * @param gcs
+ *            GeneratedChartState
+ * @param icsc
+ *            IChartScriptContext
+ */
+function beforeRendering( gcs, icsc )
+{
+	rtc = gcs.getRunTimeContext();
+	llh = rtc.getLegendLayoutHints();
+	liha = llh.getLegendItemHints();
+	
+	pointToPixel = gcs.getComputations().getPointToPixel();
+	plotWidth = gcs.getComputations().getPlotBounds().getWidth() * pointToPixel;
+	
+	var rowsNum = parseInt(liha.length / 2) + liha.length % 2;
+	width = (plotWidth / 2.0) - 17.42;
+	height = liha[0].getItemHeight() + 5.33;
+	
+	for (var i = 0; i &lt; liha.length; i++) {
+		lih = liha[i];
+		var row = parseInt(i / 2);
+		var col = i % 2;		
+		
+		lih.width(width);
+		lih.top(row * height);
+		lih.left(col * width);
+	}
+	
+	legendLength = height * rowsNum;
+	llhNew = new LegendLayoutHints(SizeImpl.create(plotWidth, legendLength), llh.getTitleSize(), null, llh.isMinSliceApplied(), llh.getMinSliceText(), liha);
+	
+	rtc.setLegendLayoutHints(llhNew);
 }</Script>
   <Units>Points</Units>
   <SeriesThickness>10.0</SeriesThickness>
@@ -1604,7 +1876,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
     </AncillarySampleData>
   </SampleData>
   <Interactivity>
-    <Enable>false</Enable>
+    <Enable>true</Enable>
     <LegendBehavior>None</LegendBehavior>
   </Interactivity>
   <EmptyMessage>
@@ -1722,210 +1994,54 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
       <TitlePosition>Left</TitlePosition>
       <SeriesDefinitions ZOrder="0">
         <Query>
-          <Definition>row[&quot;groupId&quot;]</Definition>
+          <Definition>row[&quot;mailingName&quot;]</Definition>
           <Grouping>
             <GroupingInterval>1.0</GroupingInterval>
-            <GroupType>Numeric</GroupType>
+            <GroupType>Text</GroupType>
           </Grouping>
         </Query>
         <SeriesPalette>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
-            <Red>80</Red>
-            <Green>166</Green>
-            <Blue>218</Blue>
+            <Red>46</Red>
+            <Green>52</Green>
+            <Blue>54</Blue>
           </Entries>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
-            <Red>242</Red>
-            <Green>88</Green>
-            <Blue>106</Blue>
+            <Red>136</Red>
+            <Green>138</Green>
+            <Blue>133</Blue>
           </Entries>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
-            <Red>232</Red>
-            <Green>172</Green>
-            <Blue>57</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>255</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>64</Red>
-            <Green>128</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>170</Red>
-            <Green>85</Green>
-            <Blue>85</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>0</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>192</Red>
+            <Red>255</Red>
             <Green>192</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>255</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>192</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>7</Red>
-            <Green>146</Green>
-            <Blue>94</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>128</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>255</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>128</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>0</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>64</Green>
-            <Blue>64</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>64</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>80</Red>
-            <Green>240</Green>
-            <Blue>120</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>64</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>0</Green>
-            <Blue>64</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>0</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>64</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>64</Green>
             <Blue>0</Blue>
           </Entries>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
+            <Red>146</Red>
+            <Green>208</Green>
+            <Blue>79</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
             <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
+            <Green>153</Green>
+            <Blue>153</Blue>
           </Entries>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>255</Green>
-            <Blue>255</Blue>
+            <Red>65</Red>
+            <Green>100</Green>
+            <Blue>26</Blue>
           </Entries>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>0</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>255</Green>
-            <Blue>255</Blue>
+            <Red>0</Red>
+            <Green>113</Green>
+            <Blue>185</Blue>
           </Entries>
         </SeriesPalette>
         <Series xsi:type="type:BarSeries">
@@ -1962,6 +2078,12 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
               </Color>
               <Visible>false</Visible>
             </Outline>
+            <ShadowColor>
+              <Transparency>0</Transparency>
+              <Red>255</Red>
+              <Green>255</Green>
+              <Blue>255</Blue>
+            </ShadowColor>
             <Insets>
               <Top>0.0</Top>
               <Left>10.0</Left>
@@ -1990,7 +2112,26 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
           </DataPoint>
           <LabelPosition>Outside</LabelPosition>
           <Stacked>false</Stacked>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text>row[&quot;tooltip&quot;]</Text>
+                <Delay>200</Delay>
+              </Value>
+            </Action>
+          </Triggers>
+          <Cursor>
+            <Type>Auto</Type>
+          </Cursor>
           <Riser>Rectangle</Riser>
+          <RiserOutline>
+            <Transparency>0</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </RiserOutline>
         </Series>
         <Grouping>
           <Enabled>false</Enabled>
@@ -2000,7 +2141,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
         </Grouping>
         <Sorting>Descending</Sorting>
         <SortKey>
-          <Definition>getKeyFiguresColumnPosition(row[&quot;groupId&quot;])</Definition>
+          <Definition>getKeyFiguresColumnPositionByName(row[&quot;mailingName&quot;])</Definition>
         </SortKey>
       </SeriesDefinitions>
       <Orientation>Vertical</Orientation>
@@ -2009,9 +2150,9 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
         <Thickness>1</Thickness>
         <Color>
           <Transparency>255</Transparency>
-          <Red>145</Red>
-          <Green>145</Green>
-          <Blue>145</Blue>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
         </Color>
         <Visible>true</Visible>
       </LineAttributes>
@@ -2520,9 +2661,9 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
       <SeriesPalette>
         <Entries xsi:type="attribute:ColorDefinition">
           <Transparency>255</Transparency>
-          <Red>80</Red>
-          <Green>166</Green>
-          <Blue>218</Blue>
+          <Red>46</Red>
+          <Green>52</Green>
+          <Blue>54</Blue>
         </Entries>
         <Entries xsi:type="attribute:ColorDefinition">
           <Transparency>255</Transparency>
@@ -2762,7 +2903,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
         <Enabled>true</Enabled>
         <GroupingInterval>1.0</GroupingInterval>
         <GroupType>Text</GroupType>
-        <AggregateExpression>Sum</AggregateExpression>
+        <AggregateExpression>Last</AggregateExpression>
       </Grouping>
       <Sorting>Descending</Sorting>
       <SortKey>
@@ -2773,6 +2914,12 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
     <LineAttributes>
       <Style>Solid</Style>
       <Thickness>1</Thickness>
+      <Color>
+        <Transparency>0</Transparency>
+        <Red>255</Red>
+        <Green>255</Green>
+        <Blue>255</Blue>
+      </Color>
       <Visible>false</Visible>
     </LineAttributes>
     <Label>
@@ -2872,6 +3019,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
       <MinorGridsPerUnit>5</MinorGridsPerUnit>
       <ShowOutside>false</ShowOutside>
       <TickBetweenCategories>true</TickBetweenCategories>
+      <MajorGridsStepNumber>1</MajorGridsStepNumber>
     </Scale>
     <Origin>
       <Type>Min</Type>
@@ -2882,6 +3030,9 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
     <PrimaryAxis>true</PrimaryAxis>
     <CategoryAxis>true</CategoryAxis>
     <Percent>false</Percent>
+    <Cursor>
+      <Type>Auto</Type>
+    </Cursor>
   </Axes>
   <WallFill xsi:type="attribute:ColorDefinition">
     <Transparency>255</Transparency>
@@ -2896,7 +3047,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
     <Blue>192</Blue>
   </FloorFill>
   <Orientation>Horizontal</Orientation>
-  <UnitSpacing>60.0</UnitSpacing>
+  <UnitSpacing>22.0</UnitSpacing>
   <Rotation>
     <Angles>
       <XAngle>-20.0</XAngle>
@@ -2921,8 +3072,8 @@ row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
                                     <property name="inheritColumns">true</property>
                                     <property name="marginTop">0px</property>
                                     <property name="marginBottom">0px</property>
-                                    <property name="height">380px</property>
-                                    <property name="width">760px</property>
+                                    <property name="height">760px</property>
+                                    <property name="width">747px</property>
                                     <list-property name="visibility">
                                         <structure>
                                             <property name="format">all</property>
@@ -3073,7 +3224,7 @@ row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
       <Insets>
         <Top>3.0</Top>
         <Left>3.0</Left>
-        <Bottom>3.0</Bottom>
+        <Bottom>5.0</Bottom>
         <Right>3.0</Right>
       </Insets>
       <Row>-1</Row>
@@ -3098,6 +3249,18 @@ row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
         <Blue>255</Blue>
       </Background>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -3132,7 +3295,7 @@ row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
         <Thickness>1</Thickness>
         <Color>
           <Transparency>255</Transparency>
-          <Red>0</Red>
+          <Red>255</Red>
           <Green>0</Green>
           <Blue>0</Blue>
         </Color>
@@ -3173,10 +3336,11 @@ row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
         <Visible>false</Visible>
       </Title>
       <TitlePosition>Above</TitlePosition>
+      <ShowValue>false</ShowValue>
       <WrappingSize>0.0</WrappingSize>
       <MaxPercent>0.33</MaxPercent>
       <TitlePercent>0.6</TitlePercent>
-      <Ellipsis>0</Ellipsis>
+      <Ellipsis>40</Ellipsis>
     </Children>
     <Bounds>
       <Left>0.0</Left>
@@ -3206,7 +3370,7 @@ row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -3214,9 +3378,16 @@ row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
     <Visible>true</Visible>
   </Block>
   <Dimension>Two_Dimensional</Dimension>
-  <Script>importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
+  <Script>importPackage(Packages.org.eclipse.birt.chart.model.attribute.impl);
+importPackage(Packages.org.eclipse.birt.chart.model.attribute);
+importPackage(Packages.org.eclipse.birt.report.model.api.util);
+importPackage(Packages.org.eclipse.birt.chart.model.data.impl);
+importPackage(Packages.org.eclipse.birt.chart.computation);
 importPackage(Packages.com.agnitas.messages);
-importPackage(Packages.org.apache.commons.lang);
+importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
+importPackage(Packages.java.util);
+importPackage(Packages.java.text);
+importPackage(Packages.org.apache.commons.lang3);
 
 var	ignoredBarIndexes = {}
 
@@ -3236,7 +3407,7 @@ function beforeGeneration(chart, icsc){
 	// axis
 	var xAxis = chart.getAxes().get(0);
 	var xSeriesDefinition = xAxis.getSeriesDefinitions().get(0);
-	var xValues = xSeriesDefinition.getRunTimeSeries().get(0).getDataSet().getValues()
+	var xValues = xSeriesDefinition.getRunTimeSeries().get(0).getDataSet().getValues();
 
 	for (i = 0; i &lt; xValues.length; i++) {
  		 var categoryKey = xValues[i];
@@ -3246,7 +3417,7 @@ function beforeGeneration(chart, icsc){
  		 	ignoredBarIndexes[i] = 0;
  		 }
 	}
-	chart.setSeriesThickness(30);
+	chart.setSeriesThickness(60);
 
 	max = reportContext.getPersistentGlobalVariable(&quot;maxValue&quot;);
 	if (max > 0) {
@@ -3268,37 +3439,36 @@ function beforeGeneration(chart, icsc){
 function beforeDrawDataPointLabel(dph, label, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
 	var externalScriptableContext = icsc.getExternalContext().getScriptable();
-
-	var totalSent = parseInt(reportContext.getGlobalVariable(&quot;total_sent&quot;));
+	var calculatePercent = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;calculatePercentFunction&quot;);
+	var formatPercent = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;formatPercentFunction&quot;);	
+	var getGroupIdByName = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getGroupIdByNameFunction&quot;);
+	
 	var values = new String(label.getCaption().getValue()).split(&quot;;&quot;);
-	var groupId = parseInt(values[1]);
-	if (groupId == CommonKeys.OPTIMIZATION_SUMMARY_GROUP_ID) {
-		// code to display the percent value
-		currentValue = values[0]; // series value		
-		if (!(dph.getIndex() in ignoredBarIndexes)) {	
-			curValue = Packages.java.text.NumberFormat.getNumberInstance(getLocale()).parse(currentValue);
-			totalSentNumber = new Number(totalSent);
-			if (totalSentNumber > 0) {
-				percent = (curValue / totalSentNumber) * 100;
-			} else {
-				percent = 0;
-			}
-			formatter = new Packages.java.text.DecimalFormat(&quot;##0.0&quot;);
-			percentFormatted = formatter.format(percent);		
-							
-			label.getCaption().setValue(currentValue + ' (' + percentFormatted +'%)');
-		} else {
-			label.getCaption().setValue(currentValue);		
-		}
-	} else {
+	var groupId = getGroupIdByName(values[1]);
+	var currentValue = values[0]; // series value
+	
+	if (groupId != CommonKeys.OPTIMIZATION_SUMMARY_GROUP_ID) {
 		//do not show series label for other groups ids
 		label.getCaption().setValue('');
+	} else if (!(dph.getIndex() in ignoredBarIndexes)) {
+		// code to display the percent value
+		//calculate proper percent based on sent e-mails
+		var totalSent = parseInt(reportContext.getGlobalVariable(&quot;total_sent&quot;));
+		curValue = Packages.java.text.NumberFormat.getNumberInstance(getLocale()).parse(currentValue);			
+		formattedPercent = formatPercent(calculatePercent(curValue, new Number(totalSent)));
+		label.getCaption().setValue(formattedPercent + '%; ' + currentValue);
+	} else {
+		label.getCaption().setValue(currentValue);
+	}
+		
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 };
 
 /**
  * Called before drawing each datapoint graphical representation or marker.
- * 
+ *
  * @param dph
  *            DataPointHints
  * @param fill
@@ -3310,10 +3480,11 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 function beforeDrawDataPoint( dph, fill, icsc )
 {
 	var getPaletteColor = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getPaletteColorByGroupIdFunction&quot;);
+	var getGroupIdByName = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getGroupIdByNameFunction&quot;);
 
 	var context = icsc.getExternalContext().getObject();
-	var groupId = parseInt(dph.getSeriesDisplayValue());
-	var color = getPaletteColor(groupId, context);
+	var groupId = getGroupIdByName(dph.getSeriesDisplayValue());
+	var color = getPaletteColor(groupId);
 	fill.set(color.getRed(), color.getGreen(), color.getBlue());
 }
 
@@ -3330,6 +3501,7 @@ function beforeDrawDataPoint( dph, fill, icsc )
 
 function beforeDrawAxisLabel( axis, label, icsc )
 {
+	var reportContext = icsc.getExternalContext().getObject();
 	var getTranslationByCategory = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getTranslationByCategoryFunction&quot;);
 
 	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
@@ -3340,6 +3512,10 @@ function beforeDrawAxisLabel( axis, label, icsc )
 		var translated = StringUtils.abbreviate(getTranslationByCategory(caption.getValue()), 30);
 	 	caption.setValue(translated);
 	 	axis.setLabel(label);
+	}
+
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -3357,19 +3533,62 @@ function beforeDrawAxisLabel( axis, label, icsc )
 
 function beforeDrawLegendItem( lerh, bounds, icsc )
 {
-	var getMailingGroupName = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getMailingGroupNameFunction&quot;);
+	var reportContext = icsc.getExternalContext().getObject();
 	var getPaletteColor = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getPaletteColorByGroupIdFunction&quot;);
+	var getGroupIdByName = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getGroupIdByNameFunction&quot;);
 
 	var curr = lerh.getLabel().getCaption();
-	var groupId = parseInt(curr.getValue());
+	var name = curr.getValue();
+		
+	var groupId = getGroupIdByName(name);
+	lerh.getLabel().getCaption().setValue(StringUtils.abbreviate(name, 35));
 	
-	var seriesName = getMailingGroupName(groupId);
-	lerh.getLabel().getCaption().setValue(seriesName);
-	
+		
 	var color = getPaletteColor(groupId);
 	lerh.getFill().set(color.getRed(), color.getGreen(), color.getBlue());
+	
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		curr.getColor().set(255, 255, 255);
+	}
 }
-</Script>
+
+/**
+ * Called before the chart is rendered.
+ * 
+ * @param gcs
+ *            GeneratedChartState
+ * @param icsc
+ *            IChartScriptContext
+ */
+
+function beforeRendering( gcs, icsc )
+{
+	rtc = gcs.getRunTimeContext();
+	llh = rtc.getLegendLayoutHints();
+	liha = llh.getLegendItemHints();
+	
+	pointToPixel = gcs.getComputations().getPointToPixel();
+	plotWidth = gcs.getComputations().getPlotBounds().getWidth() * pointToPixel;
+	
+	var rowsNum = parseInt(liha.length / 2) + liha.length % 2;
+	width = (plotWidth / 2.0) - 17.42;
+	height = liha[0].getItemHeight() + 5.33;
+	
+	for (var i = 0; i &lt; liha.length; i++) {
+		lih = liha[i];
+		var row = parseInt(i / 2);
+		var col = i % 2;		
+		
+		lih.width(width);
+		lih.top(row * height);
+		lih.left(col * width);
+	}
+	
+	legendLength = height * rowsNum;
+	llhNew = new LegendLayoutHints(SizeImpl.create(plotWidth, legendLength), llh.getTitleSize(), null, llh.isMinSliceApplied(), llh.getMinSliceText(), liha);
+	
+	rtc.setLegendLayoutHints(llhNew);
+}</Script>
   <Units>Points</Units>
   <SeriesThickness>10.0</SeriesThickness>
   <GridColumnCount>0</GridColumnCount>
@@ -3390,7 +3609,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
     </AncillarySampleData>
   </SampleData>
   <Interactivity>
-    <Enable>false</Enable>
+    <Enable>true</Enable>
     <LegendBehavior>None</LegendBehavior>
   </Interactivity>
   <EmptyMessage>
@@ -3508,211 +3727,55 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
       <TitlePosition>Left</TitlePosition>
       <SeriesDefinitions>
         <Query>
-          <Definition>row[&quot;groupId&quot;]</Definition>
+          <Definition>row[&quot;mailingName&quot;]</Definition>
           <Grouping>
-            <GroupingUnit>StringPrefix</GroupingUnit>
+            <GroupingUnit>String</GroupingUnit>
             <GroupingInterval>1.0</GroupingInterval>
-            <GroupType>Numeric</GroupType>
+            <GroupType>Text</GroupType>
           </Grouping>
         </Query>
         <SeriesPalette>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
-            <Red>80</Red>
-            <Green>166</Green>
-            <Blue>218</Blue>
+            <Red>46</Red>
+            <Green>52</Green>
+            <Blue>54</Blue>
           </Entries>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
-            <Red>242</Red>
-            <Green>88</Green>
-            <Blue>106</Blue>
+            <Red>136</Red>
+            <Green>138</Green>
+            <Blue>133</Blue>
           </Entries>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
-            <Red>232</Red>
-            <Green>172</Green>
-            <Blue>57</Blue>
+            <Red>146</Red>
+            <Green>208</Green>
+            <Blue>79</Blue>
           </Entries>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>255</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>64</Red>
-            <Green>128</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>170</Red>
-            <Green>85</Green>
-            <Blue>85</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>0</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>192</Red>
+            <Red>255</Red>
             <Green>192</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>255</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>192</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>7</Red>
-            <Green>146</Green>
-            <Blue>94</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>128</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>255</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>128</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>0</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>64</Green>
-            <Blue>64</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>64</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>80</Red>
-            <Green>240</Green>
-            <Blue>120</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>64</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>0</Green>
-            <Blue>64</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>0</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>64</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>64</Green>
             <Blue>0</Blue>
           </Entries>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
             <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
+            <Green>153</Green>
+            <Blue>153</Blue>
           </Entries>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>255</Green>
-            <Blue>255</Blue>
+            <Red>65</Red>
+            <Green>100</Green>
+            <Blue>26</Blue>
           </Entries>
           <Entries xsi:type="attribute:ColorDefinition">
             <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>0</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>255</Green>
-            <Blue>255</Blue>
+            <Red>0</Red>
+            <Green>113</Green>
+            <Blue>185</Blue>
           </Entries>
         </SeriesPalette>
         <Series xsi:type="type:BarSeries">
@@ -3782,7 +3845,26 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
           </DataPoint>
           <LabelPosition>Outside</LabelPosition>
           <Stacked>false</Stacked>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text>row[&quot;tooltip&quot;]</Text>
+                <Delay>200</Delay>
+              </Value>
+            </Action>
+          </Triggers>
+          <Cursor>
+            <Type>Auto</Type>
+          </Cursor>
           <Riser>Rectangle</Riser>
+          <RiserOutline>
+            <Transparency>0</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </RiserOutline>
         </Series>
         <Grouping>
           <Enabled>false</Enabled>
@@ -3792,7 +3874,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
         </Grouping>
         <Sorting>Descending</Sorting>
         <SortKey>
-          <Definition>getKeyFiguresColumnPosition(row[&quot;groupId&quot;])</Definition>
+          <Definition>getKeyFiguresColumnPositionByName(row[&quot;mailingName&quot;])</Definition>
         </SortKey>
         <SortStrength>0</SortStrength>
       </SeriesDefinitions>
@@ -3801,10 +3883,10 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
         <Style>Solid</Style>
         <Thickness>1</Thickness>
         <Color>
-          <Transparency>255</Transparency>
-          <Red>139</Red>
-          <Green>139</Green>
-          <Blue>139</Blue>
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
         </Color>
         <Visible>true</Visible>
       </LineAttributes>
@@ -4557,7 +4639,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
         <Enabled>true</Enabled>
         <GroupingInterval>1.0</GroupingInterval>
         <GroupType>Text</GroupType>
-        <AggregateExpression>Sum</AggregateExpression>
+        <AggregateExpression>Last</AggregateExpression>
       </Grouping>
       <Sorting>Descending</Sorting>
       <SortKey>
@@ -4569,10 +4651,10 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
       <Style>Solid</Style>
       <Thickness>1</Thickness>
       <Color>
-        <Transparency>255</Transparency>
-        <Red>0</Red>
-        <Green>0</Green>
-        <Blue>0</Blue>
+        <Transparency>0</Transparency>
+        <Red>255</Red>
+        <Green>255</Green>
+        <Blue>255</Blue>
       </Color>
       <Visible>false</Visible>
     </LineAttributes>
@@ -4675,7 +4757,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
       <MinorGridsPerUnit>5</MinorGridsPerUnit>
       <ShowOutside>false</ShowOutside>
       <TickBetweenCategories>true</TickBetweenCategories>
-      <MajorGridsStepNumber>7</MajorGridsStepNumber>
+      <MajorGridsStepNumber>1</MajorGridsStepNumber>
     </Scale>
     <Origin>
       <Type>Min</Type>
@@ -4697,7 +4779,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
     <Blue>192</Blue>
   </FloorFill>
   <Orientation>Horizontal</Orientation>
-  <UnitSpacing>60.0</UnitSpacing>
+  <UnitSpacing>22.0</UnitSpacing>
   <Rotation>
     <Angles>
       <XAngle>-20.0</XAngle>
@@ -4722,8 +4804,8 @@ row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
                                     <property name="inheritColumns">true</property>
                                     <property name="marginTop">0px</property>
                                     <property name="marginBottom">0px</property>
-                                    <property name="height">380px</property>
-                                    <property name="width">760px</property>
+                                    <property name="height">760px</property>
+                                    <property name="width">747px</property>
                                     <list-property name="visibility">
                                         <structure>
                                             <property name="format">all</property>
@@ -4993,7 +5075,7 @@ data["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
                             </structure>
                             <structure>
                                 <property name="name">value_categoryGroup/category_index_optimizationGroup/optimizationGroupId</property>
-                                <property name="dataType">integer</property>
+                                <property name="dataType">float</property>
                                 <simple-property-list name="aggregateOn">
                                     <value>categoryGroup/category_index</value>
                                     <value>optimizationGroup/optimizationGroupId</value>
@@ -5290,7 +5372,7 @@ data["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
                             </structure>
                             <structure>
                                 <property name="name">value_categoryGroup/category_index_optimizationGroup/optimizationGroupId</property>
-                                <property name="dataType">integer</property>
+                                <property name="dataType">float</property>
                                 <simple-property-list name="aggregateOn">
                                     <value>categoryGroup/category_index</value>
                                     <value>optimizationGroup/optimizationGroupId</value>
@@ -5647,7 +5729,7 @@ hasPercentageRepresentation(dimension["categoryGroup"]["category_index"]["catego
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -5733,6 +5815,20 @@ function beforeDrawDataPointLabel( dph, label, icsc )
 	//labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot;\n&quot; + message;
 	label.getCaption().setValue(labelText);
 }
+
+function beforeDrawMarkerLine(axis, line, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		line.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+};
+
+function beforeDrawDataPointLabel(dph, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+};
 </Script>
   <Units>Points</Units>
   <SeriesThickness>20.0</SeriesThickness>
@@ -5978,9 +6074,9 @@ function beforeDrawDataPointLabel( dph, label, icsc )
           <Thickness>1</Thickness>
           <Color>
             <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
+            <Red>128</Red>
+            <Green>128</Green>
+            <Blue>128</Blue>
           </Color>
           <Visible>true</Visible>
         </LeaderLineAttributes>
@@ -6423,7 +6519,7 @@ function beforeDrawDataPointLabel( dph, label, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -6515,6 +6611,20 @@ function beforeDrawDataPointLabel( dph, label, icsc )
 	//labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot;\n&quot; + labelText.substring(labelText.lastIndexOf(&quot;(&quot;));
 	label.getCaption().setValue(labelText);
 }
+
+function beforeDrawMarkerLine(axis, line, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		line.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+};
+
+function beforeDrawDataPointLabel(dph, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+};
 </Script>
   <Units>Points</Units>
   <SeriesThickness>20.0</SeriesThickness>
@@ -7095,9 +7205,9 @@ function beforeDrawDataPointLabel( dph, label, icsc )
           <Thickness>1</Thickness>
           <Color>
             <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
+            <Red>128</Red>
+            <Green>128</Green>
+            <Blue>128</Blue>
           </Color>
           <Visible>true</Visible>
         </LeaderLineAttributes>
@@ -7285,8 +7395,25 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                                     <property name="category">Currency</property>
                                                     <property name="pattern">#,##0{RoundingMode=HALF_UP}</property>
                                                 </structure>
+                                                <list-property name="visibility">
+                                                    <structure>
+                                                        <property name="format">all</property>
+                                                        <expression name="valueExpr" type="javascript">data["value"] &lt; 0 ||
+data["value"] == null</expression>
+                                                    </structure>
+                                                </list-property>
                                                 <property name="resultSetColumn">value</property>
                                             </data>
+                                            <text-data id="1891">
+                                                <list-property name="visibility">
+                                                    <structure>
+                                                        <property name="format">all</property>
+                                                        <expression name="valueExpr" type="javascript">data["value"] >= 0 &amp;&amp;
+data["value"] != null</expression>
+                                                    </structure>
+                                                </list-property>
+                                                <expression name="valueExpr">tr("NotAvailableShort")</expression>
+                                            </text-data>
                                         </property>
                                         <property name="style">crosstab-value</property>
                                     </extended-item>
@@ -7309,8 +7436,25 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                                     <property name="category">Custom</property>
                                                     <property name="pattern">(0.0%)</property>
                                                 </structure>
+                                                <list-property name="visibility">
+                                                    <structure>
+                                                        <property name="format">all</property>
+                                                        <expression name="valueExpr" type="javascript">data["rate"] &lt; 0 ||
+data["rate"] == null</expression>
+                                                    </structure>
+                                                </list-property>
                                                 <property name="resultSetColumn">rate</property>
                                             </data>
+                                            <text-data id="1890">
+                                                <list-property name="visibility">
+                                                    <structure>
+                                                        <property name="format">all</property>
+                                                        <expression name="valueExpr" type="javascript">data["rate"] >= 0 &amp;&amp;
+data["rate"] != null</expression>
+                                                    </structure>
+                                                </list-property>
+                                                <expression name="valueExpr">tr("NotAvailableShort")</expression>
+                                            </text-data>
                                         </property>
                                         <property name="style">crosstab-value</property>
                                     </extended-item>
@@ -7561,7 +7705,8 @@ data["category_index"] == CommonKeys.CLICKER_TRACKED_INDEX) {
                                                 <property name="level">categoryGroup/category_index</property>
                                                 <property name="filter">
                                                     <filter-condition-element>
-                                                        <expression name="expr" type="javascript">dimension["categoryGroup"]["category_index"] >= CommonKeys.OPENINGS_GROSS_MEASURED_INDEX &amp;&amp;
+                                                        <expression name="expr" type="javascript">(dimension["categoryGroup"]["category_index"] >= CommonKeys.OPENINGS_GROSS_MEASURED_INDEX ||
+dimension["categoryGroup"]["category_index"] >= CommonKeys.CLICKS_GROSS_INDEX) &amp;&amp;
 dimension["categoryGroup"]["category_index"] &lt;= CommonKeys.ACTIVITY_RATE_INDEX</expression>
                                                         <property name="operator">is-true</property>
                                                         <property name="updateAggregation">true</property>
@@ -7673,7 +7818,7 @@ dimension["categoryGroup"]["category_index"] &lt;= CommonKeys.ACTIVITY_RATE_INDE
                                 <property name="dataType">string</property>
                             </structure>
                             <structure>
-                                <property name="name">value_categoryGroup/category_index_optimizationGroup/optimizationGroupId</property>
+                                <property name="name">cubeValue</property>
                                 <property name="dataType">integer</property>
                                 <simple-property-list name="aggregateOn">
                                     <value>categoryGroup/category_index</value>
@@ -7688,7 +7833,7 @@ dimension["categoryGroup"]["category_index"] &lt;= CommonKeys.ACTIVITY_RATE_INDE
                                 </list-property>
                             </structure>
                             <structure>
-                                <property name="name">rate_categoryGroup/category_index_optimizationGroup/optimizationGroupId</property>
+                                <property name="name">cubeRate</property>
                                 <property name="dataType">float</property>
                                 <simple-property-list name="aggregateOn">
                                     <value>categoryGroup/category_index</value>
@@ -7705,9 +7850,9 @@ dimension["categoryGroup"]["category_index"] &lt;= CommonKeys.ACTIVITY_RATE_INDE
                             <structure>
                                 <property name="name">formattedValue</property>
                                 <expression name="expression" type="javascript">if(data["category_index"] == CommonKeys.OPENINGS_GROSS_MEASURED_INDEX || data["category_index"] == CommonKeys.CLICKS_GROSS_INDEX) {
-	"" + Formatter.format(data["value_categoryGroup/category_index_optimizationGroup/optimizationGroupId"], "#,##0")
+	"" + Formatter.format(data["cubeValue"], "#,##0")
 } else if(data["category_index"] == CommonKeys.ACTIVITY_RATE_INDEX) {
-	"" + Formatter.format(data["rate_categoryGroup/category_index_optimizationGroup/optimizationGroupId"], "0.0%")
+	"" + Formatter.format(data["cubeRate"], "0.0%")
 } else {""}</expression>
                                 <property name="dataType">string</property>
                             </structure>
@@ -7726,7 +7871,34 @@ dimension["categoryGroup"]["category_index"] &lt;= CommonKeys.ACTIVITY_RATE_INDE
                         <property name="marginTop">0pt</property>
                         <expression name="valueExpr">tr("report.mailsize.explanation")</expression>
                     </text-data>
-                    <text-data id="753">
+                    <text-data id="1904">
+                        <property name="style">footnote</property>
+                        <property name="marginTop">0pt</property>
+                        <expression name="valueExpr">tr("report.opens.measured.explanation")</expression>
+                    </text-data>
+                    <text-data id="1039">
+                        <property name="style">footnote</property>
+                        <expression name="valueExpr">tr("report.opens.invisible.explanation")</expression>
+                    </text-data>
+                    <text-data id="1038">
+                        <property name="style">footnote</property>
+                        <expression name="valueExpr">tr("report.opens.pc.and.mobile.explanation")</expression>
+                    </text-data>
+                    <text-data id="834">
+                        <property name="style">footnote</property>
+                        <expression name="valueExpr">tr("statistic.MeasuredOpeningsGross.explanation")</expression>
+                    </text-data>
+                    <text-data id="757">
+                        <property name="style">footnote</property>
+                        <property name="marginTop">0pt</property>
+                        <expression name="valueExpr">tr("statistic.ActivityRate.explanation")</expression>
+                    </text-data>
+                    <text-data id="754">
+                        <property name="style">footnote</property>
+                        <property name="marginTop">0pt</property>
+                        <expression name="valueExpr">tr("statistic.withoutConfirmation.explanation")</expression>
+                    </text-data>
+                    <text-data id="755">
                         <property name="style">footnote</property>
                         <property name="marginTop">0pt</property>
                         <list-property name="visibility">
@@ -7736,28 +7908,6 @@ dimension["categoryGroup"]["category_index"] &lt;= CommonKeys.ACTIVITY_RATE_INDE
                             </structure>
                         </list-property>
                         <expression name="valueExpr">tr("noTrackingData")</expression>
-                    </text-data>
-                    <text-data id="1039">
-                        <property name="style">footnote</property>
-                        <expression name="valueExpr">tr("statistic.ActivityRate.explanation")</expression>
-                    </text-data>
-                    <text-data id="1038">
-                        <property name="style">footnote</property>
-                        <expression name="valueExpr">tr("statistic.MeasuredOpeningsGross.explanation")</expression>
-                    </text-data>
-                    <text-data id="834">
-                        <property name="style">footnote</property>
-                        <expression name="valueExpr">tr("report.opens.pc.and.mobile.explanation")</expression>
-                    </text-data>
-                    <text-data id="757">
-                        <property name="style">footnote</property>
-                        <property name="marginTop">0pt</property>
-                        <expression name="valueExpr">tr("report.opens.invisible.explanation")</expression>
-                    </text-data>
-                    <text-data id="755">
-                        <property name="style">footnote</property>
-                        <property name="marginTop">0pt</property>
-                        <expression name="valueExpr">tr("report.opens.measured.explanation")</expression>
                     </text-data>
                 </cell>
             </row>

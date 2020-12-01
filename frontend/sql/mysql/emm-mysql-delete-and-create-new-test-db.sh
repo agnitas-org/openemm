@@ -76,7 +76,7 @@ for sqlfilename in ${sqlScriptsToDo}; do
 	MYSQL_PWD=${password} mysql -h ${hostname} -P 3306 -u ${username} --database=${dbname} --default-character-set=utf8 < ${sqlfilename}
 
 	if [ $? != 0 ]; then {
-		echo "Error in sql script ${sqlfilename}"
+		echo "Error in sql script"
 		exit 1
 	} fi
 done
@@ -110,7 +110,7 @@ for sqlfilename in ${sqlScriptsToDo}; do
 	MYSQL_PWD=${password} mysql -h ${hostname} -P 3306 -u ${username} --database=${dbname} --default-character-set=utf8 < ${sqlfilename}
 
 	if [ $? != 0 ]; then {
-		echo "Error in sql script ${sqlfilename}"
+		echo "Error in sql script"
 		exit 1
 	} fi
 done

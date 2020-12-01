@@ -13,31 +13,30 @@ package org.agnitas.emm.springws.endpoint.dyncontent;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.dyncontent.service.ContentModel;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddContentBlockRequest;
 import org.agnitas.emm.springws.jaxb.AddContentBlockResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.agnitas.service.UserActivityLogService;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class AddContentBlockEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class AddContentBlockEndpoint extends BaseEndpoint {
 
-	@Resource
 	private DynamicTagContentService dynamicTagContentService;
-	@Resource
-	private ObjectFactory objectFactory;
-	@Resource
-	private UserActivityLogService userActivityLogService;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		AddContentBlockRequest request = (AddContentBlockRequest) arg0;
-		AddContentBlockResponse response = objectFactory.createAddContentBlockResponse();
+	public AddContentBlockEndpoint(DynamicTagContentService dynamicTagContentService) {
+		this.dynamicTagContentService = dynamicTagContentService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddContentBlockRequest")
+	public @ResponsePayload AddContentBlockResponse addContentBlock(@RequestPayload AddContentBlockRequest request) throws Exception {
+		AddContentBlockResponse response = new AddContentBlockResponse();
 		
 		ContentModel model = new ContentModel();
 		model.setCompanyId(Utils.getUserCompany());
@@ -51,8 +50,6 @@ public class AddContentBlockEndpoint extends AbstractMarshallingPayloadEndpoint 
 		response.setContentID(dynamicTagContentService.addContent(model, userActions));
 		Utils.writeLog(userActivityLogService, userActions);
 
-
 		return response;
 	}
-
 }

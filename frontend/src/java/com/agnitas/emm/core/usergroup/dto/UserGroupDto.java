@@ -27,6 +27,8 @@ public class UserGroupDto {
     
     private Set<String> grantedPermissions;
     
+    private String[] parentGroupIDs;
+    
     public int getUserGroupId() {
         return id;
     }
@@ -70,4 +72,12 @@ public class UserGroupDto {
     public void setGrantedPermissions(Set<String> grantedPermissions) {
         this.grantedPermissions = grantedPermissions;
     }
+
+	public String[] getParentGroupIDs() {
+		return parentGroupIDs;
+	}
+
+	public void setParentGroupIDs(String[] parentGroupIDs) {
+		this.parentGroupIDs = parentGroupIDs;
+	}
 }

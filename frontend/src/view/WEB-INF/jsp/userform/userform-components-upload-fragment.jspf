@@ -1,0 +1,145 @@
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+
+<div class="tile">
+    <div class="tile-header">
+        <a href="#" class="headline" data-toggle-tile="#tile-userform-upload-image">
+            <i class="icon tile-toggle icon-angle-up"></i>
+            <mvc:message code="mailing.Graphics_Component.imageUpload"/>
+        </a>
+        <ul class="tile-header-nav">
+            <emm:ShowByPermission token="mailing.components.change">
+            <li class="active">
+                <a href="#" data-toggle-tab="#userform-upload-images-form">
+                    <mvc:message code="mailing.Graphics_Components"/>
+                </a>
+            </li>
+                <li>
+                    <a href="#" data-toggle-tab="#userform-upload-from-zip-form">
+                        <mvc:message code="mailing.Graphics_Component.zipFolder"/>
+                    </a>
+                </li>
+            </emm:ShowByPermission>
+        </ul>
+    </div>
+    <div id="tile-userform-upload-image" class="tile-content" data-initializer="upload">
+        <%-- upload images tab --%>
+        <emm:ShowByPermission token="mailing.components.change">
+            <mvc:form servletRelativeAction="/webform/${formId}/components/upload.action"
+                      id="userform-upload-images-form" cssClass="form-vertical"
+                      enctype="multipart/form-data"
+                      data-form="resource"
+                      data-custom-loader=""
+                      modelAttribute="formUploadComponentsForm">
+
+                <div class="tile-content-forms">
+                    <div class="dropzone" data-upload-dropzone="">
+                        <div class="dropzone-text">
+                            <strong>
+                                <i class="icon icon-reply"></i>&nbsp;<mvc:message code="upload_dropzone.title"/>
+                            </strong>
+                            <span class="btn btn-regular btn-primary btn-upload">
+                                <i class="icon icon-cloud-upload"></i>
+                                <span class="text"><mvc:message code="button.multiupload.select"/></span>
+                                <input type="file" name="components[].file" multiple="multiple" data-upload="">
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hidden" data-upload-add="">
+                    <div class="actions actions-top">
+                        <div class="action-left">
+                            <button type="button" class="btn btn-regular" data-upload-reset="">
+                                <i class="icon icon-times"></i>
+                                <span class="text"><mvc:message code="button.Cancel"/></span>
+                            </button>
+                        </div>
+                        <div class="action-right">
+                            <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
+                                <i class="icon icon-cloud-upload"></i>
+                                <span class="text"><mvc:message code="button.Upload"/></span>
+                            </button>
+                        </div>
+                    </div>
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th class="squeeze-column"><mvc:message code="mailing.Preview"/></th>
+                            <th ><mvc:message code="Description"/></th>
+                        </tr>
+                        </thead>
+                        <tbody data-upload-add-template="upload-template-add"></tbody>
+                    </table>
+                    <div class="actions">
+                        <div class="action-left">
+                            <button type="button" class="btn btn-regular" data-upload-reset="">
+                                <i class="icon icon-times"></i>
+                                <span class="text">
+                                <mvc:message code="button.Cancel"/>
+                            </span>
+                            </button>
+                        </div>
+                        <div class="action-right">
+                            <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
+                                <i class="icon icon-cloud-upload"></i>
+                                <span class="text"><mvc:message code="button.Upload"/></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hidden" data-upload-progress="">
+                    <div class="actions actions-top actions-bottom">
+                        <div class="action-right">
+                            <button type="button" class="btn btn-regular" data-form-abort="">
+                                <i class="icon icon-times"></i>
+                                <span class="text"><mvc:message code="button.Cancel"/></span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="progress-wrapper" data-upload-progress-template="upload-template-progress"></div>
+                    <div class="actions actions-top">
+                        <div class="action-right">
+                            <button type="button" class="btn btn-regular" data-form-abort="">
+                                <i class="icon icon-times"></i>
+                                <span class="text"><mvc:message code="button.Cancel"/></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </mvc:form>
+        </emm:ShowByPermission>
+
+        <%-- upload from zip folder tab --%>
+        <mvc:form servletRelativeAction="/webform/${formId}/components/uploadZip.action"
+                  id="userform-upload-from-zip-form"
+                  cssClass="form-vertical hidden"
+                  enctype="multipart/form-data"
+                  data-form="resource"
+                  method="post"
+                  modelAttribute="formZipUploadComponentsForm">
+
+            <div class="tile-content-forms">
+                <div class="form-group">
+                    <label class="control-label"><mvc:message code="mailing.Graphics_Component.archive.upload"/>:</label>
+                    <input type="file" name="zipFile" class="form-control" value=""/>
+                </div>
+
+                <div class="form-group">
+                    <label for="overwrite-existing">
+                        <span class="text"> <mvc:message code="OverwriteExistingData"/>: </span>
+                        <input type="checkbox" name="overwriteExisting" id="overwrite-existing" checked="checked"/>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <button type="button" class="btn btn-regular btn-primary" data-form-submit>
+                        <i class="icon icon-cloud-upload"></i>
+                        <span class="text"><mvc:message code="button.Upload"/></span>
+                    </button>
+                </div>
+            </div>
+        </mvc:form>
+    </div>
+</div>

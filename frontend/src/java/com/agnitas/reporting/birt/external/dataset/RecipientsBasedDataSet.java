@@ -15,12 +15,15 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.exception.UnknownUserStatusException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.reporting.birt.external.beans.LightTarget;
 
 public abstract class RecipientsBasedDataSet extends BIRTDataSet {
     private static final transient Logger logger = Logger.getLogger(RecipientsBasedDataSet.class);
@@ -191,5 +194,12 @@ public abstract class RecipientsBasedDataSet extends BIRTDataSet {
 		return row;
 	}
 }
-	
+
+	protected String getHiddenTargetSql(final LightTarget currentTarget, final LightTarget hiddenTarget) {
+		if(Objects.isNull(hiddenTarget) || currentTarget.getId() == hiddenTarget.getId()) {
+			return null;
+		}
+		return hiddenTarget.getTargetSQL();
+	}
+
 }

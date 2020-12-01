@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
@@ -16,7 +16,8 @@ if (params["selectedTargets"] != null) {
 function tr(key) {
 	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
 }
-]]></method>
+
+reportContext.setGlobalVariable("isDarkmode", params["darkmode"]);]]></method>
     <method name="beforeRender"><![CDATA[function drop(name) {
 	reportContext.getReportRunnable()
 		.designHandle
@@ -153,6 +154,19 @@ if (reportContext.getOutputFormat() == "csv" || params["viewChart"].value == fal
             <property name="controlType">check-box</property>
             <structure name="format"/>
         </scalar-parameter>
+        <scalar-parameter name="darkmode" id="871">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">boolean</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">False</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">check-box</property>
+            <structure name="format"/>
+        </scalar-parameter>
     </parameters>
     <data-sources>
         <script-data-source name="DummyDataSource" id="7"/>
@@ -262,7 +276,9 @@ if (reportContext.getOutputFormat() == "csv" || params["viewChart"].value == fal
             <method name="open"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.java.lang);
 dataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingClickersTimeBasedDataSet();
-clicksData = dataSet.getData("mailing_id", params["mailingID"], params["companyID"], params["selectedTargets"], params["startDate"], params["stopDate"], params["hourScale"], params["recipientType"]);
+tempTableID = dataSet.prepareData("mailing_id", params["mailingID"], params["companyID"], params["selectedTargets"], params["startDate"], params["stopDate"], params["hourScale"], params["recipientType"]);
+reportContext.setPersistentGlobalVariable("tempTableID", new Integer(tempTableID));
+clicksData = dataSet.getData(tempTableID);
 currentrow = 0;
 ]]></method>
             <method name="fetch"><![CDATA[if (currentrow < clicksData.size()) {
@@ -829,7 +845,7 @@ allTargets</expression>
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -877,9 +893,12 @@ maxValue = 0;
 
 function beforeDrawAxisTitle( axis, label, icsc ) {
 	var caption = label.getCaption();
+	reportContext =  icsc.getExternalContext().getObject();
 	if (caption.getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		caption.setValue(tr(reportContext.getParameterValue(&quot;hourScale&quot;) == true ? &quot;Time&quot; : &quot;Date&quot;, reportContext));
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -908,6 +927,20 @@ function beforeGeneration( chart, icsc ) {
 	}
 }
 
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 /**
  * Called before rendering each label on a given Axis.
  * 
@@ -926,6 +959,10 @@ function beforeDrawAxisLabel( axis, label, icsc ) {
 	if (yaxis == null) {
 		ticks++;
 		max = Integer.parseInt(label.getCaption().getValue());
+	}
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -999,6 +1036,10 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
 
 	var color = getPaletteColor(classId, context);
 	lerh.getFill().set(color.getRed(), color.getGreen(), color.getBlue());
+
+	if(context.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		caption.getColor().set(255, 255, 255);
+	}
 }
 
 /**
@@ -2378,7 +2419,7 @@ function calculateMaxValue() {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -2400,14 +2441,17 @@ ticks = 0;
 max = 0;
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;);
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -2437,6 +2481,20 @@ function beforeGeneration(chart, icsc) {
 	}
 }
 
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 /**
  * Called before rendering each label on a given Axis.
  * 
@@ -2455,7 +2513,11 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 	if (yaxis == null) {
 		ticks++;
 		max = Integer.parseInt(label.getCaption().getValue());	
-	} 
+	}
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 
 }
 
@@ -2834,10 +2896,6 @@ function afterRendering(gcs, icsc) {
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
                 <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
-                <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
                 </PropertiesMap>
@@ -2848,6 +2906,10 @@ function afterRendering(gcs, icsc) {
                 <PropertiesMap>
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
               </Value>
             </Action>
@@ -3791,7 +3853,7 @@ function afterRendering(gcs, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -3813,14 +3875,17 @@ ticks = 0;
 max = 0;
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;);
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -3850,6 +3915,20 @@ function beforeGeneration(chart, icsc) {
 	}
 }
 
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 /**
  * Called before rendering each label on a given Axis.
  * 
@@ -3868,7 +3947,11 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 	if (yaxis == null) {
 		ticks++;
 		max = Integer.parseInt(label.getCaption().getValue());	
-	} 
+	}
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 
 }
 
@@ -5203,7 +5286,7 @@ function afterRendering(gcs, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -5225,14 +5308,17 @@ ticks = 0;
 max = 0;
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;);
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -5262,6 +5348,20 @@ function beforeGeneration(chart, icsc) {
 	}
 }
 
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 /**
  * Called before rendering each label on a given Axis.
  * 
@@ -5280,7 +5380,11 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 	if (yaxis == null) {
 		ticks++;
 		max = Integer.parseInt(label.getCaption().getValue());	
-	} 
+	}
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 
 }
 
@@ -6615,7 +6719,7 @@ function afterRendering(gcs, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -6637,14 +6741,17 @@ ticks = 0;
 max = 0;
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;);
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -6674,6 +6781,20 @@ function beforeGeneration(chart, icsc) {
 	}
 }
 
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 /**
  * Called before rendering each label on a given Axis.
  * 
@@ -6693,7 +6814,10 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 		ticks++;
 		max = Integer.parseInt(label.getCaption().getValue());	
 	} 
-
+    var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 /**
@@ -8027,7 +8151,7 @@ function afterRendering(gcs, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -8049,14 +8173,17 @@ ticks = 0;
 max = 0;
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;);
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -8086,6 +8213,20 @@ function beforeGeneration(chart, icsc) {
 	}
 }
 
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 /**
  * Called before rendering each label on a given Axis.
  * 
@@ -8104,7 +8245,11 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 	if (yaxis == null) {
 		ticks++;
 		max = Integer.parseInt(label.getCaption().getValue());	
-	} 
+	}
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 
 }
 
@@ -9474,7 +9619,7 @@ function afterRendering(gcs, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -9522,9 +9667,12 @@ maxValue = 0;
 
 function beforeDrawAxisTitle( axis, label, icsc ) {
 	var caption = label.getCaption();
+	reportContext =  icsc.getExternalContext().getObject();
 	if (caption.getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		caption.setValue(tr(reportContext.getParameterValue(&quot;hourScale&quot;) == true ? &quot;Time&quot; : &quot;Date&quot;, reportContext));
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -9553,6 +9701,13 @@ function beforeGeneration( chart, icsc ) {
 	}
 }
 
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 /**
  * Called before rendering each label on a given Axis.
  * 
@@ -9571,6 +9726,10 @@ function beforeDrawAxisLabel( axis, label, icsc ) {
 	if (yaxis == null) {
 		ticks++;
 		max = Integer.parseInt(label.getCaption().getValue());
+	}
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -9644,6 +9803,10 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
 
 	var color = getPaletteColor(classId, context);
 	lerh.getFill().set(color.getRed(), color.getGreen(), color.getBlue());
+
+	if(context.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		caption.getColor().set(255, 255, 255);
+	}
 }
 
 /**
@@ -10065,10 +10228,6 @@ function calculateMaxValue() {
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
                 <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
-                <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
                 </PropertiesMap>
@@ -10079,6 +10238,10 @@ function calculateMaxValue() {
                 <PropertiesMap>
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
               </Value>
             </Action>
@@ -11030,7 +11193,7 @@ function calculateMaxValue() {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -11052,14 +11215,17 @@ ticks = 0;
 max = 0;
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;);
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -11089,6 +11255,20 @@ function beforeGeneration(chart, icsc) {
 	}
 }
 
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 /**
  * Called before rendering each label on a given Axis.
  * 
@@ -11109,6 +11289,10 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 		max = Integer.parseInt(label.getCaption().getValue());	
 	} 
 
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 /**
@@ -11486,10 +11670,6 @@ function afterRendering(gcs, icsc) {
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
                 <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
-                <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
                 </PropertiesMap>
@@ -11500,6 +11680,10 @@ function afterRendering(gcs, icsc) {
                 <PropertiesMap>
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
               </Value>
             </Action>
@@ -12450,7 +12634,7 @@ function afterRendering(gcs, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -12472,14 +12656,17 @@ ticks = 0;
 max = 0;
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;);
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -12509,6 +12696,20 @@ function beforeGeneration(chart, icsc) {
 	}
 }
 
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 /**
  * Called before rendering each label on a given Axis.
  * 
@@ -12529,6 +12730,10 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 		max = Integer.parseInt(label.getCaption().getValue());	
 	} 
 
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 /**
@@ -12906,10 +13111,6 @@ function afterRendering(gcs, icsc) {
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
                 <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
-                <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
                 </PropertiesMap>
@@ -12920,6 +13121,10 @@ function afterRendering(gcs, icsc) {
                 <PropertiesMap>
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
               </Value>
             </Action>
@@ -13869,7 +14074,7 @@ function afterRendering(gcs, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -13891,14 +14096,17 @@ ticks = 0;
 max = 0;
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;);
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -13928,6 +14136,20 @@ function beforeGeneration(chart, icsc) {
 	}
 }
 
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 /**
  * Called before rendering each label on a given Axis.
  * 
@@ -13948,6 +14170,10 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 		max = Integer.parseInt(label.getCaption().getValue());	
 	} 
 
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 /**
@@ -14325,10 +14551,6 @@ function afterRendering(gcs, icsc) {
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
                 <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
-                <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
                 </PropertiesMap>
@@ -14339,6 +14561,10 @@ function afterRendering(gcs, icsc) {
                 <PropertiesMap>
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
               </Value>
             </Action>
@@ -15288,7 +15514,7 @@ function afterRendering(gcs, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -15310,14 +15536,17 @@ ticks = 0;
 max = 0;
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;);
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -15347,6 +15576,20 @@ function beforeGeneration(chart, icsc) {
 	}
 }
 
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 /**
  * Called before rendering each label on a given Axis.
  * 
@@ -15367,6 +15610,10 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 		max = Integer.parseInt(label.getCaption().getValue());	
 	} 
 
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 /**
@@ -15744,10 +15991,6 @@ function afterRendering(gcs, icsc) {
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
                 <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
-                <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
                 </PropertiesMap>
@@ -15758,6 +16001,10 @@ function afterRendering(gcs, icsc) {
                 <PropertiesMap>
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
               </Value>
             </Action>
@@ -16707,7 +16954,7 @@ function afterRendering(gcs, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -16729,14 +16976,17 @@ ticks = 0;
 max = 0;
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;);
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -16766,6 +17016,20 @@ function beforeGeneration(chart, icsc) {
 	}
 }
 
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 /**
  * Called before rendering each label on a given Axis.
  * 
@@ -16786,6 +17050,10 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 		max = Integer.parseInt(label.getCaption().getValue());	
 	} 
 
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 /**
@@ -17163,10 +17431,6 @@ function afterRendering(gcs, icsc) {
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
                 <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
-                <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
                 </PropertiesMap>
@@ -17177,6 +17441,10 @@ function afterRendering(gcs, icsc) {
                 <PropertiesMap>
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
+                </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
               </Value>
             </Action>

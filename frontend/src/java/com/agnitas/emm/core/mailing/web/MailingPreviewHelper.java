@@ -15,18 +15,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.servlet.http.HttpServletRequest;
 
-import com.agnitas.beans.ComMailing;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.web.ComMailingContentForm;
-import com.agnitas.web.ComMailingSendForm;
-import com.agnitas.web.ShowImageServlet;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mediatype;
 import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
 import org.agnitas.preview.Preview;
+
+import com.agnitas.beans.ComMailing;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.web.PreviewForm;
+import com.agnitas.web.ShowImageServlet;
 
 /**
  * Helper class to find the proper preselected preview format.
@@ -40,33 +41,19 @@ public class MailingPreviewHelper {
     public static final int INPUT_TYPE_HTML = 1;
 	
 	/**
-	 * Updated preview format for mailing contents.
-	 * 
-	 * @param form ComMailingContentForm bean
+	 * Updated preview format in preview form.
+	 * @param previewForm PreviewForm
+	 * @param request PreviewForm
+	 * @param mailingId mailing ID
 	 * @param companyID company ID
 	 * @param dao DAO for accessing mailings
 	 */
-	public static void updateActiveMailingPreviewFormat(ComMailingContentForm form, HttpServletRequest req, int companyID, ComMailingDao dao) {
-		int activeFormat = computeActivePreviewFormat(form.getPreviewFormat(), form.getMailingID(), companyID, dao);
+	public static void updateActiveMailingPreviewFormat(PreviewForm previewForm, HttpServletRequest request, int mailingId, int companyID, ComMailingDao dao) {
+		int activeFormat = computeActivePreviewFormat(previewForm.getFormat(), mailingId, companyID, dao);
 		
-		form.setPreviewFormat(activeFormat);
+		previewForm.setFormat(activeFormat);
 		
-		req.setAttribute("PREVIEW_FORMAT", activeFormat);
-	}
-	
-	/**
-	 * Updated preview format for mailing send tab.
-	 * 
-	 * @param form ComMailingSendForm bean
-	 * @param companyID company ID
-	 * @param dao DAO for accessing mailings
-	 */
-	public static void updateActiveMailingPreviewFormat(ComMailingSendForm form, HttpServletRequest req, int companyID, ComMailingDao dao) {
-		int activeFormat = computeActivePreviewFormat(form.getPreviewFormat(), form.getMailingID(), companyID, dao);
-		
-		form.setPreviewFormat(activeFormat);
-		
-		req.setAttribute("PREVIEW_FORMAT", activeFormat);
+		request.setAttribute("PREVIEW_FORMAT", activeFormat);
 	}
 	
 	/**
@@ -80,7 +67,7 @@ public class MailingPreviewHelper {
 	 * @return preview format to select
 	 */
 	private static int computeActivePreviewFormat(int currentFormat, int mailingID, int companyID, ComMailingDao dao) {
-		ComMailing mailing = (ComMailing)dao.getMailing(mailingID, companyID);
+		ComMailing mailing = dao.getMailing(mailingID, companyID);
 		
 		// No mailing found? 
 		if(mailing.getId() == 0) {

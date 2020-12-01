@@ -12,32 +12,35 @@ package org.agnitas.emm.springws.endpoint.recipient;
 
 import java.util.List;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.ListSubscriberMailingsRequest;
 import org.agnitas.emm.springws.jaxb.ListSubscriberMailingsResponse;
 import org.agnitas.emm.springws.jaxb.Map;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class ListSubscriberMailingsEndpoint extends AbstractMarshallingPayloadEndpoint {
-    @Resource
-    private ObjectFactory objectFactory;
-    @Resource
+@Endpoint
+public class ListSubscriberMailingsEndpoint extends BaseEndpoint {
+
     private RecipientService recipientService;
 
-    @Override
-    protected Object invokeInternal(Object arg0) throws Exception {
-        ListSubscriberMailingsRequest request = (ListSubscriberMailingsRequest) arg0;
-        ListSubscriberMailingsResponse response = objectFactory.createListSubscriberMailingsResponse();
+    public ListSubscriberMailingsEndpoint(RecipientService recipientService) {
+        this.recipientService = recipientService;
+    }
+
+    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListSubscriberMailingsRequest")
+    public @ResponsePayload ListSubscriberMailingsResponse listSubscriberMailings(@RequestPayload ListSubscriberMailingsRequest request) {
+        ListSubscriberMailingsResponse response = new ListSubscriberMailingsResponse();
 
         RecipientModel model = parseModel(request);
 
         List<java.util.Map<String, Object>> mailings = recipientService.getSubscriberMailings(model);
-        populateResponse(response, mailings, objectFactory);
+        populateResponse(response, mailings);
         return response;
     }
 
@@ -48,12 +51,12 @@ public class ListSubscriberMailingsEndpoint extends AbstractMarshallingPayloadEn
         return model;
     }
 
-    static void populateResponse(ListSubscriberMailingsResponse response, List<java.util.Map<String, Object>> mailings, ObjectFactory objectFactory) {
+    static void populateResponse(ListSubscriberMailingsResponse response, List<java.util.Map<String, Object>> mailings) {
         ListSubscriberMailingsResponse.Items wrapper = new ListSubscriberMailingsResponse.Items();
         List<Map> items = wrapper.getItem();
 
         for (java.util.Map<String, Object> mailing : mailings) {
-            items.add(Utils.toJaxbMap(mailing, objectFactory));
+            items.add(Utils.toJaxbMap(mailing));
         }
 
         response.setItems(wrapper);

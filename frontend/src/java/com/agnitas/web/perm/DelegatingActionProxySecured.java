@@ -35,9 +35,9 @@ import com.agnitas.emm.core.admin.service.AdminService;
 public class DelegatingActionProxySecured extends DelegatingActionProxy {
 	private static final transient Logger logger = Logger.getLogger(DelegatingActionProxySecured.class);
 
-	private static ApplicationContext ctx =  null;
-	private static ActionsTokenResolver tokenResolver = null;
-	private static AdminService adminService = null;
+	private ApplicationContext ctx =  null;
+	private ActionsTokenResolver tokenResolver = null;
+	private AdminService adminService = null;
 
 	@Override
 	public ActionForward execute(ActionMapping mapping, ActionForm form,
@@ -51,7 +51,7 @@ public class DelegatingActionProxySecured extends DelegatingActionProxy {
 		Action delegateAction = getDelegateAction(mapping);
 		
 		String path = mapping.getPath();
-		String method = "";
+		String method;
 		
 		if (path.startsWith("/")) {
 			path = path.substring(1);
@@ -75,7 +75,7 @@ public class DelegatingActionProxySecured extends DelegatingActionProxy {
 		}
 		
 		boolean isAllowed = false;
-		
+
 		// Check for any complex auth token matching
 		List<ComplexToken> complexTokens = getTokenResolver(request).getComplex(path);
 		if (complexTokens != null && checkComplexTokens(complexTokens, method, request)) {
@@ -167,21 +167,21 @@ public class DelegatingActionProxySecured extends DelegatingActionProxy {
 		return true;
 	}
 
-	private static ApplicationContext getContext(HttpServletRequest request) {
+	private ApplicationContext getContext(HttpServletRequest request) {
 		if (ctx == null) {
 			ctx = WebApplicationContextUtils.getWebApplicationContext(request.getSession().getServletContext());
 		}
 		return ctx;
 	}
 
-	private static ActionsTokenResolver getTokenResolver(HttpServletRequest request) {
+	private ActionsTokenResolver getTokenResolver(HttpServletRequest request) {
 		if (tokenResolver == null) {
 			tokenResolver = getContext(request).getBean("actionsTokenResolver", ActionsTokenResolver.class);
 		}
 		return tokenResolver;
 	}
 
-	private static AdminService getAdminService(HttpServletRequest request) {
+	private AdminService getAdminService(HttpServletRequest request) {
 		if (adminService == null) {
 			adminService = getContext(request).getBean("AdminService", AdminService.class);
 		}

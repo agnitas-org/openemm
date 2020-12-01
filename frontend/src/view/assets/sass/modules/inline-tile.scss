@@ -281,6 +281,10 @@ Every `inline` and `inline-block` element is right-aligned.
   margin-bottom: 10px;
 }
 
+body.dark-theme .inline-tile {
+  background-color: $c-dt-tile-background;
+}
+
 .inline-tile-header {
   height: 30px;
   padding: 0;
@@ -330,6 +334,15 @@ Every `inline` and `inline-block` element is right-aligned.
 
 }
 
+body.dark-theme .inline-tile-header {
+  background-color: $c-dt-tile-background;
+
+  .headline,
+  .headline-static {
+    color: $c-dt-tile-text;
+  }
+}
+
 .inline-tile-footer {
   padding: 5px;
   text-align: right;
@@ -372,6 +385,28 @@ Every `inline` and `inline-block` element is right-aligned.
     width: 1px;
     overflow: hidden;
     background-color: $c-gray-11;
+  }
+}
+
+body.dark-theme .inline-tile-header-actions {
+  > li > a {
+    padding: 2px 5px;
+    color: $c-dt-tile-header-actions-text;
+
+    &:hover,
+    &:focus {
+      color: lighten($c-dt-tile-header-actions-text, 10%);
+    }
+
+    &:active,
+    &.active {
+      color: lighten($c-dt-tile-header-actions-text, 15%);
+      background-color: darken($c-dt-tile-background, 5%);
+    }
+
+    &.disabled {
+      color: $c-dt-tile-header-actions-disabled-text;
+    }
   }
 }
 

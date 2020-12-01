@@ -16,15 +16,13 @@
 
 <s:message var="title" code="logon.title"/>
 
-<c:url var="editionLogoSrc" value="/assets/core/images/facelift/edition_logo.png"/>
-<c:url var="agnitasEmmLogoSvgSrc" value="/assets/core/images/facelift/agnitas-emm-logo.svg"/>
-<c:url var="agnitasEmmLogoPngSrc" value="/assets/core/images/facelift/agnitas-emm-logo.png"/>
+<c:url var="editionLogoSrc" value="/layout/0/edition_logo.png"/>
+<c:url var="agnitasEmmLogoSvgSrc" value="/layout/0/logo.svg"/>
+<c:url var="agnitasEmmLogoPngSrc" value="/layout/0/logo.png"/>
 
 <c:if test="${not empty layoutdir and layoutdir != 'assets/core'}">
     <%-- Use custom title and edition logo --%>
     <s:message var="title" code="logon.title.${fn:substringAfter(layoutdir, 'assets/')}" text="${title}"/>
-    <c:url var="agnitasEmmLogoSvgSrc" value="/${layoutdir}/images/facelift/agnitas-emm-logo.svg"/>
-    <c:url var="editionLogoSrc" value="/${layoutdir}/images/facelift/edition_logo.png"/>
 </c:if>
 
 <html>
@@ -68,6 +66,19 @@
                             </logic:messagesPresent>
                         </div>
                     </div>
+                    
+                    <div class="form-group">
+                        <div class="col-sm-4">
+                            <label class="control-label" for="trustedDevice"><s:message code="logon.hostauth.trustDevice"/></label>
+                        </div>
+                         <div class="col-sm-8">
+                         	<label class="toggle">
+                         		<mvc:checkbox path="trustedDevice" id="trustedDevice" value="true" />
+                         		<div class="toggle-control"></div>
+                         	</label>
+                         </div>
+                    </div>
+                    
                     <div class="form-group">
                         <div class="col-sm-offset-4 col-sm-8">
                             <button type="submit" class="btn btn-primary btn-large btn-block">

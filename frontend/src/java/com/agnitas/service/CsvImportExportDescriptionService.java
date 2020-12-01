@@ -12,8 +12,9 @@ package com.agnitas.service;
 
 import java.util.List;
 
-import com.agnitas.beans.ComAdmin;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+
+import com.agnitas.beans.ComAdmin;
 
 public interface CsvImportExportDescriptionService {
 	CsvImportExportDescription getCsvImportExportDescription(@VelocityCheck int companyId, String cvsDescriptionName);
@@ -24,8 +25,6 @@ public interface CsvImportExportDescriptionService {
 
 	List<CsvImportExportDescription> getCsvImportExportDescriptions(@VelocityCheck int companyId, String tableName, boolean forImport);
 
-	boolean saveCsvImportExportDescription(CsvImportExportDescription csvImportExportDescription) throws Exception;
-
 	boolean deleteCsvImportExportDescription(int id);
 
 	ServiceResult<CsvImportExportDescription> getForDeletion(ComAdmin admin, int id, boolean forImport);
@@ -33,4 +32,6 @@ public interface CsvImportExportDescriptionService {
 	boolean deleteCsvImportExportDescription(@VelocityCheck int companyId, String cvsDescriptionName);
 
 	SimpleServiceResult save(ComAdmin admin, CsvImportExportDescription definition);
+
+	boolean addConstantToMappingData(int descriptionID);
 }

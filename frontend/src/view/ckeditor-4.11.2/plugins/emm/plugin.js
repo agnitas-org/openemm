@@ -6,14 +6,7 @@ CKEDITOR.plugins.add('emm', {
             var toHtmlMethod = dataProcessor.toHtml;
             var toDataMethod = dataProcessor.toDataFormat;
             dataProcessor.toHtml = function(data) {
-                data = data.replace(
-                    //regex for searching agntags in HTML file. Note that agn tags can be within html-tag's attribute
-                    /\[agn[A-Z0-9]+(?:[^'"\]]|'.*?'|".*?")+]/g,
-                    function(whole) {
-                      return _.escape(whole);
-                    }
-                );
-                arguments[0] = data;
+                arguments[0] = AGN.Lib.Helpers.escapeAgnTags(data);
                 return toHtmlMethod.apply(this, arguments);
             };
 
@@ -24,13 +17,7 @@ CKEDITOR.plugins.add('emm', {
                 if (content.indexOf(substring) !== -1) {
                     return "";
                 } else {
-                  return content.replace(
-                    //regex for searching agntags in HTML file. Note that agn tags can be within html-tag's attribute
-                    /\[agn[A-Z0-9]+(?:(?!&#39;|&quot;)[^'"\]]|&#39;.*?&#39;|&quot;.*?&quot;)*]/g,
-                    function(whole) {
-                      return _.unescape(whole);
-                    }
-                  );
+                    return AGN.Lib.Helpers.unescapeAgnTags(content);
                 }
             };
         }
@@ -76,7 +63,7 @@ CKEDITOR.plugins.add('emm', {
         editor.filter.addElementCallback(function (element) {
             var ignoredTags = editor.config.ignoredTags;
             if (Array.isArray(ignoredTags) && ignoredTags.indexOf(element.name) > -1) {
-              return CKEDITOR.FILTER_SKIP_TREE;
+                return CKEDITOR.FILTER_SKIP_TREE;
             }
         });
     }

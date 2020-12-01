@@ -14,6 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Objects;
 
+import com.agnitas.emm.core.userform.util.WebFormUtils;
 import org.agnitas.beans.Recipient;
 import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
@@ -82,8 +83,8 @@ public final class FullviewServiceImpl implements FullviewService {
 
 			final String urlEncodedFormName = URLEncoder.encode(form.getFormName(), "UTF-8");
 			final String urlEncodedUID = URLEncoder.encode(uidString, "UTF-8");
-			
-			return String.format("%s/form.do?agnCI=%d&agnFN=%s&agnUID=%s", company.getRdirDomain(), companyID, urlEncodedFormName, urlEncodedUID);
+
+			return WebFormUtils.getFormFullViewLink(company.getRdirDomain(), companyID, urlEncodedFormName, urlEncodedUID);
 		} catch(final RequiredInformationMissingException | UIDStringBuilderException e) {
 			throw new FullviewException("Cannot build UID", e);
 		} catch(final UnsupportedEncodingException e) {

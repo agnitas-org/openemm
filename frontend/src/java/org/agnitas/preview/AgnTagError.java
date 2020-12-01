@@ -20,15 +20,17 @@ import com.agnitas.messages.I18nString;
  * AgnTagError descripes an errorneous agnTag in a text component.
  */
 public class AgnTagError extends RuntimeException {
-	/** The Constant serialVersionUID. */
+	/**
+	 * The Constant serialVersionUID.
+	 */
 	private static final long serialVersionUID = 8609478855972730080L;
-	
+
 	/**
 	 * The Enum AgnTagErrorKey.
 	 */
 	public enum AgnTagErrorKey {
 		exceptionWhileChecking("error.agntag.exceptionWhileChecking"),
-		
+
 		missingClosingBracket("error.agntag.missingClosingBracket"),
 		invalidParameterSyntax("error.agntag.invalidParameterSyntax"),
 		invalidClosingAgnDynTag_notOpened("error.agntag.invalidClosingAgnDynTag.notOpened"),
@@ -40,7 +42,7 @@ public class AgnTagError extends RuntimeException {
 		missingParameter("error.agntag.missingParameter"),
 		missingClosingAgnDynTag("error.agntag.missingClosingAgnDynTag"),
 		unwrappedAgnDvalueTag("error.agntag.unwrappedValueTag"),
-		
+
 		// Parameter Errors
 		invalidWhitespace("error.agntag.parameter.invalidWhitespace"),
 		invalidQuotedKey("error.agntag.parameter.invalidQuotedKey"),
@@ -50,19 +52,21 @@ public class AgnTagError extends RuntimeException {
 		unexpectedEndOfKey("error.agntag.parameter.unexpectedEndOfKey"),
 		duplicateKey("error.agntag.parameter.duplicateKey"),
 		invalidQuotesInValue("error.agntag.parameter.invalidQuotesInValue");
-		
+
 		/**
-		  * Instantiates a new agn tag error key.
-		  *
-		  * @param messageKey the message key
-		  */
-		private AgnTagErrorKey(String messageKey) {
+		 * Instantiates a new agn tag error key.
+		 *
+		 * @param messageKey the message key
+		 */
+		AgnTagErrorKey(String messageKey) {
 			this.messageKey = messageKey;
 		}
-		
-		/** The message key. */
+
+		/**
+		 * The message key.
+		 */
 		private final String messageKey;
-		
+
 		/**
 		 * Gets the message key.
 		 *
@@ -73,24 +77,36 @@ public class AgnTagError extends RuntimeException {
 		}
 	}
 
-	/** The tag name. */
+	/**
+	 * The tag name.
+	 */
 	private String tagName = "Unknown";
-	
-	/** The full agn tag text. */
+
+	/**
+	 * The full agn tag text.
+	 */
 	private String fullAgnTagText = "<empty>";
-	
-	/** The error key. */
+
+	/**
+	 * The error key.
+	 */
 	private AgnTagErrorKey errorKey;
-	
-	/** The additional error data. */
+
+	/**
+	 * The additional error data.
+	 */
 	private String[] additionalErrorData;
-	
-	/** The line number. */
+
+	/**
+	 * The line number.
+	 */
 	private int lineNumber = -1;
-	
-	/** The position within line. */
+
+	/**
+	 * The position within line.
+	 */
 	private int positionWithinLine = -1;
-	
+
 	/**
 	 * Instantiates a new agn tag error.
 	 *
@@ -154,7 +170,7 @@ public class AgnTagError extends RuntimeException {
 		this.additionalErrorData = additionalErrorData;
 		this.errorKey = errorKey;
 	}
-	
+
 	/**
 	 * Gets the localized message.
 	 *
@@ -239,7 +255,7 @@ public class AgnTagError extends RuntimeException {
 				extendedErrorData = new Object[0];
 			}
 		}
-		
+
 		return extendedErrorData;
 	}
 
@@ -272,7 +288,7 @@ public class AgnTagError extends RuntimeException {
 	public void setAdditionalErrorData(String[] additionalErrorData) {
 		this.additionalErrorData = additionalErrorData;
 	}
-	
+
 	public void setTextPosition(String contentText, int textPosition) {
 		this.lineNumber = AgnUtils.getLineNumberOfTextposition(contentText, textPosition);
 		this.positionWithinLine = textPosition - AgnUtils.getStartIndexOfLineAtIndex(contentText, textPosition) + 1;

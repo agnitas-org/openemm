@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
@@ -22,6 +22,8 @@ mailingDeepStatDataSet = new Packages.com.agnitas.reporting.birt.external.datase
 tempTableID = mailingDeepStatDataSet.prepareRevenueReportWithDevices( params["mailingID"] , params["companyID"], targetIDs , params["startDate"],params["stopDate"], language, params["hourScale"]);
 		
 reportContext.setPersistentGlobalVariable("tempTableID", new Integer(tempTableID));
+
+reportContext.setGlobalVariable("isDarkmode", params["darkmode"]);
 
 // handle csv-Export
 if(reportContext.getOutputFormat() != "csv" ) {
@@ -145,6 +147,19 @@ if(reportContext.getOutputFormat() == "csv" ) {
             <property name="isRequired">false</property>
             <property name="dataType">boolean</property>
             <property name="distinct">true</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">check-box</property>
+            <structure name="format"/>
+        </scalar-parameter>
+        <scalar-parameter name="darkmode" id="1321">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">boolean</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">False</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
             <property name="paramType">simple</property>
             <property name="controlType">check-box</property>
             <structure name="format"/>
@@ -1300,7 +1315,7 @@ return false;]]></method>
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -1308,6 +1323,19 @@ return false;]]></method>
     <Visible>true</Visible>
   </Block>
   <Dimension>Two_Dimensional</Dimension>
+  <Script>function beforeDrawAxisLabel( axis, label, icsc ) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}</Script>
   <Units>Points</Units>
   <SeriesThickness>10.0</SeriesThickness>
   <ExtendedProperties>
@@ -2345,7 +2373,7 @@ return false;]]></method>
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -2353,6 +2381,19 @@ return false;]]></method>
     <Visible>true</Visible>
   </Block>
   <Dimension>Two_Dimensional</Dimension>
+  <Script>function beforeDrawAxisLabel( axis, label, icsc ) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}</Script>
   <Units>Points</Units>
   <SeriesThickness>10.0</SeriesThickness>
   <ExtendedProperties>
@@ -3544,7 +3585,7 @@ return false;]]></method>
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -3639,7 +3680,11 @@ function beforeDrawDataPointLabel( dph, label, icsc )
 	var reportContext =  icsc.getExternalContext().getObject();	
 	var message = Packages.com.agnitas.messages.I18nString.getLocaleString(messageKey, reportContext.getLocale());
 	labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;&amp;&quot;)) + &quot; (&quot; + rateFormatted + &quot;%) &quot; + message;
-	label.getCaption().setValue(labelText);	
+	label.getCaption().setValue(labelText);
+
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -3888,9 +3933,9 @@ function beforeDrawDataPointLabel( dph, label, icsc )
           <Thickness>1</Thickness>
           <Color>
             <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
+            <Red>136</Red>
+            <Green>136</Green>
+            <Blue>136</Blue>
           </Color>
           <Visible>true</Visible>
         </LeaderLineAttributes>

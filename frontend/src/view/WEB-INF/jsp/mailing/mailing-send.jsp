@@ -58,6 +58,8 @@
 <c:set var="isMailingGrid" value="${mailingSendForm.isMailingGrid}" />
 <c:set var="tmpMailingID" value="${mailingSendForm.mailingID}" />
 
+<fmt:setLocale value="${sessionScope['emm.admin'].locale}"/>
+
 <c:if test="${isWorkflowDriven}">
     <c:url var="WORKFLOW_LINK" value="/workflow/${workflowParams.workflowId}/view.action" scope="page">
         <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingSendForm.mailingID}"/>
@@ -86,6 +88,212 @@
 	</li>
 </c:set>
 
+<c:set var="checkLinksTile">
+	<div class="tile">
+		<div class="tile-header">
+			<h2 class="headline">
+				<i class="icon icon-chain"></i>
+				<bean:message key="link.check" />
+			</h2>
+		</div>
+		<div class="tile-content tile-content-forms">
+			<div class="well block vspace-bottom-10">
+				<bean:message key="mailing.link.check.hint" />
+			</div>
+
+			<a href="#" class="btn btn-regular btn-primary" data-action-value="${ACTION_CHECK_LINKS}" data-action="check-links">
+				<i class="icon icon-refresh"></i>
+				<span class="text"><bean:message key="button.check" /></span>
+			</a>
+		</div>
+	</div>
+</c:set>
+
+<c:set var="testRunTile">
+	<div class="tile">
+		<div class="tile-header">
+			<h2 class="headline">
+				<i class="icon icon-flask"></i>
+				<bean:message key="mailing.testrun" />
+			</h2>
+		</div>
+
+		<div class="tile-content tile-content-forms">
+			<c:set var="moveDelivery" value="${false}" />
+
+		<c:choose>
+			<c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
+				<div class="well block">
+					<c:choose>
+						<c:when test="${mailingSendForm.isTemplate}">
+							<bean:message key="template.send.test" />
+						</c:when>
+						<c:otherwise>
+							<bean:message key="mailing.send.test" />
+						</c:otherwise>
+					</c:choose>
+				</div>
+
+				<div id="test-send-controls-group" class="vspace-top-10"
+					 style="${mailingSendForm.transmissionRunning ? 'display: none;' : ''}">
+					<emm:ShowByPermission token="mailing.send.admin.target">
+						<div class="form-group">
+							<div class="col-sm-4">
+								<label class="control-label" for="adminTargetGroupSelect">
+									<bean:message key="mailing.send.admin.target.to" />
+								</label>
+							</div>
+							<div class="col-sm-8">
+								<agn:agnSelect name="mailingSendForm" property="adminTargetGroupID" styleId="adminTargetGroupSelect"
+											   styleClass="form-control js-select" data-action="admin-target-group"
+											   data-initializer="test-run-recipients-select">
+									<html:option value="0"> <bean:message key="mailing.send.adminOrTest" /></html:option>
+
+									<html:option value="${ADMIN_TARGET_SINGLE_RECIPIENT}">
+										<bean:message key="mailing.test.recipient.single" />
+									</html:option>
+
+									<c:forEach var="targetGroup" items="${adminTargetGroupList}">
+										<html:option value="${targetGroup.id}">${targetGroup.targetName}</html:option>
+									</c:forEach>
+								</agn:agnSelect>
+							</div>
+						</div>
+					</emm:ShowByPermission>
+				</div>
+
+				<div class="form-group ${mailingSendForm.adminTargetGroupID eq ADMIN_TARGET_SINGLE_RECIPIENT ? '' : 'hidden'}" id="test-recipients-table">
+					<div class="col-sm-push-4 col-sm-8">
+						<div class="table-responsive">
+							<table class="table table-bordered table-striped">
+								<thead>
+								<tr>
+									<th><bean:message key="settings.Admin.email" /></th>
+									<th></th>
+								</tr>
+								</thead>
+								<tbody>
+								<c:set var="lastAddress" value="" />
+
+								<c:forEach var="address" items="${mailingSendForm.mailingTestRecipients}" varStatus="status">
+									<c:choose>
+										<c:when test="${status.last}">
+											<c:set var="lastAddress" value="${address}" />
+										</c:when>
+										<c:otherwise>
+											<tr>
+												<td>
+													<input type="text" name="mailingTestRecipients" class="form-control" value="${fn:escapeXml(address)}" data-action="edit-test-recipient" />
+												</td>
+												<td class="table-actions">
+													<button type="button" class="btn btn-regular btn-alert" data-tooltip="<bean:message key='button.Delete'/>" data-action="remove-test-recipient">
+														<i class="icon icon-trash-o"></i>
+													</button>
+												</td>
+											</tr>
+										</c:otherwise>
+									</c:choose>
+								</c:forEach>
+
+								<tr>
+									<td>
+										<input type="text" id="new-test-recipient" name="mailingTestRecipients" class="form-control" data-action="new-test-recipient" value="${fn:escapeXml(lastAddress)}" />
+									</td>
+									<td class="table-actions">
+										<button type="button" class="btn btn-regular btn-primary" data-tooltip="<bean:message key='button.Add'/>" data-action="add-test-recipient">
+											<i class="icon icon-plus"></i>
+										</button>
+									</td>
+								</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+				<div class="form-group">
+					<div class="col-sm-offset-1 col-sm-11">
+						<div class="btn-group">
+							<a href="#"
+							   id="adminSendButton"
+							   class="btn btn-regular btn-primary"
+							   data-action-value="${ACTION_SEND_ADMIN}"
+							   data-action="start-delivery">
+								<i class="icon icon-send-o"></i>
+								<span class="text">
+									<bean:message key="adminMail" />
+								</span>
+							</a>
+
+							<a href="#" class="btn btn-regular btn-primary"
+							   data-action-value="${ACTION_SEND_TEST}"
+							   data-action="start-delivery">
+								<i class="icon icon-send-o"></i>
+								<span class="text">
+									<bean:message key="testMail" />
+								</span>
+							</a>       
+
+							<c:if test="${mayCreateExternalMailing}">
+								<a href="#" class="btn btn-regular btn-primary"
+								   data-action-value="${ACTION_CREATE_EXTERNAL}"
+								   data-action="start-delivery">
+									<i class="icon icon-send-o"></i>
+									<span class="text">
+										<bean:message key="createExternalMailing" />
+									</span>
+								</a>
+							</c:if>
+
+							<c:if test="${not empty externalEditorLink}">
+								<a href="${externalEditorLink}" target="_POST_MailingTab" class="btn btn-regular btn-primary">
+									<i class="icon icon-send-o"></i>
+									<span class="text">
+										<bean:message key="openExternalEditor" />
+									</span>
+								</a>
+							</c:if>
+						</div>
+					</div>
+				</div>
+			</c:when>
+			<c:otherwise>
+				<div class="form-group">
+					<div class="notification notification-warning">
+						<div class="notification-header">
+							<p class="headline">
+								<i class="icon icon-state-warning"></i>
+								<span class="text"><bean:message key="error.mailing.send" /></span>
+							</p>
+						</div>
+
+						<div class="notification-content">
+							<p><bean:message key="MailingTestAdmin.deleted_target_groups" /></p>
+						</div>
+					</div>
+
+				</div>
+
+				<div class="form-group">
+					<div class="notification notification-warning">
+						<div class="notification-header">
+							<p class="headline">
+								<i class="icon icon-state-warning"></i>
+								<span class="text"><bean:message key="error.mailing.send" /></span>
+							</p>
+						</div>
+
+						<div class="notification-content">
+							<p><bean:message key="MailingTestDistrib.deleted_target_groups" /></p>
+						</div>
+					</div>
+				</div>
+			</c:otherwise>
+		</c:choose>
+		</div>
+	</div>
+</c:set>
+
 <tiles:insert page="template.jsp">
 	<tiles:put name="header" type="string">
 		<ul class="tile-header-nav">
@@ -108,217 +316,16 @@
 	<tiles:put name="content" type="string">
 		<div class="${isMailingGrid ? "tile-content-padded" : "row"}">
 
-			<c:set var="contentClasses" value=""/>
-			<c:if test="${mailingSendForm.mailingtype == TYPE_NORMAL || mailingSendForm.mailingtype == TYPE_FOLLOWUP}">
-				<c:set var="contentClasses" value="data-view-block='col-xs-12 row-1-1' data-view-split='col-md-6' data-view-hidden='col-xs-12 row-1-1'"/>
+			<c:set var="contentAttr" value=""/>
+			<c:if test="${mailingSendForm.mailingtype eq TYPE_NORMAL or mailingSendForm.mailingtype eq TYPE_FOLLOWUP}">
+				<c:set var="contentAttr" value="data-view-block='col-xs-12 row-1-1' data-view-split='col-md-6' data-view-hidden='col-xs-12 row-1-1'"/>
 			</c:if>
-			<div class="col-xs-12 row-1-1" ${contentClasses} data-controller="mailing-send">
-				<agn:agnForm action="/mailingsend" id="testDeliveryForm" data-form="resource">
+			<div class="col-xs-12 row-1-1" ${contentAttr} data-controller="mailing-send">
+				<agn:agnForm action="/mailingsend.do" id="testDeliveryForm" data-form="resource">
 					<input type="hidden" name="mailingID" value="${tmpMailingID}" />
 					<input type="hidden" name="action" value="${ACTION_VIEW_SEND}" />
-
-					<div class="tile">
-						<div class="tile-header">
-							<h2 class="headline">
-								<i class="icon icon-chain"></i>
-								<bean:message key="link.check" />
-							</h2>
-						</div>
-						<div class="tile-content tile-content-forms">
-							<div class="well block vspace-bottom-10">
-								<bean:message key="mailing.link.check.hint" />
-							</div>
-
-							<a href="#" class="btn btn-regular btn-primary" data-action-value="${ACTION_CHECK_LINKS}" data-action="check-links">
-								<i class="icon icon-refresh"></i>
-								<span class="text"><bean:message key="button.check" /></span>
-							</a>
-						</div>
-						<!-- Tile Content END -->
-					</div>
-					<!-- Tile END -->
-
-					<div class="tile">
-						<div class="tile-header">
-							<h2 class="headline">
-								<i class="icon icon-flask"></i>
-								<bean:message key="mailing.testrun" />
-							</h2>
-						</div>
-
-						<div class="tile-content tile-content-forms">
-							<c:set var="moveDelivery" value="false" />
-
-							<c:choose>
-								<c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
-									<div class="well block">
-										<c:choose>
-											<c:when test="${mailingSendForm.isTemplate}">
-												<bean:message key="template.send.test" />
-											</c:when>
-											<c:otherwise>
-												<bean:message key="mailing.send.test" />
-											</c:otherwise>
-										</c:choose>
-									</div>
-
-									<div id="test-send-controls-group" class="vspace-top-10" style="${mailingSendForm.transmissionRunning ? 'display: none;' : ''}">
-										<emm:ShowByPermission token="mailing.send.admin.target">
-											<div class="form-group">
-												<div class="col-sm-4">
-													<label class="control-label" for="adminTargetGroupSelect">
-														<bean:message key="mailing.send.admin.target.to" />
-													</label>
-												</div>
-												<div class="col-sm-8">
-													<agn:agnSelect property="adminTargetGroupID" styleId="adminTargetGroupSelect" styleClass="form-control js-select" data-action="admin-target-group">
-														<html:option value="0"> <bean:message key="mailing.send.adminOrTest" /></html:option>
-
-														<html:option value="${ADMIN_TARGET_SINGLE_RECIPIENT}">
-															<bean:message key="mailing.test.recipient.single" />
-														</html:option>
-
-														<c:forEach var="targetGroup" items="${adminTargetGroupList}">
-															<html:option value="${targetGroup.id}">${targetGroup.targetName}</html:option>
-														</c:forEach>
-													</agn:agnSelect>
-												</div>
-											</div>
-										</emm:ShowByPermission>
-									</div>
-
-									<div class="form-group ${mailingSendForm.adminTargetGroupID eq ADMIN_TARGET_SINGLE_RECIPIENT ? '' : 'hidden'}" id="test-recipients-table">
-										<div class="col-sm-push-4 col-sm-8">
-											<div class="table-responsive">
-												<table class="table table-bordered table-striped">
-													<thead>
-													<tr>
-														<th><bean:message key="settings.Admin.email" /></th>
-														<th></th>
-													</tr>
-													</thead>
-													<tbody>
-													<c:set var="lastAddress" value="" />
-
-													<c:forEach var="address" items="${mailingSendForm.mailingTestRecipients}" varStatus="status">
-														<c:choose>
-															<c:when test="${status.last}">
-																<c:set var="lastAddress" value="${address}" />
-															</c:when>
-															<c:otherwise>
-																<tr>
-																	<td>
-																		<input type="text" name="mailingTestRecipients" class="form-control" value="${fn:escapeXml(address)}" data-action="edit-test-recipient" />
-																	</td>
-																	<td class="table-actions">
-																		<button type="button" class="btn btn-regular btn-alert" data-tooltip="<bean:message key='button.Delete'/>" data-action="remove-test-recipient">
-																			<i class="icon icon-trash-o"></i>
-																		</button>
-																	</td>
-																</tr>
-															</c:otherwise>
-														</c:choose>
-													</c:forEach>
-
-													<tr>
-														<td>
-															<input type="text" id="new-test-recipient" name="mailingTestRecipients" class="form-control" data-action="new-test-recipient" value="${fn:escapeXml(lastAddress)}" />
-														</td>
-														<td class="table-actions">
-															<button type="button" class="btn btn-regular btn-primary" data-tooltip="<bean:message key='button.Add'/>" data-action="add-test-recipient">
-																<i class="icon icon-plus"></i>
-															</button>
-														</td>
-													</tr>
-													</tbody>
-												</table>
-											</div>
-										</div>
-									</div>
-
-									<div class="form-group">
-										<div class="col-sm-offset-1 col-sm-11">
-											<div class="btn-group">
-												<a href="#"
-												   id="adminSendButton"
-												   class="btn btn-regular btn-primary"
-												   data-action-value="${ACTION_SEND_ADMIN}"
-												   data-action="start-delivery">
-													<i class="icon icon-send-o"></i>
-													<span class="text">
-														<bean:message key="adminMail" />
-													</span>
-												</a>
-
-												<a href="#" class="btn btn-regular btn-primary"
-												   data-action-value="${ACTION_SEND_TEST}"
-												   data-action="start-delivery">
-													<i class="icon icon-send-o"></i>
-													<span class="text">
-														<bean:message key="testMail" />
-													</span>
-												</a>
-												
-												<c:if test="${mailingSendForm.mayCreateExternal}">
-													<a href="#" class="btn btn-regular btn-primary"
-													   data-action-value="${ACTION_CREATE_EXTERNAL}"
-													   data-action="start-delivery">
-														<i class="icon icon-send-o"></i>
-														<span class="text">
-															<bean:message key="createExternalMailing" />
-														</span>
-													</a>
-												</c:if>
-												
-												<c:if test="${not empty mailingSendForm.externalEditorLink}">
-													<a href="${mailingSendForm.externalEditorLink}" target="_POST_MailingTab" class="btn btn-regular btn-primary">
-														<i class="icon icon-send-o"></i>
-														<span class="text">
-															<bean:message key="openExternalEditor" />
-														</span>
-													</a>
-												</c:if>
-											</div>
-										</div>
-									</div>
-								</c:when>
-								<c:otherwise>
-									<div class="form-group">
-										<div class="notification notification-warning">
-											<div class="notification-header">
-												<p class="headline">
-													<i class="icon icon-state-warning"></i>
-													<span class="text"><bean:message key="error.mailing.send" /></span>
-												</p>
-											</div>
-
-											<div class="notification-content">
-												<p><bean:message key="MailingTestAdmin.deleted_target_groups" /></p>
-											</div>
-										</div>
-
-									</div>
-
-									<div class="form-group">
-										<div class="notification notification-warning">
-											<div class="notification-header">
-												<p class="headline">
-													<i class="icon icon-state-warning"></i>
-													<span class="text"><bean:message key="error.mailing.send" /></span>
-												</p>
-											</div>
-
-											<div class="notification-content">
-												<p><bean:message key="MailingTestDistrib.deleted_target_groups" /></p>
-											</div>
-										</div>
-									</div>
-								</c:otherwise>
-							</c:choose>
-						</div>
-						<!-- Tile Content END -->
-					</div>
-					<!-- Tile END -->
+					${checkLinksTile}
+                    ${testRunTile}
 				</agn:agnForm>
 
 				<logic:equal name="mailingSendForm" property="isTemplate" value="false">
@@ -333,6 +340,7 @@
 							<div class="form-group">
 								<div class="well block">
 									<logic:equal name="mailingSendForm" property="worldMailingSend" value="true">
+										<%-- info text for sent normal mailing--%>
 										<logic:equal name="mailingSendForm" property="mailingtype" value="${TYPE_NORMAL}">
 											<c:choose>
 												<c:when test="${mailingSendForm.deliveryStat.deliveryStatus eq STATUS_SENT}">
@@ -342,8 +350,9 @@
 													<bean:message key="mailing.send.scheduled" />
 												</c:otherwise>
 											</c:choose>
-
 										</logic:equal>
+
+										<%-- info text for sent action based mailing--%>
 										<logic:equal name="mailingSendForm" property="mailingtype" value="${TYPE_ACTIONBASED}">
 											<bean:message key="mailing.send.active.event" /><br>
 											<c:if test="${not empty mailingSendForm.bounceFilterNames}">
@@ -354,15 +363,17 @@
 												<bean:message key="mailing.send.deactivate" />
 											</c:if>
 										</logic:equal>
+
+										<%-- info text for sent date based mailing--%>
 										<logic:equal name="mailingSendForm" property="mailingtype" value="${TYPE_DATEBASED}">
 											<bean:message key="mailing.send.active.date" /><br>
 											<bean:message key="mailing.send.deactivate" />
-											<logic:equal name="mailingSendForm" property="worldMailingSend" value="true">
-												<bean:message key="SendingTimeDaily" />:&nbsp;
-												<fmt:formatDate value="${mailingSendForm.deliveryStat.scheduledSendTime}"
-																pattern="${adminTimeFormat}" timeZone="${adminTimeZone}" />
-											</logic:equal>
+											<bean:message key="SendingTimeDaily" />:&nbsp;
+											<fmt:formatDate value="${mailingSendForm.deliveryStat.scheduledSendTime}"
+															pattern="${adminTimeFormat}" timeZone="${adminTimeZone}" />
 										</logic:equal>
+
+										<%-- info text for sent followup mailing--%>
 										<logic:equal name="mailingSendForm" property="mailingtype" value="${TYPE_FOLLOWUP}">
 											<bean:message key="mailing.send.finished" />
 										</logic:equal>
@@ -382,6 +393,10 @@
 										</logic:equal>
 										<logic:equal name="mailingSendForm" property="mailingtype" value="${TYPE_FOLLOWUP}">
 											<bean:message key="mailing.send.ready" />
+										</logic:equal>
+										<logic:equal name="mailingSendForm" property="mailingtype" value="${TYPE_INTERVAL}">
+											<bean:message key="mailing.send.ready" /><br>
+											<bean:message key="mailing.send.activate.event" />
 										</logic:equal>
 									</logic:equal>
 								</div>
@@ -404,37 +419,37 @@
 
 									<c:if test="${canBeDeactivated}">
 										<div class="form-group">
-												<div class="col-sm-4">
-													<label class="control-label">
-														<bean:message key="MailingDeactivate" />
-													</label>
-												</div>
-
-												<div class="col-sm-8">
-													<c:if test="${not isWorkflowDriven}">
-														<html:link styleClass="btn btn-regular"
-																   page='/mailingsend.do?action=${ACTION_DEACTIVATE_MAILING}&mailingID=${tmpMailingID}'>
-															<i class="icon icon-ban"></i>
-															<span class="text"><bean:message key="btndeactivate" /></span>
-														</html:link>
-													</c:if>
-													<c:if test="${isWorkflowDriven}">
-														<div class="input-group">
-															<div class="input-group-btn">
-																<button class="btn btn-regular" disabled='disabled'>
-																	<i class="icon icon-ban"></i>
-																	<span class="text"><bean:message key="btndeactivate" /></span>
-																</button>
-																<a href="${WORKFLOW_LINK}" class="btn btn-info btn-regular">
-																	<i class="icon icon-linkage-campaignmanager"></i>
-																	<strong><bean:message key="campaign.manager.icon"/></strong>
-																</a>
-															</div>
-														</div>
-													</c:if>
-												</div>
-
+											<div class="col-sm-4">
+												<label class="control-label">
+													<bean:message key="MailingDeactivate" />
+												</label>
 											</div>
+
+											<div class="col-sm-8">
+												<c:if test="${not isWorkflowDriven}">
+													<html:link styleClass="btn btn-regular btn-warning"
+															   page='/mailingsend.do?action=${ACTION_DEACTIVATE_MAILING}&mailingID=${tmpMailingID}'>
+														<i class="icon icon-ban"></i>
+														<span class="text"><bean:message key="btndeactivate" /></span>
+													</html:link>
+												</c:if>
+												<c:if test="${isWorkflowDriven}">
+													<div class="input-group">
+														<div class="input-group-btn">
+															<button class="btn btn-regular btn-warning" disabled='disabled'>
+																<i class="icon icon-ban"></i>
+																<span class="text"><bean:message key="btndeactivate" /></span>
+															</button>
+															<a href="${WORKFLOW_LINK}" class="btn btn-info btn-regular">
+																<i class="icon icon-linkage-campaignmanager"></i>
+																<strong><bean:message key="campaign.manager.icon"/></strong>
+															</a>
+														</div>
+													</div>
+												</c:if>
+											</div>
+
+										</div>
 									</c:if>
 								</logic:equal>
 
@@ -448,7 +463,8 @@
 													</label>
 												</div>
 												<div class="col-sm-8">
-													<html:link styleClass="btn btn-regular" page='/mailingsend.do?action=${ACTION_DEACTIVATE_INTERVALMAILING}&mailingID=${tmpMailingID}'>
+													<html:link styleClass="btn btn-regular btn-warning"
+															   page='/mailingsend.do?action=${ACTION_DEACTIVATE_INTERVALMAILING}&mailingID=${tmpMailingID}'>
 														<i class="icon icon-ban"></i>
 														<span class="text"><bean:message key="btndeactivate" /></span>
 													</html:link>
@@ -469,7 +485,7 @@
 												</div>
 												<div class="col-sm-8">
 													<c:if test="${not isWorkflowDriven}">
-															<html:link styleClass="btn btn-regular"
+															<html:link styleClass="btn btn-regular btn-warning"
 																	   page='/mailingsend.do?action=${ACTION_DEACTIVATE_MAILING}&mailingID=${tmpMailingID}'>
 																<i class="icon icon-ban"></i>
 																<span class="text"><bean:message key="btndeactivate" /></span>
@@ -478,7 +494,7 @@
 													<c:if test="${isWorkflowDriven}">
 														<div class="input-group">
 															<div class="input-group-btn">
-																<button class="btn btn-regular" disabled='disabled'>
+																<button class="btn btn-regular btn-warning" disabled='disabled'>
 																	<i class="icon icon-ban"></i>
 																	<span class="text"><bean:message key="btndeactivate" /></span>
 																</button>
@@ -509,7 +525,7 @@
 														</div>
 														<div class="col-sm-8">
 															<c:if test="${not isWorkflowDriven}">
-																<html:link styleClass="btn btn-regular"
+																<html:link styleClass="btn btn-regular btn-primary"
 																		page="/mailingsend.do?action=${ACTION_ACTIVATE_CAMPAIGN}&to=3&mailingID=${tmpMailingID}">
 																	<i class="icon icon-check-circle-o"></i>
 																	<span class="text"><bean:message key="button.Activate" /></span>
@@ -558,7 +574,8 @@
 															</label>
 														</div>
 														<div class="col-sm-8">
-															<html:link styleClass="btn btn-regular" page="/mailingsend.do?action=${ACTION_ACTIVATE_INTERVALMAILING}&mailingID=${tmpMailingID}">
+															<html:link styleClass="btn btn-regular btn-primary"
+																	   page="/mailingsend.do?action=${ACTION_ACTIVATE_INTERVALMAILING}&mailingID=${tmpMailingID}">
 																<i class="icon icon-check-circle-o"></i>
 																<span class="text"><bean:message key="button.Activate" /></span>
 															</html:link>
@@ -588,7 +605,7 @@
 															</label>
 														</div>
 														<div class="col-sm-8">
-															<html:link styleClass="btn btn-regular" page="/mailingsend.do?action=${ACTION_ACTIVATE_INTERVALMAILING}&mailingID=${tmpMailingID}">
+															<html:link styleClass="btn btn-regular btn-primary" page="/mailingsend.do?action=${ACTION_ACTIVATE_INTERVALMAILING}&mailingID=${tmpMailingID}">
 																<i class="icon icon-ban"></i>
 																<span class="text"><bean:message key="button.Activate" /></span>
 															</html:link>
@@ -695,12 +712,8 @@
 																	</div>
 																</c:if>
 															</div>
-															<div class="col-sm-8">
-
-															</div>
 														</div>
 													</agn:agnForm>
-
 												</c:when>
 												<c:otherwise>
 													<div class="form-group">
@@ -722,13 +735,14 @@
 									<div class="col-sm-4">
 										<label class="control-label">
 											<bean:message key="mailing.size" />
-											<button type="button" class="icon icon-help" tabindex="-1" data-help="help_${helplanguage}/mailing/MailingMaxSize.xml"></button>
+											<button type="button" class="icon icon-help" tabindex="-1"
+													data-help="help_${helplanguage}/mailing/MailingMaxSize.xml"></button>
 										</label>
 									</div>
 
 									<div class="col-sm-8">
 										<p class="form-control-static">
-												<%-- Show the value at least in KB since the byte number is inaccurate anyway --%>
+											<%-- Show the value at least in KB since the byte number is inaccurate anyway --%>
 											<c:set var="approximateMaxSizeWithoutExternalImages" value="${emm:formatBytes(mailingSendForm.approximateMaxSizeWithoutExternalImages, 1, 'iec', emm:getLocale(pageContext.request))}" />
 											<c:set var="approximateMaxSize" value="${emm:formatBytes(mailingSendForm.approximateMaxSize, 1, 'iec', emm:getLocale(pageContext.request))}" />
 
@@ -754,6 +768,7 @@
 									</div>
 								</div>
 
+								<%-- Configure button --%>
 								<emm:ShowByPermission token="mailing.send.world">
 									<c:if test="${CAN_SEND_WORLDMAILING}">
 										<c:choose>
@@ -768,6 +783,7 @@
 														<c:url var="configureLink" value="/mailingsend.do">
 															<c:param name="action" value="${ACTION_VIEW_SEND2}" />
 															<c:param name="mailingID" value="${tmpMailingID}" />
+															<c:param name="ignore_ajax" value="true" />
 														</c:url>
 
 														<c:choose>
@@ -781,7 +797,6 @@
 																<c:set var="configureButtonAction" value="configure-delivery" />
 															</c:otherwise>
 														</c:choose>
-
 														<button type="button" class="btn btn-regular btn-primary" data-action="${configureButtonAction}" data-url="${configureLink}">
 															<i class="icon icon-paper-plane"></i>
 															<span class="text"><bean:message key="button.configure" /></span>
@@ -802,6 +817,7 @@
 									</c:if>
 								</emm:ShowByPermission>
 
+								<%-- Approve button --%>
 								<emm:ShowByPermission token="mailing.send.world">
 									<c:if test="${CAN_ENABLE_SEND_WORLDMAILING}">
 										<c:choose>
@@ -904,8 +920,8 @@
 				</logic:equal>
 			</div>
 			<!-- Col END -->
-			<c:if test="${!mailingSendForm.isTemplate}">
-				<c:if test="${mailingSendForm.mailingtype == TYPE_NORMAL || mailingSendForm.mailingtype == TYPE_FOLLOWUP}">
+			<c:if test="${not mailingSendForm.isTemplate}">
+				<c:if test="${mailingSendForm.mailingtype eq TYPE_NORMAL or mailingSendForm.mailingtype eq TYPE_FOLLOWUP}">
 					<div data-view-split="col-md-6" data-view-block="col-xs-12" data-view-hidden="hidden">
 						<div class="tile">
 							<div class="tile-header">
@@ -926,9 +942,9 @@
 				</c:if>
 			</c:if>
 		</div>
+		<!-- Row END -->
 	</tiles:put>
 </tiles:insert>
-<!-- Row END -->
 
 <script id="recipients-row" type="text/x-mustache-template">
 	<tr class="js-recipients-row">

@@ -21,11 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.action.operations.ActionOperationType;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.actions.impl.EmmActionImpl;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.EmmActionDao;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
@@ -34,6 +34,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
+import com.agnitas.emm.core.commons.ActivenessStatus;
 
 /**
     <class name="org.agnitas.actions.impl.EmmActionImpl" entity-name="EmmAction" table="rdir_action_tbl">
@@ -50,7 +54,7 @@ import org.springframework.jdbc.core.RowMapper;
     
 	SELECT action_id, company_id, description, shortname, action_type FROM rdir_action_tbl WHERE action_id = ? AND company_id = ?
  */
-public class EmmActionDaoImpl extends BaseDaoImpl implements EmmActionDao {
+public class EmmActionDaoImpl extends PaginatedBaseDaoImpl implements EmmActionDao {
 
 	private final static List<String> VARCHAR_COLUMNS = Arrays.asList("description", "shortname");
 
@@ -173,12 +177,16 @@ public class EmmActionDaoImpl extends BaseDaoImpl implements EmmActionDao {
 	 * Select EMM actions with at least the specified types of actionoperations
 	 */
 	@Override
-	public List<EmmAction> getEmmActionsByOperationType(@VelocityCheck int companyID, ActionOperationType... actionTypes) {
+	public List<EmmAction> getEmmActionsByOperationType(@VelocityCheck final int companyID, final boolean includeInactive,
+			final ActionOperationType... actionTypes) {
 		if (companyID == 0) {
 			return null;
 		} else {
 			try {
 				String sql = "SELECT action_id, company_id, description, shortname, action_type, active FROM rdir_action_tbl WHERE company_id = ? AND deleted = 0";
+				if(!includeInactive) {
+					sql += " AND active = 1";
+				}
 				Object[] sqlParameters = new Object[actionTypes.length + 1];
 				sqlParameters[0] = companyID;
 				if (actionTypes != null) {
@@ -294,6 +302,7 @@ public class EmmActionDaoImpl extends BaseDaoImpl implements EmmActionDao {
 	}
 
 	@Override
+	@Deprecated
 	public String getUserFormNames(int actionId, @VelocityCheck int companyId) {
 		String result = "";
 		List<Map<String, Object>> resultList = select(logger, "SELECT formname FROM userform_tbl WHERE company_id = ? AND (startaction_id = ? OR endaction_id = ?) ORDER BY formname", companyId, actionId, actionId);
@@ -304,6 +313,12 @@ public class EmmActionDaoImpl extends BaseDaoImpl implements EmmActionDao {
 			result += row.get("formname");
 		}
 		return result;
+	}
+
+	@Override
+	public List<String> getActionUserFormNames(int actionId, @VelocityCheck int companyId) {
+		return select(logger, "SELECT formname FROM userform_tbl WHERE company_id = ? AND (startaction_id = ? OR endaction_id = ?) ORDER BY formname", new StringRowMapper(),
+				 companyId, actionId, actionId);
 	}
 
 	@Override
@@ -337,14 +352,11 @@ public class EmmActionDaoImpl extends BaseDaoImpl implements EmmActionDao {
 			newBean.setCompanyID(resultSet.getInt("company_id"));
 			newBean.setShortname(resultSet.getString("shortname"));
 			newBean.setDescription(resultSet.getString("description"));
-			newBean.setUsed(resultSet.getInt("used"));
 			newBean.setCreationDate(resultSet.getTimestamp("creation_date"));
 			newBean.setChangeDate(resultSet.getTimestamp("change_date"));
 			newBean.setIsActive(resultSet.getInt("active") == 1);
-			if (newBean.getUsed() > 0) {
-				newBean.setFormNames(getUserFormNames(newBean.getId(), companyID));
-			} else {
-				newBean.setFormNames("");
+			if (resultSet.getInt("used") > 0) {
+				newBean.setFormNameList(getActionUserFormNames(newBean.getId(), companyID));
 			}
 			return newBean;
 		}, companyID);
@@ -385,6 +397,46 @@ public class EmmActionDaoImpl extends BaseDaoImpl implements EmmActionDao {
 				+ "WHERE atsm.mailing_id = ? AND ra.company_id = ?";
 
 		return select(logger, sqlGetActionsBySendMailingId, new EmmAction_RowMapper(), mailingId, companyId);
+	}
+
+	@Override
+	public PaginatedListImpl<EmmAction> getPaginatedActionList(int companyId, String sort, String sortDirection, int page, int numberOfRows, ActivenessStatus filter) {
+		String sortClause;
+		sort = StringUtils.defaultIfEmpty(sort, "shortname");
+		if (VARCHAR_COLUMNS.contains(sort)) {
+			sortClause = " ORDER BY UPPER(r." + sort + ")";
+		} else {
+			sortClause = "ORDER BY r." + sort;
+		}
+
+		boolean sortDirectionAscending = !"desc".equalsIgnoreCase(sortDirection) && !"descending".equalsIgnoreCase(sortDirection);
+		sortClause += (sortDirectionAscending ? " ASC" : " DESC") + ", r.action_id ASC";
+
+		List<Object> params = new ArrayList<>();
+		String query = "SELECT r.company_id, r.action_id, r.shortname, r.description, r.creation_date, r.change_date, r.active"
+				+ " FROM rdir_action_tbl r WHERE r.company_id = ? AND r.deleted = 0";
+
+		params.add(companyId);
+
+		if (filter != ActivenessStatus.NONE){
+			query += " AND r.active = ?";
+			params.add(BooleanUtils.toInteger(ActivenessStatus.ACTIVE == filter));
+		}
+
+		return selectPaginatedListWithSortClause(logger, query, sortClause, sort, sortDirectionAscending,
+				page, numberOfRows, (resultSet, i) -> {
+					EmmAction emmAction = new EmmActionImpl();
+					int actionId = resultSet.getInt("action_id");
+					emmAction.setId(actionId);
+					emmAction.setCompanyID(resultSet.getInt("company_id"));
+					emmAction.setShortname(resultSet.getString("shortname"));
+					emmAction.setDescription(resultSet.getString("description"));
+					emmAction.setCreationDate(resultSet.getTimestamp("creation_date"));
+					emmAction.setChangeDate(resultSet.getTimestamp("change_date"));
+					emmAction.setIsActive(resultSet.getInt("active") == 1);
+					emmAction.setFormNameList(getActionUserFormNames(actionId, companyId));
+					return emmAction;
+				}, params.toArray());
 	}
 
 	protected static class EmmAction_RowMapper implements RowMapper<EmmAction> {

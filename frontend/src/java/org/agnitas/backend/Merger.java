@@ -17,29 +17,31 @@ import org.agnitas.util.Log;
  * as a replacement for the no more supported RMI version
  */
 public class Merger {
-	/** Logging interface */
-	private Log	log;
+	/**
+	 * Logging interface
+	 */
+	private Log log;
 
 	/**
 	 * Constructor
 	 */
-	public Merger () {
-		log = new Log ("merger", Log.DEBUG);
-		log.setPrinter (System.out);
+	public Merger() {
+		log = new Log("merger", Log.DEBUG);
+		log.setPrinter(System.out);
 	}
-	
+
 	/**
-	 * Controls the behaviour of the merger process; see the 
+	 * Controls the behaviour of the merger process; see the
 	 * Runner class for valid values of the parametere
-	 * 
+	 *
 	 * @param command the command to be executed
 	 * @param option  the option for this command
-	 * @return        a status string
+	 * @return a status string
 	 */
-	public String remote_control (String command, String option) {
-		Runner	run = new Runner (log, command, option);
+	public String remote_control(String command, String option) {
+		Runner run = new Runner(log, command, option);
 
-		run.start ();
-		return run.result ();
+		run.start();
+		return run.result();
 	}
 }

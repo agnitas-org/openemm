@@ -16,6 +16,7 @@ import org.agnitas.beans.AdminGroup;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComAdminGroupDao;
 import com.agnitas.emm.core.admin.service.AdminGroupService;
 
@@ -24,8 +25,8 @@ public class AdminGroupServiceImpl implements AdminGroupService {
     private ComAdminGroupDao adminGroupDao;
 
     @Override
-    public List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(@VelocityCheck int companyId) {
-        return adminGroupDao.getAdminGroupsByCompanyIdAndDefault(companyId);
+    public List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(@VelocityCheck int companyId, ComAdmin admin) {
+        return adminGroupDao.getAdminGroupsByCompanyIdAndDefault(companyId, admin != null ? admin.getGroupIds() : null);
     }
 
     @Required

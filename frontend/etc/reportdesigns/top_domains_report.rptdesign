@@ -26,11 +26,10 @@ var figureOptions = params["figures"].value;
 
 var topDomainsDataSet = new TopDomainReportDataSet();
 var tempTableID = topDomainsDataSet.prepareReport(companyID, mailinglists, targetGroups, startDate, stopDate, maxDomains, language, topLevelDomain, figureOptions);
-var compareTempTableID = topDomainsDataSet.prepareSendMailingsReport(companyID, mailinglists, targetGroups, startDate, stopDate);
-compareData = topDomainsDataSet.getSentMailingsData(compareTempTableID);
 
-reportContext.setPersistentGlobalVariable('tempTableID', new Integer(tempTableID))
-reportContext.setPersistentGlobalVariable('compareTempTableID', new Integer(compareTempTableID))
+reportContext.setPersistentGlobalVariable('tempTableID', new Integer(tempTableID));
+reportContext.setPersistentGlobalVariable('showTotalsRow', '' + topDomainsDataSet.isShowTotals());
+
 
 
 var sentMailingsAllowed = BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENT_MAILS, figureOptions);
@@ -48,24 +47,16 @@ if (reportContext.getOutputFormat() == "pdf" || reportContext.getOutputFormat() 
 	reportContext.setGlobalVariable('showTopDomainsStatistic', sentMailingsAllowed || hardBouncesAllowed || softBouncesAllowed || openersAllowed || clickersAllowed);
 	
 	designHandle.findElement("csvData").drop();
-	if (compareData.size() == 0) {
-		designHandle.findElement("comparisonMailings").drop();
-	}
 }
 
 if (reportContext.getOutputFormat() == "csv") {
 	designHandle.findElement("pdfData").drop();
-	
-	if (compareData.size() == 0) {
-		designHandle.findElement("csvComparisonDataTitle").drop();
-		designHandle.findElement("csvComparisonData").drop();
-	}
 }
 
-var mailingStatisticDataSet = new MailingStatisticDataSet();
-reportContext.setPersistentGlobalVariable("accountName", mailingStatisticDataSet.getAccountName(params["accountId"]));
-reportContext.setPersistentGlobalVariable("reportName", mailingStatisticDataSet.getReportName(params["reportId"]));
-reportContext.setPersistentGlobalVariable("reportCreateDate", params["reportCreateDate"].value);
+
+reportContext.setPersistentGlobalVariable("accountName", topDomainsDataSet.getAccountName(params["accountId"]));
+reportContext.setPersistentGlobalVariable("reportName", topDomainsDataSet.getReportName(params["reportId"]));
+reportContext.setPersistentGlobalVariable("reportCreateDate", params["reportCreateDate"]); // this value is formatted with admin format already
 
 function tr(key) {
 	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
@@ -518,249 +509,6 @@ currentRow++;
 return true;
 ]]></method>
         </script-data-set>
-        <script-data-set name="MailingCompareDataSet" id="2626">
-            <list-property name="resultSetHints">
-                <structure>
-                    <property name="position">1</property>
-                    <property name="name">mailing_id</property>
-                    <property name="dataType">integer</property>
-                </structure>
-                <structure>
-                    <property name="position">2</property>
-                    <property name="name">mailing_name</property>
-                    <property name="dataType">string</property>
-                </structure>
-                <structure>
-                    <property name="position">3</property>
-                    <property name="name">send_date</property>
-                    <property name="dataType">date-time</property>
-                </structure>
-                <structure>
-                    <property name="position">4</property>
-                    <property name="name">category</property>
-                    <property name="dataType">string</property>
-                </structure>
-                <structure>
-                    <property name="position">5</property>
-                    <property name="name">category_index</property>
-                    <property name="dataType">integer</property>
-                </structure>
-                <structure>
-                    <property name="position">6</property>
-                    <property name="name">targetgroup</property>
-                    <property name="dataType">string</property>
-                </structure>
-                <structure>
-                    <property name="position">7</property>
-                    <property name="name">targetgroup_index</property>
-                    <property name="dataType">integer</property>
-                </structure>
-                <structure>
-                    <property name="position">8</property>
-                    <property name="name">value</property>
-                    <property name="dataType">integer</property>
-                </structure>
-                <structure>
-                    <property name="position">9</property>
-                    <property name="name">rate</property>
-                    <property name="dataType">float</property>
-                </structure>
-                <structure>
-                    <property name="position">10</property>
-                    <property name="name">mailing_name_wrap</property>
-                    <property name="dataType">string</property>
-                </structure>
-                <structure>
-                    <property name="position">11</property>
-                    <property name="name">targets_assigned</property>
-                    <property name="dataType">string</property>
-                </structure>
-                <structure>
-                    <property name="position">12</property>
-                    <property name="name">category_row_index</property>
-                    <property name="dataType">integer</property>
-                </structure>
-                <structure>
-                    <property name="position">13</property>
-                    <property name="name">rowNumber</property>
-                    <property name="dataType">integer</property>
-                </structure>
-                <structure>
-                    <property name="position">14</property>
-                    <property name="name">mailinglist</property>
-                    <property name="dataType">string</property>
-                </structure>
-                <structure>
-                    <property name="position">15</property>
-                    <property name="name">mailinglistId</property>
-                    <property name="dataType">integer</property>
-                </structure>
-            </list-property>
-            <list-property name="columnHints">
-                <structure>
-                    <property name="columnName">mailing_id</property>
-                </structure>
-                <structure>
-                    <property name="columnName">mailing_name</property>
-                </structure>
-                <structure>
-                    <property name="columnName">send_date</property>
-                </structure>
-                <structure>
-                    <property name="columnName">category</property>
-                </structure>
-                <structure>
-                    <property name="columnName">category_index</property>
-                </structure>
-                <structure>
-                    <property name="columnName">targetgroup</property>
-                </structure>
-                <structure>
-                    <property name="columnName">targetgroup_index</property>
-                </structure>
-                <structure>
-                    <property name="columnName">value</property>
-                </structure>
-                <structure>
-                    <property name="columnName">rate</property>
-                </structure>
-                <structure>
-                    <property name="columnName">mailing_name_wrap</property>
-                </structure>
-                <structure>
-                    <property name="columnName">targets_assigned</property>
-                </structure>
-                <structure>
-                    <property name="columnName">category_row_index</property>
-                </structure>
-                <structure>
-                    <property name="columnName">rowNumber</property>
-                </structure>
-                <structure>
-                    <property name="columnName">mailinglist</property>
-                </structure>
-                <structure>
-                    <property name="columnName">mailinglistId</property>
-                </structure>
-            </list-property>
-            <structure name="cachedMetaData">
-                <list-property name="resultSet">
-                    <structure>
-                        <property name="position">1</property>
-                        <property name="name">mailing_id</property>
-                        <property name="dataType">integer</property>
-                    </structure>
-                    <structure>
-                        <property name="position">2</property>
-                        <property name="name">mailing_name</property>
-                        <property name="dataType">string</property>
-                    </structure>
-                    <structure>
-                        <property name="position">3</property>
-                        <property name="name">send_date</property>
-                        <property name="dataType">date-time</property>
-                    </structure>
-                    <structure>
-                        <property name="position">4</property>
-                        <property name="name">category</property>
-                        <property name="dataType">string</property>
-                    </structure>
-                    <structure>
-                        <property name="position">5</property>
-                        <property name="name">category_index</property>
-                        <property name="dataType">integer</property>
-                    </structure>
-                    <structure>
-                        <property name="position">6</property>
-                        <property name="name">targetgroup</property>
-                        <property name="dataType">string</property>
-                    </structure>
-                    <structure>
-                        <property name="position">7</property>
-                        <property name="name">targetgroup_index</property>
-                        <property name="dataType">integer</property>
-                    </structure>
-                    <structure>
-                        <property name="position">8</property>
-                        <property name="name">value</property>
-                        <property name="dataType">integer</property>
-                    </structure>
-                    <structure>
-                        <property name="position">9</property>
-                        <property name="name">rate</property>
-                        <property name="dataType">float</property>
-                    </structure>
-                    <structure>
-                        <property name="position">10</property>
-                        <property name="name">mailing_name_wrap</property>
-                        <property name="dataType">string</property>
-                    </structure>
-                    <structure>
-                        <property name="position">11</property>
-                        <property name="name">targets_assigned</property>
-                        <property name="dataType">string</property>
-                    </structure>
-                    <structure>
-                        <property name="position">12</property>
-                        <property name="name">category_row_index</property>
-                        <property name="dataType">integer</property>
-                    </structure>
-                    <structure>
-                        <property name="position">13</property>
-                        <property name="name">rowNumber</property>
-                        <property name="dataType">integer</property>
-                    </structure>
-                    <structure>
-                        <property name="position">14</property>
-                        <property name="name">mailinglist</property>
-                        <property name="dataType">string</property>
-                    </structure>
-                    <structure>
-                        <property name="position">15</property>
-                        <property name="name">mailinglistId</property>
-                        <property name="dataType">integer</property>
-                    </structure>
-                </list-property>
-            </structure>
-            <property name="dataSource">DummyDataSource</property>
-            <method name="open"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
-currentrow = 0;]]></method>
-            <method name="fetch"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.utils);
-importPackage(Packages.java.util);
-
-if (currentrow >= compareData.size()) {
-	return false;
-}
-
-row["mailing_id"] = compareData.get(currentrow).getMailingId();
-
-var mailingName =  compareData.get(currentrow).getMailingName();
-row["mailing_name"] = mailingName;
-
-  
-row["send_date"] = compareData.get(currentrow).getSendDate();
-row["category"] = tr(compareData.get(currentrow).getCategory());
-row["category_index"] = compareData.get(currentrow).getCategoryindex();
-
-if(compareData.get(currentrow).getTargetGroupIndex() == 1) {
-	row["targetgroup"] = tr("statistic.all_subscribers");
-} else {
-	row["targetgroup"] = compareData.get(currentrow).getTargetGroupName();
-}
-if(row["targetgroup"] == "All_Subscribers") {
-	row["targetgroup"] = tr("statistic.all_subscribers");
-}
-row["targetgroup_index"] = compareData.get(currentrow).getTargetGroupIndex();
-row["mailinglist"] = compareData.get(currentrow).getMailinglist();
-row["mailinglistId"] = compareData.get(currentrow).getMailinglistId();
-
-row["value"] = compareData.get(currentrow).getCount();
-row["rate"] = compareData.get(currentrow).getRate();
-row["rowNumber"] = currentrow+1;
-
-currentrow++;
-return true;]]></method>
-        </script-data-set>
     </data-sets>
     <cubes>
         <tabular-cube name="TopDomainsDataCube" id="588">
@@ -1009,32 +757,14 @@ return true;]]></method>
                             </image>
                         </cell>
                     </row>
-                    <row id="2348">
-                        <property name="borderBottomColor">#CCCCCC</property>
-                        <property name="borderBottomStyle">solid</property>
-                        <property name="borderBottomWidth">thin</property>
-                        <property name="height">3mm</property>
-                        <cell id="2349">
+                    <row id="9806">
+                        <property name="height">10mm</property>
+                        <cell id="9807">
                             <property name="textAlign">left</property>
                             <property name="verticalAlign">bottom</property>
                         </cell>
-                        <cell id="2350"/>
-                        <cell id="2351">
-                            <property name="paddingTop">0pt</property>
-                            <property name="paddingLeft">0pt</property>
-                            <property name="paddingBottom">0pt</property>
-                            <property name="paddingRight">0pt</property>
-                            <property name="textAlign">right</property>
-                        </cell>
-                    </row>
-                    <row id="2352">
-                        <property name="height">3mm</property>
-                        <cell id="2353">
-                            <property name="textAlign">left</property>
-                            <property name="verticalAlign">bottom</property>
-                        </cell>
-                        <cell id="2354"/>
-                        <cell id="2355">
+                        <cell id="9808"/>
+                        <cell id="9809">
                             <property name="paddingTop">0pt</property>
                             <property name="paddingLeft">0pt</property>
                             <property name="paddingBottom">0pt</property>
@@ -1067,18 +797,6 @@ return true;]]></method>
                     <column id="2315">
                         <property name="width">30mm</property>
                     </column>
-                    <row id="6966">
-                        <property name="height">3mm</property>
-                        <list-property name="visibility">
-                            <structure>
-                                <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">"1" != reportContext.getPersistentGlobalVariable("showOpenersNotes");</expression>
-                            </structure>
-                        </list-property>
-                        <cell id="6967"/>
-                        <cell id="6968"/>
-                        <cell id="6969"/>
-                    </row>
                     <row id="2344">
                         <property name="borderTopColor">#CCCCCC</property>
                         <property name="borderTopStyle">solid</property>
@@ -1101,7 +819,7 @@ return true;]]></method>
                                 <property name="paddingLeft">0pt</property>
                                 <property name="paddingBottom">0pt</property>
                                 <property name="paddingRight">0pt</property>
-                                <expression name="valueExpr">reportContext.getPersistentGlobalVariable("accountName") + ", " + reportContext.getPersistentGlobalVariable("reportName") + ", " +  reportContext.getPersistentGlobalVariable("reportCreateDate")</expression>
+                                <expression name="valueExpr">reportContext.getPersistentGlobalVariable("accountName") + ", " + reportContext.getPersistentGlobalVariable("reportName") + ", " +  params["reportCreateDate"].value</expression>
                                 <property name="contentType">auto</property>
                             </text-data>
                         </cell>
@@ -1188,1638 +906,6 @@ return true;]]></method>
             <column id="9790"/>
             <row id="9791">
                 <cell id="9792">
-                    <grid name="comparisonMailings" id="8585">
-                        <property name="style">default-font</property>
-                        <property name="fontFamily">"Arial"</property>
-                        <property name="marginTop">3pt</property>
-                        <property name="pageBreakAfter">always</property>
-                        <property name="pageBreakInside">avoid</property>
-                        <column id="8586">
-                            <property name="style">default-font</property>
-                        </column>
-                        <row id="8663">
-                            <property name="fontFamily">"Arial"</property>
-                            <cell id="8664">
-                                <property name="fontFamily">"Arial"</property>
-                                <text-data name="compareTitle" id="8330">
-                                    <property name="style">birt-report-headline</property>
-                                    <property name="backgroundAttachment">scroll</property>
-                                    <property name="backgroundPositionX">0%</property>
-                                    <property name="backgroundPositionY">0%</property>
-                                    <property name="backgroundRepeat">repeat</property>
-                                    <property name="fontSize">18px</property>
-                                    <property name="fontWeight">bold</property>
-                                    <property name="fontStyle">normal</property>
-                                    <property name="fontVariant">normal</property>
-                                    <property name="color">#000000</property>
-                                    <property name="textLineThrough">none</property>
-                                    <property name="textOverline">none</property>
-                                    <property name="textUnderline">none</property>
-                                    <property name="borderBottomColor">black</property>
-                                    <property name="borderBottomStyle">none</property>
-                                    <property name="borderBottomWidth">medium</property>
-                                    <property name="borderLeftColor">black</property>
-                                    <property name="borderLeftStyle">none</property>
-                                    <property name="borderLeftWidth">medium</property>
-                                    <property name="borderRightColor">black</property>
-                                    <property name="borderRightStyle">none</property>
-                                    <property name="borderRightWidth">medium</property>
-                                    <property name="borderTopColor">black</property>
-                                    <property name="borderTopStyle">none</property>
-                                    <property name="borderTopWidth">medium</property>
-                                    <property name="marginTop">0pt</property>
-                                    <property name="marginLeft">0pt</property>
-                                    <property name="marginBottom">5mm</property>
-                                    <property name="marginRight">0pt</property>
-                                    <property name="paddingTop">1pt</property>
-                                    <property name="paddingLeft">1pt</property>
-                                    <property name="paddingBottom">1pt</property>
-                                    <property name="paddingRight">1pt</property>
-                                    <property name="textAlign">left</property>
-                                    <property name="textIndent">0em</property>
-                                    <property name="letterSpacing">normal</property>
-                                    <property name="lineHeight">normal</property>
-                                    <property name="orphans">2</property>
-                                    <property name="textTransform">none</property>
-                                    <property name="whiteSpace">normal</property>
-                                    <property name="widows">2</property>
-                                    <property name="wordSpacing">normal</property>
-                                    <property name="display">block</property>
-                                    <property name="pageBreakAfter">auto</property>
-                                    <property name="pageBreakBefore">auto</property>
-                                    <property name="pageBreakInside">avoid</property>
-                                    <property name="showIfBlank">false</property>
-                                    <property name="canShrink">false</property>
-                                    <property name="overflow">hidden</property>
-                                    <list-property name="visibility">
-                                        <structure>
-                                            <property name="format">all</property>
-                                            <expression name="valueExpr" type="javascript">reportContext.getGlobalVariable("showTopDomainsStatistic") == false;</expression>
-                                        </structure>
-                                    </list-property>
-                                    <expression name="valueExpr">tr("birt.report.compare_mailing")</expression>
-                                </text-data>
-                            </cell>
-                        </row>
-                        <row id="8587">
-                            <cell id="8588">
-                                <property name="fontFamily">"Arial"</property>
-                                <table id="8593">
-                                    <property name="style">default-font</property>
-                                    <property name="dataSet">MailingCompareDataSet</property>
-                                    <list-property name="boundDataColumns">
-                                        <structure>
-                                            <property name="name">mailing_id</property>
-                                            <text-property name="displayName">mailing_id</text-property>
-                                            <expression name="expression" type="javascript">dataSetRow["mailing_id"]</expression>
-                                            <property name="dataType">integer</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">mailing_name</property>
-                                            <text-property name="displayName">mailing_name</text-property>
-                                            <expression name="expression" type="javascript">dataSetRow["mailing_name"]</expression>
-                                            <property name="dataType">string</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">targetgroup</property>
-                                            <text-property name="displayName">targetgroup</text-property>
-                                            <expression name="expression" type="javascript">dataSetRow["targetgroup"]</expression>
-                                            <property name="dataType">string</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">targetgroup_index</property>
-                                            <text-property name="displayName">targetgroup_index</text-property>
-                                            <expression name="expression" type="javascript">dataSetRow["targetgroup_index"]</expression>
-                                            <property name="dataType">integer</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">value</property>
-                                            <text-property name="displayName">value</text-property>
-                                            <expression name="expression" type="javascript">dataSetRow["value"]</expression>
-                                            <property name="dataType">integer</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">rate</property>
-                                            <text-property name="displayName">rate</text-property>
-                                            <expression name="expression" type="javascript">dataSetRow["rate"]</expression>
-                                            <property name="dataType">float</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">rowNumber</property>
-                                            <text-property name="displayName">rowNumber</text-property>
-                                            <expression name="expression" type="javascript">rowNumber</expression>
-                                            <property name="dataType">integer</property>
-                                            <property name="allowExport">true</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">send_date</property>
-                                            <text-property name="displayName">send_date</text-property>
-                                            <expression name="expression" type="javascript">dataSetRow["send_date"]</expression>
-                                            <property name="dataType">date-time</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">sendDate</property>
-                                            <expression name="expression" type="javascript">row["send_date"]</expression>
-                                            <property name="dataType">date-time</property>
-                                            <property name="allowExport">true</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">mailingName</property>
-                                            <expression name="expression" type="javascript">row["mailing_name"]</expression>
-                                            <property name="dataType">string</property>
-                                            <property name="allowExport">true</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">valueData</property>
-                                            <expression name="expression" type="javascript">row["value"]</expression>
-                                            <property name="dataType">integer</property>
-                                            <property name="allowExport">true</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">targetName</property>
-                                            <expression name="expression" type="javascript">row["targetgroup"]</expression>
-                                            <property name="dataType">string</property>
-                                            <property name="allowExport">true</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">rate_value</property>
-                                            <expression name="expression" type="javascript">row["rate"]</expression>
-                                            <property name="dataType">float</property>
-                                            <property name="allowExport">true</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">mailinglist</property>
-                                            <expression name="expression" type="javascript">dataSetRow["mailinglist"]</expression>
-                                            <property name="dataType">string</property>
-                                            <property name="allowExport">true</property>
-                                        </structure>
-                                    </list-property>
-                                    <method name="onPrepare"><![CDATA[rowNumber = 1;]]></method>
-                                    <list-property name="sort">
-                                        <structure>
-                                            <expression name="key" type="javascript">row["send_date"]</expression>
-                                            <property name="direction">asc</property>
-                                            <property name="strength">-1</property>
-                                        </structure>
-                                    </list-property>
-                                    <list-property name="filter">
-                                        <structure>
-                                            <property name="operator">gt</property>
-                                            <expression name="expr" type="javascript">row["valueData"]</expression>
-                                            <simple-property-list name="value1">
-                                                <value>0</value>
-                                            </simple-property-list>
-                                            <property name="updateAggregation">true</property>
-                                        </structure>
-                                    </list-property>
-                                    <column id="8612">
-                                        <property name="width">5%</property>
-                                    </column>
-                                    <column id="8632">
-                                        <property name="width">15%</property>
-                                    </column>
-                                    <column id="8613">
-                                        <property name="textAlign">left</property>
-                                        <property name="width">25%</property>
-                                    </column>
-                                    <column id="8673">
-                                        <property name="textAlign">center</property>
-                                        <property name="width">25%</property>
-                                    </column>
-                                    <column id="8614">
-                                        <property name="textAlign">center</property>
-                                        <property name="width">25%</property>
-                                    </column>
-                                    <column id="8615">
-                                        <property name="width">30%</property>
-                                    </column>
-                                    <header>
-                                        <row id="8594">
-                                            <property name="backgroundColor">#0071B9</property>
-                                            <property name="fontWeight">bold</property>
-                                            <property name="color">white</property>
-                                            <property name="textAlign">center</property>
-                                            <cell id="8595">
-                                                <property name="style">default-font</property>
-                                                <property name="fontSize">12px</property>
-                                                <property name="borderBottomStyle">none</property>
-                                                <property name="borderLeftStyle">none</property>
-                                                <property name="borderRightStyle">none</property>
-                                                <property name="borderTopStyle">none</property>
-                                                <text-data id="8617">
-                                                    <property name="style">default-font</property>
-                                                    <expression name="valueExpr">tr("default.number")</expression>
-                                                    <property name="contentType">auto</property>
-                                                </text-data>
-                                            </cell>
-                                            <cell id="8629">
-                                                <property name="style">default-font</property>
-                                                <property name="fontSize">12px</property>
-                                                <property name="borderBottomStyle">none</property>
-                                                <property name="borderLeftStyle">none</property>
-                                                <property name="borderRightStyle">none</property>
-                                                <property name="borderTopStyle">none</property>
-                                                <text-data id="8633">
-                                                    <expression name="valueExpr">tr("birt.Send_Mailing")</expression>
-                                                    <property name="contentType">auto</property>
-                                                </text-data>
-                                            </cell>
-                                            <cell id="8596">
-                                                <property name="style">default-font</property>
-                                                <property name="fontSize">12px</property>
-                                                <property name="borderBottomStyle">none</property>
-                                                <property name="borderLeftStyle">none</property>
-                                                <property name="borderRightStyle">none</property>
-                                                <property name="borderTopStyle">none</property>
-                                                <property name="textAlign">center</property>
-                                                <text-data id="8618">
-                                                    <expression name="valueExpr">tr("report.mailings")</expression>
-                                                    <property name="contentType">auto</property>
-                                                </text-data>
-                                            </cell>
-                                            <cell id="8671">
-                                                <property name="style">default-font</property>
-                                                <property name="fontSize">12px</property>
-                                                <property name="borderBottomStyle">none</property>
-                                                <property name="borderLeftStyle">none</property>
-                                                <property name="borderRightStyle">none</property>
-                                                <property name="borderTopStyle">none</property>
-                                                <text-data id="8678">
-                                                    <expression name="valueExpr">tr("Mailinglist")</expression>
-                                                    <property name="contentType">html</property>
-                                                </text-data>
-                                            </cell>
-                                            <cell id="8597">
-                                                <property name="style">default-font</property>
-                                                <property name="fontSize">12px</property>
-                                                <property name="borderBottomStyle">none</property>
-                                                <property name="borderLeftStyle">none</property>
-                                                <property name="borderRightStyle">none</property>
-                                                <property name="borderTopStyle">none</property>
-                                                <text-data id="8619">
-                                                    <expression name="valueExpr">tr("Targetgroups")</expression>
-                                                    <property name="contentType">auto</property>
-                                                </text-data>
-                                            </cell>
-                                            <cell id="8598">
-                                                <property name="style">default-font</property>
-                                                <property name="fontSize">12px</property>
-                                                <property name="borderBottomStyle">none</property>
-                                                <property name="borderLeftStyle">none</property>
-                                                <property name="borderRightStyle">none</property>
-                                                <property name="borderTopStyle">none</property>
-                                                <text-data id="8620">
-                                                    <expression name="valueExpr">tr("report.deliveredMails")</expression>
-                                                    <property name="contentType">auto</property>
-                                                </text-data>
-                                            </cell>
-                                        </row>
-                                    </header>
-                                    <detail>
-                                        <row id="8600">
-                                            <method name="onCreate"><![CDATA[rowNumber++;]]></method>
-                                            <property name="borderBottomColor">#808080</property>
-                                            <property name="borderBottomStyle">solid</property>
-                                            <property name="borderBottomWidth">thin</property>
-                                            <property name="borderLeftColor">#808080</property>
-                                            <property name="borderLeftStyle">solid</property>
-                                            <property name="borderLeftWidth">thin</property>
-                                            <property name="borderRightColor">#808080</property>
-                                            <property name="borderRightStyle">solid</property>
-                                            <property name="borderRightWidth">thin</property>
-                                            <list-property name="highlightRules">
-                                                <structure>
-                                                    <property name="operator">eq</property>
-                                                    <expression name="testExpr" type="javascript">row["rowNumber"] % 2</expression>
-                                                    <simple-property-list name="value1">
-                                                        <value type="javascript">0</value>
-                                                    </simple-property-list>
-                                                    <property name="style">odd</property>
-                                                </structure>
-                                            </list-property>
-                                            <cell id="8601">
-                                                <property name="style">default-font</property>
-                                                <property name="fontSize">12px</property>
-                                                <property name="borderRightColor">#808080</property>
-                                                <property name="borderRightStyle">solid</property>
-                                                <property name="borderRightWidth">thin</property>
-                                                <property name="textAlign">center</property>
-                                                <data id="8621">
-                                                    <property name="paddingTop">2pt</property>
-                                                    <property name="paddingBottom">2pt</property>
-                                                    <property name="resultSetColumn">rowNumber</property>
-                                                </data>
-                                            </cell>
-                                            <cell id="8630">
-                                                <property name="style">default-font</property>
-                                                <property name="fontSize">12px</property>
-                                                <property name="borderRightColor">#808080</property>
-                                                <property name="borderRightStyle">solid</property>
-                                                <property name="borderRightWidth">thin</property>
-                                                <property name="paddingTop">1pt</property>
-                                                <property name="paddingBottom">1pt</property>
-                                                <data id="8634">
-                                                    <structure name="dateTimeFormat">
-                                                        <property name="category">Unformatted</property>
-                                                    </structure>
-                                                    <method name="onPrepare"><![CDATA[if (reportContext.getLocale().getLanguage() == "de") {
-	this.getStyle().dateTimeFormat = "dd.MM.yyyy";
-} else {
-	this.getStyle().dateTimeFormat = "yyyy-MM-dd";
-}]]></method>
-                                                    <property name="resultSetColumn">sendDate</property>
-                                                </data>
-                                            </cell>
-                                            <cell id="8602">
-                                                <property name="style">default-font</property>
-                                                <property name="fontSize">12px</property>
-                                                <property name="borderRightColor">#808080</property>
-                                                <property name="borderRightStyle">solid</property>
-                                                <property name="borderRightWidth">thin</property>
-                                                <property name="paddingTop">1pt</property>
-                                                <property name="paddingBottom">1pt</property>
-                                                <data id="8635">
-                                                    <property name="resultSetColumn">mailingName</property>
-                                                </data>
-                                            </cell>
-                                            <cell id="8672">
-                                                <property name="style">default-font</property>
-                                                <property name="fontSize">12px</property>
-                                                <property name="borderRightColor">#808080</property>
-                                                <property name="borderRightStyle">solid</property>
-                                                <property name="borderRightWidth">thin</property>
-                                                <property name="paddingTop">1pt</property>
-                                                <property name="paddingBottom">1pt</property>
-                                                <property name="textAlign">left</property>
-                                                <data id="8680">
-                                                    <property name="resultSetColumn">mailinglist</property>
-                                                </data>
-                                            </cell>
-                                            <cell id="8603">
-                                                <property name="style">default-font</property>
-                                                <property name="fontSize">12px</property>
-                                                <property name="borderRightColor">#808080</property>
-                                                <property name="borderRightStyle">solid</property>
-                                                <property name="borderRightWidth">thin</property>
-                                                <property name="paddingTop">1pt</property>
-                                                <property name="paddingBottom">1pt</property>
-                                                <data id="8628">
-                                                    <property name="resultSetColumn">targetName</property>
-                                                </data>
-                                            </cell>
-                                            <cell id="8604">
-                                                <property name="style">default-font</property>
-                                                <property name="fontSize">12px</property>
-                                                <property name="borderBottomStyle">none</property>
-                                                <property name="borderLeftStyle">none</property>
-                                                <property name="borderRightStyle">none</property>
-                                                <property name="borderTopStyle">none</property>
-                                                <property name="paddingTop">1pt</property>
-                                                <property name="paddingBottom">1pt</property>
-                                                <property name="textAlign">right</property>
-                                                <data id="8626">
-                                                    <structure name="numberFormat">
-                                                        <property name="category">Custom</property>
-                                                        <property name="pattern">###,###</property>
-                                                    </structure>
-                                                    <property name="resultSetColumn">valueData</property>
-                                                </data>
-                                                <data id="8636">
-                                                    <structure name="numberFormat">
-                                                        <property name="category">Custom</property>
-                                                        <property name="pattern">(0.00%)</property>
-                                                    </structure>
-                                                    <property name="resultSetColumn">rate_value</property>
-                                                </data>
-                                            </cell>
-                                        </row>
-                                    </detail>
-                                </table>
-                            </cell>
-                        </row>
-                        <row id="8589">
-                            <cell id="8590">
-                                <table id="8638">
-                                    <property name="pageBreakInside">avoid</property>
-                                    <property name="dataSet">MailingCompareDataSet</property>
-                                    <list-property name="boundDataColumns">
-                                        <structure>
-                                            <property name="name">targetgroup_index</property>
-                                            <text-property name="displayName">targetgroup_index</text-property>
-                                            <expression name="expression" type="javascript">dataSetRow["targetgroup_index"]</expression>
-                                            <property name="dataType">integer</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">targetName</property>
-                                            <expression name="expression" type="javascript">dataSetRow["targetgroup"]</expression>
-                                            <property name="dataType">string</property>
-                                            <property name="allowExport">true</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">valuesExist</property>
-                                            <property name="dataType">float</property>
-                                            <simple-property-list name="aggregateOn">
-                                                <value>targetGroupGroup</value>
-                                            </simple-property-list>
-                                            <property name="aggregateFunction">MAX</property>
-                                            <list-property name="arguments">
-                                                <structure>
-                                                    <property name="name">Expression</property>
-                                                    <expression name="value" type="javascript">dataSetRow["value"]</expression>
-                                                </structure>
-                                            </list-property>
-                                            <property name="allowExport">true</property>
-                                        </structure>
-                                    </list-property>
-                                    <list-property name="filter">
-                                        <structure>
-                                            <property name="operator">is-true</property>
-                                            <expression name="expr" type="javascript">row["valuesExist"]</expression>
-                                            <property name="updateAggregation">true</property>
-                                        </structure>
-                                    </list-property>
-                                    <column id="8647"/>
-                                    <group id="8648">
-                                        <property name="groupName">targetGroupGroup</property>
-                                        <expression name="keyExpr" type="javascript">row["targetgroup_index"]</expression>
-                                        <structure name="toc">
-                                            <expression name="expressionValue" type="javascript">row["targetgroup_index"]</expression>
-                                        </structure>
-                                        <property name="hideDetail">false</property>
-                                        <header>
-                                            <row id="8656">
-                                                <cell id="8657">
-                                                    <property name="style">birt-report-header</property>
-                                                    <property name="textAlign">left</property>
-                                                    <data id="8658">
-                                                        <property name="fontSize">16px</property>
-                                                        <property name="textAlign">center</property>
-                                                        <property name="resultSetColumn">targetName</property>
-                                                    </data>
-                                                </cell>
-                                            </row>
-                                            <row id="8649">
-                                                <cell id="8650">
-                                                    <property name="fontSize">10pt</property>
-                                                    <extended-item extensionName="Chart" id="8637">
-                                                        <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:data="http://www.birt.eclipse.org/ChartModelData" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
-  <Version>2.6.1</Version>
-  <Type>Bar Chart</Type>
-  <SubType>Side-by-side</SubType>
-  <Block>
-    <Children xsi:type="layout:TitleBlock">
-      <Bounds>
-        <Left>0.0</Left>
-        <Top>0.0</Top>
-        <Width>0.0</Width>
-        <Height>0.0</Height>
-      </Bounds>
-      <Insets>
-        <Top>3.0</Top>
-        <Left>3.0</Left>
-        <Bottom>3.0</Bottom>
-        <Right>3.0</Right>
-      </Insets>
-      <Row>-1</Row>
-      <Column>-1</Column>
-      <Rowspan>-1</Rowspan>
-      <Columnspan>-1</Columnspan>
-      <Outline>
-        <Style>Solid</Style>
-        <Thickness>1</Thickness>
-        <Color>
-          <Transparency>255</Transparency>
-          <Red>0</Red>
-          <Green>0</Green>
-          <Blue>0</Blue>
-        </Color>
-        <Visible>false</Visible>
-      </Outline>
-      <Visible>false</Visible>
-      <Label>
-        <Caption>
-          <Font>
-            <Size>16.0</Size>
-            <Bold>true</Bold>
-            <Alignment>
-              <horizontalAlignment>Center</horizontalAlignment>
-              <verticalAlignment>Center</verticalAlignment>
-            </Alignment>
-          </Font>
-        </Caption>
-        <Background xsi:type="attribute:ColorDefinition">
-          <Transparency>0</Transparency>
-          <Red>255</Red>
-          <Green>255</Green>
-          <Blue>255</Blue>
-        </Background>
-        <Outline>
-          <Style>Solid</Style>
-          <Thickness>1</Thickness>
-          <Color>
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
-          </Color>
-        </Outline>
-        <Insets>
-          <Top>0.0</Top>
-          <Left>2.0</Left>
-          <Bottom>0.0</Bottom>
-          <Right>3.0</Right>
-        </Insets>
-        <Visible>true</Visible>
-      </Label>
-    </Children>
-    <Children xsi:type="layout:Plot">
-      <Bounds>
-        <Left>0.0</Left>
-        <Top>0.0</Top>
-        <Width>0.0</Width>
-        <Height>0.0</Height>
-      </Bounds>
-      <Insets>
-        <Top>3.0</Top>
-        <Left>3.0</Left>
-        <Bottom>3.0</Bottom>
-        <Right>3.0</Right>
-      </Insets>
-      <Row>-1</Row>
-      <Column>-1</Column>
-      <Rowspan>-1</Rowspan>
-      <Columnspan>-1</Columnspan>
-      <Outline>
-        <Style>Solid</Style>
-        <Thickness>1</Thickness>
-        <Color>
-          <Transparency>255</Transparency>
-          <Red>0</Red>
-          <Green>0</Green>
-          <Blue>0</Blue>
-        </Color>
-        <Visible>false</Visible>
-      </Outline>
-      <Visible>true</Visible>
-      <HorizontalSpacing>5</HorizontalSpacing>
-      <VerticalSpacing>5</VerticalSpacing>
-      <ClientArea>
-        <Outline>
-          <Style>Solid</Style>
-          <Thickness>0</Thickness>
-          <Color>
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
-          </Color>
-          <Visible>false</Visible>
-        </Outline>
-        <Insets>
-          <Top>0.0</Top>
-          <Left>0.0</Left>
-          <Bottom>0.0</Bottom>
-          <Right>0.0</Right>
-        </Insets>
-      </ClientArea>
-    </Children>
-    <Children xsi:type="layout:Legend">
-      <Bounds>
-        <Left>0.0</Left>
-        <Top>0.0</Top>
-        <Width>0.0</Width>
-        <Height>0.0</Height>
-      </Bounds>
-      <Insets>
-        <Top>3.0</Top>
-        <Left>3.0</Left>
-        <Bottom>3.0</Bottom>
-        <Right>3.0</Right>
-      </Insets>
-      <Row>-1</Row>
-      <Column>-1</Column>
-      <Rowspan>-1</Rowspan>
-      <Columnspan>-1</Columnspan>
-      <Outline>
-        <Style>Solid</Style>
-        <Thickness>1</Thickness>
-        <Color>
-          <Transparency>255</Transparency>
-          <Red>0</Red>
-          <Green>0</Green>
-          <Blue>0</Blue>
-        </Color>
-        <Visible>false</Visible>
-      </Outline>
-      <Visible>false</Visible>
-      <ClientArea>
-        <Outline>
-          <Style>Solid</Style>
-          <Thickness>0</Thickness>
-          <Color>
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
-          </Color>
-          <Visible>false</Visible>
-        </Outline>
-        <Insets>
-          <Top>2.0</Top>
-          <Left>2.0</Left>
-          <Bottom>2.0</Bottom>
-          <Right>2.0</Right>
-        </Insets>
-      </ClientArea>
-      <Text>
-        <Value></Value>
-        <Font>
-          <Alignment/>
-        </Font>
-      </Text>
-      <Orientation>Vertical</Orientation>
-      <Direction>Top_Bottom</Direction>
-      <Separator>
-        <Style>Solid</Style>
-        <Thickness>1</Thickness>
-        <Color>
-          <Transparency>255</Transparency>
-          <Red>0</Red>
-          <Green>0</Green>
-          <Blue>0</Blue>
-        </Color>
-        <Visible>true</Visible>
-      </Separator>
-      <Position>Right</Position>
-      <ItemType>Series</ItemType>
-      <Title>
-        <Caption>
-          <Value></Value>
-          <Font>
-            <Alignment/>
-          </Font>
-        </Caption>
-        <Background xsi:type="attribute:ColorDefinition">
-          <Transparency>0</Transparency>
-          <Red>255</Red>
-          <Green>255</Green>
-          <Blue>255</Blue>
-        </Background>
-        <Outline>
-          <Style>Solid</Style>
-          <Thickness>1</Thickness>
-          <Color>
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
-          </Color>
-          <Visible>false</Visible>
-        </Outline>
-        <Insets>
-          <Top>0.0</Top>
-          <Left>2.0</Left>
-          <Bottom>0.0</Bottom>
-          <Right>3.0</Right>
-        </Insets>
-        <Visible>false</Visible>
-      </Title>
-      <TitlePosition>Above</TitlePosition>
-    </Children>
-    <Bounds>
-      <Left>0.0</Left>
-      <Top>0.0</Top>
-      <Width>1751.25</Width>
-      <Height>130.0</Height>
-    </Bounds>
-    <Insets>
-      <Top>3.0</Top>
-      <Left>3.0</Left>
-      <Bottom>3.0</Bottom>
-      <Right>3.0</Right>
-    </Insets>
-    <Row>-1</Row>
-    <Column>-1</Column>
-    <Rowspan>-1</Rowspan>
-    <Columnspan>-1</Columnspan>
-    <Outline>
-      <Style>Solid</Style>
-      <Thickness>1</Thickness>
-      <Color>
-        <Transparency>255</Transparency>
-        <Red>0</Red>
-        <Green>0</Green>
-        <Blue>0</Blue>
-      </Color>
-      <Visible>false</Visible>
-    </Outline>
-    <Visible>true</Visible>
-  </Block>
-  <Dimension>Two_Dimensional</Dimension>
-  <Script>importPackage(Packages.com.agnitas.messages);
-
-
-/**
- * Called before generation of chart model to GeneratedChartState.
- * 
- * @param chart
- *            Chart
- * @param icsc
- *            IChartScriptContext
- */
-
-function beforeGeneration(chart, icsc)
-{
-	reportContext = icsc.getExternalContext().getObject();
-	var tr = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;tr&quot;);
-	
-	chart.getEmptyMessage().getCaption().setValue(tr(&quot;birt.noDataAvailable&quot;));
-}
-</Script>
-  <Units>Points</Units>
-  <SeriesThickness>10.0</SeriesThickness>
-  <ExtendedProperties>
-    <Name>enable.area.alt</Name>
-    <Value>false</Value>
-  </ExtendedProperties>
-  <SampleData>
-    <BaseSampleData>
-      <DataSetRepresentation>6,4,12,8,10</DataSetRepresentation>
-    </BaseSampleData>
-    <OrthogonalSampleData>
-      <DataSetRepresentation>5,4,12</DataSetRepresentation>
-      <SeriesDefinitionIndex>0</SeriesDefinitionIndex>
-    </OrthogonalSampleData>
-  </SampleData>
-  <Interactivity/>
-  <EmptyMessage>
-    <Caption>
-      <Value>This chart contains no data.</Value>
-      <Font>
-        <Alignment>
-          <horizontalAlignment>Center</horizontalAlignment>
-          <verticalAlignment>Center</verticalAlignment>
-        </Alignment>
-      </Font>
-    </Caption>
-    <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>64</Transparency>
-      <Red>127</Red>
-      <Green>127</Green>
-      <Blue>127</Blue>
-    </Background>
-    <Outline>
-      <Color>
-        <Transparency>128</Transparency>
-        <Red>127</Red>
-        <Green>127</Green>
-        <Blue>127</Blue>
-      </Color>
-      <Visible>true</Visible>
-    </Outline>
-    <Insets>
-      <Top>10.0</Top>
-      <Left>10.0</Left>
-      <Bottom>10.0</Bottom>
-      <Right>10.0</Right>
-    </Insets>
-    <Visible>false</Visible>
-  </EmptyMessage>
-  <Axes>
-    <Type>Linear</Type>
-    <Title>
-      <Caption>
-        <Value>X-Axis Title</Value>
-        <Font>
-          <Size>14.0</Size>
-          <Bold>true</Bold>
-          <Alignment>
-            <horizontalAlignment>Center</horizontalAlignment>
-            <verticalAlignment>Center</verticalAlignment>
-          </Alignment>
-        </Font>
-      </Caption>
-      <Background xsi:type="attribute:ColorDefinition">
-        <Transparency>0</Transparency>
-        <Red>255</Red>
-        <Green>255</Green>
-        <Blue>255</Blue>
-      </Background>
-      <Outline>
-        <Style>Solid</Style>
-        <Thickness>1</Thickness>
-        <Color>
-          <Transparency>255</Transparency>
-          <Red>0</Red>
-          <Green>0</Green>
-          <Blue>0</Blue>
-        </Color>
-      </Outline>
-      <Insets>
-        <Top>0.0</Top>
-        <Left>2.0</Left>
-        <Bottom>0.0</Bottom>
-        <Right>3.0</Right>
-      </Insets>
-      <Visible>false</Visible>
-    </Title>
-    <TitlePosition>Below</TitlePosition>
-    <AssociatedAxes>
-      <Type>Linear</Type>
-      <Title>
-        <Caption>
-          <Value>Y-Axis Title</Value>
-          <Font>
-            <Size>14.0</Size>
-            <Bold>true</Bold>
-            <Alignment>
-              <horizontalAlignment>Center</horizontalAlignment>
-              <verticalAlignment>Center</verticalAlignment>
-            </Alignment>
-          </Font>
-        </Caption>
-        <Background xsi:type="attribute:ColorDefinition">
-          <Transparency>0</Transparency>
-          <Red>255</Red>
-          <Green>255</Green>
-          <Blue>255</Blue>
-        </Background>
-        <Outline>
-          <Style>Solid</Style>
-          <Thickness>1</Thickness>
-          <Color>
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
-          </Color>
-        </Outline>
-        <Insets>
-          <Top>0.0</Top>
-          <Left>2.0</Left>
-          <Bottom>0.0</Bottom>
-          <Right>3.0</Right>
-        </Insets>
-        <Visible>false</Visible>
-      </Title>
-      <TitlePosition>Left</TitlePosition>
-      <SeriesDefinitions>
-        <Query>
-          <Definition></Definition>
-        </Query>
-        <SeriesPalette>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>80</Red>
-            <Green>166</Green>
-            <Blue>218</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>242</Red>
-            <Green>88</Green>
-            <Blue>106</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>232</Red>
-            <Green>172</Green>
-            <Blue>57</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>255</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>64</Red>
-            <Green>128</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>170</Red>
-            <Green>85</Green>
-            <Blue>85</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>0</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>192</Red>
-            <Green>192</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>255</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>192</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>7</Red>
-            <Green>146</Green>
-            <Blue>94</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>128</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>255</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>128</Green>
-            <Blue>192</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>0</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>64</Green>
-            <Blue>64</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>64</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>80</Red>
-            <Green>240</Green>
-            <Blue>120</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>64</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>0</Green>
-            <Blue>64</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>0</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>64</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>128</Red>
-            <Green>128</Green>
-            <Blue>128</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>64</Green>
-            <Blue>0</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>255</Green>
-            <Blue>255</Blue>
-          </Entries>
-          <Entries xsi:type="attribute:ColorDefinition">
-            <Transparency>255</Transparency>
-            <Red>255</Red>
-            <Green>128</Green>
-            <Blue>0</Blue>
-          </Entries>
-        </SeriesPalette>
-        <Series xsi:type="type:BarSeries">
-          <Visible>true</Visible>
-          <Label>
-            <Caption>
-              <Value></Value>
-              <Font>
-                <Alignment/>
-              </Font>
-            </Caption>
-            <Background xsi:type="attribute:ColorDefinition">
-              <Transparency>0</Transparency>
-              <Red>255</Red>
-              <Green>255</Green>
-              <Blue>255</Blue>
-            </Background>
-            <Outline>
-              <Style>Solid</Style>
-              <Thickness>1</Thickness>
-              <Color>
-                <Transparency>255</Transparency>
-                <Red>0</Red>
-                <Green>0</Green>
-                <Blue>0</Blue>
-              </Color>
-              <Visible>false</Visible>
-            </Outline>
-            <Insets>
-              <Top>0.0</Top>
-              <Left>2.0</Left>
-              <Bottom>0.0</Bottom>
-              <Right>3.0</Right>
-            </Insets>
-            <Visible>false</Visible>
-          </Label>
-          <DataDefinition>
-            <Definition>row[&quot;value&quot;]</Definition>
-            <Grouping>
-              <GroupType>Text</GroupType>
-              <AggregateExpression>Sum</AggregateExpression>
-            </Grouping>
-          </DataDefinition>
-          <SeriesIdentifier>Series 1</SeriesIdentifier>
-          <DataPoint>
-            <Components>
-              <Type>Orthogonal_Value</Type>
-            </Components>
-            <Separator>, </Separator>
-          </DataPoint>
-          <LabelPosition>Outside</LabelPosition>
-          <Stacked>false</Stacked>
-          <Triggers>
-            <Condition>onmouseover</Condition>
-            <Action>
-              <Type>Show_Tooltip</Type>
-              <Value xsi:type="attribute:TooltipValue">
-                <Text></Text>
-                <Delay>200</Delay>
-              </Value>
-            </Action>
-          </Triggers>
-          <Riser>Rectangle</Riser>
-        </Series>
-        <Grouping>
-          <GroupType>Text</GroupType>
-          <AggregateExpression>Sum</AggregateExpression>
-        </Grouping>
-      </SeriesDefinitions>
-      <Orientation>Vertical</Orientation>
-      <LineAttributes>
-        <Style>Solid</Style>
-        <Thickness>1</Thickness>
-        <Color>
-          <Transparency>255</Transparency>
-          <Red>145</Red>
-          <Green>145</Green>
-          <Blue>145</Blue>
-        </Color>
-        <Visible>true</Visible>
-      </LineAttributes>
-      <Label>
-        <Caption>
-          <Value></Value>
-          <Font>
-            <Alignment/>
-          </Font>
-        </Caption>
-        <Background xsi:type="attribute:ColorDefinition">
-          <Transparency>0</Transparency>
-          <Red>255</Red>
-          <Green>255</Green>
-          <Blue>255</Blue>
-        </Background>
-        <Outline>
-          <Style>Solid</Style>
-          <Thickness>1</Thickness>
-          <Color>
-            <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
-          </Color>
-        </Outline>
-        <Insets>
-          <Top>0.0</Top>
-          <Left>2.0</Left>
-          <Bottom>0.0</Bottom>
-          <Right>3.0</Right>
-        </Insets>
-        <Visible>true</Visible>
-      </Label>
-      <LabelPosition>Left</LabelPosition>
-      <MajorGrid>
-        <LineAttributes>
-          <Style>Solid</Style>
-          <Thickness>1</Thickness>
-          <Color>
-            <Transparency>255</Transparency>
-            <Red>196</Red>
-            <Green>196</Green>
-            <Blue>196</Blue>
-          </Color>
-          <Visible>false</Visible>
-        </LineAttributes>
-        <TickStyle>Across</TickStyle>
-        <TickAttributes>
-          <Style>Solid</Style>
-          <Thickness>1</Thickness>
-          <Color>
-            <Transparency>255</Transparency>
-            <Red>196</Red>
-            <Green>196</Green>
-            <Blue>196</Blue>
-          </Color>
-          <Visible>true</Visible>
-        </TickAttributes>
-      </MajorGrid>
-      <MinorGrid>
-        <LineAttributes>
-          <Style>Solid</Style>
-          <Thickness>1</Thickness>
-          <Color>
-            <Transparency>255</Transparency>
-            <Red>225</Red>
-            <Green>225</Green>
-            <Blue>225</Blue>
-          </Color>
-          <Visible>false</Visible>
-        </LineAttributes>
-        <TickStyle>Across</TickStyle>
-        <TickAttributes>
-          <Style>Solid</Style>
-          <Thickness>1</Thickness>
-          <Color>
-            <Transparency>255</Transparency>
-            <Red>225</Red>
-            <Green>225</Green>
-            <Blue>225</Blue>
-          </Color>
-          <Visible>false</Visible>
-        </TickAttributes>
-      </MinorGrid>
-      <Scale>
-        <MinorGridsPerUnit>5</MinorGridsPerUnit>
-        <AutoExpand>true</AutoExpand>
-      </Scale>
-      <Origin>
-        <Type>Min</Type>
-        <Value xsi:type="data:NumberDataElement">
-          <Value>0.0</Value>
-        </Value>
-      </Origin>
-      <PrimaryAxis>true</PrimaryAxis>
-      <Percent>false</Percent>
-      <Cursor>
-        <Type>Auto</Type>
-      </Cursor>
-    </AssociatedAxes>
-    <SeriesDefinitions>
-      <Query>
-        <Definition></Definition>
-      </Query>
-      <SeriesPalette>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>80</Red>
-          <Green>166</Green>
-          <Blue>218</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>242</Red>
-          <Green>88</Green>
-          <Blue>106</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>232</Red>
-          <Green>172</Green>
-          <Blue>57</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>128</Red>
-          <Green>255</Green>
-          <Blue>128</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>64</Red>
-          <Green>128</Green>
-          <Blue>128</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>128</Red>
-          <Green>128</Green>
-          <Blue>192</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>170</Red>
-          <Green>85</Green>
-          <Blue>85</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>128</Red>
-          <Green>128</Green>
-          <Blue>0</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>192</Red>
-          <Green>192</Green>
-          <Blue>192</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>255</Red>
-          <Green>255</Green>
-          <Blue>128</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>128</Red>
-          <Green>192</Green>
-          <Blue>128</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>7</Red>
-          <Green>146</Green>
-          <Blue>94</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>0</Red>
-          <Green>128</Green>
-          <Blue>255</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>255</Red>
-          <Green>128</Green>
-          <Blue>192</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>0</Red>
-          <Green>255</Green>
-          <Blue>255</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>255</Red>
-          <Green>128</Green>
-          <Blue>128</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>0</Red>
-          <Green>128</Green>
-          <Blue>192</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>255</Red>
-          <Green>0</Green>
-          <Blue>255</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>128</Red>
-          <Green>64</Green>
-          <Blue>64</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>255</Red>
-          <Green>128</Green>
-          <Blue>64</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>80</Red>
-          <Green>240</Green>
-          <Blue>120</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>0</Red>
-          <Green>64</Green>
-          <Blue>128</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>128</Red>
-          <Green>0</Green>
-          <Blue>64</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>255</Red>
-          <Green>0</Green>
-          <Blue>128</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>128</Red>
-          <Green>128</Green>
-          <Blue>64</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>128</Red>
-          <Green>128</Green>
-          <Blue>128</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>255</Red>
-          <Green>128</Green>
-          <Blue>255</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>0</Red>
-          <Green>64</Green>
-          <Blue>0</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>0</Red>
-          <Green>0</Green>
-          <Blue>0</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>255</Red>
-          <Green>255</Green>
-          <Blue>255</Blue>
-        </Entries>
-        <Entries xsi:type="attribute:ColorDefinition">
-          <Transparency>255</Transparency>
-          <Red>255</Red>
-          <Green>128</Green>
-          <Blue>0</Blue>
-        </Entries>
-      </SeriesPalette>
-      <Series>
-        <Visible>true</Visible>
-        <Label>
-          <Caption>
-            <Value></Value>
-            <Font>
-              <Alignment/>
-            </Font>
-          </Caption>
-          <Background xsi:type="attribute:ColorDefinition">
-            <Transparency>0</Transparency>
-            <Red>255</Red>
-            <Green>255</Green>
-            <Blue>255</Blue>
-          </Background>
-          <Outline>
-            <Style>Solid</Style>
-            <Thickness>1</Thickness>
-            <Color>
-              <Transparency>255</Transparency>
-              <Red>0</Red>
-              <Green>0</Green>
-              <Blue>0</Blue>
-            </Color>
-            <Visible>false</Visible>
-          </Outline>
-          <Insets>
-            <Top>0.0</Top>
-            <Left>2.0</Left>
-            <Bottom>0.0</Bottom>
-            <Right>3.0</Right>
-          </Insets>
-          <Visible>false</Visible>
-        </Label>
-        <DataDefinition>
-          <Definition>row.__rownum + 1</Definition>
-        </DataDefinition>
-        <SeriesIdentifier></SeriesIdentifier>
-        <DataPoint>
-          <Components>
-            <Type>Orthogonal_Value</Type>
-          </Components>
-          <Separator>, </Separator>
-        </DataPoint>
-        <LabelPosition>Outside</LabelPosition>
-        <Stacked>false</Stacked>
-      </Series>
-      <Grouping>
-        <Enabled>true</Enabled>
-        <GroupType>Text</GroupType>
-        <AggregateExpression>Sum</AggregateExpression>
-      </Grouping>
-    </SeriesDefinitions>
-    <Orientation>Horizontal</Orientation>
-    <LineAttributes>
-      <Style>Solid</Style>
-      <Thickness>1</Thickness>
-      <Color>
-        <Transparency>255</Transparency>
-        <Red>145</Red>
-        <Green>145</Green>
-        <Blue>145</Blue>
-      </Color>
-      <Visible>true</Visible>
-    </LineAttributes>
-    <Label>
-      <Caption>
-        <Value></Value>
-        <Font>
-          <Alignment/>
-        </Font>
-      </Caption>
-      <Background xsi:type="attribute:ColorDefinition">
-        <Transparency>0</Transparency>
-        <Red>255</Red>
-        <Green>255</Green>
-        <Blue>255</Blue>
-      </Background>
-      <Outline>
-        <Style>Solid</Style>
-        <Thickness>1</Thickness>
-        <Color>
-          <Transparency>255</Transparency>
-          <Red>0</Red>
-          <Green>0</Green>
-          <Blue>0</Blue>
-        </Color>
-      </Outline>
-      <Insets>
-        <Top>0.0</Top>
-        <Left>2.0</Left>
-        <Bottom>0.0</Bottom>
-        <Right>3.0</Right>
-      </Insets>
-      <Visible>true</Visible>
-    </Label>
-    <LabelPosition>Below</LabelPosition>
-    <MajorGrid>
-      <LineAttributes>
-        <Style>Solid</Style>
-        <Thickness>1</Thickness>
-        <Color>
-          <Transparency>255</Transparency>
-          <Red>196</Red>
-          <Green>196</Green>
-          <Blue>196</Blue>
-        </Color>
-        <Visible>false</Visible>
-      </LineAttributes>
-      <TickStyle>Across</TickStyle>
-      <TickAttributes>
-        <Style>Solid</Style>
-        <Thickness>1</Thickness>
-        <Color>
-          <Transparency>255</Transparency>
-          <Red>196</Red>
-          <Green>196</Green>
-          <Blue>196</Blue>
-        </Color>
-        <Visible>true</Visible>
-      </TickAttributes>
-    </MajorGrid>
-    <MinorGrid>
-      <LineAttributes>
-        <Style>Solid</Style>
-        <Thickness>1</Thickness>
-        <Color>
-          <Transparency>255</Transparency>
-          <Red>225</Red>
-          <Green>225</Green>
-          <Blue>225</Blue>
-        </Color>
-        <Visible>false</Visible>
-      </LineAttributes>
-      <TickStyle>Across</TickStyle>
-      <TickAttributes>
-        <Style>Solid</Style>
-        <Thickness>1</Thickness>
-        <Color>
-          <Transparency>255</Transparency>
-          <Red>225</Red>
-          <Green>225</Green>
-          <Blue>225</Blue>
-        </Color>
-        <Visible>false</Visible>
-      </TickAttributes>
-    </MinorGrid>
-    <Scale>
-      <MinorGridsPerUnit>5</MinorGridsPerUnit>
-      <ShowOutside>false</ShowOutside>
-      <TickBetweenCategories>true</TickBetweenCategories>
-    </Scale>
-    <Origin>
-      <Type>Min</Type>
-      <Value xsi:type="data:NumberDataElement">
-        <Value>0.0</Value>
-      </Value>
-    </Origin>
-    <PrimaryAxis>true</PrimaryAxis>
-    <CategoryAxis>true</CategoryAxis>
-    <Percent>false</Percent>
-  </Axes>
-  <Orientation>Vertical</Orientation>
-  <UnitSpacing>50.0</UnitSpacing>
-  <Rotation>
-    <Angles>
-      <XAngle>-20.0</XAngle>
-      <YAngle>45.0</YAngle>
-      <ZAngle>0.0</ZAngle>
-      <Type>None</Type>
-    </Angles>
-  </Rotation>
-</model:ChartWithAxes>
-]]></xml-property>
-                                                        <property name="outputFormat">SVG</property>
-                                                        <property name="inheritColumns">true</property>
-                                                        <property name="height">2.521in</property>
-                                                        <property name="width">7.1in</property>
-                                                        <list-property name="boundDataColumns">
-                                                            <structure>
-                                                                <property name="name">value</property>
-                                                                <expression name="expression" type="javascript">dataSetRow["value"]</expression>
-                                                                <property name="dataType">float</property>
-                                                                <property name="allowExport">true</property>
-                                                            </structure>
-                                                        </list-property>
-                                                        <property name="style">default-font</property>
-                                                    </extended-item>
-                                                </cell>
-                                            </row>
-                                        </header>
-                                    </group>
-                                </table>
-                            </cell>
-                        </row>
-                    </grid>
                     <text-data name="topDomainReportTitle" id="8592">
                         <property name="style">birt-report-headline</property>
                         <property name="backgroundAttachment">scroll</property>
@@ -2881,7 +967,7 @@ function beforeGeneration(chart, icsc)
                     </text-data>
                     <grid name="gridSentMailings" id="952">
                         <property name="style">default-font</property>
-                        <property name="pageBreakInside">avoid</property>
+                        <property name="pageBreakInside">auto</property>
                         <property name="width">100%</property>
                         <list-property name="visibility">
                             <structure>
@@ -2891,19 +977,22 @@ function beforeGeneration(chart, icsc)
                         </list-property>
                         <column id="953"/>
                         <row id="8336">
+                            <property name="pageBreakAfter">avoid</property>
                             <cell id="8337">
-                                <property name="paddingTop">5pt</property>
+                                <property name="paddingTop">0pt</property>
                                 <property name="paddingLeft">0pt</property>
                                 <property name="paddingBottom">5pt</property>
                                 <property name="paddingRight">0pt</property>
                                 <text-data id="8338">
                                     <property name="style">birt-report-header</property>
-                                    <expression name="valueExpr">tr("report.sentMails") + " " + tr("GWUA.per.domain")</expression>
+                                    <expression name="valueExpr">tr("report.sentMails") + " " + tr("report.topdomain.perdomain")</expression>
                                     <property name="contentType">html</property>
                                 </text-data>
                             </cell>
                         </row>
                         <row id="8681">
+                            <property name="pageBreakAfter">auto</property>
+                            <property name="pageBreakBefore">avoid</property>
                             <cell id="8682">
                                 <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="9165">
                                     <property name="cube">TopDomainsDataCube</property>
@@ -3414,7 +1503,7 @@ function beforeGeneration(chart, icsc)
                                                                             <property name="paddingLeft">0pt</property>
                                                                             <property name="paddingBottom">0pt</property>
                                                                             <property name="paddingRight">0pt</property>
-                                                                            <property name="textAlign">center</property>
+                                                                            <property name="textAlign">left</property>
                                                                             <property name="letterSpacing">normal</property>
                                                                             <property name="lineHeight">normal</property>
                                                                             <property name="orphans">2</property>
@@ -3684,12 +1773,19 @@ function onCreateCell( cellInst, reportContext )
 			cellInst.getStyle().setBackgroundColor("#f6f6f6");
 		}
 	}
+	
+	var showTotals = reportContext.getPersistentGlobalVariable('showTotalsRow');
+	if (showTotals == 'false') {
+		if (cellInst.getCellID() == 9342 || cellInst.getCellID() == 9343 || cellInst.getCellID() == 9345) {
+			cellInst.getStyle().setDisplay('none');
+		}
+	}
 }
 ]]></method>
                                     <property name="filter">
                                         <filter-condition-element>
                                             <expression name="expr" type="javascript">dimension["CategoryGroup"]["Category Index"]["category_index"]</expression>
-                                            <property name="operator">eq</property>
+                                            <property name="operator">in</property>
                                             <simple-property-list name="value1">
                                                 <value type="javascript">TopDomainsDataSet.CATEGORY_SENT_EMAILS</value>
                                             </simple-property-list>
@@ -3722,7 +1818,7 @@ function onCreateCell( cellInst, reportContext )
                                     <property name="display">block</property>
                                     <property name="pageBreakBefore">auto</property>
                                     <property name="pageBreakAfter">auto</property>
-                                    <property name="pageBreakInside">avoid</property>
+                                    <property name="pageBreakInside">auto</property>
                                     <property name="showIfBlank">false</property>
                                     <property name="borderTopStyle">solid</property>
                                     <property name="borderTopWidth">thin</property>
@@ -3764,70 +1860,105 @@ function onCreateCell( cellInst, reportContext )
                                         </structure>
                                         <structure>
                                             <property name="name">Value_MailinglistGroup/mailinglist_id</property>
-                                            <expression name="expression">measure["Value"]</expression>
                                             <property name="dataType">integer</property>
                                             <simple-property-list name="aggregateOn">
                                                 <value>MailinglistGroup/mailinglist_id</value>
                                             </simple-property-list>
-                                            <property name="aggregateFunction">SUM</property>
+                                            <property name="aggregateFunction">MAX</property>
+                                            <list-property name="arguments">
+                                                <structure>
+                                                    <property name="name">Expression</property>
+                                                    <expression name="value" type="javascript">measure["Value"]</expression>
+                                                </structure>
+                                            </list-property>
                                         </structure>
                                         <structure>
                                             <property name="name">Rate_MailinglistGroup/mailinglist_id</property>
-                                            <expression name="expression">measure["Rate"]</expression>
                                             <property name="dataType">float</property>
                                             <simple-property-list name="aggregateOn">
                                                 <value>MailinglistGroup/mailinglist_id</value>
                                             </simple-property-list>
-                                            <property name="aggregateFunction">SUM</property>
+                                            <property name="aggregateFunction">MAX</property>
+                                            <list-property name="arguments">
+                                                <structure>
+                                                    <property name="name">Expression</property>
+                                                    <expression name="value" type="javascript">measure["Rate"]</expression>
+                                                </structure>
+                                            </list-property>
                                         </structure>
                                         <structure>
                                             <property name="name">Domain Name Index_MailinglistGroup/mailinglist_id</property>
-                                            <expression name="expression">measure["Domain Name Index"]</expression>
                                             <property name="dataType">integer</property>
                                             <simple-property-list name="aggregateOn">
                                                 <value>MailinglistGroup/mailinglist_id</value>
                                             </simple-property-list>
-                                            <property name="aggregateFunction">SUM</property>
+                                            <property name="aggregateFunction">MAX</property>
+                                            <list-property name="arguments">
+                                                <structure>
+                                                    <property name="name">Expression</property>
+                                                    <expression name="value" type="javascript">measure["Domain Name Index"]</expression>
+                                                </structure>
+                                            </list-property>
                                         </structure>
                                         <structure>
                                             <property name="name">Value_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
-                                            <expression name="expression">measure["Value"]</expression>
-                                            <property name="dataType">integer</property>
-                                            <simple-property-list name="aggregateOn">
-                                                <value>MailinglistGroup/mailinglist_id</value>
-                                                <value>TargetGroupGroup/Target Group Name</value>
-                                            </simple-property-list>
-                                            <property name="aggregateFunction">SUM</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">Rate_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
-                                            <expression name="expression">measure["Rate"]</expression>
                                             <property name="dataType">float</property>
                                             <simple-property-list name="aggregateOn">
                                                 <value>MailinglistGroup/mailinglist_id</value>
                                                 <value>TargetGroupGroup/Target Group Name</value>
                                             </simple-property-list>
                                             <property name="aggregateFunction">SUM</property>
+                                            <list-property name="arguments">
+                                                <structure>
+                                                    <property name="name">Expression</property>
+                                                    <expression name="value" type="javascript">measure["Value"]</expression>
+                                                </structure>
+                                            </list-property>
                                         </structure>
                                         <structure>
-                                            <property name="name">Domain Name Index_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
-                                            <expression name="expression">measure["Domain Name Index"]</expression>
-                                            <property name="dataType">integer</property>
+                                            <property name="name">Rate_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
+                                            <property name="dataType">float</property>
                                             <simple-property-list name="aggregateOn">
                                                 <value>MailinglistGroup/mailinglist_id</value>
                                                 <value>TargetGroupGroup/Target Group Name</value>
                                             </simple-property-list>
                                             <property name="aggregateFunction">SUM</property>
+                                            <list-property name="arguments">
+                                                <structure>
+                                                    <property name="name">Expression</property>
+                                                    <expression name="value" type="javascript">measure["Rate"]</expression>
+                                                </structure>
+                                            </list-property>
+                                        </structure>
+                                        <structure>
+                                            <property name="name">Domain Name Index_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
+                                            <property name="dataType">integer</property>
+                                            <simple-property-list name="aggregateOn">
+                                                <value>MailinglistGroup/mailinglist_id</value>
+                                                <value>TargetGroupGroup/Target Group Name</value>
+                                            </simple-property-list>
+                                            <property name="aggregateFunction">MAX</property>
+                                            <list-property name="arguments">
+                                                <structure>
+                                                    <property name="name">Expression</property>
+                                                    <expression name="value" type="javascript">measure["Domain Name Index"]</expression>
+                                                </structure>
+                                            </list-property>
                                         </structure>
                                         <structure>
                                             <property name="name">Value_DomainNameGroup/Domain Name_TargetGroupGroup/Target Group Name</property>
-                                            <expression name="expression">measure["Value"]</expression>
                                             <property name="dataType">float</property>
                                             <simple-property-list name="aggregateOn">
                                                 <value>DomainNameGroup/Domain Name</value>
                                                 <value>TargetGroupGroup/Target Group Name</value>
                                             </simple-property-list>
                                             <property name="aggregateFunction">SUM</property>
+                                            <list-property name="arguments">
+                                                <structure>
+                                                    <property name="name">Expression</property>
+                                                    <expression name="value" type="javascript">measure["Value"]</expression>
+                                                </structure>
+                                            </list-property>
                                         </structure>
                                         <structure>
                                             <property name="name">Rate_DomainNameGroup/Domain Name_TargetGroupGroup/Target Group Name</property>
@@ -3836,7 +1967,7 @@ function onCreateCell( cellInst, reportContext )
                                                 <value>DomainNameGroup/Domain Name</value>
                                                 <value>TargetGroupGroup/Target Group Name</value>
                                             </simple-property-list>
-                                            <property name="aggregateFunction">AVE</property>
+                                            <property name="aggregateFunction">SUM</property>
                                             <list-property name="arguments">
                                                 <structure>
                                                     <property name="name">Expression</property>
@@ -3855,6 +1986,7 @@ function onCreateCell( cellInst, reportContext )
                             </cell>
                         </row>
                         <row id="8331">
+                            <property name="pageBreakAfter">always</property>
                             <cell id="8332">
                                 <property name="paddingTop">10pt</property>
                                 <property name="paddingBottom">10pt</property>
@@ -4345,7 +2477,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
         <Query>
           <Definition></Definition>
           <Grouping>
-            <GroupType>Numeric</GroupType>
+            <GroupType>Text</GroupType>
           </Grouping>
         </Query>
         <SeriesPalette>
@@ -5194,7 +3326,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                     </grid>
                     <grid name="gridHardBonces" id="8342">
                         <property name="style">default-font</property>
-                        <property name="pageBreakInside">avoid</property>
+                        <property name="pageBreakInside">auto</property>
                         <property name="width">100%</property>
                         <list-property name="visibility">
                             <structure>
@@ -5205,6 +3337,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                         <method name="onCreate"><![CDATA[reportContext.setGlobalVariable("modcnt", parseInt(0));]]></method>
                         <column id="8343"/>
                         <row id="8344">
+                            <property name="pageBreakAfter">avoid</property>
                             <cell id="8345">
                                 <property name="paddingTop">5pt</property>
                                 <property name="paddingLeft">0pt</property>
@@ -5212,12 +3345,13 @@ function afterDataSetFilled(series, dataSet, icsc) {
                                 <property name="paddingRight">0pt</property>
                                 <text-data id="8346">
                                     <property name="style">birt-report-header</property>
-                                    <expression name="valueExpr">tr("statistic.bounces.hardbounce") + " " + tr("GWUA.per.domain")</expression>
+                                    <expression name="valueExpr">tr("statistic.bounces.hardbounce") + " " + tr("report.topdomain.perdomain")</expression>
                                     <property name="contentType">auto</property>
                                 </text-data>
                             </cell>
                         </row>
                         <row id="9214">
+                            <property name="pageBreakBefore">avoid</property>
                             <cell id="9215">
                                 <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="9216">
                                     <property name="cube">TopDomainsDataCube</property>
@@ -5727,7 +3861,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                                                                             <property name="paddingLeft">0pt</property>
                                                                             <property name="paddingBottom">0pt</property>
                                                                             <property name="paddingRight">0pt</property>
-                                                                            <property name="textAlign">center</property>
+                                                                            <property name="textAlign">left</property>
                                                                             <property name="letterSpacing">normal</property>
                                                                             <property name="lineHeight">normal</property>
                                                                             <property name="orphans">2</property>
@@ -5985,6 +4119,13 @@ function onCreateCell( cellInst, reportContext )
 			cellInst.getStyle().setBackgroundColor("#f6f6f6");
 		}
 	}
+	
+	var showTotals = reportContext.getPersistentGlobalVariable('showTotalsRow');
+	if (showTotals == 'false') {
+		if (cellInst.getCellID() == 9350 || cellInst.getCellID() == 9351 || cellInst.getCellID() == 9353) {
+			cellInst.getStyle().setDisplay('none');
+		}
+	}
 }
 ]]></method>
                                     <property name="filter">
@@ -6023,7 +4164,7 @@ function onCreateCell( cellInst, reportContext )
                                     <property name="display">block</property>
                                     <property name="pageBreakBefore">auto</property>
                                     <property name="pageBreakAfter">auto</property>
-                                    <property name="pageBreakInside">avoid</property>
+                                    <property name="pageBreakInside">auto</property>
                                     <property name="showIfBlank">false</property>
                                     <property name="borderTopStyle">solid</property>
                                     <property name="borderTopWidth">thin</property>
@@ -6092,23 +4233,33 @@ function onCreateCell( cellInst, reportContext )
                                         </structure>
                                         <structure>
                                             <property name="name">Value_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
-                                            <expression name="expression">measure["Value"]</expression>
-                                            <property name="dataType">integer</property>
-                                            <simple-property-list name="aggregateOn">
-                                                <value>MailinglistGroup/mailinglist_id</value>
-                                                <value>TargetGroupGroup/Target Group Name</value>
-                                            </simple-property-list>
-                                            <property name="aggregateFunction">SUM</property>
-                                        </structure>
-                                        <structure>
-                                            <property name="name">Rate_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
-                                            <expression name="expression">measure["Rate"]</expression>
                                             <property name="dataType">float</property>
                                             <simple-property-list name="aggregateOn">
                                                 <value>MailinglistGroup/mailinglist_id</value>
                                                 <value>TargetGroupGroup/Target Group Name</value>
                                             </simple-property-list>
                                             <property name="aggregateFunction">SUM</property>
+                                            <list-property name="arguments">
+                                                <structure>
+                                                    <property name="name">Expression</property>
+                                                    <expression name="value" type="javascript">measure["Value"]</expression>
+                                                </structure>
+                                            </list-property>
+                                        </structure>
+                                        <structure>
+                                            <property name="name">Rate_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
+                                            <property name="dataType">float</property>
+                                            <simple-property-list name="aggregateOn">
+                                                <value>MailinglistGroup/mailinglist_id</value>
+                                                <value>TargetGroupGroup/Target Group Name</value>
+                                            </simple-property-list>
+                                            <property name="aggregateFunction">SUM</property>
+                                            <list-property name="arguments">
+                                                <structure>
+                                                    <property name="name">Expression</property>
+                                                    <expression name="value" type="javascript">measure["Rate"]</expression>
+                                                </structure>
+                                            </list-property>
                                         </structure>
                                         <structure>
                                             <property name="name">Domain Name Index_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
@@ -6137,7 +4288,7 @@ function onCreateCell( cellInst, reportContext )
                                                 <value>DomainNameGroup/Domain Name</value>
                                                 <value>TargetGroupGroup/Target Group Name</value>
                                             </simple-property-list>
-                                            <property name="aggregateFunction">AVE</property>
+                                            <property name="aggregateFunction">SUM</property>
                                             <list-property name="arguments">
                                                 <structure>
                                                     <property name="name">Expression</property>
@@ -6155,7 +4306,19 @@ function onCreateCell( cellInst, reportContext )
                                 </extended-item>
                             </cell>
                         </row>
+                        <row id="9795">
+                            <cell id="9796">
+                                <text-data id="9797">
+                                    <property name="style">footnote</property>
+                                    <property name="fontSize">12px</property>
+                                    <property name="color">#8D8D8F</property>
+                                    <expression name="valueExpr">tr('statistic.TopDomains.bounces.explanation')</expression>
+                                    <property name="contentType">html</property>
+                                </text-data>
+                            </cell>
+                        </row>
                         <row id="8371">
+                            <property name="pageBreakAfter">always</property>
                             <cell id="8372">
                                 <property name="paddingTop">10pt</property>
                                 <property name="paddingBottom">10pt</property>
@@ -6645,6 +4808,9 @@ function afterDataSetFilled(series, dataSet, icsc) {
       <SeriesDefinitions>
         <Query>
           <Definition></Definition>
+          <Grouping>
+            <GroupType>Numeric</GroupType>
+          </Grouping>
         </Query>
         <SeriesPalette>
           <Entries xsi:type="attribute:ColorDefinition">
@@ -6893,7 +5059,10 @@ function afterDataSetFilled(series, dataSet, icsc) {
           <SeriesIdentifier></SeriesIdentifier>
           <DataPoint>
             <Components>
-              <Type>Percentile_Orthogonal_Value</Type>
+              <Type>Orthogonal_Value</Type>
+              <FormatSpecifier xsi:type="attribute:JavaNumberFormatSpecifier">
+                <Pattern>##.##%</Pattern>
+              </FormatSpecifier>
             </Components>
             <Suffix></Suffix>
             <Separator>, </Separator>
@@ -7435,46 +5604,58 @@ function afterDataSetFilled(series, dataSet, icsc) {
                                     <property name="dataSet">TopDomainsDataSet</property>
                                     <list-property name="boundDataColumns">
                                         <structure>
+                                            <property name="name">category_name</property>
+                                            <text-property name="displayName">category_name</text-property>
+                                            <expression name="expression" type="javascript">dataSetRow["category_name"]</expression>
+                                            <property name="dataType">string</property>
+                                        </structure>
+                                        <structure>
                                             <property name="name">category_index</property>
-                                            <text-property name="displayName">Category Index</text-property>
+                                            <text-property name="displayName">category_index</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["category_index"]</expression>
                                             <property name="dataType">integer</property>
                                         </structure>
                                         <structure>
                                             <property name="name">domainname</property>
-                                            <text-property name="displayName">Domain Name</text-property>
+                                            <text-property name="displayName">domainname</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["domainname"]</expression>
                                             <property name="dataType">string</property>
                                         </structure>
                                         <structure>
                                             <property name="name">domainname_index</property>
-                                            <text-property name="displayName">Domain Name Index</text-property>
+                                            <text-property name="displayName">domainname_index</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["domainname_index"]</expression>
                                             <property name="dataType">integer</property>
                                         </structure>
                                         <structure>
                                             <property name="name">targetgroup</property>
-                                            <text-property name="displayName">Target Group Name</text-property>
+                                            <text-property name="displayName">targetgroup</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["targetgroup"]</expression>
                                             <property name="dataType">string</property>
                                         </structure>
                                         <structure>
                                             <property name="name">targetgroup_index</property>
-                                            <text-property name="displayName">Target Group Index</text-property>
+                                            <text-property name="displayName">targetgroup_index</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["targetgroup_index"]</expression>
                                             <property name="dataType">integer</property>
                                         </structure>
                                         <structure>
                                             <property name="name">value</property>
-                                            <text-property name="displayName">Value</text-property>
+                                            <text-property name="displayName">value</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["value"]</expression>
                                             <property name="dataType">integer</property>
                                         </structure>
                                         <structure>
                                             <property name="name">rate</property>
-                                            <text-property name="displayName">Rate</text-property>
+                                            <text-property name="displayName">rate</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["rate"]</expression>
                                             <property name="dataType">float</property>
+                                        </structure>
+                                        <structure>
+                                            <property name="name">mailinglist_id</property>
+                                            <text-property name="displayName">mailinglist_id</text-property>
+                                            <expression name="expression" type="javascript">dataSetRow["mailinglist_id"]</expression>
+                                            <property name="dataType">integer</property>
                                         </structure>
                                     </list-property>
                                     <property name="style">default-font</property>
@@ -7484,7 +5665,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                     </grid>
                     <grid name="gridSoftBonces" id="8398">
                         <property name="style">default-font</property>
-                        <property name="pageBreakInside">avoid</property>
+                        <property name="pageBreakInside">auto</property>
                         <property name="width">100%</property>
                         <list-property name="visibility">
                             <structure>
@@ -7495,6 +5676,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                         <method name="onPrepare"><![CDATA[reportContext.setGlobalVariable("modcnt", parseInt(0));]]></method>
                         <column id="8399"/>
                         <row id="8400">
+                            <property name="pageBreakAfter">avoid</property>
                             <cell id="8401">
                                 <property name="paddingTop">5pt</property>
                                 <property name="paddingLeft">0pt</property>
@@ -7502,12 +5684,13 @@ function afterDataSetFilled(series, dataSet, icsc) {
                                 <property name="paddingRight">0pt</property>
                                 <text-data id="8402">
                                     <property name="style">birt-report-header</property>
-                                    <expression name="valueExpr">tr("report.softbounces") + " " + tr("GWUA.per.domain")</expression>
+                                    <expression name="valueExpr">tr("report.softbounces") + " " + tr("report.topdomain.perdomain")</expression>
                                     <property name="contentType">auto</property>
                                 </text-data>
                             </cell>
                         </row>
                         <row id="9246">
+                            <property name="pageBreakBefore">avoid</property>
                             <cell id="9247">
                                 <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="9248">
                                     <property name="cube">TopDomainsDataCube</property>
@@ -8017,7 +6200,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                                                                             <property name="paddingLeft">0pt</property>
                                                                             <property name="paddingBottom">0pt</property>
                                                                             <property name="paddingRight">0pt</property>
-                                                                            <property name="textAlign">center</property>
+                                                                            <property name="textAlign">left</property>
                                                                             <property name="letterSpacing">normal</property>
                                                                             <property name="lineHeight">normal</property>
                                                                             <property name="orphans">2</property>
@@ -8275,6 +6458,13 @@ function onCreateCell( cellInst, reportContext )
 			cellInst.getStyle().setBackgroundColor("#f6f6f6");
 		}
 	}
+	
+	var showTotals = reportContext.getPersistentGlobalVariable('showTotalsRow');
+	if (showTotals == 'false') {
+		if (cellInst.getCellID() == 9358 || cellInst.getCellID() == 9359 || cellInst.getCellID() == 9361) {
+			cellInst.getStyle().setDisplay('none');
+		}
+	}
 }
 ]]></method>
                                     <property name="filter">
@@ -8313,7 +6503,7 @@ function onCreateCell( cellInst, reportContext )
                                     <property name="display">block</property>
                                     <property name="pageBreakBefore">auto</property>
                                     <property name="pageBreakAfter">auto</property>
-                                    <property name="pageBreakInside">avoid</property>
+                                    <property name="pageBreakInside">auto</property>
                                     <property name="showIfBlank">false</property>
                                     <property name="borderTopStyle">solid</property>
                                     <property name="borderTopWidth">thin</property>
@@ -8392,13 +6582,18 @@ function onCreateCell( cellInst, reportContext )
                                         </structure>
                                         <structure>
                                             <property name="name">Rate_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
-                                            <expression name="expression">measure["Rate"]</expression>
                                             <property name="dataType">float</property>
                                             <simple-property-list name="aggregateOn">
                                                 <value>MailinglistGroup/mailinglist_id</value>
                                                 <value>TargetGroupGroup/Target Group Name</value>
                                             </simple-property-list>
                                             <property name="aggregateFunction">SUM</property>
+                                            <list-property name="arguments">
+                                                <structure>
+                                                    <property name="name">Expression</property>
+                                                    <expression name="value" type="javascript">measure["Rate"]</expression>
+                                                </structure>
+                                            </list-property>
                                         </structure>
                                         <structure>
                                             <property name="name">Domain Name Index_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
@@ -8427,7 +6622,7 @@ function onCreateCell( cellInst, reportContext )
                                                 <value>DomainNameGroup/Domain Name</value>
                                                 <value>TargetGroupGroup/Target Group Name</value>
                                             </simple-property-list>
-                                            <property name="aggregateFunction">AVE</property>
+                                            <property name="aggregateFunction">SUM</property>
                                             <list-property name="arguments">
                                                 <structure>
                                                     <property name="name">Expression</property>
@@ -8445,7 +6640,65 @@ function onCreateCell( cellInst, reportContext )
                                 </extended-item>
                             </cell>
                         </row>
+                        <row id="9803">
+                            <cell id="9804">
+                                <text-data id="9805">
+                                    <property name="style">footnote</property>
+                                    <property name="backgroundAttachment">scroll</property>
+                                    <property name="backgroundPositionX">0%</property>
+                                    <property name="backgroundPositionY">0%</property>
+                                    <property name="backgroundRepeat">repeat</property>
+                                    <property name="fontFamily">"arial", sans-serif</property>
+                                    <property name="fontSize">12px</property>
+                                    <property name="fontWeight">normal</property>
+                                    <property name="fontStyle">normal</property>
+                                    <property name="fontVariant">normal</property>
+                                    <property name="color">#8D8D8F</property>
+                                    <property name="textLineThrough">none</property>
+                                    <property name="textOverline">none</property>
+                                    <property name="textUnderline">none</property>
+                                    <property name="borderBottomColor">black</property>
+                                    <property name="borderBottomStyle">none</property>
+                                    <property name="borderBottomWidth">medium</property>
+                                    <property name="borderLeftColor">black</property>
+                                    <property name="borderLeftStyle">none</property>
+                                    <property name="borderLeftWidth">medium</property>
+                                    <property name="borderRightColor">black</property>
+                                    <property name="borderRightStyle">none</property>
+                                    <property name="borderRightWidth">medium</property>
+                                    <property name="borderTopColor">black</property>
+                                    <property name="borderTopStyle">none</property>
+                                    <property name="borderTopWidth">medium</property>
+                                    <property name="marginTop">0pt</property>
+                                    <property name="marginLeft">0pt</property>
+                                    <property name="marginBottom">0pt</property>
+                                    <property name="marginRight">0pt</property>
+                                    <property name="paddingTop">1pt</property>
+                                    <property name="paddingLeft">1pt</property>
+                                    <property name="paddingBottom">1pt</property>
+                                    <property name="paddingRight">1pt</property>
+                                    <property name="textIndent">0em</property>
+                                    <property name="letterSpacing">normal</property>
+                                    <property name="lineHeight">normal</property>
+                                    <property name="orphans">2</property>
+                                    <property name="textTransform">none</property>
+                                    <property name="whiteSpace">normal</property>
+                                    <property name="widows">2</property>
+                                    <property name="wordSpacing">normal</property>
+                                    <property name="display">block</property>
+                                    <property name="pageBreakAfter">auto</property>
+                                    <property name="pageBreakBefore">auto</property>
+                                    <property name="pageBreakInside">auto</property>
+                                    <property name="showIfBlank">false</property>
+                                    <property name="canShrink">false</property>
+                                    <property name="overflow">hidden</property>
+                                    <expression name="valueExpr">tr('statistic.TopDomains.bounces.explanation')</expression>
+                                    <property name="contentType">html</property>
+                                </text-data>
+                            </cell>
+                        </row>
                         <row id="8427">
+                            <property name="pageBreakAfter">always</property>
                             <cell id="8428">
                                 <property name="paddingTop">10pt</property>
                                 <property name="paddingBottom">10pt</property>
@@ -9183,7 +7436,10 @@ function afterDataSetFilled(series, dataSet, icsc) {
           <SeriesIdentifier></SeriesIdentifier>
           <DataPoint>
             <Components>
-              <Type>Percentile_Orthogonal_Value</Type>
+              <Type>Orthogonal_Value</Type>
+              <FormatSpecifier xsi:type="attribute:JavaNumberFormatSpecifier">
+                <Pattern>##.##%</Pattern>
+              </FormatSpecifier>
             </Components>
             <Suffix></Suffix>
             <Separator>, </Separator>
@@ -9725,46 +7981,64 @@ function afterDataSetFilled(series, dataSet, icsc) {
                                     <property name="dataSet">TopDomainsDataSet</property>
                                     <list-property name="boundDataColumns">
                                         <structure>
+                                            <property name="name">category_name</property>
+                                            <text-property name="displayName">category_name</text-property>
+                                            <expression name="expression" type="javascript">dataSetRow["category_name"]</expression>
+                                            <property name="dataType">string</property>
+                                        </structure>
+                                        <structure>
                                             <property name="name">category_index</property>
-                                            <text-property name="displayName">Category Index</text-property>
+                                            <text-property name="displayName">category_index</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["category_index"]</expression>
                                             <property name="dataType">integer</property>
                                         </structure>
                                         <structure>
                                             <property name="name">domainname</property>
-                                            <text-property name="displayName">Domain Name</text-property>
+                                            <text-property name="displayName">domainname</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["domainname"]</expression>
                                             <property name="dataType">string</property>
                                         </structure>
                                         <structure>
                                             <property name="name">domainname_index</property>
-                                            <text-property name="displayName">Domain Name Index</text-property>
+                                            <text-property name="displayName">domainname_index</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["domainname_index"]</expression>
                                             <property name="dataType">integer</property>
                                         </structure>
                                         <structure>
                                             <property name="name">targetgroup</property>
-                                            <text-property name="displayName">Target Group Name</text-property>
+                                            <text-property name="displayName">targetgroup</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["targetgroup"]</expression>
                                             <property name="dataType">string</property>
                                         </structure>
                                         <structure>
                                             <property name="name">targetgroup_index</property>
-                                            <text-property name="displayName">Target Group Index</text-property>
+                                            <text-property name="displayName">targetgroup_index</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["targetgroup_index"]</expression>
                                             <property name="dataType">integer</property>
                                         </structure>
                                         <structure>
                                             <property name="name">value</property>
-                                            <text-property name="displayName">Value</text-property>
+                                            <text-property name="displayName">value</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["value"]</expression>
                                             <property name="dataType">integer</property>
                                         </structure>
                                         <structure>
                                             <property name="name">rate</property>
-                                            <text-property name="displayName">Rate</text-property>
+                                            <text-property name="displayName">rate</text-property>
                                             <expression name="expression" type="javascript">dataSetRow["rate"]</expression>
                                             <property name="dataType">float</property>
+                                        </structure>
+                                        <structure>
+                                            <property name="name">mailinglist</property>
+                                            <text-property name="displayName">mailinglist</text-property>
+                                            <expression name="expression" type="javascript">dataSetRow["mailinglist"]</expression>
+                                            <property name="dataType">string</property>
+                                        </structure>
+                                        <structure>
+                                            <property name="name">mailinglist_id</property>
+                                            <text-property name="displayName">mailinglist_id</text-property>
+                                            <expression name="expression" type="javascript">dataSetRow["mailinglist_id"]</expression>
+                                            <property name="dataType">integer</property>
                                         </structure>
                                     </list-property>
                                     <property name="style">default-font</property>
@@ -9774,7 +8048,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                     </grid>
                     <grid name="gridOpeners" id="8453">
                         <property name="style">default-font</property>
-                        <property name="pageBreakInside">avoid</property>
+                        <property name="pageBreakInside">auto</property>
                         <property name="width">100%</property>
                         <list-property name="visibility">
                             <structure>
@@ -9785,6 +8059,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                         <method name="onPrepare"><![CDATA[reportContext.setGlobalVariable("modcnt", parseInt(0));]]></method>
                         <column id="8454"/>
                         <row id="8455">
+                            <property name="pageBreakAfter">avoid</property>
                             <cell id="8456">
                                 <property name="paddingTop">5pt</property>
                                 <property name="paddingLeft">0pt</property>
@@ -9792,12 +8067,14 @@ function afterDataSetFilled(series, dataSet, icsc) {
                                 <property name="paddingRight">0pt</property>
                                 <text-data id="8457">
                                     <property name="style">birt-report-header</property>
-                                    <expression name="valueExpr">tr("statistic.opener") + " " + tr("GWUA.per.domain")</expression>
+                                    <expression name="valueExpr">tr("statistic.opener") + " " + tr("report.topdomain.perdomain")</expression>
                                     <property name="contentType">auto</property>
                                 </text-data>
                             </cell>
                         </row>
                         <row id="9278">
+                            <property name="pageBreakAfter">auto</property>
+                            <property name="pageBreakBefore">avoid</property>
                             <cell id="9279">
                                 <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="9280">
                                     <property name="cube">TopDomainsDataCube</property>
@@ -10307,7 +8584,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                                                                             <property name="paddingLeft">0pt</property>
                                                                             <property name="paddingBottom">0pt</property>
                                                                             <property name="paddingRight">0pt</property>
-                                                                            <property name="textAlign">center</property>
+                                                                            <property name="textAlign">left</property>
                                                                             <property name="letterSpacing">normal</property>
                                                                             <property name="lineHeight">normal</property>
                                                                             <property name="orphans">2</property>
@@ -10565,6 +8842,12 @@ function onCreateCell( cellInst, reportContext )
 			cellInst.getStyle().setBackgroundColor("#f6f6f6");
 		}
 	}
+	var showTotals = reportContext.getPersistentGlobalVariable('showTotalsRow');
+	if (showTotals == 'false') {
+		if (cellInst.getCellID() == 9366 || cellInst.getCellID() == 9367 || cellInst.getCellID() == 9369) {
+			cellInst.getStyle().setDisplay('none');
+		}
+	}
 }
 ]]></method>
                                     <property name="filter">
@@ -10603,7 +8886,7 @@ function onCreateCell( cellInst, reportContext )
                                     <property name="display">block</property>
                                     <property name="pageBreakBefore">auto</property>
                                     <property name="pageBreakAfter">auto</property>
-                                    <property name="pageBreakInside">avoid</property>
+                                    <property name="pageBreakInside">auto</property>
                                     <property name="showIfBlank">false</property>
                                     <property name="borderTopStyle">solid</property>
                                     <property name="borderTopWidth">thin</property>
@@ -10682,13 +8965,18 @@ function onCreateCell( cellInst, reportContext )
                                         </structure>
                                         <structure>
                                             <property name="name">Rate_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
-                                            <expression name="expression">measure["Rate"]</expression>
                                             <property name="dataType">float</property>
                                             <simple-property-list name="aggregateOn">
                                                 <value>MailinglistGroup/mailinglist_id</value>
                                                 <value>TargetGroupGroup/Target Group Name</value>
                                             </simple-property-list>
                                             <property name="aggregateFunction">SUM</property>
+                                            <list-property name="arguments">
+                                                <structure>
+                                                    <property name="name">Expression</property>
+                                                    <expression name="value" type="javascript">measure["Rate"]</expression>
+                                                </structure>
+                                            </list-property>
                                         </structure>
                                         <structure>
                                             <property name="name">Domain Name Index_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name</property>
@@ -10717,7 +9005,7 @@ function onCreateCell( cellInst, reportContext )
                                                 <value>DomainNameGroup/Domain Name</value>
                                                 <value>TargetGroupGroup/Target Group Name</value>
                                             </simple-property-list>
-                                            <property name="aggregateFunction">AVE</property>
+                                            <property name="aggregateFunction">SUM</property>
                                             <list-property name="arguments">
                                                 <structure>
                                                     <property name="name">Expression</property>
@@ -10736,6 +9024,7 @@ function onCreateCell( cellInst, reportContext )
                             </cell>
                         </row>
                         <row id="8482">
+                            <property name="pageBreakAfter">always</property>
                             <cell id="8483">
                                 <property name="paddingTop">10pt</property>
                                 <property name="paddingBottom">10pt</property>
@@ -12064,7 +10353,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                     </grid>
                     <grid name="gridClickers" id="8485">
                         <property name="style">default-font</property>
-                        <property name="pageBreakInside">avoid</property>
+                        <property name="pageBreakInside">auto</property>
                         <property name="width">100%</property>
                         <list-property name="visibility">
                             <structure>
@@ -12075,6 +10364,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                         <method name="onPrepare"><![CDATA[reportContext.setGlobalVariable("modcnt", parseInt(0));]]></method>
                         <column id="8486"/>
                         <row id="8487">
+                            <property name="pageBreakAfter">avoid</property>
                             <cell id="8488">
                                 <property name="paddingTop">5pt</property>
                                 <property name="paddingLeft">0pt</property>
@@ -12082,12 +10372,13 @@ function afterDataSetFilled(series, dataSet, icsc) {
                                 <property name="paddingRight">0pt</property>
                                 <text-data id="8489">
                                     <property name="style">birt-report-header</property>
-                                    <expression name="valueExpr">tr("statistic.clicker") + " " + tr("GWUA.per.domain")</expression>
+                                    <expression name="valueExpr">tr("statistic.clicker") + " " + tr("report.topdomain.perdomain")</expression>
                                     <property name="contentType">html</property>
                                 </text-data>
                             </cell>
                         </row>
                         <row id="9310">
+                            <property name="pageBreakBefore">avoid</property>
                             <cell id="9311">
                                 <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="9312">
                                     <property name="cube">TopDomainsDataCube</property>
@@ -12600,7 +10891,7 @@ data["Rate_MailinglistGroup/mailinglist_id_TargetGroupGroup/Target Group Name"] 
                                                                             <property name="paddingLeft">0pt</property>
                                                                             <property name="paddingBottom">0pt</property>
                                                                             <property name="paddingRight">0pt</property>
-                                                                            <property name="textAlign">center</property>
+                                                                            <property name="textAlign">left</property>
                                                                             <property name="letterSpacing">normal</property>
                                                                             <property name="lineHeight">normal</property>
                                                                             <property name="orphans">2</property>
@@ -12858,6 +11149,12 @@ function onCreateCell( cellInst, reportContext )
 			cellInst.getStyle().setBackgroundColor("#f6f6f6");
 		}
 	}
+	var showTotals = reportContext.getPersistentGlobalVariable('showTotalsRow');
+	if (showTotals == 'false') {
+		if (cellInst.getCellID() == 9373 || cellInst.getCellID() == 9374 || cellInst.getCellID() == 9376) {
+			cellInst.getStyle().setDisplay('none');
+		}
+	}
 }
 ]]></method>
                                     <property name="filter">
@@ -12896,7 +11193,7 @@ function onCreateCell( cellInst, reportContext )
                                     <property name="display">block</property>
                                     <property name="pageBreakBefore">auto</property>
                                     <property name="pageBreakAfter">auto</property>
-                                    <property name="pageBreakInside">avoid</property>
+                                    <property name="pageBreakInside">auto</property>
                                     <property name="showIfBlank">false</property>
                                     <property name="borderTopStyle">solid</property>
                                     <property name="borderTopWidth">thin</property>
@@ -13024,6 +11321,7 @@ function onCreateCell( cellInst, reportContext )
                             </cell>
                         </row>
                         <row id="8514">
+                            <property name="pageBreakAfter">always</property>
                             <cell id="8515">
                                 <property name="paddingTop">10pt</property>
                                 <property name="paddingBottom">10pt</property>
@@ -14356,7 +12654,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                 <structure>
                     <property name="name">reportDate</property>
                     <expression name="expression" type="javascript">params["reportCreateDate"].value</expression>
-                    <property name="dataType">date-time</property>
+                    <property name="dataType">string</property>
                     <property name="allowExport">true</property>
                 </structure>
                 <structure>
@@ -14391,31 +12689,43 @@ function afterDataSetFilled(series, dataSet, icsc) {
                 </structure>
                 <structure>
                     <property name="name">sentCategoryTitle</property>
-                    <expression name="expression" type="javascript">tr("report.sentMails") + " " + tr("GWUA.per.domain")</expression>
+                    <expression name="expression" type="javascript">tr("report.sentMails") + " " + tr("report.topdomain.perdomain")</expression>
                     <property name="dataType">string</property>
                     <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickersCategoryTitle</property>
-                    <expression name="expression" type="javascript">tr("statistic.clicker") + " " + tr("GWUA.per.domain")</expression>
+                    <expression name="expression" type="javascript">tr("statistic.clicker") + " " + tr("report.topdomain.perdomain")</expression>
                     <property name="dataType">string</property>
                     <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">openersCategoryTitle</property>
-                    <expression name="expression" type="javascript">tr("statistic.opener") + " " + tr("GWUA.per.domain")</expression>
+                    <expression name="expression" type="javascript">tr("statistic.opener") + " " + tr("report.topdomain.perdomain")</expression>
                     <property name="dataType">string</property>
                     <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">softBouncesCategoryTitle</property>
-                    <expression name="expression" type="javascript">tr("report.softbounces") + " " + tr("GWUA.per.domain")</expression>
+                    <expression name="expression" type="javascript">tr("report.softbounces") + " " + tr("report.topdomain.perdomain")</expression>
                     <property name="dataType">string</property>
                     <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">hardBouncesCategoryTitle</property>
-                    <expression name="expression" type="javascript">tr("statistic.bounces.hardbounce") + " " + tr("GWUA.per.domain")</expression>
+                    <expression name="expression" type="javascript">tr("statistic.bounces.hardbounce") + " " + tr("report.topdomain.perdomain")</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">ReportDateTitle</property>
+                    <expression name="expression" type="javascript">tr("report.mailing.statistics.reportdatum")</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">ReportNameTitle</property>
+                    <expression name="expression" type="javascript">tr("Name")</expression>
                     <property name="dataType">string</property>
                     <property name="allowExport">true</property>
                 </structure>
@@ -14478,12 +12788,13 @@ function afterDataSetFilled(series, dataSet, icsc) {
                 <cell id="9411"/>
             </row>
             <row id="9412">
+                <property name="backgroundColor">black</property>
                 <cell id="9413"/>
                 <cell id="9414"/>
             </row>
             <row id="9415">
                 <cell id="9416">
-                    <data id="9489">
+                    <data id="9810">
                         <property name="backgroundAttachment">scroll</property>
                         <property name="backgroundPositionX">0%</property>
                         <property name="backgroundPositionY">0%</property>
@@ -14531,7 +12842,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                         <property name="showIfBlank">false</property>
                         <property name="canShrink">false</property>
                         <property name="overflow">hidden</property>
-                        <property name="resultSetColumn">reportDateTitle</property>
+                        <property name="resultSetColumn">ReportDateTitle</property>
                     </data>
                 </cell>
                 <cell id="9417">
@@ -14695,7 +13006,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
             </row>
             <row id="9421">
                 <cell id="9422">
-                    <data id="9490">
+                    <data id="9811">
                         <property name="backgroundAttachment">scroll</property>
                         <property name="backgroundPositionX">0%</property>
                         <property name="backgroundPositionY">0%</property>
@@ -14743,7 +13054,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                         <property name="showIfBlank">false</property>
                         <property name="canShrink">false</property>
                         <property name="overflow">hidden</property>
-                        <property name="resultSetColumn">reportNameTitle</property>
+                        <property name="resultSetColumn">ReportNameTitle</property>
                     </data>
                 </cell>
                 <cell id="9423">
@@ -14797,402 +13108,6 @@ function afterDataSetFilled(series, dataSet, icsc) {
                         <property name="overflow">hidden</property>
                         <property name="resultSetColumn">reportName</property>
                     </data>
-                </cell>
-            </row>
-            <row id="9424">
-                <cell id="9425"/>
-                <cell id="9426"/>
-            </row>
-            <row id="9531">
-                <cell id="9532">
-                    <data name="csvComparisonDataTitle" id="9534">
-                        <property name="backgroundAttachment">scroll</property>
-                        <property name="backgroundPositionX">0%</property>
-                        <property name="backgroundPositionY">0%</property>
-                        <property name="backgroundRepeat">repeat</property>
-                        <property name="fontFamily">"Arial"</property>
-                        <property name="fontSize">medium</property>
-                        <property name="fontWeight">normal</property>
-                        <property name="fontStyle">normal</property>
-                        <property name="fontVariant">normal</property>
-                        <property name="color">black</property>
-                        <property name="textLineThrough">none</property>
-                        <property name="textOverline">none</property>
-                        <property name="textUnderline">none</property>
-                        <property name="borderBottomColor">black</property>
-                        <property name="borderBottomStyle">none</property>
-                        <property name="borderBottomWidth">medium</property>
-                        <property name="borderLeftColor">black</property>
-                        <property name="borderLeftStyle">none</property>
-                        <property name="borderLeftWidth">medium</property>
-                        <property name="borderRightColor">black</property>
-                        <property name="borderRightStyle">none</property>
-                        <property name="borderRightWidth">medium</property>
-                        <property name="borderTopColor">black</property>
-                        <property name="borderTopStyle">none</property>
-                        <property name="borderTopWidth">medium</property>
-                        <property name="marginTop">0pt</property>
-                        <property name="marginLeft">0pt</property>
-                        <property name="marginBottom">0pt</property>
-                        <property name="marginRight">0pt</property>
-                        <property name="paddingTop">1pt</property>
-                        <property name="paddingLeft">1pt</property>
-                        <property name="paddingBottom">1pt</property>
-                        <property name="paddingRight">1pt</property>
-                        <property name="letterSpacing">normal</property>
-                        <property name="lineHeight">normal</property>
-                        <property name="orphans">2</property>
-                        <property name="textTransform">none</property>
-                        <property name="whiteSpace">normal</property>
-                        <property name="widows">2</property>
-                        <property name="wordSpacing">normal</property>
-                        <property name="display">block</property>
-                        <property name="pageBreakAfter">auto</property>
-                        <property name="pageBreakBefore">auto</property>
-                        <property name="pageBreakInside">auto</property>
-                        <property name="showIfBlank">false</property>
-                        <property name="canShrink">false</property>
-                        <property name="overflow">hidden</property>
-                        <property name="resultSetColumn">comparisonTableTitle</property>
-                    </data>
-                </cell>
-                <cell id="9533"/>
-            </row>
-            <row id="9491">
-                <cell id="9492">
-                    <property name="colSpan">2</property>
-                    <property name="rowSpan">1</property>
-                    <table name="csvComparisonData" id="9497">
-                        <property name="style">default-font</property>
-                        <property name="dataSet">MailingCompareDataSet</property>
-                        <list-property name="boundDataColumns">
-                            <structure>
-                                <property name="name">mailing_id</property>
-                                <text-property name="displayName">mailing_id</text-property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_id"]</expression>
-                                <property name="dataType">integer</property>
-                            </structure>
-                            <structure>
-                                <property name="name">mailing_name</property>
-                                <text-property name="displayName">mailing_name</text-property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
-                                <property name="name">targetgroup</property>
-                                <text-property name="displayName">targetgroup</text-property>
-                                <expression name="expression" type="javascript">dataSetRow["targetgroup"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
-                                <property name="name">targetgroup_index</property>
-                                <text-property name="displayName">targetgroup_index</text-property>
-                                <expression name="expression" type="javascript">dataSetRow["targetgroup_index"]</expression>
-                                <property name="dataType">integer</property>
-                            </structure>
-                            <structure>
-                                <property name="name">value</property>
-                                <text-property name="displayName">value</text-property>
-                                <expression name="expression" type="javascript">dataSetRow["value"]</expression>
-                                <property name="dataType">integer</property>
-                            </structure>
-                            <structure>
-                                <property name="name">rate</property>
-                                <text-property name="displayName">rate</text-property>
-                                <expression name="expression" type="javascript">dataSetRow["rate"]</expression>
-                                <property name="dataType">float</property>
-                            </structure>
-                            <structure>
-                                <property name="name">rowNumber</property>
-                                <text-property name="displayName">rowNumber</text-property>
-                                <expression name="expression" type="javascript">rowNumber</expression>
-                                <property name="dataType">integer</property>
-                                <property name="allowExport">true</property>
-                            </structure>
-                            <structure>
-                                <property name="name">send_date</property>
-                                <text-property name="displayName">send_date</text-property>
-                                <expression name="expression" type="javascript">dataSetRow["send_date"]</expression>
-                                <property name="dataType">date-time</property>
-                            </structure>
-                            <structure>
-                                <property name="name">sendDate</property>
-                                <expression name="expression" type="javascript">row["send_date"]</expression>
-                                <property name="dataType">date-time</property>
-                                <property name="allowExport">true</property>
-                            </structure>
-                            <structure>
-                                <property name="name">mailingName</property>
-                                <expression name="expression" type="javascript">row["mailing_name"]</expression>
-                                <property name="dataType">string</property>
-                                <property name="allowExport">true</property>
-                            </structure>
-                            <structure>
-                                <property name="name">valueData</property>
-                                <expression name="expression" type="javascript">row["value"]</expression>
-                                <property name="dataType">integer</property>
-                                <property name="allowExport">true</property>
-                            </structure>
-                            <structure>
-                                <property name="name">targetName</property>
-                                <expression name="expression" type="javascript">row["targetgroup"]</expression>
-                                <property name="dataType">string</property>
-                                <property name="allowExport">true</property>
-                            </structure>
-                            <structure>
-                                <property name="name">rate_value</property>
-                                <expression name="expression" type="javascript">row["rate"]</expression>
-                                <property name="dataType">float</property>
-                                <property name="allowExport">true</property>
-                            </structure>
-                            <structure>
-                                <property name="name">mailinglist</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailinglist"]</expression>
-                                <property name="dataType">string</property>
-                                <property name="allowExport">true</property>
-                            </structure>
-                        </list-property>
-                        <method name="onPrepare"><![CDATA[rowNumber = 1;]]></method>
-                        <list-property name="sort">
-                            <structure>
-                                <expression name="key" type="javascript">row["send_date"]</expression>
-                                <property name="direction">asc</property>
-                                <property name="strength">-1</property>
-                            </structure>
-                        </list-property>
-                        <list-property name="filter">
-                            <structure>
-                                <property name="operator">gt</property>
-                                <expression name="expr" type="javascript">row["valueData"]</expression>
-                                <simple-property-list name="value1">
-                                    <value>0</value>
-                                </simple-property-list>
-                                <property name="updateAggregation">true</property>
-                            </structure>
-                        </list-property>
-                        <column id="9525">
-                            <property name="width">5%</property>
-                        </column>
-                        <column id="9526">
-                            <property name="width">15%</property>
-                        </column>
-                        <column id="9527">
-                            <property name="textAlign">left</property>
-                            <property name="width">25%</property>
-                        </column>
-                        <column id="9528">
-                            <property name="textAlign">center</property>
-                            <property name="width">25%</property>
-                        </column>
-                        <column id="9529">
-                            <property name="textAlign">center</property>
-                            <property name="width">25%</property>
-                        </column>
-                        <column id="9530">
-                            <property name="width">30%</property>
-                        </column>
-                        <header>
-                            <row id="9498">
-                                <property name="backgroundColor">#0071B9</property>
-                                <property name="fontWeight">bold</property>
-                                <property name="color">white</property>
-                                <property name="textAlign">center</property>
-                                <cell id="9499">
-                                    <property name="style">default-font</property>
-                                    <property name="fontSize">12px</property>
-                                    <property name="borderBottomStyle">none</property>
-                                    <property name="borderLeftStyle">none</property>
-                                    <property name="borderRightStyle">none</property>
-                                    <property name="borderTopStyle">none</property>
-                                    <text-data id="9500">
-                                        <property name="style">default-font</property>
-                                        <expression name="valueExpr">tr("default.number")</expression>
-                                        <property name="contentType">auto</property>
-                                    </text-data>
-                                </cell>
-                                <cell id="9501">
-                                    <property name="style">default-font</property>
-                                    <property name="fontSize">12px</property>
-                                    <property name="borderBottomStyle">none</property>
-                                    <property name="borderLeftStyle">none</property>
-                                    <property name="borderRightStyle">none</property>
-                                    <property name="borderTopStyle">none</property>
-                                    <text-data id="9502">
-                                        <expression name="valueExpr">tr("birt.Send_Mailing")</expression>
-                                        <property name="contentType">auto</property>
-                                    </text-data>
-                                </cell>
-                                <cell id="9503">
-                                    <property name="style">default-font</property>
-                                    <property name="fontSize">12px</property>
-                                    <property name="borderBottomStyle">none</property>
-                                    <property name="borderLeftStyle">none</property>
-                                    <property name="borderRightStyle">none</property>
-                                    <property name="borderTopStyle">none</property>
-                                    <property name="textAlign">center</property>
-                                    <text-data id="9504">
-                                        <expression name="valueExpr">tr("report.mailings")</expression>
-                                        <property name="contentType">auto</property>
-                                    </text-data>
-                                </cell>
-                                <cell id="9505">
-                                    <property name="style">default-font</property>
-                                    <property name="fontSize">12px</property>
-                                    <property name="borderBottomStyle">none</property>
-                                    <property name="borderLeftStyle">none</property>
-                                    <property name="borderRightStyle">none</property>
-                                    <property name="borderTopStyle">none</property>
-                                    <text-data id="9506">
-                                        <expression name="valueExpr">tr("Mailinglist")</expression>
-                                        <property name="contentType">html</property>
-                                    </text-data>
-                                </cell>
-                                <cell id="9507">
-                                    <property name="style">default-font</property>
-                                    <property name="fontSize">12px</property>
-                                    <property name="borderBottomStyle">none</property>
-                                    <property name="borderLeftStyle">none</property>
-                                    <property name="borderRightStyle">none</property>
-                                    <property name="borderTopStyle">none</property>
-                                    <text-data id="9508">
-                                        <expression name="valueExpr">tr("Targetgroups")</expression>
-                                        <property name="contentType">auto</property>
-                                    </text-data>
-                                </cell>
-                                <cell id="9509">
-                                    <property name="style">default-font</property>
-                                    <property name="fontSize">12px</property>
-                                    <property name="borderBottomStyle">none</property>
-                                    <property name="borderLeftStyle">none</property>
-                                    <property name="borderRightStyle">none</property>
-                                    <property name="borderTopStyle">none</property>
-                                    <text-data id="9510">
-                                        <expression name="valueExpr">tr("report.deliveredMails")</expression>
-                                        <property name="contentType">auto</property>
-                                    </text-data>
-                                </cell>
-                            </row>
-                        </header>
-                        <detail>
-                            <row id="9511">
-                                <method name="onCreate"><![CDATA[rowNumber++;]]></method>
-                                <property name="borderBottomColor">#808080</property>
-                                <property name="borderBottomStyle">solid</property>
-                                <property name="borderBottomWidth">thin</property>
-                                <property name="borderLeftColor">#808080</property>
-                                <property name="borderLeftStyle">solid</property>
-                                <property name="borderLeftWidth">thin</property>
-                                <property name="borderRightColor">#808080</property>
-                                <property name="borderRightStyle">solid</property>
-                                <property name="borderRightWidth">thin</property>
-                                <list-property name="highlightRules">
-                                    <structure>
-                                        <property name="operator">eq</property>
-                                        <expression name="testExpr" type="javascript">row["rowNumber"] % 2</expression>
-                                        <simple-property-list name="value1">
-                                            <value type="javascript">0</value>
-                                        </simple-property-list>
-                                        <property name="style">odd</property>
-                                    </structure>
-                                </list-property>
-                                <cell id="9512">
-                                    <property name="style">default-font</property>
-                                    <property name="fontSize">12px</property>
-                                    <property name="borderRightColor">#808080</property>
-                                    <property name="borderRightStyle">solid</property>
-                                    <property name="borderRightWidth">thin</property>
-                                    <property name="textAlign">center</property>
-                                    <data id="9513">
-                                        <property name="paddingTop">2pt</property>
-                                        <property name="paddingBottom">2pt</property>
-                                        <property name="resultSetColumn">rowNumber</property>
-                                    </data>
-                                </cell>
-                                <cell id="9514">
-                                    <property name="style">default-font</property>
-                                    <property name="fontSize">12px</property>
-                                    <property name="borderRightColor">#808080</property>
-                                    <property name="borderRightStyle">solid</property>
-                                    <property name="borderRightWidth">thin</property>
-                                    <property name="paddingTop">1pt</property>
-                                    <property name="paddingBottom">1pt</property>
-                                    <data id="9515">
-                                        <structure name="dateTimeFormat">
-                                            <property name="category">Unformatted</property>
-                                        </structure>
-                                        <method name="onPrepare"><![CDATA[if (reportContext.getLocale().getLanguage() == "de") {
-	this.getStyle().dateTimeFormat = "dd.MM.yyyy";
-} else {
-	this.getStyle().dateTimeFormat = "yyyy-MM-dd";
-}]]></method>
-                                        <property name="resultSetColumn">sendDate</property>
-                                    </data>
-                                </cell>
-                                <cell id="9516">
-                                    <property name="style">default-font</property>
-                                    <property name="fontSize">12px</property>
-                                    <property name="borderRightColor">#808080</property>
-                                    <property name="borderRightStyle">solid</property>
-                                    <property name="borderRightWidth">thin</property>
-                                    <property name="paddingTop">1pt</property>
-                                    <property name="paddingBottom">1pt</property>
-                                    <data id="9517">
-                                        <property name="resultSetColumn">mailingName</property>
-                                    </data>
-                                </cell>
-                                <cell id="9518">
-                                    <property name="style">default-font</property>
-                                    <property name="fontSize">12px</property>
-                                    <property name="borderRightColor">#808080</property>
-                                    <property name="borderRightStyle">solid</property>
-                                    <property name="borderRightWidth">thin</property>
-                                    <property name="paddingTop">1pt</property>
-                                    <property name="paddingBottom">1pt</property>
-                                    <property name="textAlign">left</property>
-                                    <data id="9519">
-                                        <property name="resultSetColumn">mailinglist</property>
-                                    </data>
-                                </cell>
-                                <cell id="9520">
-                                    <property name="style">default-font</property>
-                                    <property name="fontSize">12px</property>
-                                    <property name="borderRightColor">#808080</property>
-                                    <property name="borderRightStyle">solid</property>
-                                    <property name="borderRightWidth">thin</property>
-                                    <property name="paddingTop">1pt</property>
-                                    <property name="paddingBottom">1pt</property>
-                                    <data id="9521">
-                                        <property name="resultSetColumn">targetName</property>
-                                    </data>
-                                </cell>
-                                <cell id="9522">
-                                    <property name="style">default-font</property>
-                                    <property name="fontSize">12px</property>
-                                    <property name="borderBottomStyle">none</property>
-                                    <property name="borderLeftStyle">none</property>
-                                    <property name="borderRightStyle">none</property>
-                                    <property name="borderTopStyle">none</property>
-                                    <property name="paddingTop">1pt</property>
-                                    <property name="paddingBottom">1pt</property>
-                                    <property name="textAlign">right</property>
-                                    <data id="9523">
-                                        <structure name="numberFormat">
-                                            <property name="category">Custom</property>
-                                            <property name="pattern">###,###</property>
-                                        </structure>
-                                        <property name="resultSetColumn">valueData</property>
-                                    </data>
-                                    <data id="9524">
-                                        <structure name="numberFormat">
-                                            <property name="category">Custom</property>
-                                            <property name="pattern">(0.00%)</property>
-                                        </structure>
-                                        <property name="resultSetColumn">rate_value</property>
-                                    </data>
-                                </cell>
-                            </row>
-                        </detail>
-                    </table>
                 </cell>
             </row>
             <row id="9494">
@@ -15325,7 +13240,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                             </structure>
                             <structure>
                                 <property name="name">category_header</property>
-                                <expression name="expression" type="javascript">tr("Category")</expression>
+                                <expression name="expression" type="javascript">tr("grid.mediapool.category")</expression>
                                 <property name="dataType">string</property>
                                 <property name="allowExport">true</property>
                             </structure>
@@ -16074,7 +13989,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                             </structure>
                             <structure>
                                 <property name="name">category_header</property>
-                                <expression name="expression" type="javascript">tr("Category")</expression>
+                                <expression name="expression" type="javascript">tr("grid.mediapool.category")</expression>
                                 <property name="dataType">string</property>
                                 <property name="allowExport">true</property>
                             </structure>
@@ -16823,7 +14738,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                             </structure>
                             <structure>
                                 <property name="name">category_header</property>
-                                <expression name="expression" type="javascript">tr("Category")</expression>
+                                <expression name="expression" type="javascript">tr("grid.mediapool.category")</expression>
                                 <property name="dataType">string</property>
                                 <property name="allowExport">true</property>
                             </structure>
@@ -17572,7 +15487,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                             </structure>
                             <structure>
                                 <property name="name">category_header</property>
-                                <expression name="expression" type="javascript">tr("Category")</expression>
+                                <expression name="expression" type="javascript">tr("grid.mediapool.category")</expression>
                                 <property name="dataType">string</property>
                                 <property name="allowExport">true</property>
                             </structure>
@@ -18321,7 +16236,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                             </structure>
                             <structure>
                                 <property name="name">category_header</property>
-                                <expression name="expression" type="javascript">tr("Category")</expression>
+                                <expression name="expression" type="javascript">tr("grid.mediapool.category")</expression>
                                 <property name="dataType">string</property>
                                 <property name="allowExport">true</property>
                             </structure>

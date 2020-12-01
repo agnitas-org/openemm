@@ -16,6 +16,8 @@ import java.sql.SQLException;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.springframework.jdbc.core.RowMapper;
 
+import com.agnitas.beans.ComMailing;
+
 /**
  * {@link RowMapper} for {@link LightweightMailing}.
  */
@@ -29,8 +31,19 @@ public class LightweightMailingRowMapper implements RowMapper<LightweightMailing
 		final String description = resultSet.getString("description") != null ? resultSet.getString("description") : "";
 		final int mailingTypeCode = resultSet.getInt("mailing_type");
 		final String workStatus = resultSet.getString("work_status");
+		final String contentTypeString = resultSet.getString("content_type");
 		
-		return new LightweightMailing(companyID, mailingID, shortname, description, mailingTypeCode, workStatus);
+		final ComMailing.MailingContentType contentType = decodeContentType(contentTypeString);
+		
+		
+		return new LightweightMailing(companyID, mailingID, shortname, description, mailingTypeCode, workStatus, contentType);
 	}
 
+	private final ComMailing.MailingContentType decodeContentType(final String contentTypeString) {
+		try {
+			return ComMailing.MailingContentType.getFromString(contentTypeString);
+		} catch(final Exception e) {
+			return ComMailing.MailingContentType.advertising;
+		}
+	}
 }

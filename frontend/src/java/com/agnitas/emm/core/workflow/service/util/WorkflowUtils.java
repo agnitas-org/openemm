@@ -10,6 +10,11 @@
 
 package com.agnitas.emm.core.workflow.service.util;
 
+import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS;
+import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID;
+import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_ID;
+import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_KEEP_FORWARD;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,10 +31,10 @@ import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+
 import javax.servlet.http.HttpServletRequest;
 
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetOperator;
+import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
@@ -49,19 +54,6 @@ import com.agnitas.emm.core.workflow.beans.WorkflowStart;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartEventType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStartStop;
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetOperator;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.web.forms.WorkflowParameters;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-
-import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS;
-import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID;
-import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_ID;
-import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_KEEP_FORWARD;
 
 public class WorkflowUtils {
 	public static final int GCD_ACCURACY = 10;
@@ -69,23 +61,23 @@ public class WorkflowUtils {
 	public static final String WORKFLOW_TARGET_NAME_PATTERN = "[campaign target: %s]";
 	public static final String WORKFLOW_TARGET_NAME_SQL_PATTERN = "[campaign target: %]";
 
-	public static Map<TargetOperator, String> getOperatorTypeSupportMap() {
-		Map<TargetOperator, String> map = new HashMap<>();
+	public static Map<ConditionalOperator, String> getOperatorTypeSupportMap() {
+		Map<ConditionalOperator, String> map = new HashMap<>();
 
-		map.put(TargetNode.OPERATOR_EQ, "*");
-		map.put(TargetNode.OPERATOR_NEQ, "*");
-		map.put(TargetNode.OPERATOR_GT, "*");
-		map.put(TargetNode.OPERATOR_LT, "*");
-		map.put(TargetNode.OPERATOR_LT_EQ, "*");
-		map.put(TargetNode.OPERATOR_GT_EQ, "*");
-		map.put(TargetNode.OPERATOR_IS, "*");
-		map.put(TargetNode.OPERATOR_MOD, DbColumnType.GENERIC_TYPE_INTEGER + "," + DbColumnType.GENERIC_TYPE_DOUBLE);
-		map.put(TargetNode.OPERATOR_LIKE, DbColumnType.GENERIC_TYPE_VARCHAR + "," + DbColumnType.GENERIC_TYPE_CHAR);
-		map.put(TargetNode.OPERATOR_NLIKE, DbColumnType.GENERIC_TYPE_VARCHAR + "," + DbColumnType.GENERIC_TYPE_CHAR);
-		map.put(TargetNode.OPERATOR_CONTAINS, DbColumnType.GENERIC_TYPE_VARCHAR + "," + DbColumnType.GENERIC_TYPE_CHAR);
-		map.put(TargetNode.OPERATOR_NOT_CONTAINS, DbColumnType.GENERIC_TYPE_VARCHAR + "," + DbColumnType.GENERIC_TYPE_CHAR);
-		map.put(TargetNode.OPERATOR_STARTS_WITH, DbColumnType.GENERIC_TYPE_VARCHAR + "," + DbColumnType.GENERIC_TYPE_CHAR);
-		map.put(TargetNode.OPERATOR_NOT_STARTS_WITH, DbColumnType.GENERIC_TYPE_VARCHAR + "," + DbColumnType.GENERIC_TYPE_CHAR);
+		map.put(ConditionalOperator.EQ, "*");
+		map.put(ConditionalOperator.NEQ, "*");
+		map.put(ConditionalOperator.GT, "*");
+		map.put(ConditionalOperator.LT, "*");
+		map.put(ConditionalOperator.LEQ, "*");
+		map.put(ConditionalOperator.GEQ, "*");
+		map.put(ConditionalOperator.IS, "*");
+		map.put(ConditionalOperator.MOD, DbColumnType.GENERIC_TYPE_INTEGER + "," + DbColumnType.GENERIC_TYPE_FLOAT);
+		map.put(ConditionalOperator.LIKE, DbColumnType.GENERIC_TYPE_VARCHAR + "," + DbColumnType.GENERIC_TYPE_VARCHAR);
+		map.put(ConditionalOperator.NOT_LIKE, DbColumnType.GENERIC_TYPE_VARCHAR + "," + DbColumnType.GENERIC_TYPE_VARCHAR);
+		map.put(ConditionalOperator.CONTAINS, DbColumnType.GENERIC_TYPE_VARCHAR + "," + DbColumnType.GENERIC_TYPE_VARCHAR);
+		map.put(ConditionalOperator.NOT_CONTAINS, DbColumnType.GENERIC_TYPE_VARCHAR + "," + DbColumnType.GENERIC_TYPE_VARCHAR);
+		map.put(ConditionalOperator.STARTS_WITH, DbColumnType.GENERIC_TYPE_VARCHAR + "," + DbColumnType.GENERIC_TYPE_VARCHAR);
+		map.put(ConditionalOperator.NOT_STARTS_WITH, DbColumnType.GENERIC_TYPE_VARCHAR + "," + DbColumnType.GENERIC_TYPE_VARCHAR);
 
 		return Collections.unmodifiableMap(map);
 	}

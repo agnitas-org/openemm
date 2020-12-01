@@ -12,8 +12,6 @@ package com.agnitas.emm.core.account.service;
 
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComDemoAccountService {
@@ -28,7 +26,7 @@ public interface ComDemoAccountService {
 
     int checkDB();
     
-    boolean checkPassword(HttpServletRequest request, String user, String password);
+    boolean checkPassword(String user, String password);
     
     boolean deleteUser(int companyID);
 }

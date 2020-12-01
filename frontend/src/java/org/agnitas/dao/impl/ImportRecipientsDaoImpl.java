@@ -10,13 +10,8 @@
 
 package org.agnitas.dao.impl;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -41,7 +36,6 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.DbUtilities;
-import org.agnitas.util.ImportUtils;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.agnitas.util.importvalues.NullValuesAction;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -51,6 +45,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.json.JsonObject;
 
 public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipientsDao {
@@ -69,47 +64,6 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
     @Required
     public void setConfigService(ConfigService configService) {
 		this.configService = configService;
-	}
-
-	@Override
-	public Map<String, Map<String, Object>> getColumnInfoByColumnName(@VelocityCheck int companyId, String column) {
-		LinkedHashMap<String, Map<String, Object>> list = new LinkedHashMap<>();
-		try(final Connection connection = getDataSource().getConnection()) {
-
-			DatabaseMetaData metaData = connection.getMetaData();
-
-			boolean isOracle = isOracleDB();
-
-			String tableName = "customer_" + companyId + "_tbl";
-
-			String schemaPattern = isOracle ? metaData.getUserName() : null;
-			String tableNamePattern = isOracle ? tableName.toUpperCase() : tableName.toLowerCase();
-			String columnNamePattern = isOracle ? column.toUpperCase() : column;
-			
-			try(ResultSet resultSet = metaData.getColumns(null, schemaPattern, tableNamePattern, columnNamePattern)) {
-				if (resultSet != null) {
-					while (resultSet.next()) {
-						Map<String, Object> mapping = new HashMap<>();
-						mapping.put("column", resultSet.getString(4).toLowerCase());
-						mapping.put("shortname", resultSet.getString(4).toLowerCase());
-						mapping.put("type", ImportUtils.dbtype2string(resultSet.getInt(5)));
-						mapping.put("length", resultSet.getInt(7));
-						if (resultSet.getInt(11) == DatabaseMetaData.columnNullable) {
-							mapping.put("nullable", 1);
-						} else {
-							mapping.put("nullable", 0);
-						}
-
-						list.put((String) mapping.get("shortname"), mapping);
-					}
-				}
-			}
-			
-		} catch(Exception e) {
-			logger.error(MessageFormat.format("Failed to get column ({0}) info for companyId ({1})", column, companyId), e);
-		}
-		
-		return list;
 	}
 
     @Override
@@ -143,7 +97,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 		
 		if (DbUtilities.checkIfTableExists(getDataSource(), tempTableName)) {
 			logger.error("Import table " + tempTableName + " already existed. Dropped it to continue.");
-			execute(logger, "DROP TABLE " + tempTableName);
+			DbUtilities.dropTable(getDataSource(), tempTableName);
 		}
 		if (isOracleDB()) {
 			String tablespacePart = "";
@@ -163,7 +117,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 				String typeString = columnDataType.getValue().getTypeName();
 				if (columnDataType.getValue().getSimpleDataType() == SimpleDataType.Characters) {
 					typeString += "(" + (Integer.toString(columnDataType.getValue().getCharacterLength())) + ")";
-				} else if (columnDataType.getValue().getSimpleDataType() == SimpleDataType.Numeric) {
+				} else if (columnDataType.getValue().getSimpleDataType() == SimpleDataType.Numeric || columnDataType.getValue().getSimpleDataType() == SimpleDataType.Float) {
 					typeString += "(" + (Integer.toString(columnDataType.getValue().getNumericPrecision())) + ")";
 				}
 				execute(logger, "ALTER TABLE " + tempTableName + " MODIFY " + columnDataType.getKey() + " " + typeString + " NULL");
@@ -193,7 +147,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 		
 		if (DbUtilities.checkIfTableExists(getDataSource(), tempTableName)) {
 			logger.error("Import table " + tempTableName + " already existed. Dropped it to continue.");
-			execute(logger, "DROP TABLE " + tempTableName);
+			DbUtilities.dropTable(getDataSource(), tempTableName);
 		}
 		
 		if (isOracleDB()) {
@@ -266,7 +220,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 	public void dropTemporaryCustomerImportTable(String tempTableName) {
 		if (StringUtils.isNotBlank(tempTableName)) {
 			if (DbUtilities.checkIfTableExists(getDataSource(), tempTableName)) {
-				update(logger, "DROP TABLE " + tempTableName);
+				DbUtilities.dropTable(getDataSource(), tempTableName);
 			}
 			update(logger, "DELETE FROM import_temporary_tables WHERE temporary_table_name = ?", tempTableName);
 		}
@@ -483,23 +437,23 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 	}
 
 	@Override
-	public int assignNewCustomerToMailingList(int companyId, int datasourceId, int mailingListId, UserStatus status) {
-		String insertBindingsStatement = "INSERT INTO customer_" + companyId + "_binding_tbl (customer_id, user_type, user_status, user_remark, timestamp, creation_date, exit_mailing_id, mailinglist_id)"
-        	+ " (SELECT customer_id, '" + UserType.World.getTypeCode() + "', ?, 'CSV File Upload', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ? FROM customer_" + companyId + "_tbl cust WHERE datasource_id = ?"
-        	+ " AND NOT EXISTS (SELECT 1 FROM customer_" + companyId + "_binding_tbl bind WHERE cust.customer_id = bind.customer_id AND ? = bind.mailinglist_id))";
-		return update(logger, insertBindingsStatement, status.getStatusCode(), mailingListId, datasourceId, mailingListId);
+	public int assignNewCustomerToMailingList(int companyId, int datasourceId, int mailingListId, MediaTypes mediatype, UserStatus status) {
+		String insertBindingsStatement = "INSERT INTO customer_" + companyId + "_binding_tbl (customer_id, user_type, user_status, user_remark, timestamp, creation_date, exit_mailing_id, mailinglist_id, mediatype)"
+        	+ " (SELECT customer_id, '" + UserType.World.getTypeCode() + "', ?, 'CSV File Upload', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ? FROM customer_" + companyId + "_tbl cust WHERE datasource_id = ?"
+        	+ " AND NOT EXISTS (SELECT 1 FROM customer_" + companyId + "_binding_tbl bind WHERE cust.customer_id = bind.customer_id AND ? = bind.mailinglist_id AND ? = bind.mediatype))";
+		return update(logger, insertBindingsStatement, status.getStatusCode(), mailingListId, mediatype == null ? MediaTypes.EMAIL.getMediaCode() : mediatype.getMediaCode(), datasourceId, mailingListId, mediatype == null ? MediaTypes.EMAIL.getMediaCode() : mediatype.getMediaCode());
 	}
 
 	@Override
-	public int assignExistingCustomerWithoutBindingToMailingList(String temporaryImportTableName, int companyId, int mailingListId, UserStatus status) {
-		String insertBindingsStatement = "INSERT INTO customer_" + companyId + "_binding_tbl (customer_id, user_type, user_status, user_remark, timestamp, creation_date, exit_mailing_id, mailinglist_id)"
-        	+ " (SELECT DISTINCT customer_id, '" + UserType.World.getTypeCode() + "', ?, 'CSV File Upload', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ? FROM " + temporaryImportTableName + " temp WHERE (customer_id != 0 AND customer_id IS NOT NULL)"
-        	+ " AND NOT EXISTS (SELECT 1 FROM customer_" + companyId + "_binding_tbl bind WHERE temp.customer_id = bind.customer_id AND ? = bind.mailinglist_id))";
-		return update(logger, insertBindingsStatement, status.getStatusCode(), mailingListId, mailingListId);
+	public int assignExistingCustomerWithoutBindingToMailingList(String temporaryImportTableName, int companyId, int mailingListId, MediaTypes mediatype, UserStatus status) {
+		String insertBindingsStatement = "INSERT INTO customer_" + companyId + "_binding_tbl (customer_id, user_type, user_status, user_remark, timestamp, creation_date, exit_mailing_id, mailinglist_id, mediatype)"
+        	+ " (SELECT DISTINCT customer_id, '" + UserType.World.getTypeCode() + "', ?, 'CSV File Upload', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ? FROM " + temporaryImportTableName + " temp WHERE (customer_id != 0 AND customer_id IS NOT NULL)"
+        	+ " AND NOT EXISTS (SELECT 1 FROM customer_" + companyId + "_binding_tbl bind WHERE temp.customer_id = bind.customer_id AND ? = bind.mailinglist_id AND ? = bind.mediatype))";
+		return update(logger, insertBindingsStatement, status.getStatusCode(), mailingListId, mediatype == null ? MediaTypes.EMAIL.getMediaCode() : mediatype.getMediaCode(), mailingListId, mediatype == null ? MediaTypes.EMAIL.getMediaCode() : mediatype.getMediaCode());
 	}
 
 	@Override
-	public int changeStatusInMailingList(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, int currentStatus, int updateStatus, String remark) throws Exception {
+	public int changeStatusInMailingList(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, MediaTypes mediatype, int currentStatus, int updateStatus, String remark) throws Exception {
 		// Check for valid UserStatus code
 		UserStatus.getUserStatusByID(updateStatus);
 		
@@ -508,8 +462,8 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 			keycolumnParts.add("src." + keyColumn + " = dst." + keyColumn + " AND src." + keyColumn + " IS NOT NULL");
 		}
 		
-		return update(logger, "UPDATE customer_" + companyId + "_binding_tbl SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP WHERE user_status = ? AND mailinglist_id = ? AND customer_id IN ("
-			+ "SELECT dst.customer_id FROM " + temporaryImportTableName + " src, customer_" + companyId + "_tbl dst WHERE " + StringUtils.join(keycolumnParts, " AND ") + ")", updateStatus, remark, currentStatus, mailingListId);
+		return update(logger, "UPDATE customer_" + companyId + "_binding_tbl SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP WHERE user_status = ? AND mailinglist_id = ? AND mediatype = ? AND customer_id IN ("
+			+ "SELECT dst.customer_id FROM " + temporaryImportTableName + " src, customer_" + companyId + "_tbl dst WHERE " + StringUtils.join(keycolumnParts, " AND ") + ")", updateStatus, remark, currentStatus, mailingListId, mediatype == null ? MediaTypes.EMAIL.getMediaCode() : mediatype.getMediaCode());
 	}
 
     @Override
@@ -518,6 +472,13 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
         String updateBlacklist = "INSERT INTO cust" + companyId + "_ban_tbl (email) (SELECT DISTINCT email FROM " + temporaryImportTableName + " temp WHERE email IS NOT NULL"
         	+ " AND NOT EXISTS (SELECT email FROM cust" + companyId + "_ban_tbl ban WHERE ban.email = temp.email))";
         return update(logger, updateBlacklist);
+    }
+
+    @Override
+	@DaoUpdateReturnValueCheck
+    public void removeFromBlackListNotIncludedInTempData(String temporaryImportTableName, @VelocityCheck final int companyId) {
+        String updateBlacklist = "DELETE FROM cust" + companyId + "_ban_tbl WHERE email NOT IN (SELECT DISTINCT email FROM " + temporaryImportTableName + " temp WHERE email IS NOT NULL)";
+        update(logger, updateBlacklist);
     }
 
 	@Override
@@ -637,7 +598,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 		int droppedTables = 0;
 		for (String tableName : tableNames) {
 			if (DbUtilities.checkIfTableExists(getDataSource(), tableName)) {
-				update(logger, "DROP TABLE " + tableName);
+				DbUtilities.dropTable(getDataSource(), tableName);
 				droppedTables++;
 			}
 			update(logger, "DELETE FROM import_temporary_tables WHERE temporary_table_name = ?", tableName);
@@ -782,11 +743,26 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 	 **/
 	@Override
 	public int removeBlacklistedEmails(String tempTableName, int companyID) {
-		int blacklistedEntries = update(logger, "DELETE FROM " + tempTableName + " WHERE EXISTS (SELECT 1 FROM cust" + companyID + "_ban_tbl ban WHERE " + tempTableName + ".email = ban.email)");
+		final boolean useNewWildcards = configService.getBooleanValue(ConfigValue.Development.UseNewBlacklistWildcards, companyID);
 		
-		List<String> blacklistPatterns = select(logger, "SELECT email FROM cust" + companyID + "_ban_tbl WHERE email LIKE '%|%%' escape '|' OR email LIKE '%|_%' escape '|' OR email LIKE '%?%' OR email LIKE '%*%'", new StringRowMapper());
+		// Remove emails by exact match (excludes blacklist entries with "%" and "*")		
+		int blacklistedEntries = useNewWildcards 
+				? update(logger, "DELETE FROM " + tempTableName + " WHERE EXISTS (SELECT 1 FROM cust" + companyID + "_ban_tbl ban WHERE " + tempTableName + ".email = ban.email AND NOT ban.email LIKE '%*%' AND NOT ban.email LIKE '%|%%' ESCAPE '|')")
+				: update(logger, "DELETE FROM " + tempTableName + " WHERE EXISTS (SELECT 1 FROM cust" + companyID + "_ban_tbl ban WHERE " + tempTableName + ".email = ban.email)");
+		
+		// Remove emails by wildcard match
+		List<String> blacklistPatterns = select(logger, "SELECT email FROM cust" + companyID + "_ban_tbl WHERE email LIKE '%|%%' escape '|' OR email LIKE '%*%'", new StringRowMapper());
 		for (String blacklistPattern : blacklistPatterns) {
-			blacklistedEntries += update(logger, "DELETE FROM " + tempTableName + " WHERE email LIKE ?", blacklistPattern.replace("?", "_").replace("*", "%"));
+			if(useNewWildcards) {
+				// Preserves "?" as regular character (non-wilcard), escapes "_" not to be a wildcard, replaces "*" by "%", escape the escape char
+				final String likePattern = blacklistPattern.replace("_", "\\_").replace('*', '%').replace("|", "||");
+				
+				final String sql = String.format("DELETE FROM %s WHERE email LIKE ? ESCAPE '|'", tempTableName);
+				
+				blacklistedEntries += update(logger, sql, likePattern);
+			} else {
+				blacklistedEntries += update(logger, "DELETE FROM " + tempTableName + " WHERE email LIKE ?", blacklistPattern.replace("?", "_").replace("*", "%"));
+			}			
 		}
 		
 		return blacklistedEntries;
@@ -809,5 +785,20 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 		} else {
 			return 0;
 		}
+	}
+
+	@Override
+	public int changeStatusInMailingListNotIncludedInTempData(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, MediaTypes mediatype, int currentStatus, int updateStatus, String remark) throws Exception {
+		// Check for valid UserStatus codes
+		UserStatus.getUserStatusByID(currentStatus);
+		UserStatus.getUserStatusByID(updateStatus);
+		
+		List<String> keycolumnParts = new ArrayList<>();
+		for (String keyColumn : keyColumns) {
+			keycolumnParts.add("src." + keyColumn + " = dst." + keyColumn + " AND src." + keyColumn + " IS NOT NULL");
+		}
+		
+		return update(logger, "UPDATE customer_" + companyId + "_binding_tbl SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP WHERE user_status = ? AND mailinglist_id = ? AND mediatype = ? AND customer_id NOT IN ("
+			+ "SELECT dst.customer_id FROM " + temporaryImportTableName + " src, customer_" + companyId + "_tbl dst WHERE " + StringUtils.join(keycolumnParts, " AND ") + ")", updateStatus, remark, currentStatus, mailingListId, mediatype == null ? MediaTypes.EMAIL.getMediaCode() : mediatype.getMediaCode());
 	}
 }

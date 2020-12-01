@@ -16,23 +16,21 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.ColumnInfoService;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 
 public interface ComColumnInfoService extends ColumnInfoService {
-	@Override
-	ComProfileField getColumnInfo(@VelocityCheck int companyID, String column) throws Exception;
 	
-	ComProfileField getColumnInfo(@VelocityCheck int companyID, String column, int adminID) throws Exception;
+	ProfileField getColumnInfo(@VelocityCheck int companyID, String column, int adminID) throws Exception;
 	
-	List<ComProfileField> getComColumnInfos(@VelocityCheck int companyID) throws Exception;
+	List<ProfileField> getComColumnInfos(@VelocityCheck int companyID) throws Exception;
 
-    List<ComProfileField> getComColumnInfos(@VelocityCheck int companyID, int adminID) throws Exception;
+    List<ProfileField> getComColumnInfos(@VelocityCheck int companyID, int adminID) throws Exception;
 
-    List<ComProfileField> getComColumnInfos(@VelocityCheck int companyID, int adminID, boolean customSorting) throws Exception;
+    List<ProfileField> getComColumnInfos(@VelocityCheck int companyID, int adminID, boolean customSorting) throws Exception;
 
-	List<ComProfileField> getHistorizedComColumnInfos(@VelocityCheck int companyID) throws Exception;
+	List<ProfileField> getHistorizedComColumnInfos(@VelocityCheck int companyID) throws Exception;
 
-    CaseInsensitiveMap<String, ComProfileField> getComColumnInfoMap(@VelocityCheck int companyID) throws Exception;
+    CaseInsensitiveMap<String, ProfileField> getComColumnInfoMap(@VelocityCheck int companyID) throws Exception;
     
-	CaseInsensitiveMap<String, ComProfileField> getComColumnInfoMap(@VelocityCheck int companyID, int adminId) throws Exception;
+	CaseInsensitiveMap<String, ProfileField> getComColumnInfoMap(@VelocityCheck int companyID, int adminId) throws Exception;
 }

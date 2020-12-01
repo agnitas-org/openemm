@@ -15,7 +15,8 @@ import java.util.Collections;
 import java.util.List;
 
 import org.agnitas.emm.core.mailing.dto.MailingOverviewWebStorageEntry;
-import org.codehaus.jackson.annotate.JsonProperty;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ComMailingOverviewWebStorageEntry extends MailingOverviewWebStorageEntry {
     @JsonProperty("fields")

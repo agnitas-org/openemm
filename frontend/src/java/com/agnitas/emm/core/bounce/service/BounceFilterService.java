@@ -18,7 +18,7 @@ import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface BounceFilterService {
-    int saveBounceFilter(ComAdmin admin, BounceFilterDto bounceFilter) throws Exception;
+    int saveBounceFilter(ComAdmin admin, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
 
     PaginatedListImpl<BounceFilterDto> getPaginatedBounceFilterList(ComAdmin admin, String sort, String direction, int page, int rownums);
 
@@ -26,7 +26,7 @@ public interface BounceFilterService {
 
     boolean deleteBounceFilter(int filterId, @VelocityCheck int companyId);
 
-    boolean isMailingUsedInBounceFilter(@VelocityCheck int companyId, int mailingId);
+    boolean isMailingUsedInBounceFilterWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId);
     
-    List<BounceFilterDto> getDependentBounceFiltersByMailing(@VelocityCheck int companyId, int mailingId);
+    List<BounceFilterDto> getDependentBounceFiltersWithActiveAutoResponderByMailing(@VelocityCheck int companyId, int mailingId);
 }

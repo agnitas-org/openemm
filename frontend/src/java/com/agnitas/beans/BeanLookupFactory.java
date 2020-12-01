@@ -40,6 +40,8 @@ public abstract class BeanLookupFactory {
 	abstract public ExtensibleUIDService getBeanExtensibleUIDService();
 	abstract public BindingEntry getBeanBindingEntry();
 	abstract public ScriptHelper getBeanScriptHelper();
+	
+	@Deprecated // TODO Seems to be not used. (If used: Switch to TargetFactory)
 	abstract public ComTarget getBeanTarget();
 	abstract public Mailinglist getBeanMailinglist();
 	abstract public JavaMailService getBeanJavaMailService();

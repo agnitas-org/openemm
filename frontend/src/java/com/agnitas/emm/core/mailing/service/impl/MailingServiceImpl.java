@@ -36,9 +36,9 @@ import javax.mail.internet.InternetAddress;
 
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
+import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mediatype;
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -70,6 +70,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.MediatypeEmail;
@@ -171,7 +172,7 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 		
 	@Override
 	@Transactional
-	@Validate("updateMailing")
+	@Validate(groups = MailingModel.UpdateGroup.class)
 	public void updateMailing(MailingModel model, List<UserAction> userActions) throws MailinglistException {
         List<String> actions = new LinkedList<>();
         ComMailing aMailing = (ComMailing) prepareMailingForAddOrUpdate(model, getMailing(model), actions);
@@ -202,7 +203,7 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 
     @Override
 	public List<LightweightMailing> getAllMailingNames(@VelocityCheck ComAdmin admin) {
-		return mailingDao.getMailingNames(admin.getCompanyID(), admin.getAdminID());
+		return mailingDao.getMailingNames(admin.getCompanyID(), admin.getAdminID(), 0);
 	}
 
 	@Override
@@ -239,7 +240,7 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 	}
 
 	@Override
-	@Validate("getMailing")
+	@Validate(groups = MailingModel.GetGroup.class)
 	@Transactional
 	public String getMailingStatus(MailingModel model) {
 		int mailingID = model.getMailingId();
@@ -253,7 +254,7 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 	}
 
     @Override
-    @Validate("sendMailing")
+    @Validate(groups = MailingModel.SendGroup.class)
     public void sendMailing(MailingModel model, List<UserAction> userActions) throws Exception {
     	MaildropEntry maildrop = addMaildropEntry(model, userActions);
         Mailing mailing = getMailing(model);
@@ -279,7 +280,7 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
     }
 
 	@Override
-	@Validate("getMailing")
+	@Validate(groups = MailingModel.GetGroup.class)
 	@Transactional
 	public void deleteMailing(MailingModel model) {
 		if (!mailingDao.exist(model.getMailingId(), model.getCompanyId(), model.isTemplate())) {
@@ -449,7 +450,7 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 
 	@Override
 	@Transactional
-	@Validate("sendMailing")
+	@Validate(groups = MailingModel.SendGroup.class)
 	public MaildropEntry addMaildropEntry(MailingModel model, List<UserAction> userActions) throws Exception {
 		if (!DateUtil.isValidSendDate(model.getSendDate())) {
 			throw new SendDateNotInFutureException();
@@ -518,7 +519,7 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 	
 	@Override
 	@Transactional
-	@Validate("addMailingFromTemplate")
+	@Validate(groups = MailingModel.AddFromTemplateGroup.class)
 	public int addMailingFromTemplate(MailingModel model) {
     	Mailing template = mailingDao.getMailing(model.getTemplateId(), model.getCompanyId());
 
@@ -566,8 +567,8 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 			}
 
 			// copy urls
-			for (TrackableLink linkOrg : template.getTrackableLinks().values()) {
-				TrackableLink linkNew =  cloneBean(linkOrg, "TrackableLink");
+			for (ComTrackableLink linkOrg : template.getTrackableLinks().values()) {
+				ComTrackableLink linkNew =  cloneBean(linkOrg, "TrackableLink");
 				linkNew.setId(0);
 				linkNew.setMailingID(0);
 				aMailing.getTrackableLinks().put(linkNew.getFullUrl(), linkNew);
@@ -617,7 +618,7 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 	}
 
 	@Override
-	@Validate("getMailing")
+	@Validate(groups = MailingModel.GetGroup.class)
 	@Transactional
 	public Mailing getMailing(MailingModel model) {
 		Mailing mailing = mailingDao.getMailing(model.getMailingId(), model.getCompanyId());
@@ -630,10 +631,9 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 	}
 	
 	@Override
-	@Validate("getMailing")
 	@Transactional
-	public Mailing getMailing(final int companyID, final int mailingID) {
-		final Mailing mailing = mailingDao.getMailing(mailingID, companyID);
+	public ComMailing getMailing(final int companyID, final int mailingID) {
+		final ComMailing mailing = mailingDao.getMailing(mailingID, companyID);
 		
 		if (mailing == null || mailing.getId() == 0) {
 			throw new MailingNotExistException();
@@ -644,7 +644,7 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 
 	@Override
 	@Transactional
-	@Validate("addMailing")
+	@Validate(groups = MailingModel.AddGroup.class)
 	public int addMailing(MailingModel model) throws MailinglistNotExistException {
 		int result = 0;
 		Mailing aMailing = prepareMailingForAddOrUpdate(model, (Mailing) applicationContext.getBean("Mailing"), null);
@@ -678,13 +678,13 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 	}
 
 	@Override
-	@Validate("company")
+	@Validate(groups = MailingModel.CompanyGroup.class)
 	public List<Mailing> getMailings(MailingModel model) {
 		return mailingDao.getMailings(model.getCompanyId(), model.isTemplate());
 	}
 
 	@Override
-	@Validate("getMailingForMLID")
+	@Validate(groups = MailingModel.GetForMLID.class)
 	@Transactional
 	public List<Mailing> getMailingsForMLID(MailingModel model) throws MailinglistException {
 		if (!mailinglistDao.exist(model.getMailinglistId(), model.getCompanyId())) {
@@ -719,11 +719,16 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 
 	@Override
 	public final List<TargetLight> listTargetGroupsOfMailing(final int companyID, final int mailingID) throws MailingNotExistException {
-		final ComMailing aMailing = (ComMailing) this.getMailing(companyID, mailingID);
+		final ComMailing aMailing = getMailing(companyID, mailingID);
 		
 		final Collection<Integer> targetIdList = aMailing.getAllReferencedTargetGroups();
 
 		return this.targetDao.getTargetLights(companyID, targetIdList, false);
+	}
+
+	@Override
+	public String getTargetExpression(@VelocityCheck final int companyId, final int mailingId) {
+		return mailingDao.getTargetExpression(mailingId, companyId);
 	}
 
 	@Override
@@ -781,5 +786,39 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 		mailingBaseService.saveMailingWithUndo(mailing, admin.getAdminID(), false);
 		
 		return true;
+    }
+
+	@Override
+	public List<LightweightMailing> getLightweightMailings(final ComAdmin admin) {
+		return mailingDao.getLightweightMailings(admin.getCompanyID());
+	}
+
+	@Override
+	public List<LightweightMailing> getLightweightIntervalMailings(final ComAdmin admin) {
+		return mailingDao.getLightweightIntervalMailings(admin.getCompanyID());
+	}
+
+	@Override
+	public List<LightweightMailing> getMailingsDependentOnTargetGroup(final int companyID, final int id) {
+		return mailingDao.getMailingsDependentOnTargetGroup(companyID, id);
+	}
+
+	@Override
+	public List<Mailing> getTemplates(ComAdmin admin) {
+		return mailingDao.getTemplates(admin.getCompanyID(), 0);
+	}
+
+	@Override
+	public List<MailingBase> getTemplatesWithPreview(final ComAdmin admin, final String sort, final String direction) {
+		return mailingDao.getMailingTemplatesWithPreview(admin.getCompanyID(), 0, sort, direction);
+	}
+
+    @Override
+    public List<MailingBase> getMailingsByStatusE(@VelocityCheck int companyId) {
+        if (companyId > 0) {
+        	return mailingDao.getMailingsByStatusE(companyId);
+		} else {
+        	return new ArrayList<>();
+		}
     }
 }

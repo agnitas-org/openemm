@@ -15,8 +15,21 @@ import java.util.Set;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 
 public class RecipientModel {
+	public interface AddGroup {
+    	// do nothing
+    }
+	
+	public interface UpdateGroup {
+    	// do nothing
+    }
+	
+	public interface DeleteGroup {
+    	// do nothing
+    }
 
 	private int companyId;
 	private int customerId;
@@ -75,6 +88,10 @@ public class RecipientModel {
 	}
 
 	public String getEmail() {
+		if (parameters == null) {
+			return null;
+		}
+
 		return (String) parameters.get("email");
 	}
 
@@ -83,7 +100,11 @@ public class RecipientModel {
 	}
 
 	public Integer getMailtype() {
-		return parameters.get("mailtype") == null ? null : Integer.valueOf((String) parameters.get("mailtype"));
+		if (parameters == null) {
+			return null;
+		}
+
+		return toInteger((String) parameters.get("mailtype"));
 	}
 
 //	public void setMailtype(Number mailtype) {
@@ -91,7 +112,11 @@ public class RecipientModel {
 //	}
 
 	public Integer getGender() {
-		return parameters.get("gender") == null ? null : Integer.valueOf((String) parameters.get("gender"));
+		if (parameters == null) {
+			return null;
+		}
+
+		return toInteger((String) parameters.get("gender"));
 	}
 
 //	public void setGender(Number gender) {
@@ -107,5 +132,9 @@ public class RecipientModel {
 			columns = new HashSet<>();
 		}
 		return columns;
+	}
+
+	private Integer toInteger(String s) {
+		return StringUtils.isBlank(s) ? null : NumberUtils.toInt(s, -1);
 	}
 }

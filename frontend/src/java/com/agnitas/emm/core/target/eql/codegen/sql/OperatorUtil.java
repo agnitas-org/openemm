@@ -10,12 +10,13 @@
 
 package com.agnitas.emm.core.target.eql.codegen.sql;
 
+import com.agnitas.emm.core.target.eql.ast.RelationalInfixOperator;
 import com.agnitas.emm.core.target.eql.codegen.UnhandledOperatorException;
 
 public final class OperatorUtil {
 
 	
-	public static final String eqlOperatorToSqlOperator(final com.agnitas.emm.core.target.eql.ast.BinaryOperatorRelationalEqlNode.InfixOperator operator) throws UnhandledOperatorException {
+	public static final String eqlOperatorToSqlOperator(final RelationalInfixOperator operator) throws UnhandledOperatorException {
 		switch (operator) {
 		case EQ: 	return "=";
 		case LT:	return "<";

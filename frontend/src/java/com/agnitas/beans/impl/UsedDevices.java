@@ -12,7 +12,7 @@ package com.agnitas.beans.impl;
 
 import java.util.Date;
 
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
  * Mailing open+click by devices

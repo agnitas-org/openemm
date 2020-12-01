@@ -10,6 +10,8 @@
 
 package com.agnitas.beans;
 
+import java.util.Objects;
+
 import org.apache.commons.lang3.StringUtils;
 
 public class LinkProperty {
@@ -66,30 +68,22 @@ public class LinkProperty {
 	
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((propertyName == null) ? 0 : propertyName.hashCode());
-		result = prime * result + ((propertyType == null) ? 0 : propertyType.hashCode());
-		result = prime * result + ((propertyValue == null) ? 0 : propertyValue.hashCode());
-		return result;
+		return Objects.hash(propertyName, propertyType, propertyValue);
 	}
 	
 	@Override
-	public boolean equals(Object object) {
-		if (!(object instanceof LinkProperty)) {
-			return false;
-		} else {
-			LinkProperty linkProperty = (LinkProperty) object;
-			if (this.getPropertyType() == linkProperty.getPropertyType() 
-					&& ((this.getPropertyName() == null && linkProperty.getPropertyName() == null)
-						|| (this.getPropertyName() != null && this.getPropertyName().equals(linkProperty.getPropertyName())))
-					&& ((this.getPropertyValue() == null && linkProperty.getPropertyValue() == null)
-						|| (this.getPropertyValue() != null && this.getPropertyValue().equals(linkProperty.getPropertyValue())))) {
-				return true;
-			} else {
-				return false;
-			}
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
 		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		LinkProperty other = (LinkProperty) o;
+		
+		return propertyType == other.propertyType &&
+				StringUtils.equals(propertyName, other.propertyName) &&
+				StringUtils.equals(propertyValue, other.propertyValue);
 	}
 	
 	/**
@@ -97,12 +91,6 @@ public class LinkProperty {
 	 */
 	@Override
 	public String toString() {
-		StringBuilder result = new StringBuilder();
-		result.append(getPropertyType());
-		result.append(": ");
-		result.append(getPropertyName());
-		result.append(" = ");
-		result.append(getPropertyValue());
-		return result.toString();
+		return getPropertyType() + ": " + getPropertyName() + " = " + getPropertyValue();
 	}
 }

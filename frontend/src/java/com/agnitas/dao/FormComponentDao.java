@@ -12,7 +12,9 @@ package com.agnitas.dao;
 
 import java.util.List;
 
-import com.agnitas.dao.FormComponent.FormComponentType;
+import com.agnitas.beans.FormComponent;
+import com.agnitas.beans.FormComponent.FormComponentType;
+import org.agnitas.emm.core.velocity.VelocityCheck;
 
 /**
  * The Interface FormComponentDao.
@@ -27,7 +29,7 @@ public interface FormComponentDao {
 	 * @param imageFileName the image file name
 	 * @return the form component by name
 	 */
-	public FormComponent getFormComponent(int formID, int companyID, String imageFileName, FormComponentType componentType);
+	FormComponent getFormComponent(int formID, @VelocityCheck int companyID, String imageFileName, FormComponentType componentType);
 
 	/**
 	 * Exists.
@@ -37,14 +39,15 @@ public interface FormComponentDao {
 	 * @param componentID the component id
 	 * @return true, if successful
 	 */
-	public boolean exists(int formID, int companyID, int componentID);
+	boolean exists(int formID, @VelocityCheck int companyID, int componentID);
+	boolean exists(int formId, @VelocityCheck int companyID, String componentName);
 
 	/**
 	 * Save.
 	 *
 	 * @param formComponent the form component
 	 */
-	public boolean saveFormComponent(FormComponent formComponent);
+	boolean saveFormComponent(FormComponent formComponent);
 
 	/**
 	 * Gets the component descriptions.
@@ -54,7 +57,7 @@ public interface FormComponentDao {
 	 * @param componentType the component type
 	 * @return the component descriptions
 	 */
-	public List<FormComponent> getFormComponentDescriptions(int companyID, int formID, FormComponentType componentType);
+	List<FormComponent> getFormComponentDescriptions(@VelocityCheck int companyID, int formID, FormComponentType componentType);
 
 	/**
 	 * Delete form component.
@@ -64,9 +67,9 @@ public interface FormComponentDao {
 	 * @param componentName the name
 	 * @param componentType the componentType
 	 */
-	public boolean deleteFormComponent(int companyID, int formID, String componentName, FormComponentType componentType);
+	boolean deleteFormComponent(@VelocityCheck int companyID, int formID, String componentName, FormComponentType componentType);
 	
-	public boolean deleteFormComponentByCompany(int companyID);
+	boolean deleteFormComponentByCompany(@VelocityCheck int companyID);
 
 	/**
 	 * Gets the form components.
@@ -75,5 +78,9 @@ public interface FormComponentDao {
 	 * @param formID the form id
 	 * @return the form components
 	 */
-	public List<FormComponent> getFormComponents(int companyID, int formID);
+	List<FormComponent> getFormComponents(@VelocityCheck int companyID, int formID);
+
+	List<FormComponent> getFormComponents(@VelocityCheck int companyId, int formId, List<FormComponentType> types);
+
+	boolean saveFormComponent(@VelocityCheck int companyId, int formId, FormComponent components, FormComponent componentThumbnail) throws Exception;
 }

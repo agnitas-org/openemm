@@ -10,32 +10,37 @@
 
 package org.agnitas.emm.springws.endpoint.binding;
 
-import javax.annotation.Resource;
+import javax.xml.bind.JAXBElement;
 
 import org.agnitas.emm.core.binding.service.BindingModel;
 import org.agnitas.emm.core.binding.service.BindingService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.jaxb.Binding;
 import org.agnitas.emm.springws.jaxb.GetSubscriberBindingRequest;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class GetSubscriberBindingEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class GetSubscriberBindingEndpoint extends BaseEndpoint {
 
-	@Resource
 	private BindingService bindingService;
-	@Resource
-	private ObjectFactory objectFactory;
-	
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		GetSubscriberBindingRequest request = (GetSubscriberBindingRequest) arg0;
-		
+
+	public GetSubscriberBindingEndpoint(@Qualifier("BindingService") BindingService bindingService) {
+		this.bindingService = bindingService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetSubscriberBindingRequest")
+	public @ResponsePayload JAXBElement<Binding> getSubscriberBinding(@RequestPayload GetSubscriberBindingRequest request) {
 		BindingModel model = parseModel(request);
         if (request.isUseISODateFormat() == null) {
             request.setUseISODateFormat(false);
         }
 
-		return objectFactory.createGetSubscriberBindingResponse(new ResponseBuilder(objectFactory).createResponse(bindingService.getBinding(model), request.isUseISODateFormat()));
+		return objectFactory.createGetSubscriberBindingResponse(new SubscriberBindingResponseBuilder().createResponse(bindingService.getBinding(model), request.isUseISODateFormat()));
 	}
 
 	public static BindingModel parseModel(GetSubscriberBindingRequest request) {

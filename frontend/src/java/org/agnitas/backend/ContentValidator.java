@@ -8,12 +8,12 @@
 
 */
 
-package	org.agnitas.backend;
+package org.agnitas.backend;
 
-import	org.agnitas.util.Log;
+import org.agnitas.util.Log;
 
-import	bsh.EvalError;
-import	bsh.Interpreter;
+import bsh.EvalError;
+import bsh.Interpreter;
 
 /**
  * This class provides a validation option for all textual content
@@ -24,60 +24,76 @@ import	bsh.Interpreter;
  * - area: Either "component" if part of the template or "content" if a dynamic text block
  * - name: Either the name of the template (for "component") or the name of the text block (for "content")
  * - content: The content itself as a string (block.content)
- * 
+ * <p>
  * The Beanshell Script should return null on success or a string on error.
  * This string should describe the error as detailed as possible.
- * 
  */
 public class ContentValidator {
-	private Data	data;
-	private String	name;
-	private String	code;
+	private Data data;
+	private String name;
+	private String code;
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param nData a reference to the global configuration
 	 * @param nName the name of this validation code
 	 * @param nCode the code of the Beanshell Script itself
 	 */
-	public ContentValidator (Data nData, String nName, String nCode) {
+	public ContentValidator(Data nData, String nName, String nCode) {
 		data = nData;
 		name = nName;
 		code = nCode;
 	}
+
 	/**
 	 * Validate a text block and throw a RuntimeException, if
 	 * validation fails.
-	 * 
+	 *
 	 * @param contentArea either "component" or "content"
 	 * @param contentName the name of the block
-	 * @param conentID    the unique ID of the content block (in combination with contentArea)
+	 * @param contentID    the unique ID of the content block (in combination with contentArea)
 	 * @param content     the content itself
 	 * @throws RuntimeException
 	 */
-	public void validate (String contentArea, String contentName, long contentID, BlockData content) {
-		Interpreter	bsh = new Interpreter ();
-		Object		rc;
+	public void validate(String contentArea, String contentName, long contentID, BlockData content) {
+		Interpreter bsh = new Interpreter();
+		Object rc;
 
 		try {
-			String	id = contentArea + ":" + contentName + " (" + contentID + ")";
+			String id = contentArea + ":" + contentName + " (" + contentID + ")";
 
-			bsh.set ("data", data);
-			bsh.set ("block", content);
-			bsh.set ("area", contentArea);
-			bsh.set ("name", contentName);
-			bsh.set ("content", content != null && content.content != null ? content.content : "");
-			rc = bsh.eval (code);
+			bsh.set("data", data);
+			bsh.set("block", content);
+			bsh.set("area", contentArea);
+			bsh.set("name", contentName);
+			bsh.set("content", content != null && content.content != null ? content.content : "");
+			rc = bsh.eval(code);
 			if (rc != null) {
-				String	msg = name + ": validation failed for " + id + ": " + rc.toString ();
-				data.logging (Log.ERROR, "contentvalidator", msg);
-				throw new RuntimeException ("[content validation]: " + msg);
+				String msg = name + ": validation failed for " + id + ": " + rc.toString();
+				data.logging(Log.ERROR, "contentvalidator", msg);
+				throw new RuntimeException("[content validation]: " + msg);
 			} else {
-				data.logging (Log.DEBUG, "contentvalidator", name + ": validation passed for " + id);
+				data.logging(Log.DEBUG, "contentvalidator", name + ": validation passed for " + id);
 			}
 		} catch (EvalError e) {
-			data.logging (Log.ERROR, "contentvalidator", name + ":failed to evaluate: " + e.toString (), e);
+			data.logging(Log.ERROR, "contentvalidator", name + ":failed to evaluate: " + e.toString(), e);
 		}
 	}
 }
+/* Sample code
+
+int	count;
+char[]	carray = content.toCharArray ();
+
+for (int n = 0; n < carray.length; ++n) {
+	char	ch = carray[n];
+
+	if (ch >=0x3400 && ch <= 0x9fff) {
+		++count;
+	}
+}
+if (count > 0) {
+	return "content block contains " + count + " invalid character";
+}
+*/

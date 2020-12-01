@@ -142,22 +142,22 @@
                             <c:if test="${isReportCanBeShown && (mailingStatisticForm.dateSelectMode ne 'NONE')}">
                                 <ul class="tile-header-nav">
                                     <li class="${mailingStatisticForm.dateSelectMode == 'LAST_TENHOURS' ? 'active' : ''}">
-                                        <a href="#" data-form-set="dateSelectMode:LAST_TENHOURS,statisticType:${mailingStatisticForm.statisticType}" data-form-submit>
+                                        <a href="#" data-form-set="dateSelectMode:LAST_TENHOURS, statisticType:${mailingStatisticForm.statisticType}, startDate.date: '', endDate.date: ''" data-form-submit>
                                             <mvc:message code="TenHours"/>
                                         </a>
                                     </li>
                                     <li class="${mailingStatisticForm.dateSelectMode == 'SELECT_DAY' ? 'active' : ''}">
-                                        <a href="#" data-form-set="dateSelectMode:SELECT_DAY,statisticType:${mailingStatisticForm.statisticType}" data-form-submit>
+                                        <a href="#" data-form-set="dateSelectMode:SELECT_DAY, statisticType:${mailingStatisticForm.statisticType}, startDate.date: '', endDate.date: ''" data-form-submit>
                                             <mvc:message code="Day"/>
                                         </a>
                                     </li>
                                     <li class="${mailingStatisticForm.dateSelectMode == 'SELECT_MONTH' ? 'active' : ''}">
-                                        <a href="#" data-form-set="dateSelectMode:SELECT_MONTH,statisticType:${mailingStatisticForm.statisticType}" data-form-submit>
+                                        <a href="#" data-form-set="dateSelectMode:SELECT_MONTH, statisticType:${mailingStatisticForm.statisticType}, startDate.date: '', endDate.date: ''" data-form-submit>
                                             <mvc:message code="Month"/>
                                         </a>
                                     </li>
                                     <li class="${mailingStatisticForm.dateSelectMode == 'SELECT_PERIOD' ? 'active' : ''}">
-                                        <a href="#" data-form-set="dateSelectMode:SELECT_PERIOD,statisticType:${mailingStatisticForm.statisticType}" data-form-submit>
+                                        <a href="#" data-form-set="dateSelectMode:SELECT_PERIOD, statisticType:${mailingStatisticForm.statisticType}, startDate.date: '', endDate.date: ''" data-form-submit>
                                             <mvc:message code="statistics.dateRange"/>
                                         </a>
                                     </li>
@@ -197,8 +197,9 @@
                                             <div class="control">
                                                 <div class="input-group">
                                                     <div class="input-group-controls">
-                                                        <input type="text" value="${mailingStatisticForm.selectDay.date}" class="form-control datepicker-input js-datepicker" name="selectDay.date"
-                                                               data-datepicker-options="format: '${fn:toLowerCase(localDatePattern)}'"/>
+                                                        <mvc:text path="startDate.date" data-value="${mailingStatisticForm.startDate.date}"
+                                                                  cssClass="form-control datepicker-input js-datepicker"
+                                                                  data-datepicker-options="format: '${fn:toLowerCase(localDatePattern)}'"/>
                                                     </div>
                                                     <div class="input-group-btn">
                                                         <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
@@ -206,7 +207,7 @@
                                                         </button>
                                                     </div>
                                                     <div class="input-group-btn">
-                                                        <button class="btn btn-primary btn-regular pull-right" type="button" data-form-set="statisticType:${mailingStatisticForm.statisticType}" data-form-submit>
+                                                        <button class="btn btn-primary btn-regular pull-right" type="button" data-form-set="statisticType: ${mailingStatisticForm.statisticType}" data-form-submit>
                                                             <i class="icon icon-refresh"></i>
                                                             <span class="text"><mvc:message code="button.Refresh"/></span>
                                                         </button>

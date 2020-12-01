@@ -28,6 +28,7 @@ import com.agnitas.beans.MaildropEntry;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 
 public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatusDao {
 	private static final transient Logger logger = Logger.getLogger( MaildropStatusDaoImpl.class);
@@ -155,7 +156,22 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	}
 
 	@Override
-	public final int saveMaildropEntry(final MaildropEntry entry) {
+	public final int saveMaildropEntry(final MaildropEntry entry) throws Exception {
+		MailingType mailingType;
+		try {
+			mailingType = MailingType.fromCode(selectInt(logger, "SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", entry.getMailingID()));
+	    } catch (final Exception e) {
+	        throw new Exception("Error getting mailingType for mailing " + entry.getMailingID(), e);
+	    }
+		
+		if (mailingType == MailingType.ACTION_BASED || mailingType == MailingType.DATE_BASED) {
+			MaildropEntry existingEntry = getEntryForStatus(entry.getMailingID(), entry.getCompanyID(), entry.getStatus());
+			if (existingEntry != null) {
+				entry.setId(existingEntry.getId());
+				logger.error("Trying to activate mailing multiple times: " + entry.getMailingID());
+			}
+		}
+		
 		if (entry.getId() == 0) {
 			return insertMaildropEntry(entry);
 		} else {

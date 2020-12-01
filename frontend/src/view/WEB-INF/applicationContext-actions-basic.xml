@@ -60,15 +60,6 @@
 		<property name="linkService" ref="TrackeableLinkService"/>
 	</bean>
 
-	<bean name="/formcomponents" class="com.agnitas.web.FormComponentsAction">
-		<property name="userFormDao" ref="UserFormDao" />
-		<property name="configService" ref="ConfigService" />
-		<property name="companyDao" ref="CompanyDao" />
-		<property name="componentService" ref="componentService" />
-		<property name="mimeTypeService" ref="MimeTypeService" />
-		<property name="userActivityLogService" ref="UserActivityLogService"/>
-	</bean>
-
 	<bean name="/campaign" class="com.agnitas.web.ComCampaignAction">
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="configService" ref="ConfigService" />
@@ -81,20 +72,6 @@
 		<property name="webStorage" ref="WebStorage" />
 	</bean>
 
-	<bean name="/userform" class="com.agnitas.web.ComUserFormEditAction">
-		<property name="userFormDao" ref="UserFormDao" />
-		<property name="emmActionDao" ref="EmmActionDao" />
-		<property name="userformService" ref="userformService" />
-		<property name="comCompanyDao" ref="CompanyDao" />
-		<property name="velocityDirectiveScriptValidator" ref="VelocityDirectiveScriptValidator" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="configService" ref="ConfigService" />
-		<property name="linkService" ref="LinkService" />
-		<property name="webStorage" ref="WebStorage" />
-		<property name="userFormImporter" ref="UserFormImporter" />
-		<property name="userFormExporter" ref="UserFormExporter" />
-	</bean>
-
 	<bean name="/mwStart, /mwName, /mwTemplate, /mwType, /mwSendaddress, /mwMailtype, /mwSubject, /mwTarget, /mwTextmodules, /mwTextmodule, /mwLinks, /mwLink, /mwAttachment, /mwAttachmentDownload, /mwFinish" class="com.agnitas.web.ComMailingWizardAction">
 		<property name="mailinglistService" ref="MailinglistService" />
 		<property name="mailingDao" ref="MailingDao" />
@@ -102,7 +79,7 @@
 		<property name="mailingComponentFactory" ref="MailingComponentFactory" />
 		<property name="dynamicTagContentFactory" ref="DynamicTagContentFactory" />
 		<property name="campaignDao" ref="CampaignDao" />
-		<property name="targetDao" ref="TargetDao" />
+		<property name="targetService" ref="targetService" />
 		<property name="emmActionDao" ref="EmmActionDao" />
 		<property name="configService" ref="ConfigService" />
 		<property name="workflowDao" ref="comWorkflowDao" />
@@ -110,6 +87,8 @@
 		<property name="agnTagService" ref="AgnTagService"/>
         <property name="userActivityLogService" ref="UserActivityLogService"/>
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
+		<property name="mailingService" ref="MailingService" />
+		<property name="previewImageService" ref="PreviewImageService" />
 	</bean>
 
 	<!-- Same type, same setup as "/target"-->
@@ -189,16 +168,6 @@
 		<property name="mimeTypeWhitelistService" ref="MimeTypeWhitelistService" />
     </bean>
 
-	<bean name="/trackuserformlink" class="com.agnitas.userform.trackablelinks.web.ComTrackableUserFormLinkAction">
-		<property name="userFormDao" ref="UserFormDao" />
-		<property name="configService" ref="ConfigService" />
-	</bean>
-
-	<bean name="/trackuserformlinkstat" class="com.agnitas.userform.trackablelinks.web.ComTrackableUserFormLinkStatAction">
-		<property name="configService" ref="ConfigService" />
-		<property name="userFormDao" ref="UserFormDao" />
-	</bean>
-
 	<bean name="/mailingsend_ajax" class="org.agnitas.mailing.web.MailingSendAjaxAction">
 		<property name="mailingDao" ref="MailingDao" />
 	</bean>
@@ -242,6 +211,7 @@
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="mailingBaseService" ref="MailingBaseService" />
 		<property name="gridService" ref="GridServiceWrapper"/>
+		<property name="webStorage" ref="WebStorage" />
 	</bean>
 
 	<bean name="/mailingbase" class="com.agnitas.web.ComMailingBaseAction">
@@ -275,18 +245,19 @@
         <property name="targetService" ref="targetService"/>
         <property name="mailingStopService" ref="MailingStopService" />
         <property name="agnTagService" ref="AgnTagService"/>
+        <property name="agnDynTagGroupResolverFactory" ref="AgnDynTagGroupResolverFactory"/>
+		<property name="mailingService" ref="MailingService"/>
     </bean>
 
 	<bean name="/mailingcontent" class="com.agnitas.web.ComMailingContentAction">
 		<property name="actionDao" ref="EmmActionDao" />
 		<property name="mailingService" ref="MailingService"/>
-		<property name="mailingDao" ref="MailingDao" />
 		<property name="configService" ref="ConfigService" />
 		<property name="mailingFactory" ref="MailingFactory" />
 		<property name="tagCheckFactory" ref="TAGCheckFactory" />
 		<property name="characterEncodingValidator" ref="CharacterEncodingValidator" />
 		<property name="dynamicTagContentFactory" ref="DynamicTagContentFactory" />
-		<property name="targetDao" ref="TargetDao" />
+		<property name="targetService" ref="targetService" />
 		<property name="profileFieldDao" ref="ProfileFieldDao" />
 		<property name="mailingContentService" ref="MailingContentService" />
 		<property name="mailingComponentDao" ref="MailingComponentDao" />

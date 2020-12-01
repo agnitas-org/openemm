@@ -10,14 +10,13 @@
 
 package com.agnitas.service;
 
-import org.agnitas.emm.springws.exceptionresolver.CommonExceptionResolver;
+import org.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 
-public class DataSourceExceptionResolver extends CommonExceptionResolver {
+public class DataSourceExceptionResolver extends AbstractEmmExceptionResolver {
 
 	@Override
-	protected SoapFaultDefinition getFaultDefinition(Object endpoint,
-			Exception ex) {
+	protected SoapFaultDefinition getFaultDefinition(Object endpoint, Exception ex) {
 		
 		if (ex instanceof FailedCreateDataSourceException) {
 			SoapFaultDefinition definition = getDefaultDefinition(ex);

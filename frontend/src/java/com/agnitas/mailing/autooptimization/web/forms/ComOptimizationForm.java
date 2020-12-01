@@ -8,10 +8,6 @@
 
 */
 
-/* * * * * * * * * * * * * * *
- *  OptimizationForm.java    *
- *  Created on 24. Aug 2004  *
- * * * * * * * * * * * * * * */
 
 package com.agnitas.mailing.autooptimization.web.forms;
 
@@ -21,24 +17,22 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.servlet.http.HttpServletRequest;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
+import com.agnitas.mailing.autooptimization.beans.ComOptimization;
+import com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HtmlUtils;
-import org.apache.commons.validator.routines.DateValidator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
-import com.agnitas.mailing.autooptimization.beans.ComOptimization;
-import com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl;
 
 public class ComOptimizationForm extends ActionForm {
 	private static final transient Logger logger = Logger.getLogger(ComOptimizationForm.class);
@@ -48,11 +42,13 @@ public class ComOptimizationForm extends ActionForm {
 	 */
 	private static final long serialVersionUID = 2832237399927441262L;
 
-	// form is backuped by a domain obejct
+	private static final Pattern THRESHOLD_PATTERN = Pattern.compile("[0-9]*");
+
+	// form is backuped by a domain object
 	private ComOptimization optimization = new ComOptimizationImpl();
 
 	// state used for gui, handles problem of a really new optimization or
-	// errors which occured while saveing the optimization
+	// errors which occurred while saving the optimization
 	private boolean newOptimization = true;
 
 	private String thresholdString;
@@ -130,24 +126,20 @@ public class ComOptimizationForm extends ActionForm {
 			}
 
 			// validate the threshold
-			String thresholdRegex = "[0-9]{0,}";
-			Pattern thresholdPattern = Pattern.compile(thresholdRegex);
-			Matcher thresholdMatcher = thresholdPattern
-					.matcher(thresholdString);
+			Matcher thresholdMatcher = THRESHOLD_PATTERN.matcher(StringUtils.defaultString(thresholdString));
+
 			if (!thresholdMatcher.matches()) {
-				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(
-						"mailing.autooptimization.errors.threshold"));
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.autooptimization.errors.threshold"));
 			}
 		}
 		
 		if( "schedule".equals(action)) {
-			DateValidator dateValidator = DateValidator.getInstance();
 			ComAdmin admin = AgnUtils.getAdmin(request);
-			if (!dateValidator.isValid(resultSendDateAsString, admin.getDateTimeFormat().toPattern())) {
+			if (!AgnUtils.isDateValid(resultSendDateAsString, admin.getDateTimeFormat().toPattern())) {
 				errors.add( ActionMessages.GLOBAL_MESSAGE,  new ActionMessage("mailing.autooptimization.errors.resultsenddate", admin.getDateTimeFormat().toPattern()));
 			}
 
-			if (!dateValidator.isValid(testMailingsSendDateAsString, admin.getDateTimeFormat().toPattern())) {
+			if (!AgnUtils.isDateValid(testMailingsSendDateAsString, admin.getDateTimeFormat().toPattern())) {
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.autooptimization.errors.resultsenddate", admin.getDateTimeFormat().toPattern()));
 			}
 
@@ -161,7 +153,7 @@ public class ComOptimizationForm extends ActionForm {
 				testmailingsSenddate = admin.getDateTimeFormat().parse(testMailingsSendDateAsString);
 				resultSenddate = admin.getDateTimeFormat().parse(resultSendDateAsString);
 			} catch (ParseException e) {
-				logger.error("Error occured: " + e.getMessage(), e);
+				logger.error("Error occurred: " + e.getMessage(), e);
 			}
 				
 			Date now = new Date();

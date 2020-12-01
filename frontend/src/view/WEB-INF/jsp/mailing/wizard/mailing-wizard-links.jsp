@@ -52,7 +52,6 @@
             </div>
             <div class="tile-notification tile-notification-info">
                 <bean:message key="mailing.wizard.MeasureLinksDescriptionMsg"/>
-                <button type="button" data-help="" class="icon icon-help"></button>
             </div>
             <div class="tile-content tile-content-forms">
             </div>

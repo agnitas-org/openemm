@@ -10,13 +10,13 @@
 
 package com.agnitas.emm.springws.exceptionresolver.recipient;
 
-import org.agnitas.emm.springws.exceptionresolver.CommonExceptionResolver;
+import org.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 
 import com.agnitas.emm.core.autoexport.service.impl.TimeoutException;
 import com.agnitas.emm.core.autoexport.service.impl.UploadingException;
 
-public class ExportSubscriberToFtpExceptionResolver extends CommonExceptionResolver {
+public class ExportSubscriberToFtpExceptionResolver extends AbstractEmmExceptionResolver {
     @Override
     protected SoapFaultDefinition getFaultDefinition(Object endpoint, Exception e) {
         if (e instanceof UploadingException) {

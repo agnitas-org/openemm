@@ -10,51 +10,49 @@
 
 package org.agnitas.backend.dao;
 
-import	java.sql.SQLException;
-import	java.sql.Timestamp;
-import	java.util.ArrayList;
-import	java.util.HashMap;
-import	java.util.HashSet;
-import	java.util.List;
-import	java.util.Map;
-import	java.util.Set;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import	org.agnitas.backend.DBase;
-import	org.agnitas.backend.Media;
-import	org.agnitas.util.Const;
-import	org.agnitas.util.ParameterParser;
+import org.agnitas.backend.DBase;
+import org.agnitas.backend.Media;
+import org.agnitas.util.Const;
+import org.agnitas.util.ParameterParser;
 
 /**
  * Accesses all mailing relevant information from the database
  * from the tables mailing_tbl, mailing_mt_tbl and mailing_info_tbl
  */
 public class MailingDAO {
-	private long		mailingID;
-	private long		companyID;
-	private long		mailinglistID;
-	private long		mailtemplateID;
-	private boolean		isTemplate;
-	private boolean		deleted;
-	private String		shortName;
-	private Timestamp	creationDate;
-	private String		targetExpression;
-	private long		splitID;
-	private int		mailingType;
-	private String		workStatus;
-	private int		priority;
-	private boolean		frequencyCounterDisabled;
-	private boolean		isWorkflowMailing;
-	private List <Media>	media;
-	private Map <String, String>
-				info;
-	private Map <String, String>
-				item;
-	private long		templateID;
-	private int		templatePriority;
-		
-	public MailingDAO (DBase dbase, long forMailingID) throws SQLException {
-		List <Map <String, Object>>	rq;
-		Map <String, Object>		row;
+	private long mailingID;
+	private long companyID;
+	private long mailinglistID;
+	private long mailtemplateID;
+	private boolean isTemplate;
+	private boolean deleted;
+	private String shortName;
+	private Timestamp creationDate;
+	private String targetExpression;
+	private long splitID;
+	private int mailingType;
+	private String workStatus;
+	private int priority;
+	private boolean frequencyCounterDisabled;
+	private boolean isWorkflowMailing;
+	private List<Media> media;
+	private Map<String, String> info;
+	private Map<String, String> item;
+	private long templateID;
+	private int templatePriority;
+
+	public MailingDAO(DBase dbase, long forMailingID) throws SQLException {
+		List<Map<String, Object>> rq;
+		Map<String, Object> row;
 
 		try (DBase.With with = dbase.with ()) {
 			row = dbase.querys (with.jdbc (),
@@ -64,21 +62,21 @@ public class MailingDAO {
 			if (row != null) {
 				//
 				// basic information from mailing_tbl
-				mailingID = dbase.asLong (row.get ("mailing_id"));
-				companyID = dbase.asLong (row.get ("company_id"));
-				mailinglistID = dbase.asLong (row.get ("mailinglist_id"));
-				mailtemplateID = dbase.asLong (row.get ("mailtemplate_id"));
-				isTemplate = dbase.asInt (row.get ("is_template")) > 0;
-				deleted = dbase.asInt (row.get ("deleted")) > 0;
-				shortName = dbase.asString (row.get ("shortname"));
-				creationDate = dbase.asTimestamp (row.get ("creation_date"));
-				targetExpression = dbase.asString (row.get ("target_expression"));
-				splitID = dbase.asLong (row.get ("split_id"));
-				mailingType = dbase.asInt (row.get ("mailing_type"));
-				workStatus = dbase.asString (row.get ("work_status"));
-				priority = dbase.asInt (row.get ("priority"), -1);
-				if (row.containsKey ("freq_counter_disabled")) {
-					frequencyCounterDisabled = dbase.asInt (row.get ("freq_counter_disabled")) == 1;
+				mailingID = dbase.asLong(row.get("mailing_id"));
+				companyID = dbase.asLong(row.get("company_id"));
+				mailinglistID = dbase.asLong(row.get("mailinglist_id"));
+				mailtemplateID = dbase.asLong(row.get("mailtemplate_id"));
+				isTemplate = dbase.asInt(row.get("is_template")) > 0;
+				deleted = dbase.asInt(row.get("deleted")) > 0;
+				shortName = dbase.asString(row.get("shortname"));
+				creationDate = dbase.asTimestamp(row.get("creation_date"));
+				targetExpression = dbase.asString(row.get("target_expression"));
+				splitID = dbase.asLong(row.get("split_id"));
+				mailingType = dbase.asInt(row.get("mailing_type"));
+				workStatus = dbase.asString(row.get("work_status"));
+				priority = dbase.asInt(row.get("priority"), -1);
+				if (row.containsKey("freq_counter_disabled")) {
+					frequencyCounterDisabled = dbase.asInt(row.get("freq_counter_disabled")) == 1;
 				}
 				//
 				// workflow related informations
@@ -107,7 +105,7 @@ public class MailingDAO {
 						   )
 					);
 				}
-				media.sort ((e1, e2) -> e1.prio - e2.prio);
+				media.sort((e1, e2) -> e1.prio - e2.prio);
 				//
 				// mailing specific informations from mailing_info_tbl
 				info = new HashMap <> ();
@@ -122,13 +120,13 @@ public class MailingDAO {
 					String	name = dbase.asString (row.get ("name"));
 					String	value = dbase.asString (row.get ("value"));
 					if (name != null) {
-						info.put (name, value != null ? value : "");
+						info.put(name, value != null ? value : "");
 					}
 				}
 				//
 				// mailing specific item definitions
 				item = null;
-				if (dbase.tableExists ("mailing_item_tbl")) {
+				if (dbase.exists ("mailing_item_tbl")) {
 					rq = dbase.query (with.jdbc (),
 							  "SELECT param FROM mailing_item_tbl WHERE mailing_id = :mailingID",
 							  "mailingID", mailingID);
@@ -136,11 +134,11 @@ public class MailingDAO {
 						row = rq.get (n);
 						String	param = dbase.asString (row.get ("param"));
 						if (param != null) {
-							ParameterParser	parsed = new ParameterParser (param);
+							ParameterParser parsed = new ParameterParser(param);
 							if (item == null) {
-								item = parsed.parse ();
+								item = parsed.parse();
 							} else {
-								item.putAll (parsed.parse ());
+								item.putAll(parsed.parse());
 							}
 						}
 					}
@@ -160,78 +158,98 @@ public class MailingDAO {
 					if (row == null) {
 						break;
 					}
-					if (dbase.asInt (row.get ("is_template")) > 0) {
-						if (dbase.asInt (row.get ("deleted")) == 0) {
+					if (dbase.asInt(row.get("is_template")) > 0) {
+						if (dbase.asInt(row.get("deleted")) == 0) {
 							templateID = scanID;
-							templatePriority = dbase.asInt (row.get ("priority"));
+							templatePriority = dbase.asInt(row.get("priority"));
 						}
 						break;
 					}
-					scanID = dbase.asLong (row.get ("mailtemplate_id"));
+					scanID = dbase.asLong(row.get("mailtemplate_id"));
 				}
 			} else {
 				mailingID = 0;
 			}
 		}
 	}
-	public long mailingID () {
+
+	public long mailingID() {
 		return mailingID;
 	}
-	public long companyID () {
+
+	public long companyID() {
 		return companyID;
 	}
-	public long mailinglistID () {
+
+	public long mailinglistID() {
 		return mailinglistID;
 	}
-	public long mailtemplateID () {
+
+	public long mailtemplateID() {
 		return mailtemplateID;
 	}
-	public boolean isTemplate () {
+
+	public boolean isTemplate() {
 		return isTemplate;
 	}
-	public boolean deleted () {
+
+	public boolean deleted() {
 		return deleted;
 	}
-	public String shortName () {
+
+	public String shortName() {
 		return shortName;
 	}
-	public Timestamp creationDate () {
+
+	public Timestamp creationDate() {
 		return creationDate;
 	}
-	public String targetExpression () {
+
+	public String targetExpression() {
 		return targetExpression;
 	}
-	public long splitID () {
+
+	public long splitID() {
 		return splitID;
 	}
-	public int mailingType () {
+
+	public int mailingType() {
 		return mailingType;
 	}
-	public String workStatus () {
+
+	public String workStatus() {
 		return workStatus;
 	}
-	public int priority () {
+
+	public int priority() {
 		return priority;
 	}
-	public boolean frequencyCounterDisabled () {
+
+	public boolean frequencyCounterDisabled() {
 		return frequencyCounterDisabled;
 	}
-	public boolean isWorkflowMailing () {
+
+	public boolean isWorkflowMailing() {
 		return isWorkflowMailing;
 	}
-	public List <Media> media () {
+
+	public List<Media> media() {
 		return media;
 	}
-	public Map <String, String> info () {
+
+	public Map<String, String> info() {
 		return info;
 	}
-	public Map <String, String> item () {
+
+	public Map<String, String> item() {
 		return item;
 	}
-	public long sourceTemplateID () {
+
+	public long sourceTemplateID() {
 		return templateID;
 	}
-	public int sourceTemplatePriority () {
+
+	public int sourceTemplatePriority() {
 		return templatePriority;
 	}
 

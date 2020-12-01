@@ -10,36 +10,53 @@
 
 package org.agnitas.backend;
 
-import	java.util.ArrayList;
-import	java.util.List;
-import	java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
-import	org.agnitas.util.Log;
+import org.agnitas.util.Log;
 
-/** One record for the URL collection
+/**
+ * One record for the URL collection
  */
 public class URL {
-	/** the unique ID */
-	private long		 id;
-	/** the URL itself */
-	private String		url;
-	/** in which part we should use the URL */
-	private long		 usage;
-	/** internal flag */
-	private boolean		adminLink;
-	/** original URL */
-	private String		originalURL;
-	/** if the URL should be enriched by static values */
-	private boolean		staticValue;
-	/** List of columns referenced by embedded hash tags */
-	private List <String>	columns;
+	/**
+	 * the unique ID
+	 */
+	private long id;
+	/**
+	 * the URL itself
+	 */
+	private String url;
+	/**
+	 * in which part we should use the URL
+	 */
+	private long usage;
+	/**
+	 * internal flag
+	 */
+	private boolean adminLink;
+	/**
+	 * original URL
+	 */
+	private String originalURL;
+	/**
+	 * if the URL should be enriched by static values
+	 */
+	private boolean staticValue;
+	/**
+	 * List of columns referenced by embedded hash tags
+	 */
+	private List<String> columns;
 
-	/** Constructor
+	/**
+	 * Constructor
+	 *
 	 * @param nId    the unique ID
 	 * @param nUrl   the URL
 	 * @param nUsage the usage
 	 */
-	public URL (long nId, String nUrl, long nUsage) {
+	public URL(long nId, String nUrl, long nUsage) {
 		id = nId;
 		url = nUrl;
 		usage = nUsage;
@@ -48,51 +65,51 @@ public class URL {
 		staticValue = false;
 		columns = null;
 	}
-	
-	public long getId () {
+
+	public long getId() {
 		return id;
 	}
-	
-	public String getUrl () {
+
+	public String getUrl() {
 		return url;
 	}
-	
-	public long getUsage () {
+
+	public long getUsage() {
 		return usage;
 	}
 
-	public boolean getAdminLink () {
+	public boolean getAdminLink() {
 		return adminLink;
 	}
-	
-	public void setAdminLink (boolean nAdminLink) {
+
+	public void setAdminLink(boolean nAdminLink) {
 		adminLink = nAdminLink;
 	}
 
-	public String getOriginalURL () {
+	public String getOriginalURL() {
 		return originalURL;
 	}
-	
-	public void setOriginalURL (String nOriginalURL) {
-		originalURL = nOriginalURL != null && nOriginalURL.length () > 0 ? nOriginalURL : null;
+
+	public void setOriginalURL(String nOriginalURL) {
+		originalURL = nOriginalURL != null && nOriginalURL.length() > 0 ? nOriginalURL : null;
 	}
 
-	public boolean getStaticValue () {
+	public boolean getStaticValue() {
 		return staticValue;
 	}
-	
-	public void setStaticValue (boolean nStaticValue) {
+
+	public void setStaticValue(boolean nStaticValue) {
 		staticValue = nStaticValue;
 	}
-	
-	public void addColumn (Column c) {
+
+	public void addColumn(Column c) {
 		if (columns == null) {
-			columns = new ArrayList <> ();
+			columns = new ArrayList<>();
 		}
-		columns.add (c.getQname ());
+		columns.add(c.getQname());
 	}
 
-	public void requestFields (Data data, Set <String> predef) {
+	public void requestFields(Data data, Set<String> predef) {
 		if (columns != null) {
 			String	list = columns
 				.stream ()
@@ -100,14 +117,14 @@ public class URL {
 				.reduce ((s, e) -> s + ", " + e)
 				.orElse (null);
 			if (list != null) {
-				data.logging (Log.DEBUG, "data", "Found columns " + list + " from hash tag in url " + url);
+				data.logging(Log.DEBUG, "data", "Found columns " + list + " from hash tag in url " + url);
 			}
 		}
 	}
-	
-	public String getStaticValueColumns () {
+
+	public String getStaticValueColumns() {
 		if (columns != null) {
-			return columns.stream ().reduce ((s, e) -> s + "," + e).orElse (null);
+			return columns.stream().reduce((s, e) -> s + "," + e).orElse(null);
 		}
 		return null;
 	}

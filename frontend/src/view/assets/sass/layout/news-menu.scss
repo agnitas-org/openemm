@@ -34,6 +34,15 @@
 
 }
 
+body.dark-theme .l-news-menu {
+  background-color: $c-dt-modal-background;
+  border-color: $c-dt-modal-border;
+
+  > li + li {
+    border-color: $c-dt-modal-border;
+  }
+}
+
 .l-news-menu-item {
   position: relative;
   display: block;
@@ -64,6 +73,10 @@
 
     @include translate(0, -50%);
   }
+}
+
+body.dark-theme .l-news-menu-item {
+  color: $c-dt-modal-text;
 }
 
 .l-news-menu-button{

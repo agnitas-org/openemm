@@ -21,7 +21,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.emm.core.target.eql.codegen.DataType;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldNameResolver;
@@ -126,11 +126,11 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 			throws Exception {
 		Map<String, ColumnNameAndType> map = new HashMap<>();
 
-		CaseInsensitiveMap<String, ComProfileField> rawMap = dao.getComProfileFieldsMap(companyId, false);
+		CaseInsensitiveMap<String, ProfileField> rawMap = dao.getComProfileFieldsMap(companyId, false);
 		SimpleDataType simpleType;
 		ColumnNameAndType cnat;
-		for (ComProfileField field : rawMap.values()) {
-			simpleType = DbColumnType.getSimpleDataType(field.getDataType());
+		for (ProfileField field : rawMap.values()) {
+			simpleType = DbColumnType.getSimpleDataType(field.getDataType(), field.getNumericScale());
 			cnat = new ColumnNameAndType(field.getColumn(), DbTypeMapper.mapDbType(simpleType));
 
 			map.put(field.getShortname().toLowerCase(), cnat);

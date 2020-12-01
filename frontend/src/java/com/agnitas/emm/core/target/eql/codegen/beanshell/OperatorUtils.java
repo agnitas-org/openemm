@@ -14,6 +14,7 @@ package com.agnitas.emm.core.target.eql.codegen.beanshell;
 import com.agnitas.emm.core.target.eql.ast.BinaryOperatorBooleanEqlNode;
 import com.agnitas.emm.core.target.eql.ast.BinaryOperatorExpressionalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.BinaryOperatorRelationalEqlNode;
+import com.agnitas.emm.core.target.eql.ast.RelationalInfixOperator;
 import com.agnitas.emm.core.target.eql.codegen.UnhandledOperatorException;
 import com.agnitas.emm.core.target.eql.codegen.UnsupportedOperatorForDataTypeException;
 
@@ -55,7 +56,7 @@ public final class OperatorUtils {
 		return numericBeanShellOperatorSymbol(node.getOperator());
 	}
 
-	public static final String numericBeanShellOperatorSymbol(final BinaryOperatorRelationalEqlNode.InfixOperator operator) throws UnhandledOperatorException, UnsupportedOperatorForDataTypeException {
+	public static final String numericBeanShellOperatorSymbol(final RelationalInfixOperator operator) throws UnhandledOperatorException, UnsupportedOperatorForDataTypeException {
 		switch(operator) {
 		case EQ:	return "==";
 		case GEQ:	return ">=";

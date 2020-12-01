@@ -20,34 +20,11 @@ import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
  */
 public final class BinaryOperatorRelationalEqlNode extends AbstractRelationalEqlNode {
 
-	/**
-	 * Enum of all relational infix operators.
-	 */
-	public enum InfixOperator {
-		/** Equality. */
-		EQ, 
-		
-		/** Inequality. */
-		NEQ,
-		
-		/** Less than. */
-		LT,
-		
-		/** Greater than. */
-		GT,
-		
-		/** Less than or equals. */
-		LEQ,
-
-		/** Greater than or equals. */
-		GEQ
-	}
-	
 	/** Sub-tree on left side of operator. */
 	private final AbstractExpressionalEqlNode left;
 	
 	/** Binary operator. */
-	private final InfixOperator operator;
+	private final RelationalInfixOperator operator;
 	
 	/** Sub-tree on right side of operator. */
 	private final AbstractExpressionalEqlNode right;
@@ -63,7 +40,7 @@ public final class BinaryOperatorRelationalEqlNode extends AbstractRelationalEql
 	 * @param right sub-tree on right side of operator
 	 * @param dateFormat date format used for date comparison
 	 */
-	public BinaryOperatorRelationalEqlNode(final AbstractExpressionalEqlNode left, final InfixOperator operator, final AbstractExpressionalEqlNode right, final String dateFormat) {
+	public BinaryOperatorRelationalEqlNode(final AbstractExpressionalEqlNode left, final RelationalInfixOperator operator, final AbstractExpressionalEqlNode right, final String dateFormat) {
 		this.left = left;
 		this.operator = operator;
 		this.right = right;
@@ -84,7 +61,7 @@ public final class BinaryOperatorRelationalEqlNode extends AbstractRelationalEql
 	 * 
 	 * @return operator
 	 */
-	public final InfixOperator getOperator() {
+	public final RelationalInfixOperator getOperator() {
 		return operator;
 	}
 

@@ -10,6 +10,8 @@
 
 package org.agnitas.web;
 
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
+
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -18,24 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
+
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.ComCampaignDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.service.AgnTagService;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
@@ -49,6 +39,7 @@ import org.agnitas.dao.EmmActionDao;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DynTagException;
@@ -67,7 +58,21 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.service.AgnTagService;
+import com.agnitas.util.preview.PreviewImageService;
 
 /**
  * Action that handles creation of mailing using mailing wizard.
@@ -124,14 +129,14 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
     
     /** DAO accessing mailings. */
     protected MailingDao mailingDao;
+    protected MailingService mailingService;
     protected MailingComponentFactory mailingComponentFactory;
     protected DynamicTagContentFactory dynamicTagContentFactory;
     
     /** DAO accessing campaigns. */
     protected ComCampaignDao campaignDao;
     
-    /** DAO accessing target groups. */
-    protected ComTargetDao targetDao;
+    protected ComTargetService targetService;
     
     /** DAO accessing EMM actions. */
     protected EmmActionDao emmActionDao;
@@ -142,7 +147,8 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	protected ComMailinglistService mailinglistService;
 	protected AgnTagService agnTagService;
     private MailinglistApprovalService mailinglistApprovalService;
-    
+    protected PreviewImageService previewImageService;
+
 	private UserActivityLogService userActivityLogService;
 
     // --------------------------------------------------------- Public Methods
@@ -322,7 +328,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 				MediatypeEmail paramEmail = mailing.getEmailParam();
 
 				paramEmail.setCharset("iso-8859-1");
-				paramEmail.setMailFormat(1);
+				paramEmail.setMailFormat(MailingModel.Format.ONLINE_HTML.getCode());
 				paramEmail.setLinefeed(0);
 				paramEmail.setPriority(1);
 				paramEmail.setStatus(Mediatype.STATUS_ACTIVE);
@@ -332,7 +338,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 			setMailingWorkflowParameters(req, mailing);
 			aForm.clearEmailData();
 		} else {
-			ComMailing template = (ComMailing) mailingDao.getMailing(aForm.getMailing().getMailTemplateID(), companyId);
+			ComMailing template = mailingDao.getMailing(aForm.getMailing().getMailTemplateID(), companyId);
 
 			if (template != null) {
 				ComMailing newMailing = (ComMailing) template
@@ -383,7 +389,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	}
 
     protected void prepareTemplatePage(HttpServletRequest req) {
-        List<Mailing> templates = mailingDao.getTemplates(AgnUtils.getCompanyID(req));
+        List<Mailing> templates = mailingService.getTemplates(AgnUtils.getAdmin(req));
         req.setAttribute("templates", templates);
     }
 
@@ -527,7 +533,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
 		int mailFormat = aForm.getEmailFormat();
 		param.setMailFormat(mailFormat);
-		if (mailFormat == 0) {
+		if (mailFormat == MailingModel.Format.TEXT.getCode()) {
 			param.setHtmlTemplate("");
 			aForm.getMailing().getHtmlTemplate().setEmmBlock("", "text/html");
 		} else {
@@ -556,7 +562,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
 		request.setAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
 		request.setAttribute("campaigns", campaignDao.getCampaignList(companyId, "LOWER(shortname)", 1));
-		request.setAttribute("targets", targetDao.getTargetLights(companyId, false, true, false, excludeHiddenTargets));
+		request.setAttribute("targets", targetService.getTargetLights(admin, false, true, false, excludeHiddenTargets));
 	}
 
     /**
@@ -969,7 +975,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		final ComAdmin admin = AgnUtils.getAdmin(request);
 		final boolean excludeHiddenTargets = !admin.permissionAllowed(Permission.MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS);
 
-		request.setAttribute("targets", targetDao.getTargetLights(admin.getCompanyID(), false, true, false, excludeHiddenTargets));
+		request.setAttribute("targets", targetService.getTargetLights(admin, false, true, false, excludeHiddenTargets));
     }
 
     /**
@@ -998,8 +1004,8 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
             int fileSize = newAttachment.getFileSize();
             boolean maxSizeOverflow = false;
             // check for parameter max_allowed_packet
-            String maxSize = configService.getValue(ConfigValue.AttachmentMaxSize);
-            if (fileSize != 0 && maxSize != null && fileSize > Integer.parseInt(maxSize)){
+            int maxSize = configService.getIntegerValue(ConfigValue.MaximumUploadAttachmentSize);
+            if (fileSize != 0 && fileSize > maxSize){
                 maxSizeOverflow = true;
             }
             if (fileSize != 0 && !maxSizeOverflow) {
@@ -1089,7 +1095,10 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		}
 
 		MailingWizardForm aForm = (MailingWizardForm) form;
-		mailingDao.saveMailing(aForm.getMailing(), false);
+		Mailing mailing = aForm.getMailing();
+
+		mailingDao.saveMailing(mailing, false);
+		previewImageService.generateMailingPreview(AgnUtils.getAdmin(req), req.getSession().getId(), mailing.getId(), true);
 
 		updateForwardParameters(req, true);
 		return mapping.findForward("finish");
@@ -1190,25 +1199,12 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
         this.campaignDao = campaignDao;
     }
 
-    /**
-     * Returns DAO accessing target groups.
-     * 
-     * @return DAO accessing target groups
-     */
-    public ComTargetDao getTargetDao() {
-        return targetDao;
-    }
-
-    /**
-     * Sets DAO accessing target groups.
-     * @param targetDao DAO accessing target groups
-     */
     @Required
-    public void setTargetDao(ComTargetDao targetDao) {
-        this.targetDao = targetDao;
-    }
+	public void setTargetService(ComTargetService targetService) {
+		this.targetService = targetService;
+	}
 
-    /**
+	/**
      * Returns DAO accessing EMM actions.
      * 
      * @return DAO accessing EMM actions
@@ -1254,5 +1250,15 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	@Required
 	public void setUserActivityLogService(UserActivityLogService userActivityLogService) {
 		this.userActivityLogService = userActivityLogService;
+	}
+
+	@Required
+	public void setMailingService(MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
+
+	@Required
+	public void setPreviewImageService(PreviewImageService previewImageService) {
+    	this.previewImageService = previewImageService;
 	}
 }

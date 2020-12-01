@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.dao.MailingComponentDao;
@@ -40,9 +41,11 @@ public interface ComMailingComponentDao extends MailingComponentDao {
 	
 	void deleteMailingComponentsByMailing(int mailingID);
 
+	boolean deleteHostedImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds);
+
     int getImageComponent(@VelocityCheck int companyId, int mailingId, int componentType);
 
-    CdnImage getCdnImage(@VelocityCheck int companyID, int mailingID, String imageName, boolean isMobileRequest);
+    CdnImage getCdnImage(@VelocityCheck int companyID, int mailingID, String imageName);
 
 	MailingComponent getComponentByCdnID(String cdnID);
 
@@ -56,5 +59,5 @@ public interface ComMailingComponentDao extends MailingComponentDao {
      */
 	int setUnPresentComponentsForMailing(int mailingId, List<MailingComponent> presentComponents);
 
-	boolean updateBinBlockBulk(@VelocityCheck int companyId, Collection<Integer> mailingIds, int componentType, Collection<String> namePatterns, byte[] value);
+	boolean updateBinBlockBulk(@VelocityCheck int companyId, Collection<Integer> mailingIds, int componentType, Collection<String> namePatterns, byte[] value) throws Exception;
 }

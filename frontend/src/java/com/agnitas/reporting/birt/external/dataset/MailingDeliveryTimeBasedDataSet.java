@@ -105,7 +105,7 @@ public class MailingDeliveryTimeBasedDataSet extends BIRTDataSet {
             
             timeBasedDeliveryRow.setMailNum(rs.getInt("mail_num"));
             
-            Date sendTime = rs.getDate("max_send_date");
+            Date sendTime = rs.getTimestamp("max_send_date");
             timeBasedDeliveryRow.setSendTime(sendTime);
     
             String sendTimeString = isDateBasedMailing ? format.format(sendTime) : rs.getString("send_hour");

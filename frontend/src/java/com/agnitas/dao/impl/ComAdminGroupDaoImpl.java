@@ -16,11 +16,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.AdminGroupImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
@@ -41,8 +43,6 @@ import com.agnitas.emm.core.Permission;
 public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdminGroupDao  {
 	
 	private static final transient Logger logger = Logger.getLogger(ComAdminGroupDaoImpl.class);
-	
-	private final AdminGroupRowMapper adminGroupRowMapper = new AdminGroupRowMapper();
     
     /** DAO for accessing company data. */
 	protected ComCompanyDao companyDao;
@@ -59,32 +59,36 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 
 	@Override
 	public AdminGroup getAdminGroup(int groupID, int companyToLimitPremiumPermissionsFor) {
-		try {
-			List<AdminGroup> groups = select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE admin_group_id = ?", new AdminGroupRowMapperWithOtherCompanyId(companyToLimitPremiumPermissionsFor), groupID);
-			if (groups.size() > 0) {
-				return groups.get(0);
-			} else {
-				// No Group found
-				return null;
-			}
-		} catch (DataAccessException e) {
-			// No Group found
-			return null;
+		return selectObjectDefaultNull(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE admin_group_id = ?", new AdminGroupRowMapper(companyToLimitPremiumPermissionsFor), groupID);
+	}
+
+	private AdminGroup getAdminGroup(int groupID, int companyToLimitPremiumPermissionsFor, Stack<Integer> cycleDetectionGroupIds) {
+		if (cycleDetectionGroupIds == null) {
+			cycleDetectionGroupIds = new Stack<>();
 		}
+		cycleDetectionGroupIds.push(groupID);
+		
+		AdminGroup group = selectObjectDefaultNull(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE admin_group_id = ?", new AdminGroupRowMapper(companyToLimitPremiumPermissionsFor, cycleDetectionGroupIds), groupID);
+		cycleDetectionGroupIds.pop();
+		return group;
 	}
     
     @Override
 	public List<AdminGroup> getAdminGroupsByCompanyId(@VelocityCheck int companyId) {
-		List<AdminGroup> groupList = select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE company_id = ?", adminGroupRowMapper, companyId);
+		List<AdminGroup> groupList = select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE company_id = ? ORDER BY admin_group_id", new AdminGroupRowMapper(companyId), companyId);
 		return groupList;
     }
     
     @Override
-    public List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(@VelocityCheck int companyId) {
+    public List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(@VelocityCheck int companyId, List<Integer> additionalAdminGroupIds) {
     	if (companyId == 1) {
-    		return select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl", adminGroupRowMapper);
+    		return select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl ORDER BY admin_group_id", new AdminGroupRowMapper(companyId));
     	} else {
-    		return select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE company_id = ? OR company_id = (SELECT creator_company_id FROM company_tbl WHERE company_id = ?) ", adminGroupRowMapper, companyId, companyId);
+    		String additionalAdminGroupIdsPart = "";
+    		if (additionalAdminGroupIds != null && !additionalAdminGroupIds.isEmpty()) {
+    			additionalAdminGroupIdsPart = " OR admin_group_id IN (" + StringUtils.join(additionalAdminGroupIds, ", ") + ")";
+    		}
+    		return select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE company_id = ? OR company_id = (SELECT creator_company_id FROM company_tbl WHERE company_id = ?)" + additionalAdminGroupIdsPart + " ORDER BY admin_group_id", new AdminGroupRowMapper(companyId), companyId, companyId);
     	}
 	}
     
@@ -99,23 +103,25 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 		String selectStatement;
     	if (adminId == 1) {
     		selectStatement = "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl";
-    		return selectPaginatedList(logger, selectStatement, "admin_group_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, adminGroupRowMapper);
+    		return selectPaginatedList(logger, selectStatement, "admin_group_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new AdminGroupRowMapper(companyId));
     	} else {
     		selectStatement = "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl"
     			+ " WHERE (company_id = ? OR company_id = (SELECT creator_company_id FROM company_tbl WHERE company_id = ?))";
-    		return selectPaginatedList(logger, selectStatement, "admin_group_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, adminGroupRowMapper, companyId, companyId);
+    		return selectPaginatedList(logger, selectStatement, "admin_group_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new AdminGroupRowMapper(companyId), companyId, companyId);
     	}
     }
 	
 	@Override
 	public int saveAdminGroup(AdminGroup adminGroup) throws Exception {
-		if(adminGroup == null || adminGroup.getCompanyID() == 0) {
+		if (adminGroup == null || adminGroup.getCompanyID() == 0) {
 			return -1;
+		} else if (checkGroupCycle(adminGroup.getGroupID(), adminGroup.getParentGroupIds())) {
+			throw new Exception("Group member cycle detected");
 		}
 		
 		int groupId = adminGroup.getGroupID();
 		boolean successful;
-		if(groupId <= 0 || !exists(adminGroup.getCompanyID(), groupId)) {
+		if (groupId <= 0 || !exists(adminGroup.getCompanyID(), groupId)) {
 			if (isOracleDB()) {
 				// Insert new AdminGroup into DB
 				groupId = selectInt(logger, "SELECT admin_group_tbl_seq.nextval FROM DUAL");
@@ -146,10 +152,11 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 		}
 		
 		saveAdminGroupPermissions(groupId, adminGroup.getGroupPermissions());
+		saveAdminGroupParentGroups(groupId, adminGroup.getParentGroups());
 		
 		return groupId;
 	}
-	
+
 	private void saveAdminGroupPermissions(int adminGroupId, Set<Permission> permissions) {
 		update(logger, "DELETE FROM admin_group_permission_tbl WHERE admin_group_id = ?", adminGroupId);
 		
@@ -157,9 +164,21 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 		if (CollectionUtils.isNotEmpty(permissions)) {
 			List<Object[]> parameterList = new ArrayList<>();
 			for (Permission permission : permissions) {
-				parameterList.add(new Object[] {adminGroupId, permission.getTokenString()});
+				parameterList.add(new Object[] { adminGroupId, permission.getTokenString(), permission.getTokenString() });
 			}
-			batchupdate(logger, "INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) VALUES (?, ?)", parameterList);
+			batchupdate(logger, "INSERT INTO admin_group_permission_tbl (admin_group_id, security_token, permission_name) VALUES (?, ?, ?)", parameterList);
+		}
+	}
+	
+	private void saveAdminGroupParentGroups(int adminGroupId, Set<AdminGroup> parentGroups) {
+		update(logger, "DELETE FROM group_to_group_tbl WHERE admin_group_id = ?", adminGroupId);
+		
+		if (parentGroups != null && CollectionUtils.isNotEmpty(parentGroups)) {
+			List<Object[]> parameterList = new ArrayList<>();
+            for (AdminGroup group : parentGroups) {
+				parameterList.add(new Object[] { adminGroupId, group.getGroupID() });
+            }
+            batchupdate(logger, "INSERT INTO group_to_group_tbl (admin_group_id, member_of_admin_group_id) VALUES (?, ?)", parameterList);
 		}
 	}
 	
@@ -177,6 +196,7 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 	@DaoUpdateReturnValueCheck
     public int delete(@VelocityCheck int companyId, int adminGroupId) {
     	if (companyId > 0) {
+    		update(logger, "DELETE FROM group_to_group_tbl WHERE admin_group_id = ?", adminGroupId);
     		update(logger, "DELETE FROM admin_group_permission_tbl WHERE admin_group_id = ?", adminGroupId);
     		return update(logger, "DELETE FROM admin_group_tbl WHERE admin_group_id = ? AND company_id = ?", adminGroupId, companyId);
     	} else {
@@ -192,33 +212,21 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 	}
     
     private class AdminGroupRowMapper implements RowMapper<AdminGroup> {
-		@Override
-		public AdminGroup mapRow(ResultSet resultSet, int row) throws SQLException {
-			AdminGroup group = new AdminGroupImpl();
-			
-			group.setGroupID((resultSet.getInt("admin_group_id")));
-			group.setCompanyID((resultSet.getInt("company_id")));
-			group.setShortname(resultSet.getString("shortname"));
-			group.setDescription(resultSet.getString("description"));
-			group.setGroupPermissions(Permission.fromTokens(getGroupPermissionsTokens(group.getGroupID())));
-			
-			Set<Permission> companyPermissions = companyDao.getCompanyPermissions(group.getCompanyID());
-			group.setCompanyPermissions(companyPermissions);
-			
-			return group;
-		}
-	}
-    
-    private class AdminGroupRowMapperWithOtherCompanyId implements RowMapper<AdminGroup> {
     	private int companyID;
+    	private Stack<Integer> cycleDetectionGroupIds = null;
     	
     	/**
     	 * Overrides allowed companyPermissions of this group, because it may be some default group of company id 1 or other parent company
     	 * 
     	 * @param companyID
     	 */
-    	public AdminGroupRowMapperWithOtherCompanyId(int companyID) {
+    	public AdminGroupRowMapper(int companyID) {
     		this.companyID = companyID;
+    	}
+    	
+    	public AdminGroupRowMapper(int companyID, Stack<Integer> cycleDetectionGroupIds) {
+    		this.companyID = companyID;
+    		this.cycleDetectionGroupIds = cycleDetectionGroupIds;
     	}
     	
 		@Override
@@ -234,33 +242,67 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 			Set<Permission> companyPermissions = companyDao.getCompanyPermissions(companyID);
 			group.setCompanyPermissions(companyPermissions);
 			
+			Set<AdminGroup> parentGroups = new HashSet<>();
+			for (int parentGroupId : getParentGroupIds(group.getGroupID())) {
+				if (cycleDetectionGroupIds != null && cycleDetectionGroupIds.contains(parentGroupId)) {
+					throw new SQLException("Group member cycle detected: " + parentGroupId);
+				}
+				AdminGroup adminGroup = getAdminGroup(parentGroupId, group.getCompanyID(), cycleDetectionGroupIds);
+				parentGroups.add(adminGroup);
+			}
+			
+			group.setParentGroups(parentGroups);
+			
 			return group;
 		}
 	}
 
 	@Override
 	public List<String> getAdminsOfGroup(@VelocityCheck int companyId, int groupId) {
-		return select(logger, "SELECT username FROM admin_tbl WHERE company_id = ? AND admin_group_id = ?", new StringRowMapper(), companyId, groupId);
+		return select(logger, "SELECT adm.username FROM admin_tbl adm WHERE adm.company_id = ? AND EXISTS (SELECT 1 FROM admin_to_group_tbl grp WHERE grp.admin_id = adm.admin_id AND grp.admin_group_id = ?)", new StringRowMapper(), companyId, groupId);
+	}
+
+	@Override
+	public List<String> getGroupNamesUsingGroup(@VelocityCheck int companyId, int groupId) {
+		return select(logger, "SELECT grp1.shortname FROM admin_group_tbl grp1 WHERE grp1.company_id = ? AND EXISTS (SELECT 1 FROM group_to_group_tbl grp2 WHERE grp2.admin_group_id = grp1.admin_group_id AND grp2.member_of_admin_group_id = ?)", new StringRowMapper(), companyId, groupId);
 	}
 	
 	@Override
-    public List<AdminGroup> getAdminGroupByAdminID(int adminId) {
-    	return select(logger, "SELECT g.admin_group_id, g.company_id, shortname, description FROM admin_group_tbl g, admin_tbl admin WHERE g.admin_group_id = admin.admin_group_id AND admin.admin_id = ?", adminGroupRowMapper, adminId);
+    public List<AdminGroup> getAdminGroupsByAdminID(int companyID, int adminId) {
+    	return select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE admin_group_id IN (SELECT admin_group_id FROM admin_to_group_tbl WHERE admin_id = ?)", new AdminGroupRowMapper(companyID), adminId);
 	}
     
     @Override
     public Set<String> getGroupPermissionsTokens(int adminGroupId) {
-        List<String> tokensList = select(logger, "SELECT security_token FROM admin_group_permission_tbl WHERE admin_group_id = ?",
-                (resultSet1, i) -> resultSet1.getString("security_token"),
-                adminGroupId);
+    	Set<String> returnSet = new HashSet<>();
+    	
+    	returnSet.addAll(select(logger, "SELECT security_token FROM admin_group_permission_tbl WHERE admin_group_id = ?", new StringRowMapper(), adminGroupId));
         
-        return new HashSet<>(tokensList);
+        returnSet.addAll(getParentGroupsPermissionTokens(adminGroupId));
+        
+        return returnSet;
+    }
+    
+    @Override
+    public List<Integer> getParentGroupIds(int adminGroupId) {
+        return select(logger, "SELECT member_of_admin_group_id FROM group_to_group_tbl WHERE admin_group_id = ? ORDER BY member_of_admin_group_id", new IntegerRowMapper(), adminGroupId);
+    }
+    
+    @Override
+    public Set<String> getParentGroupsPermissionTokens(int adminGroupId) {
+    	Set<String> returnSet = new HashSet<>();
+    	
+        for (int parentGroupId : getParentGroupIds(adminGroupId)) {
+        	returnSet.addAll(select(logger, "SELECT security_token FROM admin_group_permission_tbl WHERE admin_group_id = ?", new StringRowMapper(), parentGroupId));
+        }
+        
+        return returnSet;
     }
 
 	@Override
 	public AdminGroup getAdminGroupByName(String adminGroupName, int companyToLimitPremiumPermissionsFor) {
 		try {
-			List<AdminGroup> groups = select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE (company_id = 1 OR company_id = ?) AND shortname = ?", new AdminGroupRowMapperWithOtherCompanyId(companyToLimitPremiumPermissionsFor), companyToLimitPremiumPermissionsFor, adminGroupName);
+			List<AdminGroup> groups = select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE (company_id = 1 OR company_id = ?) AND shortname = ?", new AdminGroupRowMapper(companyToLimitPremiumPermissionsFor), companyToLimitPremiumPermissionsFor, adminGroupName);
 			if (groups.size() > 0) {
 				return groups.get(0);
 			} else {
@@ -271,5 +313,21 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 			// No Group found
 			return null;
 		}
+	}
+
+	private boolean checkGroupCycle(int groupID, List<Integer> parentGroupIds) {
+		Set<Integer> summedUpParentGroupIds = new HashSet<>();
+		Set<Integer> groupIdsToCheck = new HashSet<>(parentGroupIds);
+		while (groupIdsToCheck.size() > 0) {
+			int nextGroupIdToCheck = groupIdsToCheck.iterator().next();
+			summedUpParentGroupIds.add(nextGroupIdToCheck);
+			groupIdsToCheck.remove(nextGroupIdToCheck);
+			for (int parentGroupId : getParentGroupIds(nextGroupIdToCheck)) {
+				if (!summedUpParentGroupIds.contains(parentGroupId)) {
+					groupIdsToCheck.add(parentGroupId);
+				}
+			}
+		}
+		return summedUpParentGroupIds.contains(groupID);
 	}
 }

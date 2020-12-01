@@ -16,21 +16,28 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.actions.EmmAction;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.dao.EmmActionOperationDao;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.emm.core.action.dto.EmmActionDto;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionOperationService;
 import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.commons.ActivenessStatus;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.ExtendedConversionService;
 
 public class EmmActionServiceImpl implements EmmActionService {
     protected EmmActionDao emmActionDao;
@@ -40,6 +47,8 @@ public class EmmActionServiceImpl implements EmmActionService {
     private ComMailingDao mailingDao;
     
     private EmmActionOperationService emmActionOperationService;
+
+    private ExtendedConversionService conversionService;
 
 	@Required
 	public void setEmmActionDao(EmmActionDao emmActionDao) {
@@ -61,7 +70,12 @@ public class EmmActionServiceImpl implements EmmActionService {
 		this.mailingDao = mailingDao;
 	}
 
-    @Override
+	@Required
+	public void setConversionService(ExtendedConversionService conversionService) {
+		this.conversionService = conversionService;
+	}
+
+	@Override
     public boolean actionExists(final int actionID, @VelocityCheck final int companyID) {
     	return emmActionDao.actionExists(actionID, companyID);
     }
@@ -116,6 +130,39 @@ public class EmmActionServiceImpl implements EmmActionService {
 	public int saveEmmAction(EmmAction action) {
     	return saveEmmAction(action, null);
 	}
+
+	@Override
+	@Transactional
+    public int saveEmmAction(ComAdmin admin, EmmAction action, List<UserAction> userActions) {
+    	EmmAction oldAction = action.getId() > 0 ? getEmmAction(action.getId(), action.getCompanyID()) : null;
+
+		int actionId = emmActionDao.saveEmmAction(action);
+		if (actionId > 0) {
+			for (AbstractActionOperationParameters operation : action.getActionOperations()) {
+				operation.setCompanyId(admin.getCompanyID());
+				operation.setActionId(actionId);
+				emmActionOperationDao.saveOperation(operation);
+			}
+
+			if (oldAction != null && CollectionUtils.isNotEmpty(oldAction.getActionOperations())) {
+				for (AbstractActionOperationParameters operation : ListUtils.removeAll(oldAction.getActionOperations(), action.getActionOperations())) {
+					emmActionOperationDao.deleteOperation(operation);
+				}
+			}
+
+			if (userActions != null) {
+				UserAction userAction =
+						new UserAction(oldAction == null ? "create action" : "edit action",
+						String.format("%s (%d)%n%s", action.getShortname(), action.getId(),
+								StringUtils.join(getChangesDescriptions(action, oldAction), '\n')));
+
+				userActions.add(userAction);
+			}
+		}
+
+		return actionId;
+	}
+
 
 	@Override
 	@Transactional
@@ -212,6 +259,77 @@ public class EmmActionServiceImpl implements EmmActionService {
     	return new UserAction(oldAction == null ? "create action" : "edit action", StringUtils.join(description, '\n'));
 	}
 
+	private List<String> getChangesDescriptions(EmmAction newAction, EmmAction oldAction) {
+    	List<String> descriptions = new ArrayList<>();
+
+		if (oldAction == null) {
+			descriptions.add(String.format("Set type to %s.", getTypeAsString(newAction.getType())));
+			descriptions.add(String.format("Made %s.", newAction.getIsActive() ? "active" : "inactive"));
+
+			for (AbstractActionOperationParameters operation : newAction.getActionOperations()) {
+				String operationDescription = asUalDescription(operation, null);
+				// Missing description means "nothing changed".
+				if (StringUtils.isNotBlank(operationDescription)) {
+					descriptions.add(operationDescription);
+				}
+			}
+		} else {
+			if (!StringUtils.equals(newAction.getShortname(), oldAction.getShortname())) {
+				descriptions.add(String.format("Renamed %s to %s.", oldAction.getShortname(), newAction.getShortname()));
+			}
+
+			if (newAction.getType() != oldAction.getType()) {
+				descriptions.add(String.format("Changed type from %s to %s.", getTypeAsString(oldAction.getType()), getTypeAsString(newAction.getType())));
+			}
+
+			if (newAction.getIsActive() != oldAction.getIsActive()) {
+				descriptions.add(String.format("Made %s.", newAction.getIsActive() ? "active" : "inactive"));
+			}
+
+			List<AbstractActionOperationParameters> newOperations = newAction.getActionOperations();
+			List<AbstractActionOperationParameters> oldOperations = oldAction.getActionOperations();
+
+			// Order by id to join both lists by id below.
+			newOperations.sort(Comparator.comparingInt(AbstractActionOperationParameters::getId));
+			oldOperations.sort(Comparator.comparingInt(AbstractActionOperationParameters::getId));
+
+			int newIndex = 0;
+			int oldIndex = 0;
+
+			while (newIndex < newOperations.size() || oldIndex < oldOperations.size()) {
+				AbstractActionOperationParameters newOperation = null;
+				AbstractActionOperationParameters oldOperation = null;
+
+				if (newIndex < newOperations.size()) {
+					newOperation = newOperations.get(newIndex++);
+				}
+
+				if (oldIndex < oldOperations.size()) {
+					oldOperation = oldOperations.get(oldIndex++);
+
+					if (newOperation != null) {
+						// Join if ids match or roll back a side having greater id otherwise.
+						if (newOperation.getId() < oldOperation.getId()) {
+							oldOperation = null;
+							oldIndex--;
+						} else if (newOperation.getId() > oldOperation.getId()) {
+							newOperation = null;
+							newIndex--;
+						}
+					}
+				}
+
+				String operationDescription = asUalDescription(newOperation, oldOperation);
+				if (StringUtils.isEmpty(operationDescription)) {
+					// Missing description means "nothing changed".
+					descriptions.add(operationDescription);
+				}
+			}
+		}
+
+    	return descriptions;
+	}
+
 	private String getTypeAsString(int type) {
     	switch (type) {
 			case EmmAction.TYPE_LINK:
@@ -245,6 +363,37 @@ public class EmmActionServiceImpl implements EmmActionService {
 
 		return changes;
 	}
+
+	private String asUalDescription(AbstractActionOperationParameters newOperation, AbstractActionOperationParameters oldOperation) {
+		if (newOperation == null && oldOperation == null) {
+			return "";
+		}
+
+		if (newOperation == null) {
+			return String.format("Removed %s module #%d.", oldOperation.getOperationType().getName(), oldOperation.getId());
+		}
+
+		String description = "";
+
+		if (newOperation instanceof ActionOperationSendMailingParameters) {
+			ActionOperationSendMailingParameters sendMailingOp = (ActionOperationSendMailingParameters) newOperation;
+
+			if (oldOperation instanceof ActionOperationSendMailingParameters) {
+				ActionOperationSendMailingParameters sendMailingOldOp = (ActionOperationSendMailingParameters) oldOperation;
+				if (!StringUtils.equals(sendMailingOldOp.getBcc(), sendMailingOp.getBcc())) {
+					description = "Changed bcc emails to: " + sendMailingOp.getBcc();
+				}
+			} else {
+				description = "Set bcc emails to: " + sendMailingOp.getBcc();
+			}
+
+		}
+
+		return StringUtils.isNotEmpty(description) ? String.format("%s %s module #%d (%s)",
+				oldOperation == null ? "Added " : "Changed ",
+				newOperation.getOperationType().getName(), newOperation.getId(), description) : "";
+	}
+
 
 	@Override
 	public EmmAction getEmmAction(int actionID, @VelocityCheck int companyID) {
@@ -285,4 +434,33 @@ public class EmmActionServiceImpl implements EmmActionService {
 	public List<EmmAction> getActionListBySendMailingId(@VelocityCheck int companyId, int mailingId) {
 		return emmActionDao.getActionListBySendMailingId(companyId, mailingId);
 	}
+
+	@Override
+	public PaginatedListImpl<EmmActionDto> getEmmActions(ComAdmin admin, String sort, String order, int page, int numberOfRows, ActivenessStatus filter) {
+		sort = StringUtils.defaultString(sort, "shortname");
+		PaginatedListImpl<EmmAction> actionList = emmActionDao.getPaginatedActionList(admin.getCompanyID(), sort, order, page, numberOfRows, filter);
+
+		return conversionService.convertPaginatedList(actionList, EmmAction.class, EmmActionDto.class);
+	}
+
+    @Override
+    public EmmActionDto getCopyOfAction(ComAdmin admin, int originId) {
+		EmmAction originAction = emmActionDao.getEmmAction(originId, admin.getCompanyID());
+		if (originAction != null) {
+			String copyShortname = I18nString.getLocaleString("mailing.CopyOf", admin.getLocale()) + originAction.getShortname();
+			originAction.setId(0);
+			originAction.setShortname(copyShortname);
+
+			// An operations should be cloned, not referenced
+			List<AbstractActionOperationParameters> operations = originAction.getActionOperations();
+			for (AbstractActionOperationParameters operation : CollectionUtils.emptyIfNull(operations)) {
+				operation.setId(0);
+				operation.setActionId(0);
+			}
+
+			return conversionService.convert(originAction, EmmActionDto.class);
+		} else {
+			return new EmmActionDto();
+		}
+    }
 }

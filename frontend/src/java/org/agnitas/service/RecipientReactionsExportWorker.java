@@ -42,8 +42,10 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 	private String username = null;
 		
 	private AutoExport autoExport = null;
-	
+
 	private RemoteFile remoteFile = null;
+	
+	private List<String> additionalCustomerFields = null;
 
 	public String getUsername() {
 		return username;
@@ -77,17 +79,35 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 		return exportDataEndDate;
 	}
 
-	public RecipientReactionsExportWorker(AutoExport autoExport, Date exportDataStartDate, Date exportDataEndDate) {
+	public RecipientReactionsExportWorker(AutoExport autoExport, Date exportDataStartDate, Date exportDataEndDate, List<String> additionalCustomerFields) {
 		super();
 		
 		this.autoExport = autoExport;
 		this.exportDataStartDate = exportDataStartDate;
 		this.exportDataEndDate = exportDataEndDate;
+		this.additionalCustomerFields = additionalCustomerFields;
 	}
 
 	@Override
 	public GenericExportWorker call() throws Exception {
 		try {
+			String additionalCustomerFieldsSqlPart = "";
+			csvFileHeaders = new ArrayList<>();
+			csvFileHeaders.add("MAILING_ID");
+			csvFileHeaders.add("MAILING_NAME");
+			csvFileHeaders.add("CUSTOMER_ID");
+			csvFileHeaders.add("EMAIL");
+			if (additionalCustomerFields != null) {
+				for (String additionalField : additionalCustomerFields) {
+					csvFileHeaders.add(additionalField.toUpperCase());
+					additionalCustomerFieldsSqlPart += ", cust." + additionalField.toLowerCase();
+				}
+			}
+			csvFileHeaders.add("EVENT");
+			csvFileHeaders.add("TIMESTAMP");
+			csvFileHeaders.add("LINK");
+			csvFileHeaders.add("REVENUE");
+			
 			StringBuilder sqlSelectStatement = new StringBuilder();
 			List<Object> sqlParameter = new ArrayList<>();
 			
@@ -99,13 +119,14 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 	//			+ " AND track.timestamp < ?");
 	//		sqlParameter.add(exportDataStartDate);
 	//		sqlParameter.add(exportDataEndDate);
-	//		
+	//
 	//		sqlStatement.append("\nUNION ALL\n");
 			
 			// Mail-Delivery-Successes
-			sqlSelectStatement.append("SELECT succ.mailing_id, succ.customer_id, cust.email, 4, succ.timestamp, NULL, NULL"
-				+ " FROM success_" + autoExport.getCompanyId() + "_tbl succ, customer_" + autoExport.getCompanyId() + "_tbl cust"
+			sqlSelectStatement.append("SELECT succ.mailing_id, mail.shortname, succ.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 4, succ.timestamp, NULL, NULL"
+				+ " FROM success_" + autoExport.getCompanyId() + "_tbl succ, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
 				+ " WHERE succ.customer_id = cust.customer_id"
+				+ " AND succ.mailing_id = mail.mailing_id"
 				+ " AND succ.timestamp >= ?"
 				+ " AND succ.timestamp < ?");
 			sqlParameter.add(exportDataStartDate);
@@ -114,9 +135,10 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Mail-Hard-Bounces
-			sqlSelectStatement.append("SELECT bounce.mailing_id, bounce.customer_id, cust.email, 6, bounce.timestamp, NULL, NULL"
-				+ " FROM bounce_tbl bounce, customer_" + autoExport.getCompanyId() + "_tbl cust"
+			sqlSelectStatement.append("SELECT bounce.mailing_id, mail.shortname, bounce.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 6, bounce.timestamp, NULL, NULL"
+				+ " FROM bounce_tbl bounce, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
 				+ " WHERE bounce.customer_id = cust.customer_id"
+				+ " AND bounce.mailing_id = mail.mailing_id"
 				+ " AND bounce.company_id = ?"
 				+ " AND bounce.timestamp >= ?"
 				+ " AND bounce.timestamp < ?"
@@ -128,9 +150,10 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Mail-Soft-Bounces
-			sqlSelectStatement.append("SELECT bounce.mailing_id, bounce.customer_id, cust.email, 5, bounce.timestamp, NULL, NULL"
-				+ " FROM bounce_tbl bounce, customer_" + autoExport.getCompanyId() + "_tbl cust"
+			sqlSelectStatement.append("SELECT bounce.mailing_id, mail.shortname, bounce.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 5, bounce.timestamp, NULL, NULL"
+				+ " FROM bounce_tbl bounce, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
 				+ " WHERE bounce.customer_id = cust.customer_id"
+				+ " AND bounce.mailing_id = mail.mailing_id"
 				+ " AND bounce.company_id = ?"
 				+ " AND bounce.timestamp >= ?"
 				+ " AND bounce.timestamp < ?"
@@ -142,9 +165,10 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Unsubscriptions
-			sqlSelectStatement.append("SELECT bind.exit_mailing_id, bind.customer_id, cust.email, 3, bind.timestamp, NULL, NULL"
-				+ " FROM customer_" + autoExport.getCompanyId() + "_binding_tbl bind, customer_" + autoExport.getCompanyId() + "_tbl cust"
+			sqlSelectStatement.append("SELECT bind.exit_mailing_id, mail.shortname, bind.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 3, bind.timestamp, NULL, NULL"
+				+ " FROM customer_" + autoExport.getCompanyId() + "_binding_tbl bind, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
 				+ " WHERE bind.customer_id = cust.customer_id"
+				+ " AND bind.exit_mailing_id = mail.mailing_id"
 				+ " AND bind.user_status = ?"
 				+ " AND bind.timestamp >= ?"
 				+ " AND bind.timestamp < ?");
@@ -155,9 +179,10 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Openings
-			sqlSelectStatement.append("SELECT opl.mailing_id, opl.customer_id, cust.email, 2, opl.creation, NULL, NULL"
-				+ " FROM onepixellog_device_" + autoExport.getCompanyId() + "_tbl opl, customer_" + autoExport.getCompanyId() + "_tbl cust"
+			sqlSelectStatement.append("SELECT opl.mailing_id, mail.shortname, opl.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 2, opl.creation, NULL, NULL"
+				+ " FROM onepixellog_device_" + autoExport.getCompanyId() + "_tbl opl, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
 				+ " WHERE opl.customer_id = cust.customer_id"
+				+ " AND opl.mailing_id = mail.mailing_id"
 				+ " AND opl.creation >= ?"
 				+ " AND opl.creation < ?");
 			sqlParameter.add(exportDataStartDate);
@@ -166,9 +191,10 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Clicks
-			sqlSelectStatement.append("SELECT rlog.mailing_id, rlog.customer_id, cust.email, 1, rlog.timestamp, url.full_url, NULL"
-				+ " FROM rdirlog_" + autoExport.getCompanyId() + "_tbl rlog, customer_" + autoExport.getCompanyId() + "_tbl cust, rdir_url_tbl url"
+			sqlSelectStatement.append("SELECT rlog.mailing_id, mail.shortname, rlog.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 1, rlog.timestamp, url.full_url, NULL"
+				+ " FROM rdirlog_" + autoExport.getCompanyId() + "_tbl rlog, customer_" + autoExport.getCompanyId() + "_tbl cust, rdir_url_tbl url, mailing_tbl mail"
 				+ " WHERE rlog.customer_id = cust.customer_id"
+				+ " AND rlog.mailing_id = mail.mailing_id"
 				+ " AND rlog.url_id = url.url_id"
 				+ " AND rlog.timestamp >= ?"
 				+ " AND rlog.timestamp < ?");
@@ -178,9 +204,10 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Revenues
-			sqlSelectStatement.append("SELECT valnum.mailing_id, valnum.customer_id, cust.email, 8, valnum.timestamp, NULL, valnum.num_parameter"
-				+ " FROM rdirlog_" + autoExport.getCompanyId() + "_val_num_tbl valnum, customer_" + autoExport.getCompanyId() + "_tbl cust"
+			sqlSelectStatement.append("SELECT valnum.mailing_id, mail.shortname, valnum.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 8, valnum.timestamp, NULL, valnum.num_parameter"
+				+ " FROM rdirlog_" + autoExport.getCompanyId() + "_val_num_tbl valnum, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
 				+ " WHERE valnum.customer_id = cust.customer_id"
+				+ " AND valnum.mailing_id = mail.mailing_id"
 				+ " AND valnum.page_tag >= ?"
 				+ " AND valnum.timestamp >= ?"
 				+ " AND valnum.timestamp < ?");

@@ -8,7 +8,6 @@
 
 */
 
-
 package com.agnitas.emm.core.target.eql.codegen.sql;
 
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingTypeResolver;

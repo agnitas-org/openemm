@@ -13,6 +13,22 @@ package org.agnitas.emm.core.mailinglist.service;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class MailinglistModel {
+    public interface AddGroup {
+    	// do nothing
+    }
+    
+    public interface UpdateGroup {
+    	// do nothing
+    }
+    
+    public interface GetGroup {
+    	// do nothing
+    }
+    
+    public interface CompanyGroup {
+    	// do nothing
+    }
+
     private int companyId;
     private int mailinglistId;
     private String shortname;

@@ -10,28 +10,30 @@
 
 package org.agnitas.emm.springws.endpoint.dyncontent;
 
-import javax.annotation.Resource;
-
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.emm.core.dyncontent.service.ContentModel;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.GetContentBlockRequest;
 import org.agnitas.emm.springws.jaxb.GetContentBlockResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class GetContentBlockEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class GetContentBlockEndpoint extends BaseEndpoint {
 
-	@Resource
 	private DynamicTagContentService dynamicTagContentService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		GetContentBlockRequest request = (GetContentBlockRequest) arg0;
-		GetContentBlockResponse response = objectFactory.createGetContentBlockResponse();
+	public GetContentBlockEndpoint(DynamicTagContentService dynamicTagContentService) {
+		this.dynamicTagContentService = dynamicTagContentService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetContentBlockRequest")
+	public @ResponsePayload GetContentBlockResponse getContentBlock(@RequestPayload GetContentBlockRequest request) {
+		GetContentBlockResponse response = new GetContentBlockResponse();
 		
 		ContentModel model = new ContentModel();
 		model.setCompanyId(Utils.getUserCompany());
@@ -47,5 +49,4 @@ public class GetContentBlockEndpoint extends AbstractMarshallingPayloadEndpoint 
 		
 		return response;
 	}
-
 }

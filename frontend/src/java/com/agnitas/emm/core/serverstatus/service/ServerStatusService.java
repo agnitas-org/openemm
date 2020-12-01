@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.serverstatus.service;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -63,4 +65,8 @@ public interface ServerStatusService {
 	Version getAvailableUpdateVersion() throws Exception;
 
 	boolean isReportStatusOK();
+
+	File downloadConfigFile() throws IOException, Exception;
+	
+	File getFullTbl(String dbStatement, String tableName) throws Exception;
 }

@@ -10,6 +10,11 @@
 
 package com.agnitas.emm.core.workflow.service.impl;
 
+import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_DELIVERY;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_LINK;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_REFERENCE;
+import static java.util.stream.Collectors.toList;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -32,11 +37,35 @@ import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
 import javax.mail.internet.InternetAddress;
+
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.Campaign;
+import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.beans.TrackableLink;
+import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
+import org.agnitas.emm.core.autoexport.service.AutoExportService;
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
+import org.agnitas.emm.core.autoimport.service.AutoImportService;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.EmmCalendar;
+import org.agnitas.util.SafeString;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.MaildropEntry;
@@ -59,9 +88,6 @@ import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.reminder.service.ComReminderService;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
-import com.agnitas.emm.core.target.beans.RawTargetGroup;
-import com.agnitas.emm.core.target.eql.EqlFacade;
-import com.agnitas.emm.core.target.eql.emm.legacy.TargetRepresentationToEqlConversionException;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
 import com.agnitas.emm.core.workflow.beans.Workflow;
@@ -128,34 +154,9 @@ import com.agnitas.reporting.birt.external.dao.ComCompanyDao;
 import com.agnitas.service.ComColumnInfoService;
 import com.agnitas.service.ComMailingSendService;
 import com.agnitas.userform.bean.UserForm;
+
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.Campaign;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.beans.TrackableLink;
-import org.agnitas.beans.impl.MaildropDeleteException;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.EmmCalendar;
-import org.agnitas.util.SafeString;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_DELIVERY;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_LINK;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_REFERENCE;
-import static java.util.stream.Collectors.toList;
 
 public class ComWorkflowServiceImpl implements ComWorkflowService {
 
@@ -187,9 +188,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     private ComReminderService reminderService;
     private ComWorkflowDataParser workflowDataParser;
     private ComCampaignDao campaignDao;
-    private EqlFacade eqlFacade;
     private AdminService adminService;
-
 
     @Override
     @Transactional
@@ -477,12 +476,12 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
                 case WorkflowIconType.Constants.STOP_ID:
                     WorkflowStop iconStop = (WorkflowStop) workflowIcon;
-                    date = WorkflowUtils.getStartStopIconDate(iconStop, timezone);
+                    stopType = iconStop.getEndType();
+                    if (stopType == WorkflowEndType.DATE) {
+                        date = WorkflowUtils.getStartStopIconDate(iconStop, timezone);
 
-                    // A stop icon having the latest date is the main one
-                    if (stopDate == null || (date != null && date.after(stopDate))) {
-                        stopType = iconStop.getEndType();
-                        if (stopType == WorkflowEndType.DATE) {
+                        // A stop icon having the latest date is the main one
+                        if (stopDate == null || (date != null && date.after(stopDate))) {
                             stopDate = date;
                         }
                     }
@@ -585,13 +584,12 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     @Override
 	public List<Map<String, Object>> getAllMailings(ComAdmin admin, List<Integer> mailingTypes, String status,
                                                     String mailingStatus, boolean takeMailsForPeriod, String sort,
-                                                    String order
-    ) {
+                                                    String order) {
         if(StringUtils.equals(status, "all")){
             status = null;
         }
         
-        return mailingDao.getMailingsNamesByStatus(admin.getCompanyID(), admin.getAdminID(), mailingTypes, status, mailingStatus, takeMailsForPeriod, sort, order);
+        return mailingDao.getMailingsNamesByStatus(admin.getCompanyID(), admin.getAdminID(), mailingTypes, status, mailingStatus, takeMailsForPeriod, sort, order, 0);
 	}
 
     @Override
@@ -634,12 +632,12 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-	public List<ComProfileField> getHistorizedProfileFields(int companyId) throws Exception {
+	public List<ProfileField> getHistorizedProfileFields(int companyId) throws Exception {
 		return columnInfoService.getHistorizedComColumnInfos(companyId);
 	}
 
     @Override
-    public List<ComProfileField> getProfileFields(int companyId) throws Exception {
+    public List<ProfileField> getProfileFields(int companyId) throws Exception {
         return new ArrayList<>(profileFieldDao.getComProfileFieldsMap(companyId, false).values());
     }
 
@@ -655,7 +653,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
 	@Override
     public ComMailing getMailing(int mailingId, int companyId) {
-        return (ComMailing) mailingDao.getMailing(mailingId, companyId);
+        return mailingDao.getMailing(mailingId, companyId);
     }
 
 	@Override
@@ -1445,7 +1443,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
                     boolean sent = false;
                     if (mailingId != 0) {
-                        ComMailing mailing = (ComMailing) mailingDao.getMailing(mailingId, companyId);
+                        ComMailing mailing = mailingDao.getMailing(mailingId, companyId);
                         mailings.put(mailingId, mailing);
                         MaildropEntry maildropEntry = null;
                         Date maxSendDate = null;
@@ -1904,7 +1902,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 } else if (icon.getType() == WorkflowIconType.DECISION.getId()) {
                     WorkflowDecision decision = (WorkflowDecision) icon;
 
-                    if (icon.isFilled() && decision.getDecisionType() == WorkflowDecision.WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION) {
+                    if (icon.isFilled() && decision.getDecisionType() == WorkflowDecision.WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION && decision.getDecisionDate() != null) {
                         Calendar decisionCalendar = Calendar.getInstance();
                         decisionCalendar.setTime(decision.getDecisionDate());
 
@@ -2167,32 +2165,6 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 		workflowDao.deleteTargetConditionDependencies(companyId, workflowId);
 	}
     
-    @Override
-    public void convertTargetRepresentationToEQL(@VelocityCheck int companyId) {
-        try {
-            Map<Integer, String> targetEQLForUpdate = new HashMap<>();
-            List<RawTargetGroup> targetGroups = targetDao.getTargetsCreatedByWorkflow(companyId, true);
-        
-            for (RawTargetGroup targetGroup : targetGroups) {
-                try {
-                    boolean disableThreeValueLogic = StringUtils.endsWith(targetGroup.getName(), "decision]");
-    
-                    String convertedEQL = eqlFacade.convertTargetRepresentationToEql(targetGroup.getRepresentation(),
-                            targetGroup.getCompanyId(), disableThreeValueLogic);
-                    
-                    targetEQLForUpdate.put(targetGroup.getId(), convertedEQL);
-                } catch (TargetRepresentationToEqlConversionException e) {
-                    logger.error("Cannot convert target representation for target group id: " + targetGroup.getId(), e);
-                }
-            }
-            targetDao.updateTargetGroupEQL(targetEQLForUpdate);
-            logger.warn("Converted " + targetEQLForUpdate.size() + " target groups for company id: " + companyId);
-		} catch (Exception e) {
-			logger.error("Cannot convert target representation of CM target group for companyId: " + companyId, e);
-		}
-    
-    }
-
     @Override
     public List<Workflow> getDependentWorkflowOnMailing(@VelocityCheck int companyId, int mailingId) {
         final Collection<WorkflowDependency> dependencies =
@@ -2462,6 +2434,10 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 		this.mailingDao = mailingDao;
 	}
 
+    public ComMailingDao getMailingDao() {
+        return mailingDao;
+    }
+
     @Required
 	public void setColumnInfoService(ComColumnInfoService columnInfoService) {
 		this.columnInfoService = columnInfoService;
@@ -2568,11 +2544,6 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     @Required
     public void setCampaignDao(ComCampaignDao campaignDao) {
         this.campaignDao = campaignDao;
-    }
-    
-    @Required
-    public void setEqlFacade(EqlFacade eqlFacade) {
-        this.eqlFacade = eqlFacade;
     }
     
     private static class ReactionId {
@@ -2791,7 +2762,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         }
 
         private ComMailing loadMailing(int mailingId) {
-            ComMailing mailing = (ComMailing) mailingDao.getMailing(mailingId, companyId);
+            ComMailing mailing = mailingDao.getMailing(mailingId, companyId);
 
             if (mailing != null && mailing.getId() > 0) {
                 return mailing;

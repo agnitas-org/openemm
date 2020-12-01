@@ -47,7 +47,7 @@ public class PollingServiceImpl implements PollingService {
         this.workerExecutorService = workerExecutorService;
     }
 
-    private class Callback<T> implements ListenableFutureCallback<T> {
+    private static class Callback<T> implements ListenableFutureCallback<T> {
         private final DeferredResult<T> result;
 
         public Callback(DeferredResult<T> result) {

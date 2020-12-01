@@ -13,31 +13,30 @@ package org.agnitas.emm.springws.endpoint.dyncontent;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.dyncontent.service.ContentModel;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.emm.springws.jaxb.UpdateContentBlockRequest;
 import org.agnitas.emm.springws.jaxb.UpdateContentBlockResponse;
-import org.agnitas.service.UserActivityLogService;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class UpdateContentBlockEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class UpdateContentBlockEndpoint extends BaseEndpoint {
 
-	@Resource
 	private DynamicTagContentService dynamicTagContentService;
-	@Resource
-	private ObjectFactory objectFactory;
-	@Resource
-	private UserActivityLogService userActivityLogService;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		UpdateContentBlockRequest request = (UpdateContentBlockRequest) arg0;
-		UpdateContentBlockResponse response = objectFactory.createUpdateContentBlockResponse();
+	public UpdateContentBlockEndpoint(DynamicTagContentService dynamicTagContentService) {
+		this.dynamicTagContentService = dynamicTagContentService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateContentBlockRequest")
+	public @ResponsePayload UpdateContentBlockResponse updateContentBlock(@RequestPayload UpdateContentBlockRequest request) throws Exception {
+		UpdateContentBlockResponse response = new UpdateContentBlockResponse();
 		
 		ContentModel model = new ContentModel();
 		model.setCompanyId(Utils.getUserCompany());
@@ -52,5 +51,4 @@ public class UpdateContentBlockEndpoint extends AbstractMarshallingPayloadEndpoi
 
 		return response;
 	}
-
 }

@@ -114,7 +114,7 @@ public class BirtReportExecutor implements Runnable {
 			} catch (Exception e1) {
 				logger.error("Cannot announce BirtReport end: " + e1.getMessage(), e1);
 			}
-			throw new ExportException(null, t.getMessage());
+			throw new ExportException(false, null, t.getMessage());
 		}
 	}
 }

@@ -17,7 +17,7 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.bean.ProfileFieldDependentType;
@@ -28,13 +28,13 @@ public interface ProfileFieldService {
 
     String translateDatabaseNameToVisibleName(@VelocityCheck final int companyID, final String visibleName) throws ProfileFieldException;
 
-    List<ComProfileField> getProfileFieldsWithInterest(ComAdmin admin);
+    List<ProfileField> getProfileFieldsWithInterest(ComAdmin admin);
 
     boolean isAddingNearLimit(@VelocityCheck int companyId);
 
-    List<ComProfileField> getSortedColumnInfo(@VelocityCheck int companyId);
+    List<ProfileField> getSortedColumnInfo(@VelocityCheck int companyId);
 
-    List<ComProfileField> getFieldWithIndividualSortOrder(@VelocityCheck int companyId, int adminId);
+    List<ProfileField> getFieldWithIndividualSortOrder(@VelocityCheck int companyId, int adminId);
 
     int getCurrentSpecificFieldCount(@VelocityCheck int companyId);
 
@@ -42,7 +42,7 @@ public interface ProfileFieldService {
 
     boolean exists(@VelocityCheck int companyId, String fieldName);
 
-    ComProfileField getProfileField(@VelocityCheck int companyId, String fieldName);
+    ProfileField getProfileField(@VelocityCheck int companyId, String fieldName);
 
     List<String> getDependentWorkflows(@VelocityCheck int companyId, String fieldName);
 
@@ -50,9 +50,9 @@ public interface ProfileFieldService {
 
     Set<String> getSelectedFieldsWithHistoryFlag(@VelocityCheck int companyId);
 
-    boolean createNewField(ComProfileField field, ComAdmin admin);
+    boolean createNewField(ProfileField field, ComAdmin admin);
 
-    boolean updateField(ComProfileField field, ComAdmin admin);
+    boolean updateField(ProfileField field, ComAdmin admin);
 
     void removeProfileField(@VelocityCheck int companyId, String fieldName);
 
@@ -60,9 +60,9 @@ public interface ProfileFieldService {
 
     UserAction getDeleteFieldLog(String fieldName);
 
-    UserAction getOpenEmmChangeLog(ComProfileField field, ProfileFieldForm form);
+    UserAction getOpenEmmChangeLog(ProfileField field, ProfileFieldForm form);
 
-    UserAction getEmmChangeLog(ComProfileField field, ProfileFieldForm form);
+    UserAction getEmmChangeLog(ProfileField field, ProfileFieldForm form);
 
     List<Dependent<ProfileFieldDependentType>> getDependents(@VelocityCheck int companyId, String fieldName);
 }

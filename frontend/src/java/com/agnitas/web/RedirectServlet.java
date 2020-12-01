@@ -22,9 +22,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.TrackableLink;
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
+import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
+import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
@@ -213,7 +216,7 @@ public class RedirectServlet extends HttpServlet {
 				final int rangeHeaderStartByte = RequestUtils.getRangeRequestStart(request);
 				if (rangeHeaderStartByte <= 0) {
 	            	if (deviceID != ComDeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
-						if (!noCount && company != null && company.getId() != 0 && !(company.getStatus().equals("todelete") || company.getStatus().equals("deleted"))) {
+						if (!noCount && company != null && company.getId() != 0 && !(CompanyStatus.TODELETE == company.getStatus() || CompanyStatus.DELETED == company.getStatus())) {
 							getClickTrackingService().trackLinkClick(uid, request.getRemoteAddr(), deviceClass, deviceID, clientID);
 						}
 	            	}
@@ -237,6 +240,14 @@ public class RedirectServlet extends HttpServlet {
 			final String redirectionUrl = getRdirUndecodableLinkUrl();
 			
 			sendRedirect(response, redirectionUrl, e.getUID().getCompanyID());
+		} catch(final InvalidUIDException | UIDParseException e) {
+        	if (logger.isInfoEnabled()) {
+        		logger.info(String.format("Error handling UID: %s", agnUidString), e);
+        	}
+        	
+			final String redirectionUrl = getRdirUndecodableLinkUrl();
+			
+			sendRedirect(response, redirectionUrl, 0);
 		} catch (final Exception e) {
         	if (logger.isInfoEnabled()) {
         		logger.error("Exception in RDIR", e);
@@ -634,14 +645,14 @@ public class RedirectServlet extends HttpServlet {
 			trackableLink = (ComTrackableLink) getUrlCache().get(uid.getUrlID());
 			if (trackableLink == null || trackableLink.getCompanyID() != uid.getCompanyID()) {
 				// get link and do actions
-				trackableLink = (ComTrackableLink) getTrackableLinkDao().getTrackableLink(uid.getUrlID(), uid.getCompanyID());
+				trackableLink = getTrackableLinkDao().getTrackableLink(uid.getUrlID(), uid.getCompanyID());
 				if (trackableLink != null) {
 					getUrlCache().put(uid.getUrlID(), trackableLink);
 				}
 			}
 		} else {
 			// If caching is disabled, always read link from DB and do not cache it.
-			trackableLink = (ComTrackableLink) getTrackableLinkDao().getTrackableLink(uid.getUrlID(), uid.getCompanyID());
+			trackableLink = getTrackableLinkDao().getTrackableLink(uid.getUrlID(), uid.getCompanyID());
 		}
 
 		if (trackableLink == null) {

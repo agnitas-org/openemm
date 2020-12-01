@@ -9,16 +9,15 @@
        http://www.springframework.org/schema/beans
        http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
        http://www.springframework.org/schema/context
-       http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+       http://www.springframework.org/schema/context/spring-context-4.2.xsd" default-lazy-init="true">
 
-    <mvc:annotation-driven validator="validator" message-codes-resolver="directMessageCodeResolver">
+    <mvc:annotation-driven>
         <mvc:argument-resolvers>
             <bean class="com.agnitas.web.perm.AdminArgumentResolver" lazy-init="false"/>
             <bean class="com.agnitas.web.mvc.PopupsArgumentResolver" lazy-init="true"/>
             <bean class="com.agnitas.web.mvc.AdminPreferencesArgumentResolver" lazy-init="false"/>
-            <bean class="com.agnitas.web.mvc.LogonArgumentResolver" lazy-init="true"/>
-            <bean class="com.agnitas.emm.extension.web.ExtensionSystemArgumentResolver" lazy-init="true"/>
             <bean class="com.agnitas.emm.core.workflow.web.WorkflowParametersArgumentResolver" lazy-init="true"/>
+            <bean class="com.agnitas.emm.core.logon.web.resolver.LogonStateBundleArgumentResolver" lazy-init="true" />
         </mvc:argument-resolvers>
         <mvc:return-value-handlers>
             <bean class="com.agnitas.web.mvc.PollableMethodReturnValueHandler"/>
@@ -36,6 +35,7 @@
         <mvc:interceptor>
             <mvc:mapping path="/**"/>
             <mvc:exclude-mapping path="/assets/**"/>
+            <mvc:exclude-mapping path="/form.action"/>
             <bean class="com.agnitas.web.perm.AuthorizationInterceptor"/>
         </mvc:interceptor>
     </mvc:interceptors>
@@ -48,13 +48,14 @@
         </mvc:interceptor>
     </mvc:interceptors>
 
-    <bean id="jsonMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter"/>
+    <bean id="jsonMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter" lazy-init="false"/>
 
-    <bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+    <bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver" lazy-init="false">
         <property name="viewClass" value="org.springframework.web.servlet.view.tiles.TilesView"/>
         <property name="order" value="#{T(org.springframework.core.Ordered).HIGHEST_PRECEDENCE}"/>
     </bean>
-    <bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles.TilesConfigurer">
+
+    <bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles.TilesConfigurer" lazy-init="false">
         <property name="definitions">
             <list>
                 <value>/WEB-INF/tiles-defs.xml</value>
@@ -62,16 +63,8 @@
         </property>
     </bean>
 
-    <bean id="messageSource" class="com.agnitas.messages.DBMessageSource"/>
+    <bean id="messageSource" class="com.agnitas.messages.DBMessageSource" lazy-init="false"/>
 
-    <bean id="customMessageInterpolator" class="com.agnitas.web.mvc.CustomMessageInterpolator"/>
-
-    <bean id="validator" class="com.agnitas.web.mvc.CustomValidatorFactoryBean">
-        <property name="messageInterpolator" ref="customMessageInterpolator"/>
-    </bean>
-
-    <bean id="directMessageCodeResolver" class="com.agnitas.web.mvc.DirectMessageCodeResolver"/>
-
-    <bean id="localeResolver" class="com.agnitas.web.mvc.AdminLocaleResolver"/>
+    <bean id="localeResolver" class="com.agnitas.web.mvc.AdminLocaleResolver" lazy-init="false"/>
 
 </beans>

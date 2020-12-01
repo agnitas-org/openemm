@@ -21,9 +21,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.agnitas.beans.Company;
 import org.agnitas.beans.EmmLayoutBase;
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.dao.RdirTrafficAmountDao;
 import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -201,15 +201,16 @@ public class ShowImageServlet extends HttpServlet {
 				}
 			} else {
 				String cacheKey = generateCachingKey(companyID, Integer.parseInt(mailingIdString), imageName);
-				boolean isMobileRequest = getDeviceService().getDeviceClassForStatistics(request.getHeader("User-Agent")) == DeviceClass.MOBILE;
 				CdnImage cdnImage = getCdnCache().get(cacheKey);
 				if (cdnImage == null) {
-					cdnImage = getComponentDao().getCdnImage(companyID, Integer.parseInt(mailingIdString), imageName, isMobileRequest);
+					cdnImage = getComponentDao().getCdnImage(companyID, Integer.parseInt(mailingIdString), imageName);
 					getCdnCache().put(cacheKey, cdnImage);
 				}
-				response.sendRedirect(cdnBaseLink + cdnImage.cdnId);
-				if (getConfigService().getBooleanValue(ConfigValue.ImageTrafficMeasuring, companyID)) {
-					getRdirTrafficAmountDao().save(companyID, Integer.parseInt(mailingIdString), cdnImage.name, cdnImage.imageDatalength);
+				if (cdnImage != null) {
+					response.sendRedirect(cdnBaseLink + cdnImage.cdnId);
+					if (getConfigService().getBooleanValue(ConfigValue.ImageTrafficMeasuring, companyID)) {
+						getRdirTrafficAmountDao().save(companyID, Integer.parseInt(mailingIdString), cdnImage.name, cdnImage.imageDatalength);
+					}
 				}
 			}
 		} catch (Exception e) {
@@ -357,7 +358,7 @@ public class ShowImageServlet extends HttpServlet {
 						logger.debug("image not found for not existing company: " + cacheKey);
 					}
 					newImage = null;
-				} else if (!Company.STATUS_ACTIVE.equals(company.getStatus())) {
+				} else if (!(CompanyStatus.ACTIVE == company.getStatus())) {
 					if (logger.isDebugEnabled()) {
 						logger.debug("image not found for inactive company: " + cacheKey);
 					}

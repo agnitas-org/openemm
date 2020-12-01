@@ -16,6 +16,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.AdminGroup;
+import org.agnitas.beans.EmmLayoutBase;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.Tuple;
+
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComAdminPreferences;
 import com.agnitas.beans.ComCompany;
@@ -27,12 +34,6 @@ import com.agnitas.emm.core.news.enums.NewsType;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
 import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.EmmLayoutBase;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.Tuple;
 
 public interface AdminService {
 
@@ -91,7 +92,7 @@ public interface AdminService {
 
     boolean adminLimitReached(@VelocityCheck int companyID);
 
-    List<AdminGroup> getAdminGroups(@VelocityCheck int companyID);
+    List<AdminGroup> getAdminGroups(@VelocityCheck int companyID, ComAdmin admin);
 
     List<ComCompany> getCreatedCompanies(@VelocityCheck int companyID);
 
@@ -129,6 +130,8 @@ public interface AdminService {
 
     List<EmmLayoutBase> getEmmLayoutsBase(@VelocityCheck int companyID);
 
+    boolean isDarkmodeEnabled(ComAdmin admin);
+
 	Optional<ComAdmin> getAdminByName(String username);
 	boolean updateNewsDate(final int adminID, final Date newsDate, final NewsType type);
 	ComAdmin getOldestAdminOfCompany(int companyId);
@@ -139,4 +142,5 @@ public interface AdminService {
 	boolean isEnabled(ComAdmin admin);
 	ComAdmin getAdminByLogin(String name, String password);
 
+    int getAccessLimitTargetId(ComAdmin admin);
 }

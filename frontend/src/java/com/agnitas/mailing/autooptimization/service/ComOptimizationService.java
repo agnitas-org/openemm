@@ -81,7 +81,7 @@ public interface ComOptimizationService {
 
 	int getSplitNumbers(@VelocityCheck int companyID, String splitType);
 
-	List<SelectOption> getTestMailingList(ComOptimization optimization, List<Integer> excludeMailingID);
+	List<SelectOption> getTestMailingList(ComOptimization optimization);
 
 	/**
 	 * Get the state from the optimization.

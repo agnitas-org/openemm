@@ -10,28 +10,32 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddTemplateRequest;
 import org.agnitas.emm.springws.jaxb.AddTemplateRequest.TargetIDList;
 import org.agnitas.emm.springws.jaxb.AddTemplateResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 
-public class AddTemplateEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class AddTemplateEndpoint extends BaseEndpoint {
 
-	@Resource
 	private MailingService mailingService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		AddTemplateRequest request = (AddTemplateRequest) arg0;
+	public AddTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddTemplateRequest")
+	public @ResponsePayload AddTemplateResponse addTemplate(@RequestPayload AddTemplateRequest request) throws Exception {
+		AddTemplateResponse response = new AddTemplateResponse();
 
 		MailingModel model = new MailingModel();
 		model.setCompanyId(Utils.getUserCompany());
@@ -56,9 +60,7 @@ public class AddTemplateEndpoint extends AbstractMarshallingPayloadEndpoint {
 //		model.setAutoUpdate(request.isAutoUpdate());
 		model.setTemplate(true);
 
-		AddTemplateResponse response = objectFactory.createAddTemplateResponse();
 		response.setTemplateID(mailingService.addMailing(model));
 		return response;
 	}
-
 }

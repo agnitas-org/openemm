@@ -1,18 +1,37 @@
 <HelpBalloon>
-	<title>Recherche d'adresses</title>
-	<content><![CDATA[La recherche de mailing vous permet de rechercher diff&eacute;rents champs de vos mailings. Si vous souhaitez entrer plusieurs termes en m&ecirc;me temps, vous pouvez utiliser les options suivantes:<br><br><br>
-<b>Recherche sp&eacute;cifique par guillemets </b><br><br><br>
-Par exemple : "Nous souhaitons"<br><br><br>
-Si deux termes ou plus sont mis entre guillemets, l'EMM recherchera les champs en utilisant cette s&eacute;quence sp&eacute;cifique de mots. Aucun r&eacute;sultat contenant un seul des mots ne sera affich&eacute;. <br><br><br>
-<b>Combinaison avec le signe plus </b><br><br><br>
-Par exemple : "Nous souhaitons" + No&euml;l<br><br><br>
-Si deux termes ou plus sont li&eacute;s par un signe plus, seuls les r&eacute;sultats contenant tous les termes seront affich&eacute;s.<br><br><br>
-<b>Combinaison &agrave; l'aide de la barre d'espacement </b><br><br><br>
-Par exemple : No&euml;l "Nouvel An"<br><br><br>No&euml;l
-Lorsque deux termes ou plus sont s&eacute;par&eacute;s par un espace, il s'agit d'une recherche OU. Tous les r&eacute;sultats qui contiennent au moins un des termes de recherche entr&eacute;s.<br><br><br> seront affich&eacute;s.
-<b>Termes entre parenth&egrave;ses </b><br><br><br>
-Par exemple : "Nous souhaitons" + (No&euml;l "Nouvel An")<br><br><br>
-L'exemple affich&eacute; montrerait tous les hits qui contiennent &agrave; la fois la phrase "We wish" et contiennent &eacute;galement No&euml;l ou le Nouvel An. Cependant, le r&eacute;sultat doit contenir au moins un des termes entre parenth&egrave;ses car ceux-ci sont reli&eacute;s par un signe plus. <br><br><br>
-Il est possible d'utiliser les diff&eacute;rentes options de combinaison dans n'importe quel ordre.<br><br><br>
-Par exemple : "We wish" + (joyeux bonheur) + (No&euml;l "Nouvel An")]]></content>
+	<title>Recherche</title>
+	<content><![CDATA[La fonction de recherche vous permet de faire des recherches dans diff&#xE9;rents champs. Vous pouvez &#xE9;galement utiliser des jokers dans le champ de recherche et relier plusieurs termes :
+<br><br>
+<b>point d'interrogation pour remplacer un caract&#xE8;re inconnu</b><br>
+Par exemple : Envoi d'un anniversaire
+<br><br>
+S'il n'est pas clair si l'envoi du terme anniversaire a &#xE9;t&#xE9; &#xE9;crit avec un trait d'union ou un espace et que le caract&#xE8;re inconnu est remplac&#xE9; par un point d'interrogation, le EMM affichera toutes les occurrences existantes qui se trouvent dans la s&#xE9;quence de lettres sp&#xE9;cifi&#xE9;e. Un point d'interrogation repr&#xE9;sente toujours un caract&#xE8;re inconnu, plusieurs points d'interrogation peuvent &#xE9;galement &#xEA;tre utilis&#xE9;s dans un m&#xEA;me terme.
+<br><br>
+<b>Ast&#xE9;risque et signe pourcentage comme caract&#xE8;re de remplacement pour tout nombre de caract&#xE8;res inconnus</b><br>
+Par exemple : No&#xEB;l* / No&#xEB;l%<br><br>
+L'ast&#xE9;risque ou le signe de pourcentage repr&#xE9;sente un nombre quelconque de caract&#xE8;res et peut &#xE9;galement comprendre plusieurs mots. Dans l'exemple pr&#xE9;sent&#xE9;, toutes les occurrences commen&#xE7;ant par "No&#xEB;l" sont affich&#xE9;es, par exemple : vœux de No&#xEB;l, &#xE9;dition de No&#xEB;l, No&#xEB;l 2020.
+<br><br>
+Si vous souhaitez saisir plusieurs termes en m&#xEA;me temps, les options de liaison suivantes sont disponibles :
+<br><br>
+<b>recherche exacte par les guillemets</b><br>
+Par exemple : "Nous souhaitons"
+<br><br>
+Si deux ou plusieurs termes sont mis entre guillemets, l'EMM recherche dans les champs exactement cet ordre de mots. Il n'affichera pas les r&#xE9;sultats qui contiennent un seul des termes ou lorsque les deux termes ont &#xE9;t&#xE9; utilis&#xE9;s dans un ordre diff&#xE9;rent.
+<br><br>
+<b>lien par le signe plus</b><br>
+Par exemple : "Nous souhaitons" + anniversaire
+<br><br>
+Si deux ou plusieurs termes sont li&#xE9;s par un signe plus, seuls les r&#xE9;sultats qui contiennent tous les termes sont affich&#xE9;s.
+<br><br>
+<b> liaison par espaces</b><br>
+Par exemple : nom d'anniversaire jour<br>
+<br><br>
+Si deux ou plusieurs termes sont s&#xE9;par&#xE9;s par un espace, la recherche est une recherche OU. Toutes les occurrences contenant au moins un des termes recherch&#xE9;s sont affich&#xE9;es.<br><br>
+<b>dates entre parenth&#xE8;ses</b><br>
+Par exemple : "Nous souhaitons" + (jour de l'anniversaire du nom)
+<br><br>
+L'exemple pr&#xE9;sent&#xE9; afficherait toutes les occurrences contenant la s&#xE9;quence de mots "Nous souhaitons" et soit la date d'anniversaire soit le jour du nom. Cependant, le r&#xE9;sultat doit contenir au moins un des termes entre parenth&#xE8;ses avec un signe plus entre les deux.
+<br><br>
+Il est permis d'embo&#xEE;ter les diff&#xE9;rentes possibilit&#xE9;s les unes dans les autres comme vous le souhaitez.<br><br>
+Par exemple : "Nous souhaitons" + ("tout le meilleur" "tout l'amour") + (jour du nom de l'anniversaire)]]></content>
 </HelpBalloon>

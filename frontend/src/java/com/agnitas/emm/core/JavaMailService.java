@@ -13,7 +13,7 @@ package com.agnitas.emm.core;
 public interface JavaMailService {
 	boolean sendVelocityExceptionMail(String formUrl, Exception e);
 	
-	boolean sendExceptionMail(String comment, Throwable e);
+	boolean sendExceptionMail(String errorText, Throwable e);
 
 	boolean sendEmail(String toAddressList, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments);
 

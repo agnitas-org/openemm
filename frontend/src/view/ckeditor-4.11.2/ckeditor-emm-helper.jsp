@@ -16,18 +16,15 @@
             removeEditor(textAreaId);
         }
         else {
-            createEditor(textAreaId, editorWidth, editorHeight, mailingId);
+            createEditorExt(textAreaId, editorWidth, editorHeight, mailingId);
         }
     }
 
-    function createEditor(textAreaId, editorWidth, editorHeight, mailingId) {
-         createEditorExt(textAreaId, editorWidth, editorHeight, mailingId, false);
-    }
-
-    function createEditorExt(textAreaId, editorWidth, editorHeight, mailingId, fullPage, isResizeNotEnabled) {
+    function createEditorExt(textAreaId, editorWidth, editorHeight, mailingId, fullPage, isResizeNotEnabled, allowExternalScript) {
       var imageBrowserUrl = !!mailingId ? '<html:rewrite page="/${CKEDITOR_PATH}/emm-image-browser.jsp?mailingID="/>' + mailingId : '';
       if (!isEditorVisible(textAreaId)) {
-        CKEDITOR.replace(textAreaId, {
+
+        var config = {
           customConfig: 'emm_config.js',
           fullPage: fullPage,
           toolbar: '${param.toolbarType}' ? '${param.toolbarType}' : 'EMM',
@@ -40,10 +37,33 @@
           filebrowserImageWindowWidth: '700',
           filebrowserImageWindowHeight: '600',
           resize_enabled: !isResizeNotEnabled,
-          entities_processNumerical: true,
-          entities: true,
           on: {
-            toHtml: function (event) {
+            instanceReady: function(event) {
+              if (fullPage) {
+                var editor = event.editor,
+                  rules = {
+                    elements: {
+                      html: function( element ) {
+                        var attrs = element.attributes;
+                        switch ( attrs[ 'data-cke-editable' ] ) {
+                          case 'true':
+                            attrs.contenteditable = 'true';
+                            break;
+                          case '1':
+                            delete attrs.contenteditable;
+                            break;
+                        }
+                      }
+                    }
+                  };
+                delete editor.dataProcessor.htmlFilter.elementsRules.html; //remove html rule from defaultHtmlFilterRulesForAll
+                delete editor.dataProcessor.dataFilter.elementsRules.html; //remove html rule from defaultHtmlFilterRulesForAll
+
+                editor.dataProcessor.htmlFilter.addRules(rules);
+                editor.dataProcessor.dataFilter.addRules(rules);
+              }
+            },
+            toHtml: function(event) {
               if (fullPage && event.data) {
                 if (repairFragment(event.data.dataValue)) {
                   // makes editor format the code and wrap it in full page tags
@@ -53,11 +73,32 @@
                 }
               }
             },
-            blur: function (event) {
-              event.editor.updateElement()
+            blur: function(event) {
+              event.editor.updateElement();
             }
           }
-        });
+        };
+
+        if (allowExternalScript) {
+          var elements = _.merge({}, CKEDITOR.dtd);
+          delete elements['script'];
+
+          config.allowedContent = {
+            $1: {
+              elements: elements,
+              attributes: true,
+              styles: true,
+              classes: true
+            },
+            script: {
+              attributes: '!src'
+            }
+          };
+
+          config.disallowedContent = 'iframe; *[on*];';
+        }
+
+        CKEDITOR.replace(textAreaId, config);
 
         isCKEditorActive[textAreaId] = true;
       }
@@ -74,25 +115,37 @@
     }
 
     function isFragmentCorrect(fragment) {
-      switch (fragment.children.length) {
+      var contents = filterHtmlComment(fragment.children);
+
+      switch (contents.length) {
         case 0:
           // Fragment is empty.
           return true;
 
         case 1:
           // check for root element is html
-          return fragment.children[0].name &&
-            fragment.children[0].name.toLowerCase() === 'html';
+          return contents[0].name &&
+            contents[0].name.toLowerCase() === 'html';
 
         case 2:
           // check for root element is doctype
-          return fragment.children[0].name &&
-            fragment.children[0].name.toLowerCase() === '!doctype' &&
-            fragment.children[1].name &&
-            fragment.children[1].name.toLowerCase() === 'html';
+          return contents[0].name &&
+            contents[0].name.toLowerCase() === '!doctype' &&
+            contents[1].name &&
+            contents[1].name.toLowerCase() === 'html';
       }
 
       return false;
+    }
+
+    function filterHtmlComment(children) {
+      return children.filter(function(el) {
+        if (el.value) {
+          return !el.value.startsWith('[if') && !el.value.startsWith('<![endif]') && !el.value.startsWith('{cke_protected}');
+        } else {
+          return true;
+        }
+      });
     }
 
     function getNonBodyContentKeys() {

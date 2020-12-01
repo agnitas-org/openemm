@@ -1,25 +1,19 @@
-<%@page import="com.agnitas.web.ComUserFormEditAction"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 
-<c:set var="ACTION_IMPORT" value="<%= ComUserFormEditAction.ACTION_IMPORT %>"/>
-<c:set var="ACTION_IMPORT_TEMPLATES" value="<%= ComUserFormEditAction.ACTION_IMPORT_TEMPLATES %>"/>
-
-<c:set var="importAction" value="${ACTION_IMPORT}"/>
+<c:set var="isImportTemplate" value="false"/>
 <c:if test="${not empty param.importFromTemplates and param.importFromTemplates}">
-	<c:set var="importAction" value="${ACTION_IMPORT_TEMPLATES}"/>
+	<c:set var="isImportTemplate" value="true"/>
 </c:if>
 
-<agn:agnForm action="/userform" id="userFormImport" enctype="multipart/form-data" data-form="static">
-	<html:hidden property="action"/>
-	
+<form method="post" action="<c:url value='/webform/importUserForm.action'/>" enctype="multipart/form-data" data-form="resource">
+	<input type="hidden" name="importTemplate" value="${isImportTemplate}"/>
+
 	<div class="tile">
 		<div class="tile-header">
 			<h2 class="headline">
-				<bean:message key="forms.import" />
+				<bean:message key="forms.import"/>
 			</h2>
 		</div>
 		<div class="tile-content">
@@ -27,10 +21,10 @@
 				<div class="form-group">
 					<div class="input-group">
 						<div class="input-group-controls">
-							<html:file property="uploadFile" styleId="uploadFile" styleClass="form-control" />
+							<input type="file" name="uploadFile" class="form-control">
 						</div>
 						<div class="input-group-btn">
-							<button type="button" class="btn btn-regular btn-primary" data-form-persist="upload_file: 'upload_file', action: ${importAction}" data-form-submit>
+							<button type="button" class="btn btn-regular btn-primary" data-form-submit>
 								<i class="icon icon-cloud-upload"></i>
 								<span class="text">
 									<bean:message key="forms.import"/>
@@ -42,4 +36,4 @@
 			</div>
 		</div>
 	</div>
-</agn:agnForm>
+</form>

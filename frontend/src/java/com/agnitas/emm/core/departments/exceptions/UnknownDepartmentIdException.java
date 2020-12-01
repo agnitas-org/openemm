@@ -11,7 +11,6 @@
 package com.agnitas.emm.core.departments.exceptions;
 
 public final class UnknownDepartmentIdException extends DepartmentException {
-
 	/** Serial version UID. */
 	private static final long serialVersionUID = 2083841238331211031L;
 
@@ -20,11 +19,10 @@ public final class UnknownDepartmentIdException extends DepartmentException {
 	public UnknownDepartmentIdException(final int departmentID) {
 		super(String.format("Unknown department ID %d", departmentID));
 		
-		this.departmentID = departmentID; 
+		this.departmentID = departmentID;
 	}
 
 	public final int getDepartmentID() {
-		return this.departmentID;
+		return departmentID;
 	}
-
 }

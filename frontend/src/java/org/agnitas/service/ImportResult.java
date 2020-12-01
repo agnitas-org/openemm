@@ -8,7 +8,6 @@
 
 */
 
-
 package org.agnitas.service;
 
 import java.util.HashMap;
@@ -52,8 +51,6 @@ public class ImportResult {
 	
 	public static class Builder {
 		private ImportResult options = new ImportResult();
-		private Map<String, Object[]> errors = new HashMap<>();
-		private Map<String, Object[]> warnings = new HashMap<>();
 
 		private Builder() {}
 		
@@ -63,32 +60,32 @@ public class ImportResult {
 		}
         
         public ImportResult.Builder addWarnings(Map<String, Object[]> warningsToAdd) {
-        	this.warnings.putAll(warningsToAdd);
+        	options.warnings.putAll(warningsToAdd);
             return this;
         }
 		
 		public ImportResult.Builder addWarning(String warningKey) {
-			this.warnings.put(warningKey, null);
+			options.warnings.put(warningKey, null);
 			return this;
 		}
 		
 		public ImportResult.Builder addWarning(String warningKey, Object... values) {
-			this.warnings.put(warningKey, values);
+			options.warnings.put(warningKey, values);
 			return this;
 		}
         
         public ImportResult.Builder addErrors(Map<String, Object[]> errorsToAdd) {
-        	this.errors.putAll(errorsToAdd);
+        	options.errors.putAll(errorsToAdd);
             return this;
         }
 		
 		public ImportResult.Builder addError(String errorKey) {
-			this.errors.put(errorKey, null);
+			options.errors.put(errorKey, null);
 			return this;
 		}
 		
 		public ImportResult.Builder addError(String errorKey, Object... values) {
-			this.errors.put(errorKey, values);
+			options.errors.put(errorKey, values);
 			return this;
 		}
 
@@ -109,11 +106,9 @@ public class ImportResult {
 
 		public ImportResult build() {
 			ImportResult result = options;
-			result.warnings = warnings;
-			result.errors = errors;
-			warnings = null;
-			errors = null;
+			
 			options = null;
+			
 			return result;
 		}
 	}

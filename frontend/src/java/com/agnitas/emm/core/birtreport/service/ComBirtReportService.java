@@ -27,5 +27,5 @@ public interface ComBirtReportService {
 
 	int getRunningReportsByHost(String hostName);
 
-	List<ComBirtReport> getReportsToSend(int i, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
+	List<ComBirtReport> getReportsToSend(int maximumNumberOfReports, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 }

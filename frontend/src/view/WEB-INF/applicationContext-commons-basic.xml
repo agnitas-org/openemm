@@ -101,7 +101,7 @@
 	<bean id="DynamicTagContentFactory" class="org.agnitas.beans.factory.impl.DynamicTagContentFactoryImpl" />
 	
 <!-- ============================================================================================================================== ECS (Heatmap) -->
-	<bean id="EcsService" class="com.agnitas.ecs.service.impl.EcsServiceImpl" scope="prototype">
+	<bean id="EcsService" class="com.agnitas.ecs.service.impl.EcsServiceImpl">
 		<property name="generationPDFService" ref="GenerationPDFService"/>
 		<property name="recipientDao" ref="RecipientDao"/>
 		<property name="mailingDao" ref="MailingDao"/>
@@ -188,6 +188,7 @@
 	<bean id="PasswordCheck" class="com.agnitas.emm.core.commons.password.ComPasswordCheckImpl">
 		<property name="adminService" ref="AdminService" />
 		<property name="supervisorService" ref="SupervisorService" />
+		<property name="configService" ref="ConfigService" />
 	</bean>
 	
 	<!-- For RDIR: remove that bean and set all properties referencing this bean to null -->
@@ -209,7 +210,7 @@
 	</bean>
 
 <!-- ============================================================================================================================== Profile fields -->
-	<bean id="ProfileField" class="com.agnitas.beans.impl.ComProfileFieldImpl" scope="prototype" />
+	<bean id="ProfileField" class="com.agnitas.beans.impl.ProfileFieldImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Recipients -->
 	<bean id="Recipient" factory-bean="RecipientFactory" factory-method="newRecipient" scope="prototype" />
@@ -248,54 +249,15 @@
 	<bean id="TagDetailsFactory" class="com.agnitas.beans.factory.impl.TagDetailsFactoryImpl"/>
 
 <!-- ============================================================================================================================== Target groups -->
+<!-- TODO: Remove this bean? Create Target instances by "TargetFactory" -->
 	<bean id="Target" class="com.agnitas.beans.impl.ComTargetImpl" scope="prototype">
-		<property name="targetStructure">
-			<ref bean="TargetRepresentation" />
-		</property>
 	</bean>
 	
-	<bean id="TargetRepresentation" class="org.agnitas.target.impl.TargetRepresentationImpl" scope="prototype" />
-
-	<bean id="TargetFactory" class="com.agnitas.beans.factory.impl.ComTargetFactoryImpl">
-		<property name="targetRepresentationFactory" ref="TargetRepresentationFactory" />
-	</bean>
-	
-	<bean id="TargetRepresentationFactory" class="org.agnitas.target.impl.TargetRepresentationFactoryImpl" />
-	
-	<!-- With existence of "TargetRepresentationFactory", this bean def. cannot be removed, because some other bean def. currently depends on it -->
-	<bean id="TargetNodeFactory" class="org.agnitas.target.impl.TargetNodeFactoryImpl" />
-
-	<bean id="NonValidatingTargetNodeValidator" class="org.agnitas.target.impl.validate.NonValidatorTargetNodeValidator" />
-
-	<bean id="MailingIdTargetNodeValidator" class="org.agnitas.target.impl.validate.MailingIdTargetNodeValidator">
-		<property name="mailingDao" ref="MailingDao" />
-	</bean>
-	
-	<bean id="MailingSpecificLinkClickNodeValidator" class="com.agnitas.emm.core.target.validate.MailingSpecificLinkClickNodeValidator">
-		<property name="mailingDao" ref="MailingDao" />
-		<property name="trackableLinkDao" ref="TrackableLinkDao" />
-	</bean>
-
+	<bean id="TargetFactory" class="com.agnitas.beans.factory.impl.ComTargetFactoryImpl" />
 <!-- ============================================================================================================================== Title -->
 	<bean id="Title" class="org.agnitas.beans.impl.TitleImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== UID -->
-	<bean id="UID_2_StringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.V2ComExtensibleUIDStringBuilderImpl">
-		<property name="configService" ref="ConfigService" />
-		<property name="companyDaoCache" ref="CompanyDaoCache" />
-		<property name="rdirMailingDataDaoCache" ref="RdirMailingDataDaoCache" />
-		<property name="mailingDao" ref="MailingDao" />
-	</bean>
-
-	<bean id="UID_2_Parser" class="com.agnitas.emm.core.commons.uid.parser.impl.V2ComExtensibleUIDParserImpl">
-		<property name="stringBuilder" ref="UID_2_StringBuilder" />
-		<property name="companyDaoCache" ref="CompanyDaoCache" />
-		<property name="rdirMailingDataDaoCache" ref="RdirMailingDataDaoCache" />
-		<property name="handledUidVersion">
-			<util:constant static-field="com.agnitas.emm.core.commons.uid.ExtensibleUidVersion.XUID_WITH_MD5"/>
-		</property>
-	</bean>
-
 	<bean id="UID_2_SHA512_StringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.V2Sha512ComExtensibleUIDStringBuilderImpl">
 		<property name="configService" ref="ConfigService" />
 		<property name="companyDaoCache" ref="CompanyDaoCache" />
@@ -335,7 +297,6 @@
 				<!-- Add builder for new UID versions at start of list -->
 				<ref bean="UID_3_StringBuilder" />
 				<ref bean="UID_2_SHA512_StringBuilder" />
-				<ref bean="UID_2_StringBuilder" />
 			</list>
 		</property>
 	</bean>
@@ -343,7 +304,6 @@
 	<util:list id="extensibleUIDParsers" value-type="org.agnitas.emm.core.commons.uid.parser.ExtensibleUIDParser">
 		<ref bean="UID_3_Parser" />
 		<ref bean="UID_2_SHA512_Parser" />
-		<ref bean="UID_2_Parser" />
 	</util:list>
 
 	<bean id="ExtensibleUIDParser" class="com.agnitas.emm.core.commons.uid.parser.impl.ComExtensibleUIDParserChain">
@@ -367,9 +327,10 @@
 		<property name="companyHierarchyCache" ref="CompanyHierarchyCache" />
 	</bean>
 
-	<bean id="UberspectDelegateTargetFactory" class="com.agnitas.emm.core.velocity.ComUberspectDelegateTargetFactoryImpl">
+	<bean id="UberspectDelegateTargetFactory" class="com.agnitas.emm.core.velocity.UberspectDelegateTargetFactoryImpl">
 		<property name="companyContextVelocityChecker" ref="CompanyContextVelocityChecker" />
 		<property name="configService" ref="ConfigService" />
+		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
 
 	<bean id="VelocityWrapperFactory" class="com.agnitas.emm.core.velocity.ComVelocityWrapperFactoryImpl">
@@ -507,9 +468,23 @@
 	
 	<bean id="RandomNumberGenerator" class="java.security.SecureRandom" />
 
+	<!-- 
 	<bean id="WorkerExecutorService" class="java.util.concurrent.ScheduledThreadPoolExecutor">
 		<constructor-arg value="10" type="int" />
 	</bean>
+	-->
+	<bean id="WorkerExecutorService" class="java.util.concurrent.ScheduledThreadPoolExecutor">
+		<constructor-arg value="10" type="int" />
+		<constructor-arg type="java.util.concurrent.ThreadFactory">
+			<bean class="com.agnitas.util.threads.NamingThreadFactory">
+				<constructor-arg type="java.util.concurrent.ThreadFactory">
+					<bean class="java.util.concurrent.Executors" factory-method="defaultThreadFactory" />
+				</constructor-arg>
+				<constructor-arg type="java.lang.String" value="WorkerExecutorService-emm-thread" />
+			</bean>
+		</constructor-arg>
+	</bean>
+	
 
 	<bean id="futureHolder" class="com.agnitas.util.FutureHolderMap" />
 
@@ -566,9 +541,6 @@ Euer freundlicher EMM
 		<constructor-arg ref="EqlCodeGenerator" />
 		<constructor-arg ref="SqlCodeGeneratorCallbackFactory" />
 		<constructor-arg ref="BeanShellCodeGeneratorCallbackFactory" />
-		<constructor-arg ref="EqlToTargetRepresentationConverterFactory" />
-		
-		<property name="targetRepresentationToEqlConverter" ref="EqlTargetRepresentationToEqlConverter" />
 	</bean>
 
 	<bean id="MailingTypeResolverFactory" class="com.agnitas.emm.core.target.eql.emm.resolver.EmmMailingTypeResolverFactory">
@@ -746,4 +718,7 @@ Euer freundlicher EMM
 		<property name="mediaTypesService" ref="MediaTypesService"/>
 	</bean>
 		  
+	<bean id="componentModelValidator" class="org.agnitas.emm.core.component.service.validation.ComponentModelValidator">
+		<constructor-arg value="validator-messages"/>
+	</bean>
 </beans>

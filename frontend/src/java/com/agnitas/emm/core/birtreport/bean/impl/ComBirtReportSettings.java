@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -32,6 +31,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
+import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 
 public abstract class ComBirtReportSettings {
 	@SuppressWarnings("unused")
@@ -46,14 +46,11 @@ public abstract class ComBirtReportSettings {
     public static final String ENABLED_KEY = "enabled";
     public static final String SORT_BY_KEY = "sortBy";
 
-    public static final int REPORT_SETTINGS_COMPARISON = 1;
-    public static final int REPORT_SETTINGS_MAILING = 2;
-    public static final int REPORT_SETTINGS_RECIPIENT = 3;
-
     /**
      * Predefine mailing contains ids only of
      * {@link com.agnitas.emm.core.birtreport.dto.FilterType#FILTER_ARCHIVE}
      *  or {@link com.agnitas.emm.core.birtreport.dto.FilterType#FILTER_MAILINGLIST}
+     *  or if report is setup while mailing send configured - {@link com.agnitas.emm.core.birtreport.dto.FilterType#FILTER_MAILING}
      */
     public static final String PREDEFINED_ID_KEY = "predefineMailing";
 

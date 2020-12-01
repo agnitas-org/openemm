@@ -10,16 +10,26 @@
 
 package com.agnitas.emm.core.usergroup.converter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.AdminGroupImpl;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
+import com.agnitas.dao.ComAdminGroupDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 
 @Component
 public class UserGroupDtoToAdminGroupConverter implements Converter<UserGroupDto, AdminGroup> {
+	private ComAdminGroupDao adminGroupDao;
+	
+	public UserGroupDtoToAdminGroupConverter(ComAdminGroupDao adminGroupDao) {
+		this.adminGroupDao = adminGroupDao;
+	}
+	
     @Override
     public AdminGroup convert(UserGroupDto source) {
         AdminGroup adminGroup = new AdminGroupImpl();
@@ -28,6 +38,15 @@ public class UserGroupDtoToAdminGroupConverter implements Converter<UserGroupDto
         adminGroup.setShortname(source.getShortname());
         adminGroup.setDescription(source.getDescription());
         adminGroup.setGroupPermissions(Permission.fromTokens(source.getGrantedPermissions()));
+        
+        if (source.getParentGroupIDs() != null) {
+            Set<AdminGroup> adminGroups = new HashSet<>();
+            for (String adminGroupId : source.getParentGroupIDs()) {
+            	adminGroups.add(adminGroupDao.getAdminGroup(Integer.parseInt(adminGroupId), source.getCompanyId()));
+            }
+            adminGroup.setParentGroups(adminGroups);
+        }
+        
         return adminGroup;
     }
 }

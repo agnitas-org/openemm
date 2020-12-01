@@ -14,8 +14,27 @@ import java.util.List;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.TypeDescriptor;
 
 public interface ExtendedConversionService extends ConversionService {
-    <S, T> List<T> convert(List<S> collection, Class<S> sourceType, Class<T> targetType);
-    <T, S> PaginatedListImpl<T> convertPaginatedList(PaginatedListImpl<S> paginatedList, Class<S> sourceType, Class<T> targetType);
+    default <S, T> List<T> convert(List<S> collection, Class<S> sourceType, Class<T> targetType) {
+        TypeDescriptor sourceTypeDesc = TypeDescriptor.collection(collection.getClass(), TypeDescriptor.valueOf(sourceType));
+        TypeDescriptor targetTypeDesc = TypeDescriptor.collection(collection.getClass(), TypeDescriptor.valueOf(targetType));
+
+        @SuppressWarnings("unchecked")
+        List<T> returnList = (List<T>) convert(collection, sourceTypeDesc, targetTypeDesc);
+        return returnList;
+    }
+
+    default <T, S> PaginatedListImpl<T> convertPaginatedList(PaginatedListImpl<S> paginatedList, Class<S> sourceType, Class<T> targetType) {
+        List<S> list = paginatedList.getList();
+        List<T> convertedList = convert(list, sourceType, targetType);
+
+        return new PaginatedListImpl<>(convertedList,
+                paginatedList.getFullListSize(),
+                paginatedList.getObjectsPerPage(),
+                paginatedList.getPageNumber(),
+                paginatedList.getSortCriterion(),
+                paginatedList.getSortDirection().getName());
+    }
 }

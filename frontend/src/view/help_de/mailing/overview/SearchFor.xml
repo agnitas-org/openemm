@@ -1,24 +1,37 @@
 <HelpBalloon>
-	<title>Mailing-Suche</title>
-	<content><![CDATA[Mit der Mailing-Suche k&ouml;nnen Sie verschiedene Felder des Mailings durchsuchen. M&ouml;chten Sie dabei mehrere Begriffe gleichzeitig eingeben gibt es folgende Verkn&uuml;pfungsm&ouml;glichkeiten:<br><br>
-<b>Verkn&uuml;pfung durch Fragezeichen</b><br>
-Zum Beispiel: „Wir w&uuml;nschen Frau Renate M?ier"<br><br>
-Wenn, wie im obigen Beispiel zu sehen, nicht klar ist ob der Name Meier mit ai oder ei geschrieben wird und der unbekannte Buchstabe durch ein Fragezeichen ersetzt wird, dann zeigt der <%PRODUKTNAME%> alle vorhandenen Treffer, die sich innerhalb der angegebenen Buchstabenfolge befinden, an. Es k&ouml;nnen auch mehrere Fragezeichen innerhalb eines Begriffes auftauchen. Beispielsweise wenn nicht bekannt ist ob der Name Meier mit ei, ai, ey oder ay geschrieben wird. Die Ergebnisse m&uuml;ssen aber zwingend die Wortfolge „Wir w&uuml;nschen Frau Renate" enthalten.<br><br>
-<b>Suche durch Sternchen und Prozentzeichen</b><br>
-Zum Beispiel: „Wir w&uuml;nschen */% "<br><br>
-Das Sternchen bzw. Prozentzeichen steht f&uuml;r beliebig viele Zeichen und kann auch mehrere W&ouml;rter umfassen. Das gezeigte Beispiel w&uuml;rde alle Treffer anzeigen, die die Wortfolge „Wir w&uuml;nschen" beinhalten. Mit der Mailing-Suche k&ouml;nnen Sie verschiedene Felder des Mailings durchsuchen. M&ouml;chten Sie dabei mehrere Begriffe gleichzeitig eingeben gibt es folgende Verkn&uuml;pfungsm&ouml;glichkeiten:<br><br>
-<b>Exakte Suche durch Anf&uuml;hrungszeichen</b><br>
-Zum Beispiel: „Wir w&uuml;nschen“<br><br>
-Stehen zwei oder mehr Begriffe innerhalb von Anf&uuml;hrungszeichen, dann durchsucht der EMM die Felder nach genau dieser Wortfolge. Er wird keine Ergebnisse anzeigen, die nur einen der Begriffe enthalten.<br><br>
-<b>Verkn&uuml;pfung durch Pluszeichen</b><br>
-Zum Beispiel: „Wir w&uuml;nschen“ + Geburtstag<br><br>
-Werden zwei oder mehr Begriffe mit einem Pluszeichen verkn&uuml;pft, so werden nur Ergebnisse angezeigt, die alle Begriffe enthalten.<br><br>
-<b>Verkn&uuml;pfung durch Leerzeichen</b><br>
-Zum Beispiel: Geburtstag Namenstag<br><br>
-Sind zwei oder mehr Begriffe durch ein Leerzeichen getrennt so handelt es sich um eine ODER-Suche. Es werden alle Treffer angezeigt, die mindestens einen der gesuchten Begriffe enthalten.<br><br>
+	<title>Suche</title>
+	<content><![CDATA[Mit der Suchfunktion k&#xF6;nnen Sie verschiedene Felder durchsuchen. Sie k&#xF6;nnen im Suchfeld auch Platzhalter verwenden und mehrere Begriffe verkn&#xFC;pfen:
+<br><br>
+<b>Fragezeichen als Platzhalter f&#xFC;r ein unbekanntes Zeichen</b><br>
+Zum Beispiel: Geburtstags?Mailing
+<br><br>
+Wenn nicht klar ist, ob der Begriff Geburtstags-Mailing mit Bindestrich oder Leerzeichen geschrieben wurde und das unbekannte Zeichen durch ein Fragezeichen ersetzt wird, dann zeigt der EMM alle vorhandenen Treffer, die sich innerhalb der angegebenen Buchstabenfolge befinden, an. Ein Fragezeichen steht immer f&#xFC;r ein unbekanntes Zeichen, es k&#xF6;nnen auch mehrere Fragezeichen innerhalb eines Begriffes verwendet werden.
+<br><br>
+<b>Sternchen und Prozentzeichen als Platzhalter f&#xFC;r beliebig viele unbekannte Zeichen</b><br>
+Zum Beispiel: Weihnacht* / Weihnacht%<br><br>
+Das Sternchen bzw. Prozentzeichen steht f&#xFC;r beliebig viele Zeichen und kann auch mehrere W&#xF6;rter umfassen. Das gezeigte Beispiel w&#xFC;rde alle Treffer anzeigen, die mit „Weihnacht" beginnen, also z.B. Weihnachtsgr&#xFC;&#xDF;&#xDF;e, Weihnachtsedition, Weihnachten 2020.
+<br><br>
+M&#xF6;chten Sie dabei mehrere Begriffe gleichzeitig eingeben gibt es folgende Verkn&#xFC;pfungsm&#xF6;glichkeiten:
+<br><br>
+<b>Exakte Suche durch Anf&#xFC;hrungszeichen</b><br>
+Zum Beispiel: „Wir w&#xFC;nschen“
+<br><br>
+Stehen zwei oder mehr Begriffe innerhalb von Anf&#xFC;hrungszeichen, dann durchsucht der EMM die Felder nach genau dieser Wortfolge. Er wird keine Ergebnisse anzeigen, die nur einen der Begriffe enthalten oder in denen beide Begriffe in einer anderen Reihenfolge verwendet wurden.
+<br><br>
+<b>Verkn&#xFC;pfung durch Pluszeichen</b><br>
+Zum Beispiel: „Wir w&#xFC;nschen“ + Geburtstag
+<br><br>
+Werden zwei oder mehr Begriffe mit einem Pluszeichen verkn&#xFC;pft, so werden nur Ergebnisse angezeigt, die alle Begriffe enthalten.
+<br><br>
+<b>Verkn&#xFC;pfung durch Leerzeichen</b><br>
+Zum Beispiel: Geburtstag Namenstag<br>
+<br><br>
+Sind zwei oder mehr Begriffe durch ein Leerzeichen getrennt, so handelt es sich um eine ODER-Suche. Es werden alle Treffer angezeigt, die mindestens einen der gesuchten Begriffe enthalten.<br><br>
 <b>Begriffe klammern</b><br>
-Zum Beispiel: „Wir w&uuml;nschen“ + (Geburtstag Namenstag)<br><br>
-Das gezeigte Beispiel w&uuml;rde alle Treffer anzeigen, die zum einen die Wortfolge „Wir w&uuml;nschen“ enth&auml;lt und zum anderen entweder Geburtstag oder Namenstag. Es muss aber mindestens einer der Begriffe in der Klammer im Ergebnis enthalten sein, da dazwischen ein Pluszeichen steht.<br><br>
-Es ist erlaubt die verschiedenen M&ouml;glichkeiten beliebig ineinander zu verschachteln.<br><br>
-Zum Beispiel: „Wir w&uuml;nschen“ + („alles Gute“ „alles Liebe“) + (Geburtstag Namenstag)]]></content>
+Zum Beispiel: „Wir w&#xFC;nschen“ + (Geburtstag Namenstag)
+<br><br>
+Das gezeigte Beispiel w&#xFC;rde alle Treffer anzeigen, die zum einen die Wortfolge „Wir w&#xFC;nschen“ enth&#xE4;lt und zum anderen entweder Geburtstag oder Namenstag. Es muss aber mindestens einer der Begriffe in der Klammer im Ergebnis enthalten sein, da dazwischen ein Pluszeichen steht.
+<br><br>
+Es ist erlaubt, die verschiedenen M&#xF6;glichkeiten beliebig ineinander zu verschachteln.<br><br>
+Zum Beispiel: „Wir w&#xFC;nschen“ + („alles Gute“ „alles Liebe“) + (Geburtstag Namenstag)]]></content>
 </HelpBalloon>

@@ -351,7 +351,7 @@ public class SFtpHelper implements RemoteFileHelper {
 	 * @param mode the mode (see ChannelSftp.xxx for allowed modes)
 	 * @throws SftpException the sftp exception
 	 */
-	public void put(String srcFile, String dstFile, int mode) throws Exception {
+	public void put(String srcFile, String dstFile, int mode, boolean useTempFileNameWhileUploading) throws Exception {
 		checkForConnection();
 		channel.put(srcFile, dstFile, mode);
 	}
@@ -364,22 +364,27 @@ public class SFtpHelper implements RemoteFileHelper {
 	 * @throws SftpException the sftp exception
 	 */
 	@Override
-	public void put(InputStream inputStream, String dstFile) throws Exception {
+	public void put(InputStream inputStream, String dstFile, boolean useTempFileNameWhileUploading) throws Exception {
 		checkForConnection();
-		channel.put(inputStream, dstFile, ChannelSftp.OVERWRITE);
+		if (useTempFileNameWhileUploading) {
+			channel.put(inputStream, dstFile + ".tmp", ChannelSftp.OVERWRITE);
+			channel.rename(dstFile + ".tmp", dstFile);
+		} else {
+			channel.put(inputStream, dstFile, ChannelSftp.OVERWRITE);
+		}
 	}
 
 	/**
 	 * Gets the.
 	 *
-	 * @param name the name
+	 * @param filePathAndName the path and name
 	 * @return the input stream
 	 * @throws SftpException the sftp exception
 	 */
 	@Override
-	public InputStream get(String name) throws Exception {
+	public InputStream get(String filePathAndName) throws Exception {
 		checkForConnection();
-		return channel.get(name);
+		return channel.get(filePathAndName);
 	}
 
 	/**
@@ -390,11 +395,28 @@ public class SFtpHelper implements RemoteFileHelper {
 	 * @throws SftpException the sftp exception
 	 * @throws ParseException the parse exception
 	 */
-	public Date getModifyDate(String name) throws Exception {
+	@Override
+	public Date getModifyDate(String filePathAndName) throws Exception {
 		checkForConnection();
-		SftpATTRS attrs = channel.lstat(name);
+		SftpATTRS attrs = channel.lstat(filePathAndName);
 		SimpleDateFormat format = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.US);
 		return format.parse(attrs.getMtimeString());
+	}
+
+	/**
+	 * Gets the files size in bytes
+	 *
+	 * @param name the name
+	 * @return the files size in bytes
+	 * @throws Exception
+	 * @throws SftpException the sftp exception
+	 * @throws ParseException the parse exception
+	 */
+	@Override
+	public long getFileSize(String filePathAndName) throws Exception {
+		checkForConnection();
+		SftpATTRS attrs = channel.lstat(filePathAndName);
+		return attrs.getSize();
 	}
 
 	/**

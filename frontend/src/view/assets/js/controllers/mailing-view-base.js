@@ -1,6 +1,7 @@
 AGN.Lib.Controller.new('mailing-view-base', function() {
-  var Form = AGN.Lib.Form,
-    Tooltip = AGN.Lib.Tooltip;
+  var Form = AGN.Lib.Form;
+
+  var scrollOffset = 0;
 
   var config;
   var isChangeMailing = false;
@@ -11,9 +12,20 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
   this.addDomInitializer('mailing-view-base', function() {
     config = this.config;
 
-    if (this.config.scrollTop > 0) {
-      $('#gt-wrapper').animate({scrollTop: config.scrollTop}, 50);
+    if (scrollOffset > 0) {
+      var wrapper = $('#gt-wrapper');
+      if (wrapper.exists()) {
+          wrapper.animate({scrollTop: scrollOffset}, 50);
+      } else {
+        $(document).scrollTop(scrollOffset + 50);
+      }
+    } else {
+      var shortname = $('#mailingBaseForm').find('[name="shortname"]');
+      if ($(shortname).exists()) {
+          $(shortname).focus();
+      }
     }
+    scrollOffset = 0;
 
     targetGroupIds = $('#targetGroupIds').val() || [];
 
@@ -113,6 +125,11 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
     setMailingListSelectByFollowUpMailing();
   });
 
+  this.addAction({change: 'scroll-to'}, function () {
+      var position = getPosition(this.el);
+      scrollOffset = Math.round(position);
+  });
+
   this.addAction({click: 'deleteMailingParameter'}, function() {
     var form = Form.get(this.el);
     var position = getPosition(this.el);
@@ -120,7 +137,7 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
     var $tr = this.el.closest('tr');
     $tr.remove();
 
-    form.setValueOnce('scrollTop', Math.round(position));
+    scrollOffset = Math.round(position);
     form.submit();
   });
 
@@ -129,7 +146,7 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
     var position = getPosition(this.el);
 
     form.setValueOnce('addParameter', true);
-    form.setValueOnce('scrollTop', Math.round(position));
+    scrollOffset = Math.round(position);
 
     form.submit();
   });

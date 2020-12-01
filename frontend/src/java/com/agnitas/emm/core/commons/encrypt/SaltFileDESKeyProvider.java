@@ -23,10 +23,15 @@ import org.springframework.beans.factory.annotation.Required;
  */
 public class SaltFileDESKeyProvider implements KeyProvider {
 	private ConfigService configService;
+	private String saltFilePathOverride = null;
 	
 	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
+	}
+	
+	public void setSaltFilePathOverride(String saltFilePathOverride) {
+		this.saltFilePathOverride = saltFilePathOverride;
 	}
 
 	/** Key created from salt file. */
@@ -75,7 +80,12 @@ public class SaltFileDESKeyProvider implements KeyProvider {
 	@Override
 	public byte[] getEncryptionKey() throws Exception {
 		if (keyCache == null) {
-			String saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
+			String saltFilePath;
+			if (saltFilePathOverride != null) {
+				saltFilePath = saltFilePathOverride;
+			} else {
+				saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
+			}
 			keyCache = readKey(new File(saltFilePath));
 		}
 		return keyCache;

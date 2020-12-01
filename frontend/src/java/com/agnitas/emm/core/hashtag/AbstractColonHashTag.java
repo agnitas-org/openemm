@@ -10,6 +10,11 @@
 
 package com.agnitas.emm.core.hashtag;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
+import org.apache.log4j.Logger;
+
 import com.agnitas.emm.core.hashtag.exception.HashTagException;
 
 /**
@@ -17,26 +22,46 @@ import com.agnitas.emm.core.hashtag.exception.HashTagException;
  * needed to handle colons.
  */
 public abstract class AbstractColonHashTag implements HashTag {
+	
+	private static final transient Logger LOGGER = Logger.getLogger(AbstractColonHashTag.class); 
 
 	@Override
-	public boolean canHandle(HashTagContext context, String tagString) {
-		int colonIndex = tagString.indexOf(':');
+	public boolean canHandle(final HashTagContext context, final String tagString) {
+		final int colonIndex = tagString.indexOf(':');
 		
-		String tagName = (colonIndex == -1) ? tagString : tagString.substring(0, colonIndex);
+		final String tagName = (colonIndex == -1) ? tagString : tagString.substring(0, colonIndex);
 
 		return isSupportedTag(tagName, colonIndex != -1);
 	}
 
 	@Override
-	public String handle(HashTagContext context, String tagString) throws HashTagException {
-		int colonIndex = tagString.indexOf(':');
+	public final String handle(final HashTagContext context, final String tagString) throws HashTagException {
+		final int colonIndex = tagString.indexOf(':');
 		
-		String tagName = (colonIndex == -1) ? tagString : tagString.substring(0, colonIndex).trim();
-		String appendix = (colonIndex == -1) ? null : tagString.substring(colonIndex + 1).trim();
+		final String tagName = (colonIndex == -1) ? tagString : tagString.substring(0, colonIndex).trim();
+		final String appendix = (colonIndex == -1) ? null : tagString.substring(colonIndex + 1).trim();
 
-		return handleInternal(context, tagName, appendix);
+		final String unencoded = handleInternal(context, tagName, appendix);
+		
+		return encodeResult(unencoded != null ? unencoded : "");
 	}
 
+	/**
+	 * Performs the final encoding. In common, URL-encoding the result of the hash tag is done here.
+	 * 
+	 * @param unencodedResult unencoded result
+	 * 
+	 * @return encoded result
+	 */
+	public String encodeResult(final String unencodedResult) {
+       	try {
+       		return URLEncoder.encode(unencodedResult, "UTF8");
+    	} catch(UnsupportedEncodingException e) {
+    		LOGGER.error("Error while URL-encoding", e);
+    		return "";
+    	}
+	}
+	
 	/**
 	 * Checks, if the implementation supports given tag name with or without colon in tag string.
 	 *   

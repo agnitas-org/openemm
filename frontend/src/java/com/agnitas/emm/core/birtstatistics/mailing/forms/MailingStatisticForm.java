@@ -53,8 +53,6 @@ public class MailingStatisticForm {
      */
     private FormDateTime endDate = new FormDateTime();
 
-    private FormDateTime selectDay = new FormDateTime();
-
     private boolean topLevelDomain;
 
     /**
@@ -71,6 +69,7 @@ public class MailingStatisticForm {
     private int sector;
     
     private int urlID;
+    private String description;
 
     public String getShortname() {
         return shortname;
@@ -155,10 +154,6 @@ public class MailingStatisticForm {
         return endDate;
     }
 
-    public FormDateTime getSelectDay() {
-        return selectDay;
-    }
-
     public boolean isTopLevelDomain() {
         return topLevelDomain;
     }
@@ -213,5 +208,13 @@ public class MailingStatisticForm {
     
     public void setUrlID(int urlID) {
         this.urlID = urlID;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
     }
 }

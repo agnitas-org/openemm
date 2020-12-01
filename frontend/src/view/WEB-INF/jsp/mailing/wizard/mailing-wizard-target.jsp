@@ -193,12 +193,14 @@
                                             <div class="col-sm-5">
                                                 <label class="control-label">${fn:escapeXml(target.targetName)} (${target.id})</label>
                                             </div>
-                                            <div class="col-sm-2">
-                                                <button class="btn btn-regular btn-alert" type="button" data-form-set="removeTargetID:${target.id}, targetID:0" data-form-action="${ACTION_TARGET}">
-                                                    <i class="icon icon-trash-o"></i>
-                                                    <bean:message key="button.Delete"/>
-                                                </button>
-                                            </div>
+                                            <c:if test="${mailingWizardForm.altgId != target.id}">
+                                                <div class="col-sm-2">
+                                                    <button class="btn btn-regular btn-alert" type="button" data-form-set="removeTargetID:${target.id}, targetID:0" data-form-action="${ACTION_TARGET}">
+                                                        <i class="icon icon-trash-o"></i>
+                                                        <bean:message key="button.Delete"/>
+                                                    </button>
+                                                </div>
+                                            </c:if>
                                         </div>
                                     </c:if>
                                 </c:forEach>

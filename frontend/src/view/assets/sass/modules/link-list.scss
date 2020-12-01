@@ -4,6 +4,12 @@
   }
 }
 
+body.dark-theme .link-list {
+  > li + li {
+    border-color: $c-dt-dark-border;
+  }
+}
+
 .link-list-item {
   position: relative;
   display: block;
@@ -60,5 +66,17 @@
       -ms-filter: grayscale(100%);
       filter: grayscale(100%);
     }
+  }
+}
+
+body.dark-theme .link-list-item {
+  &:hover,
+  &:focus,
+  &:active,
+  &.active {
+    background-color: lighten($c-dt-tile-background, 10%);
+  }
+  .headline {
+    color: $c-dt-tile-text;
   }
 }

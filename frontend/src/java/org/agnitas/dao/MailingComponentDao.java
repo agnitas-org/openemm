@@ -30,6 +30,19 @@ public interface MailingComponentDao {
     MailingComponent getMailingComponent(int compID, @VelocityCheck int companyID);
 
     /**
+     * Loads mailing component identified by mailing id, component id and company id.
+     *
+     * @param mailingId
+     *            The id of the mailing for mailing component.
+     * @param componentId
+     *            The id of the mailing component that should be loaded.
+     * @param companyId
+     *            The companyID for mailing component.
+     * @return The MailingComponent or null on failure.
+     */
+    MailingComponent getMailingComponent(int mailingId, int componentId, @VelocityCheck int companyId);
+
+    /**
      * Loads mailing component identified by mailing id, company id and name.
      *
      * @param mailingID
@@ -99,7 +112,20 @@ public interface MailingComponentDao {
      * @return Vector of MailingComponents.
      */
     List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID);
-    
+
+    /**
+     * Loads all components identified by mailing id and company id.
+     *
+     * @param mailingID
+     *          The id of the mailing for mailing component.
+     * @param companyID
+     *          The companyID for mailing component.
+     * @param includeContent
+     *          Whether ({@code true}) or not ({@code false}) a content data (see {@link MailingComponent#getEmmBlock()} and {@link MailingComponent#getBinaryBlock()}) should be loaded.
+     * @return Vector of MailingComponents.
+     */
+    List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID, boolean includeContent);
+
     /**
      * Loads all components identified by mailing id and company id.
      *

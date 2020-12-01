@@ -10,6 +10,9 @@
 
 package com.agnitas.util;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -24,9 +27,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
 
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -171,6 +171,18 @@ public class ImageUtils {
 		graphics.dispose();
 
 		return result;
+	}
+
+	public static Dimension getImageDimension(byte[] data) {
+		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
+				BufferedImage image = ImageIO.read(inputStream);
+
+			return new Dimension(image.getWidth(), image.getHeight());
+		} catch (IOException e) {
+			logger.error("Could not get image dimensions" + e.getMessage());
+		}
+
+		return new Dimension(0, 0);
 	}
 
 	public interface ImageProcessor {

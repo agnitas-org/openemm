@@ -2,7 +2,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>
-<%@ page import="org.agnitas.beans.MailingComponent" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -11,6 +10,7 @@
 
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
 <%--@elvariable id="limitedRecipientOverview" type="java.lang.Boolean"--%>
+<%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 
 <c:set var="ACTION_LIST" value="<%= MailingBaseAction.ACTION_LIST %>"/>
 <c:set var="ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>"/>
@@ -18,8 +18,6 @@
 <c:set var="ACTION_CONFIRM_DELETE" value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>"/>
 <c:set var="ACTION_CLONE_AS_MAILING" value="<%= MailingBaseAction.ACTION_CLONE_AS_MAILING %>"/>
 <c:set var="ACTION_CREATE_FOLLOW_UP" value="<%= ComMailingBaseAction.ACTION_CREATE_FOLLOW_UP %>"/>
-
-<emm:CheckLogon/>
 
 <c:url var="mailingsOverviewLink" value="/mailingbase.do">
     <c:param name="action" value="${ACTION_LIST}"/>
@@ -97,6 +95,9 @@
         <c:choose>
             <c:when test="${mailingExists}">
                 <c:choose>
+		            <c:when test="${isPostMailing}">
+		                <c:set var="agnNavigationKey" value="mailingView_post" scope="request" />
+		            </c:when>
                     <c:when test="${limitedRecipientOverview}">
                         <c:set var="agnNavigationKey" 		value="mailingView_DisabledMailinglist"     scope="request" />
                     </c:when>
@@ -196,51 +197,53 @@
                 <c:set var="agnHelpKey"         value="mailingGeneralOptions" scope="request" />
                 <%-- View dropdown --%>
 
-                <emm:instantiate var="element" type="java.util.LinkedHashMap">
-                    <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
+                <c:if test="${not isPostMailing}">
+                    <emm:instantiate var="element" type="java.util.LinkedHashMap">
+                        <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                    <c:set target="${element}" property="btnCls" value="btn btn-secondary btn-regular dropdown-toggle"/>
-                    <c:set target="${element}" property="extraAttributes" value="data-toggle='dropdown'"/>
-                    <c:set target="${element}" property="iconBefore" value="icon-eye"/>
-                    <c:set target="${element}" property="name"><bean:message key='default.View' /></c:set>
-                    <c:set target="${element}" property="iconAfter" value="icon-caret-down"/>
+                        <c:set target="${element}" property="btnCls" value="btn btn-secondary btn-regular dropdown-toggle"/>
+                        <c:set target="${element}" property="extraAttributes" value="data-toggle='dropdown'"/>
+                        <c:set target="${element}" property="iconBefore" value="icon-eye"/>
+                        <c:set target="${element}" property="name"><bean:message key='default.View' /></c:set>
+                        <c:set target="${element}" property="iconAfter" value="icon-caret-down"/>
 
-                    <emm:instantiate var="dropDownItems" type="java.util.LinkedHashMap">
-                        <c:set target="${element}" property="dropDownItems" value="${dropDownItems}"/>
+                        <emm:instantiate var="dropDownItems" type="java.util.LinkedHashMap">
+                            <c:set target="${element}" property="dropDownItems" value="${dropDownItems}"/>
+                        </emm:instantiate>
+
+                        <%-- Dropdown items (view modes) --%>
+
+                        <emm:instantiate var="dropDownItem" type="java.util.LinkedHashMap">
+                            <c:set target="${dropDownItems}" property="0" value="${dropDownItem}"/>
+
+                            <c:set target="${dropDownItem}" property="type" value="radio"/>
+                            <c:set target="${dropDownItem}" property="radioName" value="view-state"/>
+                            <c:set target="${dropDownItem}" property="radioValue" value="block"/>
+                            <c:set target="${dropDownItem}" property="extraAttributes" value="data-view='mailingViewBase'"/>
+                            <c:set target="${dropDownItem}" property="name"><bean:message key='mailing.content.blockview' /></c:set>
+                        </emm:instantiate>
+
+                        <emm:instantiate var="dropDownItem" type="java.util.LinkedHashMap">
+                            <c:set target="${dropDownItems}" property="1" value="${dropDownItem}"/>
+
+                            <c:set target="${dropDownItem}" property="type" value="radio"/>
+                            <c:set target="${dropDownItem}" property="radioName" value="view-state"/>
+                            <c:set target="${dropDownItem}" property="radioValue" value="split"/>
+                            <c:set target="${dropDownItem}" property="extraAttributes" value="checked data-view='mailingViewBase'"/>
+                            <c:set target="${dropDownItem}" property="name"><bean:message key='mailing.content.splitview' /></c:set>
+                        </emm:instantiate>
+
+                        <emm:instantiate var="dropDownItem" type="java.util.LinkedHashMap">
+                            <c:set target="${dropDownItems}" property="2" value="${dropDownItem}"/>
+
+                            <c:set target="${dropDownItem}" property="type" value="radio"/>
+                            <c:set target="${dropDownItem}" property="radioName" value="view-state"/>
+                            <c:set target="${dropDownItem}" property="radioValue" value="hidden"/>
+                            <c:set target="${dropDownItem}" property="extraAttributes" value="data-view='mailingViewBase'"/>
+                            <c:set target="${dropDownItem}" property="name"><bean:message key='mailing.content.hidepreview' /></c:set>
+                        </emm:instantiate>
                     </emm:instantiate>
-
-                    <%-- Dropdown items (view modes) --%>
-
-                    <emm:instantiate var="dropDownItem" type="java.util.LinkedHashMap">
-                        <c:set target="${dropDownItems}" property="0" value="${dropDownItem}"/>
-
-                        <c:set target="${dropDownItem}" property="type" value="radio"/>
-                        <c:set target="${dropDownItem}" property="radioName" value="view-state"/>
-                        <c:set target="${dropDownItem}" property="radioValue" value="block"/>
-                        <c:set target="${dropDownItem}" property="extraAttributes" value="data-view='mailingViewBase'"/>
-                        <c:set target="${dropDownItem}" property="name"><bean:message key='mailing.content.blockview' /></c:set>
-                    </emm:instantiate>
-
-                    <emm:instantiate var="dropDownItem" type="java.util.LinkedHashMap">
-                        <c:set target="${dropDownItems}" property="1" value="${dropDownItem}"/>
-
-                        <c:set target="${dropDownItem}" property="type" value="radio"/>
-                        <c:set target="${dropDownItem}" property="radioName" value="view-state"/>
-                        <c:set target="${dropDownItem}" property="radioValue" value="split"/>
-                        <c:set target="${dropDownItem}" property="extraAttributes" value="checked data-view='mailingViewBase'"/>
-                        <c:set target="${dropDownItem}" property="name"><bean:message key='mailing.content.splitview' /></c:set>
-                    </emm:instantiate>
-
-                    <emm:instantiate var="dropDownItem" type="java.util.LinkedHashMap">
-                        <c:set target="${dropDownItems}" property="2" value="${dropDownItem}"/>
-
-                        <c:set target="${dropDownItem}" property="type" value="radio"/>
-                        <c:set target="${dropDownItem}" property="radioName" value="view-state"/>
-                        <c:set target="${dropDownItem}" property="radioValue" value="hidden"/>
-                        <c:set target="${dropDownItem}" property="extraAttributes" value="data-view='mailingViewBase'"/>
-                        <c:set target="${dropDownItem}" property="name"><bean:message key='mailing.content.hidepreview' /></c:set>
-                    </emm:instantiate>
-                </emm:instantiate>
+                </c:if>
 
                 <%-- Save button --%>
 

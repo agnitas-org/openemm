@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletRequest;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComRecipientDao;
@@ -73,21 +72,6 @@ public class PreviewImageServiceImpl implements PreviewImageService {
     private MediaTypesService mediaTypesService;
     private MailingComponentDao mailingComponentDao;
     protected PreviewImageGenerationQueue queue;
-
-    @Override
-    public void generateMailingPreview(HttpServletRequest request, int mailingId, boolean async) {
-        final int companyId = AgnUtils.getCompanyID(request);
-        final String sessionId = request.getRequestedSessionId();
-
-
-        int customerId = recipientDao.getPreviewRecipient(companyId, mailingId);
-        MediaTypes activeMediaType = mediaTypesService.getActiveMediaType(companyId, mailingId);
-        if (customerId > 0) {
-            queue.enqueue(new MailingPreviewTask(sessionId, companyId, mailingId, customerId, activeMediaType), async);
-        } else {
-            logger.error("Cannot create mailing preview: no test or admin recipient found");
-        }
-    }
 
     @Override
     public void generateMailingPreview(ComAdmin admin, String sessionId, int mailingId, boolean async) {
@@ -390,7 +374,6 @@ public class PreviewImageServiceImpl implements PreviewImageService {
                     component.setDescription("Mailing preview Image");
                     component.setComponentName("THUMBNAIL.png");
                     component.setBinaryBlock(preview, "image/png");
-                    component.setPresent(1);
                     mailingComponentDao.saveMailingComponent(component);
                 } else {
                 	// Fill the single thumbnail with new data
@@ -398,7 +381,6 @@ public class PreviewImageServiceImpl implements PreviewImageService {
 	                    component.setDescription("Mailing preview Image");
 	                    component.setComponentName("THUMBNAIL.png");
 	                    component.setBinaryBlock(preview, "image/png");
-	                    component.setPresent(1);
 	                    mailingComponentDao.saveMailingComponent(component);
                 	}
                 }
@@ -416,11 +398,8 @@ public class PreviewImageServiceImpl implements PreviewImageService {
 
             return baseUrl + "/mailingsend.do" + ";jsessionid=" + sessionId + "?action=" + MailingSendAction.ACTION_PREVIEW +
                     "&mailingID=" + mailingId +
-                    "&previewFormat=" + (mediaType == null ? MailingPreviewHelper.INPUT_TYPE_HTML : mediaType.getMediaCode() + 1) +
-                    "&previewCustomerID=" + customerId +
-                    "&previewDay=0" +
-                    "&previewMonth=0" +
-                    "&previewYear=0";
+                    "&previewForm.format=" + (mediaType == null ? MailingPreviewHelper.INPUT_TYPE_HTML : mediaType.getMediaCode() + 1) +
+                    "&previewForm.customerID=" + customerId;
         }
     }
 

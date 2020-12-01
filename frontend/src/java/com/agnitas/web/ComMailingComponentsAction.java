@@ -17,15 +17,14 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.Vector;
 import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
@@ -37,13 +36,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.impl.MailingComponentImpl;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
-import org.agnitas.util.GuiConstants;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.SFtpHelper;
 import org.agnitas.util.SFtpHelperFactory;
@@ -55,6 +53,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.util.Base64;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -67,11 +66,15 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.components.dto.NewFileDto;
 import com.agnitas.emm.core.components.service.ComMailingComponentsService;
+import com.agnitas.emm.core.components.service.ComMailingComponentsService.ImportStatistics;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.util.ImageUtils;
 import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.forms.ComMailingComponentsForm;
@@ -82,13 +85,13 @@ public class ComMailingComponentsAction extends StrutsActionBase {
 	
 	public static final int ACTION_SAVE_COMPONENTS = ACTION_LAST + 1;
 
-	public static final int ACTION_SAVE_COMPONENT_EDIT = ACTION_LAST + 2;
-
 	public static final int ACTION_BULK_DOWNLOAD_COMPONENT = ACTION_LAST + 3;
 
 	public static final int ACTION_UPLOAD_ARCHIVE = ACTION_LAST + 4;
 	
 	public static final int ACTION_UPLOAD_SFTP = ACTION_LAST + 5;
+
+    public static final int ACTION_RELOAD_IMAGE = ACTION_LAST + 9;
 
     public static final int ACTION_UPDATE_HOST_IMAGE = ACTION_LAST + 6;
     
@@ -168,14 +171,14 @@ public class ComMailingComponentsAction extends StrutsActionBase {
         switch (subAction) {
         case ACTION_SAVE_COMPONENTS:
             return "save_components";
-        case ACTION_SAVE_COMPONENT_EDIT:
-            return "save_component_edit";
         case ACTION_BULK_DOWNLOAD_COMPONENT:
             return "bulk_download_component";
         case ACTION_UPLOAD_ARCHIVE:
             return "upload_archive";
         case ACTION_UPLOAD_SFTP:
             return "upload_sftp";
+        case ACTION_RELOAD_IMAGE:
+            return "reload_image";
         case ACTION_UPDATE_HOST_IMAGE:
             return "update_image";
         case ACTION_BULK_CONFIRM_DELETE:
@@ -211,6 +214,8 @@ public class ComMailingComponentsAction extends StrutsActionBase {
     	ActionForward destination=null;
     	ComAdmin admin = AgnUtils.getAdmin(request);
 
+    	assert admin != null;
+
         aForm = (ComMailingComponentsForm) form;
         if (logger.isInfoEnabled()) {
         	logger.info("Action: "+aForm.getAction());
@@ -233,7 +238,10 @@ public class ComMailingComponentsAction extends StrutsActionBase {
                     
                 case ACTION_BULK_DELETE:
                     try {
-                        mailingComponentService.deleteComponents(companyId, aForm.getMailingID(), aForm.getBulkIds());
+                        if (mailingComponentService.deleteHostedImages(companyId, aForm.getMailingID(), aForm.getBulkIds())) {
+                            previewImageService.generateMailingPreview(admin, request.getSession().getId(), aForm.getMailingID(), true);
+                        }
+
                         if (StringUtils.isEmpty(mailingName)) {
                             mailingName = mailingBaseService.getMailingName(aForm.getMailingID(), companyId);
                         }
@@ -250,123 +258,25 @@ public class ComMailingComponentsAction extends StrutsActionBase {
                     aForm.setAction(ACTION_LIST);
                     destination = mapping.findForward("list");
                     break;
-                
-                case ACTION_UPDATE_HOST_IMAGE:
-                    int componentId = aForm.getComponentId();
-                    int mailingId = aForm.getMailingID();
 
-                    String imgBase64 = aForm.getImageFile();
-                    if (StringUtils.isNotBlank(imgBase64)) {
-                        String imgUri = imgBase64.split(",")[1];
-                        byte[] imageBytes = Base64.decodeBase64(imgUri);
-                        mailingComponentService.updateHostImage(mailingId, companyId, componentId, imageBytes);
-                        if (StringUtils.isEmpty(mailingName)) {
-                            mailingBaseService.getMailingName(mailingId, companyId);
-                        }
-                        writeUserActivityLog(admin, "update mailing component",
-                                String.format("%s(%d), edited component (%d)", mailingName, mailingId, componentId));
-                    }
+                case ACTION_RELOAD_IMAGE:
+                    reloadImage(admin, aForm, request.getSession().getId(), messages, errors);
+                    aForm.setAction(ACTION_LIST);
+                    destination = mapping.findForward("list");
+                    break;
+
+                case ACTION_UPDATE_HOST_IMAGE:
+                    updateHostImage(admin, aForm, request.getSession().getId(), messages, errors);
+                    aForm.setAction(ACTION_LIST);
                     destination = mapping.findForward("list");
                     break;
 
                 case ACTION_SAVE_COMPONENTS:
-                    destination = mapping.findForward("list");
-                    Mailing mailing = mailingDao.getMailing(aForm.getMailingID(), companyId);
-            		try {
-                        boolean existArchiveFile = false;
-                        int stored = 0;
-                        int found = 0;
-                        for (FormFile file : aForm.getAllFiles().values()) {
-                            if (file != null && StringUtils.endsWithIgnoreCase(file.getFileName(), ".zip")) {
-                                ComMailingComponentsService.UploadStatistics statistics = mailingComponentService.uploadZipArchive(mailing, file);
-                                stored += statistics.getStored();
-                                found += statistics.getFound();
-                                existArchiveFile = true;
-                            }
-                        }
-                        if (!existArchiveFile) {
-		                    List<String> invalidLinksFilenameList = graphicLinkTargetsContainsInvalidCharacters(aForm);
-		                    if (invalidLinksFilenameList.size() > 0) {
-		                    	errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.error.invalidLinkTarget", invalidLinksFilenameList));
-		                    	break;
-		                    }
-		                    
-		                    if (!isValidPictureFiles(aForm)) {
-		                        aForm.setAction(ACTION_SAVE_COMPONENTS);
-		                        errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("grid.divchild.format.error"));
-		                        break;
-		                    }
-		                    
-		                    if (checkNewComponentSizes(aForm, errors, messages)) {
-			                    if (!saveComponent(aForm, request, messages, errors)) {
-			                        previewImageService.generateMailingPreview(request, aForm.getMailingID(), true);
-			                    }
-			                    aForm.setAction(ACTION_SAVE_COMPONENTS);
-			                    Enumeration<String> parameterNames = request.getParameterNames();
-			                    boolean aComponentWasJustDeleted = false;
-			                    boolean aComponentWasJustUpdated = false;
-			                    while (parameterNames.hasMoreElements()) {
-			                    	String parameterString = parameterNames.nextElement();
-			                        if (parameterString.startsWith("delete") && AgnUtils.parameterNotEmpty(request, parameterString)){
-			                            aComponentWasJustDeleted = true;
-			                            break;
-			                        }
-			                        if (parameterString.startsWith("update") && AgnUtils.parameterNotEmpty(request, parameterString)){
-			                            aComponentWasJustUpdated = true;
-			                            break;
-			                        }
-			                    }
-			
-			                    // Show "changes saved" or error message
-			                    if (aComponentWasJustUpdated || aComponentWasJustDeleted) {
-			                        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
-			                    } else {
-			                        Set<Integer> indices = aForm.getIndices();
-			                        boolean componentsAreValid = !indices.isEmpty();
-			                        if (componentsAreValid) {
-			                            for (Integer index : indices) {
-			                                FormFile file = aForm.getNewFile(index);
-			                                if (StringUtils.isEmpty(file.getFileName())) {
-			                                    componentsAreValid = false;
-			                                    break;
-			                                }
-			                            }
-			                        }
-			
-			                        if (componentsAreValid) {
-			                            messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
-			                        } else {
-			                            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.errors.no_component_file"));
-			                        }
-			                    }
-		                    }
-                        } else {
-                            if (stored > 0) {
-                                mailingDao.saveMailing(mailing, false);
-                                mailingName = StringUtils.defaultString(mailing.getShortname());
-                                writeUserActivityLog(admin, "upload archive", String.format("%s(%d), uploaded images from archive", mailingName, aForm.getMailingID()));
-                    		}
-                            if (found > 0) {
-                                messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("items_saved", stored, found));
-                            }
-                            messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
-                        }
-                    } catch (Exception e) {
-                        logger.error("error uploading ZIP archive", e);
-                        errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.Graphics_Component.zipUploadFailed"));
-                	}
-                	
+                    saveComponents(admin, aForm, request.getSession().getId(), messages, errors);
+                    aForm.setAction(ACTION_LIST);
                 	destination = mapping.findForward("list");
                 	break;
 
-                case ACTION_SAVE_COMPONENT_EDIT:
-                    destination=mapping.findForward("component_edit");
-                    saveComponent(aForm, request, messages, errors);
-                    aForm.setAction(ACTION_SAVE_COMPONENTS);
-
-                    // Show "changes saved"
-                	messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
-                    break;
                 case ACTION_BULK_DOWNLOAD_COMPONENT:
                     aForm.setAction(ACTION_SAVE_COMPONENTS);
                     destination = mapping.findForward("list");
@@ -379,7 +289,7 @@ public class ComMailingComponentsAction extends StrutsActionBase {
 
                     if (zipFile != null) {
                         try (FileInputStream instream = new FileInputStream(zipFile)) {
-                            String filename = getExportFilename(aForm) + ".zip";
+                            String filename = getExportFilename(admin, aForm) + ".zip";
 
                             response.setContentType("application/zip");
 			                HttpUtils.setDownloadFilenameHeader(response, filename);
@@ -421,10 +331,12 @@ public class ComMailingComponentsAction extends StrutsActionBase {
 
                 case ACTION_DELETE:
                     MailingComponent mailingComponent = mailingComponentService.getComponent(aForm.getComponentId(), companyId);
-                    if (mailingComponent != null) {
+                    if (mailingComponent != null && mailingComponent.getType() == MailingComponent.TYPE_HOSTED_IMAGE) {
                         mailingComponentService.deleteComponent(mailingComponent);
+                        previewImageService.generateMailingPreview(admin, request.getSession().getId(), aForm.getMailingID(), true);
+
                         if (StringUtils.isEmpty(mailingName)) {
-                            mailingName = mailingBaseService.getMailingName(aForm.getMailingID(), aForm.getComponentId());
+                            mailingName = mailingBaseService.getMailingName(aForm.getMailingID(), companyId);
                         }
                         mailingName = StringUtils.defaultString(mailingName);
                         writeUserActivityLog(admin, "delete mailing component",
@@ -509,39 +421,97 @@ public class ComMailingComponentsAction extends StrutsActionBase {
 
         return destination;
     }
-    
-	private boolean checkNewComponentSizes(ComMailingComponentsForm form, ActionMessages errors, ActionMessages messages) {
-		for (int index : form.getIndices()) {
-			if (form.getNewFile(index).getFileSize() > configService.getIntegerValue(ConfigValue.MaximumUploadImageSize)) {
-				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("component.size.error", configService.getIntegerValue(ConfigValue.MaximumUploadImageSize) / 1024f / 1024));
-				return false;
-			} else if (form.getNewFile(index).getFileSize() > configService.getIntegerValue(ConfigValue.MaximumWarningImageSize)) {
-				messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.component.size", configService.getIntegerValue(ConfigValue.MaximumWarningImageSize) / 1024f / 1024));
-			}
-		}
-		return true;
-	}
- 
-	private void uploadSftp(HttpServletRequest req, ComMailingComponentsForm aForm, ActionMessages errors, ActionMessages messages) throws Exception {
+
+    private List<NewFileDto> getNewFiles(ComMailingComponentsForm form) {
+	    List<NewFileDto> newImages = new ArrayList<>();
+
+	    for (int index : form.getIndices()) {
+	        FormFile file = form.getNewFile(index);
+
+	        if (StringUtils.isNotEmpty(file.getFileName())) {
+                newImages.add(new NewFileDto(
+                        file,
+                        form.getLink(index),
+                        form.getDescriptionByIndex(index),
+                        form.getMobileComponentBaseComponent(index)
+                ));
+            }
+        }
+
+	    return newImages;
+    }
+
+    private boolean containsArchives(List<NewFileDto> newImages) {
+	    for (NewFileDto newFile : newImages) {
+	        if (StringUtils.endsWithIgnoreCase(newFile.getFile().getFileName(), ".zip")) {
+	            return true;
+            }
+        }
+
+	    return false;
+    }
+
+    private void saveComponents(ComAdmin admin, ComMailingComponentsForm form, String sessionId, ActionMessages messages, ActionMessages errors) {
+	    // Make sure that all uploaded files are allowed images or zip-archives.
+	    if (validateFileExtensions(admin, form, errors)) {
+	        // Validate links for images (not applicable for zip-archives).
+            if (validateFileLinks(form, errors)) {
+                List<NewFileDto> newImages = getNewFiles(form);
+
+                if (newImages.size() > 0) {
+                    List<UserAction> userActions = new ArrayList<>();
+                    ServiceResult<ImportStatistics> result = mailingComponentService.importImagesBulk(admin, form.getMailingID(), newImages, userActions);
+
+                    if (result.isSuccess()) {
+                        previewImageService.generateMailingPreview(admin, sessionId, form.getMailingID(), true);
+
+                        // Files found / files effectively stored.
+                        ImportStatistics statistics = result.getResult();
+
+                        // Show numbers if multiple files or at least one archive uploaded (otherwise show default success message).
+                        if (statistics.getFound() > 1 || containsArchives(newImages)) {
+                            messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("items_saved", statistics.getStored(), statistics.getFound()));
+                        } else {
+                            messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
+                        }
+
+                        userActions.forEach(userAction -> writeUserActivityLog(admin, userAction));
+                    }
+
+                    result.extractMessagesTo(messages, errors);
+                } else {
+                    errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.errors.no_component_file"));
+                }
+            }
+        }
+    }
+
+    private void uploadSftp(HttpServletRequest req, ComMailingComponentsForm aForm, ActionMessages errors, ActionMessages messages) {
 		String sftpFilePath = aForm.getSftpFilePath();
 
 		try {
 		    if (StringUtils.isEmpty(sftpFilePath)) {
 		        errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.errors.no_sftp_file"));
 		    } else {
+		        final ComAdmin admin = AgnUtils.getAdmin(req);
                 final int companyId = AgnUtils.getCompanyID(req);
                 final String serverAndCredentials = configService.getEncryptedValue(ConfigValue.DefaultSftpServerAndCredentials, companyId);
                 final String privateKey = configService.getEncryptedValue(ConfigValue.DefaultSftpPrivateKey, companyId);
 
-                Mailing mailing = mailingDao.getMailing(aForm.getMailingID(), companyId);
-		        ComMailingComponentsService.UploadStatistics statistics = mailingComponentService.uploadSFTP(mailing, serverAndCredentials, privateKey, sftpFilePath);
+                List<UserAction> userActions = new ArrayList<>();
+                ServiceResult<ImportStatistics> result = mailingComponentService.importImagesFromSftp(admin, aForm.getMailingID(), serverAndCredentials, privateKey, sftpFilePath, userActions);
 
-                if (statistics.getStored() > 0) {
-                    mailingDao.saveMailing(mailing, false);
-                } else if (statistics.getFound() <= 0) {
-                    throw new Exception("File(s) not found on SFTP server");
+                if (result.isSuccess()) {
+                    previewImageService.generateMailingPreview(admin, req.getSession().getId(), aForm.getMailingID(), true);
+
+                    // Files found / files effectively stored.
+                    ImportStatistics statistics = result.getResult();
+                    messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("items_saved", statistics.getStored(), statistics.getFound()));
+
+                    userActions.forEach(userAction -> writeUserActivityLog(admin, userAction));
                 }
-                messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("items_saved", statistics.getStored(), statistics.getFound()));
+
+                result.extractMessagesTo(messages, errors);
 		    }
 		} catch (Exception e) {
 		    logger.error("Error uploading SFTP archive", e);
@@ -590,204 +560,130 @@ public class ComMailingComponentsAction extends StrutsActionBase {
 		form.setFileSizes(mailingComponentService.getImageSizes(AgnUtils.getCompanyID(req), form.getMailingID()));
 		form.setTimestamps(mailingComponentService.getImageTimestamps(AgnUtils.getCompanyID(req), form.getMailingID(), dateFormat));
 	}
- 
-	protected void addUploadedFiles(ComMailingComponentsForm componentForm, Mailing mailing, HttpServletRequest req, ActionMessages messages, ActionMessages errors) throws Exception {
-		Set<Integer> indices = componentForm.getIndices();
 
-		int foundItemsToStore = 0;
-		int successfullyStoredItems = 0;
-		
-		for (int index : indices) {
-			// Check if any part of this item was filled at all
-            FormFile file = componentForm.getNewFile(index);
-            if (file != null && StringUtils.isNotBlank(file.getFileName()) && file.getFileName().toLowerCase().endsWith(".zip")) {
-                ComMailingComponentsService.UploadStatistics statistics = mailingComponentService.uploadZipArchive(mailing, file);
-                foundItemsToStore += statistics.getFound();
-                successfullyStoredItems += statistics.getStored();
-                writeUserActivityLog(AgnUtils.getAdmin(req), "upload mailing component file", "Mailing ID: " + mailing.getId() + ", type: ZIP, Name: " + file.getFileName() + ", found items to store: " + statistics.getFound() + ", successfully stored items: " + statistics.getStored());
-            } else {
-	            String link = componentForm.getLink(index);
-	            String description = componentForm.getDescriptionByIndex(index);
-	            String baseComponentForMobileComponent = componentForm.getMobileComponentBaseComponent(index);
-	
-				if ((file != null && StringUtils.isNotBlank(file.getFileName()))
-						|| StringUtils.isNotBlank(link)
-						|| StringUtils.isNotBlank(description)
-						|| StringUtils.isNotBlank(baseComponentForMobileComponent)) {
-					foundItemsToStore++;
-					// Check if mandatory parts are missing
-					if (file == null || StringUtils.isBlank(file.getFileName())) {
-		                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.errors.no_component_file"));
-		            } else {
-						String newComponentName = null;
-						if (StringUtils.isNotBlank(baseComponentForMobileComponent)) {
-							newComponentName = ShowImageServlet.MOBILE_IMAGE_PREFIX + baseComponentForMobileComponent;
-							if (StringUtils.isBlank(description)) {
-	                            description = "Mobile component for " + baseComponentForMobileComponent;
-							} else {
-	                            description = description + " / Mobile component for " + baseComponentForMobileComponent;
-							}
-						}
-		
-						if (StringUtils.isBlank(newComponentName)) {
-	                        newComponentName = file.getFileName();
-	                    }
-	
-	                    try {
-	                        if (file.getFileSize() > 0) {
-	                        	MailingComponent component = mailing.getComponents().get(newComponentName);
-								if (component != null && component.getType() == MailingComponent.TYPE_HOSTED_IMAGE) {
-									// Update existing image
-									component.setBinaryBlock(file.getFileData(), file.getContentType());
-									component.setLink(link);
-									component.setDescription(description);
-								} else {
-									// Store new image
-									component = new MailingComponentImpl();
-									component.setCompanyID(mailing.getCompanyID());
-									component.setMailingID(componentForm.getMailingID());
-									component.setType(MailingComponent.TYPE_HOSTED_IMAGE);
-									component.setDescription(description);
-									component.setComponentName(newComponentName);
-									component.setBinaryBlock(file.getFileData(), file.getContentType());
-									component.setLink(link);
-									mailing.addComponent(component);
-								}
-							}
-						} catch (Exception e) {
-							logger.error("saveComponent: " + e);
-						}
-	
-						if (componentForm.getAction() == ACTION_SAVE_COMPONENT_EDIT) {
-							req.setAttribute("file_path",
-									AgnUtils.getAdmin(req).getCompany().getRdirDomain() + "/image?ci=" + mailing.getCompanyID() + "&mi=" + componentForm.getMailingID() + "&name=" + file.getFileName());
-						}
-						
-						// Reset MobileComponentBaseComponent for next upload request from gui
-	                    componentForm.setMobileComponentBaseComponent(index, "");
-						successfullyStoredItems++;
-                        writeUserActivityLog(AgnUtils.getAdmin(req), "upload mailing component file", "Mailing ID: "+mailing.getId() + ", type: image, name: " + newComponentName);
-		            }
-				}
-            }
-		}
-		
-		if (foundItemsToStore > 0) {
-			messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("items_saved", successfullyStoredItems, foundItemsToStore));
-		}
-	}
-    
-    private List<String> graphicLinkTargetsContainsInvalidCharacters(ComMailingComponentsForm form) {
+    private boolean validateFileLinks(ComMailingComponentsForm form, ActionMessages errors) {
     	List<String> filenames = new Vector<>();
 
-    	Set<Integer> indices = form.getIndices();
-    	for (int index : indices) {
-    		String link = form.getLink(index);
-    		
-    		if (link == null || link.contains(" ") || link.contains("\"") || link.contains("'")) {
-    			filenames.add(form.getNewFile(index).getFileName());
-    		}
+    	for (int index : form.getIndices()) {
+    	    FormFile file = form.getNewFile(index);
+    	    String filename = file.getFileName();
+
+    	    String extension = AgnUtils.getFileExtension(filename);
+
+    	    // Links are not applicable for zip-archives so ignore.
+    	    if (!extension.equalsIgnoreCase("zip")) {
+                String link = form.getLink(index);
+
+                if (StringUtils.isNotEmpty(link) && (link.contains(" ") || link.contains("\"") || link.contains("'"))) {
+                    filenames.add(filename);
+                }
+            }
     	}
-    	
-    	return filenames;
+
+    	if (filenames.size() > 0) {
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.error.invalidLinkTarget", filenamesToHtml(filenames)));
+            return false;
+        }
+
+        return true;
     }
-    
-    private boolean isValidPictureFiles(ComMailingComponentsForm form) {
+
+    private boolean validateFileExtensions(ComAdmin admin, ComMailingComponentsForm form, ActionMessages errors) {
+	    Set<String> filenames = new LinkedHashSet<>();
+
         for (FormFile file : form.getAllFiles().values()) {
             String name = file.getFileName();
 
             if (StringUtils.isEmpty(name)) {
-                return false;
-            }
-
-            String extension = AgnUtils.getFileExtension(name);
-            if (!ImageUtils.isValidImageFileExtension(extension) && !"zip".equalsIgnoreCase(extension)) {
-                return false;
+                filenames.add("<blank>");
+            } else {
+                String extension = AgnUtils.getFileExtension(name);
+                if (!ImageUtils.isValidImageFileExtension(extension) && !"zip".equalsIgnoreCase(extension)) {
+                    filenames.add(name);
+                }
             }
         }
+
+        if (filenames.size() > 0) {
+            String message = I18nString.getLocaleString("grid.divchild.format.error", admin.getLocale()) + filenamesToHtml(filenames);
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(message, false));
+            return false;
+        }
+
         return true;
     }
-    
+
+    private String filenamesToHtml(Collection<String> filenames) {
+        StringBuilder sb = new StringBuilder();
+
+        for (String filename : filenames) {
+            sb.append("<br><b>").append(StringEscapeUtils.escapeHtml4(filename)).append("</b>");
+        }
+
+        return sb.toString();
+    }
+
     protected List<MailingComponent> loadComponents(ComMailingComponentsForm form, HttpServletRequest request) {
         List<MailingComponent> components = mailingComponentService.getComponentsByType(AgnUtils.getCompanyID(request),
                 form.getMailingID(), Arrays.asList(MailingComponent.TYPE_HOSTED_IMAGE, MailingComponent.TYPE_IMAGE));
         request.setAttribute("components", components);
         return components;
     }
-    
-    protected void checkAndRemoveUploadDuplicates(Mailing aMailing, ComMailingComponentsForm form) {
-		// Delete previous images with same name as uploaded image
-        for (MailingComponent storedComponent : aMailing.getComponents().values()) {
-        	if (storedComponent.getType() == MailingComponent.TYPE_HOSTED_IMAGE) {
-        		for (int index : form.getIndices()) {
-        			String newComponentName = form.getNewFile(index).getFileName();
-        			String baseComponentForMobileComponent = form.getMobileComponentBaseComponent(index);
-        			if (StringUtils.isNotBlank(baseComponentForMobileComponent)) {
-        				newComponentName = ShowImageServlet.MOBILE_IMAGE_PREFIX + baseComponentForMobileComponent;
-        			}
-        			
-		        	if (storedComponent.getComponentName().equals(newComponentName)) {
-		                mailingComponentService.deleteComponent(storedComponent);
-		                break;
-		            }
-        		}
-	        }
-        }
-	}
-    
-    /**
-     * Saves components.
-     * @throws Exception
-     */
-    protected boolean saveComponent(ComMailingComponentsForm aForm, HttpServletRequest req, ActionMessages messages, ActionMessages errors) throws Exception {
-        boolean somethingDeleted = false;
 
-        // Retrieves all the components
-        Mailing aMailing = mailingDao.getMailing(aForm.getMailingID(), AgnUtils.getCompanyID(req));
-        Map<String, MailingComponent> componentsMap = aMailing.getComponents();
-        Set<String> updatedComponents = new HashSet<>();
+    private void reloadImage(ComAdmin admin, ComMailingComponentsForm form, String sessionId, ActionMessages messages, ActionMessages errors) {
+	    int mailingId = form.getMailingID();
+	    int componentId = form.getComponentId();
+	    String mailingName = form.getShortname();
 
-        for (MailingComponent storedComponent : componentsMap.values()) {
-            switch (storedComponent.getType()) {
-                case MailingComponent.TYPE_IMAGE:
-                    if (AgnUtils.parameterNotEmpty(req, "update" + storedComponent.getId())) {
-                        updatedComponents.add(storedComponent.getComponentName());
-                        storedComponent.loadContentFromURL();
-                    }
-                    break;
+        ServiceResult<Boolean> result = mailingComponentService.reloadImage(admin, mailingId, componentId);
 
-                case MailingComponent.TYPE_HOSTED_IMAGE:
-                    if (AgnUtils.parameterNotEmpty(req, "delete" + storedComponent.getId())) {
-                        somethingDeleted = true;
-                        mailingComponentService.deleteComponent(storedComponent);
-                    }
-                    break;
-                    
-				default:
-					break;
+        if (result.isSuccess()) {
+            messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
+
+            if (result.getResult()) {
+                // Re-generate mailing preview iff component has been changed.
+                previewImageService.generateMailingPreview(admin, sessionId, mailingId, true);
             }
-        }
 
-		// Delete previous images with same name as uploaded image
-        checkAndRemoveUploadDuplicates(aMailing, aForm);
-
-        // Remove untouched components to avoid an unnecessary updating
-        Iterator<Map.Entry<String, MailingComponent>> iterator = componentsMap.entrySet().iterator();
-        while (iterator.hasNext()) {
-            if (!updatedComponents.contains(iterator.next().getKey())) {
-                iterator.remove();
+            if (StringUtils.isEmpty(mailingName)) {
+                mailingName = mailingBaseService.getMailingName(mailingId, admin.getCompanyID());
             }
+
+            writeUserActivityLog(admin, "update mailing component",
+                    String.format("%s(%d), reloaded component (%d)", mailingName, mailingId, componentId));
         }
 
-        addUploadedFiles(aForm, aMailing, req, messages, errors);
+        result.extractMessagesTo(messages, errors);
+    }
 
-        mailingDao.saveMailing(aMailing, false);
+    private void updateHostImage(ComAdmin admin, ComMailingComponentsForm form, String sessionId, ActionMessages messages, ActionMessages errors) {
+        int mailingId = form.getMailingID();
+        int componentId = form.getComponentId();
+        String mailingName = form.getShortname();
 
-        return !somethingDeleted;
+        String imgBase64 = form.getImageFile();
+        if (StringUtils.isNotBlank(imgBase64)) {
+            messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
+
+            if (mailingComponentService.updateHostImage(mailingId, admin.getCompanyID(), componentId, Base64.decodeBase64(imgBase64))) {
+                // Re-generate mailing preview iff component has been changed.
+                previewImageService.generateMailingPreview(admin, sessionId, mailingId, true);
+            }
+
+            if (StringUtils.isEmpty(mailingName)) {
+                mailingName = mailingBaseService.getMailingName(mailingId, admin.getCompanyID());
+            }
+
+            writeUserActivityLog(admin, "update mailing component",
+                    String.format("%s(%d), edited component (%d)", mailingName, mailingId, componentId));
+        } else {
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("Error"));
+        }
     }
     
-    protected String getExportFilename(ComMailingComponentsForm aForm) {
-        return "Uploaded_images_mailingId_"+ aForm.getMailingID()+ "_" + new SimpleDateFormat(DateUtilities.YYYYMD).format(new Date());
+    protected String getExportFilename(ComAdmin admin, ComMailingComponentsForm aForm) {
+	    SimpleDateFormat dateFormat = DateUtilities.getFormat(DateUtilities.YYYYMD, TimeZone.getTimeZone(admin.getAdminTimezone()));
+        return "Uploaded_images_mailingId_"+ aForm.getMailingID()+ "_" + dateFormat.format(new Date());
     }
     
     protected File createComponentsZipFile(int companyId, int mailingId, Set<Integer> selectedComponentIds) throws IOException {

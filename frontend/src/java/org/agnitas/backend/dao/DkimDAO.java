@@ -10,20 +10,21 @@
 
 package org.agnitas.backend.dao;
 
-import	java.sql.SQLException;
-import	java.util.ArrayList;
-import	java.util.List;
-import	java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-import	javax.crypto.Cipher;
-import	javax.crypto.SecretKey;
-import	javax.crypto.spec.SecretKeySpec;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
-import	org.agnitas.backend.DBase;
-import	org.agnitas.backend.EMail;
-import	org.agnitas.backend.StringOps;
-import	org.agnitas.util.Log;
-import	org.apache.commons.codec.binary.Base64;
+import org.agnitas.backend.DBase;
+import org.agnitas.backend.EMail;
+import org.agnitas.backend.StringOps;
+import org.agnitas.util.Log;
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * Accesses all information for DKIM generation
@@ -31,14 +32,14 @@ import	org.apache.commons.codec.binary.Base64;
 public class DkimDAO {
 	public class DKIM {
 		@SuppressWarnings("unused")
-		private long	id;
-		private boolean	local;
-		private String	key;
-		private String	domain;
-		private String	selector;
-		private boolean	ident;
+		private long id;
+		private boolean local;
+		private String key;
+		private String domain;
+		private String selector;
+		private boolean ident;
 
-		private DKIM (long nId, boolean nLocal, String nKey, String nDomain, String nSelector) {
+		private DKIM(long nId, boolean nLocal, String nKey, String nDomain, String nSelector) {
 			id = nId;
 			local = nLocal;
 			key = nKey;
@@ -46,53 +47,63 @@ public class DkimDAO {
 			selector = nSelector;
 			ident = false;
 		}
-		private boolean valid () {
+
+		private boolean valid() {
 			return (key != null) && (domain != null) && (selector != null);
 		}
-		private boolean local () {
+
+		private boolean local() {
 			return local;
 		}
-		private boolean match (EMail email) {
+
+		private boolean match(EMail email) {
 			if ((email != null) && (email.domain != null)) {
-				return domain.equalsIgnoreCase (email.domain);
+				return domain.equalsIgnoreCase(email.domain);
 			}
 			return false;
 		}
-		private boolean matchSubdomain (EMail email) {
+
+		private boolean matchSubdomain(EMail email) {
 			if ((email != null) && (email.domain != null)) {
-				if ((email.pure_puny.length () > domain.length ()) && (email.pure_puny.charAt (email.pure_puny.length () - domain.length () - 1) == '.')) {
-					return email.pure_puny.endsWith (domain);
+				if ((email.pure_puny.length() > domain.length()) && (email.pure_puny.charAt(email.pure_puny.length() - domain.length() - 1) == '.')) {
+					return email.pure_puny.endsWith(domain);
 				}
 			}
 			return false;
 		}
-		private void ident (boolean nIdent) {
+
+		private void ident(boolean nIdent) {
 			ident = nIdent;
 		}
-		public String key () {
+
+		public String key() {
 			return key;
 		}
-		public String domain () {
+
+		public String domain() {
 			return domain;
 		}
-		public String selector () {
+
+		public String selector() {
 			return selector;
 		}
-		public boolean ident () {
+
+		public boolean ident() {
 			return ident;
 		}
 	}
-	private long		companyID;
-	private byte[]		secretKey;
-	private List <DKIM>	dkims;
-	
-	public DkimDAO (DBase dbase, long forCompanyID, byte[] useSecretKey) throws SQLException {
-		List <Map <String, Object>>	rq;
-		
+
+	private long companyID;
+	private byte[] secretKey;
+	private List<DKIM> dkims;
+
+	public DkimDAO(DBase dbase, long forCompanyID, byte[] useSecretKey) throws SQLException {
+		List<Map<String, Object>> rq;
+
 		companyID = forCompanyID;
 		secretKey = useSecretKey;
 		dkims = new ArrayList <> ();
-		if (dbase.tableExists ("dkim_key_tbl")) {
+		if (dbase.exists ("dkim_key_tbl")) {
 			try (DBase.With with = dbase.with ()) {
 				rq = dbase.query (with.jdbc (),
 						  "SELECT * FROM dkim_key_tbl " +
@@ -112,9 +123,9 @@ public class DkimDAO {
 				
 					if (dkimKeySecret != null) {
 						try {
-							dkimKey = decrypt (dkimKeySecret);
+							dkimKey = decrypt(dkimKeySecret);
 						} catch (Exception e) {
-							dbase.logging ((dkimKey != null ? Log.WARNING : Log.ERROR), "dkim", "Entry " + dkimID + " has invalid encrypted key (" + e.toString () + ")" + (dkimKey != null ? ", fall back to plain version" : ""));
+							dbase.logging((dkimKey != null ? Log.WARNING : Log.ERROR), "dkim", "Entry " + dkimID + " has invalid encrypted key (" + e.toString() + ")" + (dkimKey != null ? ", fall back to plain version" : ""));
 						}
 					} else if ((dkimKey != null) && hasSecret) {
 						try {
@@ -124,38 +135,34 @@ public class DkimDAO {
 								      "domainKey", encrypt (dkimKey));
 							dbase.logging (Log.DEBUG, "dkim", "Added encrypted key to " + dkimID);
 						} catch (SQLException e) {
-							dbase.logging (Log.ERROR, "dkim", "Failed to add encrypted key to " + dkimID + ": " + e);
+							dbase.logging(Log.ERROR, "dkim", "Failed to add encrypted key to " + dkimID + ": " + e);
 						} catch (Exception e) {
-							dbase.logging (Log.WARNING, "dkim", "Failed to encrypt entry " + dkimID + ": " + e);
+							dbase.logging(Log.WARNING, "dkim", "Failed to encrypt entry " + dkimID + ": " + e);
 						}
 					}
-					dkim = new DKIM (dkimID,
-							 dbase.asLong (row.get ("company_id")) == companyID,
-							 dkimKey,
-							 StringOps.punycodeDomain (dbase.asString (row.get ("domain"))),
-							 dbase.asString (row.get ("selector")));
-					if (dkim.valid ()) {
-						dkims.add (dkim);
+					dkim = new DKIM(dkimID, dbase.asLong(row.get("company_id")) == companyID, dkimKey, StringOps.punycodeDomain(dbase.asString(row.get("domain"))), dbase.asString(row.get("selector")));
+					if (dkim.valid()) {
+						dkims.add(dkim);
 					}
 				}
 			}
 		}
 	}
-	
-	public DKIM find (EMail email, boolean useLocal, boolean useGlobal) {
-		DKIM	local = null;
-		DKIM	global = null;
-		
+
+	public DKIM find(EMail email, boolean useLocal, boolean useGlobal) {
+		DKIM local = null;
+		DKIM global = null;
+
 		for (DKIM dkim : dkims) {
-			if (dkim.local () && dkim.match (email)) {
-				dkim.ident (true);
+			if (dkim.local() && dkim.match(email)) {
+				dkim.ident(true);
 				return dkim;
 			}
 		}
 		for (DKIM dkim : dkims) {
-			if (dkim.local ()) {
-				if (dkim.matchSubdomain (email)) {
-					dkim.ident (true);
+			if (dkim.local()) {
+				if (dkim.matchSubdomain(email)) {
+					dkim.ident(true);
 					return dkim;
 				}
 				if (useLocal && (local == null)) {
@@ -167,27 +174,28 @@ public class DkimDAO {
 				}
 			}
 		}
-		
-		DKIM	fallback = local != null ? local : global;
-		
+
+		DKIM fallback = local != null ? local : global;
+
 		if (fallback != null) {
-			fallback.ident (false);
+			fallback.ident(false);
 		}
 		return fallback;
 	}
 
-	private String decrypt (String content) throws Exception {
-		SecretKey secKey = new SecretKeySpec (secretKey, "AES");
-		Cipher cipher = Cipher.getInstance ("AES");
+	private String decrypt(String content) throws Exception {
+		SecretKey secKey = new SecretKeySpec(secretKey, "AES");
+		Cipher cipher = Cipher.getInstance("AES");
 
-		cipher.init (Cipher.DECRYPT_MODE, secKey);
-		return new String (cipher.doFinal (Base64.decodeBase64 (content.getBytes ("UTF-8"))));
+		cipher.init(Cipher.DECRYPT_MODE, secKey);
+		return new String(cipher.doFinal(Base64.decodeBase64(content.getBytes(StandardCharsets.UTF_8))));
 	}
-	private String encrypt (String content) throws Exception {
-		SecretKey secKey = new SecretKeySpec (secretKey,"AES");
-		Cipher cipher = Cipher.getInstance ("AES");
 
-		cipher.init (Cipher.ENCRYPT_MODE, secKey);
-		return new String (Base64.encodeBase64 (cipher.doFinal (content.getBytes ("UTF-8"))));
+	private String encrypt(String content) throws Exception {
+		SecretKey secKey = new SecretKeySpec(secretKey, "AES");
+		Cipher cipher = Cipher.getInstance("AES");
+
+		cipher.init(Cipher.ENCRYPT_MODE, secKey);
+		return new String(Base64.encodeBase64(cipher.doFinal(content.getBytes(StandardCharsets.UTF_8))));
 	}
 }

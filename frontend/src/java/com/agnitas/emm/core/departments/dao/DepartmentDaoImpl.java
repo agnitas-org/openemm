@@ -30,7 +30,7 @@ public final class DepartmentDaoImpl extends BaseDaoImpl implements DepartmentDa
 
 	@Override
 	public final Department getDepartmentByID(final int departmentID) throws UnknownDepartmentIdException {
-		final List<Department> list = select(logger, "SELECT * FROM department_tbl WHERE department_id=?", new DepartmentRowMapper(), departmentID);
+		final List<Department> list = select(logger, "SELECT * FROM department_tbl WHERE department_id = ?", new DepartmentRowMapper(), departmentID);
 		
 		if(list.isEmpty()) {
 			throw new UnknownDepartmentIdException(departmentID);

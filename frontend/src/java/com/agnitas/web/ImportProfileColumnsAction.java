@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
-import org.agnitas.beans.ProfileField;
 import org.agnitas.beans.impl.ColumnMappingImpl;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.ProfileFieldDao;
@@ -62,9 +61,13 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.json.Json5Reader;
+import com.agnitas.json.JsonObject;
+import com.agnitas.json.JsonReader.JsonToken;
 import com.agnitas.web.forms.ImportProfileColumnsForm;
 
 /**
@@ -327,8 +330,6 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
      * @throws Exception
      */
     protected boolean checkErrorsOnSave(ComAdmin admin, ImportProfileColumnsForm aForm, ActionMessages errors) throws Exception {
-        boolean returnValue = false;
-
         // Check for valid default values
         for (ColumnMapping mapping : aForm.getProfile().getColumnMapping()) {
             String dbColumnName = mapping.getDatabaseColumn();
@@ -352,18 +353,20 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 
             if (checkThisValue && StringUtils.isNotEmpty(mapping.getDefaultValue()) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(dbColumnName)) {
                 ProfileField profileField = profileFieldDao.getProfileField(aForm.getProfile().getCompanyId(), dbColumnName);
-                if (profileField.getSimpleDataType() == DbColumnType.SimpleDataType.Numeric && !AgnUtils.isDouble(defaultValue)) {
+                if ((profileField.getSimpleDataType() == DbColumnType.SimpleDataType.Numeric || profileField.getSimpleDataType() == DbColumnType.SimpleDataType.Float) && !AgnUtils.isDouble(defaultValue)) {
                     errors.add("global", new ActionMessage("error.import.column.invalid_default.numeric", dbColumnName));
-                    returnValue = true;
-                } else if (profileField.getSimpleDataType() == DbColumnType.SimpleDataType.Date) {
-                    String dateFormatPattern = DateFormat.getDateFormatById(aForm.getProfile().getDateFormat()).getValue();
-                    SimpleDateFormat dateFormat = new SimpleDateFormat(dateFormatPattern);
-                    try {
-                        dateFormat.parse(defaultValue);
-                    } catch (Exception e) {
-                        errors.add("global", new ActionMessage("error.import.column.invalid_default.date", dbColumnName, dateFormatPattern));
-                        returnValue = true;
-                    }
+                    return true;
+                } else if (profileField.getSimpleDataType() == DbColumnType.SimpleDataType.Date || profileField.getSimpleDataType() == DbColumnType.SimpleDataType.DateTime) {
+                	if (!DbUtilities.isNowKeyword(defaultValue)) {
+	                    String dateFormatPattern = DateFormat.getDateFormatById(aForm.getProfile().getDateFormat()).getValue();
+	                    SimpleDateFormat dateFormat = new SimpleDateFormat(dateFormatPattern);
+	                    try {
+	                        dateFormat.parse(defaultValue);
+	                    } catch (Exception e) {
+	                        errors.add("global", new ActionMessage("error.import.column.invalid_default.date", dbColumnName, dateFormatPattern));
+	                        return true;
+	                    }
+                	}
                 }
             }
         }
@@ -389,7 +392,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 					}
 					if (!notNullColumnIsSet) {
 						errors.add("global", new ActionMessage("error.import.missingNotNullableColumnInMapping", columnEntry.getKey()));
-	                    returnValue = true;
+						return true;
 					}
 				}
 			}
@@ -398,12 +401,12 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 				if ("gender".equalsIgnoreCase(mapping.getDatabaseColumn())) {
 					if (StringUtils.isBlank(mapping.getFileColumn()) && (StringUtils.isBlank(mapping.getDefaultValue()) || mapping.getDefaultValue().trim().equals("''") || mapping.getDefaultValue().trim().equalsIgnoreCase("null"))) {
 						errors.add("global", new ActionMessage("error.import.missingNotNullableColumnInMapping", "gender"));
-	                    returnValue = true;
+						return true;
 					}
 				} else if ("mailtype".equalsIgnoreCase(mapping.getDatabaseColumn())) {
 					if (StringUtils.isBlank(mapping.getFileColumn()) && (StringUtils.isBlank(mapping.getDefaultValue()) || mapping.getDefaultValue().trim().equals("''") || mapping.getDefaultValue().trim().equalsIgnoreCase("null"))) {
 						errors.add("global", new ActionMessage("error.import.missingNotNullableColumnInMapping", "mailtype"));
-	                    returnValue = true;
+						return true;
 					}
 				}
 			}
@@ -425,11 +428,11 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
                 		}
                 		if (previousCustomerIdMapping == null || !previousCustomerIdMapping.getFileColumn().equals(mapping.getFileColumn())) {
 	                		errors.add("global", new ActionMessage("error.import.column.invalid", dbColumnName));
-	                        returnValue = true;
+	                		return true;
 	                	}
                 	} else {
                 		errors.add("global", new ActionMessage("error.import.column.invalid", dbColumnName));
-                        returnValue = true;
+                		return true;
                 	}
                 }
             }
@@ -449,12 +452,12 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
                 }
                 if (!foundKeyColumn) {
                     errors.add("global", new ActionMessage("error.import.keycolumn_missing", keyColumnName));
-                    returnValue = true;
+                    return true;
                 }
             }
         }
-
-        return returnValue;
+        
+        return false;
     }
 
     /**
@@ -592,75 +595,142 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 
 			Map<String, CsvColInfo> dbColumns = recipientDao.readDBColumns(AgnUtils.getCompanyID(request));
 
-			char separator = Separator.getSeparatorById(profile.getSeparator()).getValueChar();
-			Character stringQuote = TextRecognitionChar.getTextRecognitionCharById(profile.getTextRecognitionChar()).getValueCharacter();
-
-			try (CsvReader csvReader = new CsvReader(getImportInputStream(profile, file), Charset.getCharsetById(profile.getCharset()).getCharsetName(), separator, stringQuote)) {
-			    csvReader.setAlwaysTrim(true);
-
-			    List<String> fileHeaders = csvReader.readNextCsvLine();
-
-			    if (!fileHeaders.isEmpty()) {
-			        ComAdmin admin = AgnUtils.getAdmin(request);
-			        writeUserActivityLog(admin, UAL_ACTION, "Found columns based on csv - file import : " + fileHeaders.toString());
-			    }
-
-			    if (profile.isNoHeaders()) {
-			        List<String> fileColumnIdentifiers = new ArrayList<>();
-			        for (int i = 1; i <= fileHeaders.size(); i++) {
-			            fileColumnIdentifiers.add("column_" + i);
-			        }
-			        fileHeaders = fileColumnIdentifiers;
-			    }
-
-			    // Check for duplicate csv file columns
-			    if (fileHeaders.contains("")) {
-			        errors.add("global", new ActionMessage("error.import.column.name.empty"));
-			    }
-			    String duplicateCsvColumn = CsvReader.checkForDuplicateCsvHeader(fileHeaders, profile.isAutoMapping());
-			    if (duplicateCsvColumn != null) {
-			        errors.add("global", new ActionMessage("error.import.column.csv.duplicate"));
-			    }
-
-			    List<ColumnMapping> newMappings = new ArrayList<>();
-			    // Set the file columns for a new profile mapping
-			    for (String newCsvColumn : fileHeaders) {
-			    	ColumnMapping existingColumnMapping = null;
-			    	for (ColumnMapping columnMmapping : profile.getColumnMapping()) {
-			    		if (columnMmapping.getFileColumn() != null && columnMmapping.getFileColumn().equals(newCsvColumn)) {
-			    			existingColumnMapping = columnMmapping;
-			    			break;
-			    		}
-			    	}
-			    	if (existingColumnMapping == null) {
-						ColumnMapping newMapping = new ColumnMappingImpl();
-						newMapping.setProfileId(profile.getId());
-						newMapping.setMandatory(false);
-						newMapping.setFileColumn(newCsvColumn);
-						// Look for a matching db column (without '-', '_', caseinsensitive)
-						String maybeColumnName = newCsvColumn.replace("-", "").replace("_", "").toLowerCase();
-						for (String dbColumn : dbColumns.keySet()) {
-							if (maybeColumnName.equalsIgnoreCase(dbColumn.replace("-", "").replace("_", ""))) {
-								newMapping.setDatabaseColumn(dbColumn);
-								break;
+			if ("CSV".equalsIgnoreCase(profile.getDatatype())) {
+				char separator = Separator.getSeparatorById(profile.getSeparator()).getValueChar();
+				Character stringQuote = TextRecognitionChar.getTextRecognitionCharById(profile.getTextRecognitionChar()).getValueCharacter();
+	
+				try (CsvReader csvReader = new CsvReader(getImportInputStream(profile, file), Charset.getCharsetById(profile.getCharset()).getCharsetName(), separator, stringQuote)) {
+				    csvReader.setAlwaysTrim(true);
+	
+				    List<String> fileHeaders = csvReader.readNextCsvLine();
+	
+				    if (!fileHeaders.isEmpty()) {
+				        ComAdmin admin = AgnUtils.getAdmin(request);
+				        writeUserActivityLog(admin, UAL_ACTION, "Found columns based on csv - file import : " + fileHeaders.toString());
+				    }
+	
+				    if (profile.isNoHeaders()) {
+				        List<String> fileColumnIdentifiers = new ArrayList<>();
+				        for (int i = 1; i <= fileHeaders.size(); i++) {
+				            fileColumnIdentifiers.add("column_" + i);
+				        }
+				        fileHeaders = fileColumnIdentifiers;
+				    }
+	
+				    // Check for duplicate csv file columns
+				    if (fileHeaders.contains("")) {
+				        errors.add("global", new ActionMessage("error.import.column.name.empty"));
+				    }
+				    String duplicateCsvColumn = CsvReader.checkForDuplicateCsvHeader(fileHeaders, profile.isAutoMapping());
+				    if (duplicateCsvColumn != null) {
+				        errors.add("global", new ActionMessage("error.import.column.csv.duplicate"));
+				    }
+	
+				    List<ColumnMapping> newMappings = new ArrayList<>();
+				    // Set the file columns for a new profile mapping
+				    for (String newCsvColumn : fileHeaders) {
+				    	ColumnMapping existingColumnMapping = null;
+				    	for (ColumnMapping columnMapping : profile.getColumnMapping()) {
+				    		if (columnMapping.getFileColumn() != null && columnMapping.getFileColumn().equals(newCsvColumn)) {
+				    			existingColumnMapping = columnMapping;
+				    			break;
+				    		}
+				    	}
+				    	if (existingColumnMapping == null) {
+							ColumnMapping newMapping = new ColumnMappingImpl();
+							newMapping.setProfileId(profile.getId());
+							newMapping.setMandatory(false);
+							newMapping.setFileColumn(newCsvColumn);
+							// Look for a matching db column (without '-', '_', caseinsensitive)
+							String maybeColumnName = newCsvColumn.replace("-", "").replace("_", "").toLowerCase();
+							for (String dbColumn : dbColumns.keySet()) {
+								if (maybeColumnName.equalsIgnoreCase(dbColumn.replace("-", "").replace("_", ""))) {
+									newMapping.setDatabaseColumn(dbColumn);
+									break;
+								}
 							}
+							if (StringUtils.isEmpty(newMapping.getDatabaseColumn())) {
+								newMapping.setDatabaseColumn(ColumnMapping.DO_NOT_IMPORT);
+							}
+							newMappings.add(newMapping);
+				    	} else {
+							newMappings.add(existingColumnMapping);
+				    	}
+				    }
+				
+					// Keep the already set column mappings for non-data-file columns
+					for (ColumnMapping columnMmapping : profile.getColumnMapping()) {
+						if (StringUtils.isEmpty(columnMmapping.getFileColumn())) {
+							newMappings.add(columnMmapping);
 						}
-						if (StringUtils.isEmpty(newMapping.getDatabaseColumn())) {
-							newMapping.setDatabaseColumn(ColumnMapping.DO_NOT_IMPORT);
-						}
-						newMappings.add(newMapping);
-			    	} else {
-						newMappings.add(existingColumnMapping);
-			    	}
-			    }
-			
-				// Keep the already set column mappings for non-data-file columns
-				for (ColumnMapping columnMmapping : profile.getColumnMapping()) {
-					if (StringUtils.isEmpty(columnMmapping.getFileColumn())) {
-						newMappings.add(columnMmapping);
 					}
+				    profile.setColumnMapping(newMappings);
 				}
-			    profile.setColumnMapping(newMappings);
+			} else if ("JSON".equalsIgnoreCase(profile.getDatatype())) {
+				try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(profile, file), Charset.getCharsetById(profile.getCharset()).getCharsetName())) {
+					jsonReader.readNextToken();
+					if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+						throw new Exception("Json data does not contain expected JsonArray");
+					}
+					
+					List<ColumnMapping> newMappings = new ArrayList<>();
+				    // Set the file columns for a new profile mapping
+					while (jsonReader.readNextJsonNode()) {
+						Object currentObject = jsonReader.getCurrentObject();
+						if (!(currentObject instanceof JsonObject)) {
+							throw new Exception("Json data does not contain expected JsonArray of JsonObjects");
+						}
+						JsonObject currentJsonObject = (JsonObject) currentObject;
+					    for (String jsonPropertyKey : currentJsonObject.keySet()) {
+					    	ColumnMapping existingColumnMapping = null;
+					    	for (ColumnMapping columnMapping : profile.getColumnMapping()) {
+					    		if (columnMapping.getFileColumn() != null && columnMapping.getFileColumn().equals(jsonPropertyKey)) {
+					    			existingColumnMapping = columnMapping;
+					    			break;
+					    		}
+					    	}
+					    	boolean alreadyIncludedInNewMapping = false;
+					    	for (ColumnMapping newMapping : newMappings) {
+					    		if (newMapping.getFileColumn() != null && newMapping.getFileColumn().equals(jsonPropertyKey)) {
+					    			alreadyIncludedInNewMapping = true;
+					    			break;
+					    		}
+					    	}
+					    	if (!alreadyIncludedInNewMapping) {
+						    	if (existingColumnMapping == null) {
+									ColumnMapping newMapping = new ColumnMappingImpl();
+									newMapping.setProfileId(profile.getId());
+									newMapping.setMandatory(false);
+									newMapping.setFileColumn(jsonPropertyKey);
+									// Look for a matching db column (without '-', '_', caseinsensitive)
+									String maybeColumnName = jsonPropertyKey.replace("-", "").replace("_", "").toLowerCase();
+									for (String dbColumn : dbColumns.keySet()) {
+										if (maybeColumnName.equalsIgnoreCase(dbColumn.replace("-", "").replace("_", ""))) {
+											newMapping.setDatabaseColumn(dbColumn);
+											break;
+										}
+									}
+									if (StringUtils.isEmpty(newMapping.getDatabaseColumn())) {
+										newMapping.setDatabaseColumn(ColumnMapping.DO_NOT_IMPORT);
+									}
+									newMappings.add(newMapping);
+						    	} else {
+									newMappings.add(existingColumnMapping);
+						    	}
+					    	}
+					    }
+					}
+					
+					// Keep the already set column mappings for non-data-file columns
+					for (ColumnMapping columnMmapping : profile.getColumnMapping()) {
+						if (StringUtils.isEmpty(columnMmapping.getFileColumn())) {
+							newMappings.add(columnMmapping);
+						}
+					}
+				    profile.setColumnMapping(newMappings);
+				}
+			} else {
+				throw new Exception("Invalid datatype: " + profile.getDatatype());
 			}
 		} catch (Exception e) {
 			logger.error("Error while mapping import columns: " + e.getMessage(), e);
@@ -684,8 +754,8 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 	                ZipUtilities.decompressFromEncryptedZipFile(file, unzipPath, profile.getZipPassword());
 
 	                // Check if there was only one file within the zip file and use it for import
-	                String[] filesToImport = unzipPath.list();
-	                if (filesToImport.length != 1) {
+	                String[] filesToImport = unzipPath.list(); // Returns null if no files found
+	                if (filesToImport == null || filesToImport.length != 1) {
 	                    throw new Exception("Invalid number of files included in zip file");
 	                }
 	                InputStream dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);

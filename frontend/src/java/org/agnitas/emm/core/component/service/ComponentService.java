@@ -12,8 +12,8 @@ package org.agnitas.emm.core.component.service;
 
 import java.util.List;
 
-import com.agnitas.dao.FormComponent;
-import com.agnitas.dao.FormComponent.FormComponentType;
+import com.agnitas.beans.FormComponent;
+import com.agnitas.beans.FormComponent.FormComponentType;
 import org.agnitas.beans.MailingComponent;
 
 public interface ComponentService {

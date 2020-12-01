@@ -297,9 +297,11 @@ public class FileUtils {
 		if( file.isDirectory()) {
 			File[] containedFiles = file.listFiles();
 			
-			for( File containedFile : containedFiles) {
-				if( !removeRecursively( containedFile))
-					return false;
+			if(containedFiles != null) {
+				for( File containedFile : containedFiles) {
+					if( !removeRecursively( containedFile))
+						return false;
+				}
 			}
 		}
 		
@@ -315,8 +317,10 @@ public class FileUtils {
 			}
 		});
 
-		for (File deletableFile : filesToBeDeleted) {
-			deletableFile.delete();
+		if(filesToBeDeleted != null) {
+			for (File deletableFile : filesToBeDeleted) {
+				deletableFile.delete();
+			}
 		}
 	}
 

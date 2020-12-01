@@ -12,6 +12,7 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
+<%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 
 <c:set var="ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>"/>
 <c:set var="ACTION_CONFIRM_UNDO" value="<%= ComMailingBaseAction.ACTION_CONFIRM_UNDO %>"/>
@@ -43,8 +44,6 @@
 <c:url var="editWithCampaignManagerLink" value="/workflow/${workflowId}/view.action">
     <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingBaseForm.mailingID}"/>
 </c:url>
-
-<!--XYZ: mailing-view-base.jsp ${workflowParams} - ${workflowId} - ${mailingBaseForm.workflowId} - ${formWorkflowId}-->
 
 <tiles:insert page="template.jsp">
     <tiles:put name="header" type="string">
@@ -91,14 +90,29 @@
 
     <tiles:put name="content" type="string">
         <div class="${isMailingGrid ? "tile-content-padded" : "row"}">
+            <c:set var="mainBoxClass" value=""/>
+            <c:set var="mainBoxViewModes" value=""/>
 
-            <div class="${isMailingGrid ? "col-xs-10 col-xs-push-1 col-md-8 col-md-push-2 col-lg-6 col-lg-push-3" : (mailingBaseForm.mailingID ne 0 ? "col-md-6 split-1-1" : "")}"
-                ${isMailingGrid ? '' : 'data-view-block="col-md-12" data-view-split="col-md-6 split-1-1" data-view-hidden="col-xs-12"'}
-                 data-controller="mailing-view-base">
+            <c:if test="${not isPostMailing}">
+                <c:choose>
+                    <c:when test="${isMailingGrid}">
+                        <c:set var="mainBoxClass" value="col-xs-10 col-xs-push-1 col-md-8 col-md-push-2 col-lg-6 col-lg-push-3"/>
+                        <c:set var="mainBoxViewModes" value=""/>
+                    </c:when>
+                    <c:when test="${mailingBaseForm.mailingID ne 0}">
+                        <c:set var="mainBoxClass" value="col-md-6 split-1-1"/>
+                        <c:set var="mainBoxViewModes" value='data-view-block="col-md-12" data-view-split="col-md-6 split-1-1" data-view-hidden="col-xs-12"'/>
+                    </c:when>
+                    <c:otherwise>
+                        <c:set var="mainBoxClass" value=""/>
+                        <c:set var="mainBoxViewModes" value='data-view-block="col-md-12" data-view-split="col-md-6 split-1-1" data-view-hidden="col-xs-12"'/>
+                    </c:otherwise>
+                </c:choose>
+            </c:if>
 
+            <div class="${mainBoxClass}" data-controller="mailing-view-base" ${mainBoxViewModes}>
                 <script data-initializer="mailing-view-base" type="application/json">
                     {
-                        "scrollTop": ${mailingBaseForm.scrollTop},
                         "mailingId": ${mailingBaseForm.mailingID},
                         "TARGET_MODE_AND": ${TARGET_MODE_AND},
                         "TARGET_MODE_OR": ${TARGET_MODE_OR},
@@ -117,8 +131,8 @@
                         "mailingType": ${mailingBaseForm.mailingType}
                     }
                 </script>
-
-                <agn:agnForm action="/mailingbase" data-form-focus="shortname" id="mailingBaseForm" data-form="resource" data-disable-controls="save">
+                <agn:agnForm action="/mailingbase" id="mailingBaseForm" data-form="resource" data-disable-controls="save"
+                             data-form-focus="${not isPostMailing and not isMailingGrid and mailingBaseForm.mailingID ne 0 ? '' : 'shortname'}">
                     <html:hidden property="mailingID"/>
                     <html:hidden property="action"/>
                     <html:hidden property="isTemplate"/>
@@ -128,9 +142,8 @@
                     <html:hidden property="gridTemplateId"/>
 
                     <emm:workflowParameters/>
-                    <input type="hidden" name="scrollTop" value=""/>
 
-                    <div class="tile">
+                    <div class="tile" data-action="scroll-to">
                         <div class="tile-header">
                             <a href="#" class="headline" data-toggle-tile="#tile-mailingBase">
                                 <i class="tile-toggle icon icon-angle-up"></i>
@@ -237,10 +250,10 @@
                 </agn:agnForm>
             </div>
 
-            <c:if test="${not isMailingGrid and mailingBaseForm.mailingID ne 0}">
+            <c:if test="${not isPostMailing and not isMailingGrid and mailingBaseForm.mailingID ne 0}">
                 <emm:ShowByPermission token="mailing.send.show">
                     <div class="hidden" data-view-split="col-md-6" data-view-block="col-xs-12" data-view-hidden="hidden">
-                        <div data-load="<html:rewrite page="/mailingsend.do?action=${ACTION_PREVIEW_SELECT}&mailingID=${mailingBaseForm.mailingID}&previewSelectPure=true"/>" data-load-target="#preview"></div>
+                        <div data-load="<html:rewrite page="/mailingsend.do?action=${ACTION_PREVIEW_SELECT}&mailingID=${mailingBaseForm.mailingID}&previewForm.pure=true"/>" data-load-target="#preview"></div>
                     </div>
                 </emm:ShowByPermission>
             </c:if>

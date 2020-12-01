@@ -83,7 +83,25 @@
 
         <%@include file="/WEB-INF/jsp/mailing/actions-dropdown-followup.jspf" %>
 
-		<%@include file="/WEB-INF/jsp/mailing/actions-dropdown-mailingexport.jspf" %>
+		<%-- Mailing JSON export --%>
+		<emm:ShowByPermission token="mailing.export">
+			<emm:instantiate var="option" type="java.util.LinkedHashMap">
+				<c:set target="${dropDownItems}" property="5" value="${option}" />
+				<c:set target="${option}" property="url">
+					<c:url value="/mailingbase.do">
+						<c:param name="action" value="${ACTION_MAILING_EXPORT}" />
+						<c:param name="mailingID" value="${param.mailingId}" />
+					</c:url>
+				</c:set>
+				<c:set target="${option}" property="icon" value="icon-database" />
+				<c:set target="${option}" property="name">
+					<bean:message
+						key="${param.isTemplate ? 'template.export' : 'mailing.export'}" />
+				</c:set>
+				<c:set target="${option}" property="extraAttributes"
+					value="data-prevent-load=''" />
+			</emm:instantiate>
+		</emm:ShowByPermission>
 
         <%-- Mailing edit undo --%>
 

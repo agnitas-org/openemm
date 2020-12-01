@@ -1,5 +1,6 @@
-DELETE FROM admin_group_tbl WHERE admin_group_id = 1;
-INSERT INTO admin_group_tbl (admin_group_id, company_id, shortname, description) VALUES (1, 1, 'OpenEMM', 'OpenEMM');
+UPDATE admin_tbl SET admin_group_id = 1 WHERE username = 'emm-master';
+DELETE FROM admin_to_group_tbl WHERE admin_id = 1 AND admin_group_id = 1;
+INSERT INTO admin_to_group_tbl (admin_id, admin_group_id) VALUES (1, 1);
 
 -- Admin group: OpenEMM
 DELETE FROM admin_group_permission_tbl WHERE admin_group_id IN (SELECT admin_group_id FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -21,7 +22,6 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT 
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'campaign.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'charset.use.iso_8859_15' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'charset.use.utf_8' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'content_tab_migration' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'forms.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'forms.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'forms.import' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -60,8 +60,6 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT 
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailloop.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailloop.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mediatype.email' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'pluginmanager.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'pluginmanager.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'profileField.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'profileField.visible' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'recipient.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -70,7 +68,6 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT 
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'recipient.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'recipient.gender.extended' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'recipient.history' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'recipient.profileField.html.allowed' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'recipient.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'recipient.tracking.veto' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'role.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -105,8 +102,10 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT 
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'wizard.importclassic' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'workflow.activate' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'workflow.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'workflow.edit' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'workflow.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'workflow.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'forms.export' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.export' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 
 -- User/Admin: EMM-Master
 DELETE FROM admin_permission_tbl WHERE admin_id = 1;
@@ -128,7 +127,6 @@ INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'campaign
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'campaign.show');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'charset.use.iso_8859_15');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'charset.use.utf_8');
-INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'content_tab_migration');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'forms.change');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'forms.delete');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'forms.import');
@@ -167,8 +165,6 @@ INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailloop
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailloop.delete');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailloop.show');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mediatype.email');
-INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'pluginmanager.change');
-INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'pluginmanager.show');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'profileField.show');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'profileField.visible');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'recipient.change');
@@ -177,7 +173,6 @@ INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'recipien
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'recipient.delete');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'recipient.gender.extended');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'recipient.history');
-INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'recipient.profileField.html.allowed');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'recipient.show');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'recipient.tracking.veto');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'role.change');
@@ -212,5 +207,7 @@ INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'wizard.i
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'wizard.importclassic');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'workflow.activate');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'workflow.delete');
-INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'workflow.edit');
+INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'workflow.change');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'workflow.show');
+INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'forms.export');
+INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.export');

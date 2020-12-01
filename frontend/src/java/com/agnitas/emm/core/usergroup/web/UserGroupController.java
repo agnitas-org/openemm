@@ -18,15 +18,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
-import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
-import com.agnitas.emm.core.usergroup.form.UserGroupForm;
-import com.agnitas.emm.core.usergroup.service.UserGroupService;
-import com.agnitas.service.ComWebStorage;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -48,6 +40,16 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
+import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
+import com.agnitas.emm.core.usergroup.form.UserGroupForm;
+import com.agnitas.emm.core.usergroup.service.UserGroupService;
+import com.agnitas.service.ComWebStorage;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping("/administration/usergroup")
@@ -106,16 +108,17 @@ public class UserGroupController {
         }
 
         UserGroupForm form = null;
-		if(model.containsAttribute("userGroupForm")) {
+        AdminGroup adminGroup = userGroupService.getAdminGroup(userGroupId, admin.getCompanyID());
+		if (model.containsAttribute("userGroupForm")) {
 			form = (UserGroupForm) model.asMap().get("userGroupForm");
 		} else {
-            UserGroupDto userGroup = userGroupService.getUserGroup(admin, userGroupId);
+			UserGroupDto userGroup = userGroupService.getUserGroup(admin, userGroupId);
             if (Objects.nonNull(userGroup)) {
                 form = conversionService.convert(userGroup, UserGroupForm.class);
             }
         }
 
-        if(form == null) {
+        if (form == null) {
             return "redirect:/administration/usergroup/create.action";
         }
 
@@ -124,6 +127,8 @@ public class UserGroupController {
 
         model.addAttribute("userGroupForm", form);
         model.addAttribute("currentCompanyId", admin.getCompanyID());
+        int groupIdToEdit = form.getId();
+        model.addAttribute("availableAdminGroups", userGroupService.getAdminGroupsByCompanyIdAndDefault(admin.getCompanyID(), adminGroup).stream().filter(group -> group.getGroupID() != groupIdToEdit).collect(Collectors.toList()));
         loadPermissionsSettings(admin, form.getId(), form.getCompanyId(), model);
 
         return "settings_usergroup_view";
@@ -146,7 +151,7 @@ public class UserGroupController {
         int userGroupId = form.getId();
         boolean isNew = userGroupId == NEW_USER_GROUP_ID;
 
-        if(!isValid(admin, form, popups)) {
+        if (!isValid(admin, form, popups)) {
             return "messages";
         }
         
@@ -157,7 +162,13 @@ public class UserGroupController {
         if (isAvailableToCreateOrUpdate) {
             UserGroupDto oldUserGroup = userGroupService.getUserGroup(admin, userGroupId);
 
-            int savedUsergroupId = userGroupService.saveUserGroup(admin, conversionService.convert(form, UserGroupDto.class));
+            int savedUsergroupId;
+			try {
+				savedUsergroupId = userGroupService.saveUserGroup(admin, conversionService.convert(form, UserGroupDto.class));
+			} catch (Exception e) {
+	        	popups.field("parentGroupIDs", "error.usergroup.save.message", e.getMessage());
+	            return "messages";
+			}
             if (savedUsergroupId > 0) {
                 form.setId(savedUsergroupId);
                 
@@ -203,9 +214,13 @@ public class UserGroupController {
     public String delete(ComAdmin admin, UserGroupForm form, Popups popups) {
         int userGroupId = form.getId();
         List<String> adminNames = userGroupService.getAdminNamesOfGroup(userGroupId, admin.getCompanyID());
+        List<String> groupNames = userGroupService.getGroupNamesUsingGroup(userGroupId, admin.getCompanyID());
         if(!adminNames.isEmpty()) {
             String adminNamesString = StringUtils.abbreviate(StringUtils.join(adminNames, ", "), 64);
             popups.alert("error.group.delete.hasAdmins", adminNamesString);
+        } else if(!groupNames.isEmpty()) {
+            String groupNamesString = StringUtils.abbreviate(StringUtils.join(groupNames, ", "), 64);
+            popups.alert("error.group.delete.hasGroups", groupNamesString);
 
         } else if(userGroupService.deleteUserGroup(userGroupId, admin)) {
             popups.success("default.selection.deleted");
@@ -253,7 +268,9 @@ public class UserGroupController {
 
     private void loadPermissionsSettings(ComAdmin admin, int groupId, int groupCompanyId, Model model) {
         Map<String, PermissionsOverviewData.PermissionCategoryEntry> permissionCategories = userGroupService.getPermissionOverviewData(admin, groupId, groupCompanyId);
-        model.addAttribute("permissionCategories", permissionCategories.values());
+        List<PermissionsOverviewData.PermissionCategoryEntry> list = new ArrayList<>(permissionCategories.values());
+        Collections.sort(list);
+        model.addAttribute("permissionCategories", list);
     }
 
     private String getDescription(String shortname, int userGroupId, int userGroupCompanyId) {
@@ -295,11 +312,9 @@ public class UserGroupController {
             return userActions;
         }
        
-        Map<Permission, String> allPermissionsAndCategories = Permission.getAllPermissionsAndCategories();
         for (String category : permissionCategories) {
-            List<String> permissionsForCategory = allPermissionsAndCategories.entrySet().stream()
-                    .filter(pair -> StringUtils.equals(pair.getValue(), category))
-                    .map(Map.Entry::getKey)
+            List<String> permissionsForCategory = Permission.getAllSystemPermissions().stream()
+                    .filter(permission -> StringUtils.equals(permission.getCategory(), category))
                     .filter(Permission::isVisible)
                     .map(Permission::getTokenString)
                     .filter(changedPermissions::contains)

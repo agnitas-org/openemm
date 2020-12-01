@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.agnitas.emm.core.commons.util.Constants;
 import org.agnitas.emm.core.commons.util.DateUtil;
-import org.apache.commons.validator.routines.DateValidator;
+import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -86,13 +86,11 @@ public class ComOptimizationScheduleForm extends ActionForm {
 		
 		ActionErrors errors = new ActionErrors();
 
-		DateValidator dateValidator = DateValidator.getInstance();
-
-		if (!dateValidator.isValid(resultSendDateAsString, DATE_PATTERN_FULL)) {
+		if (!AgnUtils.isDateValid(resultSendDateAsString, DATE_PATTERN_FULL)) {
 			errors.add( ActionMessages.GLOBAL_MESSAGE,  new ActionMessage("mailing.autooptimization.errors.resultsenddate" , Constants.DATE_PATTERN_FULL));
 		}
 
-		if (!dateValidator.isValid(testMailingsSendDateAsString, DATE_PATTERN_FULL)) {
+		if (!AgnUtils.isDateValid(testMailingsSendDateAsString, DATE_PATTERN_FULL)) {
 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.autooptimization.errors.resultsenddate" ,Constants.DATE_PATTERN_FULL));
 		}
 

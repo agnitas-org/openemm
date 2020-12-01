@@ -13,7 +13,6 @@ package com.agnitas.emm.core.workflow.dao.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -23,6 +22,19 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
+import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.PredicateUtils;
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.ComMailing;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
@@ -34,19 +46,6 @@ import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart;
 import com.agnitas.emm.core.workflow.beans.WorkflowStop;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.PredicateUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 
 public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 	private static final transient Logger logger = Logger.getLogger(ComWorkflowDaoImpl.class);
@@ -110,7 +109,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
                 workflow.getStatus().getId(),
                 workflow.getEditorPositionLeft(),
                 workflow.getEditorPositionTop(),
-                workflow.isInner(),
+                BooleanUtils.toInteger(workflow.isInner()),
                 workflow.getGeneralStartDate(),
                 workflow.getGeneralEndDate(),
                 workflow.getEndType() == null ? 0 : workflow.getEndType().getId(),
@@ -128,7 +127,6 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 	@DaoUpdateReturnValueCheck
 	public void createWorkflow(Workflow workflow) {
 	    String insertStatement;
-	    List<Object> params = new ArrayList<>();
 		int newId;
 		if (isOracleDB()) {
 		    insertStatement ="INSERT INTO workflow_tbl (" +
@@ -147,28 +145,26 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
                     "general_start_event, " +
                     "workflow_schema) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 			newId = selectInt(logger, "SELECT workflow_tbl_seq.NEXTVAL FROM dual");
-            params.addAll(Arrays.asList(newId,
+            int affectedRows = update(logger, insertStatement,
+                    newId,
                     workflow.getCompanyId(),
                     workflow.getShortname(),
                     workflow.getDescription(),
                     workflow.getStatus().getId(),
                     workflow.getEditorPositionLeft(),
                     workflow.getEditorPositionTop(),
-                    workflow.isInner() ? 1 : 0,
+                    BooleanUtils.toInteger(workflow.isInner()),
                     workflow.getGeneralStartDate(),
                     workflow.getGeneralEndDate(),
                     workflow.getEndType() == null ? 0 : workflow.getEndType().getId(),
                     workflow.getGeneralStartReaction() == null ? 0 : workflow.getGeneralStartReaction().getId(),
                     workflow.getGeneralStartEvent() == null ? 0 : workflow.getGeneralStartEvent().getId(),
-                    workflow.getWorkflowSchema()));
-            int affectedRows = update(logger, insertStatement, params.toArray());
+                    workflow.getWorkflowSchema());
             if (affectedRows == 0) {
                 throw new RuntimeException();
             }
             workflow.setWorkflowId(newId);
         } else {
-            KeyHolder keyHolder = new GeneratedKeyHolder();
-            String[] keyColumns = new String[1];
             insertStatement = "INSERT INTO workflow_tbl (" +
                     "company_id, " +
                     "shortname, " +
@@ -184,25 +180,28 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
                     "general_start_event, " +
                     "created, " +
                     "workflow_schema) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    		params.add(workflow.getCompanyId());
-    		params.add(workflow.getShortname());
-    		params.add(workflow.getDescription());
-    		params.add(workflow.getStatus().getId());
-    		params.add(workflow.getEditorPositionLeft());
-    		params.add(workflow.getEditorPositionTop());
-			params.add(workflow.isInner());
-            params.add(workflow.getGeneralStartDate());
-            params.add(workflow.getGeneralEndDate());
-            params.add(workflow.getEndType() == null ? 0 : workflow.getEndType().getId());
-            params.add(workflow.getGeneralStartReaction() == null ? 0 : workflow.getGeneralStartReaction().getId());
-            params.add(workflow.getGeneralStartEvent() == null ? 0 : workflow.getGeneralStartEvent().getId());
-            params.add(new Date());
-            params.add(workflow.getWorkflowSchema());
-            int affectedRows = update(logger, insertStatement, keyHolder, keyColumns, params.toArray());
-            if (affectedRows == 0) {
+
+            int generatedId =
+                    insertIntoAutoincrementMysqlTable(logger, "workflow_id", insertStatement,
+                            workflow.getCompanyId(),
+                            workflow.getShortname(),
+                            workflow.getDescription(),
+                            workflow.getStatus().getId(),
+                            workflow.getEditorPositionLeft(),
+                            workflow.getEditorPositionTop(),
+                            BooleanUtils.toInteger(workflow.isInner()),
+                            workflow.getGeneralStartDate(),
+                            workflow.getGeneralEndDate(),
+                            workflow.getEndType() == null ? 0 : workflow.getEndType().getId(),
+                            workflow.getGeneralStartReaction() == null ? 0 : workflow.getGeneralStartReaction().getId(),
+                            workflow.getGeneralStartEvent() == null ? 0 : workflow.getGeneralStartEvent().getId(),
+                            new Date(),
+                            workflow.getWorkflowSchema()
+                            );
+            if (generatedId == 0) {
                 throw new RuntimeException();
             }
-            workflow.setWorkflowId(keyHolder.getKey().intValue());
+            workflow.setWorkflowId(generatedId);
 		}
 	}
 

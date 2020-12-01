@@ -14,39 +14,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.emm.core.beans.Dependent;
-import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
-import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.target.TargetUtils;
-import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
-import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
-import com.agnitas.emm.core.target.eql.EqlAnalysisResult;
-import com.agnitas.emm.core.target.eql.EqlFacade;
-import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConversionException;
-import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
-import com.agnitas.emm.core.target.eql.parser.EqlSyntaxErrorException;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.core.target.service.TargetCopyService;
-import com.agnitas.emm.core.target.service.TargetSavingAndAnalysisResult;
-import com.agnitas.emm.core.target.web.util.EditorContentSynchronizationException;
-import com.agnitas.emm.core.target.web.util.EditorContentSynchronizer;
-import com.agnitas.emm.core.target.web.util.FormHelper;
-import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.GridServiceWrapper;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.WebStorage;
 import org.agnitas.target.TargetFactory;
-import org.agnitas.target.impl.TargetRepresentationImpl;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.util.SafeString;
@@ -62,10 +39,33 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.TargetUtils;
+import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
+import com.agnitas.emm.core.target.eql.EqlAnalysisResult;
+import com.agnitas.emm.core.target.eql.EqlFacade;
+import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
+import com.agnitas.emm.core.target.eql.parser.EqlSyntaxErrorException;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetCopyService;
+import com.agnitas.emm.core.target.service.TargetSavingAndAnalysisResult;
+import com.agnitas.emm.core.target.web.util.EditorContentSynchronizationException;
+import com.agnitas.emm.core.target.web.util.EditorContentSynchronizer;
+import com.agnitas.emm.core.target.web.util.FormHelper;
+import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.GridServiceWrapper;
+
 /**
  * Action handling the target group query builder editor view.
  */
-public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
+public class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(QueryBuilderTargetGroupAction.class);
@@ -150,7 +150,6 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 			form.setEql(target.getEQL());
 			form.setUseForAdminAndTestDelivery(target.isAdminTestDelivery());
 			form.setLocked(target.isLocked());
-			form.setSimpleStructure(target.isSimpleStructured());
 			form.setComplexityGrade(TargetUtils.getComplexityGrade(target.getComplexityIndex(), recipientService.getNumberOfRecipients(companyId)));
 
 			try {
@@ -165,18 +164,18 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 					this.editorContentSynchronizer.synchronizeEqlToQuerybuilder(admin, form);
 				}
 
-				if (!form.isSimpleStructure()) {
-					form.setFormat(TargetgroupViewFormat.EQL);
+				switch(form.getFormat()) {
+				case "qb":
+					return viewQB(mapping, form0, request, response);
+				case "eql": // Fall through
+				default:
+					return viewEQL(mapping, form0, request, response);
 				}
 			} catch (final EditorContentSynchronizationException | EqlSyntaxErrorException e) {
 				form.setFormat(TargetgroupViewFormat.EQL);
 
 				return viewEQL(mapping, form0, request, response);
 			}
-
-			return form.isSimpleStructure()
-					? viewQB(mapping, form0, request, response)
-					: viewEQL(mapping, form0, request, response);
 		} catch(final UnknownTargetGroupIdException e) {
 			logger.warn(String.format("Unknown target group ID %d", form.getTargetID()), e);
 
@@ -229,8 +228,6 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		form.setDescription(I18nString.getLocaleString("default.description", admin.getLocale()));
 		form.setEql("");
 		form.setFormat(TargetgroupViewFormat.QUERY_BUILDER);
-		form.setSimpleStructure(true);
-
 
 		// Make data for QueryBuilder available from EQL
 		this.editorContentSynchronizer.synchronizeEqlToQuerybuilder(admin, form);
@@ -288,7 +285,7 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 			
 			saveErrors(request, errors);
 		} catch(final EditorContentSynchronizationException e) {
-			form.setFormat(currentViewFormat);
+			form.setFormat(TargetgroupViewFormat.EQL);
 
 			if(logger.isInfoEnabled()) {
 				logger.info("There was an error synchronizing editor content. Keeping current view format.", e);
@@ -388,17 +385,6 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 			// Update editable properties
 			FormHelper.formPropertiesToTargetGroup(newTarget, form);
 			boolean isTargetGroupValid = true;
-
-			try {
-				newTarget.setTargetStructure(eqlFacade.convertEqlToTargetRepresentation(newTarget.getEQL(), companyID));
-			} catch(final EqlToTargetRepresentationConversionException e) {
-				if (logger.isInfoEnabled()) {
-					logger.info("EQL expression is not convertible to TargetRepresentation", e);
-				}
-
-				newTarget.setTargetStructure(new TargetRepresentationImpl());
-				isTargetGroupValid = false;
-			}
 
 			try {
 				final TargetSavingAndAnalysisResult savingResult = targetService.saveTargetWithAnalysis(admin, newTarget, oldTarget, errors, this::writeUserActivityLog);

@@ -184,7 +184,7 @@ public class CsvReader extends BasicReader {
 	 *            the separator
 	 * @param stringQuote
 	 *            the string quote
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public CsvReader(InputStream inputStream, Charset encoding, char separator, Character stringQuote) throws Exception {
 		super(inputStream, encoding);
@@ -376,7 +376,14 @@ public class CsvReader extends BasicReader {
 							}
 							return returnList;
 						} else {
-							throw new CsvDataInvalidItemCountException("Inconsistent number of values (expected: " + numberOfColumns + " actually: " + returnList.size() + ")", readCsvLines, numberOfColumns, returnList.size());
+							// Too many values found, so check if the trailing values are only empty items
+							while (returnList.size() > numberOfColumns) {
+								String lastItem = returnList.remove(returnList.size() - 1);
+								if (!"".equals(lastItem)) {
+									throw new CsvDataInvalidItemCountException("Inconsistent number of values (expected: " + numberOfColumns + " actually: " + returnList.size() + ")", readCsvLines, numberOfColumns, returnList.size());
+								}
+							}
+							return returnList;
 						}
 					}
 				} else if (nextChar == separator) {

@@ -11,7 +11,8 @@
 package com.agnitas.emm.core.target.dto;
 
 import org.agnitas.beans.RowsCountWebStorageEntry;
-import org.codehaus.jackson.annotate.JsonProperty;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class TargetOverviewWebStorageEntry extends RowsCountWebStorageEntry {
     @JsonProperty("show-world-targets")

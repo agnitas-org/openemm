@@ -10,22 +10,22 @@
 
 package com.agnitas.emm.core.workflow.service;
 
-import static org.agnitas.target.TargetNode.OPERATOR_CONTAINS;
-import static org.agnitas.target.TargetNode.OPERATOR_EQ;
-import static org.agnitas.target.TargetNode.OPERATOR_GT;
-import static org.agnitas.target.TargetNode.OPERATOR_GT_EQ;
-import static org.agnitas.target.TargetNode.OPERATOR_IS;
-import static org.agnitas.target.TargetNode.OPERATOR_LIKE;
-import static org.agnitas.target.TargetNode.OPERATOR_LT;
-import static org.agnitas.target.TargetNode.OPERATOR_LT_EQ;
-import static org.agnitas.target.TargetNode.OPERATOR_MOD;
-import static org.agnitas.target.TargetNode.OPERATOR_NEQ;
-import static org.agnitas.target.TargetNode.OPERATOR_NLIKE;
-import static org.agnitas.target.TargetNode.OPERATOR_NO;
-import static org.agnitas.target.TargetNode.OPERATOR_NOT_CONTAINS;
-import static org.agnitas.target.TargetNode.OPERATOR_NOT_STARTS_WITH;
-import static org.agnitas.target.TargetNode.OPERATOR_STARTS_WITH;
-import static org.agnitas.target.TargetNode.OPERATOR_YES;
+import static org.agnitas.target.ConditionalOperator.CONTAINS;
+import static org.agnitas.target.ConditionalOperator.EQ;
+import static org.agnitas.target.ConditionalOperator.GT;
+import static org.agnitas.target.ConditionalOperator.GEQ;
+import static org.agnitas.target.ConditionalOperator.IS;
+import static org.agnitas.target.ConditionalOperator.LIKE;
+import static org.agnitas.target.ConditionalOperator.LT;
+import static org.agnitas.target.ConditionalOperator.LEQ;
+import static org.agnitas.target.ConditionalOperator.MOD;
+import static org.agnitas.target.ConditionalOperator.NEQ;
+import static org.agnitas.target.ConditionalOperator.NOT_LIKE;
+import static org.agnitas.target.ConditionalOperator.NO;
+import static org.agnitas.target.ConditionalOperator.NOT_CONTAINS;
+import static org.agnitas.target.ConditionalOperator.NOT_STARTS_WITH;
+import static org.agnitas.target.ConditionalOperator.STARTS_WITH;
+import static org.agnitas.target.ConditionalOperator.YES;
 
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -51,16 +51,15 @@ import org.agnitas.emm.core.autoexport.service.AutoExportService;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.autoimport.service.AutoImportService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetOperator;
+import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -101,7 +100,7 @@ import com.agnitas.messages.Message;
 public class ComWorkflowValidationService {
     private static final Logger logger = Logger.getLogger(ComWorkflowValidationService.class);
 
-    private static final String VALID_TOKEN_REGEX = "\\d+|sysdate|\\(\\s*\\d+|\\d+\\s*\\)";
+    private static final String VALID_NUMBER_TOKEN_REGEX = "\\d+|\\(\\s*\\d+|\\d+\\s*\\)";
 
     private static final String NULL_VALUE = "NULL";
     private static final String NOT_NULL_VALUE = "NOT_NULL";
@@ -114,43 +113,45 @@ public class ComWorkflowValidationService {
 
     static {
         // init allowed operators for Numeric type;
-        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(OPERATOR_EQ.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(OPERATOR_NEQ.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(OPERATOR_GT.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(OPERATOR_LT.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(OPERATOR_MOD.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(OPERATOR_IS.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(OPERATOR_LT_EQ.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(OPERATOR_GT_EQ.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(EQ.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(NEQ.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(GT.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(LT.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(MOD.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(IS.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(LEQ.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE.add(GEQ.getOperatorCode());
 
         // init allowed operators for Characters type;
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_EQ.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_NEQ.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_GT.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_LT.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_LIKE.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_NLIKE.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_IS.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_LT_EQ.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_GT_EQ.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_CONTAINS.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_NOT_CONTAINS.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_STARTS_WITH.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(OPERATOR_NOT_STARTS_WITH.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(EQ.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(NEQ.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(GT.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(LT.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(LIKE.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(NOT_LIKE.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(IS.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(LEQ.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(GEQ.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(CONTAINS.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(NOT_CONTAINS.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(STARTS_WITH.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE.add(NOT_STARTS_WITH.getOperatorCode());
 
         // init allowed operators for Date type;
-        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(OPERATOR_EQ.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(OPERATOR_NEQ.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(OPERATOR_GT.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(OPERATOR_LT.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(OPERATOR_IS.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(OPERATOR_LT_EQ.getOperatorCode());
-        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(OPERATOR_GT_EQ.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(EQ.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(NEQ.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(GT.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(LT.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(IS.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(LEQ.getOperatorCode());
+        ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE.add(GEQ.getOperatorCode());
 
         // init operators by type map;
         ALLOWED_OPERATORS_BY_TYPE.put(SimpleDataType.Numeric, ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE);
+        ALLOWED_OPERATORS_BY_TYPE.put(SimpleDataType.Float, ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE);
         ALLOWED_OPERATORS_BY_TYPE.put(SimpleDataType.Characters, ALLOWED_OPERATORS_CODE_FOR_CHARACTERS_TYPE);
         ALLOWED_OPERATORS_BY_TYPE.put(SimpleDataType.Date, ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE);
+        ALLOWED_OPERATORS_BY_TYPE.put(SimpleDataType.DateTime, ALLOWED_OPERATORS_CODE_FOR_DATE_TYPE);
 
         ALLOWED_DATE_FORMATS.put("yyyymmdd", "yyyyMMdd");
         ALLOWED_DATE_FORMATS.put("yyyymm", "yyyyMM");
@@ -460,13 +461,22 @@ public class ComWorkflowValidationService {
     private boolean validateDateRuleExpression(String expression, String format) {
         expression = expression.toLowerCase().trim();
 
-        if (expression.startsWith("sysdate")) {
+        boolean startWithNowWorld = false;
+        if(expression.startsWith("sysdate")){
+            expression = expression.substring("sysdate".length());
+            startWithNowWorld = true;
+        } else if(expression.startsWith("today")){
+            expression = expression.substring("today".length());
+            startWithNowWorld = true;
+        }
+
+        if (startWithNowWorld) {
             if (StringUtils.countMatches(expression, "(") != StringUtils.countMatches(expression, ")")) {
                 return false;
             }
 
             for (String token : expression.split("([+\\-*/])")) {
-                if (!token.trim().matches(VALID_TOKEN_REGEX)) {
+                if (StringUtils.isNoneBlank(token) && !token.trim().matches(VALID_NUMBER_TOKEN_REGEX)) {
                     return false;
                 }
             }
@@ -509,6 +519,43 @@ public class ComWorkflowValidationService {
                 return false;
             }
         }
+        return isAutoOptimizationDecisionDateFilled(workflowIcons);
+    }
+
+    private boolean isAutoOptimizationDecisionDateFilled(List<WorkflowIcon> workflowIcons) {
+        boolean isAutoOptimization = false;
+        boolean usedActionBasedOrDateBasedMailing = false;
+        boolean decisionDateFilled = true;
+
+        for (WorkflowIcon icon : workflowIcons) {
+            switch (icon.getType()) {
+                case WorkflowIconType.Constants.ACTION_BASED_MAILING_ID:
+                case WorkflowIconType.Constants.DATE_BASED_MAILING_ID:
+                    usedActionBasedOrDateBasedMailing = true;
+                    break;
+
+                case WorkflowIconType.Constants.DECISION_ID:
+                    if (icon.isFilled()) {
+                        WorkflowDecision decision = (WorkflowDecision) icon;
+                        if (decision.getDecisionType() == WorkflowDecision.WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION) {
+                            isAutoOptimization = true;
+                            decisionDateFilled = decision.getDecisionDate() != null;
+                        }
+                    }
+                    break;
+
+				default:
+					break;
+            }
+        }
+
+
+        if (isAutoOptimization && !usedActionBasedOrDateBasedMailing) {
+            //ignore if campaign contains date_based or action_based mailings
+            //date_based and action_based mailings are not allowed in A/B campaign
+            return decisionDateFilled;
+        }
+
         return true;
     }
 
@@ -1622,28 +1669,28 @@ public class ComWorkflowValidationService {
 
         for (WorkflowRule rule : decision.getRules()) {
             final int operatorCode = rule.getPrimaryOperator();
-            TargetOperator operator = TargetNode.getOperatorByCode(operatorCode);
-            String operatorReadableName = Objects.nonNull(operator) ? operator.getOperatorSymbol() : operatorCode + " code";
+            final ConditionalOperator operator = ConditionalOperator.fromOperatorCode(operatorCode).orElse(null);
+            final String operatorReadableName = Objects.nonNull(operator) ? operator.getEqlSymbol() : operatorCode + " code";
 
             // checking if special handling operator
-            if (operator == OPERATOR_YES || operator == OPERATOR_NO) {
+            if (operator == YES || operator == NO) {
                 // stop validation for special handling
                 continue;
             }
 
-            if (isOperatorApplicable(simpleColumnType, operator)) {
+            if (operator != null && isOperatorApplicable(simpleColumnType, operator)) {
                 String value = rule.getPrimaryValue();
 
-                if (operator == OPERATOR_IS) {
+                if (operator == IS) {
                     if (!NULL_VALUE.equalsIgnoreCase(value) && !NOT_NULL_VALUE.equalsIgnoreCase(value)) {
                         messages.add(Message.of("error.workflow.value.operator", value, operatorReadableName));
                     }
                 } else {
-                    if (simpleColumnType == SimpleDataType.Numeric) {
+                    if (simpleColumnType == SimpleDataType.Numeric || simpleColumnType == SimpleDataType.Float) {
                         if (!AgnUtils.isDouble(value)) {
                             messages.add(Message.of("error.workflow.value.type", value, simpleColumnType));
                         }
-                    } else if (simpleColumnType == SimpleDataType.Date) {
+                    } else if (simpleColumnType == SimpleDataType.Date || simpleColumnType == SimpleDataType.DateTime) {
                         String dateFormat = ALLOWED_DATE_FORMATS.get(StringUtils.lowerCase(decision.getDateFormat()));
                         if (!validateDateRuleExpression(value, dateFormat)) {
                             messages.add(Message.of("error.workflow.value.type", value, simpleColumnType));
@@ -1659,7 +1706,7 @@ public class ComWorkflowValidationService {
     }
 
     // Make sure that given operator is applicable to data type that selected column belongs to.
-    private boolean isOperatorApplicable(SimpleDataType columnType, TargetOperator operator) {
+    private boolean isOperatorApplicable(SimpleDataType columnType, ConditionalOperator operator) {
         return ALLOWED_OPERATORS_BY_TYPE.get(columnType).contains(operator.getOperatorCode());
     }
 

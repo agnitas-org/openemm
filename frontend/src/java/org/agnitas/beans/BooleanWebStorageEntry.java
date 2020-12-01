@@ -12,7 +12,8 @@
 package org.agnitas.beans;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.codehaus.jackson.annotate.JsonProperty;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class BooleanWebStorageEntry implements WebStorageEntry {
 

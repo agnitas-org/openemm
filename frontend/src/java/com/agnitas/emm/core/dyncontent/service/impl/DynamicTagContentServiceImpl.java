@@ -65,7 +65,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
 	}
 
 	@Override
-	@Validate("getContentBlock")
+	@Validate(groups = ContentModel.GetGroup.class)
 	public DynamicTagContent getContent(ContentModel model) {
 		DynamicTagContent content = dynamicTagContentDao.getContent(model.getCompanyId(), model.getContentId());
 		if (content == null) {
@@ -75,7 +75,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
 	}
 
 	@Override
-	@Validate("listContentBlocksOrNames")
+	@Validate(groups = ContentModel.ListContentBlocksOrNamesGroup.class)
 	public List<DynamicTagContent> getContentList(ContentModel model) {
 		if (!mailingDao.exist(model.getMailingId(), model.getCompanyId())) {
 			throw new MailingNotExistException();
@@ -83,7 +83,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
 		return dynamicTagContentDao.getContentList(model.getCompanyId(), model.getMailingId());
 	}
 
-	@Validate("addContentBlock")
+	@Validate(groups = ContentModel.AddGroup.class)
 	protected int addContentImpl(ContentModel model, List<UserAction> userActions) {
 		Mailing mailing = mailingDao.getMailing(model.getMailingId(), model.getCompanyId());
 		if (mailing == null || mailing.getId() == 0) {
@@ -299,7 +299,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
 
 	@Override
 	@Transactional
-	@Validate("addContentBlock")
+	@Validate(groups = ContentModel.AddGroup.class)
     public int addContent(ContentModel model, List<UserAction> userActions) {
         int contentId = addContentImpl(model, userActions);
         mailingDao.updateStatus(model.getMailingId(), "edit");
@@ -308,7 +308,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
 
 	@Override
 	@Transactional
-	@Validate("deleteContentBlock")
+	@Validate(groups = ContentModel.DeleteGroup.class)
 	public boolean deleteContent(ContentModel model, List<UserAction> userActions) {
 		boolean res = deleteContentImpl(model, userActions);
         mailingDao.updateStatus(model.getMailingId(), "edit");
@@ -317,7 +317,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
 
 	@Override
 	@Transactional
-	@Validate("updateContentBlock")
+	@Validate(groups = ContentModel.UpdateGroup.class)
 	public void updateContent(ContentModel model, List<UserAction> userActions) {
 		updateContentImpl(model, userActions);
         mailingDao.updateStatus(model.getMailingId(), "edit");

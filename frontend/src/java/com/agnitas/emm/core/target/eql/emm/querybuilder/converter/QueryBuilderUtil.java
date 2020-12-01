@@ -11,21 +11,20 @@
 package com.agnitas.emm.core.target.eql.emm.querybuilder.converter;
 
 import java.util.Arrays;
-import javax.validation.constraints.NotNull;
 
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 import org.apache.commons.lang3.StringUtils;
 
 public class QueryBuilderUtil {
     
-    public static String getRuleNodeValueAsString(@NotNull QueryBuilderRuleNode ruleNode) {
+    public static String getRuleNodeValueAsString(QueryBuilderRuleNode ruleNode) {
         if (ruleNode.getValue() != null) {
             return ruleNode.getValue().toString();
         }
         return "";
     }
     
-    public static Object[] getRuleNodeValueAsArray(@NotNull QueryBuilderRuleNode ruleNode) {
+    public static Object[] getRuleNodeValueAsArray(QueryBuilderRuleNode ruleNode) {
         Object value = ruleNode.getValue();
         if (value != null) {
             if (value instanceof Object[]) {
@@ -37,7 +36,7 @@ public class QueryBuilderUtil {
         return new Object[0];
     }
     
-    public static boolean containsAnyEmptyValue(@NotNull Object[] values) {
+    public static boolean containsAnyEmptyValue(Object[] values) {
         return Arrays.stream(values)
                 .map(value -> value == null ? "" : value.toString())
                 .anyMatch(StringUtils::isBlank);

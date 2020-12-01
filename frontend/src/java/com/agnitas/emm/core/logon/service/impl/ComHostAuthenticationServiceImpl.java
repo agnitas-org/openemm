@@ -10,15 +10,10 @@
 
 package com.agnitas.emm.core.logon.service.impl;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.HtmlUtils;
-import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -45,26 +40,13 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	public static final transient int HOST_AUTHENTICATION_VALIDITY_PERIOD_DAYS = 90;
 
 	/** Placeholder in mail for security code. */
-	private static final transient String SECURITY_CODE_PLACEHOLDER = "SECURITY_CODE";
+	private static final transient String SECURITY_CODE_PLACEHOLDER = "${SECURITY_CODE}";
 
 	/** Placeholder in mail for user name. */
-	private static final transient String USERNAME_PLACEHOLDER = "USERNAME";
+	private static final transient String USERNAME_PLACEHOLDER = "${USERNAME}";
 
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComHostAuthenticationServiceImpl.class);
-
-	@Override
-	public String createHostId() { // TODO: This method cannot be unit-tested. Move generator code behind interface
-									// (see security code generator)
-		if (logger.isInfoEnabled()) {
-			logger.info("Creating new UUID for host identification");
-		}
-
-		UUID uuid0 = UUID.randomUUID();
-		UUID uuid1 = UUID.randomUUID();
-
-		return uuid0.toString() + "-" + uuid1.toString();
-	}
 
 	@Override
 	public boolean isHostAuthenticated(ComAdmin admin, String hostId) throws HostAuthenticationServiceException {
@@ -188,18 +170,11 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	 *             on errors sending mail
 	 */
 	private void sendSecurityCodeByEmail(ComAdmin admin, String securityCode) throws CannotSendSecurityCodeException {
-		String subjectTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.subject",
-				admin.getLocale());
-		String messageTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.content",
-				admin.getLocale());
+		String subjectTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.subject", admin.getLocale());
+		String messageTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.content", admin.getLocale());
 
-		Map<String, String> replacements = new HashMap<>();
-		replacements.put(SECURITY_CODE_PLACEHOLDER, securityCode);
-		replacements.put(USERNAME_PLACEHOLDER, admin.getUsername());
-		StrSubstitutor substitutor = new StrSubstitutor(replacements);
-
-		String subject = substitutor.replace(subjectTemplate).replace("\\n", "\n");
-		String message = substitutor.replace(messageTemplate).replace("\\n", "\n");
+		String subject = subjectTemplate.replace(USERNAME_PLACEHOLDER, admin.getUsername()).replace(SECURITY_CODE_PLACEHOLDER, securityCode).replace("\\n", "\n");
+		String message = messageTemplate.replace(USERNAME_PLACEHOLDER, admin.getUsername()).replace(SECURITY_CODE_PLACEHOLDER, securityCode).replace("\\n", "\n");
 
 		try {
 			boolean result = javaMailService.sendEmail(admin.getEmail(), subject, message, HtmlUtils.replaceLineFeedsForHTML(message));
@@ -230,13 +205,8 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 		String subjectTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.subject_supervisor", admin.getLocale());
 		String messageTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.content_supervisor", admin.getLocale());
 
-		Map<String, String> replacements = new HashMap<>();
-		replacements.put(SECURITY_CODE_PLACEHOLDER, securityCode);
-		replacements.put(USERNAME_PLACEHOLDER, admin.getUsername());
-		StrSubstitutor substitutor = new StrSubstitutor(replacements);
-
-		String subject = substitutor.replace(subjectTemplate).replace("\\n", "\n");
-		String message = substitutor.replace(messageTemplate).replace("\\n", "\n");
+		String subject = subjectTemplate.replace(USERNAME_PLACEHOLDER, admin.getUsername()).replace(SECURITY_CODE_PLACEHOLDER, securityCode).replace("\\n", "\n");
+		String message = messageTemplate.replace(USERNAME_PLACEHOLDER, admin.getUsername()).replace(SECURITY_CODE_PLACEHOLDER, securityCode).replace("\\n", "\n");
 
 		try {
 			boolean result = javaMailService.sendEmail(supervisor.getEmail(), subject, message, HtmlUtils.replaceLineFeedsForHTML(message));
@@ -311,6 +281,12 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 
 		this.hostAuthenticationDao.removeExpiredHostAuthentications();
 		this.hostAuthenticationDao.removeExpiredPendingsAuthentications(configService.getMaxPendingHostAuthenticationsAgeMinutes());
+	}
+
+
+	@Override
+	public void removeAuthentictedHost(final String hostId) {
+		this.hostAuthenticationDao.removeAuthentictedHost(hostId);
 	}
 
 	// ----------------------------------------------------------------------------------------------

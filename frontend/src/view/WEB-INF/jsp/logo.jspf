@@ -1,12 +1,12 @@
-
+<%@page import="org.agnitas.util.AgnUtils"%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
-
-<c:url var="agnitasEmmLogoSvgLink" value="/assets/core/images/facelift/agnitas-emm-logo.svg"/>
-<c:url var="agnitasEmmLogoPngLink" value="/assets/core/images/facelift/agnitas-emm-logo.png"/>
+<c:set var="companyID" value="<%= AgnUtils.getCompanyID(request) %>" />
+<c:url var="agnitasEmmLogoSvgLink" value="/layout/${companyID}/logo.svg" />
+<c:url var="agnitasEmmLogoPngLink" value="/layout/${companyID}/logo.png" />
 
 <div class="l-logo">
     <c:if test="${sessionScope['emm.adminPreferences'].startPage == START_PAGE_DASHBOARD}">

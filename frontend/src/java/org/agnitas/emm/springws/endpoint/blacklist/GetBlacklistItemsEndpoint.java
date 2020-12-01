@@ -10,29 +10,29 @@
 
 package org.agnitas.emm.springws.endpoint.blacklist;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.GetBlacklistItemsRequest;
 import org.agnitas.emm.springws.jaxb.GetBlacklistItemsResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class GetBlacklistItemsEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class GetBlacklistItemsEndpoint extends BaseEndpoint {
 
-	@Resource
 	private BlacklistService blacklistService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		@SuppressWarnings("unused")
-		GetBlacklistItemsRequest request = (GetBlacklistItemsRequest) arg0;
-		GetBlacklistItemsResponse response = objectFactory.createGetBlacklistItemsResponse();
+	public GetBlacklistItemsEndpoint(BlacklistService blacklistService) {
+		this.blacklistService = blacklistService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetBlacklistItemsRequest")
+	public  @ResponsePayload GetBlacklistItemsResponse getBlacklistItems(@RequestPayload GetBlacklistItemsRequest request) throws Exception {
+		GetBlacklistItemsResponse response = new GetBlacklistItemsResponse();
 		response.getEmail().addAll(blacklistService.getEmailList(Utils.getUserCompany()));
 		return response;
 	}
-
 }

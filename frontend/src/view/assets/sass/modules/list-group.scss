@@ -339,6 +339,26 @@ a.list-group-item {
   }
 }
 
+body.dark-theme .list-group-item {
+  background-color: $c-dt-list-group-background;
+  border-color: $c-dt-list-group-border;
+
+  &.disabled,
+  &.disabled:hover,
+  &.disabled:focus {
+    background-color: $c-dt-list-group-disabled-background;
+    color: $c-dt-list-group-disabled-text;
+
+    a {
+      color: $c-dt-list-group-disabled-text;
+    }
+
+    .list-group-item-controls a {
+      color: $c-dt-list-group-disabled-controls-text;
+    }
+  }
+}
+
 // Contextual variants
 //
 // Add modifier classes to change text and background color on individual items.

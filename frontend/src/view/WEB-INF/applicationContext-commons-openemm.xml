@@ -49,18 +49,8 @@
 
 	<bean id="EqlCodeGenerator" class="com.agnitas.emm.core.target.eql.codegen.CodeGenerator" />
 
-	<bean id="EqlTargetRepresentationToEqlConverter" class="com.agnitas.emm.core.target.eql.emm.legacy.TargetRepresentationToEqlConverter">
-		<constructor-arg ref="ProfileFieldDao"/>
-	</bean>
-	
 	<bean id="QueryBuilderConfiguration" class="com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderConfiguration">
 		<property name="profileFieldResolverFactory" ref="ProfileFieldResolverFactory"/>
-	</bean>
-	
-	<bean id="EqlToTargetRepresentationConverterFactory" class="com.agnitas.emm.core.target.eql.emm.legacy.OpenEmmEqlToTargetRepresentationConverterFactory">
-		<constructor-arg ref="ProfileFieldResolverFactory" />
-		<constructor-arg ref="MailingTypeResolverFactory" />
-		<constructor-arg ref="EqlSqlDialect" />
 	</bean>
 	
 	<bean id="SqlCodeGeneratorCallbackFactory" class="com.agnitas.emm.core.target.eql.codegen.sql.DefaultCommonSqlCodeGeneratorCallbackFactory">
@@ -69,17 +59,6 @@
 		<constructor-arg ref="MailingTypeResolverFactory" />
 		<constructor-arg ref="EqlLinkIdValidator" />
 		<constructor-arg ref="EqlSqlDialect" />
-	</bean>
-
-	<bean id="TargetNodeValidatorKit" class="org.agnitas.target.impl.TargetNodeValidatorKitImpl">
-		<property name="dateNodeValidator" ref="NonValidatingTargetNodeValidator" />
-		<property name="mailingClickedNodeValidator" ref="MailingIdTargetNodeValidator" />
-		<property name="mailingSpecificLinkClickNodeValidator" ref="MailingSpecificLinkClickNodeValidator" />
-		<property name="mailingOpenedNodeValidator" ref="MailingIdTargetNodeValidator" />
-		<property name="mailingReceivedNodeValidator" ref="MailingIdTargetNodeValidator" />
-		<property name="mailingRevenueNodeValidator" ref="MailingIdTargetNodeValidator" />
-		<property name="numericNodeValidator" ref="NonValidatingTargetNodeValidator" />
-		<property name="stringNodeValidator" ref="NonValidatingTargetNodeValidator" />
 	</bean>
 
 	<bean name="EqlToQueryBuilderParserConfiguration" class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.EqlToQueryBuilderParserConfiguration">
@@ -243,4 +222,16 @@
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
 	</bean>
 	
+	<bean id="ScriptHelper" class="com.agnitas.util.ScriptHelper" scope="prototype">
+		<property name="helperService" ref="ScriptHelperService" />
+		<property name="mailingDao" ref="MailingDao" />
+		<property name="recipientDao" ref="RecipientDao" />
+		<property name="scripthelperEmailLogDao" ref="ScripthelperEmailLogDao" />
+		<property name="configService" ref="ConfigService" />
+		<property name="javaMailService" ref="JavaMailService" />
+		<property name="sendActionbasedMailingService" ref="SendActionbasedMailingService" />
+		<property name="maildropStatusDao" ref="MaildropStatusDao" />
+		<property name="recipientService" ref="recipientService" />
+		<property name="extensibleUIDService" ref="ExtensibleUIDService" />
+	</bean>
 </beans>

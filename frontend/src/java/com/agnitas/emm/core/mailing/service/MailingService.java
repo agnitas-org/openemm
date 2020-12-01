@@ -12,11 +12,8 @@ package com.agnitas.emm.core.mailing.service;
 
 import java.util.List;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 import org.agnitas.beans.Mailing;
+import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.service.MailingModel;
@@ -26,6 +23,12 @@ import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
+
 public interface MailingService {
 	int addMailing(MailingModel model) throws MailinglistNotExistException;
 	
@@ -33,7 +36,7 @@ public interface MailingService {
 
 	Mailing getMailing(MailingModel model);
 
-	Mailing getMailing(final int companyID, final int mailingID);
+	ComMailing getMailing(final int companyID, final int mailingID);
 
 	void updateMailing(MailingModel model, List<UserAction> userActions) throws MailinglistException;
 
@@ -93,6 +96,8 @@ public interface MailingService {
 
 	List<TargetLight> listTargetGroupsOfMailing(final int companyID, final int mailingID) throws MailingNotExistException;
 
+	String getTargetExpression(@VelocityCheck final int companyId, final int mailingId);
+
 	boolean tryToLock(ComAdmin admin, int mailingId);
 	
 	boolean isDeliveryComplete(final int companyID, final int mailingID);
@@ -103,4 +108,16 @@ public interface MailingService {
 	List<Integer> listFollowupMailingIds(int companyID, int mailingID, boolean includeUnscheduled);
     
     boolean generateMailingTextContentFromHtml(ComAdmin admin, int mailingId) throws Exception;
+
+	List<LightweightMailing> getLightweightMailings(ComAdmin admin);
+
+	List<LightweightMailing> getLightweightIntervalMailings(ComAdmin admin);
+
+	List<LightweightMailing> getMailingsDependentOnTargetGroup(int companyID, int id);
+
+	List<Mailing> getTemplates(ComAdmin admin);
+
+	List<MailingBase> getTemplatesWithPreview(ComAdmin admin, String sort, String direction);
+
+    List<MailingBase> getMailingsByStatusE(@VelocityCheck int companyId);
 }

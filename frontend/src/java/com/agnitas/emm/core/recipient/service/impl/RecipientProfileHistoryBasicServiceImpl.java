@@ -15,7 +15,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.ComProfileField;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ComRecipientHistory;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.emm.core.recipient.ProfileFieldHistoryFeatureNotEnabledException;
@@ -24,11 +29,6 @@ import com.agnitas.emm.core.recipient.RecipientProfileHistoryUtil;
 import com.agnitas.emm.core.recipient.dao.RecipientProfileHistoryDao;
 import com.agnitas.emm.core.recipient.dao.impl.RecipientProfileHistoryDaoImplBasic;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
-import org.agnitas.beans.ProfileField;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Implementation of {@link RecipientProfileHistoryService} interface.
@@ -70,7 +70,7 @@ public class RecipientProfileHistoryBasicServiceImpl implements RecipientProfile
 	 * @throws Exception on errors during processing
 	 */
 	protected List<ProfileField> listProfileFieldsForHistory(@VelocityCheck int companyId) throws Exception {
-		List<ComProfileField> allFields = profileFieldDao.getComProfileFields(companyId);
+		List<ProfileField> allFields = profileFieldDao.getComProfileFields(companyId);
 
 		return Optional.ofNullable(allFields).orElse(Collections.emptyList()).stream()
 		.filter(field -> field.getHistorize() || RecipientProfileHistoryUtil.isDefaultColumn(field.getColumn()))

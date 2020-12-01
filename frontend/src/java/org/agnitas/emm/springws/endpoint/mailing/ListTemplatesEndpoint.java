@@ -10,40 +10,41 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
-import javax.annotation.Resource;
-
 import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.ListTemplatesRequest;
 import org.agnitas.emm.springws.jaxb.ListTemplatesResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 
-public class ListTemplatesEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class ListTemplatesEndpoint extends BaseEndpoint {
 
-	@Resource
 	private MailingService mailingService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		@SuppressWarnings("unused")
-		ListTemplatesRequest request = (ListTemplatesRequest) arg0;
-		ListTemplatesResponse response = objectFactory.createListTemplatesResponse();
+	public ListTemplatesEndpoint(@Qualifier("MailingService") MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListTemplatesRequest")
+	public @ResponsePayload ListTemplatesResponse listTemplatesResponse(@RequestPayload ListTemplatesRequest request) {
+		ListTemplatesResponse response = new ListTemplatesResponse();
 
 		MailingModel model = new MailingModel();
 		model.setCompanyId(Utils.getUserCompany());
 		model.setTemplate(true);
 		
 		for (Mailing mailing : mailingService.getMailings(model)) {
-			response.getItem().add(new ResponseBuilder(objectFactory).createTemplateResponse(mailing));
+			response.getItem().add(new MailingResponseBuilder().createTemplateResponse(mailing));
 		}
 			
 		return response;
 	}
-
 }

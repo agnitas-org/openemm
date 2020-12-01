@@ -51,6 +51,7 @@ import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
 import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
 import com.agnitas.emm.core.birtreport.dto.BirtReportType;
+import com.agnitas.emm.core.birtreport.dto.FilterType;
 import com.agnitas.emm.core.birtreport.dto.PeriodType;
 import com.agnitas.emm.core.birtreport.dto.PredefinedType;
 import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
@@ -72,19 +73,22 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
 
     @Override
     public boolean insert(ComBirtReport report) throws Exception{
-        if(report.isReportActive() == 1){
+        if(report.isReportActive() == 1) {
             report.setActivationDate(new Date());
         }
         return birtReportDao.insert(report);
     }
 
     @Override
-    public void logSentReport(ComBirtReport report){
+    public void logSentReport(ComBirtReport report) {
         if (report.isTriggeredByMailing()){
             final ComBirtReportMailingSettings reportMailingSettings = report.getReportMailingSettings();
             final List<Integer> mailingsIdsToSend = reportMailingSettings.getMailingsIdsToSend();
             birtReportDao.insertSentMailings(report.getId(), report.getCompanyID(), mailingsIdsToSend);
-            birtReportDao.deactivateBirtReport(report.getId());
+            if (reportMailingSettings.getReportSettingAsInt(ComBirtReportSettings.MAILING_FILTER_KEY) == FilterType.FILTER_MAILING.getKey()) {
+            	// Only deactivate this report if it is NOT an recurring report like e.g. "last mailing sent of mailinglist"
+            	birtReportDao.deactivateBirtReport(report.getId());
+            }
             if (!mailingsIdsToSend.isEmpty()){
                 reportMailingSettings.getSettingsMap().remove(MAILINGS_TO_SEND_KEY);
             }
@@ -94,7 +98,7 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
     }
 
     protected List<MailingBase> getPredefinedMailingsForReports(@VelocityCheck int companyId, int number, int filterType, int filterValue, int mailingType, String orderKey) {
-        return mailingDao.getPredefinedMailingsForReports(companyId, number, filterType, filterValue, mailingType, orderKey);
+        return mailingDao.getPredefinedMailingsForReports(companyId, number, filterType, filterValue, mailingType, orderKey, 0);
     }
 
     protected List<MailingBase> getPredefinedMailingsForReports(@VelocityCheck int companyId, int number, int filterType, int filterValue, int mailingType, String orderKey, Map<String, LocalDate> datesRestriction){
@@ -105,7 +109,7 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
 
             return mailingDao.getPredefinedNormalMailingsForReports(companyId, from, to, filterType, filterValue, orderKey);
         } else {
-        	return mailingDao.getPredefinedMailingsForReports(companyId, number, filterType, filterValue, mailingType, orderKey);
+        	return mailingDao.getPredefinedMailingsForReports(companyId, number, filterType, filterValue, mailingType, orderKey, 0);
         }
     }
 
@@ -148,10 +152,10 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
                 final Date startDate = startCalendar.getTime();
                 final Date endDate = endCalendar.getTime();
 
-                int filter = mailingSettings.getReportSettingAsInt(MAILING_FILTER_KEY,  BirtReportSettingsUtils.FILTER_NO_FILTER_VALUE);
+                int filterId = mailingSettings.getReportSettingAsInt(MAILING_FILTER_KEY);
                 int filterValue = mailingSettings.getReportSettingAsInt(ComBirtReportSettings.PREDEFINED_ID_KEY);
 
-                final List<Integer> mailingsToSend = mailingDao.getBirtReportMailingsToSend(birtReport.getCompanyID(), birtReport.getId(), startDate, endDate, filter, filterValue);
+                final List<Integer> mailingsToSend = mailingDao.getBirtReportMailingsToSend(birtReport.getCompanyID(), birtReport.getId(), startDate, endDate, filterId, filterValue);
                 mailingSettings.setMailingsToSend(mailingsToSend);
                 return !mailingsToSend.isEmpty();
             } else {
@@ -183,10 +187,10 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
         if (mailingGeneralType == MAILING_NORMAL) {
             if (mailingType == ComBirtReportMailingSettings.MAILING_PREDEFINED) {
                 int filterValue = 0;
-                int filterType = reportMailingSettings.getReportSettingAsInt(MAILING_FILTER_KEY, BirtReportSettingsUtils.FILTER_NO_FILTER_VALUE);
+                int filterType = reportMailingSettings.getReportSettingAsInt(MAILING_FILTER_KEY, FilterType.FILTER_NO_FILTER.getKey());
                 int numOfMailings = getLastNumberValue(reportMailingSettings.getPredefinedMailings());
                 String sortOrder = reportMailingSettings.getReportSettingAsString(SORT_MAILINGS_KEY);
-                if (filterType == BirtReportSettingsUtils.FILTER_ARCHIVE_VALUE || filterType == BirtReportSettingsUtils.FILTER_MAILINGLIST_VALUE){
+                if (filterType == FilterType.FILTER_ARCHIVE.getKey() || filterType == FilterType.FILTER_MAILINGLIST.getKey()){
                     filterValue = reportMailingSettings.getReportSettingAsInt(ComBirtReportMailingSettings.PREDEFINED_ID_KEY);
                 }
                 mailingIds = getPredefinedMailingsForReports(companyId, numOfMailings, filterType, filterValue, -1, sortOrder)
@@ -211,9 +215,9 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
         if (mailingType == ComBirtReportSettings.MAILINGS_PREDEFINED) {
             String sortOrder = reportComparisonSettings.getReportSettingAsString(SORT_MAILINGS_KEY);
             int numOfMailings = reportComparisonSettings.getReportSettingAsInt(PREDEFINED_MAILINGS_KEY);
-            int filterType = reportComparisonSettings.getReportSettingAsInt(MAILING_FILTER_KEY, BirtReportSettingsUtils.FILTER_NO_FILTER_VALUE);
+            int filterType = reportComparisonSettings.getReportSettingAsInt(MAILING_FILTER_KEY, FilterType.FILTER_NO_FILTER.getKey());
             int filterValue = 0;
-            if ((filterType == BirtReportSettingsUtils.FILTER_ARCHIVE_VALUE || filterType == BirtReportSettingsUtils.FILTER_MAILINGLIST_VALUE)) {
+            if ((filterType == FilterType.FILTER_ARCHIVE.getKey() || filterType == FilterType.FILTER_MAILINGLIST.getKey())) {
                 filterValue = reportComparisonSettings.getReportSettingAsInt(ComBirtReportComparisonSettings.PREDEFINED_ID_KEY);
             }
             if (numOfMailings >= 0) {

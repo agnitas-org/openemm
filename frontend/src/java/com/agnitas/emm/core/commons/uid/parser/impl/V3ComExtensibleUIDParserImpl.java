@@ -89,7 +89,11 @@ public class V3ComExtensibleUIDParserImpl extends BaseExtensibleUIDParser {
 
         if (Objects.isNull(mailingData)) {
             String errorMessage = String.format("Error validating UID. No such mailing. mailingId: %d uid: %s", mailingID, uidString);
-            logger.error(errorMessage);
+            
+            if(logger.isInfoEnabled()) {
+            	logger.info(errorMessage);
+            }
+            
             throw new MailingNotFoundParseException(errorMessage);
         }
 

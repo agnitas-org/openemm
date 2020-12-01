@@ -28,8 +28,10 @@ public abstract class BaseTrackableLinkImpl implements BaseTrackableLink {
 	protected int companyID;
 	protected int actionID;
 	protected String fullUrl = null;
+	protected int usage;
+	protected int deepTracking;
 	protected List<LinkProperty> linkProperties = new ArrayList<>();
-	
+
 	@Override
 	public int getId() {
 		return id;
@@ -79,7 +81,27 @@ public abstract class BaseTrackableLinkImpl implements BaseTrackableLink {
 	public String getFullUrl() {
 		return StringUtils.defaultString(fullUrl);
 	}
-	
+
+	@Override
+	public int getUsage() {
+		return usage;
+	}
+
+	@Override
+	public void setUsage(int usage) {
+		this.usage = usage;
+	}
+
+	@Override
+	public int getDeepTracking() {
+		return deepTracking;
+	}
+
+	@Override
+	public void setDeepTracking(int deepTracking) {
+		this.deepTracking = deepTracking;
+	}
+
 	@Override
 	public void setProperties(List<LinkProperty> linkProperties) {
 		this.linkProperties = linkProperties;
@@ -142,5 +164,30 @@ public abstract class BaseTrackableLinkImpl implements BaseTrackableLink {
 			logger.warn("Error creation directory link with optional extension without user data, cause: " + e.getMessage());
 			return "";
 		}
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+
+		BaseTrackableLinkImpl that = (BaseTrackableLinkImpl) o;
+
+		if (id != that.id) {
+			return false;
+		}
+
+		return fullUrl.equals(that.fullUrl);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = id;
+		result = 31 * result + fullUrl.hashCode();
+		return result;
 	}
 }

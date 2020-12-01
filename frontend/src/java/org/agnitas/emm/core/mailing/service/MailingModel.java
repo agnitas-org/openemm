@@ -26,6 +26,33 @@ import com.agnitas.emm.core.report.enums.DatabaseField;
 import com.agnitas.emm.core.report.enums.DatabaseFieldUtils;
 
 public class MailingModel {
+	public interface AddGroup {
+    	// do nothing
+    }
+	
+	public interface AddFromTemplateGroup {
+    	// do nothing
+    }
+	
+	public interface GetGroup {
+    	// do nothing
+    }
+	
+	public interface UpdateGroup {
+    	// do nothing
+    }
+	
+	public interface SendGroup {
+    	// do nothing
+    }
+	
+	public interface CompanyGroup {
+    	// do nothing
+    }
+	
+	public interface GetForMLID {
+    	// do nothing
+    }
 
 	public static enum MailingType {
 		REGULAR("regular", 0), ACTION_BASED("action-based", 1), RULE_BASED("rule-based", 2);

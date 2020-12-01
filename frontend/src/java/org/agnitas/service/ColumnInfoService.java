@@ -12,9 +12,10 @@ package org.agnitas.service;
 
 import java.util.List;
 
-import org.agnitas.beans.ProfileField;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
+
+import com.agnitas.beans.ProfileField;
 
 public interface ColumnInfoService {
 	ProfileField getColumnInfo(@VelocityCheck int companyID, String column) throws Exception;

@@ -46,4 +46,6 @@ public interface ProfileFieldValidationService {
     boolean isStandardColumn(String fieldName);
     
     ServiceResult<Object> validateNewProfileFieldValue(ComAdmin admin, RecipientFieldDto field);
+
+	boolean isInvalidFloatField(String fieldType, String fieldDefault);
 }

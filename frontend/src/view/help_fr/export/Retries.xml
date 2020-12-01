@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[nombre de tentatives]]></title>
+	<content><![CDATA[Si une exportation n'a pas pu être exécutée parce que, par exemple, le serveur cible était inaccessible ou qu'aucun espace disque n'était disponible, vous pouvez spécifier à quelle fréquence l'EMM doit tenter de relancer l'exportation. Par défaut, une nouvelle tentative est effectuée après 15 minutes. Toutes les autres tentatives sont également effectuées à des intervalles de 15 minutes.]]></content>
+</HelpBalloon>

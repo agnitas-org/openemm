@@ -10,18 +10,19 @@
 
 package com.agnitas.emm.core.target.complexity.service.impl;
 
-import com.agnitas.beans.ComProfileField;
-import com.agnitas.dao.ComProfileFieldDao;
-import com.agnitas.emm.core.target.complexity.service.AbstractTargetComplexityAnalyzer;
-import com.agnitas.emm.core.target.complexity.service.TargetComplexityCriterion;
-import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
-import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationState;
-import com.agnitas.emm.core.target.complexity.bean.CustomerTableColumnMetadata;
-import com.agnitas.emm.core.target.complexity.bean.impl.CustomerTableColumnMetadataImpl;
-import com.agnitas.emm.core.target.eql.ast.ProfileFieldAtomEqlNode;
 import org.agnitas.util.DbColumnType;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import com.agnitas.beans.ProfileField;
+import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.emm.core.target.complexity.bean.CustomerTableColumnMetadata;
+import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
+import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationState;
+import com.agnitas.emm.core.target.complexity.bean.impl.CustomerTableColumnMetadataImpl;
+import com.agnitas.emm.core.target.complexity.service.AbstractTargetComplexityAnalyzer;
+import com.agnitas.emm.core.target.complexity.service.TargetComplexityCriterion;
+import com.agnitas.emm.core.target.eql.ast.ProfileFieldAtomEqlNode;
 
 @Component
 public final class TargetProfileFieldNodeComplexityAnalyzer extends AbstractTargetComplexityAnalyzer<ProfileFieldAtomEqlNode> {
@@ -46,7 +47,7 @@ public final class TargetProfileFieldNodeComplexityAnalyzer extends AbstractTarg
 
             if (type == DbColumnType.SimpleDataType.Characters) {
                 add(state, TargetComplexityCriterion.COLUMN_TEXT);
-            } else if (type == DbColumnType.SimpleDataType.Date) {
+            } else if (type == DbColumnType.SimpleDataType.Date || type == DbColumnType.SimpleDataType.DateTime) {
                 add(state, TargetComplexityCriterion.COLUMN_DATE);
             }
 
@@ -81,7 +82,7 @@ public final class TargetProfileFieldNodeComplexityAnalyzer extends AbstractTarg
             DbColumnType type = profileFieldDao.getColumnType(companyId, column);
 
             if (type == null) {
-                ComProfileField field = profileFieldDao.getProfileFieldByShortname(companyId, column);
+                ProfileField field = profileFieldDao.getProfileFieldByShortname(companyId, column);
 
                 if (field == null) {
                     return null;

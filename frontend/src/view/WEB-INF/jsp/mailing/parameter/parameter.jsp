@@ -14,7 +14,7 @@
     <c:set var="isChangable" value="${true}"/>
 </emm:ShowByPermission>
 
-<div class="tile">
+<div class="tile" data-action="scroll-to">
     <div class="tile-header">
         <a href="#" class="headline" data-toggle-tile="#tile-mailingParameters">
             <i class="tile-toggle icon icon-angle-up"></i>

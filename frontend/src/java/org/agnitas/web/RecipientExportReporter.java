@@ -74,7 +74,7 @@ public class RecipientExportReporter {
 	}
 	
 	@Required
-	public final void setAdminService(final AdminService service) {
+	public void setAdminService(final AdminService service) {
 		this.adminService = Objects.requireNonNull(service, "Admin service is null");
 	}
 

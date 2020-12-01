@@ -403,7 +403,15 @@ public class AgnUtils {
 
 	public static ComAdmin getAdmin(HttpServletRequest request) {
 		try {
-			HttpSession session = request.getSession(false);
+			return getAdmin(request.getSession(false));
+		} catch (Exception e) {
+			logger.error("Error while reading admin from request", e);
+			return null;
+		}
+	}
+
+	public static ComAdmin getAdmin(HttpSession session) {
+		try {
 			if (session == null) {
 				logger.debug("no request session found for getAdmin", new Exception());
 				return null;
@@ -417,7 +425,7 @@ public class AgnUtils {
 				}
 			}
 		} catch (Exception e) {
-			logger.error("Error while reading admin from request", e);
+			logger.error("Error while reading admin from session", e);
 			return null;
 		}
 	}
@@ -627,7 +635,7 @@ public class AgnUtils {
 	 */
 	 @Deprecated // TODO EMM-6543 remove (replacement exists)
 	public static Interpreter getBshInterpreter(int cID, int customerID, ApplicationContext con) throws JspException {
-		DataSource ds = (DataSource) con.getBean("dataSource");
+		DataSource ds = con.getBean("dataSource", DataSource.class);
 		Interpreter aBsh = new Interpreter();
 		NameSpace aNameSpace = aBsh.getNameSpace();
 		aNameSpace.importClass("org.agnitas.util.AgnUtils");
@@ -1603,6 +1611,14 @@ public class AgnUtils {
 		}
 	}
 
+	public static boolean isNumberValid(final String value) {
+		try {
+			return parseNumber(value) != null;
+		} catch (NumberFormatException e) {
+			return false;
+		}
+	}
+
 	/**
 	 * Call lowercase and trim on email address. Watch out: apostrophe and other
 	 * special characters !#$%&'*+-/=?^_`{|}~ are allowed in local parts of
@@ -2080,15 +2096,6 @@ public class AgnUtils {
 
 		return uniqueName;
     }
-    
-    public static String getUserFormUrlPattern(ComAdmin admin) {
-		if (admin == null || admin.getCompany() == null) {
-			return "";
-		}
-		
-		return String.format("%s/form.do?agnCI=%d&agnFN={user-form-name}",
-				admin.getCompany().getRdirDomain(), admin.getCompanyID());
-	}
 
     public static class TimeIgnoringComparator implements Comparator<Calendar> {
 		@Override
@@ -2535,6 +2542,10 @@ public class AgnUtils {
 		}
 
 		return true;
+	}
+
+	public static String getHumanReadableNumber(Number value, String unitTypeSign, boolean siUnits, HttpServletRequest request) {
+		return getHumanReadableNumber(value, unitTypeSign, siUnits, getLocale(request));
 	}
 
 	public static String getHumanReadableNumber(Number value, String unitTypeSign, boolean siUnits) {
@@ -3119,6 +3130,10 @@ public class AgnUtils {
 			return defaultValue;
 		}
 	}
+	
+	/**
+	 * Convert a float or double number from the admins locale display into english standard display
+	 */
 	public static String normalizeNumber(Locale locale, String numberString) {
 		DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols(locale);
 		String decimalSeparator = Character.toString(decimalFormatSymbols.getDecimalSeparator());
@@ -3126,6 +3141,9 @@ public class AgnUtils {
 		return normalizeNumber(decimalSeparator, groupingSeparator, numberString);
 	}
 
+	/**
+	 * Convert a float or double number with defined decimalSeparator into english standard display
+	 */
 	public static String normalizeNumber(String decimalSeparator, String numberString) {
 		if (",".equals(decimalSeparator)) {
 			return normalizeNumber(decimalSeparator, ".", numberString);
@@ -3134,6 +3152,9 @@ public class AgnUtils {
 		}
 	}
 
+	/**
+	 * Convert a float or double number with defined decimalSeparator and groupingSeparator into english standard display
+	 */
 	public static String normalizeNumber(String decimalSeparator, String groupingSeparator, String numberString) {
 		if (StringUtils.isBlank(numberString)) {
 			return "";
@@ -3257,7 +3278,7 @@ public class AgnUtils {
 
 	public static String replaceHomeVariables(String value) {
 		if (StringUtils.isNotBlank(value)) {
-			String homeDir = getUserHomeDir();
+			String homeDir = AgnUtils.getUserHomeDir();
 			return value.replace("~", homeDir).replace("$HOME", homeDir).replace("${HOME}", homeDir).replace("$home", homeDir).replace("${home}", homeDir);
 		} else {
 			return value;
@@ -3653,5 +3674,48 @@ public class AgnUtils {
 	
 	public static ZoneId getSystemTimeZoneId() {
 		return getSystemTimeZone().toZoneId();
+	}
+
+	public static String getNormalizedRdirDomain(String rdirDomain) {
+        rdirDomain = StringUtils.trim(rdirDomain);
+
+        if (StringUtils.isEmpty(rdirDomain)) {
+            return StringUtils.EMPTY;
+        }
+
+        if (rdirDomain.endsWith("/")) {
+            return rdirDomain;
+        } else {
+            return rdirDomain + "/";
+        }
+    }
+	
+	public static List<String> sortCollectionWithItemsFirst(Collection<String> sourceCollection, String... keepItemsFirst) {
+		List<String> list = new ArrayList<>(sourceCollection);
+		Collections.sort(list, new Comparator<String>() {
+			@Override
+			public int compare(String o1, String o2) {
+				if (o1 == o2) {
+					return 0;
+				} else if (o1 == null) {
+					return 1;
+				} else if (o1.equals(o2)) {
+					return 0;
+				} else {
+					for (String item : keepItemsFirst) {
+						if (o1.equalsIgnoreCase(item)) {
+							return -1;
+						}
+					}
+					for (String item : keepItemsFirst) {
+						if (o2.equalsIgnoreCase(item)) {
+							return 1;
+						}
+					}
+					return o1.compareTo(o2);
+				}
+			}
+		});
+		return list;
 	}
 }

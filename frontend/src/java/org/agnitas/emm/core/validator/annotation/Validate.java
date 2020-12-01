@@ -18,9 +18,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Validate {
-	/**
-	 * Form name in validator-rules.xml
-	 * @return form name
-	 */
-	String value();
+
+	Class<?>[] groups() default {};
 }

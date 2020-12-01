@@ -29,6 +29,8 @@ public class ComEmmActionForm extends EmmActionForm {
 	private Set<Integer> bulkIDs = new HashSet<>();
 
     private List<Tuple<Integer, String>> usedByFormsNames;
+    
+    private List<Tuple<Integer, String>> usedByImportNames;
 
     private Map<Integer, Boolean> activenessMap = new HashMap<>();
     private String activenessFilter;
@@ -39,13 +41,15 @@ public class ComEmmActionForm extends EmmActionForm {
 
         clearBulkIds();
         usedByFormsNames = null;
+        usedByImportNames = null;
         activenessMap.clear();
         activenessFilter = null;
     }
 
     public void setBulkID(int id, String value) {
-        if (value != null && (value.equals("on") || value.equals("yes") || value.equals("true")))
-            this.bulkIDs.add(id);
+        if (value != null && (value.equals("on") || value.equals("yes") || value.equals("true"))) {
+			this.bulkIDs.add(id);
+		}
     }
 
     public String getBulkID(int id) {
@@ -66,6 +70,14 @@ public class ComEmmActionForm extends EmmActionForm {
 
     public void setUsedByFormsNames(List<Tuple<Integer, String>> usedByFormsNames) {
         this.usedByFormsNames = usedByFormsNames;
+    }
+
+    public List<Tuple<Integer, String>> getUsedByImportNames() {
+        return usedByImportNames;
+    }
+
+    public void setUsedByImportNames(List<Tuple<Integer, String>> usedByImportNames) {
+        this.usedByImportNames = usedByImportNames;
     }
 
     public void setActiveness(int id, String value) {

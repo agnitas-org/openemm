@@ -14,16 +14,17 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
-import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-public interface RecipientsReportService {
-    RecipientsReport createAndSaveImportReport(ComAdmin admin, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError);
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
 
-    RecipientsReport createAndSaveExportReport(ComAdmin admin, String filename, Date reportDate, String content, boolean isError);
+public interface RecipientsReportService {
+    RecipientsReport createAndSaveImportReport(ComAdmin admin, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError) throws Exception;
+
+    RecipientsReport createAndSaveExportReport(ComAdmin admin, String filename, Date reportDate, String content, boolean isError) throws Exception;
 
     String getImportReportContent(int companyId, int reportId);
 

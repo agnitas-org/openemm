@@ -33,19 +33,6 @@ import com.agnitas.dao.ComEmmLayoutBaseDao;
 public class ComEmmLayoutBaseDaoImpl extends BaseDaoImpl implements ComEmmLayoutBaseDao {
 	private static final transient Logger logger = Logger.getLogger(ComEmmLayoutBaseDaoImpl.class);
 	
-	private static final String TABLE = "emm_layout_base_tbl";
-
-	private static final String FIELD_BASE_ID = "layout_base_id";
-	private static final String FIELD_BASE_URL = "base_url";
-	private static final String FIELD_SHORTNAME = "shortname";
-	private static final String FIELD_MENU_POSITION = "menu_position";
-	private static final String FIELD_LIVEPREVIEW_POSITION = "livepreview_position";
-	private static final String FIELD_COMPANY_ID = "company_id";
-	
-	private static final String[] FIELD_NAMES = new String[]{FIELD_BASE_ID, FIELD_BASE_URL, FIELD_SHORTNAME, FIELD_MENU_POSITION, FIELD_LIVEPREVIEW_POSITION, FIELD_COMPANY_ID};	
-	private static final String SELECT = "SELECT " + StringUtils.join(FIELD_NAMES, ", ") + " FROM " + TABLE + " WHERE " + FIELD_BASE_ID + " = ? AND " + FIELD_COMPANY_ID + " = ?";
-	private static final String SELECT_BY_COMPANYID = "SELECT " + StringUtils.join(FIELD_NAMES, ", ") + " FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? OR " + FIELD_COMPANY_ID + " = 0 ORDER BY " + FIELD_COMPANY_ID + ", " + FIELD_MENU_POSITION;
-
 	private static final Map<String, String> LAYOUT_CACHE = new HashMap<>();
 
 	@Override
@@ -55,7 +42,7 @@ public class ComEmmLayoutBaseDaoImpl extends BaseDaoImpl implements ComEmmLayout
 		}
 
 		try {
-			List<EmmLayoutBase> result = select(logger, SELECT, new ComEmmLayoutBaseRowMapper(), emmLayoutBaseID, companyID);
+			List<EmmLayoutBase> result = select(logger, "SELECT layout_base_id, base_url, shortname, menu_position, livepreview_position, company_id, theme_type FROM emm_layout_base_tbl WHERE layout_base_id = ? AND company_id IN(0, ?)", new ComEmmLayoutBaseRowMapper(), emmLayoutBaseID, companyID);
 			if (result.size() > 0) {
 				return result.get(0);
 			} else {
@@ -71,7 +58,7 @@ public class ComEmmLayoutBaseDaoImpl extends BaseDaoImpl implements ComEmmLayout
 	@Override
 	public List<EmmLayoutBase> getEmmLayoutsBase(@VelocityCheck int companyID) {
 		try {
-			return select(logger, SELECT_BY_COMPANYID, new ComEmmLayoutBaseRowMapper(), companyID);
+			return select(logger, "SELECT layout_base_id, base_url, shortname, menu_position, livepreview_position, company_id, theme_type FROM emm_layout_base_tbl WHERE company_id = ? OR company_id = 0 ORDER BY company_id, menu_position", new ComEmmLayoutBaseRowMapper(), companyID);
 		} catch (Exception e) {
 			logger.debug("Error:" + e);
 			return new ArrayList<>();
@@ -81,14 +68,15 @@ public class ComEmmLayoutBaseDaoImpl extends BaseDaoImpl implements ComEmmLayout
 	protected class ComEmmLayoutBaseRowMapper implements RowMapper<EmmLayoutBase> {
 		@Override
 		public EmmLayoutBase mapRow(ResultSet resultSet, int row) throws SQLException {
-			int id = resultSet.getInt(FIELD_BASE_ID);
-			String baseUrl = resultSet.getString(FIELD_BASE_URL);
+			int id = resultSet.getInt("layout_base_id");
+			String baseUrl = resultSet.getString("base_url");
 			
 			EmmLayoutBaseImpl layoutBase = new EmmLayoutBaseImpl(id, baseUrl);
 			
-			layoutBase.setShortname(resultSet.getString(FIELD_SHORTNAME));
-			layoutBase.setMenuPosition(resultSet.getInt(FIELD_MENU_POSITION));
-			layoutBase.setLivepreviewPosition(resultSet.getInt(FIELD_LIVEPREVIEW_POSITION));
+			layoutBase.setShortname(resultSet.getString("shortname"));
+			layoutBase.setMenuPosition(resultSet.getInt("menu_position"));
+			layoutBase.setLivepreviewPosition(resultSet.getInt("livepreview_position"));
+			layoutBase.setThemeType(EmmLayoutBase.ThemeType.valueOf(resultSet.getInt("theme_type")));
 			
 			return layoutBase;
 		}
@@ -122,6 +110,23 @@ public class ComEmmLayoutBaseDaoImpl extends BaseDaoImpl implements ComEmmLayout
 			return directory;
 		} catch (Exception e) {
 			return "assets/core";
+		}
+	}
+
+	@Override
+	public Map<String, Integer> getMappedDomains() {
+		try {
+			Map<String, Integer> returnMap = new HashMap<>();
+			List<Map<String,Object>> result = select(logger, "SELECT domain, company_id FROM emm_layout_base_tbl WHERE domain IS NOT NULL");
+			for (Map<String,Object> row : result) {
+				int companyID = ((Number) row.get("company_id")).intValue();
+				String domain = (String) row.get("domain");
+				returnMap.put(domain, companyID);
+			}
+			return returnMap;
+		} catch (Exception e) {
+			logger.debug("Error:" + e);
+			return new HashMap<>();
 		}
 	}
 }

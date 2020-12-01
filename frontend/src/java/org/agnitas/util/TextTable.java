@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
 
 public class TextTable {
@@ -55,8 +55,9 @@ public class TextTable {
 	public TextTable(String... columnNames) {
 		this();
 		
-		for (String columnName : columnNames)
+		for (String columnName : columnNames) {
 			addColumn(columnName);
+		}
 	}
 	
 	public TextTable(List<Map<String, Object>> data, boolean oneLinePerDataRow) throws Exception {
@@ -105,25 +106,29 @@ public class TextTable {
 		columnColors.add(farbe);
 		
 		// add second row
-		if (columnNameLine2 != null && columnNames.size() == 1)
+		if (columnNameLine2 != null && columnNames.size() == 1) {
 			columnNames.add(new ArrayList<>());
-		
-		if (columnNames.size() > 1) {
-			while (columnNames.get(1).size() < columnNames.get(0).size() - 1)
-				columnNames.get(1).add("");
 		}
 		
-		if (columnNameLine2 != null)
+		if (columnNames.size() > 1) {
+			while (columnNames.get(1).size() < columnNames.get(0).size() - 1) {
+				columnNames.get(1).add("");
+			}
+		}
+		
+		if (columnNameLine2 != null) {
 			columnNames.get(1).add(columnNameLine2);
-		else if (columnNames.size() > 1)
+		} else if (columnNames.size() > 1) {
 			columnNames.get(1).add("");
+		}
 		
 		columnRightAligned.add(alignRight);
 		
 		// bring all rows to length of headers
 		for (List<String> line : content) {
-			while (line.size() < columnNames.get(0).size())
+			while (line.size() < columnNames.get(0).size()) {
 				line.add("");
+			}
 		}
 	}
 	
@@ -131,19 +136,22 @@ public class TextTable {
 		columnNames.get(0).remove(index);
 		columnColors.remove(index);
 		
-		if (columnNames.size() > 1)
+		if (columnNames.size() > 1) {
 			columnNames.get(1).remove(index);
+		}
 		
 		columnRightAligned.remove(index);
 		
 		// bring all rows to length of headers
-		for (List<String> line : content)
+		for (List<String> line : content) {
 			line.remove(index);
+		}
 	}
 	
 	public void setAlignmentForColumn(int columnIndex, boolean alignRight) throws Exception {
-		if (columnIndex < 0 || columnIndex >= columnNames.get(0).size())
+		if (columnIndex < 0 || columnIndex >= columnNames.get(0).size()) {
 			throw new Exception("Ungultige Spalten-Indexangabe: " + columnIndex);
+		}
 		
 		columnRightAligned.set(columnIndex, alignRight);
 	}
@@ -159,8 +167,9 @@ public class TextTable {
 		currentColumnIndex = 0;
 		
 		// bring new row to length of headers
-		while (content.get(currentLineIndex).size() < columnNames.get(0).size())
+		while (content.get(currentLineIndex).size() < columnNames.get(0).size()) {
 			content.get(currentLineIndex).add("");
+		}
 	}
 	
 	public void addValueToCurrentLine(int value) throws Exception {
@@ -168,12 +177,15 @@ public class TextTable {
 	}
 	
 	public void addValueToCurrentLine(String value) throws Exception {
-		if (currentLineIndex == -1)
+		if (currentLineIndex == -1) {
 			throw new Exception("Keine Zeile zum Erweitern angelegt");
-		else if (content.get(currentLineIndex).size() <= currentColumnIndex)
+		} else if (content.get(currentLineIndex).size() <= currentColumnIndex) {
 			throw new Exception("Versuch in eine Spalte zu Schreiben die noch nicht angelegt wurde");
+		}
 		
-		if (value == null) value = "";
+		if (value == null) {
+			value = "";
+		}
 		content.get(currentLineIndex).set(currentColumnIndex, value);
 		currentColumnIndex++;
 	}
@@ -208,21 +220,24 @@ public class TextTable {
 			int size = getMaxSizeOfColumn(columnIndex);
 			
 			for (int lineIndex = 0; lineIndex < columnNames.size(); lineIndex++) {
-				if (columnIndex > 0)
+				if (columnIndex > 0) {
 					columnNamesLines.get(lineIndex).append(" ");
+				}
 				
 				columnNamesLines.get(lineIndex).append(trimStringToLengthAlignedLeft(columnNames.get(lineIndex).get(columnIndex), size));
 			}
 			
 			// iterate over rows
 			for (int lineIndex = 0; lineIndex < content.size(); lineIndex++) {
-				if (columnIndex > 0)
+				if (columnIndex > 0) {
 					contentLines.get(lineIndex).append(" ");
+				}
 				
-				if (columnRightAligned.get(columnIndex))
+				if (columnRightAligned.get(columnIndex)) {
 					contentLines.get(lineIndex).append(trimStringToLengthAlignedRight(content.get(lineIndex).get(columnIndex), size));
-				else
+				} else {
 					contentLines.get(lineIndex).append(trimStringToLengthAlignedLeft(content.get(lineIndex).get(columnIndex), size));
+				}
 			}
 		}
 		
@@ -253,9 +268,9 @@ public class TextTable {
 		}
 		
 		// write data rows
-		// itearate over rows
+		// iterate over rows
 		for (int lineIndex = 0; lineIndex < content.size(); lineIndex++) {
-			// itearate over columns
+			// iterate over columns
 			for (int columnIndex = 0 ; columnIndex < content.get(0).size(); columnIndex++) {
 				csvText.append("\"" + content.get(lineIndex).get(columnIndex) + "\";");
 			}
@@ -301,8 +316,9 @@ public class TextTable {
 			for (int columnIndex = 0 ; columnIndex < content.get(0).size(); columnIndex++) {
 				// remova leading apostroph
 				String cellContentString = content.get(lineIndex).get(columnIndex);
-				if (cellContentString != null && cellContentString.startsWith("'") && !cellContentString.endsWith("'"))
+				if (cellContentString != null && cellContentString.startsWith("'") && !cellContentString.endsWith("'")) {
 					cellContentString = cellContentString.substring(1);
+				}
 				csvText.append("\"" + cellContentString + "\";");
 			}
 			csvText.append("\n");
@@ -331,7 +347,7 @@ public class TextTable {
 	}
 	
 	public static String getHtmlFooter() {
-		return "<body>\n" 
+		return "<body>\n"
 			+ "<html>\n";
 	}
 
@@ -342,8 +358,9 @@ public class TextTable {
 	public String toHtmlString(String tableTitle, int fontsizeInPt) {
 		StringBuilder htmlTableStringBuffer = new StringBuilder();
 		htmlTableStringBuffer.append(StringEscapeUtils.escapeHtml4(tableTitle) + "<br>\n");
-		if (fontsizeInPt > 0)
+		if (fontsizeInPt > 0) {
 			htmlTableStringBuffer.append("<STYLE TYPE=\"text/css\"><!--TD{font-family: Arial; font-size: " + fontsizeInPt + "pt;}---></STYLE>");
+		}
 		htmlTableStringBuffer.append("<table border='1' cellspacing='1' cellpadding='1'>\n");
 		// Alternative for full width: "<table border='1' width='100%' cellspacing='1' cellpadding='1'>\n");
 	
@@ -352,33 +369,37 @@ public class TextTable {
 		htmlTableStringBuffer.append("<tr align='center'>");
 		// itearate over columns
 		for (int columnIndex = 0 ; columnIndex < columnNames.get(0).size(); columnIndex++) {
-			if (columnColors.get(columnIndex) == null)
+			if (columnColors.get(columnIndex) == null) {
 				htmlTableStringBuffer.append("<td>");
-			else
+			} else {
 				htmlTableStringBuffer.append("<td bgcolor='" + convertXlsColor2HtmlColor(columnColors.get(columnIndex)) + "'>");
+			}
 			
 			htmlTableStringBuffer.append(StringEscapeUtils.escapeHtml4(columnNames.get(0).get(columnIndex)).replace(" ", "&nbsp;").replace("-", "&#8209;"));
-			if (columnNames.size() > 1)
+			if (columnNames.size() > 1) {
 				htmlTableStringBuffer.append("<br/>" + StringEscapeUtils.escapeHtml4(columnNames.get(1).get(columnIndex)).replace(" ", "&nbsp;").replace("-", "&#8209;"));
+			}
 			htmlTableStringBuffer.append("</td>");
 		}
 		htmlTableStringBuffer.append("</tr>\n");
 		
 		// itearate over rows
 		for (int lineIndex = 0; lineIndex < content.size(); lineIndex++) {
-			if (lineColors.get(lineIndex) != null)
+			if (lineColors.get(lineIndex) != null) {
 				htmlTableStringBuffer.append("<tr align='right' bgcolor='" + lineColors.get(lineIndex) + "'>");
-			else if (rowcount % 2 == 0)
+			} else if (rowcount % 2 == 0) {
 				htmlTableStringBuffer.append("<tr align='right' bgcolor='cornflowerblue'>");
-			else
+			} else {
 				htmlTableStringBuffer.append("<tr align='right' bgcolor='lightblue'>");
+			}
 			
 			// itearate over columns
 			for (int columnIndex = 0 ; columnIndex < columnNames.get(0).size(); columnIndex++) {
 				// remove leading apostroph
 				String cellContentString = content.get(lineIndex).get(columnIndex);
-				if (cellContentString != null && cellContentString.startsWith("'") && !cellContentString.endsWith("'"))
+				if (cellContentString != null && cellContentString.startsWith("'") && !cellContentString.endsWith("'")) {
 					cellContentString = cellContentString.substring(1);
+				}
 				htmlTableStringBuffer.append("<td align='" + (columnRightAligned.get(columnIndex) ? "right" : "left") + "'>" + StringEscapeUtils.escapeHtml4(cellContentString).replace(" ", "&nbsp;").replace("-", "&#8209;") + "</td>");
 			}
 			htmlTableStringBuffer.append("</tr>\n");
@@ -405,29 +426,30 @@ public class TextTable {
 	}
 	
 	public static String convertXlsColor2HtmlColor(String xlsColor) {
-		if ("VERY_LIGHT_YELLOW".equalsIgnoreCase(xlsColor))
+		if ("VERY_LIGHT_YELLOW".equalsIgnoreCase(xlsColor)) {
 			return "yellow";
-		else if ("LIGHT_GREEN".equalsIgnoreCase(xlsColor))
+		} else if ("LIGHT_GREEN".equalsIgnoreCase(xlsColor)) {
 			return "lime";
-		else if ("LAVENDER".equalsIgnoreCase(xlsColor))
+		} else if ("LAVENDER".equalsIgnoreCase(xlsColor)) {
 			return "fuchsia";
-		else if ("TAN".equalsIgnoreCase(xlsColor))
+		} else if ("TAN".equalsIgnoreCase(xlsColor)) {
 			return "fuchsia";
-		else if ("TURQUOISE".equalsIgnoreCase(xlsColor))
+		} else if ("TURQUOISE".equalsIgnoreCase(xlsColor)) {
 			return "aqua";
-		else if ("YELLOW".equalsIgnoreCase(xlsColor))
+		} else if ("YELLOW".equalsIgnoreCase(xlsColor)) {
 			return "yellow";
-		else if ("LIGHT_TURQUOISE".equalsIgnoreCase(xlsColor))
+		} else if ("LIGHT_TURQUOISE".equalsIgnoreCase(xlsColor)) {
 			return "aqua";
-		else if ("LIGHT_ORANGE".equalsIgnoreCase(xlsColor))
+		} else if ("LIGHT_ORANGE".equalsIgnoreCase(xlsColor)) {
 			return "red";
-		else if ("ROSE".equalsIgnoreCase(xlsColor))
+		} else if ("ROSE".equalsIgnoreCase(xlsColor)) {
 			return "fuchsia";
-		else if ("WOCHENENDE".equalsIgnoreCase(xlsColor))
+		} else if ("WOCHENENDE".equalsIgnoreCase(xlsColor)) {
 			// special color
 			return "coral";
-		else
+		} else {
 			return "white";
+		}
 	}
 	
 	public void loadCsvWithMetadataFile(byte[] csvWithMetadata) throws IOException {
@@ -447,10 +469,12 @@ public class TextTable {
 			while ((fileLine = fileReader.readLine()) != null) {
 				String[] lineParts = fileLine.split(";");
 				for (int i = 0; i < lineParts.length; i++) {
-					if (lineParts[i].startsWith("\""))
+					if (lineParts[i].startsWith("\"")) {
 						lineParts[i] = lineParts[i].substring(1);
-					if (lineParts[i].endsWith("\""))
+					}
+					if (lineParts[i].endsWith("\"")) {
 						lineParts[i] = lineParts[i].substring(0, lineParts[i].length() - 1);
+					}
 				}
 				if (METADATA_HEADER.equals(lineParts[0])) {
 					List<String> headerLine = new ArrayList<>();
@@ -461,25 +485,28 @@ public class TextTable {
 				}
 				else if (METADATA_FARBE.equals(lineParts[0])) {
 					for (int i = 1; i < lineParts.length; i++) {
-						if (lineParts[i].equalsIgnoreCase("null"))
+						if (lineParts[i].equalsIgnoreCase("null")) {
 							columnColors.add(null);
-						else
+						} else {
 							columnColors.add(lineParts[i]);
+						}
 					}
 				}
 				else if (METADATA_RIGHTALIGNMENT.equals(lineParts[0])) {
 					for (int i = 1; i < lineParts.length; i++) {
-						if (lineParts[i].equalsIgnoreCase("true"))
+						if (lineParts[i].equalsIgnoreCase("true")) {
 							columnRightAligned.add(true);
-						else
+						} else {
 							columnRightAligned.add(false);
+						}
 					}
 				}
 				else {
-					if (lineParts[0].equalsIgnoreCase("null"))
+					if (lineParts[0].equalsIgnoreCase("null")) {
 						lineColors.add(null);
-					else
+					} else {
 						lineColors.add(lineParts[0]);
+					}
 					List<String> contentLine = new ArrayList<>();
 					content.add(contentLine);
 					for (int i = 1; i < lineParts.length; i++) {
@@ -526,8 +553,9 @@ public class TextTable {
 	}
 	
 	public String getHeader(int headerLineIndex, int columnIndex) throws Exception {
-		if (columnNames.size() <= headerLineIndex || columnNames.get(headerLineIndex).size() <= columnIndex)
+		if (columnNames.size() <= headerLineIndex || columnNames.get(headerLineIndex).size() <= columnIndex) {
 			throw new Exception("Ungultige Datenabfrage an Spaltenuberschriften Zeilenindex " + headerLineIndex + " Spaltenindex " + columnIndex);
+		}
 		return columnNames.get(headerLineIndex).get(columnIndex);
 	}
 	
@@ -540,8 +568,9 @@ public class TextTable {
 	}
 	
 	public String getData(int lineIndex, int columnIndex) throws Exception {
-		if (content.size() <= lineIndex || content.get(lineIndex).size() <= columnIndex)
+		if (content.size() <= lineIndex || content.get(lineIndex).size() <= columnIndex) {
 			throw new Exception("Ungultige Datenabfrage an Zeilenindex " + lineIndex + " Spaltenindex " + columnIndex);
+		}
 		return content.get(lineIndex).get(columnIndex);
 	}
 

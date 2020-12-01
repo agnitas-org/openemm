@@ -14,6 +14,10 @@ package org.agnitas.beans;
 import java.sql.Timestamp;
 
 public interface AdminEntry {
+	int getCompanyID();
+	
+	void setCompanyID(int companyID);
+	
     String getUsername();
 
     String getFullname();

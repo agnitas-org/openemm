@@ -10,6 +10,38 @@
 
 package com.agnitas.emm.core.birtreport.util;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings;
+import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
+import com.agnitas.emm.core.birtreport.dto.PeriodType;
+import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
+import com.agnitas.messages.I18nString;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.Logger;
+
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_KEY;
@@ -59,40 +91,6 @@ import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Prope
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.SOFT_BOUNCES;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.TEXT;
 
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings;
-import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
-import com.agnitas.emm.core.birtreport.dto.FilterType;
-import com.agnitas.emm.core.birtreport.dto.PeriodType;
-import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
-import com.agnitas.messages.I18nString;
-
 public class BirtReportSettingsUtils {
     @SuppressWarnings("unused")
 	private static final Logger logger = Logger.getLogger(BirtReportSettingsUtils.class);
@@ -117,11 +115,6 @@ public class BirtReportSettingsUtils {
     
     private static final int MAX_TARGET_GROUPS_FOR_RECIPIENTS = 10;
     private static final int MAX_TARGET_GROUPS = 5;
-    
-    public static final int FILTER_NO_FILTER_VALUE = FilterType.FILTER_NO_FILTER.getKey();
-    public static final int FILTER_ARCHIVE_VALUE = FilterType.FILTER_ARCHIVE.getKey();
-    public static final int FILTER_MAILINGLIST_VALUE = FilterType.FILTER_MAILINGLIST.getKey();
-    public static final int FILTER_MAILING_VALUE = FilterType.FILTER_MAILING.getKey();
     
     public static final String REPORT_DATE_FORMAT = DateUtilities.YYYY_MM_DD;
     public static final String REPORT_DATE_FORMAT_FOR_DAY = DateUtilities.YYYY_MM_DD_HH_MM;

@@ -13,39 +13,37 @@ package org.agnitas.emm.springws.endpoint.mailinglist;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.mailinglist.service.MailinglistModel;
 import org.agnitas.emm.core.mailinglist.service.MailinglistService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.ListMailinglistsRequest;
 import org.agnitas.emm.springws.jaxb.ListMailinglistsResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class ListMailinglistsEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class ListMailinglistsEndpoint extends BaseEndpoint {
 
     private MailinglistService mailinglistService;
 
-    private ObjectFactory objectFactory;
+    @Autowired
+	public ListMailinglistsEndpoint(@Qualifier("WS_mailinglistService") MailinglistService mailinglistService) {
+		this.mailinglistService = mailinglistService;
+	}
 
-    @Override
-    protected Object invokeInternal(Object arg0) throws Exception {
-        @SuppressWarnings("unused")
-		ListMailinglistsRequest request = (ListMailinglistsRequest) arg0;
-        ListMailinglistsResponse response = objectFactory.createListMailinglistsResponse();
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListMailinglistsRequest")
+    public @ResponsePayload ListMailinglistsResponse listMailinglists(@RequestPayload ListMailinglistsRequest request) throws Exception {
+        ListMailinglistsResponse response = new ListMailinglistsResponse();
         
 		MailinglistModel model = new MailinglistModel();
 		model.setCompanyId(Utils.getUserCompany());
 
-        for (Mailinglist mailinglist : mailinglistService.getMailinglists(model)) {
-			response.getItem().add(new ResponseBuilder(mailinglist, objectFactory).createResponse());
+        for (Mailinglist mailinglist : mailinglistService.listMailinglists(Utils.getUserCompany())) {
+			response.getItem().add(new MailinglistResponseBuilder(mailinglist).createResponse());
 		}
         return response;
     }
-
-
-	public void setMailinglistService(MailinglistService service) {
-		this.mailinglistService = service;
-	}
-	
-	public void setObjectFactory(ObjectFactory factory) {
-		this.objectFactory = factory;
-	}
 }

@@ -109,9 +109,10 @@
     <c:forEach var="entry" items="${workflowsJson}">
         <c:url var="viewLink" value="/workflow/${entry['id']}/view.action"/>
         <c:set target="${entry}" property="show" value="${viewLink}"/>
-
-        <c:url var="deleteLink" value="/workflow/${entry['id']}/confirmDelete.action"/>
-        <c:set target="${entry}" property="delete" value="${deleteLink}"/>
+		<emm:ShowByPermission token="workflow.delete">
+	        <c:url var="deleteLink" value="/workflow/${entry['id']}/confirmDelete.action"/>
+	        <c:set target="${entry}" property="delete" value="${deleteLink}"/>
+	    </emm:ShowByPermission>
     </c:forEach>
 
     <script id="workflow-list-table" type="application/json">

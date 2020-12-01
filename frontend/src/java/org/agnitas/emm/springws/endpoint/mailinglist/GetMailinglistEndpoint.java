@@ -10,40 +10,38 @@
 
 package org.agnitas.emm.springws.endpoint.mailinglist;
 
-import org.agnitas.beans.Mailinglist;
+import javax.xml.bind.JAXBElement;
+
 import org.agnitas.emm.core.mailinglist.service.MailinglistModel;
 import org.agnitas.emm.core.mailinglist.service.MailinglistService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.GetMailinglistRequest;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.agnitas.emm.springws.jaxb.Mailinglist;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class GetMailinglistEndpoint extends AbstractMarshallingPayloadEndpoint {
-
+@Endpoint
+public class GetMailinglistEndpoint extends BaseEndpoint {
 
     private MailinglistService mailinglistService;
 
-    private ObjectFactory objectFactory;
+    @Autowired
+	public GetMailinglistEndpoint(@Qualifier("WS_mailinglistService") MailinglistService mailinglistService) {
+		this.mailinglistService = mailinglistService;
+	}
 
-    @Override
-    protected Object invokeInternal(Object arg0) throws Exception {
-        GetMailinglistRequest request = (GetMailinglistRequest) arg0;
-
+    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetMailinglistRequest")
+    public @ResponsePayload JAXBElement<Mailinglist> getMailinglist(@RequestPayload GetMailinglistRequest request) throws Exception {
 		MailinglistModel model = new MailinglistModel();
 		model.setCompanyId(Utils.getUserCompany());
 		model.setMailinglistId(request.getMailinglistID());
 
-        Mailinglist mailinglist = mailinglistService.getMailinglist(model);
-        
-        return objectFactory.createGetMailinglistResponse(new ResponseBuilder(mailinglist, objectFactory).createResponse());
+		Mailinglist mailinglist = new MailinglistResponseBuilder(mailinglistService.getMailinglist(model)).createResponse();
+		return objectFactory.createGetMailinglistResponse(mailinglist);
     }
-
-
-	public void setMailinglistService(MailinglistService service) {
-		this.mailinglistService = service;
-	}
-	
-	public void setObjectFactory(ObjectFactory factory) {
-		this.objectFactory = factory;
-	}
 }

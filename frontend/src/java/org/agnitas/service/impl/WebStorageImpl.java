@@ -12,6 +12,7 @@ package org.agnitas.service.impl;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,12 +23,16 @@ import org.agnitas.service.WebStorage;
 import org.agnitas.service.WebStorageBundle;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 public class WebStorageImpl implements WebStorage {
     private static final Logger logger = Logger.getLogger(WebStorageImpl.class);
@@ -78,6 +83,15 @@ public class WebStorageImpl implements WebStorage {
         }
     }
 
+    @Override
+    public <T extends WebStorageEntry> boolean isPresented(final WebStorageBundle<T> key) {
+        Objects.requireNonNull(key, "key == null");
+
+        synchronized (key) {
+            return dataMap.containsKey(key.getName());
+        }
+    }
+
     private <T extends WebStorageEntry> T access(WebStorageBundle<T> key) {
         Class<T> type = key.getType();
         return type.cast(dataMap.computeIfAbsent(key.getName(), name -> instantiate(type)));
@@ -95,7 +109,7 @@ public class WebStorageImpl implements WebStorage {
         Map<String, Class<? extends WebStorageEntry>> typeMap = new HashMap<>();
         ObjectMapper mapper = new ObjectMapper();
 
-        mapper.disable(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES);
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
         for (WebStorageBundle<? extends WebStorageEntry> bundle : WebStorageBundle.definitions()) {
             typeMap.put(bundle.getName(), bundle.getType());
@@ -103,36 +117,30 @@ public class WebStorageImpl implements WebStorage {
 
         JsonFactory factory = new JsonFactory();
 
-        try (JsonParser parser = factory.createJsonParser(dataAsJson)) {
+        try (JsonParser parser = factory.createParser(dataAsJson)) {
             parser.setCodec(mapper);
 
             if (JsonToken.START_OBJECT != parser.nextToken()) {
                 throw new IOException("Missing expected `{` token");
             }
 
-            for ( ; ; ) {
-                JsonToken token = parser.nextToken();
+            JsonNode node = mapper.readTree(parser);
 
-                if (token == JsonToken.FIELD_NAME) {
-                    String name = parser.getCurrentName();
-                    Class<? extends WebStorageEntry> type = typeMap.get(name);
+            Iterator<Map.Entry<String, JsonNode>> nodeIterator = node.fields();
+            while (nodeIterator.hasNext()) {
+                final Map.Entry<String, JsonNode> entry = nodeIterator.next();
+                final String name = entry.getKey();
+                final Class<? extends WebStorageEntry> type = typeMap.get(name);
 
-                    parser.nextToken();
+                if(type == null) {
+                    logger.warn("Missing expected definition for `" + name + "` bundle");
+                    continue;
+                }
 
-                    if (type == null) {
-                        parser.skipChildren();
-                        logger.warn("Missing expected definition for `" + name + "` bundle");
-                    } else {
-                        try {
-                            dataMapToCollectIn.put(name, mapper.readValue(parser.readValueAsTree(), type));
-                        } catch (JsonMappingException e) {
-                            logger.warn("Failed to deserialize `" + name + "` bundle", e);
-                        }
-                    }
-                } else if (token == JsonToken.END_OBJECT) {
-                    return;
-                } else {
-                    throw new IOException("Unexpected token (field name or `}` were expected)");
+                try {
+                    dataMapToCollectIn.put(name, mapper.readValue(entry.getValue().traverse(), type));
+                } catch (JsonParseException | JsonMappingException e) {
+                    logger.warn("Failed to deserialize `" + name + "` bundle", e);
                 }
             }
         }

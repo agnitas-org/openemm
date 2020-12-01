@@ -10,28 +10,17 @@
 
 package com.agnitas.emm.core.recipientsreport.web;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
-import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
-import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
-import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
-import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.ComWebStorage;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
-import org.agnitas.util.DateUtilities;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -44,14 +33,22 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
+import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
+import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
+import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.ComWebStorage;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+
 @Controller
 @RequestMapping("/recipientsreport")
 @PermissionMapping("recipientsreport")
 public class RecipientsReportController {
     private static final transient Logger logger = Logger.getLogger(RecipientsReportController.class);
-
-    private static final String DATE_FORMAT = DateUtilities.YYYY_MM_DD;
-
     private RecipientsReportService recipientsReportService;
     private WebStorage webStorage;
     private UserActivityLogService userActivityLogService;
@@ -67,9 +64,8 @@ public class RecipientsReportController {
     public String list(ComAdmin admin, RecipientsReportForm reportForm, Model model) {
         FormUtils.syncNumberOfRows(webStorage, ComWebStorage.IMPORT_EXPORT_LOG_OVERVIEW, reportForm);
 
-        SimpleDateFormat format = new SimpleDateFormat(DATE_FORMAT);
-        Date startDate = reportForm.getFilterDateStart().get(format);
-        Date finishDate = reportForm.getFilterDateFinish().get(format);
+        Date startDate = reportForm.getFilterDateStart().get(admin.getDateFormat());
+        Date finishDate = reportForm.getFilterDateFinish().get(admin.getDateFormat());
 
 
         PaginatedListImpl<RecipientsReport> reports =
@@ -80,8 +76,8 @@ public class RecipientsReportController {
                         reportForm.getFilterTypes());
 
         model.addAttribute("reportsList", reports);
-        model.addAttribute("dateFormatPattern", DATE_FORMAT);
-        model.addAttribute("adminDateTimeFormatPattern", admin.getDateTimeFormat().toPattern());
+        
+        AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
         
         writeUserActivityLog(admin, "Import/Export logs", "active tab - overview");
 

@@ -107,3 +107,18 @@
 body.wide-sidebar .l-header {
   padding-left: 245px;
 }
+
+body.dark-theme .l-header {
+  background-color: $c-dt-header-background;
+  .header-actions {
+    background-color: $c-dt-header-background;
+  }
+
+  .header-nav {
+    h1,
+    a:not(.btn),
+    li {
+      color: $c-dt-header-text;
+    }
+  }
+}

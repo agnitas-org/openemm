@@ -24,6 +24,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -71,18 +72,18 @@ public class NetworkUtil {
 		}
 	}
 	
-	public static void setHttpClientProxyFromSystem(HttpClient httpClient, String url) {
-		if (StringUtils.isNotBlank(System.getProperty("http.proxyHost"))) {
-			String proxyHost = System.getProperty("http.proxyHost");
+	public static void setHttpClientProxyFromSystem(final RequestConfig.Builder configBuilder, final String url) {
+		String proxyHost = System.getProperty("http.proxyHost");
+		if (StringUtils.isNotBlank(proxyHost)) {
 			String proxyPort = System.getProperty("http.proxyPort");
 			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
 		
 			if (StringUtils.isBlank(nonProxyHosts)) {
 				if (StringUtils.isNotBlank(proxyHost)) {
 					if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
-						httpClient.getHostConfiguration().setProxy(proxyHost, Integer.parseInt(proxyPort));
+						configBuilder.setProxy(new HttpHost(proxyHost, Integer.parseInt(proxyPort)));
 					} else {
-						httpClient.getHostConfiguration().setProxy(proxyHost, 8080);
+						configBuilder.setProxy(new HttpHost(proxyHost, 8080));
 					}
 				}
 			} else {
@@ -100,9 +101,9 @@ public class NetworkUtil {
 					if (!ignoreProxy) {
 						if (StringUtils.isNotBlank(proxyHost)) {
 							if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
-								httpClient.getHostConfiguration().setProxy(proxyHost, Integer.parseInt(proxyPort));
+								configBuilder.setProxy(new HttpHost(proxyHost, Integer.parseInt(proxyPort)));
 							} else {
-								httpClient.getHostConfiguration().setProxy(proxyHost, 8080);
+								configBuilder.setProxy(new HttpHost(proxyHost, 8080));
 							}
 						}
 					}
@@ -110,7 +111,36 @@ public class NetworkUtil {
 			}
 		}
 	}
-	
+
+	public static void setHttpClientProxyFromSystem(HttpClient httpClient, String url) {
+		String proxyHost = System.getProperty("http.proxyHost");
+		if (StringUtils.isNotBlank(proxyHost)) {
+			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
+			String proxyPort = System.getProperty("http.proxyPort");
+
+			if (StringUtils.isBlank(nonProxyHosts)) {
+				httpClient.getHostConfiguration().setProxy(proxyHost, org.apache.commons.lang3.math.NumberUtils.toInt(proxyPort, 8080));
+			} else {
+				boolean ignoreProxy = false;
+				String urlDomain = getDomainFromUrl(url);
+				if (urlDomain != null) {
+					urlDomain = urlDomain.trim().toLowerCase();
+					for (String nonProxyHost : nonProxyHosts.split("\\||,|;| ")) {
+						nonProxyHost = nonProxyHost.trim().toLowerCase();
+						if (urlDomain.equals(nonProxyHost) || urlDomain.endsWith("." + nonProxyHost)) {
+							ignoreProxy = true;
+							break;
+						}
+					}
+
+					if (!ignoreProxy) {
+						httpClient.getHostConfiguration().setProxy(proxyHost, org.apache.commons.lang3.math.NumberUtils.toInt(proxyPort, 8080));
+					}
+				}
+			}
+		}
+	}
+
 	public static String getDomainFromUrl(String url) {
 		if (!url.startsWith("http") && !url.startsWith("https")) {
 			url = "http://" + url;
@@ -129,32 +159,29 @@ public class NetworkUtil {
 		if (StringUtils.isNotBlank(proxyHost)) {
 			String proxyPort = System.getProperty("http.proxyPort");
 			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
-			
+
 			if (StringUtils.isBlank(nonProxyHosts)) {
-				if (StringUtils.isNotBlank(proxyHost)) {
-					if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
-						request.setConfig(RequestConfig.custom().setProxy(new HttpHost(proxyHost, Integer.parseInt(proxyPort), "http")).build());
-					} else {
-						request.setConfig(RequestConfig.custom().setProxy(new HttpHost(proxyHost, 8080, "http")).build());
-					}
+				if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
+					request.setConfig(RequestConfig.custom().setProxy(new HttpHost(proxyHost, Integer.parseInt(proxyPort), "http")).build());
+				} else {
+					request.setConfig(RequestConfig.custom().setProxy(new HttpHost(proxyHost, 8080, "http")).build());
 				}
 			} else {
 				boolean ignoreProxy = false;
 				String urlDomain = getDomainFromUrl(url);
-				for (String nonProxyHost : nonProxyHosts.split("\\|")) {
-					nonProxyHost = nonProxyHost.trim();
-					if (urlDomain == null || urlDomain.equalsIgnoreCase(url)) {
-						ignoreProxy = true;
-						break;
-					}
-				}
-				if (!ignoreProxy) {
-					if (StringUtils.isNotBlank(proxyHost)) {
-						if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
-							request.setConfig(RequestConfig.custom().setProxy(new HttpHost(proxyHost, Integer.parseInt(proxyPort), "http")).build());
-						} else {
-							request.setConfig(RequestConfig.custom().setProxy(new HttpHost(proxyHost, 8080, "http")).build());
+				if (urlDomain != null) {
+					urlDomain = urlDomain.trim().toLowerCase();
+					for (String nonProxyHost : nonProxyHosts.split("\\||,|;| ")) {
+						nonProxyHost = nonProxyHost.trim().toLowerCase();
+						if (urlDomain.equals(nonProxyHost) || urlDomain.endsWith("." + nonProxyHost)) {
+							ignoreProxy = true;
+							break;
 						}
+					}
+
+					if (!ignoreProxy) {
+						request.setConfig(RequestConfig.custom()
+								.setProxy(new HttpHost(proxyHost, NumberUtils.toInt(proxyPort, 8080), "http")).build());
 					}
 				}
 			}

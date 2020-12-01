@@ -18,7 +18,7 @@ public class CompanyImpl implements Company {
 	private int creatorID;
 	private String shortname;
 	private String description;
-	private String status;
+	private CompanyStatus status;
 	private int mailtracking;
 	private Number minimumSupportedUIDVersion;
 	private int maxRecipients = 10000;
@@ -67,12 +67,12 @@ public class CompanyImpl implements Company {
 	}
 
 	@Override
-	public String getStatus() {
+	public CompanyStatus getStatus() {
 		return status;
 	}
 
 	@Override
-	public void setStatus(String status) {
+	public void setStatus(CompanyStatus status) {
 		this.status = status;
 	}
 

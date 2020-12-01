@@ -31,10 +31,10 @@ public class ComBirtReportComparisonSettings extends ComBirtReportSettings {
     @Override
     public void loadDefaults() {
         super.loadDefaults();
-        settingsMap.put(MAILING_TYPE_KEY, MAILINGS_PREDEFINED);
-        settingsMap.put(SORT_MAILINGS_KEY, SORT_NAME);
-        settingsMap.put(PERIOD_TYPE_KEY, DATE_RANGE_WEEK);
-        settingsMap.put(ARCHIVED_ID, 0);
+        setReportSetting(MAILING_TYPE_KEY, MAILINGS_PREDEFINED);
+        setReportSetting(SORT_MAILINGS_KEY, SORT_NAME);
+        setReportSetting(PERIOD_TYPE_KEY, DATE_RANGE_WEEK);
+        setReportSetting(ARCHIVED_ID, 0);
     }
 
     @Override

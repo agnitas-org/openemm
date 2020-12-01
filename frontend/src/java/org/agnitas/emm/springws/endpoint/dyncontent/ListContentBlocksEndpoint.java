@@ -12,29 +12,31 @@ package org.agnitas.emm.springws.endpoint.dyncontent;
 
 import java.util.List;
 
-import javax.annotation.Resource;
-
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.emm.core.dyncontent.service.ContentModel;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.ListContentBlocksRequest;
 import org.agnitas.emm.springws.jaxb.ListContentBlocksResponse;
 import org.agnitas.emm.springws.jaxb.ListContentBlocksResponse.ContentBlock;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class ListContentBlocksEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class ListContentBlocksEndpoint extends BaseEndpoint {
 
-	@Resource
 	private DynamicTagContentService dynamicTagContentService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		ListContentBlocksRequest request = (ListContentBlocksRequest) arg0;
-		ListContentBlocksResponse response = objectFactory.createListContentBlocksResponse();
+	public ListContentBlocksEndpoint(DynamicTagContentService dynamicTagContentService) {
+		this.dynamicTagContentService = dynamicTagContentService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListContentBlocksRequest")
+	public @ResponsePayload ListContentBlocksResponse listContentBlocks(@RequestPayload ListContentBlocksRequest request) {
+		ListContentBlocksResponse response = new ListContentBlocksResponse();
 		
 		ContentModel model = new ContentModel();
 		model.setCompanyId(Utils.getUserCompany());
@@ -43,7 +45,7 @@ public class ListContentBlocksEndpoint extends AbstractMarshallingPayloadEndpoin
 		List<DynamicTagContent> list = dynamicTagContentService.getContentList(model);
 		List<ContentBlock> responseList = response.getContentBlock();
 		for (DynamicTagContent content : list) {
-			ContentBlock responseContentBlock = objectFactory.createListContentBlocksResponseContentBlock();
+			ContentBlock responseContentBlock = new ListContentBlocksResponse.ContentBlock();
 			responseContentBlock.setContentID(content.getId());
 			responseContentBlock.setName(content.getDynName());
 			responseContentBlock.setTargetID(content.getTargetID());
@@ -53,5 +55,4 @@ public class ListContentBlocksEndpoint extends AbstractMarshallingPayloadEndpoin
 		
 		return response;
 	}
-
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.4.0.v201405191524 Build &lt;4.4.0.v20140611-1043></property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
@@ -86,6 +86,21 @@ reportContext.getDesignHandle().addCss("styles.css");]]></method>
                 <property name="category">Unformatted</property>
             </structure>
         </scalar-parameter>
+        <scalar-parameter name="hiddenTargetId" id="571">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
     </parameters>
     <data-sources>
         <script-data-source name="DummyDataSource" id="7"/>
@@ -149,7 +164,7 @@ mailinglistID = null;
 if (params["mailinglistID"].value != null &amp;&amp; params["mailinglistID"].value != 0){
 	mailinglistID = params["mailinglistID"];
 }
-valueList = recipientMailtypeDataSet.getRecipientMailtype(params["companyID"], targetID, mailinglistID);
+valueList = recipientMailtypeDataSet.getRecipientMailtype(params["companyID"], targetID, mailinglistID, params["hiddenTargetId"]);
 currentrow = 0;
 totalCount=0;]]></method>
             <method name="fetch"><![CDATA[if( currentrow < valueList.size() ) {
@@ -314,8 +329,8 @@ return false;]]></method>
                 <row id="178">
                     <cell id="179">
                         <text-data id="189">
-                            <property name="contentType">auto</property>
                             <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("recipient.RecipientMailtype", reportContext.getLocale())</expression>
+                            <property name="contentType">auto</property>
                         </text-data>
                     </cell>
                     <cell id="180"/>
@@ -557,8 +572,8 @@ function addColor( colorArray, styleName ) {
                                     <text-data id="40">
                                         <property name="fontWeight">normal</property>
                                         <property name="paddingLeft">1pt</property>
-                                        <property name="contentType">auto</property>
                                         <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Mailtype", reportContext.getLocale())</expression>
+                                        <property name="contentType">auto</property>
                                     </text-data>
                                 </cell>
                                 <cell id="26">
@@ -568,8 +583,8 @@ function addColor( colorArray, styleName ) {
                                         <property name="fontWeight">normal</property>
                                         <property name="paddingLeft">1pt</property>
                                         <property name="textAlign">left</property>
-                                        <property name="contentType">auto</property>
                                         <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("image.editor.inpercent", reportContext.getLocale())</expression>
+                                        <property name="contentType">auto</property>
                                     </text-data>
                                 </cell>
                             </row>
@@ -636,8 +651,8 @@ function addColor( colorArray, styleName ) {
                                     <text-data id="50">
                                         <property name="fontWeight">bold</property>
                                         <property name="paddingLeft">1pt</property>
-                                        <property name="contentType">auto</property>
                                         <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
+                                        <property name="contentType">auto</property>
                                     </text-data>
                                 </cell>
                                 <cell id="34">

@@ -13,19 +13,19 @@ package com.agnitas.web;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
+
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
+import org.agnitas.web.MailingSendForm;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionMapping;
 
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.mailing.bean.MailingDependentType;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.web.MailingSendAction;
-import org.agnitas.web.MailingSendForm;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
 
 public class ComMailingSendForm extends MailingSendForm {
 	private static final long serialVersionUID = -2719144223604027921L;
@@ -51,10 +51,6 @@ public class ComMailingSendForm extends MailingSendForm {
 
 	private int percentsComplete;
 
-	private boolean previewSelectPure;
-
-	private boolean useCustomerEmail;
-
 	private int autoExportId;
 
 	/**
@@ -77,15 +73,11 @@ public class ComMailingSendForm extends MailingSendForm {
 	private boolean isMailingUndoAvailable;
 
 	private Map<String, String> styles;
-	private List<Integer> availablePreviewFormats;
 	List<AutoExport> autoExports;
 
 	private String[] mailingTestRecipients;
 	private String[] filterTypes;
 	private List<Dependent<MailingDependentType>> dependents;
-	
-	private boolean mayCreateExternal = false;
-	private String externalEditorLink = null;
 
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
@@ -302,26 +294,8 @@ public class ComMailingSendForm extends MailingSendForm {
 	@Override
 	public ActionErrors formSpecificValidate(ActionMapping mapping, HttpServletRequest req) {
 		ActionErrors errors = new ActionErrors();
-
-		if (action == MailingSendAction.ACTION_PREVIEW_SELECT) {
-			ComMailingContentForm aForm = null;
-			if (req != null) {
-				aForm = (ComMailingContentForm) req.getSession().getAttribute("mailingContentForm");
-				if (aForm != null) {
-					aForm.setNoImages(this.isNoImages());
-				}
-			}
-		}
-		if (action == MailingSendAction.ACTION_PREVIEW) {
-			ComMailingContentForm aForm = null;
-			if (req != null) {
-				aForm = (ComMailingContentForm) req.getSession().getAttribute("mailingContentForm");
-				if (aForm != null) {
-					this.setNoImages(aForm.isNoImages());
-				}
-			}
-		}
-
+		// prevent validate here the action MailingSendAction.ACTION_CONFIRM_SEND_WORLD
+		//validation is implemented in execute action
 		return errors;
 	}
 
@@ -330,22 +304,6 @@ public class ComMailingSendForm extends MailingSendForm {
         MediatypeEmail mediatype = (MediatypeEmail) mailing.getMediatypes().get(0);
         String subject = mediatype.getSubject();
         return subject;
-    }
-
-    public boolean isPreviewSelectPure() {
-        return previewSelectPure;
-    }
-
-    public void setPreviewSelectPure(boolean previewSelectPure) {
-        this.previewSelectPure = previewSelectPure;
-    }
-
-    public boolean isUseCustomerEmail() {
-        return useCustomerEmail;
-    }
-
-    public void setUseCustomerEmail(boolean useCustomerEmail) {
-        this.useCustomerEmail = useCustomerEmail;
     }
 
 	public int getTemplateId() {
@@ -407,14 +365,6 @@ public class ComMailingSendForm extends MailingSendForm {
 		this.isMailingUndoAvailable = isMailingUndoAvailable;
 	}
 
-	public List<Integer> getAvailablePreviewFormats() {
-		return availablePreviewFormats;
-	}
-
-	public void setAvailablePreviewFormats(List<Integer> availablePreviewFormats) {
-		this.availablePreviewFormats = availablePreviewFormats;
-	}
-
 	public List<AutoExport> getAutoExports() {
 		return autoExports;
 	}
@@ -445,83 +395,5 @@ public class ComMailingSendForm extends MailingSendForm {
 
 	public String[] getFilterTypes() {
 		return filterTypes;
-	}
-
-	public String getExternalEditorLink() {
-		return externalEditorLink;
-	}
-
-	public void setExternalEditorLink(String externalEditorLink) {
-		this.externalEditorLink = externalEditorLink;
-	}
-
-	public boolean isMayCreateExternal() {
-		return mayCreateExternal;
-	}
-
-	public void setMayCreateExternal(boolean mayCreateExternal) {
-		this.mayCreateExternal = mayCreateExternal;
-	}
-	
-	public int getPreviewWidth(){
-        int width;
-
-        switch (previewSize) {
-            case 1:
-                width = 1022;
-                break;
-            case 2:
-                width = 320;
-                break;
-            case 3:
-                width = 356;
-                break;
-            case 4:
-                width = 768;
-                break;
-            case 5:
-                width = 1024;
-                break;
-            default:
-                previewSize = 1;
-                width = 800;
-                break;
-        }
-
-        return width + 2;
-    }
-    
-    public String getMediaQuery(){
-        String mediaQuery;
-
-        switch (previewSize) {
-            case 1:
-                mediaQuery = "false";
-                break;
-            case 2:
-                mediaQuery = "true";
-                break;
-            case 3:
-                mediaQuery = "true";
-                break;
-            case 4:
-                mediaQuery = "true";
-                break;
-            case 5:
-                mediaQuery = "false";
-                break;
-            default:
-                mediaQuery = "false";
-                break;
-        }
-        return mediaQuery;
-    }
-	
-	public boolean isPreviewFormatContainsHeader() {
-		if (previewFormat == MediaTypes.EMAIL.getMediaCode()) {
-			return true;
-		}
-		int mediaTypeCode = previewFormat - 1;
-		return mediaTypeCode == MediaTypes.EMAIL.getMediaCode();
 	}
 }

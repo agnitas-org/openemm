@@ -209,6 +209,7 @@
 
                     <c:url var="adminDeleteUrl" value="/admin/${admin.id}/confirmDelete.action"/>
                     <c:url var="adminViewUrl" value="/admin/${admin.id}/view.action"/>
+                    <c:url var="adminSendUrl" value="/admin/${admin.id}/welcome.action"/>
 
                     <display:column titleKey="logon.username" sortProperty="username" sortable="true"
                                     headerClass="js-table-sort" value="${admin.username}"/>
@@ -233,6 +234,12 @@
 
                     <display:column class="table-actions">
                         <a href="${adminViewUrl}" class="js-row-show hidden" title="<mvc:message code='settings.admin.edit'/> "></a>
+                        <emm:ShowByPermission token="temp.beta">
+	                       	<mvc:message var="passwordSendMessage" code="password.send" />
+    	                    <a href="${adminSendUrl}" class="btn btn-regular btn-alert js-row-delete" data-tooltip="${passwordSendMessage}">
+        	                    <i class="icon icon-envelope-o"></i>
+            	            </a>
+            	        </emm:ShowByPermission>
                         <emm:ShowByPermission token="admin.delete">
                             <c:choose>
                                 <c:when test="${admin.passwordExpired}">

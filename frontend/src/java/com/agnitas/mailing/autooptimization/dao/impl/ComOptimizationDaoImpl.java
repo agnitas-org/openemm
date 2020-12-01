@@ -37,6 +37,7 @@ import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
@@ -76,43 +77,37 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 			"workflow_id"
 	};
 
-	protected class ComOptimizationRowMapper implements RowMapper<ComOptimization> {
+	protected static class ComOptimizationRowMapper implements RowMapper<ComOptimization> {
 		@Override
 		public ComOptimization mapRow(ResultSet resultSet, int row) throws SQLException {
 			ComOptimization optimization = new ComOptimizationImpl();
 
-			optimization.setId(resultSet.getBigDecimal("optimization_id").intValue());
-			optimization.setCompanyID(resultSet.getBigDecimal("company_id").intValue());
-			optimization.setCampaignID(resultSet.getBigDecimal("campaign_id").intValue());
-			optimization.setMailinglistID(resultSet.getBigDecimal("mailinglist_id").intValue());
+			optimization.setId(resultSet.getInt("optimization_id"));
+			optimization.setCompanyID(resultSet.getInt("company_id"));
+			optimization.setCampaignID(resultSet.getInt("campaign_id"));
+			optimization.setMailinglistID(resultSet.getInt("mailinglist_id"));
 			optimization.setShortname(resultSet.getString("shortname"));
 			optimization.setDescription(resultSet.getString("description"));
-			optimization.setEvalType(WorkflowDecision.WorkflowAutoOptimizationCriteria.fromId(resultSet.getBigDecimal("eval_type").intValue()));
-			optimization.setGroup1(resultSet.getBigDecimal("group1_id").intValue());
-			optimization.setGroup2(resultSet.getBigDecimal("group2_id").intValue());
-			optimization.setGroup3(resultSet.getBigDecimal("group3_id").intValue());
-			optimization.setGroup4(resultSet.getBigDecimal("group4_id").intValue());
-			optimization.setGroup5(resultSet.getBigDecimal("group5_id").intValue());
+			optimization.setEvalType(WorkflowDecision.WorkflowAutoOptimizationCriteria.fromId(resultSet.getInt("eval_type")));
+			optimization.setGroup1(resultSet.getInt("group1_id"));
+			optimization.setGroup2(resultSet.getInt("group2_id"));
+			optimization.setGroup3(resultSet.getInt("group3_id"));
+			optimization.setGroup4(resultSet.getInt("group4_id"));
+			optimization.setGroup5(resultSet.getInt("group5_id"));
 			optimization.setSplitType(resultSet.getString("split_type"));
-			optimization.setStatus(resultSet.getBigDecimal("status").intValue());
+			optimization.setStatus(resultSet.getInt("status"));
 	        optimization.setTargetExpression(resultSet.getString("target_expression"));
-	        optimization.setTargetMode(resultSet.getBigDecimal("target_mode").intValue());
+	        optimization.setTargetMode(resultSet.getInt("target_mode"));
 			//optimization.setTargetID(resultSet.getBigDecimal("target_id").intValue());
-			optimization.setResultMailingID(resultSet.getBigDecimal("result_mailing_id").intValue());
+			optimization.setResultMailingID(resultSet.getInt("result_mailing_id"));
 			optimization.setSendDate(resultSet.getTimestamp("result_senddate"));
 			optimization.setTestMailingsSendDate(resultSet.getTimestamp("test_senddate"));
-			optimization.setThreshold(resultSet.getBigDecimal("threshold") != null ? resultSet.getBigDecimal("threshold").intValue() : 0);		
-			optimization.setFinalMailingId( resultSet.getBigDecimal( "final_mailing_id") != null ? resultSet.getBigDecimal( "final_mailing_id").intValue() : 0);
-			boolean doubleCheckingActivated = false;
+			optimization.setThreshold(resultSet.getInt("threshold"));
+			optimization.setFinalMailingId(resultSet.getInt( "final_mailing_id"));
 
-			if( resultSet.getBigDecimal("double_check") != null ) {
-				doubleCheckingActivated = (resultSet.getBigDecimal("double_check").intValue() > 0 );
-				
-			}
-
-			optimization.setDoubleCheckingActivated(doubleCheckingActivated);
-			optimization.setTestRun(resultSet.getBigDecimal("test_run").intValue() == 1);
-			optimization.setWorkflowId(resultSet.getBigDecimal("workflow_id").intValue());
+			optimization.setDoubleCheckingActivated(BooleanUtils.toBoolean(resultSet.getInt("double_check")));
+			optimization.setTestRun(BooleanUtils.toBoolean(resultSet.getInt("test_run")));
+			optimization.setWorkflowId(resultSet.getInt("workflow_id"));
 
 			return optimization;
 		}
@@ -441,10 +436,7 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 	public boolean delete(ComOptimization optimization) {
 		String deleteQuery = "update auto_optimization_tbl set deleted = 1 where optimization_id = ?";
 		int rownums = update(logger, deleteQuery, optimization.getId());
-		if( rownums > 0) {
-			return true;
-		}
-		return false;
+		return rownums > 0;
 	}
 
 	@Override
@@ -515,19 +507,17 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 
 	@Override
 	public List<ComOptimization> getOptimizationsForCalendar_New(@VelocityCheck int companyId, Date startDate, Date endDate) {
-		StringBuilder querySb = new StringBuilder();
-		querySb.append("SELECT ao.campaign_id,")
-				.append(" CASE WHEN ao.workflow_id = 0 OR ao.workflow_id IS NULL THEN ao.shortname ELSE (SELECT w.shortname FROM workflow_tbl w WHERE w.workflow_id = ao.workflow_id) END AS shortname,")
-				.append(" ao.status, ao.optimization_id, ao.result_mailing_id, ao.result_senddate, ao.workflow_id")
-				.append(" FROM auto_optimization_tbl ao")
-				.append(" WHERE ao.company_id = ?")
-				.append(" AND (ao.deleted = 0 OR ao.deleted IS NULL)")
-				.append(" AND ao.result_senddate IS NOT NULL")
-				.append(" AND ao.result_senddate >= ?")
-				.append(" AND ao.result_senddate <= ?")
-				.append(" ORDER BY ao.result_senddate");
-
-		return select(logger, querySb.toString(), new MinimizedOptimizationRowMapper(), companyId, startDate, endDate);
+		String querySb = "SELECT ao.campaign_id," +
+				" CASE WHEN ao.workflow_id = 0 OR ao.workflow_id IS NULL THEN ao.shortname ELSE (SELECT w.shortname FROM workflow_tbl w WHERE w.workflow_id = ao.workflow_id) END AS shortname," +
+				" ao.status, ao.optimization_id, ao.result_mailing_id, ao.result_senddate, ao.workflow_id" +
+				" FROM auto_optimization_tbl ao" +
+				" WHERE ao.company_id = ?" +
+				" AND (ao.deleted = 0 OR ao.deleted IS NULL)" +
+				" AND ao.result_senddate IS NOT NULL" +
+				" AND ao.result_senddate >= ?" +
+				" AND ao.result_senddate <= ?" +
+				" ORDER BY ao.result_senddate";
+		return select(logger, querySb, new MinimizedOptimizationRowMapper(), companyId, startDate, endDate);
 	}
     
     @Override

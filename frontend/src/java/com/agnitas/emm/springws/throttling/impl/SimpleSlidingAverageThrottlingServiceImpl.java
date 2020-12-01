@@ -57,7 +57,7 @@ public class SimpleSlidingAverageThrottlingServiceImpl implements ThrottlingServ
 	public synchronized boolean checkAndTrack(String user) throws ExecutionException, IllegalStateException, CacheException {
 		LimitMeter limitMeter = getMeter(user);
 		if (limitMeter.limit != null && limitMeter.limit > 0 && !limitMeter.checkAndTrack()) {
-			//TODO: log limit exceeded event for statistic 
+			//TODO: log limit exceeded event for statistic
 			logger.error("WS-request rejected: rate limit exceeded. User:[" + user + "]");
 			return false;
 		}
@@ -77,7 +77,7 @@ public class SimpleSlidingAverageThrottlingServiceImpl implements ThrottlingServ
 
 	private LimitMeter createMeter(String name) {
 		Double limit = getRequestRateLimit(name);
-		SlidingAverageRateMeter meter = (limit == null) ? null 
+		SlidingAverageRateMeter meter = (limit == null) ? null
 				: new SlidingAverageRateMeter(TRACKING_PERIOD_SECONDS * 1000, THRESHOLD_TIME_SECONDS * 1000);
 		LimitMeter limitMeter = new LimitMeter(meter, limit);
 		logger.info("Created SlidingAverageRateMeter for: " + name);
@@ -111,7 +111,6 @@ public class SimpleSlidingAverageThrottlingServiceImpl implements ThrottlingServ
 		
 		public boolean checkAndTrack() {
 			double rate = meter.getRate();
-//			System.out.println("Rate: " + rate + " count " + meter.getAveragedCounter() );
 			if (rate > limit) {
 				return false;
 			}

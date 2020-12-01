@@ -110,7 +110,7 @@ public class DateUtil {
         actionDateCalendar.setTime(actionDate);
 
         // Move "current time" 5 minutes into future, so we get a 5 minute fairness period
-        now.add( Calendar.MINUTE, 5);
+        now.add(Calendar.MINUTE, 5);
         
         // Do the hard work!
         return !now.before(actionDateCalendar);

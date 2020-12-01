@@ -12,6 +12,7 @@ package com.agnitas.service;
 
 import org.agnitas.beans.RowsCountAndSelectedFieldsWebStorageEntry;
 import org.agnitas.beans.RowsCountWebStorageEntry;
+import org.agnitas.beans.SortingWebStorageEntry;
 import org.agnitas.service.WebStorage;
 import org.agnitas.service.WebStorageBundle;
 
@@ -54,4 +55,5 @@ public interface ComWebStorage extends WebStorage {
     WebStorageBundle<RowsCountWebStorageEntry> COMPANY_OVERVIEW = WebStorageBundle.define("company-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> RECIPIENT_RETARGETING_HISTORY_OVERVIEW = WebStorageBundle.define("recipient-retargeting-history-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> RECIPIENT_DEVICE_HISTORY_OVERVIEW = WebStorageBundle.define("recipient-device-history-overview", RowsCountWebStorageEntry.class);
+    WebStorageBundle<SortingWebStorageEntry> TRACKABLE_LINKS = WebStorageBundle.define("trackable-links", SortingWebStorageEntry.class);
 }

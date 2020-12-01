@@ -28,7 +28,7 @@
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
-        <c:set target="${agnBreadcrumb}" property="textKey" value="Actions"/>
+        <c:set target="${agnBreadcrumb}" property="textKey" value="default.Overview"/>
         <c:set target="${agnBreadcrumb}" property="url">
             <c:url value="/action.do">
                 <c:param name="action" value="${ACTION_LIST}"/>

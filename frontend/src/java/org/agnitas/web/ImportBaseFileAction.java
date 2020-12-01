@@ -137,8 +137,8 @@ public abstract class ImportBaseFileAction extends StrutsActionBase {
      * @param request request
      * @param csvFile uploaded csv file
      * @return errors that happened
-     * @throws IOException 
-     * @throws FileNotFoundException 
+     * @throws IOException
+     * @throws FileNotFoundException
      */
     private ActionErrors storeCsvFile(HttpServletRequest request, FormFile csvFile) throws Exception {
         ActionErrors errors = new ActionErrors();
@@ -173,7 +173,7 @@ public abstract class ImportBaseFileAction extends StrutsActionBase {
         	ComAdmin admin = ((ComAdmin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN));
 			int companyId = admin.getCompanyID();
 			int adminId = admin.getAdminID();
-			return File.createTempFile("upload_csv_file_" + companyId + "_" + adminId + "_", ".csv", AgnUtils.createDirectory(IMPORT_FILE_DIRECTORY)).getAbsolutePath();
+			return File.createTempFile("upload_csv_file_" + companyId + "_" + adminId + "_", ".csv", AgnUtils.createDirectory(IMPORT_FILE_DIRECTORY + "/" + admin.getCompanyID())).getAbsolutePath();
 		} catch (Exception e) {
 			logger.error("Cannot create temp file path for upload file storage", e);
 			return null;

@@ -11,6 +11,7 @@
 package org.agnitas.emm.core.autoexport.bean;
 
 import java.util.Date;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -120,6 +121,12 @@ public class AutoExport {
 	private boolean hidden;
 	private String intervalAsJson;
 	private String timeZone;
+	private boolean considerLastRun;
+	private int retryCount;
+	private int maximumRetries = 1;
+
+	// For AutoExportType.Reactions only.
+	private List<String> additionalCustomerFields;
 
 	public int getMailingID() {
 		return mailingID;
@@ -399,5 +406,37 @@ public class AutoExport {
 
 	public void setTimeZone(String timeZone) {
 		this.timeZone = timeZone;
+	}
+
+	public List<String> getAdditionalCustomerFields() {
+		return additionalCustomerFields;
+	}
+
+	public void setAdditionalCustomerFields(List<String> additionalCustomerFields) {
+		this.additionalCustomerFields = additionalCustomerFields;
+	}
+
+	public boolean isConsiderLastRun() {
+		return considerLastRun;
+	}
+
+	public void setConsiderLastRun(boolean considerLastRun) {
+		this.considerLastRun = considerLastRun;
+	}
+	
+	public int getRetryCount() {
+		return retryCount;
+	}
+
+	public void setRetryCount(int retryCount) {
+		this.retryCount = retryCount;
+	}
+
+	public int getMaximumRetries() {
+		return maximumRetries;
+	}
+
+	public void setMaximumRetries(int maximumRetries) {
+		this.maximumRetries = maximumRetries;
 	}
 }

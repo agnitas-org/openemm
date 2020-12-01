@@ -23,7 +23,7 @@ public class ResultSettings {
 	private boolean useUrl;
 	private boolean useVelocity;
 	private String url;
-	
+
 	public ResultSettings(boolean success) {
 		this.success = success;
 	}
@@ -76,6 +76,4 @@ public class ResultSettings {
 	public void setUrl(String url) {
 		this.url = url;
 	}
-
-	//TODO: GWUA-4279 populate with necessary fields
 }

@@ -13,7 +13,6 @@ package com.agnitas.mailing.autooptimization.web;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -30,10 +29,10 @@ import org.agnitas.emm.core.commons.util.Constants;
 import org.agnitas.emm.core.mailing.MailingAllReadySentException;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.util.beans.impl.SelectOption;
 import org.agnitas.web.BaseDispatchActionSupport;
 import org.agnitas.web.StrutsActionBase;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -200,11 +199,8 @@ public class ComOptimizationAction extends BaseDispatchActionSupport {
 			logger.error("Could not parse date : " + optimizationForm.getResultSendDateAsString(), e);
 		}
 
-		if ("".equals(optimizationForm.getThresholdString().trim())) {
-			optimization.setThreshold(0);
-		} else {
-			optimization.setThreshold(Integer.parseInt(optimizationForm.getThresholdString()));
-		}
+		optimization.setThreshold(NumberUtils.toInt(optimizationForm.getThresholdString(), 0));
+
 		boolean is_new = (optimization.getId() == 0);
 
         ComOptimization cachedOptimization = null;
@@ -316,29 +312,31 @@ public class ComOptimizationAction extends BaseDispatchActionSupport {
 			
 		return view(mapping, form, request, response);
 	}
-	
-	public ActionForward unSchedule(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception{
-	
+
+	public ActionForward unSchedule(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
+
 		ActionMessages errors = new ActionMessages();
 		ComAdmin admin = AgnUtils.getAdmin(request);
-		
-		ComOptimizationForm scheduleForm =  (ComOptimizationForm) form;
+
+		ComOptimizationForm scheduleForm = (ComOptimizationForm) form;
 		ComOptimization optimization = optimizationService.get(scheduleForm.getOptimizationID(), admin.getCompanyID());
-		
+
 		try {
 			optimizationScheduleService.unscheduleOptimization(optimization);
-            writeUserActivityLog(admin, "do unschedule Auto-Optimization", getOptimizationDescription(optimization) + " stopped");
+			writeUserActivityLog(admin, "do unschedule Auto-Optimization", getOptimizationDescription(optimization) + " stopped");
 		} catch (MaildropDeleteException e) {
-			logger.error("Could not unschedule optimization." +optimization.getId() + " Status-ID:  " + optimization.getStatus() );
+			logger.error("Could not unschedule optimization." + optimization.getId() + " Status-ID:  " + optimization.getStatus());
 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.autooptimization.errors.unschedule"));
 		}
-		
+
 		if (errors.isEmpty()) {
 			ActionMessages actionMessages = new ActionMessages();
 			actionMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
 			saveMessages(request, actionMessages);
 			scheduleForm.setTestMailingsSendDateAsString(null);
 			scheduleForm.setResultSendDateAsString(null);
+		} else {
+			saveErrors(request, errors);
 		}
 
 		return view(mapping, form, request, response);
@@ -388,34 +386,7 @@ public class ComOptimizationAction extends BaseDispatchActionSupport {
 		request.setAttribute("adminDateFormatPattern", admin.getDateFormat().toPattern());
 
 		// handle the 'groups' select(s)
-		request.setAttribute("groups", optimizationService.getTestMailingList(optimization,null));
-		if( optimization.getGroup2() > 0) {
-			List<Integer> excludeMailingIDs = new ArrayList<>();
-			request.setAttribute("groups2", optimizationService.getTestMailingList(optimization, excludeMailingIDs));
-		} else {
-			request.setAttribute("groups2", new ArrayList<SelectOption>());
-		}
-		
-		if( optimization.getGroup3() > 0) {
-			List<Integer> excludeMailingIDs = new ArrayList<>();
-			request.setAttribute("groups3", optimizationService.getTestMailingList(optimization, excludeMailingIDs));
-		} else {
-			request.setAttribute("groups3", new ArrayList<SelectOption>());
-		}
-		
-		if( optimization.getGroup4() > 0) {
-			List<Integer> excludeMailingIDs = new ArrayList<>();
-			request.setAttribute("groups4", optimizationService.getTestMailingList(optimization, excludeMailingIDs));
-		} else {
-			request.setAttribute("groups4", new ArrayList<SelectOption>());
-		}
-		
-		if( optimization.getGroup5() > 0) {
-			List<Integer> excludeMailingIDs = new ArrayList<>();
-			request.setAttribute("groups5", optimizationService.getTestMailingList(optimization, excludeMailingIDs));
-		} else {
-			request.setAttribute("groups5", new ArrayList<SelectOption>());
-		}
+		request.setAttribute("groups", optimizationService.getTestMailingList(optimization));
 	}
 
     /**

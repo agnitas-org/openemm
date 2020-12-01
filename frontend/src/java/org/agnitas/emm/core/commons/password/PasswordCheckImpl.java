@@ -12,7 +12,11 @@ package org.agnitas.emm.core.commons.password;
 
 import java.util.Objects;
 
-import org.apache.commons.lang3.StringUtils;
+import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
+import org.agnitas.emm.core.commons.password.policy.PasswordPolicy;
+import org.agnitas.emm.core.commons.password.util.PasswordCheckUtil;
+import org.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
+import org.agnitas.emm.core.commons.util.ConfigService;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -26,23 +30,51 @@ import com.agnitas.service.SimpleServiceResult;
 public class PasswordCheckImpl implements PasswordCheck {
 
 	private AdminService adminService;
+	private ConfigService configService;
 
 	@Override
 	public boolean checkAdminPassword(String password, ComAdmin admin, PasswordCheckHandler handler) {
 		try {
 			// Check basic constraints
-			PasswordUtil.checkPasswordConstraints(password);
+			final PasswordPolicies policies = PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService);
+			assert policies != null; // By definition of loadCompanyPasswordPolicy()
+			
+			final PasswordPolicy policy = policies.getPasswordPolicy();
+			assert policy != null; // by definition of PasswordPolicies
+			
+			// Check password policy
+			policy.checkPassword(password);
 
 			if (admin != null) {
 				// Check that given password differs from current Admin password
 				if (adminService.isAdminPassword(admin, password)) {
-					throw new PasswordMatchesCurrentPasswordException();
+					handler.handleMatchesCurrentPassword();
+					
+					return false;
 				}
 			}
 
 			return true;
-		} catch(PasswordConstraintException e) {
-			handleException(e, handler);
+		} catch(final PolicyViolationException e) {
+			PasswordCheckUtil.invokeHandler(e, handler);
+
+			return false;
+		}
+	}
+
+	@Override
+	public boolean checkNewAdminPassword(String password, final int companyID, PasswordCheckHandler handler) {
+		try {
+			// Check basic constraints
+			final PasswordPolicies policies = PasswordPolicyUtil.loadCompanyPasswordPolicy(companyID, configService);
+			assert policies != null; // By definition of loadCompanyPasswordPolicy()
+			final PasswordPolicy policy = policies.getPasswordPolicy();
+			assert policy != null; // by definition of PasswordPolicies
+			policy.checkPassword(password);
+
+			return true;
+		} catch(final PolicyViolationException e) {
+			PasswordCheckUtil.invokeHandler(e, handler);
 
 			return false;
 		}
@@ -51,81 +83,50 @@ public class PasswordCheckImpl implements PasswordCheck {
 	@Override
 	public SimpleServiceResult checkAdminPassword(String password, ComAdmin admin) {
 		try {
-			PasswordUtil.checkPasswordConstraints(password);
+			// Check basic constraints
+			final PasswordPolicies policies = PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService);
+			assert policies != null; // By definition of loadCompanyPasswordPolicy()
+			final PasswordPolicy policy = policies.getPasswordPolicy();
+			assert policy != null; // by definition of PasswordPolicies
+			policy.checkPassword(password);
 
 			if (admin != null) {
 				// Check that given password differs from current admin's password.
 				if (adminService.isAdminPassword(admin, password)) {
-					throw new PasswordMatchesCurrentPasswordException();
+					return new SimpleServiceResult(false, Message.of("error.password_must_differ"));
 				}
 			}
 
 			return new SimpleServiceResult(true);
-		} catch (PasswordConstraintException e) {
-			return new SimpleServiceResult(false, asMessage(e));
+		} catch (final PolicyViolationException e) {
+			return new SimpleServiceResult(false, PasswordCheckUtil.policyViolationsToMessages(e));
 		}
 	}
 
-	/**
-	 * Resolve password exception and call corresponding method of handler.
-	 *  
-	 * @param ex password exception
-	 * @param handler handler
-	 */
-	protected void handleException(PasswordConstraintException ex, PasswordCheckHandler handler) {
+	@Override
+	public SimpleServiceResult checkNewAdminPassword(String password, final PasswordPolicy passwordPolicy) {
 		try {
-			throw ex;	// Just a trick to dispatch exception to handler methods. Required for subclassing...
-		} catch(PasswordContainsNoLowerCaseLettersException e) {
-			handler.handleNoLowerCaseLettersException();
-		} catch(PasswordContainsNoUpperCaseLettersException e) {
-			handler.handleNoUpperCaseLettersException();
-		} catch(PasswordContainsNoDigitsException e) {
-			handler.handleNoDigitsException();
-		} catch(PasswordContainsNoSpecialCharactersException e) {
-			handler.handleNoPunctuationException();
-		} catch(PasswordTooShortException e) {
-			handler.handlePasswordTooShort();
-		} catch(PasswordMatchesCurrentPasswordException e) {
-			handler.handleMatchesCurrentPassword();
-		} catch(PasswordConstraintException e) {
-			handler.handleGenericError();
+			// Check basic constraints
+			passwordPolicy.checkPassword(password);
+
+			return new SimpleServiceResult(true);
+		} catch (final PolicyViolationException e) {
+			return new SimpleServiceResult(false, PasswordCheckUtil.policyViolationsToMessages(e));
 		}
 	}
-
-	protected Message asMessage(PasswordConstraintException exception) {
-		try {
-			throw exception;
-		} catch(PasswordContainsNoLowerCaseLettersException e) {
-			return Message.of("error.password_no_lowercase_letters");
-		} catch(PasswordContainsNoUpperCaseLettersException e) {
-			return Message.of("error.password_no_uppercase_letters");
-		} catch(PasswordContainsNoDigitsException e) {
-			return Message.of("error.password_no_digits");
-		} catch(PasswordContainsNoSpecialCharactersException e) {
-			return Message.of("error.password_no_special_chars");
-		} catch(PasswordTooShortException e) {
-			return Message.of("error.password.tooShort");
-		} catch(PasswordMatchesCurrentPasswordException e) {
-			return Message.of("error.password_must_differ");
-		} catch(PasswordConstraintException e) {
-			return Message.of("error.password.general");
-		}
+	
+	protected final ConfigService getConfigService() {
+		return this.configService;
 	}
-
-    @Override
-    public boolean passwordChanged(String username, String password) {
-    	final ComAdmin admin = adminService.getAdminByLogin(username, password);
-
-    	if (StringUtils.isEmpty(password) || (admin != null && admin.getAdminID() > 0)) {
-            return false;
-        } else {
-            return true;
-        }
-    }
 
 	// ---------------------------------------------------------------------------------------------------- Dependency Injection
 	@Required
-	public void setAdminService(AdminService service) {
+	public final void setAdminService(final AdminService service) {
 		this.adminService = Objects.requireNonNull(service, "Admin service is null");
+	}
+	
+	@Required
+	public final void setConfigService(final ConfigService service) {
+		this.configService = Objects.requireNonNull(service, "Config service is null");
 	}
 }

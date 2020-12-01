@@ -2,7 +2,6 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib uri="http://ajaxtags.org/tags/ajax" prefix="ajax" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
@@ -81,7 +80,7 @@
                         excludedParams="*"
                         decorator="com.agnitas.util.RecipientsTableDecorator">
 
-                    <display:column headerClass="js-table-sort" titleKey="settings.fieldType.DATE" sortable="true" format="{0,date,${localeTablePattern}}" property="changeDate" />
+                    <display:column headerClass="js-table-sort" titleKey="Date" sortable="true" format="{0,date,${localeTablePattern}}" property="changeDate" />
 
                     <display:column headerClass="js-table-sort" titleKey="recipient.history.fieldname" sortable="true" property="fieldName" />
 

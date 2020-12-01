@@ -19,8 +19,8 @@ import org.agnitas.emm.core.component.service.ComponentAlreadyExistException;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentNotExistException;
 import org.agnitas.emm.core.component.service.ComponentService;
+import org.agnitas.emm.core.component.service.validation.ComponentModelValidator;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.validator.annotation.Validate;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,10 +29,16 @@ import com.agnitas.dao.FormComponentDao;
 public abstract class ComponentServiceImpl implements ComponentService {
 
 	protected MailingComponentDao mailingComponentDao;
+	protected ComponentModelValidator modelValidator;
 	
 	@Required
 	public void setMailingComponentDao(MailingComponentDao mailingComponentDao) {
 		this.mailingComponentDao = mailingComponentDao;
+	}
+
+	@Required
+	public void setModelValidator(final ComponentModelValidator modelValidator) {
+		this.modelValidator = modelValidator;
 	}
 
 	protected MailingDao mailingDao;
@@ -53,8 +59,8 @@ public abstract class ComponentServiceImpl implements ComponentService {
 	
 	@Override
 	@Transactional
-	@Validate("getComponents")
 	public List<MailingComponent> getComponents(ComponentModel model) {
+		modelValidator.assertIsValidToGetOrDelete(model);
 		if (!mailingDao.exist(model.getMailingId(), model.getCompanyId())) {
 			throw new MailingNotExistException();
 		}
@@ -63,8 +69,8 @@ public abstract class ComponentServiceImpl implements ComponentService {
 
 	@Override
 	@Transactional
-	@Validate("getComponent")
 	public MailingComponent getComponent(ComponentModel model) {
+		modelValidator.assertIsValidToGetOrDelete(model);
 		MailingComponent component = mailingComponentDao.getMailingComponent(model.getComponentId(), model.getCompanyId());
 		if (component == null || component.getType() != model.getComponentType()) {
 			throw new ComponentNotExistException();
@@ -74,8 +80,8 @@ public abstract class ComponentServiceImpl implements ComponentService {
 
 	@Override
 	@Transactional
-	@Validate("addComponent")
 	public int addComponent(ComponentModel model) throws Exception {
+		modelValidator.assertIsValidToAdd(model);
 		return addComponentImpl(model);
 	}
 		
@@ -100,8 +106,8 @@ public abstract class ComponentServiceImpl implements ComponentService {
 
 	@Override
 	@Transactional
-	@Validate("updateComponent")
 	public void updateComponent(ComponentModel model) throws Exception {
+		modelValidator.assertIsValidToUpdateGroup(model);
 		MailingComponent component = mailingComponentDao.getMailingComponent(model.getComponentId(), model.getCompanyId());
 		if (component == null || component.getType() != model.getComponentType()) {
 			throw new ComponentNotExistException();
@@ -120,8 +126,8 @@ public abstract class ComponentServiceImpl implements ComponentService {
 
 	@Override
 	@Transactional
-	@Validate("getComponent")
 	public void deleteComponent(ComponentModel model) {
+		modelValidator.assertIsValidToGetOrDelete(model);
 		deleteComponentImpl(model);
 	}
 		

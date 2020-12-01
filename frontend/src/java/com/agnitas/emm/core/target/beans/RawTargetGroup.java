@@ -10,20 +10,23 @@
 
 package com.agnitas.emm.core.target.beans;
 
-import org.agnitas.target.TargetRepresentation;
-
 /**
  * The class represents raw target group data.
  * 
  * These information is read from database and not processed furthermore.
- * This is used when EQL expression and {@link TargetRepresentation} are required in
+ * This is used when EQL expression are required in
  * an unmodified form.
  * 
  * Therefore
  * <ul>
  *   <li>EQL may be invalid (due to missing profile fields or reference tables)</li>
- *   <li>EQL and {@link TargetRepresentation} may not represent the same target group rules</li>
  * </ul>
+ */
+@Deprecated 
+/*
+ * TODO When TargetRepresentation can be removed, this class can be replaced by ComTargetImpl.
+ * 
+ * This class has no advantage over ComTargetImpl.
  */
 public final class RawTargetGroup {
 
@@ -38,23 +41,18 @@ public final class RawTargetGroup {
 	/** EQL expression of the target group. */
 	private final String eql;
 	
-	/** {@link TargetRepresentation} of the target group. */
-	private final TargetRepresentation representation;
-	
 	/**
 	 * Creates a new instance.
 	 * 
 	 * @param id ID of target group
 	 * @param name name of target group
 	 * @param eql EQL expression
-	 * @param representation 
 	 */
-	public RawTargetGroup(final int id, final String name, int companyId, final String eql, final TargetRepresentation representation) {
+	public RawTargetGroup(final int id, final String name, int companyId, final String eql) {
 		this.id = id;
 		this.name = name;
 		this.companyId = companyId;
 		this.eql = eql;
-		this.representation = representation;
 	}
 
 	/**
@@ -86,15 +84,6 @@ public final class RawTargetGroup {
 	 */
 	public final String getEql() {
 		return eql;
-	}
-
-	/**
-	 * Returns the (unmodified) {@link TargetRepresentation} of the target group.
-	 * 
-	 * @return the (unmodified) {@link TargetRepresentation} of the target group
-	 */
-	public final TargetRepresentation getRepresentation() {
-		return representation;
 	}
 	 
 }

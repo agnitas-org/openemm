@@ -33,6 +33,8 @@ import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.lang3.StringUtils;
 
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+
 public class ImportProfileImpl implements ImportProfile {
 	protected int id;
     protected int adminId;
@@ -60,8 +62,9 @@ public class ImportProfileImpl implements ImportProfile {
     private boolean zipped = false;
     private String zipPassword = null;
     private boolean autoMapping = false;
-    private boolean csvImport = true;
     private List<Integer> mailinglistIds;
+    private MediaTypes mediatype;
+    private String datatype = "CSV";
     
     public ImportProfileImpl() {
     	keyColumns = new ArrayList<>();
@@ -236,89 +239,6 @@ public class ImportProfileImpl implements ImportProfile {
     @Override
     public void setAutoMapping(boolean autoMapping) {
         this.autoMapping = autoMapping;
-    }
-
-    @Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + actionForNewRecipients;
-		result = prime * result + adminId;
-		result = prime * result + (autoMapping ? 1231 : 1237);
-		result = prime * result + charset;
-		result = prime * result + checkForDuplicates;
-		result = prime * result + ((columnMapping == null) ? 0 : columnMapping.hashCode());
-		result = prime * result + companyId;
-		result = prime * result + (csvImport ? 1231 : 1237);
-		result = prime * result + dateFormat;
-		result = prime * result + decimalSeparator;
-		result = prime * result + defaultMailType;
-		result = prime * result + ((genderMapping == null) ? 0 : genderMapping.hashCode());
-		result = prime * result + id;
-		result = prime * result + importId;
-		result = prime * result + importMode;
-		result = prime * result + importProcessActionID;
-		result = prime * result + ((keyColumns == null) ? 0 : keyColumns.hashCode());
-		result = prime * result + ((mailForError == null) ? 0 : mailForError.hashCode());
-		result = prime * result + ((mailForReport == null) ? 0 : mailForReport.hashCode());
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + (noHeaders ? 1231 : 1237);
-		result = prime * result + nullValuesAction;
-		result = prime * result + separator;
-		result = prime * result + textRecognitionChar;
-		result = prime * result + (updateAllDuplicates ? 1231 : 1237);
-		result = prime * result + ((zipPassword == null) ? 0 : zipPassword.hashCode());
-		result = prime * result + (zipped ? 1231 : 1237);
-		return result;
-	}
-
-    @Override
-    public boolean equals(Object profileObject) {
-        if (!(profileObject instanceof ImportProfile)) {
-            return false;
-        }
-        ImportProfile profile = (ImportProfile) profileObject;
-
-        if (!StringUtils.equals(name, profile.getName())) {
-            return false;
-        }
-        if (!StringUtils.equals(mailForReport, profile.getMailForReport())) {
-            return false;
-        }
-        if (!StringUtils.equals(mailForError, profile.getMailForError())) {
-            return false;
-        }
-        
-        if (keyColumns != profile.getKeyColumns()) {
-        	if (keyColumns == null || profile.getKeyColumns() == null) {
-        		return false;
-        	} else if (keyColumns.size() != profile.getKeyColumns().size()) {
-	        	return false;
-	        } else {
-	        	for (int i = 0; i < keyColumns.size(); i++) {
-	        		if (keyColumns.get(i) != profile.getKeyColumns().get(i)) {
-	        			if (keyColumns.get(i) == null || profile.getKeyColumns().get(i) == null) {
-	        	        	return false;
-	        			} else if (!keyColumns.get(i).equals(profile.getKeyColumns().get(i))) {
-		        			return false;
-		        		}
-	        		}
-	        	}
-	        }
-        }
-        
-        return id == profile.getId()
-                && adminId == profile.getAdminId()
-                && companyId == profile.getCompanyId()
-                && separator == profile.getSeparator()
-                && textRecognitionChar == profile.getTextRecognitionChar()
-                && charset == profile.getCharset()
-                && dateFormat == profile.getDateFormat()
-                && importMode == profile.getImportMode()
-                && checkForDuplicates == profile.getCheckForDuplicates()
-                && nullValuesAction == profile.getNullValuesAction()
-                && defaultMailType == profile.getDefaultMailType()
-                && updateAllDuplicates == profile.getUpdateAllDuplicates();
     }
 
     @Override
@@ -508,16 +428,6 @@ public class ImportProfileImpl implements ImportProfile {
 	}
 
 	@Override
-	public boolean isCsvImport() {
-		return csvImport;
-	}
-
-	@Override
-	public void setCsvImport(boolean csvImport) {
-		this.csvImport = csvImport;
-	}
-
-	@Override
 	public String toString() {
 		StringBuilder output = new StringBuilder("\"" + name + "\" (CID " + companyId + " / ID " + id + ")\n");
 		try {
@@ -529,7 +439,7 @@ public class ImportProfileImpl implements ImportProfile {
 		output.append("EncryptedZip: " + (zipPassword != null) + "\n");
 		output.append("AutoMapping: " + autoMapping + "\n");
 		
-		if (csvImport) {
+		if ("CSV".equalsIgnoreCase(datatype)) {
 			output.append("NoHeaders: " + noHeaders + "\n");
 			try {
 				output.append("Separator: " + Separator.getSeparatorById(separator).getValueChar() + "\n");
@@ -542,8 +452,10 @@ public class ImportProfileImpl implements ImportProfile {
 				output.append("TextRecognitionChar: Invalid (\"" + e.getMessage() + "\")\n");
 			}
 			output.append("DecimalSeparator: " + decimalSeparator + "\n");
+		} else if ("JSON".equalsIgnoreCase(datatype)) {
+			output.append("Json data import: true\n");
 		} else {
-			output.append("Json data import: " + !csvImport + "\n");
+			throw new RuntimeException("Invalid datatype: " + datatype);
 		}
 		
 		try {
@@ -612,5 +524,35 @@ public class ImportProfileImpl implements ImportProfile {
 	@Override
 	public void setMailinglists(List<Integer> mailinglistIds) {
 		this.mailinglistIds = mailinglistIds;
+	}
+
+	@Override
+	public MediaTypes getMediatype() {
+		return mediatype;
+	}
+
+	@Override
+	public void setMediatype(MediaTypes mediatype) {
+		this.mediatype = mediatype;
+	}
+
+	@Override
+	public int getMediatypeCode() {
+		return mediatype == null ? MediaTypes.EMAIL.getMediaCode() : mediatype.getMediaCode();
+	}
+
+	@Override
+	public void setMediatypeCode(int mediatypeCode) {
+		this.mediatype = MediaTypes.getMediaTypeForCode(mediatypeCode);
+	}
+
+	@Override
+	public String getDatatype() {
+		return datatype;
+	}
+
+	@Override
+	public void setDatatype(String datatype) {
+		this.datatype = datatype;
 	}
 }

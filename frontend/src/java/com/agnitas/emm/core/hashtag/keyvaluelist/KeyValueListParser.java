@@ -15,10 +15,23 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Parser for lists of key-value pairs used in hashtags.
+ */
 public final class KeyValueListParser {
 
+	/** Regular expression to parse a key-value list as a sequence of chunks. */ 
 	private static final Pattern PATTERN = Pattern.compile("^\\s*([^ =]+)\\s*=\\s*(?:([^'\"][^ ]*)|'([^']*)'|\"([^\"]*)\")\\s*(?:,(.*))?$");
 	
+	/**
+	 * Parse list of key-value pairs in given string.
+	 * 
+	 * @param str String containing list of key-value pairs
+	 * 
+	 * @return Map representing key-values pairs from given string
+	 * 
+	 * @throws KeyValueListParserException if given list is malformed
+	 */
 	public static final Map<String, String> parseKeyValueList(final String str) throws KeyValueListParserException {
 		final Map<String, String> map = new HashMap<>();
 		
@@ -46,10 +59,6 @@ public final class KeyValueListParser {
 		}
 		
 		return map;
-	}
-	
-	public static void main(String args[]) throws Exception {
-		System.out.println(parseKeyValueList("date='dd.mm.yyyy'"));
 	}
 
 }

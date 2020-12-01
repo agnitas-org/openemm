@@ -17,11 +17,21 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.annotation.Resource;
 
+import org.agnitas.service.FormImportResult;
+import org.agnitas.service.UserFormImporter;
+import org.agnitas.util.DateUtilities;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.dao.UserFormDao;
+import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
+import com.agnitas.emm.core.userform.service.ComUserformService;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
@@ -30,11 +40,6 @@ import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.bean.impl.UserFormImpl;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 import com.agnitas.userform.trackablelinks.bean.impl.ComTrackableUserFormLinkImpl;
-import org.agnitas.service.FormImportResult;
-import org.agnitas.service.UserFormImporter;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 public class UserFormImporterImpl extends ActionImporter implements UserFormImporter {
 	/** The logger. */
@@ -42,25 +47,26 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 	
 	@Resource(name="UserFormDao")
 	protected UserFormDao userFormDao;
-    
-    /**
-     * Import userform
-     */
+
+	@Resource(name="FormTrackableLinkDao")
+	protected FormTrackableLinkDao trackableLinkDao;
+
+	@Resource(name="userformService")
+	protected ComUserformService userFormService;
+
 	@Override
-	public FormImportResult importUserFormFromJson(int companyID, InputStream input) throws Exception {
-		return importUserFormFromJson(companyID, input, null, null);
+	public FormImportResult importUserForm(ComAdmin admin, InputStream input) throws Exception {
+		return importUserForm(admin, input, null, null);
 	}
 
-    /**
-     * Import userform
-     */
 	@Override
-	public FormImportResult importUserFormFromJson(int companyID, InputStream input, String formName, String description) throws Exception {
+	public FormImportResult importUserForm(ComAdmin admin, InputStream input, String formName, String description) throws Exception {
 		try (JsonReader reader = new JsonReader(input, "UTF-8")) {
+			int companyId = admin.getCompanyID();
 			JsonNode jsonNode = reader.read();
-			
+
 			checkIsJsonObject(jsonNode);
-			
+
 			JsonObject jsonObject = (JsonObject) jsonNode.getValue();
 
 			String version = (String) jsonObject.get("version");
@@ -69,117 +75,130 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 			Map<Integer, Integer> actionIdMappings = new HashMap<>();
 			if (jsonObject.containsPropertyKey("actions")) {
 				for (Object actionObject : (JsonArray) jsonObject.get("actions")) {
-					importAction(companyID, (JsonObject) actionObject, actionIdMappings);
+					importAction(companyId, (JsonObject) actionObject, actionIdMappings);
 				}
 			}
 
 			UserForm userForm = new UserFormImpl();
-			userForm.setCompanyID(companyID);
-			userForm.setFormName(StringUtils.defaultIfEmpty(formName, (String) jsonObject.get("formname")));
-			
+			String userFormName = StringUtils.defaultIfEmpty(formName, (String) jsonObject.get("formname"));
+			description = StringUtils.defaultIfEmpty(description, (String) jsonObject.get("description"));
+
 			FormImportResult.Builder importResult = FormImportResult.builder();
-			
-			int nameCollisionIterationsCount = 0;
-			String originalFormName = userForm.getFormName();
-			while (userFormDao.getUserFormByName(userForm.getFormName(), companyID) != null && nameCollisionIterationsCount < 10) {
-				nameCollisionIterationsCount++;
+
+			boolean formNameInUse = userFormService.isFormNameInUse(userFormName, companyId);
+			if (formNameInUse) {
 				importResult.addWarning("error.form.name_in_use");
-				userForm.setFormName(originalFormName + "_" + nameCollisionIterationsCount);
+				String originName = userFormName;
+				userFormName = userFormService.getCloneUserFormName(userFormName, companyId, admin.getLocale());
+				logger.warn(String.format("User form name \"%s\" already exists, changes to \"%s\"", originName, userFormName));
 			}
-			if (nameCollisionIterationsCount >= 10) {
-				logger.error("UserForm import had unresolvable collision with userformname: '" + originalFormName + "' in company: " + companyID);
-				return importResult.setSuccess(false).addError("error.userform.import").build();
-			}
-			
-			userForm.setDescription(StringUtils.defaultIfEmpty(description, (String) jsonObject.get("description")));
-			
-			userForm.setIsActive((boolean) jsonObject.get("active"));
-			
-			if (jsonObject.containsPropertyKey("startaction")) {
-				userForm.setStartActionID(actionIdMappings.get(jsonObject.get("startaction")));
-			}
-			
-			if (jsonObject.containsPropertyKey("endaction")) {
-				userForm.setEndActionID(actionIdMappings.get(jsonObject.get("endaction")));
-			}
+			importResult.setUserFormName(userFormName);
+			userForm.setFormName(userFormName);
+			userForm.setDescription(description);
+			userForm.setActive((boolean) jsonObject.get("active"));
 
-			userForm.setSuccessTemplate((String) jsonObject.get("success_template"));
-			if (jsonObject.containsPropertyKey("success_mimetype")) {
-				userForm.setSuccessMimetype((String) jsonObject.get("success_mimetype"));
-			}
-			
-			if (jsonObject.containsPropertyKey("success_url")) {
-				userForm.setSuccessUrl((String) jsonObject.get("success_url"));
-				if (jsonObject.containsPropertyKey("success_use_url")) {
-					userForm.setSuccessUseUrl((boolean) jsonObject.get("success_use_url"));
-				}
-			}
+			importFormSettings(userForm, jsonObject, actionIdMappings);
 
-			userForm.setErrorTemplate((String) jsonObject.get("error_template"));
-			if (jsonObject.containsPropertyKey("error_mimetype")) {
-				userForm.setErrorMimetype((String) jsonObject.get("error_mimetype"));
-			}
-			
-			if (jsonObject.containsPropertyKey("success_url")) {
-				userForm.setErrorUrl((String) jsonObject.get("error_url"));
-				if (jsonObject.containsPropertyKey("error_use_url")) {
-					userForm.setErrorUseUrl((boolean) jsonObject.get("error_use_url"));
-				}
-			}
-			
+			List<ComTrackableUserFormLink> links = new ArrayList<>();
 			if (jsonObject.containsPropertyKey("links")) {
-				Map<String, ComTrackableUserFormLink> trackableLinks = new HashMap<>();
-				for (Object linkObject : (JsonArray) jsonObject.get("links")) {
-					JsonObject linkJsonObject = (JsonObject) linkObject;
-					ComTrackableUserFormLink trackableLink = new ComTrackableUserFormLinkImpl();
-					trackableLink.setShortname((String) linkJsonObject.get("name"));
-					trackableLink.setFullUrl((String) linkJsonObject.get("url"));
-					
-					if (linkJsonObject.containsPropertyKey("deep_tracking")) {
-						trackableLink.setDeepTracking((Integer) linkJsonObject.get("deep_tracking"));
-					}
-					
-					if (linkJsonObject.containsPropertyKey("relevance")) {
-						trackableLink.setRelevance((Integer) linkJsonObject.get("relevance"));
-					}
-					
-					if (linkJsonObject.containsPropertyKey("usage")) {
-						trackableLink.setUsage((Integer) linkJsonObject.get("usage"));
-					}
-					
-					if (linkJsonObject.containsPropertyKey("action_id")) {
-						trackableLink.setActionID(actionIdMappings.get(jsonObject.get("action_id")));
-					}
-
-					if (linkJsonObject.containsPropertyKey("properties")) {
-						List<LinkProperty> linkProperties = new ArrayList<>();
-						for (Object propertyObject : (JsonArray) linkJsonObject.get("properties")) {
-							JsonObject propertyJsonObject = (JsonObject) propertyObject;
-							LinkProperty linkProperty = new LinkProperty(PropertyType.parseString((String) propertyJsonObject.get("type")), (String) propertyJsonObject.get("name"), (String) propertyJsonObject.get("value"));
-							linkProperties.add(linkProperty);
-						}
-						trackableLink.setProperties(linkProperties);
-					}
-					
-					trackableLinks.put(trackableLink.getFullUrl(), trackableLink);
-				}
-				userForm.setTrackableLinks(trackableLinks);
+				links = getUserFormLinks(jsonObject, actionIdMappings);
 			}
-			
+
 			// Mark mailing as newly imported
-			userForm.setDescription("Imported at " + new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM).format(new Date()) + (StringUtils.isEmpty(userForm.getDescription()) ? "" : "\n" + userForm.getDescription()));
-		
-			int importedUserFormID = userFormDao.storeUserForm(userForm);
-			
-			if (importedUserFormID <= 0) {
+			String importDescription = String.format("Imported at %s %s",
+					new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM).format(new Date()),
+					StringUtils.isNotEmpty(description) ? "\n" + description : "");
+			userForm.setDescription(importDescription);
+
+			int importedFormId = userFormDao.createUserForm(companyId, userForm);
+			if (importedFormId > 0) {
+				trackableLinkDao.saveUserFormTrackableLinks(importedFormId, companyId, links);
+				return importResult.setUserFormID(importedFormId).setSuccess(true).build();
+			} else {
 				logger.error("Cannot save userform");
 				return importResult.setSuccess(false).addError("error.userform.import").build();
-			} else {
-				return importResult.setUserFormID(importedUserFormID).setSuccess(true).build();
 			}
+
 		} catch (Exception e) {
 			logger.error("Error in userform import: " + e.getMessage(), e);
 			throw e;
+		}
+	}
+
+	private List<ComTrackableUserFormLink> getUserFormLinks(JsonObject jsonObject, Map<Integer, Integer> actionIdMappings) throws Exception {
+		Map<String, ComTrackableUserFormLink> trackableLinks = new HashMap<>();
+		for (Object linkObject : (JsonArray) jsonObject.get("links")) {
+			JsonObject linkJsonObject = (JsonObject) linkObject;
+			ComTrackableUserFormLink trackableLink = new ComTrackableUserFormLinkImpl();
+			trackableLink.setShortname((String) linkJsonObject.get("name"));
+			trackableLink.setFullUrl((String) linkJsonObject.get("url"));
+
+			if (linkJsonObject.containsPropertyKey("deep_tracking")) {
+				trackableLink.setDeepTracking((Integer) linkJsonObject.get("deep_tracking"));
+			}
+
+			if (linkJsonObject.containsPropertyKey("usage")) {
+				trackableLink.setUsage((Integer) linkJsonObject.get("usage"));
+			}
+
+			if (linkJsonObject.containsPropertyKey("action_id")) {
+				trackableLink.setActionID(actionIdMappings.get(jsonObject.get("action_id")));
+			}
+
+			if (linkJsonObject.containsPropertyKey("properties")) {
+				List<LinkProperty> linkProperties = new ArrayList<>();
+				for (Object propertyObject : (JsonArray) linkJsonObject.get("properties")) {
+					JsonObject propertyJsonObject = (JsonObject) propertyObject;
+					LinkProperty linkProperty = new LinkProperty(PropertyType.parseString((String) propertyJsonObject.get("type")), (String) propertyJsonObject.get("name"), (String) propertyJsonObject.get("value"));
+					linkProperties.add(linkProperty);
+				}
+				trackableLink.setProperties(linkProperties);
+			}
+
+			trackableLinks.put(trackableLink.getFullUrl(), trackableLink);
+		}
+
+		if (!trackableLinks.containsKey("Form")) {
+			ComTrackableUserFormLink dummyStatisticLinks = new ComTrackableUserFormLinkImpl();
+			dummyStatisticLinks.setFullUrl("Form");
+			trackableLinks.put("Form", dummyStatisticLinks);
+		}
+
+		return new ArrayList<>(trackableLinks.values());
+	}
+
+	private void importFormSettings(UserForm userForm, JsonObject jsonObject, Map<Integer, Integer> actionMappings) {
+
+		if (jsonObject.containsPropertyKey("startaction")) {
+			userForm.setStartActionID(actionMappings.get(jsonObject.get("startaction")));
+		}
+
+		if (jsonObject.containsPropertyKey("endaction")) {
+			userForm.setEndActionID(actionMappings.get(jsonObject.get("endaction")));
+		}
+
+		userForm.setSuccessTemplate((String) jsonObject.get("success_template"));
+		if (jsonObject.containsPropertyKey("success_mimetype")) {
+			userForm.setSuccessMimetype((String) jsonObject.get("success_mimetype"));
+		}
+
+		if (jsonObject.containsPropertyKey("success_url")) {
+			userForm.setSuccessUrl((String) jsonObject.get("success_url"));
+			if (jsonObject.containsPropertyKey("success_use_url")) {
+				userForm.setSuccessUseUrl((boolean) jsonObject.get("success_use_url"));
+			}
+		}
+
+		userForm.setErrorTemplate((String) jsonObject.get("error_template"));
+		if (jsonObject.containsPropertyKey("error_mimetype")) {
+			userForm.setErrorMimetype((String) jsonObject.get("error_mimetype"));
+		}
+
+		if (jsonObject.containsPropertyKey("success_url")) {
+			userForm.setErrorUrl((String) jsonObject.get("error_url"));
+			if (jsonObject.containsPropertyKey("error_use_url")) {
+				userForm.setErrorUseUrl((boolean) jsonObject.get("error_use_url"));
+			}
 		}
 	}
 }

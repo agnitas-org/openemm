@@ -18,7 +18,6 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import com.agnitas.emm.core.JavaMailAttachment;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.GenericExportWorker;
 import org.agnitas.service.JobWorker;
@@ -33,6 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.agnitas.emm.core.JavaMailAttachment;
 import com.jcraft.jsch.ChannelSftp;
 
 /**
@@ -114,7 +114,7 @@ public class DBJobWorker extends JobWorker {
 			}
 			
 			if (StringUtils.isNotEmpty(sftpServerCredentials)) {
-				DataEncryptor dataEncryptor = (DataEncryptor) applicationContext.getBean("DataEncryptor");
+				DataEncryptor dataEncryptor = getApplicationContextForJobWorker().getBean("DataEncryptor", DataEncryptor.class);
 				String sftpCredentialsString = dataEncryptor.decrypt(sftpServerCredentials);
 				
 				if (StringUtils.isBlank(filename)) {
@@ -137,7 +137,7 @@ public class DBJobWorker extends JobWorker {
 								
 								sftpHelper.setAllowUnknownHostKeys(true);
 								sftpHelper.connect();
-								sftpHelper.put(exportDataFile.getAbsolutePath(), sftpFileName, ChannelSftp.OVERWRITE);
+								sftpHelper.put(exportDataFile.getAbsolutePath(), sftpFileName, ChannelSftp.OVERWRITE, true);
 							}
 
 							infoMailContent.append("Export data file '" + sftpFileName + "' transfered to SFTP server<br />\n");

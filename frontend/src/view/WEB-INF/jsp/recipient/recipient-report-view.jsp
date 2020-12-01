@@ -5,10 +5,11 @@
 <%--@elvariable id="reportId" type="java.lang.Integer"--%>
 <%--@elvariable id="reportContentEscaped" type="java.lang.String"--%>
 
-<c:url var="view_url" value="/recipientsreport/${reportId}/view.action"/>
-<mvc:form action="${view_url}" method="GET">
-    <div class="tile">
-        <iframe class="js-simple-iframe" style="width: 100%; height: 750px; border: 0px;" srcdoc="${reportContentEscaped}"></iframe>
-    </div>
-</mvc:form>
-
+<div data-initializer="recipient-report-initializer">
+    <c:url var="view_url" value="/recipientsreport/${reportId}/view.action"/>
+    <mvc:form action="${view_url}" method="GET">
+        <div class="tile">
+            <iframe id="report-iframe" class="js-simple-iframe" style="width: 100%; height: 750px; border: 0px;" srcdoc="${reportContentEscaped}"></iframe>
+        </div>
+    </mvc:form>
+</div>

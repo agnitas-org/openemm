@@ -16,13 +16,15 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="mailingContentForm" type="com.agnitas.web.ComMailingContentForm"--%>
+<%--@elvariable id="disableContentEditing" type="java.lang.Boolean"--%>
+<%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 
 <c:set var="ACTION_VIEW" value="<%=ComMailingContentAction.ACTION_VIEW%>"/>
 <c:set var="ACTION_PREVIEW_SELECT" value="<%=ComMailingSendActionBasic.ACTION_PREVIEW_SELECT%>"/>
 <c:set var="ACTION_PREVIEW" value="<%=ComMailingSendActionBasic.ACTION_PREVIEW%>"/>
 <c:set var="ACTION_VIEW_CONTENT" value="<%= ComMailingContentAction.ACTION_VIEW_CONTENT %>"/>
 <c:set var="ACTION_IMPORT_CONTENT" value="<%= ComMailingContentAction.ACTION_IMPORT_CONTENT %>"/>
-<c:set var="ACTION_GENERATE_TEXT_FROM_HTML"	value="<%= ComMailingContentAction.ACTION_GENERATE_TEXT_FROM_HTML %>"/>
+<c:set var="ACTION_GENERATE_TEXT_FROM_HTML"	value="<%= ComMailingContentAction.ACTION_GENERATE_TEXT_FROM_HTML_CONFIRM %>"/>
 
 <c:set var="LIVEPREVIEW_POSITION_BOTTOM" value="<%= EmmLayoutBase.LIVEPREVIEW_POSITION_BOTTOM %>"/>
 <c:set var="LIVEPREVIEW_POSITION_DEACTIVATE" value="<%= EmmLayoutBase.LIVEPREVIEW_POSITION_DEACTIVATE %>"/>
@@ -35,10 +37,7 @@
 <c:set var="isMailingGrid" value="${mailingContentForm.gridTemplateId > 0}" scope="request"/>
 <c:set var="isMailingExclusiveLockingAcquired" value="${true}"/>
 
-<emm:ShowByPermission token="temp.beta">
-    <%-- Always true unless temp.beta permission is there --%>
-    <c:set var="isMailingExclusiveLockingAcquired" value="${mailingContentForm.mailingExclusiveLockingAcquired}"/>
-</emm:ShowByPermission>
+<c:set var="isMailingExclusiveLockingAcquired" value="${mailingContentForm.mailingExclusiveLockingAcquired}"/>
 
 <jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp"/>
 
@@ -53,96 +52,103 @@
         <c:if test="${isMailingGrid}">
             <div class="tile-content-padded">
         </c:if>
-            <div class="row">
-                <div class="col-xs-12" data-view-split="col-md-6 split-1-1" data-view-block="col-xs-12" data-view-hidden="col-xs-12">
-                    <agn:agnForm action="/mailingcontent"  data-form="resource" data-controller="mailing-content-controller">
-                        <html:hidden property="mailingID"/>
-                        <html:hidden property="showDateSettings"/>
-                        <html:hidden property="action" value=""/>
+		<c:choose>
+			<c:when test="${not isPostMailing}">
+				<div class="row">
+					<div class="col-xs-12" data-view-split="col-md-6 split-1-1" data-view-block="col-xs-12" data-view-hidden="col-xs-12">
+						<agn:agnForm action="/mailingcontent"  data-form="resource" data-controller="mailing-content-controller">
+							<html:hidden property="mailingID"/>
+							<html:hidden property="showDateSettings"/>
+							<html:hidden property="action" value=""/>
 
-                        <div class="tile">
-                            <div class="tile-header">
-                                <h2 class="headline"><bean:message key="mailing.TextModules"/></h2>
-                            </div>
+							<div class="tile">
+								<div class="tile-header">
+									<h2 class="headline"><bean:message key="mailing.TextModules"/></h2>
+								</div>
 
-                            <div class="tile-content" data-initializer="mailing-content-overview">
-                                <div class="tile-content-forms">
-                                	<%@include file="mailing-content-list-contentsource-list.jsp"  %>
+								<div class="tile-content" data-initializer="mailing-content-overview">
+									<div class="tile-content-forms">
+										<%@include file="mailing-content-list-contentsource-list.jsp"  %>
 
-                                    <c:if test="${mailingContentForm.enableTextGeneration and not mailingContentForm.worldMailingSend}">
-                                        <div class="form-group">
-                                            <div class="col-sm-4">
-                                                <label class="control-label">
-                                                    <bean:message key="mailing.option"/>
-                                                </label>
-                                            </div>
+										<c:if test="${mailingContentForm.enableTextGeneration and not mailingContentForm.worldMailingSend}">
+											<div class="form-group">
+												<div class="col-sm-4">
+													<label class="control-label">
+														<bean:message key="mailing.option"/>
+													</label>
+												</div>
 
-                                            <div class="col-sm-8">
-                                                <button type="button" tabindex="-1" class="btn btn-regular" data-controls-group="editing"
-                                                        data-form-action="${ACTION_GENERATE_TEXT_FROM_HTML}">
-                                                    <i class="icon icon-exchange"></i>
-                                                    <span class="text"><bean:message key="mailing.GenerateText"/></span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </c:if>
+												<div class="col-sm-8">
+													<agn:agnLink page="/mailingcontent.do?action=${ACTION_GENERATE_TEXT_FROM_HTML}&mailingID=${mailingContentForm.mailingID}"
+																 tabindex="-1" styleClass="btn btn-regular" data-controls-group="editing"
+																 data-confirm="">
+														<i class="icon icon-exchange"></i>
+														<span class="text"><bean:message key="mailing.GenerateText"/></span>
+													</agn:agnLink>
+												</div>
+											</div>
+										</c:if>
 
-									<%@include file="mailing-content-list-contentsource-datelimit.jsp" %>
-                                </div>
+										<%@include file="mailing-content-list-contentsource-datelimit.jsp" %>
+									</div>
 
-                                <table class="table table-bordered table-striped table-hover js-table" id="contentList"
-                                       data-controls-group="editing">
-                                    <thead>
-                                    <tr>
-                                        <th><bean:message key="Text_Module"/></th>
-                                        <th><bean:message key="Target"/></th>
-                                        <th><bean:message key="default.Content"/></th>
-                                    </tr>
-                                    </thead>
-                                    <tbody id="table_body">
-                                    </tbody>
-                                </table>
+									<table class="table table-bordered table-striped table-hover js-table" id="contentList"
+										   data-controls-group="editing">
+										<thead>
+											<tr>
+												<th><bean:message key="Text_Module"/></th>
+												<th><bean:message key="Target"/></th>
+												<th><bean:message key="default.Content"/></th>
+											</tr>
+										</thead>
+										<tbody id="table_body">
+										</tbody>
+									</table>
 
-                                        <%--todo: mailingContentForm.tags contains extra information.--%>
-                                        <%--todo: Please create DTO for that entity during migration --%>
-                                <script data-initializer="mailing-content-initializer" type="application/json">
-                                            {
-                                                "targetGroupList": ${emm:toJson(mailingContentForm.availableTargetGroups)},
-                                                "interestGroupList": ${emm:toJson(mailingContentForm.availableInterestGroups)},
-                                                "dynTagNames": ${emm:toJson(mailingContentForm.dynTagNames)},
-                                                "dynTagsMap": ${emm:toJson(mailingContentForm.tags)},
-                                                "isMailingExclusiveLockingAcquired": ${isMailingExclusiveLockingAcquired}
-                                            }
+									<%--todo: mailingContentForm.tags contains extra information.--%>
+									<%--todo: Please create DTO for that entity during migration --%>
+									<script data-initializer="mailing-content-initializer" type="application/json">
+										{
+											"targetGroupList": ${emm:toJson(mailingContentForm.availableTargetGroups)},
+											"interestGroupList": ${emm:toJson(mailingContentForm.availableInterestGroups)},
+											"dynTagNames": ${emm:toJson(mailingContentForm.dynTagNames)},
+											"dynTagsMap": ${emm:toJson(mailingContentForm.tags)},
+											"isMailingExclusiveLockingAcquired": ${isMailingExclusiveLockingAcquired}
+										}
+									</script>
 
-                                </script>
+									<script id="config:mailing-content-overview" type="application/json">
+										{
+											"mailingId": ${mailingContentForm.mailingID},
+											"isMailingExclusiveLockingAcquired": ${isMailingExclusiveLockingAcquired}
+										}
+									</script>
+								</div>
+								<!-- Tile Content END -->
+							</div>
+							<!-- Tile END -->
+						</agn:agnForm>
+					</div>
+					<!-- col END -->
 
-                                <script id="config:mailing-content-overview" type="application/json">
-                                    {
-                                        "mailingId": ${mailingContentForm.mailingID},
-                                        "isMailingExclusiveLockingAcquired": ${isMailingExclusiveLockingAcquired}
-                                    }
-                                </script>
-                            </div>
-                            <!-- Tile Content END -->
-                        </div>
-                        <!-- Tile END -->
-                    </agn:agnForm>
-                </div>
-                <!-- col END -->
+					<emm:ShowByPermission token="mailing.send.show">
+						<c:url var="previewLink" value="/mailingsend.do">
+							<c:param name="action" value="${ACTION_PREVIEW_SELECT}"/>
+							<c:param name="mailingID" value="${mailingContentForm.mailingID}"/>
+							<c:param name="previewForm.pure" value="true"/>
+							<c:param name="previewForm.format" value="${mailingContentForm.showHTMLEditor ? PREVIEW_FORMAT_HTML : PREVIEW_FORMAT_TEXT}"/>
+						</c:url>
 
-                <emm:ShowByPermission token="mailing.send.show">
-                    <c:url var="previewLink" value="/mailingsend.do">
-                        <c:param name="action" value="${ACTION_PREVIEW_SELECT}"/>
-                        <c:param name="mailingID" value="${mailingContentForm.mailingID}"/>
-                        <c:param name="previewSelectPure" value="true"/>
-                        <c:param name="previewFormat" value="${mailingContentForm.showHTMLEditor ? PREVIEW_FORMAT_HTML : PREVIEW_FORMAT_TEXT}"/>
-                    </c:url>
-
-                    <div class="hidden" data-view-split="col-md-6" data-view-block="col-xs-12" data-view-hidden="hidden">
-                        <div data-load="${previewLink}" data-load-target="#preview"></div>
-                    </div>
-                </emm:ShowByPermission>
-            </div>
+						<div class="hidden" data-view-split="col-md-6" data-view-block="col-xs-12" data-view-hidden="hidden">
+							<div data-load="${previewLink}" data-load-target="#preview"></div>
+						</div>
+					</emm:ShowByPermission>
+				</div>
+			</c:when>
+			<c:otherwise>
+				<%@include file="mailing-type-post.jspf" %>
+			</c:otherwise>
+		</c:choose>
         <c:if test="${isMailingGrid}">
             </div>
         </c:if>

@@ -1,9 +1,12 @@
+<%@page import="com.agnitas.emm.core.Permission"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
 
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags"   prefix="agn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm"%>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
+
+<c:set var="USERRIGHT_MESSAGEKEY_PREFIX" value="<%= Permission.USERRIGHT_MESSAGEKEY_PREFIX %>"/>
 
 <%--@elvariable id="permissionCategories" type="java.util.Set<com.agnitas.emm.core.admin.web.PermissionsOverviewData.PermissionCategoryEntry>"--%>
 
@@ -95,28 +98,18 @@
 											<c:set var="adminGroupTooltipMsg" value=""/>
 											<c:if test="${permission.showInfoTooltip}">
 												<c:set var="adminGroupTooltipMsg">
-													<mvc:message code ="permission.group.set" arguments="${permission.adminGroup.shortname}"/>
+													<mvc:message code="permission.group.set" arguments="${permission.adminGroup.shortname}"/>
 												</c:set>
 											</c:if>
 
 											<li class="list-group-item">
 												<label class="checkbox-inline" data-tooltip="${adminGroupTooltipMsg}">
-													<input type="checkbox" id='${category.name}.${permission.name}' name="userRights"
+													<input type="checkbox" id='${permission.name}' name="userRights"
 														   value="${permission.name}"
 														${permission.granted ? 'checked' : ''}
 														${permission.changeable ? '' : 'disabled'} />
 													&nbsp;
-													<c:if test="${category.name == 'others'}">
-														${permission.name}
-													</c:if>
-													<c:if test="${category.name != 'others'}">
-														<c:if test="${empty subCategory.name}">
-															<mvc:message code ='UserRight.${category.name}.${permission.name}' /><br>
-														</c:if>
-														<c:if test="${not empty subCategory.name}">
-															<mvc:message code ='UserRight.${category.name}#${subCategory.name}.${permission.name}' /><br>
-														</c:if>
-													</c:if>
+													<mvc:message code ='${USERRIGHT_MESSAGEKEY_PREFIX}${permission.name}' /><br>
 												</label>
 											</li>
 										</c:forEach>

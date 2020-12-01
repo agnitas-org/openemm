@@ -20,232 +20,232 @@ public interface ExportPredef {
      * 
      * @param id New value of property id.
      */
-    public void setId(int id);
+    void setId(int id);
 
     /**
      * Setter for property companyID.
      * 
      * @param company New value of property companyID.
      */
-    public void setCompanyID( @VelocityCheck int company);
+    void setCompanyID(@VelocityCheck int company);
 
     /**
      * Setter for property charset.
      * 
      * @param charset New value of property charset.
      */
-    public void setCharset(String charset);
+    void setCharset(String charset);
 
     /**
      * Setter for property columns.
      * 
      * @param columns New value of property columns.
      */
-    public void setColumns(String columns);
+    void setColumns(String columns);
 
     /**
      * Setter for property shortname.
      * 
      * @param shortname New value of property shortname.
      */
-    public void setShortname(String shortname);
+    void setShortname(String shortname);
 
     /**
      * Setter for property description.
      * 
      * @param description New value of property description.
      */
-    public void setDescription(String description);
+    void setDescription(String description);
 
     /**
      * Setter for property mailinglists.
      * 
      * @param mailinglists New value of property mailinglists.
      */
-    public void setMailinglists(String mailinglists);
+    void setMailinglists(String mailinglists);
 
     /**
      * Setter for property mailinglistID.
      * 
      * @param mailinglistID New value of property mailinglistID.
      */
-    public void setMailinglistID(int mailinglistID);
+    void setMailinglistID(int mailinglistID);
 
     /**
      * Setter for property delimiter.
      * 
      * @param delimiter New value of property delimiter.
      */
-    public void setDelimiter(String delimiter);
+    void setDelimiter(String delimiter);
 
     /**
      * Setter for property separator.
      * 
      * @param separator New value of property separator.
      */
-    public void setSeparator(String separator);
+    void setSeparator(String separator);
 
     /**
      * Setter for property targetID.
      * 
      * @param targetID New value of property targetID.
      */
-    public void setTargetID(int targetID);
+    void setTargetID(int targetID);
 
     /**
      * Setter for property userType.
      * 
      * @param userType New value of property userType.
      */
-    public void setUserType(String userType);
+    void setUserType(String userType);
 
     /**
      * Setter for property userStatus.
      * 
      * @param userStatus New value of property userStatus.
      */
-    public void setUserStatus(int userStatus);
+    void setUserStatus(int userStatus);
 
     /**
      * Setter for property deleted.
      * 
      * @param deleted New value of property deleted.
      */
-    public void setDeleted(int deleted);
+    void setDeleted(int deleted);
 
     /**
      * Getter for property id.
      *
      * @return Value of property id.
      */
-    public int getId();
+    int getId();
 
     /**
      * Getter for property companyID.
      *
      * @return Value of property companyID.
      */
-    public int getCompanyID();
+    int getCompanyID();
     
     /**
      * Getter for property charset.
      *
      * @return Value of property charset.
      */
-    public String getCharset();
+    String getCharset();
     
     /**
      * Getter for property columns.
      *
      * @return Value of property columns.
      */
-    public String getColumns();
+    String getColumns();
     
     /**
      * Getter for property shortname.
      *
      * @return Value of property shortname.
      */
-    public String getShortname();
+    String getShortname();
     
     /**
      * Getter for property description.
      *
      * @return Value of property description.
      */
-    public String getDescription();
+    String getDescription();
     
     /**
      * Getter for property mailinglists.
      *
      * @return Value of property mailinglists.
      */
-    public String getMailinglists();
+    String getMailinglists();
     
     /**
      * Getter for property mailinglistID.
      *
      * @return Value of property mailinglistID.
      */
-    public int getMailinglistID();
+    int getMailinglistID();
 
     /**
      * Getter for property delimiter.
      *
      * @return Value of property delimiter.
      */
-    public String getDelimiter();
+    String getDelimiter();
 
     /**
      * Getter for property separator.
      *
      * @return Value of property separator.
      */
-    public String getSeparator();
+    String getSeparator();
 
     /**
      * Getter for property targetID.
      *
      * @return Value of property targetID.
      */
-    public int getTargetID();
+    int getTargetID();
 
     /**
      * Getter for property userType.
      *
      * @return Value of property userType.
      */
-    public String getUserType();
+    String getUserType();
 
     /**
      * Getter for property userStatus.
      *
      * @return Value of property userStatus.
      */
-    public int getUserStatus();
+    int getUserStatus();
 
     /**
      * Getter for property deleted.
      *
      * @return Value of property deleted.
      */
-    public int getDeleted();
+    int getDeleted();
 
-    public Date getTimestampStart();
+    Date getTimestampStart();
 
-    public void setTimestampStart(Date timestampStart);
+    void setTimestampStart(Date timestampStart);
 
-    public Date getTimestampEnd();
+    Date getTimestampEnd();
 
-    public void setTimestampEnd(Date timestampEnd);
+    void setTimestampEnd(Date timestampEnd);
 
-    public int getTimestampLastDays();
+    int getTimestampLastDays();
 
-    public void setTimestampLastDays(int timestampLastDays);
+    void setTimestampLastDays(int timestampLastDays);
 
-    public Date getCreationDateStart();
+    Date getCreationDateStart();
 
-    public void setCreationDateStart(Date creationDateStart);
+    void setCreationDateStart(Date creationDateStart);
 
-    public Date getCreationDateEnd();
+    Date getCreationDateEnd();
 
-    public void setCreationDateEnd(Date creationDateEnd);
+    void setCreationDateEnd(Date creationDateEnd);
 
-    public int getCreationDateLastDays();
+    int getCreationDateLastDays();
 
-    public void setCreationDateLastDays(int creationDateLastDays);
+    void setCreationDateLastDays(int creationDateLastDays);
 
-    public Date getMailinglistBindStart();
+    Date getMailinglistBindStart();
 
-    public void setMailinglistBindStart(Date mailinglistBindStart);
+    void setMailinglistBindStart(Date mailinglistBindStart);
 
-    public Date getMailinglistBindEnd();
+    Date getMailinglistBindEnd();
 
-    public void setMailinglistBindEnd(Date mailinglistBindEnd);
+    void setMailinglistBindEnd(Date mailinglistBindEnd);
 
-    public int getMailinglistBindLastDays();
+    int getMailinglistBindLastDays();
     
-    public void setMailinglistBindLastDays(int mailinglistBindLastDays);
+    void setMailinglistBindLastDays(int mailinglistBindLastDays);
 
 	boolean isAlwaysQuote();
 

@@ -28,7 +28,6 @@ import org.apache.velocity.util.introspection.VelPropertySet;
  * This class is required to allow dependency injection by Spring.
  */
 public class UberspectDelegate implements Uberspect, RuntimeServicesAware, ContextAware {
-	
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger( UberspectDelegate.class);
 	
@@ -79,8 +78,9 @@ public class UberspectDelegate implements Uberspect, RuntimeServicesAware, Conte
 			
 			throw new RuntimeException( "No delegate target defined");
 		} else {
-			if( logger.isDebugEnabled())
+			if( logger.isDebugEnabled()) {
 				logger.debug( "Delegate target defined. Class is " + this.uberspector.getClass().getCanonicalName());
+			}
 			
 			initUberspectTarget( this.uberspector);
 		}
@@ -114,5 +114,4 @@ public class UberspectDelegate implements Uberspect, RuntimeServicesAware, Conte
 	public void setContext(Context context) {
 		this.context = context;
 	}
-
 }

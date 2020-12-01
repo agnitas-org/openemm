@@ -24,6 +24,10 @@ public class SimpleServiceResult extends ServiceResult<Void> {
         super(null, success, messages);
     }
 
+    public SimpleServiceResult(boolean success, List<Message> messages) {
+        super(null, success, messages);
+    }
+
     public static SimpleServiceResult simpleSuccess(final Message... successMessages) {
         return new SimpleServiceResult(true, Arrays.asList(successMessages), null, null);
     }
@@ -34,6 +38,10 @@ public class SimpleServiceResult extends ServiceResult<Void> {
 
     public static SimpleServiceResult simpleWarning(final List<Message> warningMessages) {
         return new SimpleServiceResult(true, null, warningMessages, null);
+    }
+
+    public static SimpleServiceResult simpleError(final Message... errorMessages) {
+        return new SimpleServiceResult(false, null, null, Arrays.asList(errorMessages));
     }
 
     public static SimpleServiceResult simpleError(final List<Message> errorMessages) {

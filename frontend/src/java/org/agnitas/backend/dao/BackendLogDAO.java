@@ -10,21 +10,20 @@
 
 package org.agnitas.backend.dao;
 
-import	java.sql.SQLException;
+import java.sql.SQLException;
 
-import	org.agnitas.backend.DBase;
-import	org.agnitas.util.Log;
+import org.agnitas.backend.DBase;
+import org.agnitas.util.Log;
 
 /**
  * Update all backend log informations
- * 
  */
 public class BackendLogDAO {
-	private long	statusID;
-	private long	mailingID;
-	private boolean	isWorldMailing;
-	
-	public BackendLogDAO (DBase dbase, long forStatusID, long forMailingID, boolean nIsWorldMailing) throws SQLException {
+	private long statusID;
+	private long mailingID;
+	private boolean isWorldMailing;
+
+	public BackendLogDAO(DBase dbase, long forStatusID, long forMailingID, boolean nIsWorldMailing) throws SQLException {
 		statusID = forStatusID;
 		mailingID = forMailingID;
 		isWorldMailing = nIsWorldMailing;
@@ -39,14 +38,14 @@ public class BackendLogDAO {
 			);
 			dbase.logging (Log.VERBOSE, "backendLog", "Setup of mailing backend log done");
 		} catch (SQLException e) {
-			dbase.logging (Log.ERROR, "backendLog", "Failed to setup mailing backend log", e);
+			dbase.logging(Log.ERROR, "backendLog", "Failed to setup mailing backend log", e);
 			throw e;
 		}
 	}
-	
+
 	/**
 	 * Update backend log entry with current mail count
-	 * 
+	 *
 	 * @param dbase      a reference to the database instance
 	 * @param mailCount  current mail count
 	 * @param totalCount expected number of total mails
@@ -62,14 +61,14 @@ public class BackendLogDAO {
 				      "statusID", statusID);
 			dbase.logging (Log.DEBUG, "backendLog", "Updated backend log to " + mailCount + " of " + totalCount);
 		} catch (SQLException e) {
-			dbase.logging (Log.ERROR, "backendLog", "Failed to update mailing backend log to " + mailCount + " of " + totalCount, e);
+			dbase.logging(Log.ERROR, "backendLog", "Failed to update mailing backend log to " + mailCount + " of " + totalCount, e);
 			throw e;
 		}
 	}
-	
+
 	/**
 	 * Finalize the created number of entries to database
-	 * 
+	 *
 	 * @param totalCount the final number of mails written
 	 */
 	public void freeze (DBase dbase, long totalCount) throws SQLException {
@@ -92,7 +91,7 @@ public class BackendLogDAO {
 				dbase.logging (Log.VERBOSE, "backendLog", "Freeze world backend log to " + totalCount);
 			}
 		} catch (SQLException e) {
-			dbase.logging (Log.ERROR, "backendLog", "Failed to freeze mailing backend log to " + totalCount, e);
+			dbase.logging(Log.ERROR, "backendLog", "Failed to freeze mailing backend log to " + totalCount, e);
 			throw e;
 		}
 	}

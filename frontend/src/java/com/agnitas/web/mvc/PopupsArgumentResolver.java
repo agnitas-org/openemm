@@ -10,26 +10,16 @@
 
 package com.agnitas.web.mvc;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.agnitas.web.mvc.impl.StrutsPopups;
 import org.springframework.core.MethodParameter;
 import org.springframework.ui.ModelMap;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.support.RequestContextUtils;
-
-import com.agnitas.messages.Message;
-import com.agnitas.web.mvc.impl.StrutsPopups;
 
 public class PopupsArgumentResolver implements HandlerMethodArgumentResolver {
     @Override
@@ -39,36 +29,7 @@ public class PopupsArgumentResolver implements HandlerMethodArgumentResolver {
 
     @Override
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mav, NativeWebRequest nativeWebRequest, WebDataBinderFactory webDataBinderFactory) {
-        Popups popups = initializePopups(mav.getDefaultModel(), nativeWebRequest.getNativeRequest(HttpServletRequest.class));
-
-        for (BindingResult result : getBindingResult(mav)) {
-            for (ObjectError error : result.getAllErrors()) {
-                Message message = asMessage(error);
-
-                if (error instanceof FieldError) {
-                    popups.field(((FieldError) error).getField(), message);
-                } else {
-                    popups.alert(message);
-                }
-            }
-        }
-
-        return popups;
-    }
-
-    private List<BindingResult> getBindingResult(ModelAndViewContainer mav) {
-        return mav.getModel().values().stream()
-                .filter(BindingResult.class::isInstance)
-                .map(BindingResult.class::cast)
-                .collect(Collectors.toList());
-    }
-
-    private Message asMessage(ObjectError error) {
-        if (ArrayUtils.isEmpty(error.getCodes())) {
-            return Message.exact(StringUtils.defaultString(error.getDefaultMessage()));
-        } else {
-            return Message.of(error.getCode(), error.getArguments());
-        }
+        return initializePopups(mav.getDefaultModel(), nativeWebRequest.getNativeRequest(HttpServletRequest.class));
     }
 
     private StrutsPopups initializePopups(ModelMap model, HttpServletRequest request) {

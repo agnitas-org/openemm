@@ -63,10 +63,10 @@ import com.agnitas.emm.core.action.service.UnableConvertException;
  * Implementation of <strong>Action</strong> that handles Targets
  */
 public class EmmActionAction extends StrutsActionBase {
-	
+
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(EmmActionAction.class);
-    
+
     public static final int ACTION_ADD_MODULE = 9;
     public static final int ACTION_REMOVE_MODULE = 10;
 
@@ -80,10 +80,10 @@ public class EmmActionAction extends StrutsActionBase {
     protected ComRecipientDao recipientDao;
     protected BlacklistService blacklistService;
     protected ComTrackpointDao trackpointDao;
-    
+
 	protected ConfigService configService;
 	protected WebStorage webStorage;
-	
+
     @Override
 	public String subActionMethodName(int subAction) {
 		switch (subAction) {
@@ -107,7 +107,7 @@ public class EmmActionAction extends StrutsActionBase {
 				return super.subActionMethodName(subAction);
 		}
 	}
-    
+
     /**
      * Process the specified HTTP request, and create the corresponding HTTP
      * response (or forward to another web component that will create it).
@@ -311,17 +311,17 @@ public class EmmActionAction extends StrutsActionBase {
             if (operations == null) {
                 operations = new ArrayList<>();
             }
-            
+
             for (AbstractActionOperationParameters operation : operations) {
 				operation.setCompanyId(companyId);
-				
+
 				try {
 					operation.validate(errors, admin.getLocale(), recipientDao, trackpointDao);
 				} catch (Exception e) {
 					logger.error("Cannot validate AbstractActionOperationParameters: " + e.getMessage(), e);
 					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("Error", e.getMessage()));
 				}
-                
+
                 if (ActionOperationType.SEND_MAILING.equals(operation.getOperationType())) {
                 	String bccAddress = ((ActionOperationSendMailingParameters) operation).getBcc();
                 	if (StringUtils.isNotBlank(bccAddress) && blacklistService.blacklistCheckCompanyOnly(bccAddress, companyId)) {
@@ -339,7 +339,7 @@ public class EmmActionAction extends StrutsActionBase {
 	            			}
 	            		}
                 	}
-                	
+
                 	String fromAddress = ((ActionOperationServiceMailParameters) operation).getFromAddress();
                 	if (StringUtils.isNotBlank(fromAddress)) {
 	                	if (!fromAddress.toLowerCase().startsWith("$requestparameters.")
@@ -351,7 +351,7 @@ public class EmmActionAction extends StrutsActionBase {
 							}
 						}
                 	}
-					
+
                 	String replyAddress = ((ActionOperationServiceMailParameters) operation).getReplyAddress();
                 	if (StringUtils.isNotBlank(replyAddress)) {
 	                	if (!replyAddress.toLowerCase().startsWith("$requestparameters.")
@@ -377,8 +377,15 @@ public class EmmActionAction extends StrutsActionBase {
     }
 
     private boolean isValidActions(EmmActionForm form, ActionMessages errors){
+        String shortname = form.getShortname();
+        if(StringUtils.length(shortname) < 3) {
+			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.name.too.short"));
+		} else if (StringUtils.length(shortname) > 50) {
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.action.nameTooLong"));
+		}
+
     	List<AbstractActionOperationParameters> list =  form.getActions();
-    	
+
     	if (list != null) {
 	    	for ( Object action : list) {
 	    		if (action instanceof ActionOperationExecuteScriptParameters) {
@@ -387,13 +394,13 @@ public class EmmActionAction extends StrutsActionBase {
                         this.velocityDirectiveScriptValidator.validateScript(scriptAction.getScript());
                     } catch(ScriptValidationException e) {
                         String directive = ((IllegalVelocityDirectiveException) e).getDirective();
-                        errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage( "error.action.illegal_directive", directive));
+                        errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.action.illegal_directive", directive));
                     }
                 }
 	    	}
 
-	    	if(isInvalidBcc(list)){
-	    	    errors.add(ActionMessages.GLOBAL_MESSAGE,new ActionMessage("error.action.invalid.bbc"));
+	    	if (isInvalidBcc(list)){
+	    	    errors.add(ActionMessages.GLOBAL_MESSAGE,new ActionMessage("error.email.invalid"));
             }
     	}
 
@@ -427,7 +434,7 @@ public class EmmActionAction extends StrutsActionBase {
      */
     protected Map<String, String> getActionOperations() {
 		Map<String, String> mapMessageKeyToActionClass = new TreeMap<>();
-		String[] names = actionOperationFactory.getTypes();
+		String[] names = actionOperationFactory.getTypeNames();
 		for (String name : names) {
 			mapMessageKeyToActionClass.put("action.op." + name, name);
 		}
@@ -535,12 +542,12 @@ public class EmmActionAction extends StrutsActionBase {
     public void setWebStorage(WebStorage webStorage) {
         this.webStorage = webStorage;
     }
-    
+
     @Required
     public void setBlacklistService(BlacklistService blacklistService) {
         this.blacklistService = blacklistService;
     }
-    
+
     // not required for OpenEMM
     public void setTrackpointDao(ComTrackpointDao trackpointDao) {
         this.trackpointDao = trackpointDao;

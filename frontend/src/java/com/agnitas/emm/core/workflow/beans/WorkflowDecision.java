@@ -14,31 +14,30 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetOperator;
+import org.agnitas.target.ConditionalOperator;
 
 import com.agnitas.beans.IntEnum;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 
 public interface WorkflowDecision extends WorkflowMailingAware {
 
-    TargetOperator[] DECISION_OPERATORS = {
-			TargetNode.OPERATOR_EQ,
-			TargetNode.OPERATOR_NEQ,
-			TargetNode.OPERATOR_GT,
-			TargetNode.OPERATOR_LT,
-			TargetNode.OPERATOR_LT_EQ,
-			TargetNode.OPERATOR_GT_EQ,
-			TargetNode.OPERATOR_IS,
-			TargetNode.OPERATOR_LIKE,
-			TargetNode.OPERATOR_NLIKE,
-			TargetNode.OPERATOR_CONTAINS,
-			TargetNode.OPERATOR_NOT_CONTAINS,
-			TargetNode.OPERATOR_STARTS_WITH,
-			TargetNode.OPERATOR_NOT_STARTS_WITH
+    ConditionalOperator[] DECISION_OPERATORS = {
+			ConditionalOperator.EQ,
+			ConditionalOperator.NEQ,
+			ConditionalOperator.GT,
+			ConditionalOperator.LT,
+			ConditionalOperator.LEQ,
+			ConditionalOperator.GEQ,
+			ConditionalOperator.IS,
+			ConditionalOperator.LIKE,
+			ConditionalOperator.NOT_LIKE,
+			ConditionalOperator.CONTAINS,
+			ConditionalOperator.NOT_CONTAINS,
+			ConditionalOperator.STARTS_WITH,
+			ConditionalOperator.NOT_STARTS_WITH
 	};
 
-    Map<TargetOperator, String> OPERATOR_TYPE_SUPPORT_MAP = WorkflowUtils.getOperatorTypeSupportMap();
+    Map<ConditionalOperator, String> OPERATOR_TYPE_SUPPORT_MAP = WorkflowUtils.getOperatorTypeSupportMap();
 
     WorkflowDecisionType getDecisionType();
 

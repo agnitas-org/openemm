@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
@@ -89,6 +89,21 @@ if(reportContext.getOutputFormat()=="csv") {
             <simple-property-list name="defaultValue">
                 <value type="constant">DE</value>
             </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="hiddenTargetId" id="519">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
             <structure name="format">
@@ -253,7 +268,7 @@ mailinglistID = null;
 if (params["mailinglistID"].value != null &amp;&amp; params["mailinglistID"].value != 0){
 	mailinglistID = params["mailinglistID"];
 }
-valueList = recipientStatusDataSet.getRecipientStatus(params["companyID"], targetID, mailinglistID, params["mediaType"], params["language"]);
+valueList = recipientStatusDataSet.getRecipientStatus(params["companyID"], targetID, mailinglistID, params["mediaType"], params["language"], params["hiddenTargetId"]);
 currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if(currentrow < valueList.size()) {
 	row["status"] = valueList.get(currentrow).getStatus();

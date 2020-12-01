@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -116,7 +116,7 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 			WebserviceUserCredential convertedUser = conversionService.convert(user, WebserviceUserCredential.class);
 
 			int companyId = convertedUser.getCompanyID();
-			int dsGroup = configService.getIntegerValue(ConfigValue.WebserviceDatasourceGroupId);
+			int dsGroup = configService.getIntegerValue(Webservices.WebserviceDatasourceGroupId);
 			String dsDescription = String.format(USER_DESCRIPTION_PATTERN, username);
 			
 			dataSourceId = datasourceService.createDataSource(companyId, dsGroup, dsDescription, DATA_SOURCE_URI);
@@ -207,7 +207,7 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	
 	private final void saveGrantedPermissionsAndGroups(final WebserviceUser user) {
 		// Do not modify permissions, if permissions are disabled
-		if(configService.getBooleanValue(ConfigValue.WebserviceEnablePermissions, user.getCompanyID())) {
+		if(configService.getBooleanValue(Webservices.WebserviceEnablePermissions, user.getCompanyID())) {
 			sanitizePermissions(user);
 			this.webserviceUserDao.saveGrantedPermissionsAndGroups(user);
 		}

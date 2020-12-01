@@ -20,6 +20,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.ViciousFormDataException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -156,7 +157,7 @@ public final class ComUserFormExecuteAction extends StrutsActionBase {
 				final int companyID = Integer.parseInt(request.getParameter("agnCI"));
 				final ComCompany company = this.comCompanyDao.getCompany(companyID);
 				
-				request.setAttribute("SHOW_SUPPORT_BUTTON", company != null && company.getStatus().equals("active"));
+				request.setAttribute("SHOW_SUPPORT_BUTTON", company != null && CompanyStatus.ACTIVE == company.getStatus());
 				
 				return mapping.findForward("form_not_found");
 			} catch(final Exception e) {

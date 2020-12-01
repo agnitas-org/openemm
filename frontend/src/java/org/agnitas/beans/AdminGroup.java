@@ -10,6 +10,7 @@
 
 package org.agnitas.beans;
 
+import java.util.List;
 import java.util.Set;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -66,7 +67,7 @@ public interface AdminGroup {
      * Check if admingroup has any of the demanded permission rights.
      * @param permissions
      */
-    boolean permissionAllowed(int companyID, Permission... permissions);
+    boolean permissionAllowed(Permission... permissions);
 
     /**
      * Setter for property companyID.
@@ -104,4 +105,12 @@ public interface AdminGroup {
     void setShortname(String name);
 
 	void setCompanyPermissions(Set<Permission> companyPermissions);
+
+	Set<AdminGroup> getParentGroups();
+
+	void setParentGroups(Set<AdminGroup> parentGroups);
+
+	List<Integer> getParentGroupIds();
+
+	boolean permissionAllowedByParentGroups(Permission... permission);
 }

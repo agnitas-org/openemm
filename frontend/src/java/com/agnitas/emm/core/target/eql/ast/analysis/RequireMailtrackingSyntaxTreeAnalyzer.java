@@ -13,6 +13,7 @@ package com.agnitas.emm.core.target.eql.ast.analysis;
 import com.agnitas.emm.core.target.eql.ast.AbstractEqlNode;
 import com.agnitas.emm.core.target.eql.ast.ClickedInMailingRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.OpenedMailingRelationalEqlNode;
+import com.agnitas.emm.core.target.eql.ast.ReceivedMailingRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.RevenueByMailingRelationalEqlNode;
 
 public final class RequireMailtrackingSyntaxTreeAnalyzer extends AbstractNotOperatorSyntaxTreeAnalyzer {
@@ -25,10 +26,15 @@ public final class RequireMailtrackingSyntaxTreeAnalyzer extends AbstractNotOper
 	
 	@Override
 	public final void nodeVisited(final AbstractEqlNode node, final boolean not) {
-		mailtrackingRequired |=	not && isRelevantNodeType(node); 
+		mailtrackingRequired |=	isReceivedMailingNode(node) ||
+				(not && isRelevantNodeType(node));
+	}
+
+	private static boolean isReceivedMailingNode(final AbstractEqlNode node) {
+		return node instanceof ReceivedMailingRelationalEqlNode;
 	}
 	
-	private static final boolean isRelevantNodeType(final AbstractEqlNode node) {
+	private static boolean isRelevantNodeType(final AbstractEqlNode node) {
 		return 
 				node instanceof OpenedMailingRelationalEqlNode
 				|| node instanceof ClickedInMailingRelationalEqlNode

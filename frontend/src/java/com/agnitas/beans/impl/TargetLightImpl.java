@@ -57,6 +57,8 @@ public class TargetLightImpl implements TargetLight {
     /** A number that describes target structure complexity */
 	private int complexityIndex;
 
+	private boolean accessLimitation;
+
 	@Override
 	public int getCompanyID() {
 		return companyID;
@@ -247,5 +249,15 @@ public class TargetLightImpl implements TargetLight {
 	@Override
 	public void setComplexityIndex(int complexityIndex) {
 		this.complexityIndex = complexityIndex;
+	}
+
+	@Override
+	public boolean isAccessLimitation() {
+		return accessLimitation;
+	}
+
+	@Override
+	public void setAccessLimitation(boolean accessLimitation) {
+		this.accessLimitation = accessLimitation;
 	}
 }

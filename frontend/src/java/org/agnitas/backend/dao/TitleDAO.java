@@ -10,13 +10,13 @@
 
 package org.agnitas.backend.dao;
 
-import	java.sql.SQLException;
-import	java.util.HashMap;
-import	java.util.List;
-import	java.util.Map;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import	org.agnitas.backend.DBase;
-import	org.agnitas.util.Title;
+import org.agnitas.backend.DBase;
+import org.agnitas.util.Title;
 
 /**
  * Accesses title relevant data from the database, these are the
@@ -41,16 +41,16 @@ public class TitleDAO {
 				int			gender = dbase.asInt (row.get ("gender"));
 				Title			cur = null;
 
-				if ((cur = titles.get (id)) == null) {
-					cur = new Title (id);
-					titles.put (id, cur);
+				if ((cur = titles.get(id)) == null) {
+					cur = new Title(id);
+					titles.put(id, cur);
 				}
-				cur.setTitle (gender, title);
+				cur.setTitle(gender, title);
 			}
 		}
 	}
-	
-	public Map <Long, Title> titles () {
+
+	public Map<Long, Title> titles() {
 		return titles;
 	}
 }

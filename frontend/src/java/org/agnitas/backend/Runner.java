@@ -8,113 +8,128 @@
 
 */
 
-package	org.agnitas.backend;
+package org.agnitas.backend;
 
 import java.util.StringTokenizer;
 
 import org.agnitas.util.Log;
 
-/** This class is the anchor for a new thread in the mailout server
+/**
+ * This class is the anchor for a new thread in the mailout server
  */
 public class Runner extends Thread {
-	/** logger */
+	/**
+	 * logger
+	 */
 	private Log log;
-	/** the command to execute */
+	/**
+	 * the command to execute
+	 */
 	private String command;
-	/** the options for this command */
+	/**
+	 * the options for this command
+	 */
 	private String option;
-	/** the standard response on fire */
+	/**
+	 * the standard response on fire
+	 */
 	private String result = "Mailout started";
 
-	/** Constructor
-	 * @param log a reference to valid logger
+	/**
+	 * Constructor
+	 *
+	 * @param log     a reference to valid logger
 	 * @param command the command to execute
-	 * @param option its options
+	 * @param option  its options
 	 */
-	public Runner (Log log, String command, String option) {
+	public Runner(Log log, String command, String option) {
 		this.log = log;
 		this.command = command;
 		this.option = option;
 	}
-	
+
 	/**
 	 * Returns the message to return from an invocation
-	 * 
+	 *
 	 * @return the message string
 	 */
-	public String result () {
+	public String result() {
 		return result;
 	}
 
-	/** Thread starting point
+	/**
+	 * Thread starting point
 	 */
 	@Override
-	public void run () {
-		StringTokenizer	tok;
-		int		tokCount;
+	public void run() {
+		StringTokenizer tok;
+		int tokCount;
 
 		if (option != null) {
-			tok = new StringTokenizer (option);
-			tokCount = tok.countTokens ();
+			tok = new StringTokenizer(option);
+			tokCount = tok.countTokens();
 		} else {
 			tok = null;
 			tokCount = 0;
 		}
-		if (command.equals ("fire")) {
-			fire (tok, tokCount);
+		if (command.equals("fire")) {
+			fire(tok, tokCount);
 		} else {
-			message (Log.ERROR, "unknown command " + command);
+			message(Log.ERROR, "unknown command " + command);
 		}
 	}
-	
-	private void fire (StringTokenizer tok, int tokCount) {
+
+	private void fire(StringTokenizer tok, int tokCount) {
 		if ((tokCount < 1) || (tokCount > 2)) {
-			message (Log.ERROR, "invalid number of arguments (<status_id> [<customerid>] expected, got " + tokCount + ")");
+			message(Log.ERROR, "invalid number of arguments (<status_id> [<customerid>] expected, got " + tokCount + ")");
 			return;
 		}
 
-		String	status_id, custid;
+		String status_id, custid;
 
-		status_id = tok.nextToken ();
+		status_id = tok.nextToken();
 		if (tokCount > 1) {
-			custid = tok.nextToken ();
+			custid = tok.nextToken();
 		} else {
 			custid = null;
 		}
-			
+
 		MailgunImpl mailout = null;
 		try {
-			mailout = new MailgunImpl ();
-			mailout.initialize (status_id);
+			mailout = new MailgunImpl();
+			mailout.initialize(status_id);
 
-			message (Log.INFO, mailout.fire(custid));
+			message(Log.INFO, mailout.fire(custid));
 		} catch (Exception e) {
-			message (Log.ERROR, "Error during starting: " + e.toString (), e);
+			message(Log.ERROR, "Error during starting: " + e.toString(), e);
 			if (mailout == null) {
-				message (Log.ERROR, "Failed to cleanup mailout: Nullpointer mailout not successfully initialized", e);
+				message(Log.ERROR, "Failed to cleanup mailout: Nullpointer mailout not successfully initialized", e);
 			} else {
 				try {
-					mailout.done ();
+					mailout.done();
 				} catch (Exception e2) {
-					message (Log.ERROR, "Failed to cleanup mailout: " + e.toString (), e);
+					message(Log.ERROR, "Failed to cleanup mailout: " + e.toString(), e);
 				}
 			}
 		}
 	}
-	
-	/** output error message
+
+	/**
+	 * output error message
+	 *
 	 * @param loglvl the log level
-	 * @param str the message
+	 * @param str    the message
 	 */
-	private void message (int loglvl, String str, Throwable th) {
+	private void message(int loglvl, String str, Throwable th) {
 		if (str != null) {
 			if (option != null) {
 				str = "[" + option + "] " + str;
 			}
-			log.out (loglvl, (command != null ? command : "runner"), str, th);
+			log.out(loglvl, (command != null ? command : "runner"), str, th);
 		}
 	}
-	private void message (int loglvl, String str) {
-		message (loglvl, str, null);
+
+	private void message(int loglvl, String str) {
+		message(loglvl, str, null);
 	}
 }

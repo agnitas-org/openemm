@@ -31,7 +31,7 @@ public class DynamicTagNameServiceImpl implements DynamicTagNameService {
 	private MailingDao mailingDao;
 
 	@Override
-	@Validate("listContentBlocksOrNames")
+	@Validate
 	public List<DynamicTag> getNameList(NameModel model) {
 		if (!mailingDao.exist(model.getMailingId(), model.getCompanyId())) {
 			throw new MailingNotExistException();

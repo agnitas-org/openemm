@@ -15,8 +15,6 @@ import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.JobWorker;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.dao.AnonymizeStatisticsDao;
@@ -29,32 +27,66 @@ import com.agnitas.emm.core.company.bean.CompanyEntry;
  *     VALUES ((SELECT MAX(id) + 1 FROM job_queue_tbl), 'AnonymizeStatistics', CURRENT_TIMESTAMP, null, 0, 'OK', 0, 0, '0000', CURRENT_TIMESTAMP, null, 'com.agnitas.service.job.AnonymizeStatisticsJobWorker', 0);
  */
 public class AnonymizeStatisticsJobWorker extends JobWorker {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(AnonymizeStatisticsJobWorker.class);
+
+	/** The logger. */
+	private static final transient Logger LOGGER = Logger.getLogger(AnonymizeStatisticsJobWorker.class);
 
 	@Override
 	public String runJob() throws Exception {
-		List<Integer> includedCompanyIds = null;
-		String includedCompanyIdsString = job.getParameters().get("includedCompanyIds");
-		if (StringUtils.isNotBlank(includedCompanyIdsString)) {
-			includedCompanyIds = AgnUtils.splitAndTrimList(includedCompanyIdsString).stream().map(Integer::parseInt).collect(Collectors.toList());
-		}
-		List<Integer> excludedCompanyIds = null;
-		String excludedCompanyIdsString = job.getParameters().get("excludedCompanyIds");
-		if (StringUtils.isNotBlank(excludedCompanyIdsString)) {
-			excludedCompanyIds = AgnUtils.splitAndTrimList(excludedCompanyIdsString).stream().map(Integer::parseInt).collect(Collectors.toList());
-		}
-		
-		ComCompanyDao companyDao = daoLookupFactory.getBeanCompanyDao();
-		AnonymizeStatisticsDao anonymizeStatisticsDao = daoLookupFactory.getBeanAnonymizeStatisticsDao();
-		
-		for (CompanyEntry company : companyDao.getActiveCompaniesLight()) {
-			int companyID = company.getCompanyId();
-			if ((includedCompanyIds == null || includedCompanyIds.contains(companyID))
-				&& (excludedCompanyIds == null || !excludedCompanyIds.contains(companyID))
-				&& configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, companyID)) {
-				anonymizeStatisticsDao.anonymizeStatistics(companyID);
+		try {
+			if(LOGGER.isInfoEnabled()) {
+				LOGGER.info(String.format("%s started", this.getClass().getSimpleName()));
 			}
+			
+			final List<Integer> includedCompanyIds = parameterAsIntegerListOrNull("includedCompanyIds");
+			final List<Integer> excludedCompanyIds = parameterAsIntegerListOrNull("excludedCompanyIds");
+	
+			if(LOGGER.isInfoEnabled()) {
+				LOGGER.info(String.format(
+						"Included company IDs (parsed list): %s",
+						includedCompanyIds == null || includedCompanyIds.isEmpty() ? "all" : includedCompanyIds.stream().map(x -> x.toString()).collect(Collectors.joining(", "))
+						));
+				LOGGER.info(String.format(
+						"Excluded company IDs (parsed list): %s",
+						excludedCompanyIds == null || excludedCompanyIds.isEmpty() ? "none" : excludedCompanyIds.stream().map(x -> x.toString()).collect(Collectors.joining(", "))
+						));
+			}
+					
+			final ComCompanyDao companyDao = daoLookupFactory.getBeanCompanyDao();
+			final AnonymizeStatisticsDao anonymizeStatisticsDao = daoLookupFactory.getBeanAnonymizeStatisticsDao();
+			
+			for (final CompanyEntry company : companyDao.getActiveCompaniesLight(true)) {
+				final int companyID = company.getCompanyId();
+				
+				final boolean included = includedCompanyIds == null || includedCompanyIds.contains(companyID);
+				final boolean excluded = excludedCompanyIds != null && excludedCompanyIds.contains(companyID);
+				final boolean anonymize = configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, companyID);
+				
+				if(LOGGER.isInfoEnabled()) {
+					LOGGER.debug(String.format("Processing company ID %d (included: %b, excluded %b, anonymize: %b)", companyID, included, excluded, anonymize));
+				}
+				
+				if (included && !excluded && anonymize) {
+					final boolean anonymizeAll = configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, companyID);
+			
+					if(LOGGER.isInfoEnabled()) {
+						LOGGER.debug(String.format("Running anonymization on company ID %d (anonymize all: %b)", companyID, anonymizeAll));
+					}
+					
+					anonymizeStatisticsDao.anonymizeStatistics(companyID, anonymizeAll);
+				} else {
+					if(LOGGER.isInfoEnabled()) {
+						LOGGER.debug(String.format("Anonymization not run on company ID %d", companyID));
+					}
+				}
+			}
+	
+			if(LOGGER.isInfoEnabled()) {
+				LOGGER.info(String.format("%s finished without exception", this.getClass().getSimpleName()));
+			}
+		} catch(final Exception e) {
+			LOGGER.info(String.format("%s finished with exception", this.getClass().getSimpleName()), e);
+			throw e;
 		}
 		
 		return null;

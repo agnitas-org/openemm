@@ -10,6 +10,8 @@
 
 package org.agnitas.emm.core.commons.password;
 
+import org.agnitas.emm.core.commons.password.policy.PasswordPolicy;
+
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.service.SimpleServiceResult;
 
@@ -19,37 +21,26 @@ import com.agnitas.service.SimpleServiceResult;
 public interface PasswordCheck {
 
 	/**
-	 * Check admin password. Checks some constraint (length, structure). If {@code admin} is not {@code null}, then 
-	 * it's checked, that given password differs from current admin password.
+	 * Check admin password. Checks some constraint (length, structure).
 	 * 
 	 * @param password password to check
-	 * @param admin admin for comparison with current password or {@code null}
+	 * @param admin admin for comparison with current password
 	 * @param handler handler for dealing with errors
 	 * 
 	 * @return {@code true} if password is ok, otherwise {@code false}
 	 */
 	boolean checkAdminPassword(String password, ComAdmin admin, PasswordCheckHandler handler);
+	boolean checkNewAdminPassword(final String password, final int companyID, final PasswordCheckHandler handler);
 
 	/**
-	 * Check admin password. Checks some constraint (length, structure). If {@code admin} is not {@code null}, then
-	 * it's checked, that given password differs from current admin password.
+	 * Check admin password. Checks some constraint (length, structure).
 	 *
 	 * @param password password to check
-	 * @param admin admin for comparison with current password or {@code null}
+	 * @param admin admin for comparison with current password
 	 *
 	 * @return a {@link SimpleServiceResult} instance.
 	 */
 	SimpleServiceResult checkAdminPassword(String password, ComAdmin admin);
-
-    /**
-     * Check if admin password changed.
-     * Method checked if given password differs from existed.
-     *
-     * @param password password to check (new password)
-     * @param username user login
-     *
-     * @return {@code true} if password changed, otherwise {@code false}
-     */
-    boolean passwordChanged(String username, String password);
+	SimpleServiceResult checkNewAdminPassword(final String password, final PasswordPolicy passwordPolicy);
 
 }

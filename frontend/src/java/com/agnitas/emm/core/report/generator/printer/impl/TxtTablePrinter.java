@@ -104,7 +104,7 @@ public class TxtTablePrinter implements GenericTablePrinter<Table> {
                 String translationKey = columnDefinition.getTranslationKey();
                 String defaultColumnName = columnDefinition.getValue();
                 String columnName = I18nString.getLocaleStringOrDefault(translationKey, locale, defaultColumnName);
-                String capitalizedColumnName = Strings.toUpperCase(columnName);
+                String capitalizedColumnName = Strings.toUpperCase(columnName);		// TODO Do we really need Bouncy Castle here???
                 columns.put(columnKey, capitalizedColumnName);
 
                 // in case of translated column title bigger then column width we need to increase the width

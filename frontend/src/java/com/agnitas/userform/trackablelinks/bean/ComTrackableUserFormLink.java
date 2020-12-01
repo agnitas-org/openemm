@@ -16,10 +16,6 @@ import org.agnitas.beans.BaseTrackableLink;
  * Bean interface for trackable links within a user form
  */
 public interface ComTrackableUserFormLink extends BaseTrackableLink {
-
-	
-	
-	
     /**
      * Getter for property formID.
      * 
@@ -27,67 +23,11 @@ public interface ComTrackableUserFormLink extends BaseTrackableLink {
      */
     int getFormID();
 
-    /**
-     * Getter for property usage.
-     * 
-     * @return Value of property usage.
-     */
-    int getUsage();
-
      /**
      * Setter for property FormID.
      * 
      * @param id New value of property FormID.
      */
     void setFormID(int id);
-
-    /**
-     * Setter for property usage.
-     * 
-     * @param usage New value of property usage.
-     */
-    void setUsage(int usage);
-
-    /**
-     * Getter for property relevance.
-     *
-     * @return Value of property relevance.
-     */
-    String getDeepTrackingUID();
-
-    /**
-     * Getter for property relevance.
-     *
-     * @return Value of property relevance.
-     */
-    String getDeepTrackingSession();
-
-    /**
-     * Getter for property relevance.
-     *
-     * @return Value of property relevance.
-     */
-    int getDeepTracking();
-
-    /**
-     * Setter for property relevance.
-     *
-     * @param deepTracking New value of property relevance.
-     */
-    void setDeepTracking(int deepTracking);
-    
-    /**
-     * Getter for property relevance.
-     *
-     * @return Value of property relevance.
-     */
-    int getRelevance();
-
-    /**
-     * Setter for property relevance.
-     *
-     * @param relevance New value of property relevance.
-     */
-    void setRelevance(int relevance);
 }
 

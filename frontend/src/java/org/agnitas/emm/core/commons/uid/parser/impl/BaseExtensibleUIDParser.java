@@ -29,18 +29,40 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 
+/**
+ * Base class for all UID parsers.
+ */
 public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
 
+	/** UID version handled by the parser. */
     protected ExtensibleUidVersion handledUidVersion;
+    
+    /** Caching DAO for accessing company data. */
     protected CompanyDaoCache companyDaoCache;
+    
+    /** Corresponding UID string builder. */
     protected ExtensibleUIDStringBuilder stringBuilder;
 
+    /** Minimum number of required UID parts. */
     private int minPartsCount;
+    
+    /** Maximum number of UID parts. */
     private int maxPartsCount;
+    
+    /** Length of signature in bytes. */
     private int signatureLength;
 
+    /** Logger. */    
     private Logger logger;
 
+    /**
+     * Creates a new instance.
+     * 
+     * @param logger Logger from sub class
+     * @param minPartsCount minimum number of UID parts
+     * @param maxPartsCount maximum number of UID parts
+     * @param signatureLength length of signature in bytes
+     */
     protected BaseExtensibleUIDParser(Logger logger, int minPartsCount, int maxPartsCount, int signatureLength) {
         this.logger = logger;
         this.minPartsCount = minPartsCount;
@@ -69,6 +91,16 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
         return uid;
     }
 
+    /**
+     * Parses UID from given UID string.
+     * 
+     * @param uidString full UID string
+     * @param parts splitted UID string
+     * 
+     * @return parsed UID
+     * 
+     * @throws UIDParseException on errors parsing UID
+     */
     protected abstract ComExtensibleUID parse(final String uidString, final String[] parts) throws UIDParseException;
 
     /**
@@ -102,29 +134,50 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
         return result;
     }
 
+    /**
+     * Checks if UID version is supported by company.
+     * 
+     * @param uidString UID string (used for error message only)
+     * @param uid parsed UID
+     * 
+     * @throws DeprecatedUIDVersionException if UID version is not supported
+     */
     private void checkUIDVersion(String uidString, ComExtensibleUID uid) throws DeprecatedUIDVersionException {
         final Company company = this.companyDaoCache.getItem(uid.getCompanyID());
         Number minimumSupportedVersion = company.getMinimumSupportedUIDVersion();
         if (handledUidVersion.isOlderThan(minimumSupportedVersion)) {
             String descriptionTemplate = "Version validation Error. Deprecated UID version. minimumSupportedVersion: %d, actualVersion: %s, encodedUid: %s";
             String message = String.format(descriptionTemplate, minimumSupportedVersion, handledUidVersion.getVersionCode(), uidString);
-            logger.error(message);
+            logger.warn(message);
             throw new DeprecatedUIDVersionException(message, uid);
         }
     }
 
-    private void checkSignature(String uidString, ComExtensibleUID uid, String[] parts) throws InvalidUIDException, UIDParseException {
+    /**
+     * Checks signature of UID.
+     * 
+     * @param uidString UID string (used for error message only)
+     * @param uid parsed UID
+     * @param parts parts of the UID string
+     * 
+     * @throws InvalidUIDException on mismatching UID signature
+     * @throws UIDParseException on errors parsing UID
+     */
+    private void checkSignature(String uidString, ComExtensibleUID uid, String[] parts) throws InvalidUIDException, UIDParseException { // TODO Replace InvalidUIDException by SignatureNotMatchParseExcepitn
         try {
             String expectedSignature = getExpectedSignature(uid);
             String actualSignature = getActualSignature(parts);
             if (!actualSignature.equals(expectedSignature)) {
-                String descriptionTemplate = "Signature validation error. Signature doesn't match. expectedSignature: %s, actualSignature: %s, version: %d, uid: %s";
+                String descriptionTemplate = "Signature validation error. Signature doesn't match. Expected signature: %s, actual signature: %s, version: %d, uid: %s";
                 String message = String.format(descriptionTemplate, expectedSignature, actualSignature, handledUidVersion.getVersionCode(), uidString);
-                logger.error(message);
+                if(logger.isInfoEnabled()) {
+                	logger.info(message);
+                }
+                
                 throw new SignatureNotMatchParseException(message);
             }
         } catch (UIDStringBuilderException | RequiredInformationMissingException e) {
-            String messageTemplate = "Signature validation error. Cannot create string from decoded uid. uid: %s, decodedUid: %s";
+            String messageTemplate = "Signature validation error. Cannot create string from decoded uid. uid: %s, decoded UID: %s";
             String errorMessage = String.format(messageTemplate, uidString, uid);
             logger.error(String.format(errorMessage, uidString, uid), e);
             throw new UIDParseException(errorMessage, e);
@@ -132,7 +185,7 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
     }
 
     /**
-     * Determine the actual signature for the given parts of uid string.
+     * Determine the actual signature for the given parts of UID string.
      *
      * @param parts UID.
      * @return actual signature.
@@ -155,6 +208,13 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
         return StringUtils.isNotBlank(uidString) && isValidBaseFormat(splitUIDString(uidString));
     }
 
+    /**
+     * Check base form of UID. (Number of parts, signature length, ...)
+     * 
+     * @param parts parts uid UID string
+     * 
+     * @return <code>true</code> if base form of UID is valid
+     */
     protected boolean isValidBaseFormat(final String[] parts) {
         return (parts.length == minPartsCount || parts.length == maxPartsCount) && parts[parts.length - 1].length() == signatureLength;
     }
@@ -174,6 +234,13 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
         this.companyDaoCache = Objects.requireNonNull(companyDaoCache, "Company cache cannot be null");
     }
 
+    /**
+     * Set UID version handled by the parser.
+     * 
+     * @param handledUidVersion UID version handled by the parser
+     * @throws NullPointerException if given UID version is <code>null</code>
+     */
+    @Deprecated // TODO Should not be injected. Make getHandledUidVersion() abstract and let sub-class implement this method accordingly.
     @Required
     public void setHandledUidVersion(ExtensibleUidVersion handledUidVersion) {
         this.handledUidVersion = Objects.requireNonNull(handledUidVersion, "handled uid version cannot be null");

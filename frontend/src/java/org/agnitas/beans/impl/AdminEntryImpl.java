@@ -17,6 +17,7 @@ import org.agnitas.beans.AdminEntry;
 import com.agnitas.beans.ComAdmin;
 
 public class AdminEntryImpl implements AdminEntry {
+    private int companyID;
     private String shortname;
     private String username;
     private String firstname;
@@ -29,14 +30,15 @@ public class AdminEntryImpl implements AdminEntry {
     private boolean passwordExpired;
 
     public AdminEntryImpl(ComAdmin admin) {
-        this(admin.getAdminID(), admin.getUsername(), admin.getFullname(), admin.getFirstName(), admin.getShortname(), admin.getEmail());
+        this(admin.getCompanyID(), admin.getAdminID(), admin.getUsername(), admin.getFullname(), admin.getFirstName(), admin.getShortname(), admin.getEmail());
     }
 
-    public AdminEntryImpl(int id, String username, String fullname, String firstname, String shortname) {
-		this(id, username, fullname, firstname, shortname, null);
+    public AdminEntryImpl(int companyID, int id, String username, String fullname, String firstname, String shortname) {
+		this(companyID, id, username, fullname, firstname, shortname, null);
     }
 
-    public AdminEntryImpl(int id, String userName, String fullName, String firstName, String shortName, String email) {
+    public AdminEntryImpl(int companyID, int id, String userName, String fullName, String firstName, String shortName, String email) {
+    	this.companyID = companyID;
         this.username = userName;
         this.fullname = fullName;
         this.firstname = firstName;
@@ -46,6 +48,16 @@ public class AdminEntryImpl implements AdminEntry {
     }
 
     @Override
+	public int getCompanyID() {
+		return companyID;
+	}
+
+	@Override
+	public void setCompanyID(int companyID) {
+		this.companyID = companyID;
+	}
+
+	@Override
 	public String getUsername() {
         return username;
     }

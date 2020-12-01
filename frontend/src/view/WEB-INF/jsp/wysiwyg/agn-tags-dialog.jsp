@@ -58,6 +58,28 @@
                     </div>
                 </script>
 
+                <script type="text/x-mustache-template" id="agnFORM-extended-attributes">
+                    <div class="form-group">
+                        <div class="col-sm-4">
+                            <label class="control-label"><s:message code="GWUA.default.createLink"/>:</label>
+                        </div>
+                        <div class="col-sm-8">
+                            <label class="toggle">
+                                <input type="checkbox" class="form-control" id="createLinkToggle"/>
+                                <div class="toggle-control"></div>
+                            </label>
+                        </div>
+                        <div id="tagLinkParams">
+                            <div class="col-sm-4">
+                                <label class="control-label"><s:message code="GWUA.default.linkText"/>:</label>
+                            </div>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" id="tagLinkText"/>
+                            </div>
+                        </div>
+                    </div>
+                </script>
+
                 <script type="application/json" data-initializer="wysiwyg-agn-tags">
                     ${emm:toJson(tags)}
                 </script>

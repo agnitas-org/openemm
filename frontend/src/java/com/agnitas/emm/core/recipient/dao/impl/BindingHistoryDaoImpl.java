@@ -36,15 +36,15 @@ public class BindingHistoryDaoImpl extends BaseDaoImpl implements BindingHistory
 					+ "\tEXECUTE IMMEDIATE 'SELECT email FROM customer_" + companyID + "_tbl WHERE customer_id = ' || v_cust into v_email;\n"
 					+ "\tIF DELETING THEN\n"
 						+ "\t\tINSERT INTO hst_customer_" + companyID + "_binding_tbl\n"
-							+ "\t\t\t(customer_id, email, mailinglist_id, user_type, user_status, user_remark, referrer, creation_date, timestamp, exit_mailing_id, mediatype, timestamp_change, change_type, client_info)\n"
+							+ "\t\t\t(customer_id, email, mailinglist_id, user_type, user_status, user_remark, referrer, creation_date, timestamp, exit_mailing_id, entry_mailing_id, mediatype, timestamp_change, change_type, client_info)\n"
 						+ "\t\tVALUES\n"
-							+ "\t\t\t(:old.customer_id, v_email, :old.mailinglist_id, :old.user_type, :old.user_status, :old.user_remark, :old.referrer, :old.creation_date, :old.timestamp, :old.exit_mailing_id, :old.mediatype, CURRENT_TIMESTAMP, 0, v_hist);\n"
+							+ "\t\t\t(:old.customer_id, v_email, :old.mailinglist_id, :old.user_type, :old.user_status, :old.user_remark, :old.referrer, :old.creation_date, :old.timestamp, :old.exit_mailing_id, :old.entry_mailing_id, :old.mediatype, CURRENT_TIMESTAMP, 0, v_hist);\n"
 					+ "\tELSIF UPDATING THEN\n"
 						+ "\t\tIF ( (:old.USER_TYPE != :new.user_type) OR (:old.user_status != :new.user_status) OR (:old.mediatype != :new.mediatype)) THEN\n"
 							+ "\t\t\tINSERT INTO hst_customer_" + companyID + "_binding_tbl\n"
-								+ "\t\t\t\t(customer_id, email, mailinglist_id, user_type, user_status, user_remark, referrer, creation_date, timestamp, exit_mailing_id, mediatype, timestamp_change, change_type, client_info)\n"
+								+ "\t\t\t\t(customer_id, email, mailinglist_id, user_type, user_status, user_remark, referrer, creation_date, timestamp, exit_mailing_id, entry_mailing_id, mediatype, timestamp_change, change_type, client_info)\n"
 							+ "\t\t\tVALUES\n"
-								+ "\t\t\t\t(:old.customer_id, v_email, :old.mailinglist_id, :old.user_type, :old.user_status, :old.user_remark, :old.referrer, :old.creation_date, :old.timestamp, :old.exit_mailing_id, :old.mediatype, CURRENT_TIMESTAMP, 1, v_hist);\n"
+								+ "\t\t\t\t(:old.customer_id, v_email, :old.mailinglist_id, :old.user_type, :old.user_status, :old.user_remark, :old.referrer, :old.creation_date, :old.timestamp, :old.exit_mailing_id, :old.entry_mailing_id, :old.mediatype, CURRENT_TIMESTAMP, 1, v_hist);\n"
 						+ "\t\tEND IF; "
 					+ "\tEND IF;\n"
 				+ "EXCEPTION WHEN OTHERS THEN\n"
@@ -83,6 +83,7 @@ public class BindingHistoryDaoImpl extends BaseDaoImpl implements BindingHistory
 				"      creation_date,\n" +
 				"      timestamp,\n" +
 				"      exit_mailing_id,\n" +
+				"      entry_mailing_id,\n" +
 				"      mediatype,\n" +
 				"      timestamp_change,\n" +
 				"      change_type,\n" +
@@ -98,6 +99,7 @@ public class BindingHistoryDaoImpl extends BaseDaoImpl implements BindingHistory
 				"      OLD.creation_date,\n" +
 				"      OLD.timestamp,\n" +
 				"      OLD.exit_mailing_id,\n" +
+				"      OLD.entry_mailing_id,\n" +
 				"      OLD.mediatype,\n" +
 				"      CURRENT_TIMESTAMP,\n" +
 				"      0,\n" +
@@ -135,6 +137,7 @@ public class BindingHistoryDaoImpl extends BaseDaoImpl implements BindingHistory
 				"        creation_date,\n" +
 				"        timestamp,\n" +
 				"        exit_mailing_id,\n" +
+				"        entry_mailing_id,\n" +
 				"        mediatype,\n" +
 				"        timestamp_change,\n" +
 				"        change_type,\n" +
@@ -150,6 +153,7 @@ public class BindingHistoryDaoImpl extends BaseDaoImpl implements BindingHistory
 				"        OLD.creation_date,\n" +
 				"        OLD.timestamp,\n" +
 				"        OLD.exit_mailing_id,\n" +
+				"        OLD.entry_mailing_id,\n" +
 				"        OLD.mediatype,\n" +
 				"        CURRENT_TIMESTAMP,\n" +
 				"        1,\n" +

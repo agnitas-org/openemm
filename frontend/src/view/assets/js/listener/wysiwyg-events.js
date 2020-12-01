@@ -4,27 +4,24 @@
       Editor = AGN.Lib.Editor;
 
   $(document).on('tile:show', function(e) {
-    var target = $(e.target);
-    var $editor = target.find('.js-wysiwyg');
+    var $target = $(e.target);
+    var $editor = $target.find('.js-wysiwyg');
     var editorId = $editor.attr('id');
 
     if ($editor.length === 1) {
-      var isFullHeight = isFullHeightEditor($editor);
-      var fullHTML = target.data('full-tags') == true;
-      var browseMailingId = getMailingId(target, $editor);
-      var height = isFullHeight ? 0 : $editor.height();
-      var width = isFullHeight ? $editor.parent().width() : '100%';
+      var options = getEditorOptions($editor);
 
       window.createEditorExt(
         editorId,
-        width,
-        height,
-        browseMailingId,
-        fullHTML,
-        isFullHeight
+        options.width,
+        options.height,
+        options.browseMailingId,
+        options.isFullHtml,
+        options.isFullHeight,
+        options.allowExternalScript
       );
 
-      if (isFullHeight) {
+      if (options.isFullHeight) {
         CKEDITOR.instances[editorId].on("instanceReady", getOnInstanceReadyListener($editor));
       }
     }
@@ -53,7 +50,7 @@
     }
   });
 
-  function getMailingId(target, $editor) {
+  function getMailingId($editor) {
     var mailingId = $editor.data('browse-mailing-id');
     if(!!mailingId) {
       return mailingId;
@@ -95,4 +92,16 @@
   var isFullHeightEditor = function($textAreaContainer) {
     return !!$textAreaContainer.data('full-height-editor');
   };
+
+  var getEditorOptions = function($editor) {
+    var options = {};
+    options.isFullHtml = !!$editor.data('full-tags');
+    options.isFullHeight = isFullHeightEditor($editor);
+    options.browseMailingId = getMailingId($editor);
+    options.height = options.isFullHeight ? 0 : $editor.height();
+    options.width = options.isFullHeight ? $editor.parent().width() : '100%';
+    options.allowExternalScript = false;
+
+    return _.extend(options, AGN.Lib.Helpers.objFromString($editor.data('editor-options')));
+  }
 })();

@@ -14,15 +14,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.AdminGroup;
+import org.springframework.beans.factory.annotation.Required;
+
 import com.agnitas.dao.ComAdminGroupDao;
 import com.agnitas.service.ComPDFService;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.AdminGroup;
-import org.springframework.beans.factory.annotation.Required;
 
 public class ComPDFServiceImpl implements ComPDFService {
     /** DAO for accessing admin group data. */
@@ -70,10 +71,15 @@ public class ComPDFServiceImpl implements ComPDFService {
             table.addCell(user.getFirstname());
             table.addCell(user.getFullname());
             table.addCell(user.getEmail());
-            List<AdminGroup> adminGroups = adminGroupDao.getAdminGroupByAdminID(user.getId());
-            for (AdminGroup adminGroup : adminGroups) {
-                table.addCell(adminGroup.getShortname());
-            }
+            List<AdminGroup> adminGroups = adminGroupDao.getAdminGroupsByAdminID(user.getCompanyID(), user.getId());
+            StringBuilder adminGroupsList = new StringBuilder();
+        	for (AdminGroup adminGroup : adminGroups) {
+        		if (adminGroupsList.length() > 0) {
+        			adminGroupsList.append(", ");
+        		}
+        		adminGroupsList.append(adminGroup.getShortname());
+        	}
+            table.addCell(adminGroupsList.toString());
         }
     }
 }

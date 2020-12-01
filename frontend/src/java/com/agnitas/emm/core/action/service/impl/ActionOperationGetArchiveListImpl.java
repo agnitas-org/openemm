@@ -32,12 +32,14 @@ import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveListParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 
-public class ActionOperationGetArchiveListImpl implements EmmActionOperation, ApplicationContextAware {
+	public class ActionOperationGetArchiveListImpl implements EmmActionOperation, ApplicationContextAware {
 	
 	/**
 	 * The logger.
@@ -94,7 +96,7 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation, Ap
 	                if(aType.getStatus()==ComMediatype.STATUS_ACTIVE) {
 	                    mailingids.add(Integer.toString(tmpMailingID));
 	                    shortnames.put(Integer.toString(tmpMailingID), (String) map.get("shortname"));
-	                    subjects.put(Integer.toString(tmpMailingID), aMailing.getPreview(aType.getSubject(), Mailing.INPUT_TYPE_HTML, customerID, applicationContext));
+	                    subjects.put(Integer.toString(tmpMailingID), aMailing.getPreview(aType.getSubject(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, applicationContext));
 	                    
 	                    uid = UIDFactory.copyWithNewMailingID(uid, tmpMailingID);
 	                    
@@ -125,7 +127,12 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation, Ap
 
 	}
 
-	@Required
+    @Override
+    public ActionOperationType processedType() {
+        return ActionOperationType.GET_ARCHIVE_LIST;
+    }
+
+    @Required
 	public final void setUidService(final ExtensibleUIDService service) {
 		this.uidService = Objects.requireNonNull(service, "UID Service cannot be null");
 	}

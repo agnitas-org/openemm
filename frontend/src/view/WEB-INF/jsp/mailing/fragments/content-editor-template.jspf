@@ -66,26 +66,32 @@
                                     <div class="l-stub well">
                                         <bean:message key="default.NoEntries"/>
                                     </div>
-                                    <div class="plus-button-holder">
-                                        <i class="icon icon-plus-circle icon-2x plus-button"
-                                           data-action="addDynContent"></i>
+
+                                    <c:if test="${disableContentEditing ne true}">
+                                        <div class="plus-button-holder">
+                                            <i class="icon icon-plus-circle icon-2x plus-button"
+                                               data-action="addDynContent"></i>
+                                        </div>
+                                    </c:if>
+                                </div>
+                            </div>
+
+                            <c:if test="${disableContentEditing ne true}">
+                                <div class="fixed-footer mailing-content-footer">
+                                    <div class="col-sm-4">
+                                        <label class="control-label" for="target_groups">
+                                            <bean:message key="Target"/>
+                                        </label>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <select id="target_groups" class="form-control js-select dropdown-menu">
+                                            {{targetGroups.forEach(function(targetGroup){ }}
+                                                <option value="{{- targetGroup.id}}"> {{- targetGroup.targetName}}</option>
+                                            {{ }); }}
+                                        </select>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="fixed-footer mailing-content-footer">
-                                <div class="col-sm-4">
-                                    <label class="control-label" for="target_groups">
-                                        <bean:message key="Target"/>
-                                    </label>
-                                </div>
-                                <div class="col-sm-8">
-                                    <select id="target_groups" class="form-control js-select dropdown-menu">
-                                        {{targetGroups.forEach(function(targetGroup){ }}
-                                        <option value="{{- targetGroup.id}}"> {{- targetGroup.targetName}}</option>
-                                        {{ }); }}
-                                    </select>
-                                </div>
-                            </div>
+                            </c:if>
                         </div>
                         <div class="col-sm-8 full-height no-padding" id="editable_area">
                             <div class="fixed-content-40-0 full-height">
@@ -111,13 +117,14 @@
                                 </div>
                                 <div class="fixed-body">
                                     <div id="tab-content-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height">
-                                        <div id="contentEditor" class="form-control"></div>
+                                        <div id="contentEditor" class="form-control" ${disableContentEditing eq true ? 'readonly' : ''}></div>
                                     </div>
-                                    <div id="tab-content-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height" data-full-tags="{{- isFullHtmlTags }}">
+                                    <div id="tab-content-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height" >
                                             <textarea id="content"
                                                       name="content"
                                                       class="form-control js-editor js-wysiwyg full-height"
-                                                      data-browse-mailing-id="${mailingId}"></textarea>
+                                                      data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
+                                                      ${disableContentEditing eq true ? 'readonly' : ''}></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -132,12 +139,14 @@
                             <i class="icon icon-times"></i>
                             <span class="text"><bean:message key="button.Cancel"/></span>
                         </button>
-                        <button type="button"
-                                class="btn btn-primary btn-large"
-                                data-action="saveDynTag">
-                            <i class="icon icon-save"></i>
-                            <span class="text"><bean:message key="button.Save"/></span>
-                        </button>
+                        <c:if test="${disableContentEditing ne true}">
+                            <button type="button"
+                                    class="btn btn-primary btn-large"
+                                    data-action="saveDynTag">
+                                <i class="icon icon-save"></i>
+                                <span class="text"><bean:message key="button.Save"/></span>
+                            </button>
+                        </c:if>
                     </div>
                 </div>
             </form>

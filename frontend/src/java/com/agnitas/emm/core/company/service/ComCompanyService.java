@@ -13,6 +13,12 @@ package com.agnitas.emm.core.company.service;
 import java.util.List;
 import java.util.Set;
 
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.impl.CompanyStatus;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComCompany;
 import com.agnitas.emm.core.Permission;
@@ -20,9 +26,6 @@ import com.agnitas.emm.core.company.dto.CompanyInfoDto;
 import com.agnitas.emm.core.company.form.CompanyCreateForm;
 import com.agnitas.emm.core.company.form.CompanyViewForm;
 import com.agnitas.web.mvc.Popups;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComCompanyService {
 
@@ -62,5 +65,16 @@ public interface ComCompanyService {
 	
 	boolean createFrequencyFields(@VelocityCheck int companyID);
 	
-	String getStatus(int companyID);
+	CompanyStatus getStatus(int companyID);
+	
+	/**
+	 * Returns the password policy for given company ID.
+	 * 
+	 * @param companyID company ID
+	 * 
+	 * @return password policy for company ID
+	 */
+	public PasswordPolicies getPasswordPolicy(@VelocityCheck final int companyID);
+
+	boolean reactivateCompany(int companyIdForDeactivation);
 }

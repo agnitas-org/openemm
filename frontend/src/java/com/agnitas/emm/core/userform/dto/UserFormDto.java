@@ -97,9 +97,15 @@ public class UserFormDto {
 		return successSettings;
 	}
 	
+	public void setSuccessSettings(ResultSettings successSettings) {
+		this.successSettings = successSettings;
+	}
+	
 	public ResultSettings getErrorSettings() {
 		return errorSettings;
 	}
 	
-	//TODO: GWUA-4279 populate with necessary fields
+	public void setErrorSettings(ResultSettings errorSettings) {
+		this.errorSettings = errorSettings;
+	}
 }

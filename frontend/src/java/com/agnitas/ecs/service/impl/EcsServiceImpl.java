@@ -112,7 +112,7 @@ public class EcsServiceImpl implements EcsService {
 
     private File exportHeatMap(ComAdmin admin, String sessionId, String title, EcsHeatMapOptions options) {
         String url = getHeatMapUrl(admin, sessionId, options);
-        return generationPDFService.generatePDF(configService.getValue(ConfigValue.WkhtmlToPdfToolPath), url, StringUtils.defaultString(title), admin, "", PDF_ORIENTATION, PDF_FOOTER_MESSAGE_KEY);
+        return generationPDFService.generatePDF(configService.getValue(ConfigValue.WkhtmlToPdfToolPath), url, StringUtils.defaultString(title), admin, "heatmapLoadFinished", PDF_ORIENTATION, PDF_FOOTER_MESSAGE_KEY);
     }
 
     private String getExportFilename(String mailingName, Locale locale) {

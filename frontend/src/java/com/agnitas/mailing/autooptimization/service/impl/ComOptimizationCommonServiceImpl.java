@@ -10,20 +10,17 @@
 
 package com.agnitas.mailing.autooptimization.service.impl;
 
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
-
-import org.agnitas.beans.impl.MaildropDeleteException;
-import org.agnitas.dao.MaildropStatusDao;
-
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationCommonService;
+import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.dao.MaildropStatusDao;
 
-public class ComOptimizationCommonServiceImpl implements
-		ComOptimizationCommonService {
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
+
+public class ComOptimizationCommonServiceImpl implements ComOptimizationCommonService {
 	
-
 	private ComOptimizationDao optimizationDao;
 	private MaildropStatusDao maildropStatusDao;
 	private ComMailingDao mailingDao;

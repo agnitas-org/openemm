@@ -13,7 +13,6 @@ package com.agnitas.emm.core.mailloop;
 /**
  * Exception indicating an unknown mailloop ID in given company ID.
  */
-@Deprecated
 public class UnknownMailloopIdException extends MailloopException {
 
 	/** Serial version UID. */

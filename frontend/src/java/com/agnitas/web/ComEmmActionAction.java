@@ -116,6 +116,7 @@ public class ComEmmActionAction extends EmmActionAction {
 
             case ACTION_SHOW_FORMS:
                 emmActionForm.setUsedByFormsNames(userFormDao.getUserFormNamesByActionID(admin.getCompanyID(), emmActionForm.getActionID()));
+                emmActionForm.setUsedByImportNames(userFormDao.getImportNamesByActionID(admin.getCompanyID(), emmActionForm.getActionID()));
                 return mapping.findForward("view_forms");
 
             case ACTION_SAVE_ACTIVENESS:

@@ -28,4 +28,5 @@ public interface ComEmmActionService extends EmmActionService {
     boolean setActiveness(Map<Integer, Boolean> changeMap, @VelocityCheck int companyId, List<UserAction> userActions);
 	
 	List<EmmAction> getEmmNotLinkActions(@VelocityCheck int companyId, boolean includeInactive);
+
 }

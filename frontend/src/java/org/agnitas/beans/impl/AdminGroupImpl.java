@@ -11,6 +11,8 @@
 
 package org.agnitas.beans.impl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.agnitas.beans.AdminGroup;
@@ -24,6 +26,8 @@ public class AdminGroupImpl implements AdminGroup {
 
 	protected Set<Permission> groupPermissions;
 	protected Set<Permission> companyPermissions;
+	
+	protected Set<AdminGroup> parentGroups;
 
 	protected int groupID = -1;
 
@@ -82,8 +86,12 @@ public class AdminGroupImpl implements AdminGroup {
 	}
 
 	@Override
-	public boolean permissionAllowed(int companyIdToCheckFor, Permission... permissions) {
-		return Permission.permissionAllowed(companyIdToCheckFor, groupPermissions, companyPermissions, permissions);
+	public boolean permissionAllowed(Permission... permissions) {
+		if (Permission.permissionAllowed(groupPermissions, companyPermissions, permissions)){
+			return true;
+		} else {
+			return permissionAllowedByParentGroups(permissions);
+		}
 	}
 
 	/**
@@ -110,5 +118,40 @@ public class AdminGroupImpl implements AdminGroup {
 	@Override
 	public void setCompanyPermissions(Set<Permission> companyPermissions) {
 		this.companyPermissions = companyPermissions;
+	}
+
+	@Override
+	public Set<AdminGroup> getParentGroups() {
+		return parentGroups;
+	}
+
+	@Override
+	public void setParentGroups(Set<AdminGroup> parentGroups) {
+		this.parentGroups = parentGroups;
+	}
+
+	@Override
+	public List<Integer> getParentGroupIds() {
+		List<Integer> groupIds = new ArrayList<>();
+	    if (getParentGroups() != null && !getParentGroups().isEmpty()) {
+	    	for (AdminGroup group : getParentGroups()) {
+	    		groupIds.add(group.getGroupID());
+	    	}
+	    }
+	    return groupIds;
+	}
+
+	@Override
+	public boolean permissionAllowedByParentGroups(Permission... permission) {
+		if (parentGroups != null && !parentGroups.isEmpty() ) {
+			for (AdminGroup adminGroup : parentGroups) {
+				if (adminGroup.permissionAllowed(permission)) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			return false;
+		}
 	}
 }

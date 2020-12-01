@@ -24,3 +24,16 @@
   }
 
 }
+
+body.dark-theme .default-block-content {
+  .tile-content,
+  .tile-footer,
+  .mailing-preview-wrapper,
+  .mailing-preview-frame {
+    background-color: $c-dt-tile-background;
+  }
+
+  .tile-content-forms {
+    border-color: $c-dt-tile-border;
+  }
+}

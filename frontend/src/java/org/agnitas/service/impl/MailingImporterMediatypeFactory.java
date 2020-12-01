@@ -36,6 +36,7 @@ public class MailingImporterMediatypeFactory {
 			emailType.setFollowUpMethod((String) mediatypeJsonObject.get("followup_method"));
 			emailType.setOnepixel((String) mediatypeJsonObject.get("onepixel"));
 			emailType.setLinefeed((Integer) mediatypeJsonObject.get("linefeed"));
+			emailType.setEnvelopeEmail((String) mediatypeJsonObject.get("envelope"));
 			return emailType;
 		}
 

@@ -15,7 +15,6 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 
-import org.agnitas.beans.ProfileField;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbColumnType;
@@ -24,6 +23,7 @@ import org.agnitas.util.DbUtilities;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
+import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ComRecipientHistory;
 import com.agnitas.beans.impl.ComRecipientHistoryImpl;
 import com.agnitas.emm.core.recipient.CannotUseViewsException;
@@ -263,13 +263,13 @@ public class RecipientProfileHistoryDaoImplBasic extends BaseDaoImpl implements 
 	 * @return SQL fragment for reading profile field value
 	 */
 	private String typeConvert(final ProfileField profileField, final String victim) {
-		SimpleDataType dataType = DbColumnType.getSimpleDataType(profileField.getDataType());
+		SimpleDataType dataType = DbColumnType.getSimpleDataType(profileField.getDataType(), profileField.getNumericScale());
 
-		if (dataType == SimpleDataType.Date) {
+		if (dataType == SimpleDataType.Date || dataType == SimpleDataType.DateTime) {
 			if (isOracleDB()) {
-				return String.format("to_char(%s, 'yyyy-mm-dd HH24:mi:ss')", victim);
+				return String.format("TO_CHAR(%s, 'yyyy-mm-dd HH24:mi:ss')", victim);
 			} else {
-				return String.format("date_format(%s, '%%Y-%%m-%%d %%H:%%i:%%s')", victim);
+				return String.format("DATE_FORMAT(%s, '%%Y-%%m-%%d %%H:%%i:%%s')", victim);
 			}
 		} else {
 			return victim;

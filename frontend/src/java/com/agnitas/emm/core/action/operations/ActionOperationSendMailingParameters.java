@@ -46,6 +46,7 @@ public class ActionOperationSendMailingParameters extends AbstractActionOperatio
 	}
 
 	@Override
+	@Deprecated
 	public String getUalDescription(AbstractActionOperationParameters oldOperation) {
 		if (oldOperation instanceof ActionOperationSendMailingParameters) {
 			ActionOperationSendMailingParameters operation = (ActionOperationSendMailingParameters) oldOperation;

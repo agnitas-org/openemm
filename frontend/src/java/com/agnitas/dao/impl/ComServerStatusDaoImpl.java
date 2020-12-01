@@ -10,6 +10,12 @@
 
 package com.agnitas.dao.impl;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -21,6 +27,8 @@ import javax.sql.DataSource;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.CsvWriter;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
@@ -117,25 +125,10 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 	}
 
 	@Override
-	public int executeUpdate(String updateStatement, Object... parameter) {
-		return update(logger, updateStatement, parameter);
-	}
-
-	@Override
-	public List<Map<String, Object>> select(String selectStatement, Object... parameter) {
-		return select(logger, selectStatement, parameter);
-	}
-
-	@Override
-	public int selectInt(String selectStatement, Object... parameter) {
-		return selectInt(logger, selectStatement, parameter);
-	}
-	
-	@Override
 	public String getDbUrl() throws Exception {
 		return DbUtilities.getDbUrl(getDataSource());
 	}
-    
+
     @Override
     public String getDbVendor() {
 		DataSource dataSource = getDataSource();
@@ -146,7 +139,7 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 		}
 		return "N/A";
     }
-    
+
     @Override
     public Map<String, String> geDbInformation() {
 		DataSource dataSource = getDataSource();
@@ -196,7 +189,7 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 			return status;
 		}
 	}
-	
+
 	@Override
 	public int getLogEntryCount() {
 		return select(logger, "SELECT COUNT(*) FROM emm_db_errorlog_tbl", Integer.class);
@@ -207,7 +200,7 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 		String sql = "SELECT description FROM job_queue_tbl WHERE deleted = 0 AND ((lastresult != 'OK' AND lastresult IS NOT NULL) OR nextstart < ? OR (running = 1 AND laststart < ?))";
 		return select(logger, sql, new StringRowMapper(), DateUtilities.getDateOfMinutesAgo(15), DateUtilities.getDateOfHoursAgo(5));
 	}
-	
+
 	@Override
 	public List<String> getDKIMKeys() {
 		if (DbUtilities.checkIfTableExists(getDataSource(), "dkim_key_tbl")) {
@@ -216,13 +209,13 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 			return new ArrayList<>();
 		}
 	}
-	
+
 	@Override
 	public List<String> killRunningImports() {
 		List<String> killedImportTables = new ArrayList<>();
 		for (String tableName : select(logger, "SELECT temporary_table_name FROM import_temporary_tables", new StringRowMapper())) {
 			try {
-				update(logger, "DROP TABLE " + tableName);
+				DbUtilities.dropTable(getDataSource(), tableName);
 				update(logger, "DELETE FROM import_temporary_tables WHERE temporary_table_name = ?", tableName);
 			} catch(Exception e) {
 				logger.error("Cannot clean up import table: " + tableName, e);
@@ -230,5 +223,38 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 			killedImportTables.add(tableName);
 		}
 		return killedImportTables;
+	}
+	
+	@Override
+	public File getFullTbl(String dbStatement, String tableName) throws Exception {
+		try (Connection connection = getDataSource().getConnection()) {
+			if (!DbUtilities.checkIfTableExists(connection, tableName)) {
+				return null;
+			}
+			try (Statement stmt = connection.createStatement()) {
+				try (ResultSet rs = stmt.executeQuery(dbStatement)) {
+					File outputFile = File.createTempFile(AgnUtils.getTempDir() + "/" + tableName + "_", ".csv");
+					FileOutputStream outputStream = new FileOutputStream(outputFile);
+					try (CsvWriter csvWriter = new CsvWriter(outputStream)) {
+						ResultSetMetaData rsmd = rs.getMetaData();
+						List<String> headerList = new ArrayList<>();
+						for(int i = 1; i <= rsmd.getColumnCount(); i++) {
+							headerList.add(rsmd.getColumnLabel(i));
+						}
+						csvWriter.writeValues(headerList);
+						int columnNumber = rsmd.getColumnCount();
+						while (rs.next()) {
+							List<String> valueList = new ArrayList<>();
+							for (int i = 1; i <= columnNumber; i++) {
+								
+								valueList.add(rs.getString(i));
+							}
+							csvWriter.writeValues(valueList);
+						}
+					}
+					return outputFile;
+				}
+			}
+		}
 	}
 }

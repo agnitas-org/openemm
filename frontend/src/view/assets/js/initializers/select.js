@@ -163,6 +163,18 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
         });
       }
 
+      var currentFormatSelection = options.formatSelection;
+      options.formatSelection = function(data) {
+        var text = data.text;
+        if (text) {
+          data.text = text.trim();
+        }
+        if(currentFormatSelection instanceof Function) {
+          return currentFormatSelection.apply(this, arguments);
+        }
+        return $.fn.select2.defaults.formatSelection.apply(this, arguments);
+      };
+
       $el.select2(options);
       // focusing by label is now handled in listener/label-events
 

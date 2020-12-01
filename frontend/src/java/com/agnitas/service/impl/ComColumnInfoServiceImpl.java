@@ -12,12 +12,11 @@ package com.agnitas.service.impl;
 
 import java.util.List;
 
-import org.agnitas.beans.ProfileField;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.log4j.Logger;
 
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.service.ComColumnInfoService;
 
@@ -28,12 +27,12 @@ public class ComColumnInfoServiceImpl implements ComColumnInfoService {
 	private ComProfileFieldDao profileFieldDao;
 	
 	@Override
-    public ComProfileField getColumnInfo(@VelocityCheck int companyID, String column) throws Exception {
+    public ProfileField getColumnInfo(@VelocityCheck int companyID, String column) throws Exception {
 		return profileFieldDao.getProfileField(companyID, column);
     }
 	
 	@Override
-    public ComProfileField getColumnInfo(@VelocityCheck int companyID, String column, int adminID) throws Exception {
+    public ProfileField getColumnInfo(@VelocityCheck int companyID, String column, int adminID) throws Exception {
 		return profileFieldDao.getProfileField(companyID, column, adminID);
     }
 	
@@ -48,30 +47,30 @@ public class ComColumnInfoServiceImpl implements ComColumnInfoService {
     }
 	
 	@Override
-    public List<ComProfileField> getComColumnInfos(@VelocityCheck int companyID) throws Exception {
+    public List<ProfileField> getComColumnInfos(@VelocityCheck int companyID) throws Exception {
 		return profileFieldDao.getComProfileFields(companyID);
     }
 	
 	@Override
-    public List<ComProfileField> getComColumnInfos(@VelocityCheck int companyID, int adminID) throws Exception {
+    public List<ProfileField> getComColumnInfos(@VelocityCheck int companyID, int adminID) throws Exception {
 		return getComColumnInfos(companyID, adminID, false);
     }
 
     @Override
-    public List<ComProfileField> getComColumnInfos(@VelocityCheck int companyID, int adminID, boolean customSorting) throws Exception {
+    public List<ProfileField> getComColumnInfos(@VelocityCheck int companyID, int adminID, boolean customSorting) throws Exception {
 		return profileFieldDao.getComProfileFields(companyID, adminID, customSorting);
     }
 
     @Override
-	public List<ComProfileField> getHistorizedComColumnInfos(@VelocityCheck int companyID) throws Exception {
+	public List<ProfileField> getHistorizedComColumnInfos(@VelocityCheck int companyID) throws Exception {
 		return profileFieldDao.getHistorizedProfileFields(companyID);
 	}
 	
 	@Override
 	public CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(@VelocityCheck int companyID) throws Exception {
-		CaseInsensitiveMap<String, ComProfileField> comProfileFieldMap = profileFieldDao.getComProfileFieldsMap(companyID);
+		CaseInsensitiveMap<String, ProfileField> comProfileFieldMap = profileFieldDao.getComProfileFieldsMap(companyID);
 		CaseInsensitiveMap<String, ProfileField> profileFieldMap = new CaseInsensitiveMap<>();
-		for (ComProfileField comProfileField : comProfileFieldMap.values()) {
+		for (ProfileField comProfileField : comProfileFieldMap.values()) {
 			profileFieldMap.put(comProfileField.getColumn(), comProfileField);
 		}
 		return profileFieldMap;
@@ -79,21 +78,21 @@ public class ComColumnInfoServiceImpl implements ComColumnInfoService {
 	
 	@Override
 	public CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(@VelocityCheck int companyID, int adminID) throws Exception {
-		CaseInsensitiveMap<String, ComProfileField> comProfileFieldMap = profileFieldDao.getComProfileFieldsMap(companyID, adminID);
+		CaseInsensitiveMap<String, ProfileField> comProfileFieldMap = profileFieldDao.getComProfileFieldsMap(companyID, adminID);
 		CaseInsensitiveMap<String, ProfileField> profileFieldMap = new CaseInsensitiveMap<>();
-		for (ComProfileField comProfileField : comProfileFieldMap.values()) {
+		for (ProfileField comProfileField : comProfileFieldMap.values()) {
 			profileFieldMap.put(comProfileField.getColumn(), comProfileField);
 		}
 		return profileFieldMap;
 	}
 	
 	@Override
-    public CaseInsensitiveMap<String, ComProfileField> getComColumnInfoMap(@VelocityCheck int companyID) throws Exception {
+    public CaseInsensitiveMap<String, ProfileField> getComColumnInfoMap(@VelocityCheck int companyID) throws Exception {
 		return profileFieldDao.getComProfileFieldsMap(companyID);
     }
 	
 	@Override
-	public CaseInsensitiveMap<String, ComProfileField> getComColumnInfoMap(@VelocityCheck int companyID, int adminID) throws Exception {
+	public CaseInsensitiveMap<String, ProfileField> getComColumnInfoMap(@VelocityCheck int companyID, int adminID) throws Exception {
 		return profileFieldDao.getComProfileFieldsMap(companyID, adminID);
 	}
 

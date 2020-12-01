@@ -10,9 +10,12 @@
 
 package org.agnitas.web;
 
+import static com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils.TXT_EXTENSION;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -20,12 +23,14 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 
-import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.CustomerImportStatus;
+import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.MailinglistDao;
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
+import org.agnitas.emm.core.autoimport.bean.AutoImport.UsedFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.ImportException;
@@ -52,11 +57,11 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComCompany;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
+import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import com.agnitas.messages.I18nString;
 import com.agnitas.web.forms.ComNewImportWizardForm;
-
-import static com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils.TXT_EXTENSION;
 
 public class ProfileImportReporter {
 	/** The logger. */
@@ -196,7 +201,7 @@ public class ProfileImportReporter {
 			
 			String subject = I18nString.getLocaleString("import.recipients.report", emailLocale) + " \"" + profileImportWorker.getImportProfile().getName() + "\" (" + I18nString.getLocaleString("Company", emailLocale) + ": " + company.getShortname() + ")";
 			String bodyHtml = generateLocalizedImportHtmlReport(profileImportWorker, admin, true);
-			String bodyText = generateLocalizedImportTextReport(profileImportWorker, emailLocale, true);
+			String bodyText = generateLocalizedImportTextReport(profileImportWorker, admin, true);
 			
 			// Deactivated attachment of InvalidRecipientsCsvZipFile for DSGVO reasons. Must be password secured if reintegrated!
 //			if (profileImportWorker.getStatus().getInvalidRecipientsCsv() != null && profileImportWorker.getStatus().getInvalidRecipientsCsv().length() < 4 * 1024 * 1024) {
@@ -208,94 +213,104 @@ public class ProfileImportReporter {
 		}
 	}
 
-	private String generateLocalizedImportTextReport(ProfileImportWorker profileImportWorker, Locale emailLocale, boolean showVerboseProfileData) throws Exception {
-		String reportContent = I18nString.getLocaleString("import.recipients.report", emailLocale) + " \"" + profileImportWorker.getImportProfile().getName() + "\":\n\n";
+	private String generateLocalizedImportTextReport(ProfileImportWorker profileImportWorker, ComAdmin admin, boolean showVerboseProfileData) throws Exception {
+		String reportContent = I18nString.getLocaleString("import.recipients.report", admin.getLocale()) + " \"" + profileImportWorker.getImportProfile().getName() + "\":\n\n";
 
-		reportContent += I18nString.getLocaleString("decode.licenseID", emailLocale) + ": " + configService.getValue(ConfigValue.System_Licence) + "\n";
+		reportContent += I18nString.getLocaleString("decode.licenseID", admin.getLocale()) + ": " + configService.getValue(ConfigValue.System_Licence) + "\n";
 		
 		ComCompany company = companyDao.getCompany(profileImportWorker.getImportProfile().getCompanyId());
-		reportContent += I18nString.getLocaleString("Company", emailLocale) + ": " + (company == null ? "Unknown" : company.toString()) + "\n";
+		reportContent += I18nString.getLocaleString("Company", admin.getLocale()) + ": " + (company == null ? "Unknown" : company.toString()) + "\n";
 		
 		if (profileImportWorker.getAutoImport() != null) {
 			reportContent += "AutoImport: " + profileImportWorker.getAutoImport().toString() + "\n";
 		}
 		
-		reportContent += I18nString.getLocaleString("import.type", emailLocale) + ": " + I18nString.getLocaleString("Recipients", emailLocale) + "\n";
+		reportContent += I18nString.getLocaleString("import.type", admin.getLocale()) + ": " + I18nString.getLocaleString("Recipients", admin.getLocale()) + "\n";
 		
 		// Show ImportProfile data
-		reportContent += I18nString.getLocaleString("import.ImportProfile", emailLocale) + ": \"" + profileImportWorker.getImportProfile().getName() + "\" (ID: " + profileImportWorker.getImportProfile().getId() + ")\n";
+		reportContent += I18nString.getLocaleString("import.ImportProfile", admin.getLocale()) + ": \"" + profileImportWorker.getImportProfile().getName() + "\" (ID: " + profileImportWorker.getImportProfile().getId() + ")\n";
 		String profileContent = "";
 		if (showVerboseProfileData) {
 			try {
-				profileContent += I18nString.getLocaleString("Charset", emailLocale) + ": " + Charset.getCharsetById(profileImportWorker.getImportProfile().getCharset()).getCharsetName() + "\n";
+				profileContent += I18nString.getLocaleString("Charset", admin.getLocale()) + ": " + Charset.getCharsetById(profileImportWorker.getImportProfile().getCharset()).getCharsetName() + "\n";
 			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("Charset", emailLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
+				profileContent += I18nString.getLocaleString("Charset", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
 			}
 			
-			profileContent += I18nString.getLocaleString("csv.ContainsHeaders", emailLocale) + ": " + !profileImportWorker.getImportProfile().isNoHeaders() + "\n";
-			profileContent += I18nString.getLocaleString("import.zipped", emailLocale) + ": " + profileImportWorker.getImportProfile().isZipped() + "\n";
-			profileContent += I18nString.getLocaleString("import.zipPassword", emailLocale) + ": " + (profileImportWorker.getImportProfile().getZipPassword() != null) + "\n";
+			profileContent += I18nString.getLocaleString("csv.ContainsHeaders", admin.getLocale()) + ": " + !profileImportWorker.getImportProfile().isNoHeaders() + "\n";
+			profileContent += I18nString.getLocaleString("import.zipped", admin.getLocale()) + ": " + profileImportWorker.getImportProfile().isZipped() + "\n";
+			profileContent += I18nString.getLocaleString("import.zipPassword", admin.getLocale()) + ": " + (profileImportWorker.getImportProfile().getZipPassword() != null) + "\n";
 			
-			profileContent += I18nString.getLocaleString("import.autoMapping", emailLocale) + ": " + profileImportWorker.getImportProfile().isAutoMapping() + "\n";
-			
-			try {
-				profileContent += I18nString.getLocaleString("csv.Delimiter", emailLocale) + ": " + Separator.getSeparatorById(profileImportWorker.getImportProfile().getSeparator()).getValueChar() + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("csv.Delimiter", emailLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
-			}
+			profileContent += I18nString.getLocaleString("import.autoMapping", admin.getLocale()) + ": " + profileImportWorker.getImportProfile().isAutoMapping() + "\n";
 			
 			try {
-				profileContent += I18nString.getLocaleString("csv.StringQuote", emailLocale) + ": " + TextRecognitionChar.getTextRecognitionCharById(profileImportWorker.getImportProfile().getTextRecognitionChar()).name() + "\n";
+				profileContent += I18nString.getLocaleString("csv.Delimiter", admin.getLocale()) + ": " + Separator.getSeparatorById(profileImportWorker.getImportProfile().getSeparator()).getValueChar() + "\n";
 			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("csv.StringQuote", emailLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
-			}
-			
-			profileContent += I18nString.getLocaleString("csv.DecimalSeparator", emailLocale) + ": " + profileImportWorker.getImportProfile().getDecimalSeparator() + "\n";
-			
-			try {
-				profileContent += I18nString.getLocaleString("import.dateFormat", emailLocale) + ": " + DateFormat.getDateFormatById(profileImportWorker.getImportProfile().getDateFormat()).getValue() + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("import.dateFormat", emailLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
+				profileContent += I18nString.getLocaleString("csv.Delimiter", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
 			}
 			
 			try {
-				profileContent += I18nString.getLocaleString("Mode", emailLocale) + ": " + I18nString.getLocaleString(ImportMode.getFromInt(profileImportWorker.getImportProfile().getImportMode()).getMessageKey(), emailLocale) + "\n";
+				profileContent += I18nString.getLocaleString("csv.StringQuote", admin.getLocale()) + ": " + TextRecognitionChar.getTextRecognitionCharById(profileImportWorker.getImportProfile().getTextRecognitionChar()).name() + "\n";
 			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("Mode", emailLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
+				profileContent += I18nString.getLocaleString("csv.StringQuote", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
+			}
+			
+			profileContent += I18nString.getLocaleString("csv.DecimalSeparator", admin.getLocale()) + ": " + profileImportWorker.getImportProfile().getDecimalSeparator() + "\n";
+			
+			try {
+				profileContent += I18nString.getLocaleString("import.dateFormat", admin.getLocale()) + ": " + DateFormat.getDateFormatById(profileImportWorker.getImportProfile().getDateFormat()).getValue() + "\n";
+			} catch (Exception e) {
+				profileContent += I18nString.getLocaleString("import.dateFormat", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
 			}
 			
 			try {
-				profileContent += I18nString.getLocaleString("import.recipients.duplicate", emailLocale) + ": " + CheckForDuplicates.getFromInt(profileImportWorker.getImportProfile().getCheckForDuplicates()).name() + "\n";
+				profileContent += I18nString.getLocaleString("Mode", admin.getLocale()) + ": " + I18nString.getLocaleString(ImportMode.getFromInt(profileImportWorker.getImportProfile().getImportMode()).getMessageKey(), admin.getLocale()) + "\n";
 			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("import.recipients.duplicate", emailLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
+				profileContent += I18nString.getLocaleString("Mode", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
 			}
 			
 			try {
-				profileContent += I18nString.getLocaleString("import.null_value_handling", emailLocale) + ": " + NullValuesAction.getFromInt(profileImportWorker.getImportProfile().getNullValuesAction()).name() + "\n";
+				profileContent += I18nString.getLocaleString("import.recipients.duplicate", admin.getLocale()) + ": " + CheckForDuplicates.getFromInt(profileImportWorker.getImportProfile().getCheckForDuplicates()).name() + "\n";
 			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("import.null_value_handling", emailLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
+				profileContent += I18nString.getLocaleString("import.recipients.duplicate", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
 			}
 			
 			try {
-				profileContent += I18nString.getLocaleString("recipient.RecipientMailtype", emailLocale) + " (" + I18nString.getLocaleString("import.profile.default", emailLocale) + "): " + MailType.getFromInt(profileImportWorker.getImportProfile().getDefaultMailType()).name() + "\n";
+				profileContent += I18nString.getLocaleString("import.null_value_handling", admin.getLocale()) + ": " + NullValuesAction.getFromInt(profileImportWorker.getImportProfile().getNullValuesAction()).name() + "\n";
 			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("recipient.RecipientMailtype", emailLocale) + " (" + I18nString.getLocaleString("import.profile.default", emailLocale) + "): Invalid (\"" + e.getMessage() + "\")\n";
+				profileContent += I18nString.getLocaleString("import.null_value_handling", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
 			}
 			
-			profileContent += I18nString.getLocaleString("import.profile.updateAllDuplicates", emailLocale) + ": " + profileImportWorker.getImportProfile().getUpdateAllDuplicates() + "\n";
+			try {
+				profileContent += I18nString.getLocaleString("recipient.RecipientMailtype", admin.getLocale()) + " (" + I18nString.getLocaleString("import.profile.default", admin.getLocale()) + "): " + MailType.getFromInt(profileImportWorker.getImportProfile().getDefaultMailType()).name() + "\n";
+			} catch (Exception e) {
+				profileContent += I18nString.getLocaleString("recipient.RecipientMailtype", admin.getLocale()) + " (" + I18nString.getLocaleString("import.profile.default", admin.getLocale()) + "): Invalid (\"" + e.getMessage() + "\")\n";
+			}
+			
+			if (admin.permissionAllowed(Permission.IMPORT_MEDIATYPE)) {
+				try {
+					profileContent += I18nString.getLocaleString("mediatype", admin.getLocale()) + ": " + I18nString.getLocaleString("mailing.MediaType." + profileImportWorker.getImportProfile().getMediatype().getMediaCode(), admin.getLocale()) + "\n";
+				} catch (Exception e) {
+					profileContent += I18nString.getLocaleString("mediatype", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
+				}
+			}
+			
+			profileContent += I18nString.getLocaleString("import.datatype", admin.getLocale()) + ": " + profileImportWorker.getImportProfile().getDatatype() + "\n";
+			
+			profileContent += I18nString.getLocaleString("import.profile.updateAllDuplicates", admin.getLocale()) + ": " + profileImportWorker.getImportProfile().getUpdateAllDuplicates() + "\n";
 			
 			if (profileImportWorker.getImportProfile().getImportProcessActionID() > 0) {
 				profileContent += "ImportProcessActionID" + ": " + profileImportWorker.getImportProfile().getImportProcessActionID() + "\n";
 			}
 			
 			if (profileImportWorker.getImportProfile().getActionForNewRecipients() > 0) {
-				profileContent += I18nString.getLocaleString("import.actionForNewRecipients", emailLocale) + ": " + profileImportWorker.getImportProfile().getActionForNewRecipients() + "\n";
+				profileContent += I18nString.getLocaleString("import.actionForNewRecipients", admin.getLocale()) + ": " + profileImportWorker.getImportProfile().getActionForNewRecipients() + "\n";
 			}
 			
-			profileContent += I18nString.getLocaleString("import.profile.report.email", emailLocale) + ": " + (StringUtils.isBlank(profileImportWorker.getImportProfile().getMailForReport()) ? I18nString.getLocaleString("default.none", emailLocale) : profileImportWorker.getImportProfile().getMailForReport()) + "\n";
-			profileContent += I18nString.getLocaleString("error.import.profile.email", emailLocale) + ": " + (StringUtils.isBlank(profileImportWorker.getImportProfile().getMailForError()) ? I18nString.getLocaleString("default.none", emailLocale) : profileImportWorker.getImportProfile().getMailForError()) + "\n";
+			profileContent += I18nString.getLocaleString("import.profile.report.email", admin.getLocale()) + ": " + (StringUtils.isBlank(profileImportWorker.getImportProfile().getMailForReport()) ? I18nString.getLocaleString("default.none", admin.getLocale()) : profileImportWorker.getImportProfile().getMailForReport()) + "\n";
+			profileContent += I18nString.getLocaleString("error.import.profile.email", admin.getLocale()) + ": " + (StringUtils.isBlank(profileImportWorker.getImportProfile().getMailForError()) ? I18nString.getLocaleString("default.none", admin.getLocale()) : profileImportWorker.getImportProfile().getMailForError()) + "\n";
 			
-			profileContent += I18nString.getLocaleString("import.profile.gender.settings", emailLocale) + ": ";
+			profileContent += I18nString.getLocaleString("import.profile.gender.settings", admin.getLocale()) + ": ";
 			
 			if (profileImportWorker.getImportProfile().getGenderMapping() != null && profileImportWorker.getImportProfile().getGenderMapping().size() > 0) {
 				profileContent += "\n\t" + AgnUtils.mapToString(profileImportWorker.getImportProfile().getGenderMapping()).replace("\n", "\n\t") + "\n";
@@ -303,7 +318,7 @@ public class ProfileImportReporter {
 				profileContent += "NONE\n";
 			}
 			
-			profileContent += I18nString.getLocaleString("Mapping", emailLocale) + ": \n";
+			profileContent += I18nString.getLocaleString("Mapping", admin.getLocale()) + ": \n";
 			for (ColumnMapping mapping : profileImportWorker.getImportProfile().getColumnMapping()) {
 				String mappingEntryContent = mapping.getDatabaseColumn() + " = " + mapping.getFileColumn();
 				if (mapping.isKeyColumn()) {
@@ -325,49 +340,204 @@ public class ProfileImportReporter {
 				profileContent += "\t" + mappingEntryContent + "\n";
 			}
 			
-			profileContent += I18nString.getLocaleString("KeyColumn", emailLocale) + ": " + StringUtils.join(profileImportWorker.getImportProfile().getKeyColumns(), ", ");
+			profileContent += I18nString.getLocaleString("KeyColumn", admin.getLocale()) + ": " + StringUtils.join(profileImportWorker.getImportProfile().getKeyColumns(), ", ");
 		} else {
 			try {
-				profileContent += I18nString.getLocaleString("Mode", emailLocale) + ": " + I18nString.getLocaleString(ImportMode.getFromInt(profileImportWorker.getImportProfile().getImportMode()).getMessageKey(), emailLocale) + "\n";
+				profileContent += I18nString.getLocaleString("Mode", admin.getLocale()) + ": " + I18nString.getLocaleString(ImportMode.getFromInt(profileImportWorker.getImportProfile().getImportMode()).getMessageKey(), admin.getLocale()) + "\n";
 			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("Mode", emailLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
+				profileContent += I18nString.getLocaleString("Mode", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
 			}
-			profileContent += I18nString.getLocaleString("KeyColumn", emailLocale) + ": " + StringUtils.join(profileImportWorker.getImportProfile().getKeyColumns(), ", ");
+			profileContent += I18nString.getLocaleString("KeyColumn", admin.getLocale()) + ": " + StringUtils.join(profileImportWorker.getImportProfile().getKeyColumns(), ", ");
 		}
 		reportContent += "\t" + profileContent.replace("\n", "\n\t") + "\n";
 		
 		if (CollectionUtils.isNotEmpty(profileImportWorker.getImportProfile().getKeyColumns())) {
 			if (!importRecipientsDao.isKeyColumnIndexed(profileImportWorker.getImportProfile().getCompanyId(), profileImportWorker.getImportProfile().getKeyColumns())) {
-				reportContent += "\n*** " + I18nString.getLocaleString("warning.import.keyColumn.index", emailLocale) + " ***\n\n";
+				reportContent += "\n*** " + I18nString.getLocaleString("warning.import.keyColumn.index", admin.getLocale()) + " ***\n\n";
 			}
 		}
 		
-		reportContent += I18nString.getLocaleString("StartTime", emailLocale) + ": " + new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).format(profileImportWorker.getStartTime()) + "\n";
-		reportContent += I18nString.getLocaleString("EndTime", emailLocale) + ": " + new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).format(profileImportWorker.getEndTime()) + "\n";
+		reportContent += I18nString.getLocaleString("StartTime", admin.getLocale()) + ": " + admin.getDateTimeFormat().format(profileImportWorker.getStartTime()) + "\n";
+		reportContent += I18nString.getLocaleString("EndTime", admin.getLocale()) + ": " + admin.getDateTimeFormat().format(profileImportWorker.getEndTime()) + "\n";
 		
 		if (profileImportWorker.getAutoImport() != null) {
-			reportContent += I18nString.getLocaleString("autoImport.fileServer", emailLocale) + ": " + profileImportWorker.getAutoImport().getFileServerWithoutCredentials();
+			reportContent += I18nString.getLocaleString("autoImport.fileServer", admin.getLocale()) + ": " + profileImportWorker.getAutoImport().getFileServerWithoutCredentials();
 		}
-		reportContent += I18nString.getLocaleString("settings.FileName", emailLocale) + ": " + (StringUtils.isBlank(profileImportWorker.getImportFile().getRemoteFilePath()) ? I18nString.getLocaleString("Unknown", emailLocale) : profileImportWorker.getImportFile().getRemoteFilePath()) + "\n";
+		reportContent += I18nString.getLocaleString("settings.FileName", admin.getLocale()) + ": " + (StringUtils.isBlank(profileImportWorker.getImportFile().getRemoteFilePath()) ? I18nString.getLocaleString("Unknown", admin.getLocale()) : profileImportWorker.getImportFile().getRemoteFilePath()) + "\n";
 		if (profileImportWorker.getImportFile().getDownloadDurationMillis() > -1) {
-			reportContent += I18nString.getLocaleString("DownloadDuration", emailLocale) + ": " + AgnUtils.getHumanReadableDurationFromMillis(profileImportWorker.getImportFile().getDownloadDurationMillis()) + "\n";
+			reportContent += I18nString.getLocaleString("DownloadDuration", admin.getLocale()) + ": " + AgnUtils.getHumanReadableDurationFromMillis(profileImportWorker.getImportFile().getDownloadDurationMillis()) + "\n";
 		}
 		
 		reportContent += "\n";
 		
-		List<ImportReportEntry> reportStatusEntries = generateImportStatusEntries(profileImportWorker, profileImportWorker.getImportProfile().getCompanyId(), emailLocale, profileImportWorker.getImportProfile().isNoHeaders());
+		List<ImportReportEntry> reportStatusEntries = generateImportStatusEntries(profileImportWorker, profileImportWorker.getImportProfile().getCompanyId(), admin.getLocale(), profileImportWorker.getImportProfile().isNoHeaders());
 		for (ImportReportEntry entry : reportStatusEntries) {
-			reportContent += I18nString.getLocaleString(entry.getKey(), emailLocale) + ": " + entry.getValue() + "\n";
+			reportContent += I18nString.getLocaleString(entry.getKey(), admin.getLocale()) + ": " + entry.getValue() + "\n";
 		}
 		
 		reportContent += "\n";
 		
 		if (profileImportWorker.getMailinglistAssignStatistics() != null && profileImportWorker.getMailinglistAssignStatistics().size() > 0) {
-			reportContent += I18nString.getLocaleString("Mailinglists", emailLocale) +":\n";
+			reportContent += I18nString.getLocaleString("Mailinglists", admin.getLocale()) +":\n";
 			for (Entry<Integer, Integer> entry : profileImportWorker.getMailinglistAssignStatistics().entrySet()) {
 				reportContent += "\t\"" + mailinglistDao.getMailinglistName(entry.getKey(), profileImportWorker.getImportProfile().getCompanyId()) + "\" (ID: " + entry.getKey() + "): " + entry.getValue() + "\n";
 			}
 		}
+		return reportContent;
+	}
+	private String generateLocalizedImportTextReportForAlreadyImportedFile(UsedFile alreadyImportedFile, AutoImport autoImport, ImportProfile importProfile, ComAdmin admin, boolean showVerboseProfileData) {
+		String reportContent = I18nString.getLocaleString("import.recipients.report", admin.getLocale()) + " \"" + importProfile.getName() + "\":\n\n";
+		
+		reportContent += I18nString.getLocaleString("autoimport.error.fileWasAlreadyImported", admin.getLocale(), alreadyImportedFile.getRemoteFileName(), AgnUtils.getHumanReadableNumber(alreadyImportedFile.getFileSize(), "Byte", false, admin.getLocale()), admin.getDateTimeFormat().format(alreadyImportedFile.getFileDate()));
+
+		reportContent += I18nString.getLocaleString("decode.licenseID", admin.getLocale()) + ": " + configService.getValue(ConfigValue.System_Licence) + "\n";
+		
+		ComCompany company = companyDao.getCompany(importProfile.getCompanyId());
+		reportContent += I18nString.getLocaleString("Company", admin.getLocale()) + ": " + (company == null ? "Unknown" : company.toString()) + "\n";
+		
+		reportContent += "AutoImport: " + autoImport.toString() + "\n";
+		
+		reportContent += I18nString.getLocaleString("import.type", admin.getLocale()) + ": " + I18nString.getLocaleString("Recipients", admin.getLocale()) + "\n";
+		
+		// Show ImportProfile data
+		reportContent += I18nString.getLocaleString("import.ImportProfile", admin.getLocale()) + ": \"" + importProfile.getName() + "\" (ID: " + importProfile.getId() + ")\n";
+		String profileContent = "";
+		if (showVerboseProfileData) {
+			try {
+				profileContent += I18nString.getLocaleString("Charset", admin.getLocale()) + ": " + Charset.getCharsetById(importProfile.getCharset()).getCharsetName() + "\n";
+			} catch (Exception e) {
+				profileContent += I18nString.getLocaleString("Charset", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
+			}
+			
+			profileContent += I18nString.getLocaleString("csv.ContainsHeaders", admin.getLocale()) + ": " + !importProfile.isNoHeaders() + "\n";
+			profileContent += I18nString.getLocaleString("import.zipped", admin.getLocale()) + ": " + importProfile.isZipped() + "\n";
+			profileContent += I18nString.getLocaleString("import.zipPassword", admin.getLocale()) + ": " + (importProfile.getZipPassword() != null) + "\n";
+			
+			profileContent += I18nString.getLocaleString("import.autoMapping", admin.getLocale()) + ": " + importProfile.isAutoMapping() + "\n";
+			
+			try {
+				profileContent += I18nString.getLocaleString("csv.Delimiter", admin.getLocale()) + ": " + Separator.getSeparatorById(importProfile.getSeparator()).getValueChar() + "\n";
+			} catch (Exception e) {
+				profileContent += I18nString.getLocaleString("csv.Delimiter", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
+			}
+			
+			try {
+				profileContent += I18nString.getLocaleString("csv.StringQuote", admin.getLocale()) + ": " + TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).name() + "\n";
+			} catch (Exception e) {
+				profileContent += I18nString.getLocaleString("csv.StringQuote", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
+			}
+			
+			profileContent += I18nString.getLocaleString("csv.DecimalSeparator", admin.getLocale()) + ": " + importProfile.getDecimalSeparator() + "\n";
+			
+			try {
+				profileContent += I18nString.getLocaleString("import.dateFormat", admin.getLocale()) + ": " + DateFormat.getDateFormatById(importProfile.getDateFormat()).getValue() + "\n";
+			} catch (Exception e) {
+				profileContent += I18nString.getLocaleString("import.dateFormat", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
+			}
+			
+			try {
+				profileContent += I18nString.getLocaleString("Mode", admin.getLocale()) + ": " + I18nString.getLocaleString(ImportMode.getFromInt(importProfile.getImportMode()).getMessageKey(), admin.getLocale()) + "\n";
+			} catch (Exception e) {
+				profileContent += I18nString.getLocaleString("Mode", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
+			}
+			
+			try {
+				profileContent += I18nString.getLocaleString("import.recipients.duplicate", admin.getLocale()) + ": " + CheckForDuplicates.getFromInt(importProfile.getCheckForDuplicates()).name() + "\n";
+			} catch (Exception e) {
+				profileContent += I18nString.getLocaleString("import.recipients.duplicate", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
+			}
+			
+			try {
+				profileContent += I18nString.getLocaleString("import.null_value_handling", admin.getLocale()) + ": " + NullValuesAction.getFromInt(importProfile.getNullValuesAction()).name() + "\n";
+			} catch (Exception e) {
+				profileContent += I18nString.getLocaleString("import.null_value_handling", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
+			}
+			
+			try {
+				profileContent += I18nString.getLocaleString("recipient.RecipientMailtype", admin.getLocale()) + " (" + I18nString.getLocaleString("import.profile.default", admin.getLocale()) + "): " + MailType.getFromInt(importProfile.getDefaultMailType()).name() + "\n";
+			} catch (Exception e) {
+				profileContent += I18nString.getLocaleString("recipient.RecipientMailtype", admin.getLocale()) + " (" + I18nString.getLocaleString("import.profile.default", admin.getLocale()) + "): Invalid (\"" + e.getMessage() + "\")\n";
+			}
+			
+			if (admin.permissionAllowed(Permission.IMPORT_MEDIATYPE)) {
+				try {
+					profileContent += I18nString.getLocaleString("mediatype", admin.getLocale()) + ": " + I18nString.getLocaleString("mailing.MediaType." + importProfile.getMediatype().getMediaCode(), admin.getLocale()) + "\n";
+				} catch (Exception e) {
+					profileContent += I18nString.getLocaleString("mediatype", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
+				}
+			}
+			
+			profileContent += I18nString.getLocaleString("import.datatype", admin.getLocale()) + ": " + importProfile.getDatatype() + "\n";
+			
+			profileContent += I18nString.getLocaleString("import.profile.updateAllDuplicates", admin.getLocale()) + ": " + importProfile.getUpdateAllDuplicates() + "\n";
+			
+			if (importProfile.getImportProcessActionID() > 0) {
+				profileContent += "ImportProcessActionID" + ": " + importProfile.getImportProcessActionID() + "\n";
+			}
+			
+			if (importProfile.getActionForNewRecipients() > 0) {
+				profileContent += I18nString.getLocaleString("import.actionForNewRecipients", admin.getLocale()) + ": " + importProfile.getActionForNewRecipients() + "\n";
+			}
+			
+			profileContent += I18nString.getLocaleString("import.profile.report.email", admin.getLocale()) + ": " + (StringUtils.isBlank(importProfile.getMailForReport()) ? I18nString.getLocaleString("default.none", admin.getLocale()) : importProfile.getMailForReport()) + "\n";
+			profileContent += I18nString.getLocaleString("error.import.profile.email", admin.getLocale()) + ": " + (StringUtils.isBlank(importProfile.getMailForError()) ? I18nString.getLocaleString("default.none", admin.getLocale()) : importProfile.getMailForError()) + "\n";
+			
+			profileContent += I18nString.getLocaleString("import.profile.gender.settings", admin.getLocale()) + ": ";
+			
+			if (importProfile.getGenderMapping() != null && importProfile.getGenderMapping().size() > 0) {
+				profileContent += "\n\t" + AgnUtils.mapToString(importProfile.getGenderMapping()).replace("\n", "\n\t") + "\n";
+			} else {
+				profileContent += "NONE\n";
+			}
+			
+			profileContent += I18nString.getLocaleString("Mapping", admin.getLocale()) + ": \n";
+			for (ColumnMapping mapping : importProfile.getColumnMapping()) {
+				String mappingEntryContent = mapping.getDatabaseColumn() + " = " + mapping.getFileColumn();
+				if (mapping.isKeyColumn()) {
+					mappingEntryContent += ", keycolumn";
+				}
+				if (StringUtils.isNotEmpty(mapping.getDefaultValue())) {
+					mappingEntryContent += ", default = \"" + mapping.getDefaultValue() + "\"";
+				}
+				if (StringUtils.isNotEmpty(mapping.getFormat())) {
+					mappingEntryContent += ", format = \"" + mapping.getFormat() + "\"";
+				}
+				if (mapping.isMandatory()) {
+					mappingEntryContent += ", mandatory = " + mapping.isMandatory();
+				}
+				if (mapping.isEncrypted()) {
+					mappingEntryContent += ", encrypted = " + mapping.isEncrypted();
+				}
+				
+				profileContent += "\t" + mappingEntryContent + "\n";
+			}
+			
+			profileContent += I18nString.getLocaleString("KeyColumn", admin.getLocale()) + ": " + StringUtils.join(importProfile.getKeyColumns(), ", ");
+		} else {
+			try {
+				profileContent += I18nString.getLocaleString("Mode", admin.getLocale()) + ": " + I18nString.getLocaleString(ImportMode.getFromInt(importProfile.getImportMode()).getMessageKey(), admin.getLocale()) + "\n";
+			} catch (Exception e) {
+				profileContent += I18nString.getLocaleString("Mode", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
+			}
+			profileContent += I18nString.getLocaleString("KeyColumn", admin.getLocale()) + ": " + StringUtils.join(importProfile.getKeyColumns(), ", ");
+		}
+		reportContent += "\t" + profileContent.replace("\n", "\n\t") + "\n";
+		
+		if (CollectionUtils.isNotEmpty(importProfile.getKeyColumns())) {
+			if (!importRecipientsDao.isKeyColumnIndexed(importProfile.getCompanyId(), importProfile.getKeyColumns())) {
+				reportContent += "\n*** " + I18nString.getLocaleString("warning.import.keyColumn.index", admin.getLocale()) + " ***\n\n";
+			}
+		}
+		
+		reportContent += I18nString.getLocaleString("StartTime", admin.getLocale()) + ": " + admin.getDateTimeFormat().format(new Date()) + "\n";
+		
+		if (autoImport != null) {
+			reportContent += I18nString.getLocaleString("autoImport.fileServer", admin.getLocale()) + ": " + autoImport.getFileServerWithoutCredentials();
+		}
+		reportContent += I18nString.getLocaleString("settings.FileName", admin.getLocale()) + ": " + (StringUtils.isBlank(alreadyImportedFile.getRemoteFileName()) ? I18nString.getLocaleString("Unknown", admin.getLocale()) : alreadyImportedFile.getRemoteFileName()) + "\n";
+		
+		reportContent += "\n";
+		
 		return reportContent;
 	}
 
@@ -464,13 +634,22 @@ public class ProfileImportReporter {
 			htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("mailing.Graphics_Component.FileSize", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getFileSize(), "Byte", false, locale)));
 		}
 
-		if (importWorker.getImportProfile().isNoHeaders()) {
-			htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.csvlines", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getCsvLines(), locale)));
-		} else if (importWorker.getStatus().getCsvLines() <= 0) {
-			// Maybe there was an error in csv structure
-			htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.csvlines", locale), I18nString.getLocaleString("Unknown", locale)));
+		if ("CSV".equalsIgnoreCase(importWorker.getImportProfile().getDatatype())) {
+			if (importWorker.getImportProfile().isNoHeaders()) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.csvlines", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getCsvLines(), locale)));
+			} else if (importWorker.getStatus().getCsvLines() <= 0) {
+				// Maybe there was an error in csv structure
+				htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.csvlines", locale), I18nString.getLocaleString("Unknown", locale)));
+			} else {
+				htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.csvlines", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getCsvLines() - 1, locale) + " (+1 " + I18nString.getLocaleString("csv.ContainsHeaders", locale) + ")"));
+			}
 		} else {
-			htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.csvlines", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getCsvLines() - 1, locale) + " (+1 " + I18nString.getLocaleString("csv.ContainsHeaders", locale) + ")"));
+			if (importWorker.getStatus().getCsvLines() <= 0) {
+				// Maybe there was an error in data file structure
+				htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.filedataitems", locale), I18nString.getLocaleString("Unknown", locale)));
+			} else {
+				htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.result.filedataitems", locale), AgnUtils.getHumanReadableNumber(importWorker.getStatus().getCsvLines(), locale)));
+			}
 		}
 		
 		htmlContent.append(HtmlReporterHelper.getOutputTableResultContentLine(I18nString.getLocaleString("import.RecipientsAllreadyinDB", locale), Integer.toString(importWorker.getStatus().getAlreadyInDb())));
@@ -573,6 +752,16 @@ public class ProfileImportReporter {
 				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("recipient.RecipientMailtype", locale) + " (" + I18nString.getLocaleString("import.profile.default", locale) + ")", "Invalid (\"" + e.getMessage() + "\")"));
 			}
 			
+			if (admin.permissionAllowed(Permission.IMPORT_MEDIATYPE)) {
+				try {
+					htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("mediatype", locale), I18nString.getLocaleString("mailing.MediaType." + importWorker.getImportProfile().getMediatype().getMediaCode(), admin.getLocale())));
+				} catch (Exception e) {
+					htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("mediatype", locale), "Invalid (\"" + e.getMessage() + "\")"));
+				}
+			}
+			
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.datatype", locale), importWorker.getImportProfile().getDatatype()));
+			
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.profile.updateAllDuplicates", locale), I18nString.getLocaleString(importWorker.getImportProfile().getUpdateAllDuplicates() ? "default.Yes" : "No", locale)));
 			
 			if (importWorker.getImportProfile().getImportProcessActionID() > 0) {
@@ -645,6 +834,177 @@ public class ProfileImportReporter {
 		
 		return htmlContent.toString();
 	}
+	
+	private String generateLocalizedImportHtmlReportForAlreadyImportedFile(UsedFile alreadyImportedFile, AutoImport autoImport, ImportProfile importProfile, ComAdmin admin, boolean showVerboseProfileData) {
+		Locale locale = admin.getLocale();
+		String title = "AutoImport: " + autoImport.toString();
+		
+		StringBuilder htmlContent = new StringBuilder(HtmlReporterHelper.getHtmlPrefixWithCssStyles(title));
+		
+		htmlContent.append(HtmlReporterHelper.getHeader(title, I18nString.getLocaleString("default.version", locale)));
+		
+		// Already Imported File Warning
+		htmlContent.append(HtmlReporterHelper.getOutputTableStart());
+		htmlContent.append(HtmlReporterHelper.getOutputTableContentStart(false));
+		
+		htmlContent.append(HtmlReporterHelper.getOutputTableWarningContentLine(I18nString.getLocaleString("autoimport.error.fileWasAlreadyImported", locale, alreadyImportedFile.getRemoteFileName(), AgnUtils.getHumanReadableNumber(alreadyImportedFile.getFileSize(), "Byte", false, locale), admin.getDateTimeFormat().format(alreadyImportedFile.getFileDate()))));
+		
+		htmlContent.append(HtmlReporterHelper.getOutputTableContentEnd());
+		htmlContent.append(HtmlReporterHelper.getOutputTableEnd());
+
+		// Informations
+		htmlContent.append(HtmlReporterHelper.getOutputTableStart());
+		htmlContent.append(HtmlReporterHelper.getOutputTableHeader(I18nString.getLocaleString("Info", locale)));
+		htmlContent.append(HtmlReporterHelper.getOutputTableContentStart(false));
+		
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("decode.licenseID", locale), configService.getValue(ConfigValue.System_Licence)));
+
+		ComCompany company = companyDao.getCompany(importProfile.getCompanyId());
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Company", locale), (company == null ? "Unknown" : company.toString())));
+		
+		if (autoImport != null) {
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("AutoImport", autoImport.toString()));
+		}
+		
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.type", locale), I18nString.getLocaleString("Recipients", locale)));
+		
+		// Importprofile
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.ImportProfile", locale), "\"" + importProfile.getName() + "\" (ID: " + importProfile.getId() + ")"));
+		
+		if (showVerboseProfileData) {
+			try {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Charset", locale), Charset.getCharsetById(importProfile.getCharset()).getCharsetName()));
+			} catch (Exception e) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Charset", locale), "Invalid (\"" + e.getMessage() + "\")"));
+			}
+			
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.ContainsHeaders", locale), I18nString.getLocaleString(!importProfile.isNoHeaders() ? "default.Yes" : "No", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.zipped", locale), I18nString.getLocaleString(importProfile.isZipped() ? "default.Yes" : "No", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.zipPassword", locale), I18nString.getLocaleString(importProfile.getZipPassword() != null ? "default.Yes" : "No", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.autoMapping", locale), I18nString.getLocaleString(importProfile.isAutoMapping() ? "default.Yes" : "No", locale)));
+
+			try {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.Delimiter", locale), Character.toString(Separator.getSeparatorById(importProfile.getSeparator()).getValueChar())));
+			} catch (Exception e) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.Delimiter", locale), "Invalid (\"" + e.getMessage() + "\")"));
+			}
+			
+			try {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.StringQuote", locale), I18nString.getLocaleString(TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getPublicValue(), locale)));
+			} catch (Exception e) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.StringQuote", locale), "Invalid (\"" + e.getMessage() + "\")"));
+			}
+			
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.DecimalSeparator", locale), Character.toString(importProfile.getDecimalSeparator())));
+			
+			try {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.dateFormat", locale), DateFormat.getDateFormatById(importProfile.getDateFormat()).getValue()));
+			} catch (Exception e) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.dateFormat", locale), "Invalid (\"" + e.getMessage() + "\")"));
+			}
+			
+			try {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Mode", locale), I18nString.getLocaleString(ImportMode.getFromInt(importProfile.getImportMode()).getMessageKey(), locale)));
+			} catch (Exception e) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Mode", locale), "Invalid (\"" + e.getMessage() + "\")"));
+			}
+			
+			try {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.recipients.duplicate", locale), I18nString.getLocaleString(CheckForDuplicates.getFromInt(importProfile.getCheckForDuplicates()).getMessageKey(), locale)));
+			} catch (Exception e) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.recipients.duplicate", locale), "Invalid (\"" + e.getMessage() + "\")"));
+			}
+			
+			try {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.null_value_handling", locale), I18nString.getLocaleString(NullValuesAction.getFromInt(importProfile.getNullValuesAction()).getMessageKey(), locale)));
+			} catch (Exception e) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.null_value_handling", locale), "Invalid (\"" + e.getMessage() + "\")"));
+			}
+			
+			try {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("recipient.RecipientMailtype", locale) + " (" + I18nString.getLocaleString("import.profile.default", locale) + ")", MailType.getFromInt(importProfile.getDefaultMailType()).name()));
+			} catch (Exception e) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("recipient.RecipientMailtype", locale) + " (" + I18nString.getLocaleString("import.profile.default", locale) + ")", "Invalid (\"" + e.getMessage() + "\")"));
+			}
+			
+			if (admin.permissionAllowed(Permission.IMPORT_MEDIATYPE)) {
+				try {
+					htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("mediatype", locale), I18nString.getLocaleString("mailing.MediaType." + importProfile.getMediatype().getMediaCode(), admin.getLocale())));
+				} catch (Exception e) {
+					htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("mediatype", locale), "Invalid (\"" + e.getMessage() + "\")"));
+				}
+			}
+			
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.datatype", locale), importProfile.getDatatype()));
+			
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.profile.updateAllDuplicates", locale), I18nString.getLocaleString(importProfile.getUpdateAllDuplicates() ? "default.Yes" : "No", locale)));
+			
+			if (importProfile.getImportProcessActionID() > 0) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("ImportProcessActionID", Integer.toString(importProfile.getImportProcessActionID())));
+			}
+			
+			if (importProfile.getActionForNewRecipients() > 0) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.actionForNewRecipients", locale), Integer.toString(importProfile.getActionForNewRecipients())));
+			}
+			
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.profile.report.email", locale), StringUtils.isBlank(importProfile.getMailForReport()) ? I18nString.getLocaleString("default.none", locale) : importProfile.getMailForReport()));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("error.import.profile.email", locale), StringUtils.isBlank(importProfile.getMailForError()) ? I18nString.getLocaleString("default.none", locale) : importProfile.getMailForError()));
+
+			htmlContent.append(HtmlReporterHelper.getOutputTableSubHeader(I18nString.getLocaleString("import.profile.gender.settings", locale), false));
+			if (importProfile.getGenderMapping() != null && importProfile.getGenderMapping().size() > 0) {
+				for (Entry<String, Integer> genderEntry : importProfile.getGenderMapping().entrySet()) {
+					htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("", genderEntry.getKey() + " = " + genderEntry.getValue()));
+				}
+			} else {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("", I18nString.getLocaleString("default.none", locale)));
+			}
+
+			htmlContent.append(HtmlReporterHelper.getOutputTableSubHeader(I18nString.getLocaleString("Mapping", locale), false));
+			for (ColumnMapping mapping : importProfile.getColumnMapping()) {
+				String mappingEntryContent = mapping.getDatabaseColumn() + " = " + mapping.getFileColumn();
+				if (mapping.isKeyColumn()) {
+					mappingEntryContent += ", keycolumn";
+				}
+				if (StringUtils.isNotEmpty(mapping.getDefaultValue())) {
+					mappingEntryContent += ", default = \"" + mapping.getDefaultValue() + "\"";
+				}
+				if (StringUtils.isNotEmpty(mapping.getFormat())) {
+					mappingEntryContent += ", format = \"" + mapping.getFormat() + "\"";
+				}
+				if (mapping.isMandatory()) {
+					mappingEntryContent += ", mandatory = " + mapping.isMandatory();
+				}
+				if (mapping.isEncrypted()) {
+					mappingEntryContent += ", encrypted = " + mapping.isEncrypted();
+				}
+				
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("", mappingEntryContent));
+			}
+
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("KeyColumn", locale), StringUtils.join(importProfile.getKeyColumns(), ", ")));
+		} else {
+			try {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Mode", locale), I18nString.getLocaleString(ImportMode.getFromInt(importProfile.getImportMode()).getMessageKey(), locale)));
+			} catch (Exception e) {
+				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Mode", locale), "Invalid (\"" + e.getMessage() + "\")"));
+			}
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("KeyColumn", locale), StringUtils.join(importProfile.getKeyColumns(), ", ")));
+		}
+		
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("StartTime", locale), DateUtilities.getDateTimeString(new Date(), TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId(), admin.getDateTimeFormatter())));
+
+		if (autoImport != null) {
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.fileServer", locale), autoImport.getFileServerWithoutCredentials()));
+		}
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("settings.FileName", locale), StringUtils.isBlank(alreadyImportedFile.getRemoteFileName()) ? I18nString.getLocaleString("Unknown", locale) : alreadyImportedFile.getRemoteFileName()));
+
+		htmlContent.append(HtmlReporterHelper.getOutputTableContentEnd());
+		htmlContent.append(HtmlReporterHelper.getOutputTableEnd());
+		
+		htmlContent.append(HtmlReporterHelper.getFooter(AgnUtils.getHostName(), configService.getValue(ConfigValue.ApplicationVersion)));
+		
+		return htmlContent.toString();
+	}
 
 	private List<ImportReportEntry> generateImportStatusEntries(ProfileImportWorker importWorker, int companyID, Locale locale, boolean noHeaders) {
 		List<ImportReportEntry> reportStatusEntries = new ArrayList<>();
@@ -690,13 +1050,22 @@ public class ProfileImportReporter {
 			reportStatusEntries.add(new ImportReportEntry("mailing.Graphics_Component.FileSize", AgnUtils.getHumanReadableNumber(customerImportStatus.getFileSize(), "Byte", false, locale)));
 		}
 		
-		if (noHeaders) {
-			reportStatusEntries.add(new ImportReportEntry("import.result.csvlines",  AgnUtils.getHumanReadableNumber(customerImportStatus.getCsvLines(), locale)));
-		} else if (customerImportStatus.getCsvLines() <= 0) {
-			// Maybe there was an error in csv structure
-			reportStatusEntries.add(new ImportReportEntry("import.result.csvlines", I18nString.getLocaleString("Unknown", locale)));
+		if ("CSV".equalsIgnoreCase(importWorker.getImportProfile().getDatatype())) {
+			if (noHeaders) {
+				reportStatusEntries.add(new ImportReportEntry("import.result.csvlines",  AgnUtils.getHumanReadableNumber(customerImportStatus.getCsvLines(), locale)));
+			} else if (customerImportStatus.getCsvLines() <= 0) {
+				// Maybe there was an error in csv structure
+				reportStatusEntries.add(new ImportReportEntry("import.result.csvlines", I18nString.getLocaleString("Unknown", locale)));
+			} else {
+				reportStatusEntries.add(new ImportReportEntry("import.result.csvlines",  AgnUtils.getHumanReadableNumber(customerImportStatus.getCsvLines() - 1, locale) + " (+1 " + I18nString.getLocaleString("csv.ContainsHeaders", locale) + ")"));
+			}
 		} else {
-			reportStatusEntries.add(new ImportReportEntry("import.result.csvlines",  AgnUtils.getHumanReadableNumber(customerImportStatus.getCsvLines() - 1, locale) + " (+1 " + I18nString.getLocaleString("csv.ContainsHeaders", locale) + ")"));
+			if (customerImportStatus.getCsvLines() <= 0) {
+				// Maybe there was an error in data file structure
+				reportStatusEntries.add(new ImportReportEntry("import.result.filedataitems", I18nString.getLocaleString("Unknown", locale)));
+			} else {
+				reportStatusEntries.add(new ImportReportEntry("import.result.filedataitems",  AgnUtils.getHumanReadableNumber(customerImportStatus.getCsvLines(), locale)));
+			}
 		}
 		
 		reportStatusEntries.add(new ImportReportEntry("import.RecipientsAllreadyinDB", String.valueOf(customerImportStatus.getAlreadyInDb())));
@@ -793,15 +1162,50 @@ public class ProfileImportReporter {
 		}
 
 		if (!emailRecipients.isEmpty()) {
-			Locale emailLocale = admin != null ? admin.getLocale() : null;
-			
 			ComCompany company = companyDao.getCompany(profileImportWorker.getImportProfile().getCompanyId());
 			
-			String subject = "Import-ERROR: " + I18nString.getLocaleString("import.recipients.report", emailLocale) + ": " + " \"" + profileImportWorker.getImportProfile().getName() + "\" (" + I18nString.getLocaleString("Company", emailLocale) + ": " + company.getShortname() + ")";
+			String subject = "Import-ERROR: " + I18nString.getLocaleString("import.recipients.report", admin.getLocale()) + ": " + " \"" + profileImportWorker.getImportProfile().getName() + "\" (" + I18nString.getLocaleString("Company", admin.getLocale()) + ": " + company.getShortname() + ")";
 			String bodyHtml = generateLocalizedImportHtmlReport(profileImportWorker, admin, true);
-			String bodyText = "Import-ERROR:\n" + generateLocalizedImportTextReport(profileImportWorker, emailLocale, true);
+			String bodyText = "Import-ERROR:\n" + generateLocalizedImportTextReport(profileImportWorker, admin, true);
 			
 			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
+	}
+
+	public void sendProfileImportReportAlreadyImportedFileMail(UsedFile alreadyImportedFile, AutoImport autoImport, ImportProfile importProfile, ComAdmin admin) {
+		Set<String> emailRecipients = new HashSet<>();
+		
+		if (StringUtils.isNotBlank(importProfile.getMailForReport())) {
+			for (String email : AgnUtils.splitAndTrimList(importProfile.getMailForReport())) {
+				emailRecipients.add(AgnUtils.normalizeEmail(email));
+			}
+		}
+		
+		if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ImportAlwaysInformEmail, admin.getCompanyID()))) {
+			for (String email : AgnUtils.splitAndTrimList(configService.getValue(ConfigValue.ImportAlwaysInformEmail, admin.getCompanyID()))) {
+				emailRecipients.add(AgnUtils.normalizeEmail(email));
+			}
+		}
+
+		if (!emailRecipients.isEmpty()) {
+			Locale emailLocale = admin != null ? admin.getLocale() : null;
+			
+			ComCompany company = companyDao.getCompany(importProfile.getCompanyId());
+			
+			String subject = I18nString.getLocaleString("import.recipients.report", emailLocale) + " \"" + importProfile.getName() + "\" (" + I18nString.getLocaleString("Company", emailLocale) + ": " + company.getShortname() + ")";
+			String bodyHtml = generateLocalizedImportHtmlReportForAlreadyImportedFile(alreadyImportedFile, autoImport, importProfile, admin, true);
+			String bodyText = generateLocalizedImportTextReportForAlreadyImportedFile(alreadyImportedFile, autoImport, importProfile, admin, true);
+			
+			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+		}
+	}
+
+	public int writeProfileImportReportAlreadyImportedFile(UsedFile alreadyImportedFile, AutoImport autoImport, ImportProfile importProfile, ComAdmin admin) throws Exception {
+		String resultFileContent = generateLocalizedImportHtmlReportForAlreadyImportedFile(alreadyImportedFile, autoImport, importProfile, admin, true);
+		int autoImportID = -1;
+		if (autoImport != null) {
+			autoImportID = autoImport.getAutoImportId();
+		}
+		return recipientsReportService.createAndSaveImportReport(admin, RecipientReportUtils.IMPORT_RESULT_FILE_PREFIX, 0, new Date(), resultFileContent, autoImportID, false).getId();
 	}
 }

@@ -13,7 +13,6 @@ package com.agnitas.emm.core.company.enums;
 public enum Salutation {
     MR(0, "recipient.gender.0.short"),
     MS(1, "recipient.gender.1.short"),
-    MS2(3, "recipient.gender.3.short"),
     PRACTICE(4, "recipient.gender.4.short"),
     COMPANY(5, "recipient.gender.5.short"),
     UNKNOWN(2, "recipient.gender.2.short");

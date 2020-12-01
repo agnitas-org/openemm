@@ -458,6 +458,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
         }
         if (!newMails.isEmpty()) {
             newMails = newMails.substring(0, newMails.length() - 1);
+
             if (!targets.isEmpty()) {
                 String bouncesQuery = createBouncesQueryForTargets(recipientsType, targets);
                 insertCategoryDataToTempTable(newMails, companyID, bouncesQuery, tempTableID, BOUNCES, BOUNCES_INDEX, targets, true, false);

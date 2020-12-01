@@ -39,6 +39,7 @@ import com.agnitas.emm.core.target.eql.ast.OpenedMailingRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.ProfileFieldAtomEqlNode;
 import com.agnitas.emm.core.target.eql.ast.ReceivedMailingRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.RelationalBooleanEqlNode;
+import com.agnitas.emm.core.target.eql.ast.RelationalInfixOperator;
 import com.agnitas.emm.core.target.eql.ast.StartsWithRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.StringConstantWithEscapeCharsAtomEqlNode;
 import com.agnitas.emm.core.target.eql.codegen.CodeFragment;
@@ -328,12 +329,16 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 	}
 
 	private void binaryRelationalOperationWithOperandTransformation(final BinaryOperatorRelationalEqlNode node, final CodeFragment left, final Function<String, String> transformLeft, final CodeFragment right, final Function<String, String> transformRight) throws CodeGeneratorException {
+		binaryRelationalOperationWithOperandTransformation(node.getOperator(), node.getStartLocation(), left, transformLeft, right, transformRight);
+	}
+	
+	private void binaryRelationalOperationWithOperandTransformation(final RelationalInfixOperator operator, final CodeLocation location, final CodeFragment left, final Function<String, String> transformLeft, final CodeFragment right, final Function<String, String> transformRight) throws CodeGeneratorException {
 		// Use identity function if transformation is null
 		final Function<String, String> fnLeft = transformLeft != null ? transformLeft : Function.identity();
 		final Function<String, String> fnRight = transformRight != null ? transformRight : Function.identity();
 		
 		
-		final String operatorCode = OperatorUtil.eqlOperatorToSqlOperator(node.getOperator());
+		final String operatorCode = OperatorUtil.eqlOperatorToSqlOperator(operator);
 
 		final String relationalCode = String.format("(%s %s %s)", fnLeft.apply(left.getCode()), operatorCode, fnRight.apply(right.getCode()));
 		
@@ -349,11 +354,11 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 				
 				codeStack.push(new CodeFragment(makeReferenceTableFrame(relationalCode, set), DataType.BOOLEAN, null));
 			} catch (UnknownReferenceTableException e) {
-				throw new UnknownReferenceTableFaultyCodeException(node.getStartLocation(), e.getTableName(), e);
+				throw new UnknownReferenceTableFaultyCodeException(location, e.getTableName(), e);
 			} catch (UnknownReferenceTableColumnException e) {
-				throw new UnknownReferenceTableColumnFaultyCodeException(node.getStartLocation(), e.getTableName(), e.getColumnName(), e);
+				throw new UnknownReferenceTableColumnFaultyCodeException(location, e.getTableName(), e.getColumnName(), e);
 			} catch (ReferenceTableResolveException e) {
-				throw new UnknownReferenceTableFaultyCodeException(node.getStartLocation(), e);
+				throw new UnknownReferenceTableFaultyCodeException(location, e);
 			}
 		}
 	}
@@ -992,6 +997,33 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 		
 	protected String buildDeviceQueryTableList() {
 		throw new UnsupportedOperationException();
+	}
+	
+	/**
+	 * Creates the SQL code for given timestamp expression node.
+	 * <code>timestampColumnName</code> denotes the column containing the referenced timestamp and may contain a table name prefix.
+	 * Code fragment for expression on right side of operator must be already on top of stack.
+	 * Pushes result on code stack.
+	 * 
+	 * @param dateFormat date format for comparison
+	 * @param operator comparing operator
+	 * @param timestampColumnName name of column containing timestamp (optional with table name prefix)
+	 * @param location location of timestamp expression in EQL code
+	 * 
+	 * @throws CodeGeneratorException 
+	 */
+	public final CodeFragment timestampExpression(final EqlDateFormat dateFormat, final RelationalInfixOperator operator, final String timestampColumnName, final CodeLocation location) throws CodeGeneratorException {
+		assert (codeStack.size() >= 1);
+		final CodeFragment expressionCodeFragment = codeStack.pop();
+		
+		final CodeFragment timestampCodeFragment = new CodeFragment(
+				timestampColumnName, 
+				DataType.DATE, 
+				null);
+		
+		binaryRelationalOperationWithOperandTransformation(operator, location, timestampCodeFragment, getDateTransformFunction(timestampCodeFragment, dateFormat), expressionCodeFragment, getDateTransformFunction(expressionCodeFragment, dateFormat));
+
+		return codeStack.pop();
 	}
 	
 	// --------------------------------------------------------------------------------------------------------------------------------------------------------------------

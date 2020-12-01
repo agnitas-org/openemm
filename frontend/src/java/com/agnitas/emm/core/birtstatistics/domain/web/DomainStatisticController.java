@@ -58,7 +58,7 @@ public class DomainStatisticController {
 	@RequestMapping("/view.action")
 	public String view(ComAdmin admin, DomainStatisticForm form, Model model) throws Exception {
 		String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
-		model.addAttribute(TARGET_LIST, targetService.getTargetLights(admin.getCompanyID()));
+		model.addAttribute(TARGET_LIST, targetService.getTargetLights(admin));
 		model.addAttribute(MAILING_LISTS, mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
 		model.addAttribute(BIRT_STATISTIC_URL_WITHOUT_FORMAT,
 				birtStatisticsService.getDomainStatisticsUrlWithoutFormat(

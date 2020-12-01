@@ -34,7 +34,7 @@ public class MailingSendRecipientStatWorker implements Callable<Map<Integer, Int
 
     @Override
 	public Map<Integer, Integer> call() throws Exception {
-        ComMailing mailing = (ComMailing) mailingDao.getMailing(mailingId, companyId);
+        ComMailing mailing = mailingDao.getMailing(mailingId, companyId);
         return mailingDao.getSendStats(mailing, companyId);
     }
 }

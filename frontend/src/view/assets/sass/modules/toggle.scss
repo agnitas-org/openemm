@@ -112,6 +112,29 @@ Toggle switches are used best as on/off like switches and should be preferred ov
   }
 }
 
+body.dark-theme .toggle{
+  .toggle-control {
+    &:before {
+      background-color: $c-dt-toggle-before-background;
+    }
+
+    &:after {
+      background-color: $c-dt-toggle-after-background;
+    }
+  }
+
+  input:checked + .toggle-control,
+  input:checked + input[type="hidden"] + .toggle-control {
+    &:before {
+      background-color: #009530;
+    }
+
+    &:after {
+      background-color: $c-dt-toggle-checked-after-background;
+    }
+  }
+}
+
 .form-group {
   .toggle {
     padding-top: 5px;

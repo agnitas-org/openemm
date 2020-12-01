@@ -10,6 +10,8 @@
 
 package com.agnitas.dao;
 
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,12 +21,15 @@ public interface ConfigTableDao {
 	Map<String, Map<Integer, String>> getAllEntriesForThisHost();
 
 	@DaoUpdateReturnValueCheck
-	void storeEntry(String classString, String name, String value);
-	
-	@DaoUpdateReturnValueCheck
-	void storeEntry(String classString, String name, String hostName, String value);
+	void storeEntry(String classString, String name, String hostName, String value, String description);
 
     void deleteEntry(String classString, String name);
 
 	int getJobqueueHostStatus(String hostName);
+
+	List<Map<String, Object>> getReleaseData(String hostNamePattern, String applicationTypePattern) throws Exception;
+
+	void checkAndSetReleaseVersion();
+
+	Date getCurrentDbTime();
 }

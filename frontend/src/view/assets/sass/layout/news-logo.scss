@@ -2,8 +2,7 @@
   position: relative;
   float:left;
   width: 200px;
-  padding: 10px 0px 10px 10px;
-  height: 60px;
+  padding: 9px 0px 9px 10px;
 
   background-color: $c-white;
 
@@ -21,5 +20,13 @@
     width: 115px;
     overflow: visible;
     text-overflow: clip;
+  }
+}
+
+body.dark-theme .l-news-logo {
+  background-color: $c-dt-logo-background;
+
+  .logo {
+    background-color: $c-dt-logo-background;
   }
 }

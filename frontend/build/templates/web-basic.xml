@@ -173,20 +173,10 @@
 	<listener>
 		<listener-class>com.agnitas.emm.core.recipient.web.listener.RebuildBindingHistoryTriggersOnStartupListener</listener-class>
 	</listener>
-	
-	<listener>
-		<listener-class>com.agnitas.emm.core.target.web.listener.TargetGroupMigrationListener</listener-class>
-	</listener>
 
 	<!-- Shutdown the WorkerExecutorService -->
 	<listener>
 		<listener-class>com.agnitas.web.ExecutorShutdownListener</listener-class>
-	</listener>
-
-	<!-- Listener to initialize the extension system Note: This listener requires
-		that Springs ContextLoaderListener is loaded before this listener! -->
-	<listener>
-		<listener-class>com.agnitas.emm.extension.listener.ComExtensionSystemInitializationContextListener</listener-class>
 	</listener>
 	
 	<!-- Listener for execution of startup jobs -->
@@ -421,26 +411,6 @@
 	<servlet-mapping>
 		<servlet-name>AnonymousView</servlet-name>
 		<url-pattern>/v.html</url-pattern>
-	</servlet-mapping>
-
-	<!-- Extension setup servlet -->
-	<servlet>
-		<servlet-name>ExtensionSetupServlet</servlet-name>
-		<servlet-class>org.agnitas.emm.extension.web.ExtensionSetupServlet</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>ExtensionSetupServlet</servlet-name>
-		<url-pattern>/extensionSetupServlet</url-pattern>
-	</servlet-mapping>
-
-	<!-- Extension servlet -->
-	<servlet>
-		<servlet-name>ExtensionServlet</servlet-name>
-		<servlet-class>org.agnitas.emm.extension.web.ExtensionServlet</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>ExtensionServlet</servlet-name>
-		<url-pattern>/extensionServlet</url-pattern>
 	</servlet-mapping>
 
 	<!-- File download -->

@@ -10,6 +10,14 @@
 
 package org.agnitas.util;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -33,30 +41,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.agnitas.emm.core.commons.filter.OriginUriFilter;
+import com.agnitas.json.JsonUtilities;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.sf.json.JSON;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.agnitas.emm.core.commons.filter.OriginUriFilter;
-import com.agnitas.json.JsonUtilities;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import net.sf.json.JSON;
+import static org.agnitas.util.NetworkUtil.setHttpClientProxyFromSystem;
 
 public class HttpUtils {
 	public enum RequestMethod {
@@ -117,14 +117,16 @@ public class HttpUtils {
 	}
 
 	public static int getResponseStatusCode(String urlString) {
-		try{
-			HttpURLConnection huc =  (HttpURLConnection) new URL(urlString).openConnection();
-			huc.setInstanceFollowRedirects(false);
-			huc.setRequestMethod("GET");
-			huc.connect();
-			return huc.getResponseCode();
+		try {
+			HttpClient httpClient = new HttpClient();
+			setHttpClientProxyFromSystem(httpClient, urlString);
+
+			GetMethod method = new GetMethod(urlString);
+			method.setFollowRedirects(true);
+
+			return httpClient.executeMethod(method);
 		} catch (IOException e) {
-			logger.warn("Could not instantiate connection");
+			logger.error("Could not instantiate connection", e);
 		}
 		return -1;
 	}

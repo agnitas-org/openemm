@@ -1,3 +1,4 @@
+<%@page import="org.agnitas.beans.AdminGroup"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" import="
 	org.agnitas.util.AgnUtils,
 	com.agnitas.beans.ComAdmin,
@@ -16,6 +17,7 @@
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="adminForm" type="com.agnitas.web.ComAdminForm"--%>
 
@@ -69,7 +71,6 @@
                         <html:option value="0"><bean:message key="recipient.gender.0.short"/></html:option>
                         <html:option value="1"><bean:message key="recipient.gender.1.short"/></html:option>
                         <emm:ShowByPermission token="recipient.gender.extended">
-                            <html:option value="3"><bean:message key="recipient.gender.3.short"/></html:option>
                             <html:option value="4"><bean:message key="recipient.gender.4.short"/></html:option>
                             <html:option value="5"><bean:message key="recipient.gender.5.short"/></html:option>
                         </emm:ShowByPermission>
@@ -131,39 +132,37 @@
                     <label class="control-label" for="username"><bean:message key="logon.username"/></label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text styleClass="form-control" property="username" size="52" maxlength="180" styleId="username"/>
+                    <html:text styleClass="form-control" property="username" size="52" maxlength="180" styleId="username" readonly="true" />
                 </div>
             </div>
+            
             <emm:ShowByPermission token="admin.setgroup">
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label" for="groupID"><bean:message key="settings.Usergroup"/></label>
+                        <label class="control-label" for="groupIDs"><bean:message key="settings.Usergroup"/></label>
                     </div>
                     <div class="col-sm-8">
-                        <html:select styleClass="form-control js-select" property="groupID" size="1" styleId="groupID">
-                            <html:option value="0"><bean:message key="default.none"/></html:option>
-                            <c:forEach var="adminGroup" items="${adminGroups}">
-                                <html:option value="${adminGroup.groupID}">
-                                    ${adminGroup.shortname}
-                                </html:option>
-                            </c:forEach>
-                        </html:select>
+						<mvc:select path="adminForm.groupIDs" id="groupIDs" cssClass="form-control js-select" multiple="true">
+	                        <c:forEach var="adminGroup" items="${availableAdminGroups}">
+	                            <mvc:option value="${adminGroup.groupID}">${fn:escapeXml(adminGroup.shortname)}</mvc:option>
+	                        </c:forEach>
+	                    </mvc:select>
                     </div>
                 </div>
             </emm:ShowByPermission>
             <emm:HideByPermission token="admin.setgroup">
-                <html:hidden property="groupID"/>
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label" for="groupIDShow"><bean:message key="settings.Usergroup"/></label>
                     </div>
                     <div class="col-sm-8">
-                        <% String groupName= admin.getGroup().getShortname();
-                            if (groupName.equals("Dummy")) groupName ="None";%>
-                        <input type="text" class="form-control disabled" readonly value="<%= groupName%>">
+                    	<% for (AdminGroup adminGroup : admin.getGroups()) {%>
+                        <input type="text" class="form-control disabled" readonly value="<%= adminGroup.getShortname() %> (<%= adminGroup.getGroupID() %>)">
+                        <% } %>
                     </div>
                 </div>
             </emm:HideByPermission>
+            
             <div data-field="password">
                 <div class="form-group">
                     <div class="col-sm-4">
@@ -175,7 +174,7 @@
                     <div class="col-sm-8">
                         <div class="input-group">
                             <div class="input-group-controls">
-                                <html:password property="password" styleId="password" styleClass="form-control js-password-strength" size="52" />
+                            	<input type="password" name="password" id="password" class="form-control js-password-strength" size="52" data-rule="${PASSWORD_POLICY}" />
                             </div>
                             <div class="input-group-addon">
                                 <span class="addon js-password-strength-indicator hidden">
@@ -261,7 +260,7 @@
                 </div>
                 <div class="col-sm-8">
                     <html:select styleClass="form-control js-select" property="layoutBaseId" size="1" styleId="layoutBaseId">
-                        <c:forEach var="layout" items="${layouts}">
+                        <c:forEach var="layout" items="${availableLayouts}">
                             <html:option value="${layout.id}">
                                 ${layout.shortname}
                             </html:option>
@@ -354,9 +353,7 @@
 
             <div class="table-wrapper">
                 <%
-                    Locale userLocale = AgnUtils.getAdmin(request).getLocale();
-                	SimpleDateFormat dateFormat = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance( DateFormat.MEDIUM, DateFormat.LONG, userLocale);
-                    dateFormat.applyPattern(dateFormat.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
+                	SimpleDateFormat dateTimeFormat = AgnUtils.getAdmin(request).getDateTimeFormatWithSeconds();
                 %>
 
                 <display:table
@@ -369,7 +366,7 @@
                         excludedParams="*"
                         >
                     <display:column headerClass="head_action" class="action" titleKey="warning.failed_login.date">
-                        <%= dateFormat.format(((LoginData) loginData).getLoginTime()) %>
+                        <%= dateTimeFormat.format(((LoginData) loginData).getLoginTime()) %>
                         <%--								${loginData.loginTime} --%>
                     </display:column>
                     <display:column headerClass="head_action" class="action" titleKey="statistic.IPAddress">

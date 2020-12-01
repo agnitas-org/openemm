@@ -12,6 +12,7 @@ package org.agnitas.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -28,7 +29,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.service.ImportException;
-import org.agnitas.service.impl.DataType;
 import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
@@ -104,38 +104,6 @@ public class ImportUtils {
     	String errorneousFieldName = ((String) recipient.get(ImportRecipientsDao.VALIDATOR_RESULT_RESERVED));
 		fieldIsValid = errorneousFieldName != null && !currentFieldName.equals(errorneousFieldName);
     	return fieldIsValid;
-	}
-
-	public static String dbtype2string(int type) {
-		switch (type) {
-			case java.sql.Types.BIGINT:
-			case java.sql.Types.INTEGER:
-			case java.sql.Types.SMALLINT:
-				return DataType.INTEGER;
-
-			case java.sql.Types.DECIMAL:
-			case java.sql.Types.DOUBLE:
-			case java.sql.Types.FLOAT:
-			case java.sql.Types.NUMERIC:
-			case java.sql.Types.REAL:
-				return DataType.DOUBLE;
-
-			case java.sql.Types.CHAR:
-				return DataType.CHAR;
-
-			case java.sql.Types.VARCHAR:
-			case java.sql.Types.LONGVARCHAR:
-			case java.sql.Types.CLOB:
-				return DataType.VARCHAR;
-
-			case java.sql.Types.DATE:
-			case java.sql.Types.TIMESTAMP:
-			case java.sql.Types.TIME:
-				return DataType.DATE;
-				
-			default:
-				return "UNKNOWN(" + type + ")";
-		}
 	}
 
 	/**
@@ -215,26 +183,15 @@ public class ImportUtils {
         } else if (isZipped) {
 			try {
 				if (optionalZipPassword == null) {
-					try (InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile))) {
-						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-						if (zipEntry == null) {
-							throw new ImportException(false, "error.unzip.noEntry");
-						} else {
-							if (zipEntry.getSize() == -1) {
-								return dataInputStream.read(new byte[5]) > -1;
-							} else {
-								return zipEntry.getSize() > 0;
-							}
-						}
-					}
+					return importZip(importFile);
 				} else {
 					File unzipPath = new File(importFile.getAbsolutePath() + ".unzipped");
 					unzipPath.mkdir();
 					ZipUtilities.decompressFromEncryptedZipFile(importFile, unzipPath, optionalZipPassword);
 					
 					// Check if there was only one file within the zip file and use it for import
-					String[] filesToImport = unzipPath.list();
-					if (filesToImport.length != 1) {
+					String[] filesToImport = unzipPath.list(); // Returns null if no files found
+					if (filesToImport == null || filesToImport.length != 1) {
 						throw new Exception("Invalid number of files included in zip file");
 					} else {
 						boolean fileHasData = new File(unzipPath.getAbsolutePath() + "/" + filesToImport[0]).length() > 0;
@@ -255,6 +212,21 @@ public class ImportUtils {
 				// do nothing
 			}
 			return fileHasData;
+		}
+	}
+
+	private static boolean importZip(File importFile) throws IOException, FileNotFoundException {
+		try (InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile))) {
+			ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
+			if (zipEntry == null) {
+				throw new ImportException(false, "error.unzip.noEntry");
+			} else {
+				if (zipEntry.getSize() == -1) {
+					return dataInputStream.read(new byte[5]) > -1;
+				} else {
+					return zipEntry.getSize() > 0;
+				}
+			}
 		}
 	}
 }

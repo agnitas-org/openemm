@@ -71,7 +71,7 @@ public abstract class BindingServiceImpl implements BindingService {
 
 	@Override
 	@Transactional
-	@Validate("getBinding")
+	@Validate(groups = BindingModel.GetGroup.class)
 	public BindingEntry getBinding(BindingModel model) {
 		BindingEntry bindingEntry = bindingEntryDao.get(model.getCustomerId(), model.getCompanyId(), model.getMailinglistId(), model.getMediatype());
 		if (bindingEntry == null) {
@@ -82,7 +82,7 @@ public abstract class BindingServiceImpl implements BindingService {
 
 	@Override
 	@Transactional
-	@Validate("setBinding")
+	@Validate(groups = BindingModel.SetGroup.class)
 	public void setBinding(BindingModel model) throws MailinglistException {
 		if (!mailinglistDao.exist(model.getMailinglistId(), model.getCompanyId())) {
 			throw new MailinglistNotExistException(model.getMailinglistId());
@@ -117,7 +117,7 @@ public abstract class BindingServiceImpl implements BindingService {
 
 	@Override
 	@Transactional
-	@Validate("getBinding")
+	@Validate(groups = BindingModel.GetGroup.class)
 	public void deleteBinding(BindingModel model) {
 		if (!bindingEntryDao.exist(model.getCustomerId(), model.getCompanyId(), model.getMailinglistId(), model.getMediatype())) {
 			throw new BindingNotExistException();
@@ -127,7 +127,7 @@ public abstract class BindingServiceImpl implements BindingService {
 	
 	@Override
 	@Transactional
-	@Validate("listBinding")
+	@Validate(groups = BindingModel.ListGroup.class)
 	public List<BindingEntry> getBindings(BindingModel model) {
 		if (!recipientDao.exist(model.getCustomerId(), model.getCompanyId())) {
 			throw new RecipientNotExistException();

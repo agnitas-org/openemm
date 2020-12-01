@@ -24,7 +24,7 @@
 
 <emm:ShowByPermission token="template.show">
 
-    <div class="tile">
+    <div class="tile" data-action="scroll-to">
         <div class="tile-header">
             <a href="#" class="headline" data-toggle-tile="#tile-mailingTemplate">
                 <i class="tile-toggle icon icon-angle-up"></i>
@@ -208,7 +208,7 @@
 
 </emm:ShowByPermission>
 
-<div class="tile">
+<div class="tile" data-action="scroll-to">
     <div class="tile-header">
         <a href="#" class="headline" data-toggle-tile="#tile-mediaEmail">
             <i class="tile-toggle icon icon-angle-up"></i>
@@ -310,7 +310,8 @@
                     <div class="col-sm-4">
                         <label class="control-label" for="emailEnvelopeEmail">
                             <bean:message key="EnvelopeEmail"/>
-                        </label>
+	                        <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/EnvelopeAddress.xml" tabindex="-1" type="button"></button>
+	                    </label>
                     </div>
                     <div class="col-sm-8">
                         <html:text styleId="emailEnvelopeEmail" property="media[0].envelopeEmail"

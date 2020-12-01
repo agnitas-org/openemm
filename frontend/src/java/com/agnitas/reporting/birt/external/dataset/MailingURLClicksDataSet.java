@@ -17,10 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetRow;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
@@ -29,6 +25,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetRow;
 
 /**
  * BIRT-DataSet for mailing url clicks statistics
@@ -144,22 +145,23 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 		}
 	}
 	
-	private void updateMeasureLinks(int companyID, String targetSql, String recipientFilter, String timeFilter, List<Object> parameters,
-									Map<Integer, MailingClickStatsPerTargetRow> clicksItems, boolean isMobile) {
-		StringBuilder sql = new StringBuilder("SELECT");
-		sql.append(" rlog.url_id,")
-				.append(" COUNT(*) AS clicks_gross,")
-				.append(" COUNT(DISTINCT rlog.customer_id) AS clicks_net")
-				.append(" FROM ").append(getRdirLogTableName(companyID)).append(" rlog, ").append(getCustomerTableName(companyID)).append(" cust")
-				.append(" WHERE rlog.customer_id = cust.customer_id")
-				.append(" AND rlog.customer_id != 0")
-				.append(" AND rlog.mailing_id = ?");
+	private void updateMeasureLinks(int companyID, String targetSql, String recipientFilter, String timeFilter, List<Object> parameters, Map<Integer, MailingClickStatsPerTargetRow> clicksItems, boolean isMobile) {
+		StringBuilder sql = new StringBuilder("SELECT rlog.url_id, COUNT(*) AS clicks_gross, COUNT(DISTINCT rlog.customer_id) AS clicks_net");
 		
-		if(isMobile) {
+		if ((recipientFilter != null && recipientFilter.contains("cust.")) || (targetSql != null && targetSql.contains("cust."))) {
+			// Join customer table
+			sql.append(" FROM ").append(getRdirLogTableName(companyID)).append(" rlog, ").append(getCustomerTableName(companyID)).append(" cust");
+			sql.append(" WHERE rlog.customer_id = cust.customer_id AND rlog.customer_id != 0 AND rlog.mailing_id = ?");
+		} else {
+			sql.append(" FROM ").append(getRdirLogTableName(companyID)).append(" rlog");
+			sql.append(" WHERE rlog.customer_id != 0 AND rlog.mailing_id = ?");
+		}
+		
+		if (isMobile) {
 			sql.append(" AND rlog.device_class_id = ").append(DeviceClass.MOBILE.getId());
 		}
 		
-		if(StringUtils.isNotEmpty(targetSql)) {
+		if (StringUtils.isNotEmpty(targetSql)) {
 			sql.append(" AND (").append(targetSql).append(")");
 		}
 		
@@ -301,12 +303,12 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 	 * the report in one table
 	 * 
 	 * @return id of the create temporary table
-	 * @throws Exception 
-	 * @throws DataAccessException 
+	 * @throws Exception
+	 * @throws DataAccessException
 	 */
 	private int createTempTable() throws DataAccessException, Exception {
 		int tempTableID = getNextTmpID();
-		executeEmbedded(logger, 
+		executeEmbedded(logger,
 			"CREATE TABLE " + getTempTableName(tempTableID) + " ("
 				+ "url VARCHAR(2000),"
 				+ " url_id INTEGER,"

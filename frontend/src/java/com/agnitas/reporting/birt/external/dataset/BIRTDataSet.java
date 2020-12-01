@@ -12,6 +12,7 @@ package com.agnitas.reporting.birt.external.dataset;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -24,26 +25,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
-import com.agnitas.reporting.birt.external.beans.LightMailingList;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.dao.LightTargetDao;
-import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
-import com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl;
-import com.agnitas.util.LongRunningSelectResultCacheDao;
 import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.beans.Mediatype;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
+import org.agnitas.emm.core.mediatypes.dao.impl.MediatypesDaoImpl;
+import org.agnitas.emm.core.mediatypes.factory.MediatypeFactoryImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
@@ -54,8 +53,21 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.incrementer.MySQLMaxValueIncrementer;
 
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.reporting.birt.external.beans.LightMailingList;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.dao.LightTargetDao;
+import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
+import com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl;
+import com.agnitas.util.LongRunningSelectResultCacheDao;
+
 public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	private static final transient Logger logger = Logger.getLogger(BIRTDataSet.class);
+	
+	private static final String TEMPTABLECACHE_TABLENAME = "temp_cache_tbl";
 
 	public static final String DATE_PARAMETER_FORMAT = "yyyy-MM-dd";
 	public static final String DATE_PARAMETER_FORMAT_WITH_HOUR = "yyyy-MM-dd:H";
@@ -68,6 +80,77 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
  
 	public Connection getConnection() throws SQLException {
 		return getDataSource().getConnection();
+	}
+
+	protected int getCachedTempTable(Logger childClassLogger, String statisticsType, String parameterString) throws Exception {
+		try {
+			if (!checkEmbeddedTableExists(TEMPTABLECACHE_TABLENAME)) {
+				executeEmbedded(childClassLogger, "CREATE TABLE " + TEMPTABLECACHE_TABLENAME + " ("
+					+ "type VARCHAR(50),"
+					+ " parameter VARCHAR(400),"
+					+ " temptableid INTEGER,"
+					+ " table_name VARCHAR(50),"
+					+ " creation_date TIMESTAMP,"
+					+ " validity_date TIMESTAMP,"
+					+ " cleanup_date TIMESTAMP"
+					+")");
+			}
+
+			List<Map<String, Object>> result = selectEmbedded(childClassLogger, "SELECT table_name FROM " + TEMPTABLECACHE_TABLENAME + " WHERE cleanup_date < ?", new Date());
+			for (Map<String, Object> row : result) {
+				String tableNameToDelete = (String) row.get("table_name");
+				updateEmbedded(childClassLogger, "DELETE FROM " + TEMPTABLECACHE_TABLENAME + " WHERE table_name = ?", tableNameToDelete);
+				try {
+					executeEmbedded(childClassLogger, "DROP TABLE " + tableNameToDelete);
+				} catch (Exception e) {
+					childClassLogger.error("Cannot drop embedded table " + tableNameToDelete);
+				}
+			}
+			
+			boolean blockingEntryExists = true;
+			while (blockingEntryExists) {
+				int tempTableID = selectEmbeddedIntWithDefault(childClassLogger, "SELECT MAX(temptableid) FROM " + TEMPTABLECACHE_TABLENAME + " WHERE type = ? AND parameter = ? AND validity_date IS NULL AND creation_date <= ?", 0, statisticsType, parameterString, DateUtilities.addMinutesToDate(new Date(), 60));
+				blockingEntryExists = tempTableID > 0;
+				if (blockingEntryExists) {
+					Thread.sleep(10000);
+				}
+			}
+			
+			int tempTableID = selectEmbeddedIntWithDefault(childClassLogger, "SELECT MAX(temptableid) FROM " + TEMPTABLECACHE_TABLENAME + " WHERE type = ? AND parameter = ? AND validity_date >= ?", 0, statisticsType, parameterString, new Date());
+			List<Map<String, Object>> resultTables = selectEmbedded(childClassLogger, "SELECT table_name FROM " + TEMPTABLECACHE_TABLENAME + " WHERE temptableid = ?", tempTableID);
+			if (resultTables.size() > 0) {
+				String tableName = (String) resultTables.get(0).get("table_name");
+				if (checkEmbeddedTableExists(tableName)) {
+					return tempTableID;
+				} else {
+					updateEmbedded(childClassLogger, "DELETE FROM " + TEMPTABLECACHE_TABLENAME + " WHERE table_name = ?", tableName);
+					return 0;
+				}
+			} else {
+				updateEmbedded(childClassLogger, "DELETE FROM " + TEMPTABLECACHE_TABLENAME + " WHERE temptableid = ?", tempTableID);
+				return 0;
+			}
+		} catch (Exception e) {
+			childClassLogger.error("Cannot getCachedTempTable: " + e.getMessage(), e);
+			return 0;
+		}
+	}
+
+	protected void createBlockEntryInTempTableCache(Logger childClassLogger, String statisticsType, String parameterString) throws Exception {
+		try {
+			updateEmbedded(childClassLogger, "INSERT INTO " + TEMPTABLECACHE_TABLENAME + " (type, parameter, creation_date, cleanup_date) VALUES (?, ?, ?, ?)", statisticsType, parameterString, new Date(), DateUtilities.addMinutesToDate(new Date(), 60));
+		} catch (Exception e) {
+			childClassLogger.error("Cannot createBlockEntryInTempTableCache: " + e.getMessage(), e);
+		}
+	}
+
+	protected void storeTempTableInCache(Logger childClassLogger, String statisticsType, String parameterString, int tempTableID, String tempTableName) throws Exception {
+		try {
+			updateEmbedded(childClassLogger, "INSERT INTO " + TEMPTABLECACHE_TABLENAME + " (type, parameter, temptableid, table_name, creation_date, validity_date, cleanup_date) VALUES (?, ?, ?, ?, ?, ?, ?)", statisticsType, parameterString, tempTableID, tempTableName, new Date(), DateUtilities.addMinutesToDate(new Date(), 10), DateUtilities.addMinutesToDate(new Date(), 15));
+			updateEmbedded(childClassLogger, "DELETE FROM " + TEMPTABLECACHE_TABLENAME + " WHERE type = ? AND parameter = ? AND validity_date IS NULL", statisticsType, parameterString);
+		} catch (Exception e) {
+			childClassLogger.error("Cannot storeTempTableInCache: " + e.getMessage(), e);
+		}
 	}
 	
 	public static String getOnePixelLogDeviceTableName(int companyID) {
@@ -126,7 +209,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		this.embeddedDataSource = embeddedDataSource;
 	}
 
-	private DataSource getEmbeddedDatasource() throws Exception {
+	protected DataSource getEmbeddedDatasource() throws Exception {
 		if (embeddedDataSource != null) {
 			return embeddedDataSource;
 		} else {
@@ -330,6 +413,24 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		
 		return "";
     }
+    
+    protected String getMailingSubject(@VelocityCheck int companyId, int mailingId) {
+		try {
+			MediatypesDaoImpl mediatypesDao = new MediatypesDaoImpl();
+			mediatypesDao.setDataSource(getDataSource());
+			mediatypesDao.setMediatypeFactory(new MediatypeFactoryImpl());
+			Map<Integer, Mediatype> mediaTypeMap = mediatypesDao.loadMediatypes(mailingId, companyId);
+			Mediatype mediatype = mediaTypeMap.get(MediaTypes.EMAIL.getMediaCode());
+			if (mediatype != null) {
+				MediatypeEmail emailMediaType = (MediatypeEmail) mediatype;
+				return StringUtils.trimToEmpty(emailMediaType.getSubject());
+			}
+			
+		} catch (MediatypesDaoException e) {
+			logger.error("Error occured: " + e.getMessage(), e);
+		}
+		return "";
+	}
 	
 	protected String getTargetSqlString(String selectedTargets, @VelocityCheck Integer companyId) {
 		List<String> sqlList = getTargetSql(selectedTargets, companyId);
@@ -391,17 +492,14 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	}
 	
 	public boolean isMailingBouncesExpire(@VelocityCheck int companyId, int mailingId) {
-		Map<Integer, Boolean> expireMap = getMailingBouncesExpire(companyId, mailingId + "");
+		Map<Integer, Boolean> expireMap = getMailingBouncesExpire(companyId, String.valueOf(mailingId));
 		return expireMap.get(mailingId);
 	}
 	
 	public Map<Integer, Boolean> getMailingBouncesExpire(@VelocityCheck int companyId, String mailingIds) {
 		HashMap<Integer, Boolean> expireMap = new HashMap<>();
-		String query = "SELECT expire_bounce FROM company_tbl WHERE company_id = ?";
-		int bounceExpire =  selectInt(logger, query, companyId);
-		if (bounceExpire == 0) {
-			bounceExpire = getConfigService().getIntegerValue(ConfigValue.ExpireBounce, companyId);
-		}
+		int bounceExpire =  getConfigService().getIntegerValue(ConfigValue.ExpireBounce, companyId);
+
 		String sql;
 		if (isOracleDB()) {
 			sql = "SELECT (sysdate - senddate) mail_age, mailing_id FROM maildrop_status_tbl " + "WHERE company_id = ? AND mailing_id IN (" + mailingIds
@@ -421,12 +519,14 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		}
 		String[] ids = mailingIds.split(",");
 		for (String id : ids) {
-			int mailingId = Integer.parseInt(id.trim());
-			if (expireMap.get(mailingId) == null) {
-				expireMap.put(mailingId, false);
-			}
+			int mailingId = NumberUtils.toInt(StringUtils.trim(id));
+			expireMap.putIfAbsent(mailingId, false);
 		}
 		return expireMap;
+	}
+
+	protected String getTemporaryTableName(int tempTableID) {
+		return "tmp_report_aggregation_" + tempTableID + "_tbl";
 	}
 	
 	public void dropTempTable(int tempTableID) throws Exception {
@@ -502,10 +602,10 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
     		List<Object> parameters = new ArrayList<>();
             
             if (targetSql != null && targetSql.contains("cust.")) {
-    			queryBuilder.append(" customer_" + companyID + "_tbl cust,");
+    			queryBuilder.append(" customer_").append(companyID).append("_tbl cust,");
     		}
          
-        	queryBuilder.append(" interval_track_" + companyID + "_tbl track");
+        	queryBuilder.append(" interval_track_").append(companyID).append("_tbl track");
         	queryBuilder.append(" WHERE track.mailing_id = ?");
     		parameters.add(mailingID);
         	if (startDate != null && endDate != null) {
@@ -529,10 +629,10 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         		List<Object> parameters = new ArrayList<>();
                 
                 if (targetSql != null && targetSql.contains("cust.")) {
-        			queryBuilder.append(" customer_" + companyID + "_tbl cust,");
+        			queryBuilder.append(" customer_").append(companyID).append("_tbl cust,");
         		}
              
-            	queryBuilder.append(" mailtrack_" + companyID + "_tbl track");
+            	queryBuilder.append(" mailtrack_").append(companyID).append("_tbl track");
             	queryBuilder.append(" WHERE track.mailing_id = ?");
         		parameters.add(mailingID);
 
@@ -864,7 +964,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         if (periodicallySendEntries > 0) {
         	return false;
         } else {
-    		int expirePeriod = selectInt(logger, "SELECT expire_success FROM company_tbl WHERE company_id = ?", companyID);
+        	int expirePeriod = getConfigService().getIntegerValue(ConfigValue.ExpireSuccess, companyID);
     		if (expirePeriod <= 0) {
     			return false;
     		} else {
@@ -877,4 +977,16 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	        }
 		}
     }
+	
+	public boolean checkEmbeddedTableExists(String tableName) throws Exception {
+		try (Connection connection = getEmbeddedDatasource().getConnection()) {
+			try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT 1 FROM " + tableName + " WHERE 1 = 0")) {
+				return true;
+			} catch (Exception e) {
+				return false;
+			}
+		} catch (Exception e) {
+			return false;
+		}
+	}
 }

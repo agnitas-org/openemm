@@ -213,7 +213,7 @@
                             <div class="row">
                                 <div class="col-sm-12">
                                     <textarea id="newContent" name="newContent" class="form-control js-editor js-wysiwyg" rows="20" cols="85"
-                                              data-browse-mailing-id="${mailing.id}"></textarea>
+                                              data-browse-mailing-id="${mailing.id}">${fn:escapeXml(mailingWizardForm.newContent)}</textarea>
                                 </div>
                             </div>
                             <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">

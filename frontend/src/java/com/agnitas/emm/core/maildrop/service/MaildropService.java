@@ -25,15 +25,16 @@ public interface MaildropService {		// TODO: Complete JavaDoc
 	// TODO: Modify code to use this method
 	/**
 	 * Schedules mailing for immediate test delivery to admin recipients.
+	 * @throws Exception
 	 */
-	int scheduleAdminMailing(final int mailingID, final int companyID, final int adminTargetID) throws MaildropException;
+	int scheduleAdminMailing(final int mailingID, final int companyID, final int adminTargetID) throws Exception;
 
 	// TODO: Modify code to use this method
 	/**
 	 * Schedules mailing for immediate test delivery to test recipients.
-	 * @return 
+	 * @return
 	 */
-	int scheduleTestMailing(final int mailingID, final int companyID, final int testTargetID) throws MaildropException;
+	int scheduleTestMailing(final int mailingID, final int companyID, final int testTargetID) throws Exception;
 	
 	// TODO: Modify code to use this method
 	/**
@@ -82,7 +83,7 @@ public interface MaildropService {		// TODO: Complete JavaDoc
 	
 	/**
 	 * Returns <code>true</code> is world mailing is sent or scheduled to send or action-based/date-based mailing is activated.
-	 * @return 
+	 * @return
 	 */
 	boolean isActiveMailing(final int mailingID, final int companyID);
 

@@ -79,4 +79,9 @@
 	        <transport-guarantee>NONE</transport-guarantee>
 	    </user-data-constraint>
 	</security-constraint>
+	
+	<!-- Set session timeout to minimum to reduce memory footprint -->
+	<session-config>
+		<session-timeout>1</session-timeout>
+	</session-config>
 </web-app>

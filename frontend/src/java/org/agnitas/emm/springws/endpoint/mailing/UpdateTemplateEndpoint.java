@@ -13,39 +13,43 @@ package org.agnitas.emm.springws.endpoint.mailing;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.emm.springws.jaxb.UpdateTemplateRequest;
-import org.agnitas.emm.springws.jaxb.UpdateTemplateRequest.TargetIDList;
-import org.agnitas.service.UserActivityLogService;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.agnitas.emm.springws.jaxb.UpdateTemplateResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 
-public class UpdateTemplateEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class UpdateTemplateEndpoint extends BaseEndpoint {
 
-	@Resource
 	private MailingService mailingService;
-	@Resource
-	private ObjectFactory objectFactory;
-	@Resource
-	private UserActivityLogService userActivityLogService;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		UpdateTemplateRequest request = (UpdateTemplateRequest) arg0;
+	@Autowired
+	public UpdateTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
 
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateTemplateRequest")
+	public @ResponsePayload UpdateTemplateResponse updateTemplate(@RequestPayload UpdateTemplateRequest request) throws MailinglistException {
+		UpdateTemplateResponse response = new UpdateTemplateResponse();
 		MailingModel model = new MailingModel();
 		model.setMailingId(request.getTemplateID());
 		model.setCompanyId(Utils.getUserCompany());
 		model.setShortname(request.getShortname());
 		model.setDescription(request.getDescription());
 		model.setMailinglistId(request.getMailinglistID());
-		TargetIDList targetIDList = request.getTargetIDList();
+
+		UpdateTemplateRequest.TargetIDList targetIDList = request.getTargetIDList();
 		if (targetIDList != null) {
 			model.setTargetIDList(targetIDList.getTargetID());
 		}
@@ -67,7 +71,6 @@ public class UpdateTemplateEndpoint extends AbstractMarshallingPayloadEndpoint {
 		mailingService.updateMailing(model, userActions);
 		Utils.writeLog(userActivityLogService, userActions);
 
-		return objectFactory.createUpdateTemplateResponse();
+		return response;
 	}
-
 }

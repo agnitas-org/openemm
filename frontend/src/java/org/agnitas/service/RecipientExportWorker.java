@@ -17,11 +17,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.util.AgnUtils;
@@ -29,10 +29,10 @@ import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
+import com.agnitas.emm.core.target.service.ComTargetService;
 
 public class RecipientExportWorker extends GenericExportWorker {
 	@SuppressWarnings("unused")
@@ -42,6 +42,8 @@ public class RecipientExportWorker extends GenericExportWorker {
 
 	public static final int NO_MAILINGLIST = -1;
 	public static final String ALL_BINDING_TYPES = "E";
+
+	private final ComTargetService targetService;
 	
 	private ExportPredef exportProfile;
 	private ComAdmin admin;
@@ -87,7 +89,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 		return this.admin;
 	}
 
-	public RecipientExportWorker(ExportPredef exportProfile, ComAdmin admin) {
+	public RecipientExportWorker(ExportPredef exportProfile, ComAdmin admin, final ComTargetService targetService) {
 		super();
 		this.exportProfile = exportProfile;
 		this.admin = admin;
@@ -102,6 +104,8 @@ public class RecipientExportWorker extends GenericExportWorker {
 			setStringQuote(exportProfile.getDelimiter().toCharArray()[0]);
 			setAlwaysQuote(exportProfile.isAlwaysQuote());
 		}
+
+		this.targetService = targetService;
 	}
 
 	@Override
@@ -115,15 +119,6 @@ public class RecipientExportWorker extends GenericExportWorker {
 			int companyID = exportProfile.getCompanyID();
 			List<Integer> mailingListIds = getMailingListIds();
 
-			String targetSql = null;
-			if (exportProfile.getTargetID() != 0) {
-				try {
-					targetSql = new JdbcTemplate(dataSource).queryForObject("SELECT target_sql FROM dyn_target_tbl WHERE company_id = ? AND target_id = ?", new StringRowMapper(), companyID, exportProfile.getTargetID());
-				} catch (Exception e) {
-					throw new Exception("Cannot read data for targetid " + exportProfile.getTargetID() + ": " + e.getMessage(), e);
-				}
-			}
-			
 			// Create basic Select statement
 			selectParameters = new ArrayList<>();
 			StringBuilder customerTableSql = new StringBuilder("SELECT ");
@@ -174,6 +169,8 @@ public class RecipientExportWorker extends GenericExportWorker {
 					+ " WHERE user_status = " + UserStatus.Bounce.getStatusCode()
 					+ ") bounce ON cust.customer_id = bounce.customer_id");
 			}
+
+			final String targetSql = getTargetSql();
 			if (StringUtils.containsIgnoreCase(targetSql, "bind.")) {
 				customerTableSql.append(" JOIN customer_").append(companyID).append("_binding_tbl bind");
 				customerTableSql.append(" ON cust.customer_id = bind.customer_id");
@@ -222,13 +219,15 @@ public class RecipientExportWorker extends GenericExportWorker {
 			}
 
 			// Add date limits for change date to sql statement
+			TimeZone timeZone = TimeZone.getTimeZone(admin.getAdminTimezone());
+			
 			if (exportProfile.getTimestampStart() != null) {
 				customerTableSql.append(" AND cust.timestamp >= ?");
 				selectParameters.add(exportProfile.getTimestampStart());
 			}
 			if (exportProfile.getTimestampEnd() != null) {
 				customerTableSql.append(" AND cust.timestamp < ?");
-				Calendar endGregDate = new GregorianCalendar();
+				Calendar endGregDate = new GregorianCalendar(timeZone);
 				endGregDate.setTime(exportProfile.getTimestampEnd());
 				endGregDate.add(Calendar.DAY_OF_MONTH, 1);
 				endGregDate = DateUtilities.removeTime(endGregDate);
@@ -236,9 +235,9 @@ public class RecipientExportWorker extends GenericExportWorker {
 			}
 			if (exportProfile.getTimestampLastDays() > 0) {
 				customerTableSql.append(" AND cust.timestamp >= ?");
-				selectParameters.add(DateUtilities.removeTime(DateUtilities.getDateOfDaysAgo(exportProfile.getTimestampLastDays())));
+				selectParameters.add(DateUtilities.removeTime(DateUtilities.getDateOfDaysAgo(exportProfile.getTimestampLastDays()), timeZone));
 				customerTableSql.append(" AND cust.timestamp < ?");
-				selectParameters.add(DateUtilities.midnight());
+				selectParameters.add(DateUtilities.midnight(timeZone));
 			}
 
 			// Add date limits for create date to sql statement
@@ -248,7 +247,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 			}
 			if (exportProfile.getCreationDateEnd() != null) {
 				customerTableSql.append(" AND cust.creation_date < ?");
-				Calendar endGregDate = new GregorianCalendar();
+				Calendar endGregDate = new GregorianCalendar(timeZone);
 				endGregDate.setTime(exportProfile.getCreationDateEnd());
 				endGregDate.add(Calendar.DAY_OF_MONTH, 1);
 				endGregDate = DateUtilities.removeTime(endGregDate);
@@ -256,31 +255,48 @@ public class RecipientExportWorker extends GenericExportWorker {
 			}
 			if (exportProfile.getCreationDateLastDays() > 0) {
 				customerTableSql.append(" AND cust.creation_date >= ?");
-				selectParameters.add(DateUtilities.removeTime(DateUtilities.getDateOfDaysAgo(exportProfile.getCreationDateLastDays())));
+				selectParameters.add(DateUtilities.removeTime(DateUtilities.getDateOfDaysAgo(exportProfile.getCreationDateLastDays()), timeZone));
 				customerTableSql.append(" AND cust.creation_date < ?");
-				selectParameters.add(DateUtilities.midnight());
+				selectParameters.add(DateUtilities.midnight(timeZone));
 			}
 
 			// Add date limits for mailing list binding change date to sql statement
+			List<String> mailinglistChangeClauses = new ArrayList<>();
 			for (int selectedMailinglistID : mailingListIds) {
+				String mailinglistChangeClause = "";
+				
 				if (exportProfile.getMailinglistBindStart() != null) {
-					customerTableSql.append(" AND m" + selectedMailinglistID + ".timestamp >= ?");
+					mailinglistChangeClause = "m" + selectedMailinglistID + ".timestamp >= ?";
 					selectParameters.add(exportProfile.getMailinglistBindStart());
 				}
 				if (exportProfile.getMailinglistBindEnd() != null) {
-					customerTableSql.append(" AND m" + selectedMailinglistID + ".timestamp < ?");
-					Calendar endGregDate = new GregorianCalendar();
+					if (mailinglistChangeClause.length() > 0) {
+						mailinglistChangeClause += " AND ";
+					}
+					mailinglistChangeClause += "m" + selectedMailinglistID + ".timestamp < ?";
+					Calendar endGregDate = new GregorianCalendar(timeZone);
 					endGregDate.setTime(exportProfile.getMailinglistBindEnd());
 					endGregDate.add(Calendar.DAY_OF_MONTH, 1);
 					endGregDate = DateUtilities.removeTime(endGregDate);
 					selectParameters.add(endGregDate.getTime());
 				}
 				if (exportProfile.getMailinglistBindLastDays() > 0) {
-					customerTableSql.append(" AND m" + selectedMailinglistID + ".timestamp >= ?");
-					selectParameters.add(DateUtilities.removeTime(DateUtilities.getDateOfDaysAgo(exportProfile.getMailinglistBindLastDays())));
-					customerTableSql.append(" AND m" + selectedMailinglistID + ".timestamp < ?");
-					selectParameters.add(DateUtilities.midnight());
+					if (mailinglistChangeClause.length() > 0) {
+						mailinglistChangeClause += " AND ";
+					}
+					mailinglistChangeClause += "m" + selectedMailinglistID + ".timestamp >= ? AND m" + selectedMailinglistID + ".timestamp < ?";
+					selectParameters.add(DateUtilities.removeTime(DateUtilities.getDateOfDaysAgo(exportProfile.getMailinglistBindLastDays()), timeZone));
+					selectParameters.add(DateUtilities.midnight(timeZone));
 				}
+				
+				if (mailinglistChangeClause.length() > 0) {
+					mailinglistChangeClauses.add(mailinglistChangeClause);
+				}
+			}
+			if (mailinglistChangeClauses.size() == 1) {
+				customerTableSql.append(" AND (" + mailinglistChangeClauses.get(0) + ")");
+			} else if (mailinglistChangeClauses.size() > 1) {
+				customerTableSql.append(" AND ((" + StringUtils.join(mailinglistChangeClauses, ") OR (") + "))");
 			}
 
 			selectStatement = customerTableSql.toString();
@@ -317,5 +333,17 @@ public class RecipientExportWorker extends GenericExportWorker {
 		}
 
 		return Collections.emptyList();
+	}
+
+	protected String getTargetSql() throws Exception {
+		if (exportProfile.getTargetID() <= 0) {
+			return null;
+		}
+
+		return targetService.getTargetSQL(exportProfile.getTargetID(), exportProfile.getCompanyID());
+	}
+
+	protected ComTargetService getTargetService() {
+		return this.targetService;
 	}
 }

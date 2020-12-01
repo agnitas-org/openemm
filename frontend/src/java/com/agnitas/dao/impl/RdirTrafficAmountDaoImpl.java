@@ -14,11 +14,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.dao.RdirTrafficAmountDao;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -55,7 +57,7 @@ public class RdirTrafficAmountDaoImpl extends BaseDaoImpl implements RdirTraffic
 	
 	@Override
 	public List<Integer> getCompaniesForAggregation(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds) {
-		return select(logger, "SELECT company_id FROM company_tbl WHERE status = 'active'"
+		return select(logger, "SELECT company_id FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "'"
 			+ (includedCompanyIds != null && !includedCompanyIds.isEmpty() ? " AND company_id IN (" + StringUtils.join(includedCompanyIds, ", ") + ")" : "")
 			+ (excludedCompanyIds != null && !excludedCompanyIds.isEmpty() ? " AND company_id NOT IN (" + StringUtils.join(excludedCompanyIds, ", ") + ")" : "")
 			+ " ORDER BY company_id",
@@ -82,18 +84,12 @@ public class RdirTrafficAmountDaoImpl extends BaseDaoImpl implements RdirTraffic
 		try {
 			String trafficAgrTable = "rdir_traffic_agr_" + companyID + "_tbl";
 			String trafficAmountTable = "rdir_traffic_amount_" + companyID + "_tbl";
-			if (isOracleDB()) {
-				int existing = selectInt(logger, "SELECT COUNT(table_name) FROM user_tables WHERE LOWER(table_name) = ?", trafficAgrTable);
-	        	if (existing > 0) {
-	        		execute(logger, "DROP TABLE " + trafficAgrTable);
-	        	}
-	        	existing = selectInt(logger, "SELECT COUNT(table_name) FROM user_tables WHERE LOWER(table_name) = ?", trafficAmountTable);
-	        	if (existing > 0) {
-	        		execute(logger, "DROP TABLE " + trafficAmountTable);
-	        	}
-			} else {
-				execute(logger, "DROP TABLE IF EXISTS " + trafficAgrTable);
-				execute(logger, "DROP TABLE IF EXISTS " + trafficAmountTable);
+			
+			if (DbUtilities.checkIfTableExists(getDataSource(), trafficAgrTable)) {
+				DbUtilities.dropTable(getDataSource(), trafficAgrTable);
+			}
+			if (DbUtilities.checkIfTableExists(getDataSource(), trafficAmountTable)) {
+				DbUtilities.dropTable(getDataSource(), trafficAmountTable);
 			}
 			return true;
 		} catch(Exception e) {

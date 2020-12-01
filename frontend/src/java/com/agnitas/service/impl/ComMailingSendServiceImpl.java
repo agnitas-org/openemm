@@ -13,7 +13,6 @@ package com.agnitas.service.impl;
 import java.util.Date;
 import java.util.List;
 
-import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
@@ -23,6 +22,7 @@ import org.agnitas.dao.OnepixelDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.DateUtil;
+import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
@@ -77,7 +77,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
             return;
         }
 
-        ComMailing mailing = (ComMailing) mailingDao.getMailing(mailingId, companyId);
+        ComMailing mailing = mailingDao.getMailing(mailingId, companyId);
 
         MailingTypes mailingType = MailingTypes.getByCode(mailing.getMailingType());
         if (mailing.getId() == 0) {
@@ -163,7 +163,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
             return;
         }
 
-        if (mailingDao.hasEmail(mailing.getId())) {
+        if (mailingDao.hasEmail(mailing.getCompanyID(), mailing.getId())) {
             MediatypeEmail param = mailing.getEmailParam();
 
             // Check the text version of mailing.
@@ -177,7 +177,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
             }
 
             // Check the HTML version unless mail format is "only text".
-            if (param.getMailFormat() >= MailingPreviewHelper.INPUT_TYPE_HTML) {
+            if (param.getMailFormat() >= MailingModel.Format.ONLINE_HTML.getCode()) {
                 if (isContentBlank(mailing, mailing.getHtmlTemplate())) {
                     errors.add(Message.of("error.mailing.no_html_version"));
                     return;

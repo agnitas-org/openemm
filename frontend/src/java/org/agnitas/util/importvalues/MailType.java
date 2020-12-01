@@ -38,7 +38,8 @@ public enum MailType {
 				return item;
 			}
 		}
-		throw new Exception("Invalid messageKey value for " + MailType.class.getSimpleName());
+		
+		throw new Exception(String.format("Invalid messageKey value '%s' for %s", messageKey, MailType.class.getSimpleName()));
 	}
 
 	public static MailType getFromString(String valueString) throws Exception {
@@ -47,7 +48,8 @@ public enum MailType {
 				return item;
 			}
 		}
-		throw new Exception("Invalid int value for " + MailType.class.getSimpleName());
+		
+		throw new Exception(String.format("Invalid string value '%s' for %s", valueString, MailType.class.getSimpleName()));
 	}
 
 	public static MailType getFromInt(int intValue) throws Exception {
@@ -56,7 +58,8 @@ public enum MailType {
 				return item;
 			}
 		}
-		throw new Exception("Invalid int value for " + MailType.class.getSimpleName());
+		
+		throw new Exception(String.format("Invalid int value %d for %s", intValue, MailType.class.getSimpleName()));
 	}
 	
 	public static MailType getMailTypeByDefaultMapping(String value) {

@@ -4,13 +4,14 @@
 <%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <%--@elvariable id="userGroupForm" type="com.agnitas.emm.core.usergroup.form.UserGroupForm"--%>
 <%--@elvariable id="permissionCategoryList" type="java.util.List<java.lang.String>"--%>
 <%--@elvariable id="permissionCategoriesMap" type="java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.lang.String>>"--%>
 <%--@elvariable id="permissionChangeable" type="java.util.Set<java.lang.String>"--%>
 
-<c:set var="USERRIGHT_MESSAGEKEY_PREFIX" value="<%= Permission.USERRIGHT_MESSAGEKEY_PREFIX%>"/>
+<c:set var="USERRIGHT_MESSAGEKEY_PREFIX" value="<%= Permission.USERRIGHT_MESSAGEKEY_PREFIX %>"/>
 
 <c:set var="allowedUserGroupChange" value="false"/>
 <emm:ShowByPermission token="role.change">
@@ -66,7 +67,20 @@
                     <mvc:text path="description" id="userGroupDescription" size="52" maxlength="99" cssClass="form-control"/>
                 </div>
             </div>
-        </div>
+
+			<div class="form-group">
+				<div class="col-sm-4">
+					<label class="control-label" for="groupIDs"><mvc:message code="settings.Usergroup" /></label>
+				</div>
+				<div class="col-sm-8">
+					<mvc:select path="parentGroupIDs" id="parentGroupIDs" cssClass="form-control js-select" multiple="true">
+						<c:forEach var="adminGroup" items="${availableAdminGroups}">
+							<mvc:option value="${adminGroup.groupID}">${fn:escapeXml(adminGroup.shortname)}</mvc:option>
+						</c:forEach>
+					</mvc:select>
+				</div>
+			</div>
+		</div>
     </div>
 
     <div class="tile">
@@ -176,24 +190,22 @@
                                 <div>
                                     <ul class="list-group">
                                         <c:forEach items="${subCategory.permissions}" var="permission">
-                                            <li class="list-group-item">
-                                                <label class="checkbox-inline">
-                                                    <mvc:checkbox path="grantedUserPermissions" value="${permission.name}" cssClass="js-form-change checkboxes-item"
-                                                                  disabled="${not permission.changeable}"/>
-                                                    &nbsp;
-                                                    <c:if test="${category.name eq 'others'}">
-                                                        ${permission.name}
-                                                    </c:if>
-                                                    <c:if test="${category.name ne 'others'}">
-                                                        <c:if test="${empty subCategory.name}">
-                                                            <mvc:message code="${USERRIGHT_MESSAGEKEY_PREFIX}${category.name}.${permission.name}" /><br>
-                                                        </c:if>
-                                                        <c:if test="${not empty subCategory.name}">
-                                                            <mvc:message code="${USERRIGHT_MESSAGEKEY_PREFIX}${category.name}#${subCategory.name}.${permission.name}" /><br>
-                                                        </c:if>
-                                                    </c:if>
-                                                </label>
-                                            </li>
+                                       		<c:set var="adminGroupTooltipMsg" value=""/>
+											<c:if test="${permission.showInfoTooltip}">
+												<c:set var="adminGroupTooltipMsg">
+													<mvc:message code="permission.group.set" arguments="${permission.adminGroup.shortname}"/>
+												</c:set>
+											</c:if>
+
+											<li class="list-group-item">
+												<label class="checkbox-inline" data-tooltip="${adminGroupTooltipMsg}">
+													<input type="checkbox" id='${permission.name}' name="grantedPermissions" value="${permission.name}"
+														${permission.granted ? 'checked' : ''}
+														${permission.changeable ? '' : 'disabled'} />
+													&nbsp;
+													<mvc:message code ='${USERRIGHT_MESSAGEKEY_PREFIX}${permission.name}' /><br>
+												</label>
+											</li>
                                         </c:forEach>
                                     </ul>
                                 </div>

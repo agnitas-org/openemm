@@ -1,7 +1,31 @@
 AGN.Lib.Controller.new('recipient-list', function () {
   var self = this;
 
-  this.addDomInitializer('recipient-list', function () {
+
+  function checkAndRedirect(link, recipientId, checkLimitAccessUrl, viewUrl) {
+    checkLimitAccessUrl = checkLimitAccessUrl.replace("{RECIPIENT_ID}", recipientId);
+    $.ajax({
+        url: checkLimitAccessUrl,
+        type: "POST"
+    }).always(function(response) {
+        var accessible = false;
+        if (!!response) {
+            accessible = response.accessAllowed;
+        }
+
+        if (accessible) {
+          AGN.Lib.JsonMessages({}, true);
+          window.location.href = viewUrl.replace("{RECIPIENT_ID}", recipientId);
+        } else {
+          AGN.Lib.Messages(t("Error"), t("error.recipient.restricted"), "alert");
+        }
+    }).fail(function () {
+        console.error("Could not check access for recipient with id: " + recipientId);
+    });
+  }
+
+  this.addDomInitializer('recipient-list', function ($scope) {
+    var config = this.config;
 
     $('#basicSearch').on("click", function () {
       $("input[name=advancedSearch]").val(false);
@@ -12,13 +36,28 @@ AGN.Lib.Controller.new('recipient-list', function () {
     $('#add-rule-table').on('change', function () {
       $('#refresh-button').attr('data-form-set', 'advancedSearch:true, addTargetNode:true')
     });
+
+    $scope.on("click", '.js-table .table-link a', function(e) {
+      e.preventDefault();
+      e.preventViewLoad = true;
+      var link = $(this);
+      var recipientId = link.closest('tr').find('[data-recipient-id]').data('recipient-id');
+      checkAndRedirect(link, recipientId, config.CHECK_LIMITACCESS_URL, config.VIEW_URL);
+    });
+
+
     var basicSearchActive = $("#basicSearch").hasClass("tab active");
     var advancedSearchActive = $("#advancedSearch").hasClass("tab active");
+    var duplicateAnalysisActive = $("#duplicateAnalysis").hasClass("tab active");
     if (advancedSearchActive) {
       $("input[name=advancedSearch]").val(true);
     }
     if (basicSearchActive) {
       $("input[name=advancedSearch]").val(false);
+    }
+    if (duplicateAnalysisActive) {
+      var controls = $('#recipientForm').find('.table-controls .well');
+      controls.first().html(controls.last().html())
     }
   });
 

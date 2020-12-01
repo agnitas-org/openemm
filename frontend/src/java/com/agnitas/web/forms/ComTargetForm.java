@@ -17,7 +17,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.web.TargetForm;
@@ -25,6 +24,7 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 
+import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 import com.agnitas.web.ComTargetAction;
 
 public class ComTargetForm extends TargetForm {
@@ -48,7 +48,6 @@ public class ComTargetForm extends TargetForm {
 	private boolean showWorldDelivery;
 	private boolean showTestAdminDelivery;
 	private boolean locked;
-	private boolean simpleStructure;
     private int mailinglistId;
     private List<Mailinglist> mailinglists;
     private String searchQueryText;
@@ -69,9 +68,7 @@ public class ComTargetForm extends TargetForm {
 		
 		this.useForAdminAndTestDelivery = false;
 		this.showTestAdminDelivery = false;
-		this.showWorldDelivery = false;
-		this.setAddTargetNode(false);
-		this.setTargetNodeToRemove(-1);
+		this.showWorldDelivery = true;
 		this.setMailingId(0);
 		this.setLocked(false);
 
@@ -115,7 +112,8 @@ public class ComTargetForm extends TargetForm {
             }
             return actionErrors;
         }
-        return !getAddTargetNode() ? super.formSpecificValidate(mapping, request) : null;
+        
+        return super.formSpecificValidate(mapping, request);
     }
 
 	public boolean isShowWorldDelivery() {
@@ -157,15 +155,7 @@ public class ComTargetForm extends TargetForm {
     public void setMailinglists(List<Mailinglist> mailinglists) {
         this.mailinglists = mailinglists;
     }
-    
-    public void setSimpleStructure(boolean simpleStructure) {
-    	this.simpleStructure = simpleStructure;
-    }
-    
-    public boolean isSimpleStructure() {
-    	return this.simpleStructure;
-    }
-
+  
     public String getSearchQueryText() {
         return searchQueryText;
     }

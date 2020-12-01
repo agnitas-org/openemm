@@ -10,22 +10,21 @@
 
 package com.agnitas.emm.core.delivery.service.impl;
 
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
-import com.agnitas.emm.core.delivery.dao.DeliveryDao;
-import com.agnitas.emm.core.delivery.service.DeliveryService;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import net.sf.json.util.JSONUtils;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
+import com.agnitas.emm.core.delivery.dao.DeliveryDao;
+import com.agnitas.emm.core.delivery.service.DeliveryService;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import net.sf.json.util.JSONUtils;
 
 public class DeliveryServiceImpl implements DeliveryService {
 
@@ -34,26 +33,16 @@ public class DeliveryServiceImpl implements DeliveryService {
     @Override
     public JSONArray getDeliveriesInfo(@VelocityCheck final int companyId, final int mailingId, final int customerId) {
         List<DeliveryInfo> deliveriesInfo = deliveryDao.getDeliveriesInfo(companyId, mailingId, customerId);
-        if(CollectionUtils.isEmpty(deliveriesInfo)) {
+        if (CollectionUtils.isEmpty(deliveriesInfo)) {
             return new JSONArray();
+        } else {
+	        return mapToJson(deliveriesInfo);
         }
-
-        deliveriesInfo = filterOutEntriesWithNotEnoughData(deliveriesInfo);
-        deliveriesInfo.sort(Comparator.comparingInt(DeliveryInfo::getId).reversed());
-        return mapToJson(deliveriesInfo);
     }
 
     @Override
     public boolean checkIfDeliveryTableIsInDb(@VelocityCheck final int companyId) {
         return deliveryDao.checkIfDeliveryTableExists(companyId);
-    }
-
-    private List<DeliveryInfo> filterOutEntriesWithNotEnoughData(final Collection<DeliveryInfo> deliveriesInfo) {
-        return deliveriesInfo.stream().filter(this::isEnoughData).collect(Collectors.toList());
-    }
-
-    private boolean isEnoughData(final DeliveryInfo deliveryInfo) {
-        return StringUtils.isNotBlank(deliveryInfo.getDsn()) || StringUtils.isNotBlank(deliveryInfo.getStatus()) || StringUtils.isNotBlank(deliveryInfo.getRelay());
     }
 
     private JSONArray mapToJson(final List<DeliveryInfo> deliveriesInfo) {
@@ -65,20 +54,21 @@ public class DeliveryServiceImpl implements DeliveryService {
     }
 
     private JSONObject mapToJson(final DeliveryInfo deliveryInfo) {
-        final JSONObject entry = new JSONObject();
+		final JSONObject entry = new JSONObject();
 
-        entry.element("timestamp", DateUtilities.toLong(deliveryInfo.getTimestamp()));
-        entry.element("dsn", deliveryInfo.getDsn());
-        entry.element("status", deliveryInfo.getStatus());
+		entry.element("timestamp", DateUtilities.toLong(deliveryInfo.getTimestamp()));
+		entry.element("dsn", deliveryInfo.getDsn());
+		entry.element("status", deliveryInfo.getStatus());
+		entry.element("mailer", deliveryInfo.getMailerHost());
 
-        final String relay = deliveryInfo.getRelay();
-        if(StringUtils.startsWith(relay, "[")){
-            entry.element("relay", JSONUtils.quote(deliveryInfo.getRelay()));
-        } else {
-            entry.element("relay", deliveryInfo.getRelay());
-        }
+		final String relay = deliveryInfo.getRelay();
+		if (StringUtils.startsWith(relay, "[")) {
+			entry.element("relay", JSONUtils.quote(deliveryInfo.getRelay()));
+		} else {
+			entry.element("relay", deliveryInfo.getRelay());
+		}
 
-        return entry;
+		return entry;
     }
 
     @Required

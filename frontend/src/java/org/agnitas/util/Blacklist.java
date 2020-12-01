@@ -57,7 +57,7 @@ public class Blacklist {
 		String	separator = System.getProperty ("file.separator");
 		String	home = System.getProperty ("user.home", ".");
 
-		bouncelog = home + separator + "var" + separator + "spool" + separator + "log" + separator + "extbounce.log";
+		bouncelog = home + separator + "log" + separator + "extbounce.log";
 		log = nLog;
 	}
 	public Blacklist () {
@@ -74,12 +74,13 @@ public class Blacklist {
 	/** add a email or pattern to the blacklist
 	 * @param email the email or pattern
 	 * @param global true, if this entry is on the global blacklist
+	 * @param simplified true, if simplified version should be used
 	 */
-	public void add (String email, boolean global) {
+	public void add (String email, boolean global, boolean simplified) {
 		if (! seen.contains (email)) {
 			seen.add (email);
 
-			Blackdata	bd = new Blackdata (email, global);
+			Blackdata	bd = new Blackdata (email, global, simplified);
 
 			if (bd.isWildcard ()) {
 				wildcards.add (bd);
@@ -93,6 +94,9 @@ public class Blacklist {
 				++localCount;
 			}
 		}
+	}
+	public void add (String email, boolean global) {
+		add (email, global, false);
 	}
 
 	/** Returns wether an email is on the blacklist or not

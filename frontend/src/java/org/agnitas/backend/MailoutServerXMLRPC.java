@@ -11,58 +11,52 @@
 package org.agnitas.backend;
 
 import org.agnitas.util.Log;
+import org.agnitas.util.Systemconfig;
 import org.agnitas.util.XMLRPCServer;
 
 /**
  * Entrypoint for the server version of the merger process
  */
 public class MailoutServerXMLRPC extends XMLRPCServer {
-	private static final String	HOSTNAME = "nfsserver";
-	private static final int	PORT = 8089;
-	private Log			log = null;
+	private static final String HOSTNAME = "nfsserver";
+	private static final int PORT = 8089;
+	private Log log = null;
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param hostname the hostname to bind the listening socket to
 	 * @param port     the port to listen for incoming connections
 	 * @throws Exception
 	 */
-	public MailoutServerXMLRPC (String hostname, int port) throws Exception {
-		super (hostname, port);
-		log = new Log ("mailoutserver", Log.INFO);
-		log.link ("xml-rpc");
-		log.setPrinter (System.out);
-		phm.addHandler ("Merger", Merger.class);
-		log.out (Log.INFO, "server", "Listening to " + (hostname == null ? "*" : hostname) + ":" + port + " for XML-RPC requests");
-	}
-	public MailoutServerXMLRPC (String hostname) throws Exception {
-		this (hostname, PORT);
-	}
-	public MailoutServerXMLRPC () throws Exception {
-		this (HOSTNAME, PORT);
+	public MailoutServerXMLRPC(String hostname, int port) throws Exception {
+		super(hostname, port);
+		log = new Log("mailoutserver", Log.INFO);
+		log.link("xml-rpc");
+		log.setPrinter(System.out);
+		phm.addHandler("Merger", Merger.class);
+		log.out(Log.INFO, "server", "Listening to " + (hostname == null ? "*" : hostname) + ":" + port + " for XML-RPC requests running " + Data.version);
 	}
 
 	/**
 	 * Startup point
 	 */
-	public static void main (String[] args) throws Exception {
-		String			hostname;
-		int			port;
+	public static void main(String[] args) throws Exception {
+		Systemconfig		syscfg = new Systemconfig ();
+		String			hostname = syscfg.get ("mailout-server", HOSTNAME);
+		int			port = syscfg.get ("mailout-port", PORT);
 		MailoutServerXMLRPC	svr;
 
-		hostname = HOSTNAME;
-		port = PORT;
 		if (args.length > 0) {
 			hostname = args[0];
-			if ((hostname.length () == 0) || hostname.equals ("*")) {
+			if ((hostname.length() == 0) || hostname.equals("*")) {
 				hostname = null;
 			}
 			if (args.length > 1) {
-				port = Integer.parseInt (args[1]);
+				port = Integer.parseInt(args[1]);
 			}
 		}
-		svr = new MailoutServerXMLRPC (hostname, port);
-		svr.start ();
+		svr = new MailoutServerXMLRPC(hostname, port);
+		svr.start();
 	}
 }

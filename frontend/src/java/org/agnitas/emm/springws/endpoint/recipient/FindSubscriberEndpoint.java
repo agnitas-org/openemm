@@ -10,28 +10,29 @@
 
 package org.agnitas.emm.springws.endpoint.recipient;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.FindSubscriberRequest;
 import org.agnitas.emm.springws.jaxb.FindSubscriberResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class FindSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class FindSubscriberEndpoint extends BaseEndpoint {
 
-	@Resource
 	private RecipientService recipientService;
-	@Resource
-	private ObjectFactory objectFactory;
-	
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		FindSubscriberRequest request = (FindSubscriberRequest) arg0;
-		FindSubscriberResponse response = objectFactory.createFindSubscriberResponse();
+
+	public FindSubscriberEndpoint(RecipientService recipientService) {
+		this.recipientService = recipientService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "FindSubscriberRequest")
+	public @ResponsePayload FindSubscriberResponse findSubscriber(@RequestPayload FindSubscriberRequest request) {
+		FindSubscriberResponse response = new FindSubscriberResponse();
 		response.setValue(recipientService.findSubscriber(Utils.getUserCompany(), request.getKeyColumn(), request.getValue()));
 		return response;
 	}
-
 }

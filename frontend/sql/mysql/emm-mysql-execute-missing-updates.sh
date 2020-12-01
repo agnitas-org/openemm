@@ -115,6 +115,10 @@ updatefiles="${updatefiles} ${scriptDir}/../userrights.sql"
 echo
 
 for sqlfilename in ${updatefiles};do
-	echo "Executing $sqlfilename"
+	echo "Executing ${sqlfilename}"
 	MYSQL_PWD=${password} mysql -h ${hostname} -P ${port} --protocol=TCP -u ${username} --database=${dbname} --default-character-set=utf8 < ${sqlfilename}
+	if [ $? != 0 ]; then {
+		echo "Error while executing ${sqlfilename}"
+		exit 1
+	} fi
 done

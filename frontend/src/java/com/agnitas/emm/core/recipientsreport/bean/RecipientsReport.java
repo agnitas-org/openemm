@@ -17,6 +17,7 @@ public class RecipientsReport {
     private int id;
     private int autoImportID = -1;
     private Date reportDate;
+    private String reportDateFormatted;
     /**
      * file name of report file
      */
@@ -146,5 +147,13 @@ public class RecipientsReport {
 
 	public boolean isError() {
 		return isError;
+	}
+
+	public String getReportDateFormatted() {
+		return reportDateFormatted;
+	}
+
+	public void setReportDateFormatted(String reportDateFormatted) {
+		this.reportDateFormatted = reportDateFormatted;
 	}
 }

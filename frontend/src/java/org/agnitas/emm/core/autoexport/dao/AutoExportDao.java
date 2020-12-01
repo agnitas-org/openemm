@@ -35,7 +35,7 @@ public interface AutoExportDao {
 
 	boolean announceStart(int autoExportId, Date nextStart);
 
-	void announceEnd(int autoExportId, int durationInSeconds, String result, int fieldCount, int exportCount, long fileSize) throws Exception;
+	void announceEnd(AutoExport autoExport, int durationInSeconds, String result, int fieldCount, int exportCount, long fileSize) throws Exception;
 
 	List<AutoExport> getAutoExports(@VelocityCheck int companyId, boolean active);
 

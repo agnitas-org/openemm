@@ -18,6 +18,7 @@ public class FormImportResult {
 	public static Builder builder() {return new Builder();}
 	
 	private int userFormID;
+	private String userFormName;
 	private boolean isSuccess = false;
 	private Map<String, Object[]> warnings = new HashMap<>();
 	private Map<String, Object[]> errors = new HashMap<>();
@@ -27,7 +28,11 @@ public class FormImportResult {
 	public int getUserFormID() {
 		return userFormID;
 	}
-	
+
+	public String getUserFormName() {
+		return userFormName;
+	}
+
 	public Map<String, Object[]> getWarnings() {
 		return warnings;
 	}
@@ -49,6 +54,11 @@ public class FormImportResult {
 		
 		public Builder setUserFormID(int userFormID) {
 			options.userFormID = userFormID;
+			return this;
+		}
+
+		public Builder setUserFormName(String userFormName) {
+			options.userFormName = userFormName;
 			return this;
 		}
 

@@ -99,6 +99,8 @@ public class ComManualServlet extends HttpServlet {
 						mimeType = "application/font-woff";
 					} else if (manualRequestUriPart.endsWith(".eot")) {
 						mimeType = "application/vnd.ms-fontobject";
+					} else if (manualRequestUriPart.endsWith(".zip")) {
+						mimeType = "application/zip";
 					}
 	
 					if (mimeType == null) {

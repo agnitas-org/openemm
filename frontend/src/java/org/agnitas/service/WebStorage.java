@@ -78,4 +78,13 @@ public interface WebStorage {
      * @param consumer a function that the referenced data bundle will be passed to.
      */
     <T extends WebStorageEntry> void access(WebStorageBundle<T> key, Consumer<T> consumer);
+
+
+    /**
+     * Have a synchronized access via {@code key}.
+     *
+     * @param key a descriptor (key) of a data bundle to be accessed.
+     * @return true if entry for the key has already been initialized.
+     */
+    <T extends WebStorageEntry> boolean isPresented(WebStorageBundle<T> key);
 }

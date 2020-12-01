@@ -90,6 +90,18 @@ public class Systemconfig {
 		
 		return rc != null ? rc : dflt;
 	}
+	public int get (String key, int dflt) {
+		String	rc = get (key);
+		
+		if (rc != null) {
+			try {
+				return Integer.parseInt (rc);
+			} catch (Exception e) {
+				// do nothing
+			}
+		}
+		return dflt;
+	}
 	
 	private boolean fileExists (String path) {
 		return (new File (path)).exists ();

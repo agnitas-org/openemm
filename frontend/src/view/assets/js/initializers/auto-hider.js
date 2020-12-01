@@ -58,12 +58,29 @@
     _.each($scope.find('[data-show-by-select]'), function(el) {
       var selector = $(el);
       var selectSelector = $(selector.data('show-by-select'));
-      var options = selector.data('show-by-select-values').split(",");
-      for (var i = 0; i < options.length; i++) {
-        options[i] = options[i].trim();
+      var hideForData = selector.data('show-by-select-values');
+      if(selectSelector && hideForData) {
+        var options = hideForData.toString().split(",");
+        for(var i = 0; i < options.length; i++) {
+          options[i] = options[i].trim();
+        }
+        updateVisibleBySelect(selector, selectSelector, options, true);
+        addSelectListener(selector, selectSelector, options, true);
       }
-      updateVisibleBySelect(selector, selectSelector, options);
-      addSelectListener(selector, selectSelector, options);
+    });
+
+    _.each($scope.find('[data-hide-by-select]'), function(el) {
+      var selector = $(el);
+      var selectSelector = $(selector.data('hide-by-select'));
+      var hideForData = selector.data('hide-by-select-values');
+      if(selectSelector && hideForData) {
+        var options = hideForData.toString().split(",");
+        for(var i = 0; i < options.length; i++) {
+          options[i] = options[i].trim();
+        }
+        updateVisibleBySelect(selector, selectSelector, options, false);
+        addSelectListener(selector, selectSelector, options, false);
+      }
     });
   });
 
@@ -89,27 +106,32 @@
     }
   }
 
-  function addSelectListener(selector, selectSelector, options){
+  function addSelectListener(selector, selectSelector, options, showIfChecked){
     selectSelector.change(function() {
-      updateVisibleBySelect(selector, selectSelector, options);
+      updateVisibleBySelect(selector, selectSelector, options, showIfChecked);
     });
   }
 
-  function updateVisibleBySelect(selector, selectSelector, options) {
+  function updateVisibleBySelect(selector, selectSelector, options, showIfChecked) {
     var selectValue = selectSelector.val();
-    var show = false;
+    var selected = false;
     for (var i = 0; i < options.length; i++) {
       if (options[i] == selectValue){
-        show = true;
+        selected = true;
         break;
       }
     }
 
-    if (show){
-      selector.removeClass("hidden");
+    var forSelectFun, forNotSelectFun;
+    if(showIfChecked) {
+      forSelectFun = function() {selector.removeClass("hidden")};
+      forNotSelectFun = function() {selector.addClass("hidden")};
     } else {
-      selector.addClass("hidden");
+      forSelectFun = function() {selector.addClass("hidden")};
+      forNotSelectFun = function() {selector.removeClass("hidden")};
     }
+
+    selected ? forSelectFun() : forNotSelectFun();
   }
 
 })();

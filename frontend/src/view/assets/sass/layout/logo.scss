@@ -2,8 +2,6 @@
   flex-shrink: 0;
   text-align: center;
 
-  background-color: $c-white;
-
   .logo {
     height: 60px;
     line-height: 60px;
@@ -47,4 +45,8 @@ body.wide-sidebar .l-sidebar .l-logo {
     overflow: hidden;
     text-overflow: clip;
   }
+}
+
+body.dark-theme .l-sidebar .l-logo .logo {
+  background-color: $c-dt-logo-background;
 }

@@ -100,7 +100,7 @@ public interface ComBlacklistDao {
 
 	/**
 	 * Updates all blacklisted bindings for a list of mailinglists for a given email to a given user status.
-	 *  
+	 * 
 	 * @param companyId	company ID
 	 * @param email email to update related bindings
 	 * @param mailinglistIds list of mailinglist ID to update
@@ -131,4 +131,7 @@ public interface ComBlacklistDao {
      * @return true if E-Mail-Adress is blacklisted
      */
 	boolean blacklistCheck(String email, @VelocityCheck int companyID);
+
+
+	List<BlackListEntry> getBlacklistCheckEntries(int companyID, String email);
 }

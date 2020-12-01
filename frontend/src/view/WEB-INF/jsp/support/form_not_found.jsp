@@ -6,9 +6,9 @@
 <%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-<c:url var="editionLogoSrc" value="/assets/core/images/facelift/edition_logo.png"/>
-<c:url var="agnitasEmmLogoSvgSrc" value="/assets/core/images/facelift/agnitas-emm-logo.svg"/>
-<c:url var="agnitasEmmLogoPngSrc" value="/assets/core/images/facelift/agnitas-emm-logo.png"/>
+<c:url var="editionLogoSrc" value="/layout/0/edition_logo.png"/>
+<c:url var="agnitasEmmLogoSvgSrc" value="/layout/0/logo.svg"/>
+<c:url var="agnitasEmmLogoPngSrc" value="/layout/0/logo.png"/>
 
 <!DOCTYPE html>
 <html:html>

@@ -30,7 +30,15 @@
                                     "field": "timestamp",
                                     "type": "dateColumn",
                                     "cellRenderer": "DateCellRenderer",
-                                    "cellRendererParams": { "optionDateFormat": "${fn:toUpperCase(dateTimeFormatPattern)}" }
+                                    "cellRendererParams": { "optionDateFormat": "${fn:replace(fn:replace(dateTimeFormatPattern, "d", "D"), "y", "Y")}" }
+                                },
+                                {
+                                    "headerName": "<bean:message key='recipient.delivery.mailer'/>",
+                                    "editable": false,
+                                    "suppressMenu": true,
+                                    "width": 100,
+                                    "field": "mailer",
+                                    "textInPopoverIfTruncated": true
                                 },
                                 {
                                     "headerName": "<bean:message key='recipient.delivery.relay'/>",

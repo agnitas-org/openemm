@@ -39,7 +39,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ImportProcessAction;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
@@ -78,7 +78,7 @@ public class ImportProfileForm extends StrutsFormBase {
 	private Set<Integer> mailinglistsToShow = Collections.emptySet();
 
 	//Page settings - necessary for properly set up page after validation error
-	private List<ComProfileField> availableImportProfileFields;
+	private List<ProfileField> availableImportProfileFields;
 	private List<Mailinglist> availableMailinglists;
 	
 	public int getProfileId() {
@@ -288,11 +288,11 @@ public class ImportProfileForm extends StrutsFormBase {
 		return mailinglistsToShow;
 	}
 
-	public void setAvailableImportProfileFields(List<ComProfileField> availableImportProfileFields) {
+	public void setAvailableImportProfileFields(List<ProfileField> availableImportProfileFields) {
 		this.availableImportProfileFields = availableImportProfileFields;
 	}
 	
-	public List<ComProfileField> getAvailableImportProfileFields() {
+	public List<ProfileField> getAvailableImportProfileFields() {
 		return availableImportProfileFields;
 	}
 	

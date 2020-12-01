@@ -19,7 +19,6 @@ import java.util.OptionalInt;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.jaxb.Map;
 import org.agnitas.emm.springws.jaxb.MapItem;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.emm.springws.security.authorities.CompanyAuthority;
 import org.agnitas.service.UserActivityLogService;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -30,12 +29,15 @@ import org.w3c.dom.Element;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.impl.ComAdminImpl;
-import com.agnitas.emm.springws.endpoint.BulkSizeLimitExeededExeption;
+import com.agnitas.emm.springws.exception.BulkSizeLimitExeededExeption;
 import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 
 public class Utils {
-	
+
+	public static final String NAMESPACE_ORG = "http://agnitas.org/ws/schemas";
+	public static final String NAMESPACE_COM = "http://agnitas.com/ws/schemas";
+
 	public static CaseInsensitiveMap<String, Object> toCaseInsensitiveMap(Map map, final boolean extractStringFromSubXml) {
 		if (map == null || map.getItem() == null) {
 			return null;
@@ -88,20 +90,33 @@ public class Utils {
 		}
 	}
 
-	public static Map toJaxbMap(java.util.Map<String, Object> map, ObjectFactory objectFactory) {
+	public static Map toJaxbMap(java.util.Map<String, Object> map) {
 		if (map == null) {
 			return null;
 		}
-		Map resultMap = objectFactory.createMap();
+		Map resultMap = new Map();
 		for (Entry<String, Object> entry : map.entrySet()) {
-			MapItem mapItem = objectFactory.createMapItem();
+			MapItem mapItem = new MapItem();
 			mapItem.setKey(entry.getKey());
 			mapItem.setValue(entry.getValue());
 			resultMap.getItem().add(mapItem);
 		}
 		return resultMap;
 	}
-	
+
+	public static com.agnitas.emm.springws.jaxb.Map toJaxbComMap(java.util.Map<String, Object> map) {
+		if (map == null) {
+			return null;
+		}
+		com.agnitas.emm.springws.jaxb.Map resultMap = new com.agnitas.emm.springws.jaxb.Map();
+		for (Entry<String, Object> entry : map.entrySet()) {
+			com.agnitas.emm.springws.jaxb.MapItem mapItem = new com.agnitas.emm.springws.jaxb.MapItem();
+			mapItem.setKey(entry.getKey());
+			mapItem.setValue(entry.getValue());
+			resultMap.getItem().add(mapItem);
+		}
+		return resultMap;
+	}
 	
 	public static void checkBulkSizeLimit(final String endpointName, final WebserviceUserService userService, final int size) throws BulkSizeLimitExeededExeption {
 		final String username = Utils.getUserName();

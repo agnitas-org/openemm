@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.springws.exceptionresolver;
 
-import org.agnitas.emm.springws.exceptionresolver.CommonExceptionResolver;
+import org.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 
 import com.agnitas.emm.core.servicemail.ServiceMailException;
@@ -18,7 +18,7 @@ import com.agnitas.emm.core.servicemail.ServiceMailException;
 /**
  * Exception resolver for webservice &quot;SendServiceMail&quot;.
  */
-public class SendServiceMailExceptionResolver extends CommonExceptionResolver {
+public class SendServiceMailExceptionResolver extends AbstractEmmExceptionResolver {
 	
     @Override
     protected SoapFaultDefinition getFaultDefinition(Object endpoint, Exception e) {

@@ -13,35 +13,37 @@ package org.agnitas.backend;
 import java.util.Map;
 
 public interface Mailgun {
-    /**
-     * Initialize internal data
-     * @param status_id the string version of the statusID to use
-     */
-    void initialize (String status_id) throws Exception;
+	/**
+	 * Initialize internal data
+	 *
+	 * @param status_id the string version of the statusID to use
+	 */
+	void initialize(String status_id) throws Exception;
 
-    /**
-     * Setup a mailout without starting generation
-     *
-     * @param opts options to control the setup beyond DB information
-     */
-    void prepare (Map <String, Object> opts) throws Exception;
+	/**
+	 * Setup a mailout without starting generation
+	 *
+	 * @param opts options to control the setup beyond DB information
+	 */
+	void prepare(Map<String, Object> opts) throws Exception;
 
-    /**
-     * Execute an already setup mailout
-     *
-     * @param opts options to control the execution beyond DB information
-     */
-    void execute (Map <String, Object> opts) throws Exception;
+	/**
+	 * Execute an already setup mailout
+	 *
+	 * @param opts options to control the execution beyond DB information
+	 */
+	void execute(Map<String, Object> opts) throws Exception;
 
-    /**
-     * Full execution of a mail generation
-     *
-     * @param custid optional customer id
-     * @return Status string
-     */
-    String fire(String custid) throws Exception;
+	/**
+	 * Full execution of a mail generation
+	 *
+	 * @param custid optional customer id
+	 * @return Status string
+	 */
+	String fire(String custid) throws Exception;
 
-    /** Cleaup mailout
-     */
-    void done () throws Exception;
+	/**
+	 * Cleanup mailout
+	 */
+	void done() throws Exception;
 }

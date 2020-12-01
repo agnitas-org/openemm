@@ -30,47 +30,21 @@ import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+
 import javax.sql.DataSource;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.ComUndoDynContent;
-import com.agnitas.beans.ComUndoMailing;
-import com.agnitas.beans.ComUndoMailingComponent;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.MailingsListProperties;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComUndoDynContentDao;
-import com.agnitas.dao.ComUndoMailingComponentDao;
-import com.agnitas.dao.ComUndoMailingDao;
-import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.emm.core.LinkService;
-import com.agnitas.emm.core.components.service.ComMailingComponentsService;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
-import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
-import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
-import com.agnitas.emm.core.mailing.service.CalculationRecipients;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
-import com.agnitas.emm.core.target.TargetExpressionUtils;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.service.AgnDynTagGroupResolverFactory;
-import com.agnitas.service.AgnTagService;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.util.Span;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingSendStatus;
+import org.agnitas.beans.Mediatype;
 import org.agnitas.beans.factory.DynamicTagContentFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.DynamicTagContentDao;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.exception.UnknownMailingIdException;
+import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnTagUtils;
 import org.agnitas.util.AgnUtils;
@@ -90,6 +64,39 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.ComUndoDynContent;
+import com.agnitas.beans.ComUndoMailing;
+import com.agnitas.beans.ComUndoMailingComponent;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.ComUndoDynContentDao;
+import com.agnitas.dao.ComUndoMailingComponentDao;
+import com.agnitas.dao.ComUndoMailingDao;
+import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.emm.core.LinkService;
+import com.agnitas.emm.core.components.service.ComMailingComponentsService;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
+import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
+import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
+import com.agnitas.emm.core.mailing.service.CalculationRecipients;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.messages.Message;
+import com.agnitas.service.AgnDynTagGroupResolverFactory;
+import com.agnitas.service.AgnTagService;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.util.Span;
 
 public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 	private static final Logger logger = Logger.getLogger(ComMailingBaseServiceImpl.class);
@@ -309,7 +316,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     
         try {
             MailingComponent template = mailing.getHtmlTemplate();
-            List<DynamicTag> dynTags = agnTagService.getDynTags(template.getEmmBlock(), agnDynTagGroupResolverFactory.create(mailing.getId()));
+            List<DynamicTag> dynTags = agnTagService.getDynTags(template.getEmmBlock(), agnDynTagGroupResolverFactory.create(mailing.getCompanyID(), mailing.getId()));
             return dynTags.stream().map(DynamicTag::getDynName).collect(Collectors.toList());
         } catch (DynTagException e) {
             logger.error("Error occurred: " + e.getMessage(), e);
@@ -400,7 +407,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 
     @Override
     public int calculateRecipients(@VelocityCheck int companyId, int mailingId) throws Exception {
-        ComMailing mailing = (ComMailing) mailingDao.getMailing(mailingId, companyId);
+        ComMailing mailing = mailingDao.getMailing(mailingId, companyId);
 
         if (mailing == null || mailing.getId() <= 0) {
             throw new UnknownMailingIdException("Mailing #" + mailingId + " doesn't exist");
@@ -499,7 +506,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     @Override
     public ComMailing getMailing(@VelocityCheck int companyId, int mailingId) {
         if (mailingId > 0 && companyId > 0) {
-            return (ComMailing) mailingDao.getMailing(mailingId, companyId);
+            return mailingDao.getMailing(mailingId, companyId);
         }
         
         return null;
@@ -507,10 +514,6 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     
     @Override
     public List<MailingBase> getMailingsForComparison(ComAdmin admin) {
-        if (admin == null) {
-            return new ArrayList<>();
-        }
-        
         return mailingDao.getMailingsForComparation(admin.getCompanyID(), admin.getAdminID());
     }
     
@@ -651,7 +654,11 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     public void setMailingDao( ComMailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
-    
+
+    protected ComMailingDao getMailingDao() {
+        return mailingDao;
+    }
+
     @Required
     public final void setMailinglistApprovalService(final MailinglistApprovalService service) {
     	this.mailinglistApprovalService = Objects.requireNonNull(service, "Mailinglist approval service is null");
@@ -1196,5 +1203,57 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     @Override
     public Timestamp getMailingLastSendDate(int mailingId) {
         return mailingDao.getLastSendDate(mailingId);
+    }
+
+    @Override
+    public SimpleServiceResult checkContentNotBlank(ComMailing mailing) {
+        MediatypeEmail emailMediaType = mailing.getEmailParam();
+
+        // Check if email media type is selected at all.
+        if (Mediatype.isActive(emailMediaType)) {
+            // If "text only" format selected then text version is required.
+            if (MailingModel.Format.TEXT.getCode() == emailMediaType.getMailFormat()) {
+                if (isContentBlank(mailing.getTextTemplate(), mailing.getDynTags())) {
+                    return SimpleServiceResult.simpleError(Message.of("error.mailing.no_text_version"));
+                } else {
+                    return SimpleServiceResult.simpleSuccess();
+                }
+            } else {
+                List<Message> warnings = new ArrayList<>();
+                List<Message> errors = new ArrayList<>();
+
+                // Check text version.
+                if (isContentBlank(mailing.getTextTemplate(), mailing.getDynTags())) {
+                    // Text version is required for all new mailings (see GWUA-3991).
+                    if (mailingDao.isTextVersionRequired(mailing.getCompanyID(), mailing.getId())) {
+                        errors.add(Message.of("error.mailing.no_text_version"));
+                    } else {
+                        warnings.add(Message.of("error.mailing.no_text_version"));
+                    }
+                }
+
+                // Check HTML version.
+                if (isContentBlank(mailing.getHtmlTemplate(), mailing.getDynTags())) {
+                    errors.add(Message.of("error.mailing.no_html_version"));
+                }
+
+                return new SimpleServiceResult(errors.isEmpty(), Collections.emptyList(), warnings, errors);
+            }
+        } else {
+            // Check if no media type is selected at all.
+            if (mailing.getMediatypes().values().stream().noneMatch(Mediatype::isActive)) {
+                return SimpleServiceResult.simpleError(Message.of("error.mailing.mediatype.none"));
+            } else {
+                return SimpleServiceResult.simpleSuccess();
+            }
+        }
+    }
+
+    private boolean isContentBlank(MailingComponent template, Map<String, DynamicTag> contentMap) {
+        if (template == null) {
+            return true;
+        }
+
+        return isContentBlank(template.getEmmBlock(), contentMap);
     }
 }

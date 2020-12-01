@@ -37,9 +37,9 @@ import org.agnitas.preview.TagSyntaxChecker;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.util.MailoutClient;
 import org.agnitas.util.SafeString;
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
@@ -58,6 +58,7 @@ import com.agnitas.emm.core.LinkService.LinkScanResult;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.messages.I18nString;
+import com.agnitas.util.LinkUtils;
 
 public class ComMailingImpl extends MailingImpl implements ComMailing {
 	
@@ -232,8 +233,17 @@ public class ComMailingImpl extends MailingImpl implements ComMailing {
 								new ActionMessage("error.mailing.links.errorneous",
 										linkScanResult.getErrorneousLinks().size(),
 										textModuleName,
-										StringEscapeUtils.escapeHtml4(linkScanResult.getErrorneousLinks().get(0).getLinkText()),
-										I18nString.getLocaleString(linkScanResult.getErrorneousLinks().get(0).getErrorMessageKey(), admin.getLocale())));
+										StringEscapeUtils.escapeHtml4(
+												linkScanResult
+													.getErrorneousLinks()
+													.get(0)
+													.getLinkText()),
+										I18nString.getLocaleString(
+												linkScanResult
+													.getErrorneousLinks()
+													.get(0)
+													.getErrorMessageKey(), 
+												admin.getLocale())));
 					}
 				}
 				
@@ -368,7 +378,7 @@ public class ComMailingImpl extends MailingImpl implements ComMailing {
 				List<LinkProperty> properties = link.getProperties();
 				boolean changedProperty = false;
 				for (LinkProperty property : properties) {
-					if (property.getPropertyType() == PropertyType.LinkExtension && property.getPropertyName().equals(extensionPropertyName)) {
+					if (LinkUtils.isExtension(property) && property.getPropertyName().equals(extensionPropertyName)) {
 						property.setPropertyValue(extensionPropertyValue);
 						changedProperty = true;
 					}
@@ -391,9 +401,9 @@ public class ComMailingImpl extends MailingImpl implements ComMailing {
 		List<LinkProperty> commonLinkProperties = null;
 		for (TrackableLink link : getTrackableLinks().values()) {
 			if (commonLinkProperties == null) {
-				commonLinkProperties = new ArrayList<>(((ComTrackableLink) link).getProperties());
+				commonLinkProperties = new ArrayList<>(link.getProperties());
 			} else {
-				commonLinkProperties.retainAll(((ComTrackableLink) link).getProperties());
+				commonLinkProperties.retainAll(link.getProperties());
 			}
 		}
 		
@@ -419,10 +429,10 @@ public class ComMailingImpl extends MailingImpl implements ComMailing {
 		ComMailing clonedMailing = (ComMailing) super.clone(con);
 		
 		// copy link properties of trackable links
-		for (Entry<String, TrackableLink> entry : getTrackableLinks().entrySet()) {
+		for (Entry<String, ComTrackableLink> entry : getTrackableLinks().entrySet()) {
 			String trackableLinkFullUrl = entry.getKey();
-			ComTrackableLink linkOriginal = (ComTrackableLink) entry.getValue();
-			ComTrackableLink linkCloned = (ComTrackableLink) clonedMailing.getTrackableLinks().get(trackableLinkFullUrl);
+			ComTrackableLink linkOriginal = entry.getValue();
+			ComTrackableLink linkCloned = clonedMailing.getTrackableLinks().get(trackableLinkFullUrl);
 
 	        // clone old version of link extension
 			linkCloned.setExtendByMailingExtensions(linkOriginal.isExtendByMailingExtensions());

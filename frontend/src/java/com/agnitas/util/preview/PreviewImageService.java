@@ -24,17 +24,6 @@ public interface PreviewImageService {
     /**
      * Generate and store a thumbnail for the mailing.
      *
-     * @param request current request object to retrieve current session information from.
-     * @param mailingId an identifier of the mailing to generate a thumbnail for.
-     * @param async whether ({@code true}) or not ({@code false}) run in separate thread.
-     * @deprecated use {@link #generateMailingPreview(com.agnitas.beans.ComAdmin, String, int, boolean)} instead.
-     */
-    @Deprecated
-    void generateMailingPreview(HttpServletRequest request, int mailingId, boolean async);
-
-    /**
-     * Generate and store a thumbnail for the mailing.
-     *
      * @param admin
      * @param sessionId
      * @param mailingId an identifier of the mailing to generate a thumbnail for.

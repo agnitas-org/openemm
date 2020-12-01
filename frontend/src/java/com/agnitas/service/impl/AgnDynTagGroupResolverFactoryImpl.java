@@ -24,8 +24,8 @@ public class AgnDynTagGroupResolverFactoryImpl implements AgnDynTagGroupResolver
     private DynamicTagDao dynamicTagDao;
 
     @Override
-    public AgnDynTagGroupResolver create(int mailingId) {
-        return new AgnDynTagGroupResolverImpl(mailingId);
+    public AgnDynTagGroupResolver create(int companyID, int mailingID) {
+        return new AgnDynTagGroupResolverImpl(companyID, mailingID);
     }
 
     @Required
@@ -35,18 +35,21 @@ public class AgnDynTagGroupResolverFactoryImpl implements AgnDynTagGroupResolver
 
     private class AgnDynTagGroupResolverImpl implements AgnDynTagGroupResolver {
         private Map<String, Integer> cache = new HashMap<>();
-        private int mailingId;
+        private int companyID;
+        private int mailingID;
 
-        public AgnDynTagGroupResolverImpl(int mailingId) {
-            this.mailingId = mailingId;
+        public AgnDynTagGroupResolverImpl(int companyID, int mailingID) {
+            this.mailingID = mailingID;
+            this.companyID = companyID;
         }
 
         @Override
         public int resolve(String name) {
-            if (mailingId <= 0 || StringUtils.isEmpty(name)) {
+            if (companyID <= 0 || mailingID <= 0 || StringUtils.isEmpty(name)) {
                 return 0;
+            } else {
+            	return cache.computeIfAbsent(name, k -> dynamicTagDao.getId(companyID, mailingID, k));
             }
-            return cache.computeIfAbsent(name, k -> dynamicTagDao.getIdForName(mailingId, k));
         }
     }
 }

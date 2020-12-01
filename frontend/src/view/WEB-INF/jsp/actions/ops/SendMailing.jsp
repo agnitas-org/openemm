@@ -26,7 +26,7 @@
         </div>
         <div class="col-sm-8">
             <html:select styleClass="form-control js-select" property='<%= "actions[" + index + "].delayMinutes" %>' size="1">
-                <html:option value="0"><bean:message key="No_Delay"/></html:option>
+                <html:option value="0"><bean:message key="action.No_Delay"/></html:option>
                 <html:option value="60">1&nbsp;<bean:message key="Hour"/></html:option>
                 <html:option value="360">6&nbsp;<bean:message key="Hours"/></html:option>
                 <html:option value="720">12&nbsp;<bean:message key="Hours"/></html:option>

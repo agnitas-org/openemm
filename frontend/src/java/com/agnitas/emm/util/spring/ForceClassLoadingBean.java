@@ -12,18 +12,24 @@ package com.agnitas.emm.util.spring;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 public final class ForceClassLoadingBean {
+	
+	/** The logger. */
+	private static final transient Logger LOGGER = Logger.getLogger(ForceClassLoadingBean.class);
 
 	@Required
 	public final void setClassesToLoad(final List<String> names) throws Throwable {
-		try {
-			for(final String name : names) {
+		for(final String name : names) {
+			try {
 				Class.forName(name);
+			} catch (ExceptionInInitializerError e) {
+				LOGGER.error(String.format("Error force-loading class '%s'", name), e);
+				
+				throw e;
 			}
-		} catch (ExceptionInInitializerError e) {
-			throw e.getCause();
 		}
 	}
 

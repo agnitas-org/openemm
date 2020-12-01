@@ -13,6 +13,7 @@ package com.agnitas.emm.core.action.service;
 import java.util.Map;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 
 public interface EmmActionOperation {
 	
@@ -28,5 +29,7 @@ public interface EmmActionOperation {
 	 * @throws Exception on errors during execution
 	 */
 	boolean execute(final AbstractActionOperationParameters operation, final Map<String, Object> params, final EmmActionOperationErrors errors) throws Exception;
+
+    ActionOperationType processedType();
 
 }

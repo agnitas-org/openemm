@@ -43,7 +43,6 @@ public class UserFormToUserFormDtoConverter implements Converter<UserForm, UserF
 		errorForm.setUrl(userForm.getErrorUrl());
 		errorForm.setUseUrl(userForm.isErrorUseUrl());
 		
-		//TODO: GWUA-4279 implement converter
 		return dto;
 	}
 }

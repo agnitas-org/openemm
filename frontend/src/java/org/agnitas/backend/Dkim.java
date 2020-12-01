@@ -13,6 +13,7 @@ package org.agnitas.backend;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
 import org.agnitas.backend.dao.DkimDAO;
@@ -25,27 +26,27 @@ import org.agnitas.util.TimeoutLRUMap;
  * xmlback for mail generation
  */
 public class Dkim {
-	static private TimeoutLRUMap <String, Boolean>	dkimReportCache;
-	static private byte[]				secretKey;
+	static private TimeoutLRUMap<String, Boolean> dkimReportCache;
+	static private byte[] secretKey;
+
 	static {
 		dkimReportCache = new TimeoutLRUMap<>(5000, 30 * 60 * 1000); // max. 5000 entries for 30 Minutes
 
-		String	salt = 	"C'est la vie";	
-		String	path = StringOps.makePath ("${home}", "lib", "dkim.key");
-		File	fd = new File (path);
-		
-		if (fd.exists ()) {
-			try (FileInputStream rd = new FileInputStream (fd)) {
-				byte[]	rc = new byte[(int) fd.length ()];
-				int	n = rd.read (rc);
+		String salt = "C'est la vie";
+		String path = StringOps.makePath("${home}", "lib", "dkim.key");
+		File fd = new File(path);
+
+		if (fd.exists()) {
+			try (FileInputStream rd = new FileInputStream(fd)) {
+				byte[] rc = new byte[(int) fd.length()];
+				int n = rd.read(rc);
 				if (n != rc.length) {
-					throw new IOException ("Incomplete read, expected " + rc.length + " bytes, got " + n);
+					throw new IOException("Incomplete read, expected " + rc.length + " bytes, got " + n);
 				}
-				salt = (new String (rc)).trim ();
+				salt = (new String(rc)).trim();
 			} catch (IOException e) {
 				try {
-					(new Log ("dkim-key", Log.ERROR))
-						.out (Log.ERROR, "read", "Failed to read key from existing file " + path + ": " + e.toString (), e);
+					(new Log("dkim-key", Log.ERROR)).out(Log.ERROR, "read", "Failed to read key from existing file " + path + ": " + e.toString(), e);
 				} catch (Exception e2) {
 					// do nothing
 				}
@@ -53,34 +54,31 @@ public class Dkim {
 		}
 		secretKey = new byte[16];
 		if (salt != null) {
-			try {
-				byte[]	b = salt.getBytes ("UTF-8");
-			
-				for (int n = 0; n < secretKey.length; ++n)
-					secretKey[n] = n < b.length ? b[n] : 0;
-			} catch (java.io.UnsupportedEncodingException e) {
-				// do nothing
-			}
+			byte[] b = salt.getBytes(StandardCharsets.UTF_8);
+
+			for (int n = 0; n < secretKey.length; ++n)
+				secretKey[n] = n < b.length ? b[n] : 0;
 		}
 	}
 
-	private Data	data;
+	private Data data;
+
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param data the global configuration
 	 */
-	public Dkim (Data nData) {
+	public Dkim(Data nData) {
 		data = nData;
 	}
-	
+
 	/**
 	 * scan the stored DKIM keys to match the domain part
 	 * of the given email and store the related information
 	 * as part of the company info data.
-	 * 
+	 *
 	 * @param email the email to lookup the dkim key for
-	 * @return      true if a dkim key was found, false otherwise
+	 * @return true if a dkim key was found, false otherwise
 	 */
 	public boolean check (EMail email) throws SQLException {
 		DkimDAO		dkimDAO = new DkimDAO (data.dbase, data.company.id (), secretKey);
@@ -91,42 +89,48 @@ public class Dkim {
 			return false;
 		}
 
-		data.company.infoAdd ("_dkim_domain", dkim.domain ());
-		data.company.infoAdd ("_dkim_selector", dkim.selector ());
-		data.company.infoAdd ("_dkim_key", dkim.key ());
-		if (dkim.ident ()) {
-			data.company.infoAdd ("_dkim_ident", email.pure_puny);
+		data.company.infoAdd("_dkim_domain", dkim.domain());
+		data.company.infoAdd("_dkim_selector", dkim.selector());
+		data.company.infoAdd("_dkim_key", dkim.key());
+		if (dkim.ident()) {
+			data.company.infoAdd("_dkim_ident", email.pure_puny);
 		}
-		String	dkimDebug = data.company.info ("dkim-debug", data.mailing.id ());
+		String dkimDebug = data.company.info("dkim-debug", data.mailing.id());
 		if (dkimDebug != null) {
-			data.company.infoAdd ("_dkim_z", dkimDebug);
+			data.company.infoAdd("_dkim_z", dkimDebug);
 		}
-		if (dkimReport (data, dkim.domain ())) {
-			data.company.infoAdd ("_dkim_report", "true");
+		if (dkimReport(dkim.domain())) {
+			data.company.infoAdd("_dkim_report", "true");
 		}
 		return true;
 	}
 
-	private boolean dkimReport (Data dataParam, String domain) {
-		boolean	rc = false;
-		
+	private boolean dkimReport(String domain) {
+		boolean rc = false;
+
 		synchronized (domain) {
-			Boolean	use = dkimReportCache.get (domain);
-			
+			Boolean use = dkimReportCache.get(domain);
+
 			if (use == null) {
-				DNS	dns = new DNS (2, dataParam.getLogger ());
-				String	check = "_report._domainkey." + domain;
-				String	content = dns.queryText (check);
-				
-				if (content == null) {
-					dataParam.logging (Log.DEBUG, "dkim", "No report for dkim domain " + domain + " found");
-				} else {
-					dataParam.logging (Log.DEBUG, "dkim", "For dkim domain " + domain + " we found in " + check + " this content: \"" + content + "\"");
+				try {
+					DNS dns = new DNS(2, data.getLogger());
+					String check = "_report._domainkey." + domain;
+					String content = dns.queryText(check);
+
+					if (content == null) {
+						data.logging(Log.DEBUG, "dkim", "No report for dkim domain " + domain + " found");
+					} else {
+						data.logging(Log.DEBUG, "dkim", "For dkim domain " + domain + " we found in " + check + " this content: \"" + content + "\"");
+					}
+					use = content != null;
+					dkimReportCache.put(domain, use);
+				} catch (Exception e) {
+					data.logging (Log.ERROR, "dkim", "Failed to query \"" + domain + "\": " + e.toString ());
 				}
-				use = content != null;
-				dkimReportCache.put (domain, use);
 			}
-			rc = use;
+			if (use != null) {
+				rc = use;
+			}
 		}
 		return rc;
 	}

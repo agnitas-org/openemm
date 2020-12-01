@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
@@ -17,7 +17,8 @@ if (params["selectedTargets"] != null) {
 function tr(key) {
 	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
 }
-]]></method>
+
+reportContext.setGlobalVariable("isDarkmode", params["darkmode"]);]]></method>
     <method name="beforeRender"><![CDATA[if(reportContext.getOutputFormat()!="pdf") {
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("reportParameters").drop();
 }
@@ -144,6 +145,41 @@ if(reportContext.getOutputFormat()=="csv") {
             <property name="distinct">true</property>
             <simple-property-list name="defaultValue">
                 <value type="constant">True</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">check-box</property>
+            <structure name="format"/>
+        </scalar-parameter>
+        <scalar-parameter name="emmsession" id="946">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="sec" id="947">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="darkmode" id="948">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">boolean</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">False</value>
             </simple-property-list>
             <list-property name="selectionList"/>
             <property name="paramType">simple</property>
@@ -332,7 +368,9 @@ return false;]]></method>
             <method name="open"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.java.lang);
 dataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingOpenersTimeBasedDataSet();
-openingsData = dataSet.getData(params["mailingID"], params["companyID"], params["selectedTargets"], params["startDate"], params["stopDate"], params["hourScale"], params["recipientType"]);
+tempTableID = dataSet.prepareData(params["mailingID"], params["companyID"], params["selectedTargets"], params["startDate"], params["stopDate"], params["hourScale"], params["recipientType"]);
+reportContext.setPersistentGlobalVariable("tempTableID", new Integer(tempTableID));
+openingsData = dataSet.getData(tempTableID);
 currentrow = 0;
 ]]></method>
             <method name="fetch"><![CDATA[if (currentrow < openingsData.size()) {
@@ -658,6 +696,18 @@ allTargets</expression>
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -768,7 +818,7 @@ allTargets</expression>
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -807,14 +857,17 @@ function translateColor(colorRgb) {
 }
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;)
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -840,6 +893,27 @@ function beforeGeneration(chart, icsc) {
 	
 	if (reportContext.getParameterValue(&quot;hourScale&quot;) == false) {
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
+	}
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -891,8 +965,23 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
 
 	var color = getPaletteColor(classId, context);
 	lerh.getFill().set(color.getRed(), color.getGreen(), color.getBlue());
+	
+	if(context.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		caption.getColor().set(255, 255, 255);
+	}
 }
-</Script>
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	if(icsc.getExternalContext().getObject().getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	if(icsc.getExternalContext().getObject().getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}</Script>
   <Units>Points</Units>
   <SeriesThickness>10.0</SeriesThickness>
   <ExtendedProperties>
@@ -1142,7 +1231,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                       <Value>drill-through hours</Value>
                     </Caption>
                   </Label>
-                  <BaseUrl>&lt;structure name=&quot;action&quot;>
+                  <BaseUrl>&lt;structure>
     &lt;property name=&quot;linkType&quot;>drill-through&lt;/property>
     &lt;property name=&quot;reportName&quot;>mailing_openers_progress.rptdesign&lt;/property>
     &lt;property name=&quot;targetBookmarkType&quot;>bookmark&lt;/property>
@@ -1151,39 +1240,69 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
     &lt;list-property name=&quot;paramBindings&quot;>
         &lt;structure>
             &lt;property name=&quot;paramName&quot;>companyID&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>&quot;&quot; + params[&quot;companyID&quot;]&lt;/expression>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>&quot;&quot; + params[&quot;companyID&quot;]&lt;/value>
+            &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
             &lt;property name=&quot;paramName&quot;>mailingID&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>&quot;&quot; + params[&quot;mailingID&quot;]&lt;/expression>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>&quot;&quot; + params[&quot;mailingID&quot;]&lt;/value>
+            &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
             &lt;property name=&quot;paramName&quot;>language&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/value>
+            &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/value>
+            &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
             &lt;property name=&quot;paramName&quot;>stopDate&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/value>
+            &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
             &lt;property name=&quot;paramName&quot;>hourScale&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>true&lt;/expression>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>true&lt;/value>
+            &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
             &lt;property name=&quot;paramName&quot;>selectedTargets&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;selectedTargets&quot;].value&lt;/expression>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;selectedTargets&quot;].value&lt;/value>
+            &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
             &lt;property name=&quot;paramName&quot;>recipientType&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;recipientType&quot;]&lt;/expression>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;recipientType&quot;]&lt;/value>
+            &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
         &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
@@ -1192,6 +1311,10 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -1204,10 +1327,16 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -1795,6 +1924,18 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                         <value type="javascript">params["viewChart"]</value>
                                                     </simple-property-list>
                                                 </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
                                             </list-property>
                                         </structure>
                                     </list-property>
@@ -2029,6 +2170,18 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -2139,7 +2292,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -2164,6 +2317,9 @@ function beforeDrawAxisTitle( axis, label, icsc )
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -2194,6 +2350,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 	
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -2543,6 +2720,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -2566,6 +2755,16 @@ function beforeGeneration( chart, icsc )
                   <Key>MenuItem</Key>
                   <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -3151,6 +3350,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>
@@ -3397,6 +3608,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -3507,7 +3730,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -3524,14 +3747,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext =  icsc.getExternalContext().getObject(); 
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -3562,6 +3788,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 	
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -3911,6 +4158,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -3934,6 +4193,16 @@ function beforeGeneration( chart, icsc )
                   <Key>MenuItem</Key>
                   <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -4519,6 +4788,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>
@@ -4765,6 +5046,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -4875,12 +5168,15 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
     </Background>
     <Visible>true</Visible>
+    <Cursor>
+      <Type>Auto</Type>
+    </Cursor>
   </Block>
   <Dimension>Two_Dimensional</Dimension>
   <Script>importPackage( Packages.org.eclipse.birt.chart.model.attribute );
@@ -4892,14 +5188,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext =  icsc.getExternalContext().getObject(); 
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -4930,6 +5229,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 	
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -5279,6 +5599,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -5286,6 +5618,10 @@ function beforeGeneration( chart, icsc )
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -5298,10 +5634,16 @@ function beforeGeneration( chart, icsc )
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -5887,6 +6229,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>
@@ -6133,6 +6487,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -6243,7 +6609,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -6260,14 +6626,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext =  icsc.getExternalContext().getObject(); 
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -6298,6 +6667,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 	
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -6647,6 +7037,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -6654,10 +7056,6 @@ function beforeGeneration( chart, icsc )
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -6670,6 +7068,20 @@ function beforeGeneration( chart, icsc )
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -7255,6 +7667,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>
@@ -7501,6 +7925,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -7611,7 +8047,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -7628,14 +8064,19 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+
+	var reportContext = icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject(); 
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -7666,6 +8107,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 	
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -8015,6 +8477,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -8038,6 +8512,16 @@ function beforeGeneration( chart, icsc )
                   <Key>MenuItem</Key>
                   <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -8623,6 +9107,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>
@@ -8901,6 +9397,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -9011,7 +9519,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -9050,14 +9558,17 @@ function translateColor(colorRgb) {
 }
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject();
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;)
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -9083,6 +9594,20 @@ function beforeGeneration(chart, icsc) {
 
 	if (reportContext.getParameterValue(&quot;hourScale&quot;) == false) {
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -9134,6 +9659,9 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
 
 	var color = getPaletteColor(classId, context);
 	lerh.getFill().set(color.getRed(), color.getGreen(), color.getBlue());
+	if(context.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		caption.getColor().set(255, 255, 255);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -9428,6 +9956,18 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -9451,6 +9991,16 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                   <Key>MenuItem</Key>
                   <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
                 </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -10038,6 +10588,18 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                         <value type="javascript">params["viewChart"]</value>
                                                     </simple-property-list>
                                                 </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
                                             </list-property>
                                         </structure>
                                     </list-property>
@@ -10277,6 +10839,18 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -10387,7 +10961,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -10404,14 +10978,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext = icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject();
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -10442,6 +11019,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -10791,6 +11389,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -10798,10 +11408,6 @@ function beforeGeneration( chart, icsc )
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -10814,6 +11420,20 @@ function beforeGeneration( chart, icsc )
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -11399,6 +12019,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>
@@ -11650,6 +12282,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -11760,7 +12404,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -11777,14 +12421,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext = icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject();
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -11815,6 +12462,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -12164,6 +12832,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -12171,10 +12851,6 @@ function beforeGeneration( chart, icsc )
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -12187,6 +12863,20 @@ function beforeGeneration( chart, icsc )
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -12772,6 +13462,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>
@@ -13023,6 +13725,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -13133,7 +13847,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -13150,14 +13864,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext = icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject();
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -13188,6 +13905,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -13537,6 +14275,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -13544,10 +14294,6 @@ function beforeGeneration( chart, icsc )
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -13560,6 +14306,20 @@ function beforeGeneration( chart, icsc )
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -14145,6 +14905,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>
@@ -14396,6 +15168,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -14506,7 +15290,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -14523,14 +15307,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject();
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -14561,6 +15348,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -14910,6 +15718,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -14917,10 +15737,6 @@ function beforeGeneration( chart, icsc )
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -14933,6 +15749,20 @@ function beforeGeneration( chart, icsc )
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -15520,6 +16350,18 @@ function beforeGeneration( chart, icsc )
                                                         <value type="javascript">params["viewChart"]</value>
                                                     </simple-property-list>
                                                 </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
                                             </list-property>
                                         </structure>
                                     </list-property>
@@ -15769,6 +16611,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -15879,7 +16733,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -15896,14 +16750,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext = icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject();
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -15934,6 +16791,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -16283,6 +17161,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -16290,10 +17180,6 @@ function beforeGeneration( chart, icsc )
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -16306,6 +17192,20 @@ function beforeGeneration( chart, icsc )
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -16893,6 +17793,18 @@ function beforeGeneration( chart, icsc )
                                                         <value type="javascript">params["viewChart"]</value>
                                                     </simple-property-list>
                                                 </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
                                             </list-property>
                                         </structure>
                                     </list-property>
@@ -17171,6 +18083,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -17281,7 +18205,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -17320,14 +18244,17 @@ function translateColor(colorRgb) {
 }
 
 function beforeDrawAxisTitle(axis, label, icsc) {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject();
 		if (reportContext.getParameterValue(&quot;hourScale&quot;) == true) {
 			xAxisTitle = tr(&quot;Time&quot;)
 		} else {
 			xAxisTitle = tr(&quot;Date&quot;);
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -17353,6 +18280,20 @@ function beforeGeneration(chart, icsc) {
 
 	if (reportContext.getParameterValue(&quot;hourScale&quot;) == false) {
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -17404,6 +18345,9 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
 
 	var color = getPaletteColor(classId, context);
 	lerh.getFill().set(color.getRed(), color.getGreen(), color.getBlue());
+	if(context.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		caption.getColor().set(255, 255, 255);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -17698,6 +18642,18 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -17705,10 +18661,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -17721,6 +18673,20 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -18308,6 +19274,18 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                         <value type="javascript">params["viewChart"]</value>
                                                     </simple-property-list>
                                                 </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
                                             </list-property>
                                         </structure>
                                     </list-property>
@@ -18556,6 +19534,18 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -18666,7 +19656,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -18683,14 +19673,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject();
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -18721,6 +19714,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -19070,6 +20084,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -19077,10 +20103,6 @@ function beforeGeneration( chart, icsc )
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -19093,6 +20115,20 @@ function beforeGeneration( chart, icsc )
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -19678,6 +20714,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>
@@ -19936,6 +20984,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -20046,7 +21106,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -20063,14 +21123,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject();
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -20101,6 +21164,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -20450,6 +21534,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -20457,10 +21553,6 @@ function beforeGeneration( chart, icsc )
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -20473,6 +21565,20 @@ function beforeGeneration( chart, icsc )
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -21058,6 +22164,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>
@@ -21316,6 +22434,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -21426,7 +22556,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -21443,14 +22573,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject();
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -21481,6 +22614,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -21830,6 +22984,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -21837,10 +23003,6 @@ function beforeGeneration( chart, icsc )
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -21853,6 +23015,20 @@ function beforeGeneration( chart, icsc )
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -22438,6 +23614,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>
@@ -22696,6 +23884,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -22806,7 +24006,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -22823,14 +24023,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject();
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -22861,6 +24064,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -23210,6 +24434,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -23217,10 +24453,6 @@ function beforeGeneration( chart, icsc )
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -23233,6 +24465,20 @@ function beforeGeneration( chart, icsc )
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -23818,6 +25064,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>
@@ -24077,6 +25335,18 @@ function beforeGeneration( chart, icsc )
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Triggers>
+        <Condition>onclick</Condition>
+        <Action>
+          <Type>Toggle_Visibility</Type>
+          <Value xsi:type="attribute:SeriesValue">
+            <Name></Name>
+          </Value>
+        </Action>
+      </Triggers>
+      <Cursor>
+        <Type>Pointer</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -24187,7 +25457,7 @@ function beforeGeneration( chart, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -24204,14 +25474,17 @@ importPackage( Packages.java.lang );
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
+	reportContext =  icsc.getExternalContext().getObject();
 	if (label.getCaption().getValue() == &quot;xAxis&quot;) {
-		reportContext =  icsc.getExternalContext().getObject();
 		if (reportContext.getParameterValue(&quot;hourScale&quot;)==true) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;Time&quot;, reportContext.getLocale())
 		} else {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 
@@ -24242,6 +25515,27 @@ function beforeGeneration( chart, icsc )
 		 xAxis.setFormatSpecifier(JavaDateFormatSpecifierImpl.create(&quot;dd-MM-yyyy&quot;));
 	}
 
+}
+
+function beforeDrawLegendItem(lerh, bounds, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		lerh.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 </Script>
@@ -24591,6 +25885,18 @@ function beforeGeneration( chart, icsc )
             &lt;property name=&quot;paramName&quot;>viewChart&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;viewChart&quot;]&lt;/expression>
         &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>emmsession&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;emmsession&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
+        &lt;structure>
+            &lt;property name=&quot;paramName&quot;>sec&lt;/property>
+            &lt;simple-property-list name=&quot;expression&quot;>
+                &lt;value type=&quot;javascript&quot;>params[&quot;sec&quot;].value&lt;/value>
+            &lt;/simple-property-list>
+        &lt;/structure>
     &lt;/list-property>
 &lt;/structure>
 </BaseUrl>
@@ -24598,10 +25904,6 @@ function beforeGeneration( chart, icsc )
                   <ValueParameterName></ValueParameterName>
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
                 <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
@@ -24614,6 +25916,20 @@ function beforeGeneration( chart, icsc )
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
+                <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -25199,6 +26515,18 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">viewChart</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["viewChart"]</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">emmsession</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["emmsession"].value</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                                <structure>
+                                                    <property name="paramName">sec</property>
+                                                    <simple-property-list name="expression">
+                                                        <value type="javascript">params["sec"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                             </list-property>

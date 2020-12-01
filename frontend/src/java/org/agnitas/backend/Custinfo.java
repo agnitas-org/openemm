@@ -18,22 +18,34 @@ import java.util.Map;
  * during mail generation
  */
 public class Custinfo {
-	/** The customer ID */
-	private long			customerID = 0;
-	/** The user type from the binding table */
-	private String			userType = null;
-	/** a mapping for all available columns */
-	private Map <String, String>	columns = null;
-	/** sample email address if creating sample copies */
-	private String			sampleEmail = null;
-	/** provider email address if creating a provider preview */
-	private String			providerEmail = null;
-	/** values for database retrieved target groups */
-	private boolean[]		targetGroupValues = null;
+	/**
+	 * The customer ID
+	 */
+	private long customerID = 0;
+	/**
+	 * The user type from the binding table
+	 */
+	private String userType = null;
+	/**
+	 * a mapping for all available columns
+	 */
+	private Map<String, String> columns = null;
+	/**
+	 * sample email address if creating sample copies
+	 */
+	private String sampleEmail = null;
+	/**
+	 * provider email address if creating a provider preview
+	 */
+	private String providerEmail = null;
+	/**
+	 * values for database retrieved target groups
+	 */
+	private boolean[] targetGroupValues = null;
 
-	public Custinfo (Data data) {
+	public Custinfo(Data data) {
 		if (data != null) {
-			int	targetCount = data.targetExpression.resolveByDatabase ().size ();
+			int targetCount = data.targetExpression.resolveByDatabase().size();
 			if (targetCount > 0) {
 				targetGroupValues = new boolean[targetCount];
 			}
@@ -42,18 +54,18 @@ public class Custinfo {
 
 	/**
 	 * Set information for the next customer
-	 * 
+	 *
 	 * @param nCustomerID the customer_id of this customer
 	 * @param nUserType   his user-type
 	 * @param rmap        the data read from the database
 	 */
-	public void newCustomer (long nCustomerID, String nUserType, Column[] rmap) {
+	public void newCustomer(long nCustomerID, String nUserType, Column[] rmap) {
 		customerID = nCustomerID;
 		userType = nUserType;
-		columns = new HashMap <> ();
+		columns = new HashMap<>();
 		if (rmap != null) {
 			for (int n = 0; n < rmap.length; ++n) {
-				columns.put (rmap[n].getQname (), rmap[n].get ());
+				columns.put(rmap[n].getQname(), rmap[n].get());
 			}
 		}
 		sampleEmail = null;
@@ -63,24 +75,30 @@ public class Custinfo {
 			}
 		}
 	}
-	public long getCustomerID () {
+
+	public long getCustomerID() {
 		return customerID;
 	}
-	public void setSampleEmail (String nSampleEmail) {
+
+	public void setSampleEmail(String nSampleEmail) {
 		sampleEmail = nSampleEmail;
 	}
-	public void setProviderEmail (String nProviderEmail) {
+
+	public void setProviderEmail(String nProviderEmail) {
 		providerEmail = nProviderEmail;
 	}
-	public void setTargetGroupValue (int pos, boolean value) {
+
+	public void setTargetGroupValue(int pos, boolean value) {
 		if ((targetGroupValues != null) && (pos >= 0) && (pos < targetGroupValues.length)) {
 			targetGroupValues[pos] = value;
 		}
 	}
-	public String getUserType () {
+
+	public String getUserType() {
 		return userType;
 	}
-	public String getMediaFieldContent (Media m) {
+
+	public String getMediaFieldContent(Media m) {
 		if ((m != null) && (m.type == Media.TYPE_EMAIL)) {
 			if (sampleEmail != null) {
 				return sampleEmail;
@@ -89,41 +107,48 @@ public class Custinfo {
 				return providerEmail;
 			}
 		}
-		String	profileField = m != null ? m.profileField () : null;
-		return profileField != null ? columns.get (profileField) : null;
+		String profileField = m != null ? m.profileField() : null;
+		return profileField != null ? columns.get(profileField) : null;
 	}
-	public int getGender () {
-		String	value = columns.get ("gender");
-		
+
+	public int getGender() {
+		String value = columns.get("gender");
+
 		if (value != null) {
 			try {
-				return Integer.parseInt (value);
+				return Integer.parseInt(value);
 			} catch (Exception e) {
 				// do nothing
 			}
 		}
 		return 2;
 	}
-	public String getFirstname () {
-		return columns.get ("firstname");
+
+	public String getFirstname() {
+		return columns.get("firstname");
 	}
-	public String getLastname () {
-		return columns.get ("lastname");
+
+	public String getLastname() {
+		return columns.get("lastname");
 	}
-	public String getTitle () {
-		return columns.get ("title");
+
+	public String getTitle() {
+		return columns.get("title");
 	}
-	public boolean getTrackingVeto () {
-		String	value = columns.get ("sys_tracking_veto");
-		
-		return ((value != null) && (! "".equals (value)) && (! "0".equals (value)));
+
+	public boolean getTrackingVeto() {
+		String value = columns.get("sys_tracking_veto");
+
+		return ((value != null) && (!"".equals(value)) && (!"0".equals(value)));
 	}
-	public Map <String, String> getColumns () {
+
+	public Map<String, String> getColumns() {
 		return columns;
 	}
-	public String getTargetGroupValue () {
-		String	rc = null;
-		
+
+	public String getTargetGroupValue() {
+		String rc = null;
+
 		if (targetGroupValues != null) {
 			rc = "";
 			for (int n = 0; n < targetGroupValues.length; ++n) {

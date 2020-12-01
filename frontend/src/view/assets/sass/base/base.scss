@@ -13,6 +13,14 @@ body {
   background-color: $c-gray-11;
 }
 
+body.dark-theme {
+  background-color: $c-dt-main-background;
+  color: $c-dt-primary-text;
+}
+body.dark-theme h2, h3, h4, h5, h6 {
+  color: $c-dt-primary-text;
+}
+
 img {
   outline: none;
   text-decoration: none;
@@ -80,6 +88,12 @@ h3, h4, h5, h6 {
   margin: 0;
 }
 
+body.dark-theme {
+  h3, h4, h5, h6 {
+    color: $c-dt-primary-text;
+  }
+}
+
 small, .small {
   font-size: $fs-tiny;
 }
@@ -103,6 +117,10 @@ hr {
   border-bottom: 1px solid #e6e6e6;
 }
 
+body.dark-theme hr {
+  border-bottom-color: $c-dt-border;
+}
+
 ul {
   list-style-type: none;
   margin: 0;
@@ -117,6 +135,10 @@ ol {
 i { font-style: normal; }
 
 a { text-decoration: none; }
+
+body.dark-theme a {
+  color: $c-blue-27;
+}
 
 // reset default webkit button styles
 button {

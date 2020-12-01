@@ -150,8 +150,6 @@ public class ExportWizardForm extends StrutsFormBase {
 
     private String localeDatePattern;
 
-    private boolean backButtonPressed = false;
-    
     private int alwaysQuote = 0;
 
 	/**
@@ -164,12 +162,9 @@ public class ExportWizardForm extends StrutsFormBase {
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
         if(action != ExportWizardAction.ACTION_COLLECT_DATA
                 && action != ExportWizardAction.ACTION_PROCEED
-                && action != ExportWizardAction.ACTION_VIEW_STATUS_WINDOW
-                && !backButtonPressed){
+                && action != ExportWizardAction.ACTION_VIEW_STATUS_WINDOW){
             clearData();
         }
-
-        backButtonPressed = false;
     }
     
     /**
@@ -790,14 +785,6 @@ public class ExportWizardForm extends StrutsFormBase {
 
     public void setLocaleDatePattern(String localeDatePattern) {
         this.localeDatePattern = localeDatePattern;
-    }
-
-    public boolean isBackButtonPressed() {
-        return backButtonPressed;
-    }
-
-    public void setBackButtonPressed(boolean backButtonPressed) {
-        this.backButtonPressed = backButtonPressed;
     }
 
 	public int getAlwaysQuote() {

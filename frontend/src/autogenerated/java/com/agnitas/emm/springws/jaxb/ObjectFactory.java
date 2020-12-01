@@ -11,7 +11,10 @@
 
 package com.agnitas.emm.springws.jaxb;
 
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
+import javax.xml.namespace.QName;
 
 
 /**
@@ -32,6 +35,7 @@ import javax.xml.bind.annotation.XmlRegistry;
 @SuppressWarnings("all")
 public class ObjectFactory {
 
+    private final static QName _Error_QNAME = new QName("http://agnitas.com/ws/schemas", "Error");
 
     /**
      * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: com.agnitas.emm.springws.jaxb
@@ -257,6 +261,22 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link MapItem }
+     * 
+     */
+    public MapItem createMapItem() {
+        return new MapItem();
+    }
+
+    /**
+     * Create an instance of {@link Map }
+     * 
+     */
+    public Map createMap() {
+        return new Map();
+    }
+
+    /**
      * Create an instance of {@link MailingContent }
      * 
      */
@@ -270,6 +290,15 @@ public class ObjectFactory {
      */
     public GroupStatisticInfo.Items createGroupStatisticInfoItems() {
         return new GroupStatisticInfo.Items();
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://agnitas.com/ws/schemas", name = "Error")
+    public JAXBElement<String> createError(String value) {
+        return new JAXBElement<String>(_Error_QNAME, String.class, null, value);
     }
 
 }

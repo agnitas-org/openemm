@@ -11,6 +11,8 @@
 package org.agnitas.web;
 
 import java.util.Iterator;
+import java.util.regex.Pattern;
+
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 
@@ -29,7 +31,6 @@ import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 import org.apache.struts.upload.FormFile;
 
 public class MailingWizardForm extends StrutsFormBase {
@@ -37,6 +38,9 @@ public class MailingWizardForm extends StrutsFormBase {
 	private static final transient Logger logger = Logger.getLogger( MailingWizardForm.class);
     
     private static final long serialVersionUID = 9104717555855628618L;
+    private static final Pattern CONTENT_PARAMETER_PATTERN = Pattern.compile("newContent|content\\[\\d+]\\.dynContent");
+
+    private int altgId;
 
 
 	/** Creates a new instance of TemplateForm */
@@ -113,14 +117,10 @@ public class MailingWizardForm extends StrutsFormBase {
         return errors;
     }
 
-	@Override
-	protected ActionMessages checkForHtmlTags(HttpServletRequest request) {
-		if (this.dynName == null || !this.dynName.equals("HTML-Version")) {
-            return super.checkForHtmlTags(request);
-        } else {
-            return new ActionErrors();
-        }
-	}
+    @Override
+    protected boolean isParameterExcludedForUnsafeHtmlTagCheck(String parameterName, HttpServletRequest request) {
+        return CONTENT_PARAMETER_PATTERN.matcher(parameterName).matches();
+    }
 
 	/**
      * Holds value of property action.
@@ -709,6 +709,12 @@ public class MailingWizardForm extends StrutsFormBase {
 	public void setMailingContentTypeAdvertising(boolean mailingContentTypeAdvertising) {
 		mailingContentType = mailingContentTypeAdvertising ? MailingContentType.advertising : MailingContentType.transaction;
 	}
-	
-	
+
+    public int getAltgId() {
+        return altgId;
+    }
+
+    public void setAltgId(int altgId) {
+        this.altgId = altgId;
+    }
 }

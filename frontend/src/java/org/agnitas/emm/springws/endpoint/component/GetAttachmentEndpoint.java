@@ -10,27 +10,32 @@
 
 package org.agnitas.emm.springws.endpoint.component;
 
-import javax.annotation.Resource;
+import javax.xml.bind.JAXBElement;
 
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.jaxb.Attachment;
 import org.agnitas.emm.springws.jaxb.GetAttachmentRequest;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class GetAttachmentEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class GetAttachmentEndpoint extends BaseEndpoint {
 
-	@Resource
 	private ComponentService componentService;
-	@Resource
-	private ObjectFactory objectFactory;
-	
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		GetAttachmentRequest request = (GetAttachmentRequest) arg0;
-		
+
+	public GetAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService) {
+		this.componentService = componentService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetAttachmentRequest")
+	public @ResponsePayload JAXBElement<Attachment> getAttachment(@RequestPayload GetAttachmentRequest request) {
 		ComponentModel model = new ComponentModel();
 		model.setCompanyId(Utils.getUserCompany());
 		model.setComponentId(request.getComponentID());
@@ -40,7 +45,6 @@ public class GetAttachmentEndpoint extends AbstractMarshallingPayloadEndpoint {
             request.setUseISODateFormat(false);
         }
 
-		return objectFactory.createGetAttachmentResponse(new ResponseBuilder(objectFactory).createResponse(componentService.getComponent(model), true, request.isUseISODateFormat()));
+		return objectFactory.createGetAttachmentResponse(new AttachmentResponseBuilder().createResponse(componentService.getComponent(model), true, request.isUseISODateFormat()));
 	}
-
 }

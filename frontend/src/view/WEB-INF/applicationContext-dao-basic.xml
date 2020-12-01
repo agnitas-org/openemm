@@ -61,12 +61,14 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="recipientDao" ref="RecipientDao" />
+		<property name="configService" ref="ConfigService" />
 	</bean>
 
 <!-- ============================================================================================================================== Blacklist -->
 	<bean id="BlacklistDao"	class="com.agnitas.emm.core.blacklist.dao.impl.BlacklistDaoImplBasic">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
+		<property name="configService" ref="ConfigService" />
 	</bean>
 
 <!-- ============================================================================================================================== Calendar -->
@@ -314,7 +316,7 @@
 	<bean id="MailingComponentDao" class="com.agnitas.dao.impl.ComMailingComponentDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
-		<property name="configService" ref="ConfigService" />
+		<property name="trackableLinkDao" ref="TrackableLinkDao" />
 		<property name="mailingComponentFactory" ref="MailingComponentFactory" />
 	</bean>
 
@@ -367,13 +369,6 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="configService" ref="ConfigService" />
-	</bean>
-
-<!-- ============================================================================================================================== Plugins -->
-	<!-- Do not remove, this is used by ExtensionSystemInitializationContextListener -->
-	<bean id="pluginDao" class="org.agnitas.emm.extension.dao.impl.PluginDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
 
 <!-- ============================================================================================================================== Profile fields -->
@@ -442,9 +437,9 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="targetFactory" ref="TargetFactory" />
-		<property name="targetRepresentationFactory" ref="TargetRepresentationFactory" />
 		<property name="eqlFacade" ref="EqlFacade" />
-	</bean>
+        <property name="fulltextSearchQueryGenerator" ref="fulltextSearchQueryGenerator"/>
+    </bean>
 	
 	<bean id="LightTargetDao" class="com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl">
 		<property name="dataSource" ref="dataSource" />
@@ -471,6 +466,11 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="configService" ref="ConfigService" />
+	</bean>
+
+	<bean id="FormTrackableLinkDao" class="com.agnitas.emm.core.trackablelinks.dao.impl.FormTrackableLinkDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
 	
 <!-- ============================================================================================================================== Undo -->
@@ -501,6 +501,7 @@
 	<bean id="UserFormDao" class="com.agnitas.dao.impl.UserFormDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
+		<property name="trackableLinkDao" ref="FormTrackableLinkDao"/>
 	</bean>
 
 <!-- ============================================================================================================================== RecipientsReport -->
@@ -631,6 +632,9 @@
 	<bean id="PermissionDao" class="com.agnitas.dao.impl.PermissionDaoImpl" parent="_BaseDao" />
 	<bean id="WebservicePermissionDao" class="com.agnitas.emm.wsmanager.dao.impl.WebservicePermissionDaoImpl" parent="_BaseDao" />
 	<bean id="WebservicePermissionGroupDao" class="com.agnitas.emm.wsmanager.dao.impl.WebservicePermissionGroupDaoImpl" parent="_BaseDao" />
+	
+	<!-- ============================================================================================================================== Server Prio -->
+	<bean id="ServerPrioDao" class="com.agnitas.emm.core.serverprio.dao.impl.ServerPrioDaoImpl" parent="_BaseDao" />
 	
 	<!-- ============================================================================================================================== Start-Up jobs -->
 	<bean id="StartupJobEntryDao" class="com.agnitas.startuplistener.dao.StartupJobEntryDaoImpl" parent="_BaseDao" />

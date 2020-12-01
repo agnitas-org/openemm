@@ -10,13 +10,9 @@
 
 package org.agnitas.beans;
 
+import org.agnitas.beans.impl.CompanyStatus;
+
 public interface Company {
-	
-	public final static String STATUS_DELETED = "deleted";
-	public final static String STATUS_ACTIVE = "active";
-	public final static String STATUS_INACTIVE = "inactive";
-	public final static String STATUS_TODELETE = "todelete";
-	
     /**
      * Getter for property id.
      *
@@ -71,7 +67,7 @@ public interface Company {
      *
      * @return Value of property ststus.
      */
-    String getStatus();
+    CompanyStatus getStatus();
 
     /**
      * Getter for property use_utf.
@@ -134,7 +130,7 @@ public interface Company {
      *
      * @param status New value of property status.
      */
-    void setStatus(String status);
+    void setStatus(CompanyStatus status);
 
     /**
      * Setter for property use_utf.

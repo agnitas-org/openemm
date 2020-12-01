@@ -42,6 +42,7 @@ import com.agnitas.emm.core.bounce.service.BounceFilterService;
 import com.agnitas.emm.core.bounce.service.impl.BlacklistedAutoResponderEmailException;
 import com.agnitas.emm.core.bounce.service.impl.BlacklistedFilterEmailException;
 import com.agnitas.emm.core.bounce.service.impl.BlacklistedForwardEmailException;
+import com.agnitas.emm.core.bounce.service.impl.EmailInUseException;
 import com.agnitas.emm.core.bounce.util.BounceUtils;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
@@ -148,7 +149,7 @@ public class BounceFilterController {
             BounceFilterDto bounceFilter = conversionService.convert(form, BounceFilterDto.class);
             try {
                 boolean isNew = form.getId() <= 0;
-                int id = bounceFilterService.saveBounceFilter(admin, bounceFilter);
+                int id = bounceFilterService.saveBounceFilter(admin, bounceFilter, isNew);
         
                 if (id > 0) {
                     popups.success("default.changes_saved");
@@ -167,6 +168,9 @@ public class BounceFilterController {
             } catch (BlacklistedAutoResponderEmailException e) {
                 logger.error("Could not save bounce filter!", e);
                 popups.alert("error.blacklistedAutoresponderEmail");
+            } catch (EmailInUseException e) {
+                logger.error("Could not save bounce filter!", e);
+                popups.alert("error.email.used");
             } catch (Exception e) {
                 logger.error("Could not save bounce filter!", e);
                 popups.alert("Error");

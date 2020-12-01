@@ -10,18 +10,32 @@
 
 package com.agnitas.dao.impl;
 
+import java.io.File;
+import java.nio.file.Paths;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.ServerCommand.Server;
+import org.agnitas.util.SqlPreparedStatementManager;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.util.Version;
 
 /**
  * This class is intended to simplify access to the config_tbl.
@@ -75,13 +89,7 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 
 	@DaoUpdateReturnValueCheck
 	@Override
-	public void storeEntry(String classString, String name, String value)  {
-		storeEntry(classString, name, null, value);
-	}
-
-	@DaoUpdateReturnValueCheck
-	@Override
-	public void storeEntry(String classString, String name, String hostName, String value)  {
+	public void storeEntry(String classString, String name, String hostName, String value, String description)  {
 		if (StringUtils.isNotBlank(value) && value.startsWith(AgnUtils.getUserHomeDir())) {
 			value = value.replace(AgnUtils.getUserHomeDir(), "${home}");
 		}
@@ -89,16 +97,16 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 		if (StringUtils.isBlank(hostName)) {
 			List<Map<String, Object>> results = select(logger, "SELECT value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", classString, name);
 			if (results != null && results.size() > 0) {
-				update(logger, "UPDATE config_tbl SET value = ? WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", value, classString, name);
+				update(logger, "UPDATE config_tbl SET value = ?, description = ?, change_date = CURRENT_TIMESTAMP WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", value, description, classString, name);
 			} else {
-				update(logger, "INSERT INTO config_tbl (class, name, hostname, value) VALUES (?, ?, NULL, ?)", classString, name, value);
+				update(logger, "INSERT INTO config_tbl (class, name, hostname, value, creation_date, change_date, description) VALUES (?, ?, NULL, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)", classString, name, value, description);
 			}
 		} else {
 			List<Map<String, Object>> results = select(logger, "SELECT value FROM config_tbl WHERE class = ? AND name = ? AND hostname = ?", classString, name, hostName);
 			if (results != null && results.size() > 0) {
-				update(logger, "UPDATE config_tbl SET value = ? WHERE class = ? AND name = ? AND hostname = ?", value, classString, name, hostName);
+				update(logger, "UPDATE config_tbl SET value = ?, description = ?, change_date = CURRENT_TIMESTAMP WHERE class = ? AND name = ? AND hostname = ?", value, description, classString, name, hostName);
 			} else {
-				update(logger, "INSERT INTO config_tbl (class, name, hostname, value) VALUES (?, ?, ?, ?)", classString, name, hostName, value);
+				update(logger, "INSERT INTO config_tbl (class, name, hostname, value, creation_date, change_date, description) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)", classString, name, hostName, value, description);
 			}
 		}
 	}
@@ -111,5 +119,111 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 	@Override
 	public int getJobqueueHostStatus(String hostName) {
 		return selectIntWithDefaultValue(logger, "SELECT MIN(value) FROM config_tbl WHERE class = ? AND name = ?", 0, "system", hostName + ".IsActive");
+	}
+
+	@Override
+	public void checkAndSetReleaseVersion() {
+		Server applicationType = ConfigService.getInstance().getApplicationType();
+
+		String buildTimeString = ConfigService.getInstance().getValue(ConfigValue.BuildTime);
+		Date buildTime;
+		try {
+			buildTime = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS).parse(buildTimeString);
+		} catch (ParseException e) {
+			try {
+				buildTime = DateUtilities.parseUnknownDateFormat(buildTimeString);
+			} catch (Exception e1) {
+				logger.error("Unparseable BuldTime: " + buildTimeString);
+				buildTime = null;
+			}
+		}
+		String buildHost = ConfigService.getInstance().getValue(ConfigValue.BuildHost);
+		String buildUser = ConfigService.getInstance().getValue(ConfigValue.BuildUser);
+		
+		if (applicationType != null) {
+			// Only keep data for 1 year
+			update(logger, "DELETE FROM release_log_tbl WHERE host_name = ? AND application_name = ? AND startup_timestamp < ?", AgnUtils.getHostName(), applicationType.name(), DateUtilities.getDateOfDaysAgo(365));
+			
+			String versionString = ConfigService.getInstance().getValue(ConfigValue.ApplicationVersion);
+			String lastStartedVersion;
+			if (ConfigService.isOracleDB()) {
+				lastStartedVersion = selectObjectDefaultNull(logger, "SELECT * FROM (SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", new StringRowMapper(), AgnUtils.getHostName(), applicationType.name());
+			} else {
+				lastStartedVersion = selectObjectDefaultNull(logger, "SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", new StringRowMapper(), AgnUtils.getHostName(), applicationType.name());
+			}
+			if (!versionString.equals(lastStartedVersion)) {
+				update(logger, "INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)", AgnUtils.getHostName(), applicationType.name(), versionString, buildTime, buildHost, buildUser);
+			}
+		}
+		
+		// Check and set Runtime version
+		String runtimeVersionFilePath = AgnUtils.getUserHomeDir() + "/conf/version.txt";
+		if (new File(runtimeVersionFilePath).exists()) {
+			Version runtimeVersion = null;
+			try {
+				runtimeVersion = new Version(FileUtils.readFileToString(new File(runtimeVersionFilePath), "UTF-8").trim());
+			} catch (Exception e) {
+				logger.error("Cannot store relealog data for runtime");
+			}
+			if (runtimeVersion != null) {
+				String lastStartedRuntimeVersion;
+				if (ConfigService.isOracleDB()) {
+					lastStartedRuntimeVersion = selectObjectDefaultNull(logger, "SELECT * FROM (SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", new StringRowMapper(), AgnUtils.getHostName(), "RUNTIME");
+				} else {
+					lastStartedRuntimeVersion = selectObjectDefaultNull(logger, "SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", new StringRowMapper(), AgnUtils.getHostName(), "RUNTIME");
+				}
+				if (!runtimeVersion.toString().equals(lastStartedRuntimeVersion)) {
+					update(logger, "INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)", AgnUtils.getHostName(), "RUNTIME", runtimeVersion.toString(), null, null, null);
+				}
+			}
+		}
+		
+		// Check and set Manual version if available
+		String manualPath = ConfigService.getInstance().getValue(ConfigValue.ManualInstallPath) + "/de";
+		if (new File(manualPath).exists()) {
+			Version manualVersion = null;
+			try {
+				String manualVersionString = Paths.get(manualPath).toRealPath().toString();
+				Matcher manualVersionMatcher = Pattern.compile(".*?([0-9]+[.][0-9]+[.][0-9]+(?:[.][0-9]+)?).*").matcher(manualVersionString);
+				if (manualVersionMatcher.find()) {
+					manualVersion = new Version(manualVersionMatcher.group(1));
+				}
+			} catch (Exception e) {
+				logger.error("Cannot store relealog data for manual");
+			}
+			if (manualVersion != null) {
+				String lastStartedManualVersion;
+				if (ConfigService.isOracleDB()) {
+					lastStartedManualVersion = selectObjectDefaultNull(logger, "SELECT * FROM (SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", new StringRowMapper(), AgnUtils.getHostName(), "MANUAL");
+				} else {
+					lastStartedManualVersion = selectObjectDefaultNull(logger, "SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", new StringRowMapper(), AgnUtils.getHostName(), "MANUAL");
+				}
+				if (!manualVersion.toString().equals(lastStartedManualVersion)) {
+					update(logger, "INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)", AgnUtils.getHostName(), "MANUAL", manualVersion.toString(), null, null, null);
+				}
+			}
+		}
+	}
+
+	@Override
+	public List<Map<String, Object>> getReleaseData(String hostNamePattern, String applicationTypePattern) throws Exception {
+		SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager("SELECT startup_timestamp, host_name, application_name, version_number, build_time, build_host, build_user FROM release_log_tbl");
+		if (StringUtils.isNotBlank(hostNamePattern)) {
+			sqlPreparedStatementManager.addWhereClause("host_name LIKE ?", hostNamePattern.replace("?", "_").replace("*", "%"));
+		}
+		if (StringUtils.isNotBlank(applicationTypePattern)) {
+			sqlPreparedStatementManager.addWhereClause("application_name LIKE ?", applicationTypePattern.replace("?", "_").replace("*", "%"));
+		}
+		
+		return select(logger, sqlPreparedStatementManager.getPreparedSqlString() + " ORDER BY startup_timestamp DESC", sqlPreparedStatementManager.getPreparedSqlParameters());
+	}
+
+	@Override
+	public Date getCurrentDbTime() {
+		if (isOracleDB()) {
+			return select(logger, "SELECT CURRENT_TIMESTAMP FROM dual", Date.class);
+		} else {
+			return select(logger, "SELECT CURRENT_TIMESTAMP", Date.class);
+		}
 	}
 }

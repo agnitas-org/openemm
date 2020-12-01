@@ -20,6 +20,7 @@ import java.util.concurrent.Future;
 
 import javax.sql.DataSource;
 
+import com.agnitas.service.SimpleServiceResult;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingSendStatus;
@@ -248,4 +249,11 @@ public interface ComMailingBaseService {
     String toViewUri(int mailingId);
 
     Timestamp getMailingLastSendDate(int mailingId);
+
+    /**
+     * Check if required content (depends on selected media types) is not blank.
+     *
+     * @param mailing a mailing entity to check.
+     */
+    SimpleServiceResult checkContentNotBlank(ComMailing mailing);
 }

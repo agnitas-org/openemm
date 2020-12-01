@@ -18,8 +18,9 @@
 <emm:Permission token="targets.show" />
 
 <c:set var="isTabsMenuShown" value="false" scope="request" />
-<c:set var="agnNavHrefAppend"
-	value="&targetID=${editTargetForm.targetID}" scope="request" />
+<emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+    <c:set target="${agnNavHrefParams}" property="target-id" value="${editTargetForm.targetID}"/>
+</emm:instantiate>
 <c:set var="agnTitleKey" value="Target" scope="request" />
 <c:set var="agnSubtitleKey" value="Target" scope="request" />
 <c:set var="sidemenu_active" value="Targetgroups" scope="request" />
@@ -37,15 +38,13 @@
 	</c:when>
 	<c:otherwise>
 		<c:set var="agnNavigationKey" value="targets" scope="request" />
-		<c:set var="sidemenu_sub_active" value="target.NewTarget"
-			scope="request" />
+		<c:set var="sidemenu_sub_active" value="target.NewTarget" scope="request" />
 		<c:set var="agnHighlightKey" value="target.NewTarget" scope="request" />
 	</c:otherwise>
 </c:choose>
 
 <c:set var="submitType" value="data-form-submit" />
-<c:if
-	test="${workflowForwardParams != null && workflowForwardParams != ''}">
+<c:if test="${workflowForwardParams != null && workflowForwardParams != ''}">
 	<c:set var="submitType" value="data-form-submit-static" />
 </c:if>
 

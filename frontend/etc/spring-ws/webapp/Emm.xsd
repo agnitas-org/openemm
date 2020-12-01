@@ -3,9 +3,27 @@
 	xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
 	xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
 	xmlns:agn="http://agnitas.com/ws/schemas"
-	targetNamespace="http://agnitas.com/ws/schemas" 
+	targetNamespace="http://agnitas.com/ws/schemas"
 	elementFormDefault="qualified"
 	jaxb:version="2.0">
+	
+	
+    <!-- Utility element used for Map type -->
+	<xs:complexType name="MapItem">
+		<xs:all>      
+			<xs:element name="key" type="xs:anyType" />      
+			<xs:element name="value" type="xs:anyType" />     
+		</xs:all>
+	</xs:complexType>
+	<!-- Utility element used for sending map collections -->
+	<xs:complexType name="Map">
+		<xs:sequence>
+			<xs:element name="item" type="agn:MapItem" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:element name="Error" type="xs:string" />
+
 	
 	<xs:element name="SetSubscriberBindingWithActionRequest">
 		<xs:complexType>
@@ -244,5 +262,6 @@
 			</xs:all>
 		</xs:complexType>
 	</xs:element>
-
+	
+	
 </xs:schema>

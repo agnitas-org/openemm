@@ -16,13 +16,13 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 
 /**
  * Implementation of {@link AbstractVelocityWrapper} using
- * the {@link ComAgnVelocityUberspector}.
+ * the {@link AgnVelocityUberspector}.
  */
 class ComVelocityWrapperImpl extends AbstractVelocityWrapper {
 	
 	/**
 	 * Creates a new ComVelocityWrapperImpl using the
-	 * {@link ComAgnVelocityUberspector}. 
+	 * {@link AgnVelocityUberspector}. 
 	 * 
 	 * @param companyId company ID
 	 * @param factory factory for Uberspect delegate targets

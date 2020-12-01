@@ -15,6 +15,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.log4j.Logger;
+
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
@@ -26,8 +29,6 @@ import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisti
 import com.agnitas.emm.core.birtstatistics.optimization.dto.OptimizationStatisticDto;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatisticDto;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.log4j.Logger;
 
 public interface BirtStatisticsService {
 	
@@ -78,10 +79,8 @@ public interface BirtStatisticsService {
 	 */
 	Map<String, String> getReportStatisticsUrlMap(List<ComBirtReportSettings> reportSettings, Date currentDate, ComBirtReport report, int companyId, Integer accountId) throws Exception;
 
-	String generateUrlWithParamsForInternalAccess(Map<String, Object> parameters);
+	String generateUrlWithParams(Map<String, Object> parameters, boolean internalAccess);
 
-	String generateUrlWithParamsForExternalAccess(Map<String, Object> parameters);
-    
     String getRecipientStatisticUrlWithoutFormat(ComAdmin admin, String sessionId, RecipientStatisticDto recipientStatistic) throws Exception;
 
     String getMailingStatisticUrl(ComAdmin admin, String sessionId, MailingStatisticDto mailingStatistic) throws Exception;
@@ -97,4 +96,6 @@ public interface BirtStatisticsService {
 	String getRecipientStatusStatisticUrl(ComAdmin admin, String sessionId, RecipientStatusStatisticDto recipientStatusDto) throws Exception;
 
 	String getOptimizationStatisticUrl(ComAdmin admin, OptimizationStatisticDto optimizationDto) throws Exception;
+
+	String getUserFormTrackableLinkStatisticUrl(ComAdmin admin, String sessionId, int formId) throws Exception;
 }

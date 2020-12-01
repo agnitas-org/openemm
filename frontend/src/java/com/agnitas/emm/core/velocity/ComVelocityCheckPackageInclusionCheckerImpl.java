@@ -20,22 +20,20 @@ import org.apache.log4j.Logger;
  * Implementation of {@link AbstractPackageInclusionChecker} for OpenEMM and EMM packages.
  */
 public class ComVelocityCheckPackageInclusionCheckerImpl extends AbstractPackageInclusionChecker {
-	
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger( ComVelocityCheckPackageInclusionCheckerImpl.class);
 	
 	/** Pattern for OpenEMM and EMM packages. */
 	private static final transient Pattern pattern = Pattern.compile( "^(?:(?:org)|(?:com))\\.agnitas(?:\\..+)?");
 	
-
 	@Override
 	public boolean includePackage(String packageName) {
-		if( logger.isInfoEnabled())
+		if( logger.isInfoEnabled()) {
 			logger.info( "Check exclusion of package " + packageName);
+		}
 		
 		Matcher matcher = pattern.matcher( packageName);
 
 		return matcher.matches();
 	}
-
 }

@@ -10,19 +10,16 @@
 
 package com.agnitas.emm.core.target.eql.emm.eql;
 
-import com.agnitas.emm.core.target.eql.codegen.InvalidEqlDateFormatException;
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetOperator;
+import java.util.Optional;
+
+import org.agnitas.target.ChainOperator;
+import org.agnitas.target.ConditionalOperator;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.target.eql.codegen.EqlDateFormat;
+import com.agnitas.emm.core.target.eql.codegen.InvalidEqlDateFormatException;
 
 public class EqlUtils {
-	
-	public static TargetOperator getValidOperator(TargetOperator[] validOperator, int operatorCode) {
-		return operatorCode > 0 && operatorCode <= validOperator.length ?
-				validOperator[operatorCode - 1] : null;
-	}
 
     public static String getIsEmptyOperatorValue(String value) {
 		return StringUtils.equalsIgnoreCase("NOT_NULL", value) ? "IS NOT EMPTY" : "IS EMPTY";
@@ -48,64 +45,65 @@ public class EqlUtils {
 			throw new IllegalArgumentException("Invalid date format pattern: " + dateFormat, e);
 		}
 	}
-	
-	public static String makeEquation(String field, TargetOperator operator1, Object value1, boolean disableThreeValuedLogic) {
+
+	public static String makeEquation(String field, ConditionalOperator operator1, Object value1, boolean disableThreeValuedLogic) {
 		return makeEquation(field, operator1, value1, null, null, disableThreeValuedLogic);
 	}
-	
-	public static String makeEquation(String field, TargetOperator operator1, Object value1, TargetOperator operator2, String value2, boolean disableThreeValuedLogic) {
-		TargetOperator comparisonOperator = operator2 == null ? operator1 : operator2;
-		StringBuilder operatorExpression = new StringBuilder();
-		
+
+	public static String makeEquation(String field, ConditionalOperator operator1, Object value1, ConditionalOperator operator2, String value2, boolean disableThreeValuedLogic) {
+		ConditionalOperator comparisonOperator = operator2 == null ? operator1 : operator2;
+		final StringBuilder operatorExpression = new StringBuilder();
+
 		if (disableThreeValuedLogic) {
-			disableThreeValuedLogic = TargetNode.isThreeValuedLogicOperator(comparisonOperator);
-			
-			if (TargetNode.isInequalityOperator(comparisonOperator)) {
+			disableThreeValuedLogic = comparisonOperator.isThreeValuedLogicOperator();
+
+			if (comparisonOperator.isInequalityOperator()) {
 				operatorExpression.append('(');
 			} else {
-				comparisonOperator = TargetNode.getOppositeOperator(comparisonOperator);
+				comparisonOperator = comparisonOperator.getOppositeOperator();
 				operatorExpression.append("NOT (");
 			}
 		}
-		
+
 		if (operator2 == null) {
 			operatorExpression.append(field)
 					.append(" ")
-					.append(comparisonOperator.getOperatorSymbol())
+					.append(comparisonOperator.getEqlSymbol())
 					.append(" ")
 					.append(value1);
 		} else {
 			operatorExpression.append(field)
 					.append(" ")
-					.append(operator1 == TargetNode.OPERATOR_MOD ? "%" : operator1.getOperatorSymbol())
+					.append(operator1 == ConditionalOperator.MOD ? "%" : operator1.getEqlSymbol())
 					.append(" ")
 					.append(value1)
 					.append(" ")
-					.append(comparisonOperator.getOperatorSymbol())
+					.append(comparisonOperator.getEqlSymbol())
 					.append(" ")
 					.append(value2);
 		}
-		
+
 		if (disableThreeValuedLogic) {
 			operatorExpression.append(" OR ")
 					.append(field)
 					.append(" IS EMPTY")
 					.append(')');
 		}
-		
+
 		return operatorExpression.toString();
 	}
 	
 	public static String convertChainOperator(int chainOperator) {
-		switch(chainOperator) {
-			case TargetNode.CHAIN_OPERATOR_AND:
-				return "AND";
-    
-			case TargetNode.CHAIN_OPERATOR_OR:
-				return "OR";
-            
-			default:
-				return "";
-        }
+		final Optional<ChainOperator> opOpt = ChainOperator.fromCode(chainOperator);
+		
+		if(opOpt.isPresent()) {
+			switch(opOpt.get()) {
+			case AND:	return "AND";
+			case OR:	return "OR";
+			default:	return "";
+			}
+		} else {
+			return "";
+		}
 	}
 }

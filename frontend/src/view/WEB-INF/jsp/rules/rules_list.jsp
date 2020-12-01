@@ -1,17 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@ page import="com.agnitas.emm.core.target.nodes.TargetNodeMailingClickedOnSpecificLink" %>
-<%@ page import="com.agnitas.emm.core.target.nodes.TargetNodeMailingRevenue" %>
 <%@ page import="com.agnitas.web.ComTargetAction" %>
 <%@ page import="com.agnitas.web.forms.ComTargetForm" %>
 <%@ page import="org.agnitas.beans.Recipient" %>
-<%@ page import="org.agnitas.target.TargetNode" %>
-<%@ page import="org.agnitas.target.impl.TargetNodeDate" %>
-<%@ page import="org.agnitas.target.impl.TargetNodeIntervalMailing" %>
-<%@ page import="org.agnitas.target.impl.TargetNodeMailingClicked" %>
-<%@ page import="org.agnitas.target.impl.TargetNodeMailingOpened" %>
-<%@ page import="org.agnitas.target.impl.TargetNodeMailingReceived" %>
-<%@ page import="org.agnitas.target.impl.TargetNodeNumeric" %>
-<%@ page import="org.agnitas.target.impl.TargetNodeString" %>
+<%@ page import="org.agnitas.target.ChainOperator" %>
+<%@ page import="org.agnitas.target.ConditionalOperator" %>
+<%@ page import="org.agnitas.target.PseudoColumn" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
@@ -44,23 +37,21 @@
 <c:set var="COLUMN_TYPE_MAILING_CLICKED_SPECIFIC_LINK" value="<%= ComTargetForm.COLUMN_TYPE_MAILING_CLICKED_SPECIFIC_LINK %>" scope="page" />
 
 
-<c:set var="DATE_OPERATORS" value="<%= TargetNodeDate.getValidOperators() %>" />
-<c:set var="STRING_OPERATORS" value="<%= TargetNodeString.getValidOperators() %>" />
-<c:set var="NUMERIC_OPERATORS" value="<%= TargetNodeNumeric.getValidOperators() %>" />
-<c:set var="MOD_SECONDARY_OPERATORS" value="<%= TargetNode.getAllowedSecondaryOperatorsForPrimaryOperator(TargetNode.OPERATOR_MOD) %>" />
-<c:set var="MAILING_OPERATORS" value="<%= TargetNodeMailingReceived.getValidOperators() %>" />
-<c:set var="INTERVAL_MAILING_OPERATORS" value="<%= TargetNodeIntervalMailing.getValidOperators() %>" />
+<c:set var="DATE_OPERATORS" value="<%= ConditionalOperator.getValidOperatorsForDate() %>" />
+<c:set var="STRING_OPERATORS" value="<%= ConditionalOperator.getValidOperatorsForString() %>" />
+<c:set var="NUMERIC_OPERATORS" value="<%= ConditionalOperator.getValidOperatorsForNumber() %>" />
+<c:set var="MOD_SECONDARY_OPERATORS" value="<%= ConditionalOperator.getSecondaryOperatorsForMod() %>" />
+<c:set var="MAILING_OPERATORS" value="<%=ConditionalOperator.getValidOperatorsForMailingOperators()%>" />
+<c:set var="INTERVAL_MAILING_OPERATORS" value="<%=ConditionalOperator.getValidOperatorsForMailingOperators()%>" />
 
-<c:set var="OPERATOR_IS" value="<%=TargetNode.OPERATOR_IS.getOperatorCode()%>" scope="page" />
-<c:set var="OPERATOR_MOD" value="<%=TargetNode.OPERATOR_MOD.getOperatorCode()%>" scope="page" />
+<c:set var="OPERATOR_IS" value="<%= ConditionalOperator.IS.getOperatorCode() %>" scope="page" />
+<c:set var="OPERATOR_MOD" value="<%= ConditionalOperator.MOD.getOperatorCode() %>" scope="page" />
 
-<c:set var="COLUMN_INTERVAL_MAILING" value="<%= TargetNodeIntervalMailing.PSEUDO_COLUMN_NAME %>" scope="page" />
-<c:set var="COLUMN_MAILING_OPENED" value="<%= TargetNodeMailingOpened.PSEUDO_COLUMN_NAME %>" scope="page" />
-<c:set var="COLUMN_MAILING_CLICKED" value="<%= TargetNodeMailingClicked.PSEUDO_COLUMN_NAME %>" scope="page" />
-<c:set var="COLUMN_MAILING_RECEIVED" value="<%= TargetNodeMailingReceived.PSEUDO_COLUMN_NAME %>" scope="page" />
-<c:set var="COLUMN_MAILING_REVENUE" value="<%= TargetNodeMailingRevenue.PSEUDO_COLUMN_NAME %>" scope="page" />
-<c:set var="COLUMN_MAILING_CLICKED_ON_SPECIFIC_LINK" value="<%= TargetNodeMailingClickedOnSpecificLink.PSEUDO_COLUMN_NAME %>" scope="page" />
-
+<c:set var="COLUMN_INTERVAL_MAILING" value="<%= PseudoColumn.INTERVAL_MAILING %>" scope="page" />
+<c:set var="COLUMN_MAILING_OPENED" value="<%= PseudoColumn.OPENED_MAILING %>" scope="page" />
+<c:set var="COLUMN_MAILING_CLICKED" value="<%= PseudoColumn.CLICKED_IN_MAILING %>" scope="page" />
+<c:set var="COLUMN_MAILING_RECEIVED" value="<%= PseudoColumn.RECEIVED_MAILING %>" scope="page" />
+<c:set var="COLUMN_MAILING_CLICKED_ON_SPECIFIC_LINK" value="<%= PseudoColumn.CLICKED_SPECIFIC_LINK_IN_MAILING %>" scope="page" />
 
 <c:set var="ACTION_SAVE" value="<%=ComTargetAction.ACTION_SAVE%>" scope="page" />
 
@@ -104,11 +95,6 @@
         <c:set target="${columnNameToShortNameMap}" property="${fn:toUpperCase(COLUMN_MAILING_RECEIVED)}"><bean:message key="target.rule.mailingReceived"/></c:set>
         <option value="${fn:toUpperCase(COLUMN_MAILING_RECEIVED)}" data-extra="MAILING">
             <bean:message key="target.rule.mailingReceived"/>
-        </option>
-
-        <c:set target="${columnNameToShortNameMap}" property="${fn:toUpperCase(COLUMN_MAILING_REVENUE)}"><bean:message key="target.rule.mailingRevenue"/></c:set>
-        <option value="${fn:toUpperCase(COLUMN_MAILING_REVENUE)}" data-extra="MAILING">
-            <bean:message key="target.rule.mailingRevenue"/>
         </option>
 
         <c:set target="${columnNameToShortNameMap}" property="${fn:toUpperCase(COLUMN_MAILING_CLICKED_ON_SPECIFIC_LINK)}"><bean:message key="target.rule.mailingClickedSpecificLink"/></c:set>
@@ -241,16 +227,14 @@
                             <c:when test="${index != 0}">
                                 <td>
                                     <html:select styleClass="form-control" name="${FORM_NAME}" property="chainOperator[${index}]" size="1" disabled="${TARGET_LOCKED}">
-                                        <html:option value="<%=Integer
-                                                        .toString(TargetNode.CHAIN_OPERATOR_AND)%>" key="default.and" />
-                                        <html:option value="<%=Integer
-                                                        .toString(TargetNode.CHAIN_OPERATOR_OR)%>" key="default.or" />
+                                        <html:option value="<%= Integer.toString(ChainOperator.AND.getOperatorCode()) %>" key="default.and" />
+                                        <html:option value="<%= Integer.toString(ChainOperator.OR.getOperatorCode()) %>" key="default.or" />
                                     </html:select>
                                 </td>
                             </c:when>
                             <c:otherwise>
                                 <td>
-                                    <html:hidden name="${FORM_NAME}" property="chainOperator[${index}]" value="<%= Integer.toString(TargetNode.CHAIN_OPERATOR_NONE) %>" />
+                                    <html:hidden name="${FORM_NAME}" property="chainOperator[${index}]" value="<%= Integer.toString(ChainOperator.NONE.getOperatorCode()) %>" />
                                 </td>
                             </c:otherwise>
                         </c:choose>
@@ -355,7 +339,6 @@
                                                                 <html:option value="0" key="recipient.gender.0.short" />
                                                                 <html:option value="1" key="recipient.gender.1.short" />
                                                                 <emm:ShowByPermission token="recipient.gender.extended">
-                                                                    <html:option value="3" key="recipient.gender.3.short" />
                                                                     <html:option value="4" key="recipient.gender.4.short" />
                                                                     <html:option value="5" key="recipient.gender.5.short" />
                                                                 </emm:ShowByPermission>
@@ -384,7 +367,7 @@
                                                 </div>
                                                 <div class="col-sm-4">
                                                     <html:select name="${FORM_NAME}" property="secondaryOperator[${index}]" size="1" styleClass="form-control" disabled="${TARGET_LOCKED}">
-                                                        <logic:iterate collection="<%= TargetNode.getAllowedSecondaryOperatorsForPrimaryOperator(TargetNode.OPERATOR_MOD) %>" id="operator">
+                                                        <logic:iterate collection="<%= ConditionalOperator.getSecondaryOperatorsForMod() %>" id="operator">
                                                             <html:option value="${operator.operatorCode}"><bean:message key="target.operator.${operator.operatorKey}" /></html:option>
                                                         </logic:iterate>
                                                     </html:select>

@@ -344,7 +344,11 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
       } else {
         cursorPos = null; // select all
       }
-      ace.edit("contentEditor").setValue(content, cursorPos);
+      var aceEditor = ace.edit("contentEditor");
+      if($("body").hasClass("dark-theme")) {
+        aceEditor.setTheme("ace/theme/idle_fingers");
+      }
+      aceEditor.setValue(content, cursorPos);
     }
   };
 
@@ -363,6 +367,9 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
 
       if ($htmlEditorBlock.is(":visible")) {
         var htmlEditor = ace.edit("contentEditor");
+        if($("body").hasClass("dark-theme")) {
+          htmlEditor.setTheme("ace/theme/idle_fingers");
+        }
         content = htmlEditor.getValue();
       }
 

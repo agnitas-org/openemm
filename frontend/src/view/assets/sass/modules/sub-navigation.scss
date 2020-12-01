@@ -134,6 +134,28 @@
 
 }
 
+body.dark-theme .sub-navigation {
+  border-color: $c-dt-sub-nav-border;
+  background-color: $c-dt-sub-nav-background;
+
+  @include box-shadow(inset 0px 10px 4px -8px $c-dt-sub-nav-shadow);
+
+  .sub-nav > li {
+      > a {
+        color: $c-dt-sub-nav-text;
+      }
+
+      &:hover,
+      &:active,
+      &:focus,
+      &.active {
+        > a {
+          border-bottom-color: $c-blue-27;
+        }
+      }
+  }
+}
+
 body.wide-sidebar .sub-navigation {
   left: 240px;
 }

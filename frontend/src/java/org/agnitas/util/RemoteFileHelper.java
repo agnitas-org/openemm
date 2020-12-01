@@ -12,6 +12,7 @@ package org.agnitas.util;
 
 import java.io.Closeable;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.List;
 
 public interface RemoteFileHelper extends Closeable {
@@ -20,6 +21,8 @@ public interface RemoteFileHelper extends Closeable {
 	public List<String> ls(String path) throws Exception;
 	public boolean directoryExists(String directoryPath) throws Exception;
 	public boolean fileExists(String filePath) throws Exception;
-	public void put(InputStream inputStream, String destination) throws Exception;
+	public void put(InputStream inputStream, String destination, boolean useTempFileNameWhileUploading) throws Exception;
 	public InputStream get(String name) throws Exception;
+	public Date getModifyDate(String filePathAndName) throws Exception;
+	public long getFileSize(String filePathAndName) throws Exception;
 }

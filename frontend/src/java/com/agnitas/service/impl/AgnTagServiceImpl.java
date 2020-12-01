@@ -24,16 +24,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.AgnTagAttributeDto;
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.factory.TagDetailsFactory;
-import com.agnitas.beans.AgnTagDto;
-import com.agnitas.service.AgnDynTagGroupResolver;
-import com.agnitas.service.AgnTagAttributeResolverRegistry;
-import com.agnitas.service.AgnTagResolver;
-import com.agnitas.service.AgnTagResolverFactory;
-import com.agnitas.service.AgnTagService;
 import org.agnitas.beans.TagDetails;
 import org.agnitas.beans.factory.DynamicTagFactory;
 import org.agnitas.dao.TagDao;
@@ -45,13 +35,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.AgnTagAttributeDto;
+import com.agnitas.beans.AgnTagDto;
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.factory.TagDetailsFactory;
+import com.agnitas.service.AgnDynTagGroupResolver;
+import com.agnitas.service.AgnTagAttributeResolverRegistry;
+import com.agnitas.service.AgnTagResolver;
+import com.agnitas.service.AgnTagResolverFactory;
+import com.agnitas.service.AgnTagService;
+
 public class AgnTagServiceImpl implements AgnTagService {
     private static final Logger logger = Logger.getLogger(AgnTagServiceImpl.class);
 
-    private Pattern dynTagInQuotesPattern = Pattern.compile("\\[(?<type>agnDYN|agnDVALUE|gridPH)\\s+name='(?<name>.*)'\\s+/]");
-    private Pattern dynTagInDoubleQuotesPattern = Pattern.compile("\\[(?<type>agnDYN|agnDVALUE|gridPH)\\s+name=\"(?<name>.*?)\"\\s+/]");
-    private Pattern agnTagSelectValueAttributePattern = Pattern.compile("\\{([^}]+)}");
-    private Pattern agnTagSelectNamePattern = Pattern.compile("\\[([^]]+)\\]");
+    private static final Pattern dynTagInQuotesPattern = Pattern.compile("\\[(?<type>agnDYN|agnDVALUE|gridPH)\\s+name='(?<name>.*)'\\s+/]");
+    private static final Pattern dynTagInDoubleQuotesPattern = Pattern.compile("\\[(?<type>agnDYN|agnDVALUE|gridPH)\\s+name=\"(?<name>.*?)\"\\s+/]");
+    private static final Pattern agnTagSelectValueAttributePattern = Pattern.compile("\\{([^}]+)}");
+    private static final Pattern agnTagSelectNamePattern = Pattern.compile("\\[([^]]+)]");
 
     private DynamicTagFactory dynamicTagFactory;
     private TagDetailsFactory tagDetailsFactory;
@@ -109,7 +110,12 @@ public class AgnTagServiceImpl implements AgnTagService {
     }
 
     @Override
-    public String resolveTags(String content, AgnTagResolver resolver) throws Exception {
+    public String resolveTags(int companyID, String content, AgnTagResolver resolver) throws Exception {
+        return resolveTags(companyID, content, true, resolver);
+    }
+
+    @Override
+    public String resolveTags(int companyID, String content, boolean recursive, AgnTagResolver resolver) throws Exception {
         if (StringUtils.isEmpty(content)) {
             return content;
         }
@@ -130,7 +136,7 @@ public class AgnTagServiceImpl implements AgnTagService {
                     throw new Exception("error.personalization_tag_parameter");
                 }
 
-                String value = resolver.resolve(tag);
+                String value = resolver.resolve(companyID, tag);
                 if (value == null) {
                     position = end + 1;
                 } else {
@@ -138,7 +144,12 @@ public class AgnTagServiceImpl implements AgnTagService {
                     if (logger.isInfoEnabled()) {
                         logger.info("resolveTags: " + name + " value '" + value + "'");
                     }
-                    position = begin;
+
+                    if (recursive) {
+                        position = begin;
+                    } else {
+                        position = begin + value.length();
+                    }
                 }
             }
         }
@@ -148,12 +159,12 @@ public class AgnTagServiceImpl implements AgnTagService {
 
     @Override
     public String resolveTags(String content, @VelocityCheck int companyId, int mailingId, int mailingListId, int customerId) throws Exception {
-        return resolveTags(content, agnTagResolverFactory.create(companyId, mailingId, mailingListId, customerId));
+        return resolveTags(companyId, content, agnTagResolverFactory.create(companyId, mailingId, mailingListId, customerId));
     }
 
     @Override
     public String resolve(TagDetails tag, @VelocityCheck int companyId, int mailingId, int mailingListId, int customerId) {
-        return agnTagResolverFactory.create(companyId, mailingId, mailingListId, customerId).resolve(tag);
+        return agnTagResolverFactory.create(companyId, mailingId, mailingListId, customerId).resolve(companyId, tag);
     }
 
     @Override

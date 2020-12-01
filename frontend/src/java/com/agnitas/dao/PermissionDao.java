@@ -15,7 +15,7 @@ import java.util.List;
 import com.agnitas.emm.core.Permission;
 
 public interface PermissionDao {
-	public List<Permission> getAllPermissions();
-	
-	public List<Permission> getPermissionsByCategory(String category);
+	List<Permission> getAllPermissions();
+
+	List<String> getAllCategoriesOrdered();
 }

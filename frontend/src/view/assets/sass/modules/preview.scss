@@ -5,6 +5,10 @@
   background-color: $c-gray-02;
 }
 
+body.dark-theme .mailing-preview-wrapper {
+  background-color: $c-dt-tile-background;
+}
+
 .mailing-preview {
   padding: 13px;
   margin: 0 auto;

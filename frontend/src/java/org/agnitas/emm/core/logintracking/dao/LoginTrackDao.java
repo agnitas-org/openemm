@@ -74,6 +74,15 @@ public interface LoginTrackDao {
 	 * @return number of records deleted
 	 */
 	public int deleteOldRecords(int retentionTime, int maxRecords);
+
+	/**
+	 * Same as {@link #deleteOldRecords(int, int)} but with hours instead of days.
+	 *  
+	 * @param retentionTime number of days a records must be stored
+	 * @param maxRecords maximum number of records to be deleted at one method call
+	 * @return number of records deleted
+	 */
+	public int deleteOldRecordsHours(int retentionTimeHours, int maxRecords);
 	
 	/**
 	 * Returns login tracking data by tracking ID.

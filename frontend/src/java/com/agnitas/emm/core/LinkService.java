@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 import com.agnitas.util.Caret;
+import com.agnitas.beans.LinkProperty;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComTrackableLink;
@@ -56,12 +57,19 @@ public interface LinkService {
 	String createDeepTrackingUID(int companyID, int mailingID, int linkID, int customerID);
 
 	Integer getLineNumberOfFirstRdirLink(String text);
-
-	Integer getLineNumberOfFirstInvalidLink(String text);
+	
+	/**
+	 * Return number of line with invalid link
+	 * @param text
+	 * @return if invalid line exists - return number of line, otherwise return -1
+	 */
+	int getLineNumberOfFirstInvalidLink(String text);
 
 	Integer getLineNumberOfFirstInvalidSrcLink(String text);
 
 	String validateLink(@VelocityCheck int companyId, String link, GridCustomPlaceholderType type);
+
+	List<LinkProperty> getDefaultExtensions(@VelocityCheck int companyId);
 
 	class ParseLinkException extends Exception implements ErrorLinkStorage {
 		private static final long serialVersionUID = -4821051425601251856L;

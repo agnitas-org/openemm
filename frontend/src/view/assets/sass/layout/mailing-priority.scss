@@ -79,6 +79,48 @@ $m-type-normal-icon-url: 'core/images/campaignManager/icon_mailing_l.png';
   }
 }
 
+body.dark-theme .l-mailing-priority {
+
+  .l-sub-headers {
+    border-color: $c-dt-tile-border;
+    background-color: $c-dt-tile-header;
+  }
+
+  .l-row-bordered {
+    .col-sm-1:not(:first-child),
+    .col-sm-2:not(:first-child),
+    .col-sm-3:not(:first-child),
+    .col-sm-4:not(:first-child),
+    .col-sm-5:not(:first-child),
+    .col-sm-6:not(:first-child),
+    .col-sm-7:not(:first-child),
+    .col-sm-8:not(:first-child),
+    .col-sm-9:not(:first-child),
+    .col-sm-10:not(:first-child),
+    .col-sm-11:not(:first-child),
+    .col-sm-12:not(:first-child) {
+      border-color: $c-dt-tile-border;
+    }
+  }
+
+  .l-content-area {
+    background-color: $c-dt-tile-background;
+  }
+
+  .l-droppable-area.highlight {
+    background-color: lighten($c-dt-tile-background, 5%);
+  }
+
+  #ordered-area,
+  #unordered-area {
+    > .row.row-2,
+    > .row.row-3,
+    > .row.row-4 {
+      border-color: $c-dt-tile-border;
+    }
+  }
+}
+
 .l-mailing-entry {
   display: flex;
   flex-direction: row;
@@ -142,6 +184,17 @@ $m-type-normal-icon-url: 'core/images/campaignManager/icon_mailing_l.png';
         background-image: url($m-type-normal-icon-url);
       }
     }
+  }
+}
+
+body.dark-theme .l-mailing-entry {
+  color: $c-mailing-priority-entry-text;
+  background-color: $c-mailing-priority-entry-background;
+  border-color: $c-mailing-priority-entry-border;
+
+  &:hover,
+  &:focus {
+    background-color: lighten($c-mailing-priority-entry-background, 5%);
   }
 }
 

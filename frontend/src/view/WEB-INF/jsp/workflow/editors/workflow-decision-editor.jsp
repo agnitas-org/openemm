@@ -1,11 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="org.agnitas.target.TargetNode" %>
-<%@ page import="org.agnitas.beans.Recipient" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowReactionType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowDecisionType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowDecisionCriteria" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria" %>
+<%@ page import="org.agnitas.target.ChainOperator" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
@@ -38,8 +37,8 @@
 <c:set var="operators" value="<%= WorkflowDecision.DECISION_OPERATORS %>"/>
 <c:set var="operatorsTypeSupportMap" value="<%= WorkflowDecision.OPERATOR_TYPE_SUPPORT_MAP %>"/>
 
-<c:set var="CHAIN_OPERATOR_AND" value="<%= TargetNode.CHAIN_OPERATOR_AND %>"/>
-<c:set var="CHAIN_OPERATOR_OR" value="<%= TargetNode.CHAIN_OPERATOR_OR %>"/>
+<c:set var="CHAIN_OPERATOR_AND" value="<%= ChainOperator.AND.getOperatorCode() %>"/>
+<c:set var="CHAIN_OPERATOR_OR" value="<%= ChainOperator.OR.getOperatorCode() %>"/>
 
 <c:set var="isRevenueCrteriaEnabled" value="false"/>
 <%@include file="../fragments/workflow-decision-editor-revenue-settigs.jspf" %>
@@ -228,7 +227,7 @@
                                                             <select id="decision_newRule_primaryOperator" class="decision-rule-operator" data-action="decision-rule-operator-change">
                                                                 <logic:iterate collection="${operators}" id="operator">
                                                                     <c:set var="types" value="${operatorsTypeSupportMap[operator]}"/>
-                                                                    <option data-types="${types}" value="${operator.operatorCode}">${operator.operatorSymbol}</option>
+                                                                    <option data-types="${types}" value="${operator.operatorCode}">${operator.eqlSymbol}</option>
                                                                 </logic:iterate>
                                                             </select>
                                                         </td>

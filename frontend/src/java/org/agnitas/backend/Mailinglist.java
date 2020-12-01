@@ -10,37 +10,48 @@
 
 package org.agnitas.backend;
 
-import	org.agnitas.backend.dao.MailinglistDAO;
-import	org.agnitas.util.Log;
+import org.agnitas.backend.dao.MailinglistDAO;
+import org.agnitas.util.Log;
 
 /**
  * Thes class keeps track of all mailinglist related
  * configurations
  */
 public class Mailinglist {
-	/** refrence to global configuration				*/
-	private Data		data;
-	/** the mailinglist table mailinglist_id			*/
-	private long		id;
-	/** the name of the mailinglist					*/
-	private String		name;
-	/** the mailinglist version of the RDIR domain to use		*/
-	private String		rdirDomain;
-	/** if frequency counter is enabled for this mailinglist	*/
-	private boolean		frequencyCounterEnabled;
+	/**
+	 * refrence to global configuration
+	 */
+	private Data data;
+	/**
+	 * the mailinglist table mailinglist_id
+	 */
+	private long id;
+	/**
+	 * the name of the mailinglist
+	 */
+	private String name;
+	/**
+	 * the mailinglist version of the RDIR domain to use
+	 */
+	private String rdirDomain;
+	/**
+	 * if frequency counter is enabled for this mailinglist
+	 */
+	private boolean frequencyCounterEnabled;
 
-	public Mailinglist (Data nData) {
+	public Mailinglist(Data nData) {
 		data = nData;
 	}
-	
-	public Mailinglist done () {
+
+	public Mailinglist done() {
 		return null;
 	}
-	
-	public long id () {
+
+	public long id() {
 		return id;
 	}
-	public void id (long nId) {
+
+	public void id(long nId) {
 		if (id != nId) {
 			id = nId;
 			name = null;
@@ -48,62 +59,65 @@ public class Mailinglist {
 			frequencyCounterEnabled = false;
 		}
 	}
-	
-	public String name () {
+
+	public String name() {
 		return name;
 	}
-	public void name (String nName) {
+
+	public void name(String nName) {
 		name = nName;
 	}
-	
-	public String rdirDomain () {
+
+	public String rdirDomain() {
 		return rdirDomain;
 	}
-	public void rdirDomain (String nRdirDomain) {
+
+	public void rdirDomain(String nRdirDomain) {
 		rdirDomain = nRdirDomain;
 	}
 
-	public boolean frequencyCounterEnabled () {
+	public boolean frequencyCounterEnabled() {
 		return frequencyCounterEnabled;
 	}
-	public void frequencyCounterEnabled (boolean nFrequencyCounterEnabled) {
+
+	public void frequencyCounterEnabled(boolean nFrequencyCounterEnabled) {
 		frequencyCounterEnabled = nFrequencyCounterEnabled;
 	}
-	
+
 	/**
 	 * Write all mailinglist related settings to logfile
 	 */
-	public void logSettings () {
-		data.logging (Log.DEBUG, "init", "\tmailinglist.id = " + id);
+	public void logSettings() {
+		data.logging(Log.DEBUG, "init", "\tmailinglist.id = " + id);
 		if (name != null) {
-			data.logging (Log.DEBUG, "init", "\tmailinglist.name = " + name);
+			data.logging(Log.DEBUG, "init", "\tmailinglist.name = " + name);
 		}
 		if (rdirDomain != null) {
-			data.logging (Log.DEBUG, "init", "\tmailinglist.rdirDomain = " + rdirDomain);
+			data.logging(Log.DEBUG, "init", "\tmailinglist.rdirDomain = " + rdirDomain);
 		}
-		data.logging (Log.DEBUG, "init", "\tmailinglist.frequencyCounterEnabled = " + frequencyCounterEnabled);
+		data.logging(Log.DEBUG, "init", "\tmailinglist.frequencyCounterEnabled = " + frequencyCounterEnabled);
 	}
 
 	/**
 	 * Configure from external resource
-	 * 
+	 *
 	 * @param cfg the configuration
 	 */
-	public void configure (Config cfg) {
+	public void configure(Config cfg) {
 		// nothing to do
 	}
 
 	/**
 	 * Retrieves all company realted information from available resources
 	 */
-	public void retrieveInformation () throws Exception {
-		MailinglistDAO	mailinglist = new MailinglistDAO (data.dbase, id);
-		
-		if (mailinglist.mailinglistID () == 0L) {
-			throw new Exception ("No entry for mailinglistID " + id + " in mailinglist table found");
+	public void retrieveInformation() throws Exception {
+		MailinglistDAO mailinglist = new MailinglistDAO(data.dbase, id);
+
+		if (mailinglist.mailinglistID() == 0L) {
+			throw new Exception("No entry for mailinglistID " + id + " in mailinglist table found");
 		}
-		name (mailinglist.shortName ());
-		rdirDomain (mailinglist.rdirDomain ());
-		frequencyCounterEnabled (mailinglist.frequencyCounterEnabled ());
+		name(mailinglist.shortName());
+		rdirDomain(mailinglist.rdirDomain());
+		frequencyCounterEnabled(mailinglist.frequencyCounterEnabled());
 	}
 }

@@ -10,12 +10,14 @@
 
 package com.agnitas.emm.springws.endpoint;
 
-import javax.annotation.Resource;
-
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.impl.ComTargetImpl;
@@ -23,22 +25,23 @@ import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException;
 import com.agnitas.emm.springws.jaxb.AddTargetGroupRequest;
 import com.agnitas.emm.springws.jaxb.AddTargetGroupResponse;
-import com.agnitas.emm.springws.jaxb.ObjectFactory;
 
-public class AddTargetGroupEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class AddTargetGroupEndpoint extends BaseEndpoint {
 
-    private ObjectFactory objectFactory;
-
-    @Resource
     private ComTargetService targetService;
 
-    @Override
-    protected Object invokeInternal(Object requestObject) throws Exception {
-        AddTargetGroupRequest request = (AddTargetGroupRequest) requestObject;
+    @Autowired
+    public AddTargetGroupEndpoint(ComTargetService targetService) {
+        this.targetService = targetService;
+    }
+
+    @PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "AddTargetGroupRequest")
+    public @ResponsePayload AddTargetGroupResponse addTargetGroup(@RequestPayload AddTargetGroupRequest request) throws Exception {
         validateRequest(request);
         ComTarget target = createTargetFromRequest(request);
         int savedTargetId = targetService.saveTarget(target);
-        AddTargetGroupResponse response = objectFactory.createAddTargetGroupResponse();
+        AddTargetGroupResponse response = new AddTargetGroupResponse();
         response.setTargetId(savedTargetId);
         return response;
     }
@@ -61,10 +64,5 @@ public class AddTargetGroupEndpoint extends AbstractMarshallingPayloadEndpoint {
         if (StringUtils.isBlank(eql)) {
             throw new WebServiceInvalidFieldsException("Eql field is not specified or blank.");
         }
-    }
-
-    @Required
-    public void setObjectFactory(ObjectFactory objectFactory) {
-        this.objectFactory = objectFactory;
     }
 }

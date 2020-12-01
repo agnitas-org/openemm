@@ -10,37 +10,39 @@
 
 package org.agnitas.backend.dao;
 
-import	java.sql.SQLException;
-import	java.util.ArrayList;
-import	java.util.Arrays;
-import	java.util.List;
-import	java.util.Map;
-import	org.agnitas.backend.BlockData;
-import	org.agnitas.backend.DBase;
-import	org.agnitas.backend.Media;
-import	org.agnitas.backend.StringOps;
-import	org.agnitas.util.Const;
-import	org.agnitas.util.Log;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import org.agnitas.backend.BlockData;
+import org.agnitas.backend.DBase;
+import org.agnitas.backend.Media;
+import org.agnitas.backend.StringOps;
+import org.agnitas.util.Const;
+import org.agnitas.util.Log;
 
 /**
  * Access all informations from the component table
  */
 public class ComponentDAO {
-	private long	companyID;
-	private long	mailingID;
-	public ComponentDAO (long forCompanyID, long forMailingID) {
+	private long companyID;
+	private long mailingID;
+
+	public ComponentDAO(long forCompanyID, long forMailingID) {
 		companyID = forCompanyID;
 		mailingID = forMailingID;
 	}
 
-	public List <BlockData> retrieve (DBase dbase, int[] componentTypes) throws SQLException {
-		List <BlockData>		rc = new ArrayList <> ();
-		String				reduceClause = null;
-		
+	public List<BlockData> retrieve(DBase dbase, int[] componentTypes) throws SQLException {
+		List<BlockData> rc = new ArrayList<>();
+		String reduceClause = null;
+
 		if ((componentTypes != null) && (componentTypes.length > 0)) {
 			reduceClause = " AND comptype ";
 			if (componentTypes.length > 1) {
-				reduceClause += "IN (" + Arrays.stream (componentTypes).boxed ().map (e -> e.toString ()).reduce ((s, e) -> s + "," + e).orElse (null) + ")";
+				reduceClause += "IN (" + Arrays.stream(componentTypes).boxed().map(e -> e.toString()).reduce((s, e) -> s + "," + e).orElse(null) + ")";
 			} else {
 				reduceClause += "= " + componentTypes[0];
 			}
@@ -66,118 +68,116 @@ public class ComponentDAO {
 				tmp.mime = dbase.asString (row.get ("mtype"));
 				tmp.targetID = dbase.asInt (row.get ("target_id"));
 				switch (tmp.comptype) {
-				case 0:
-					tmp.isParseable = true;
-					tmp.isText = true;
-					if (tmp.cid.equals (Const.Component.NAME_HEADER)) {
-						tmp.type = BlockData.HEADER;
-						tmp.media = Media.TYPE_EMAIL;
-					} else if (tmp.cid.equals (Const.Component.NAME_TEXT)) {
-						tmp.type = BlockData.TEXT;
-						tmp.media = Media.TYPE_EMAIL;
-					} else if (tmp.cid.equals (Const.Component.NAME_HTML)) {
-						tmp.type = BlockData.HTML;
-						tmp.media = Media.TYPE_EMAIL;
-					} else if (tmp.cid.equals (Const.Component.NAME_FAX)) {
-						tmp.type = BlockData.PDF;
-						tmp.media = Media.TYPE_FAX;
-						tmp.isPDF = true;
-					} else if (tmp.cid.equals (Const.Component.NAME_PRINT)) {
-						tmp.type = BlockData.PDF;
-						tmp.media = Media.TYPE_PRINT;
-						tmp.isPDF = true;
-					} else if (tmp.cid.equals (Const.Component.NAME_MMS)) {
-						tmp.type = BlockData.MMS;
-						tmp.media = Media.TYPE_MMS;
-					} else if (tmp.cid.equals (Const.Component.NAME_SMS)) {
-						tmp.type = BlockData.SMS;
-						tmp.media = Media.TYPE_SMS;
-					} else {
-						dbase.logging (Log.WARNING, "component", "Invalid compname " + tmp.cid + " for comptype 0 found");
+					case 0:
+						tmp.isParseable = true;
+						tmp.isText = true;
+						if (tmp.cid.equals(Const.Component.NAME_HEADER)) {
+							tmp.type = BlockData.HEADER;
+							tmp.media = Media.TYPE_EMAIL;
+						} else if (tmp.cid.equals(Const.Component.NAME_TEXT)) {
+							tmp.type = BlockData.TEXT;
+							tmp.media = Media.TYPE_EMAIL;
+						} else if (tmp.cid.equals(Const.Component.NAME_HTML)) {
+							tmp.type = BlockData.HTML;
+							tmp.media = Media.TYPE_EMAIL;
+						} else if (tmp.cid.equals(Const.Component.NAME_FAX)) {
+							tmp.type = BlockData.PDF;
+							tmp.media = Media.TYPE_FAX;
+							tmp.isPDF = true;
+						} else if (tmp.cid.equals(Const.Component.NAME_PRINT)) {
+							tmp.type = BlockData.PDF;
+							tmp.media = Media.TYPE_PRINT;
+							tmp.isPDF = true;
+						} else if (tmp.cid.equals(Const.Component.NAME_MMS)) {
+							tmp.type = BlockData.MMS;
+							tmp.media = Media.TYPE_MMS;
+						} else if (tmp.cid.equals(Const.Component.NAME_SMS)) {
+							tmp.type = BlockData.SMS;
+							tmp.media = Media.TYPE_SMS;
+						} else {
+							dbase.logging(Log.WARNING, "component", "Invalid compname " + tmp.cid + " for comptype 0 found");
+							tmp = null;
+						}
+						break;
+					case 1:
+						tmp.type = BlockData.RELATED_BINARY;
+						break;
+					case 3:
+						tmp.type = BlockData.ATTACHMENT_BINARY;
+						tmp.isAttachment = true;
+						break;
+					case 4:
+						tmp.type = BlockData.ATTACHMENT_TEXT;
+						tmp.isParseable = true;
+						tmp.isText = true;
+						tmp.isAttachment = true;
+						if ((tmp.mime != null) && tmp.mime.equals("application/pdf")) {
+							tmp.isPDF = true;
+						}
+						break;
+					case 5:
+						tmp.type = BlockData.RELATED_BINARY;
+						break;
+					case 6:
+						tmp.type = BlockData.FONT;
+						tmp.isFont = true;
+						break;
+					case 7:
+						tmp.type = BlockData.ATTACHMENT_BINARY;
+						tmp.isParseable = true;
+						tmp.isAttachment = true;
+						tmp.isPrecoded = true;
+						break;
+					default:
+						dbase.logging(Log.WARNING, "component", "Invalid comptype " + tmp.comptype + " found");
 						tmp = null;
-					}
-					break;
-				case 1:
-					tmp.type = BlockData.RELATED_BINARY;
-					break;
-				case 3:
-					tmp.type = BlockData.ATTACHMENT_BINARY;
-					tmp.isAttachment = true;
-					break;
-				case 4:
-					tmp.type = BlockData.ATTACHMENT_TEXT;
-					tmp.isParseable = true;
-					tmp.isText = true;
-					tmp.isAttachment = true;
-					if ((tmp.mime != null) && tmp.mime.equals ("application/pdf")) {
-						tmp.isPDF = true;
-					}
-					break;
-				case 5:
-					tmp.type = BlockData.RELATED_BINARY;
-					break;
-				case 6:
-					tmp.type = BlockData.FONT;
-					tmp.isFont = true;
-					break;
-				case 7:
-					tmp.type = BlockData.ATTACHMENT_BINARY;
-					tmp.isParseable = true;
-					tmp.isAttachment = true;
-					tmp.isPrecoded = true;
-					break;
-				default:
-					dbase.logging (Log.WARNING, "component", "Invalid comptype " + tmp.comptype + " found");
-					tmp = null;
-					break;
+						break;
 				}
 				if (tmp != null) {
-					String	emmblock = dbase.asClob (row.get ("emmblock"));
-					byte[]	binary = dbase.asBlob (row.get ("binblock"));
+					String emmblock = dbase.asClob(row.get("emmblock"));
+					byte[] binary = dbase.asBlob(row.get("binblock"));
 
 					if (emmblock != null) {
 						if (tmp.isParseable || tmp.isPrecoded) {
-							tmp.content =  StringOps.convertOld2New (emmblock);
+							tmp.content = StringOps.convertOld2New(emmblock);
 						} else {
 							tmp.content = emmblock;
 						}
 					}
 					tmp.binary = binary;
 					if (tmp.binary != null) {
-						if ((! tmp.isParseable) && (tmp.content != null) && (tmp.content.length () == 0)) {
+						if ((!tmp.isParseable) && (tmp.content != null) && (tmp.content.length() == 0)) {
 							tmp.content = null;
 						}
 					}
-					if ((tmp.type == BlockData.RELATED_BINARY) && (tmp.mime != null) && (tmp.mime.toLowerCase ().startsWith ("image/"))) {
+					if ((tmp.type == BlockData.RELATED_BINARY) && (tmp.mime != null) && (tmp.mime.toLowerCase().startsWith("image/"))) {
 						tmp.isImage = true;
 					}
-					rc.add (tmp);
+					rc.add(tmp);
 				}
 			}
 		}
 		return rc;
 	}
-	
-	public void add (DBase dbase, BlockData bd) throws SQLException {
-		try (DBase.With with = dbase.with ()) {
-			String	query;
-			
-			if (dbase.isOracle ()) {
-				long	cid;
+
+	public void add(DBase dbase, BlockData bd) throws SQLException {
+		try (DBase.With with = dbase.with()) {
+			String query;
+
+			if (dbase.isOracle()) {
+				long cid;
 
 				query = "SELECT component_tbl_seq.nextval FROM dual";
-				cid = dbase.queryLong (with.jdbc (), query);
-				query = "INSERT INTO component_tbl (component_id, mailing_id, company_id, mtype, comptype, compname, emmblock, binblock, target_id, url_id, timestamp) " +
-					"VALUES (:componentID, :mailingID, :companyID, :mtype, 5, :compname, null, :binblock, 0, 0, CURRENT_TIMESTAMP)";
-				dbase.update (with.jdbc (), query, "componentID", cid, "mailingID", mailingID, "companyID", companyID, "mtype", bd.mime, "compname", bd.cid, "binblock", bd.binary);
+				cid = dbase.queryLong(with.jdbc(), query);
+				query = "INSERT INTO component_tbl (component_id, mailing_id, company_id, mtype, comptype, compname, emmblock, binblock, target_id, url_id, timestamp) " + "VALUES (:componentID, :mailingID, :companyID, :mtype, 5, :compname, null, :binblock, 0, 0, CURRENT_TIMESTAMP)";
+				dbase.update(with.jdbc(), query, "componentID", cid, "mailingID", mailingID, "companyID", companyID, "mtype", bd.mime, "compname", bd.cid, "binblock", bd.binary);
 			} else {
-				query = "INSERT INTO component_tbl (mailing_id, company_id, mtype, comptype, compname, emmblock, binblock, target_id, url_id, timestamp) " +
-					"VALUES (:mailingID, :companyID, :mtype, 5, :compname, null, :binblock, 0, 0, CURRENT_TIMESTAMP)";
-				dbase.update (with.jdbc (), query, "mailingID", mailingID, "companyID", companyID, "mtype", bd.mime, "compname", bd.cid, "binblock", bd.binary);
+				query = "INSERT INTO component_tbl (mailing_id, company_id, mtype, comptype, compname, emmblock, binblock, target_id, url_id, timestamp) " + "VALUES (:mailingID, :companyID, :mtype, 5, :compname, null, :binblock, 0, 0, CURRENT_TIMESTAMP)";
+				dbase.update(with.jdbc(), query, "mailingID", mailingID, "companyID", companyID, "mtype", bd.mime, "compname", bd.cid, "binblock", bd.binary);
 			}
-			dbase.logging (Log.DEBUG, "add", "Added new component " + bd.cid);
+			dbase.logging(Log.DEBUG, "add", "Added new component " + bd.cid);
 		} catch (SQLException e) {
-			dbase.logging (Log.ERROR, "add", "Failed to add new component " + bd.cid + ": " + e.toString (), e);
+			dbase.logging(Log.ERROR, "add", "Failed to add new component " + bd.cid + ": " + e.toString(), e);
 		}
 	}
 }

@@ -10,22 +10,22 @@
 
 package org.agnitas.backend.dao;
 
-import	java.sql.SQLException;
-import	java.util.HashMap;
-import	java.util.List;
-import	java.util.Map;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import	org.agnitas.backend.DBase;
-import	org.agnitas.backend.DynCont;
-import	org.agnitas.backend.DynName;
-import	org.agnitas.backend.StringOps;
-import	org.agnitas.util.Log;
+import org.agnitas.backend.DBase;
+import org.agnitas.backend.DynCont;
+import org.agnitas.backend.DynName;
+import org.agnitas.backend.StringOps;
+import org.agnitas.util.Log;
 
 public class ContentDAO {
-	private long			companyID;
-	private long			mailingID;
-	
-	public ContentDAO (long forCompanyID, long forMailingID) {
+	private long companyID;
+	private long mailingID;
+
+	public ContentDAO(long forCompanyID, long forMailingID) {
 		companyID = forCompanyID;
 		mailingID = forMailingID;
 	}
@@ -47,15 +47,15 @@ public class ContentDAO {
 				long			nameID = dbase.asLong (row.get ("dyn_name_id"));
 				String			name = dbase.asString (row.get ("dyn_name"));
 
-				if (! names.containsKey (nameID)) {
-					DynName	 dno = new DynName (name, nameID);
+				if (!names.containsKey(nameID)) {
+					DynName dno = new DynName(name, nameID);
 
-					dno.setInterest (dbase.asString (row.get ("interest_group")));
-					dno.setDisableLinkExtension (dbase.asInt (row.get ("no_link_extension")) == 1);
-					names.put (nameID, dno);
-					dbase.logging (Log.DEBUG, "content", "Added dynamic name " + name);
+					dno.setInterest(dbase.asString(row.get("interest_group")));
+					dno.setDisableLinkExtension(dbase.asInt(row.get("no_link_extension")) == 1);
+					names.put(nameID, dno);
+					dbase.logging(Log.DEBUG, "content", "Added dynamic name " + name);
 				} else
-					dbase.logging (Log.DEBUG, "content", "Skip already recorded name " + name);
+					dbase.logging(Log.DEBUG, "content", "Skip already recorded name " + name);
 			}
 			
 			rq = dbase.query (with.jdbc (),
@@ -74,10 +74,10 @@ public class ContentDAO {
 				String			content = dbase.asClob (row.get ("dyn_content"));
 				DynName			name;
 
-				if ((name = names.get (nameID)) != null) {
-					name.add (new DynCont (dyncontID, targetID, order, content != null ? StringOps.convertOld2New (content) : null));
+				if ((name = names.get(nameID)) != null) {
+					name.add(new DynCont(dyncontID, targetID, order, content != null ? StringOps.convertOld2New(content) : null));
 				} else {
-					dbase.logging (Log.WARNING, "content", "Found content for name-ID " + nameID + " without an entry in dyn_name_tbl");
+					dbase.logging(Log.WARNING, "content", "Found content for name-ID " + nameID + " without an entry in dyn_name_tbl");
 				}
 			}
 		}

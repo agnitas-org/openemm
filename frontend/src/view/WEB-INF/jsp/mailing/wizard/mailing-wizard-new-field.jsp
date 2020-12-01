@@ -119,7 +119,7 @@
 
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label" for="fieldDefault"><bean:message key="Default_Value"/></label>
+                        <label class="control-label" for="fieldDefault"><bean:message key="settings.Default_Value"/></label>
                     </div>
                     <div class="col-sm-8">
                         <mvc:text path="fieldDefault" id="fieldDefault" cssClass="form-control" size="32"/>

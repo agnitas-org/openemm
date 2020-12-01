@@ -23,7 +23,9 @@ public class UserGroupForm {
     
     private String description;
     
-    private Set<String> grantedUserPermissions = new HashSet<>();
+    private String[] parentGroupIDs;
+    
+    private Set<String> grantedPermissions = new HashSet<>();
     
     public int getId() {
         return id;
@@ -56,12 +58,20 @@ public class UserGroupForm {
     public void setDescription(String description) {
         this.description = description;
     }
+
+	public String[] getParentGroupIDs() {
+		return parentGroupIDs;
+	}
+
+	public void setParentGroupIDs(String[] parentGroupIDs) {
+		this.parentGroupIDs = parentGroupIDs;
+	}
     
-    public Set<String> getGrantedUserPermissions() {
-        return grantedUserPermissions;
+    public Set<String> getGrantedPermissions() {
+        return grantedPermissions;
     }
     
-    public void setGrantedUserPermissions(Set<String> grantedUserPermissions) {
-        this.grantedUserPermissions = grantedUserPermissions;
+    public void setGrantedPermissions(Set<String> grantedPermissions) {
+        this.grantedPermissions = grantedPermissions;
     }
 }

@@ -30,3 +30,13 @@
   }
 
 }
+
+body.dark-theme .inbox-preview {
+
+  .dropdown-toggle,
+  .list-group-item,
+  .list-group-item .checkbox-inline {
+    color: $c-dt-secondary-text;
+  }
+
+}

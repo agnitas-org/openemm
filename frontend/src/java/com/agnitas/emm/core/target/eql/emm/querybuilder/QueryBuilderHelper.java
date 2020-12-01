@@ -13,7 +13,7 @@ package com.agnitas.emm.core.target.eql.emm.querybuilder;
 import org.apache.log4j.Logger;
 
 import com.agnitas.emm.core.target.eql.ast.BinaryOperatorBooleanEqlNode;
-import com.agnitas.emm.core.target.eql.ast.BinaryOperatorRelationalEqlNode;
+import com.agnitas.emm.core.target.eql.ast.RelationalInfixOperator;
 import com.agnitas.emm.core.target.eql.codegen.DataType;
 
 public class QueryBuilderHelper {
@@ -84,16 +84,16 @@ public class QueryBuilderHelper {
 		return operator;
 	}
 
-	public static final String relationalEqlOperatorToQueryBuilderString(final BinaryOperatorRelationalEqlNode.InfixOperator eqlOperator) throws EqlToQueryBuilderConversionException {
+	public static final String relationalEqlOperatorToQueryBuilderString(final RelationalInfixOperator eqlOperator) throws EqlToQueryBuilderConversionException {
 		return relationalEqlOperatorToQueryBuilder(eqlOperator).queryBuilderName();
 	}
 
-	public static final String relationalEqlOperatorToQueryBuilderString(final BinaryOperatorRelationalEqlNode.InfixOperator eqlOperator, DataType dataType) throws EqlToQueryBuilderConversionException {
+	public static final String relationalEqlOperatorToQueryBuilderString(final RelationalInfixOperator eqlOperator, DataType dataType) throws EqlToQueryBuilderConversionException {
 		return relationalEqlOperatorToQueryBuilder(eqlOperator, dataType).queryBuilderName();
 	}
 
 
-	public static final QueryBuilderOperator relationalEqlOperatorToQueryBuilder(final BinaryOperatorRelationalEqlNode.InfixOperator eqlOperator) throws EqlToQueryBuilderConversionException {
+	public static final QueryBuilderOperator relationalEqlOperatorToQueryBuilder(final RelationalInfixOperator eqlOperator) throws EqlToQueryBuilderConversionException {
 		final QueryBuilderOperator operator = QueryBuilderOperator.findByEqlOperator(eqlOperator);
 
 		if(operator == null) {
@@ -109,7 +109,7 @@ public class QueryBuilderHelper {
 		}
 	}
 	
-	public static final QueryBuilderOperator relationalEqlOperatorToQueryBuilder(final BinaryOperatorRelationalEqlNode.InfixOperator eqlOperator, DataType dataType) throws EqlToQueryBuilderConversionException {
+	public static final QueryBuilderOperator relationalEqlOperatorToQueryBuilder(final RelationalInfixOperator eqlOperator, DataType dataType) throws EqlToQueryBuilderConversionException {
 		if (dataType == null) {
 			return relationalEqlOperatorToQueryBuilder(eqlOperator);
 		}

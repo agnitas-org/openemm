@@ -40,7 +40,8 @@ public class ComDatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implem
     
     @Override
     public DatasourceDescription getByDescription(String groupName, @VelocityCheck int companyID, String description) throws Exception {
-    	int sourceGroupId = selectInt(logger, "SELECT sourcegroup_id FROM sourcegroup_tbl WHERE sourcegroup_type = ?", groupName);
+    	int sourceGroupId = selectInt(logger, "SELECT sourcegroup_id FROM sourcegroup_tbl WHERE sourcegroup_type = ? " +
+				(isOracleDB() ? " AND ROWNUM < 2 ORDER BY creation_date DESC" : " ORDER BY creation_date DESC LIMIT 1"), groupName);
     	if (sourceGroupId <= 0) {
     		throw new Exception("Unknown sourcegroupname: " + groupName);
     	}

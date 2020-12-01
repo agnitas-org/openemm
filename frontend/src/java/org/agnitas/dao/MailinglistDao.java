@@ -11,6 +11,7 @@
 package org.agnitas.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -126,5 +127,7 @@ public interface MailinglistDao {
 	boolean deleteAllMailinglist(@VelocityCheck int companyId);
 
 	List<Mailinglist> getMailingListsNames(@VelocityCheck int companyId);
+
+	Map<Integer, Integer> getMailinglistWorldSubscribersStatistics(int companyId, int mailinglistID);
 
 }

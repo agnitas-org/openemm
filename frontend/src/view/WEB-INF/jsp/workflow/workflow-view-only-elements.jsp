@@ -6,8 +6,8 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStart" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStop" %>
 <%@ page import="org.agnitas.beans.Recipient" %>
-<%@ page import="org.agnitas.target.TargetNode" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.impl.WorkflowDeadlineImpl" %>
+<%@ page import="org.agnitas.target.ChainOperator" %>
 
 <%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -125,15 +125,15 @@
                 "<%= Recipient.GENDER_UNKNOWN %>": "Unknown"
             },
             "chainOperatorOptions": {
-                "<%= TargetNode.CHAIN_OPERATOR_AND %>": "<bean:message key="default.and"/>",
-                "<%= TargetNode.CHAIN_OPERATOR_OR %>": "<bean:message key="default.or"/>"
+                "<%= ChainOperator.AND.getOperatorCode() %>": "<bean:message key="default.and"/>",
+                "<%= ChainOperator.OR.getOperatorCode() %>": "<bean:message key="default.or"/>"
             },
             "operators": [
                 <c:forEach items="${operators}" var="operator" varStatus="index">
                     <c:set var="types" value="${operatorsTypeSupportMap[operator]}"/>
                 {
                     "id": "${operator.operatorCode}",
-                    "text": "${operator.operatorSymbol}",
+                    "text": "${operator.eqlSymbol}",
                     "data": {
                         "types": "${empty types ? '' : types}"
                     }
@@ -142,7 +142,7 @@
             ],
             "operatorsMap": {
                 <c:forEach  items="${operators}" var="operator" varStatus="index">
-                  "${operator.operatorCode}": "${operator.operatorSymbol}"${!index.last ? ',':''}
+                  "${operator.operatorCode}": "${operator.eqlSymbol}"${!index.last ? ',':''}
                 </c:forEach>
             },
             "mailingThumbnailURL" : "<c:url value='/workflow/getMailingThumbnail.action'/>",

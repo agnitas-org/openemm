@@ -22,8 +22,6 @@ import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 
 public interface MailingContentService {
 
-    Mailing getMailing(@VelocityCheck int companyId, int mailingId);
-
     ServiceResult<List<UserAction>> updateDynContent(Mailing mailing, DynTagDto dynTagDto, ComAdmin admin) throws Exception;
 
     DynTagDto getDynTag(@VelocityCheck int companyId, int dynNameId);

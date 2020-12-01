@@ -55,6 +55,10 @@ public class CalendarServiceImpl implements CalendarService {
         this.mailingDao = mailingDao;
     }
 
+    protected ComMailingDao getMailingDao() {
+        return mailingDao;
+    }
+
     @Override
     public PaginatedListImpl<Map<String, Object>> getUnsentMailings(ComAdmin admin, int listSize) {
         return mailingDao.getUnsentMailings(admin.getCompanyID(), admin.getAdminID(), listSize);
@@ -69,15 +73,14 @@ public class CalendarServiceImpl implements CalendarService {
     public JSONArray getMailings(ComAdmin admin, LocalDate startDate, LocalDate endDate) {
         List<Map<String, Object>> mailings = new ArrayList<>();
         int companyId = admin.getCompanyID();
-        int adminId = admin.getAdminID();
         ZoneId zoneId = AgnUtils.getZoneId(admin);
 
         // TODO: change DAO methods to use inclusive (not exclusive) date bounds.
         Date start = DateUtilities.toDate(startDate.atStartOfDay().minusNanos(1), zoneId);
         Date end = DateUtilities.toDate(endDate.plusDays(1), zoneId);
 
-        mailings.addAll(getMailings(companyId, adminId, start, end));
-        mailings.addAll(getPlannedMailings(companyId, adminId, start, end, zoneId));
+        mailings.addAll(getMailings(admin, start, end));
+        mailings.addAll(getPlannedMailings(admin, start, end));
 
         List<Integer> sentMailings = getSentMailings(mailings);
 
@@ -93,23 +96,29 @@ public class CalendarServiceImpl implements CalendarService {
         return mailingsAsJson(mailings, openers, clickers, admin);
     }
 
-    private List<Map<String, Object>> getPlannedMailings(int companyId, int adminId, Date startDate, Date endDate, ZoneId zoneId) {
-        List<Map<String, Object>> plannedMailings = mailingDao.getPlannedMailings(companyId, adminId, startDate, endDate);
-        Date midnight = DateUtilities.midnight(zoneId);
+    protected List<Map<String, Object>> getPlannedMailings(final ComAdmin admin, final Date startDate, final Date endDate) {
+        List<Map<String, Object>> plannedMailings = mailingDao.getPlannedMailings(admin.getCompanyID(), admin.getAdminID(), startDate, endDate);
+        return addSomeFieldsToPlannedMailings(plannedMailings, AgnUtils.getZoneId(admin));
+    }
 
-        for (Map<String, Object> plannedMailing : plannedMailings) {
+    protected List<Map<String, Object>> addSomeFieldsToPlannedMailings(final List<Map<String, Object>> mailings, final ZoneId zoneId) {
+        final Date midnight = DateUtilities.midnight(zoneId);
+        for (Map<String, Object> plannedMailing : mailings) {
             Date sendDate = (Date) plannedMailing.get("senddate");
 
             plannedMailing.put("planned", true);
             plannedMailing.put("plannedInPast", sendDate.before(midnight));
         }
-
-        return plannedMailings;
+        return mailings;
     }
 
-    private List<Map<String, Object>> getMailings(int companyId, int adminId, Date startDate, Date endDate) {
-        List<Map<String, Object>> mailings = mailingDao.getSentAndScheduled(companyId, adminId, startDate, endDate);
+    protected List<Map<String, Object>> getMailings(final ComAdmin admin, Date startDate, Date endDate) {
+        List<Map<String, Object>> mailings = mailingDao.getSentAndScheduled(admin.getCompanyID(), admin.getAdminID(), startDate, endDate);
 
+        return addSomeFieldsToSentAndScheduledMailings(mailings);
+    }
+
+    protected List<Map<String, Object>> addSomeFieldsToSentAndScheduledMailings(final List<Map<String, Object>> mailings) {
         for (Map<String, Object> mailing : mailings) {
             mailing.put("planned", false);
             mailing.put("plannedInPast", false);
@@ -146,7 +155,7 @@ public class CalendarServiceImpl implements CalendarService {
 
     @Override
     public boolean moveMailing(ComAdmin admin, int mailingId, LocalDate date) {
-        ComMailing mailing = (ComMailing) mailingDao.getMailing(mailingId, admin.getCompanyID());
+        ComMailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
         // Avoid schedule in the past.
         if (mailing.getId() == mailingId && !date.isBefore(LocalDate.now())) {
             MaildropEntry drop = getMaildropForUpdate(mailing.getMaildropStatus());

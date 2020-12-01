@@ -35,7 +35,6 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="actionID" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="shortname" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="deepTracking" type="{http://www.w3.org/2001/XMLSchema}int"/>
- *         &lt;element name="relevance" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="altText" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="originalUrl" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="isAdminLink" type="{http://www.w3.org/2001/XMLSchema}boolean"/>
@@ -85,7 +84,6 @@ public class GetTrackableLinkSettingsResponse {
     @XmlElement(required = true)
     protected String shortname;
     protected int deepTracking;
-    protected int relevance;
     @XmlElement(required = true)
     protected String altText;
     @XmlElement(required = true)
@@ -189,22 +187,6 @@ public class GetTrackableLinkSettingsResponse {
      */
     public void setDeepTracking(int value) {
         this.deepTracking = value;
-    }
-
-    /**
-     * Gets the value of the relevance property.
-     * 
-     */
-    public int getRelevance() {
-        return relevance;
-    }
-
-    /**
-     * Sets the value of the relevance property.
-     * 
-     */
-    public void setRelevance(int value) {
-        this.relevance = value;
     }
 
     /**

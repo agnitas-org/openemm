@@ -11,9 +11,6 @@
 	<maximumNumberOfCustomers>-1</maximumNumberOfCustomers>
 	<maximumNumberOfProfileFields>-1</maximumNumberOfProfileFields>
 	<allowedPremiumFeatures>
-		pluginmanager.change
-		pluginmanager.show
-		recipient.profileField.html.allowed
 		webservice.user.change
 		webservice.user.create
 		webservice.user.show

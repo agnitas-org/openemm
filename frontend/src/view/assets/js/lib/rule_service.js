@@ -54,6 +54,7 @@
 
   // Constants
   var COLUMN_TYPE_DATE = "DATE",
+      COLUMN_TYPE_DATETIME = "DATETIME",
       COLUMN_TYPE_INTEGER = "INTEGER",
       COLUMN_TYPE_DOUBLE = "DOUBLE",
       COLUMN_TYPE_NUMBER = "NUMBER",
@@ -76,6 +77,7 @@
   function getAvailablePrimaryOperators(config, columnType) {
     switch (columnType) {
       case COLUMN_TYPE_DATE:
+      case COLUMN_TYPE_DATETIME:
         return config.dateOperators;
 
       case COLUMN_TYPE_MAILING:
@@ -111,7 +113,7 @@
         switchToIsOperator(config, primaryVal, idx);
       } else if (primaryOp.value == config['OPERATOR_MOD'] && isNumericType(columnType)) {
         switchToModOperator(config, primaryVal, idx);
-      } else if (columnType == COLUMN_TYPE_DATE) {
+      } else if (columnType == COLUMN_TYPE_DATE || columnType === COLUMN_TYPE_DATETIME) {
         switchToDateType(config, primaryVal, idx);
       } else if (columnType == COLUMN_TYPE_INTERVAL_MAILING) {
         switchToIntervalMailingType(config, primaryVal, idx);

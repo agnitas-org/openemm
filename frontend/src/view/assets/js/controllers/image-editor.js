@@ -209,6 +209,12 @@ AGN.Lib.Controller.new('image-editor', function() {
         var newSrc = canvas.toDataURL();
         var $result = $('#editor-result');
 
+        // Cut off a meta data prefix.
+        var separatorPosition = newSrc.indexOf(',');
+        if (separatorPosition >= 0) {
+            newSrc = newSrc.substring(separatorPosition + 1);
+        }
+
         if ($result.val() != newSrc) {
             $result.val(newSrc);
             $result.prop('disabled', false);

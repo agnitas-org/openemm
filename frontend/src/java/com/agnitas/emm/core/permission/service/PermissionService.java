@@ -11,14 +11,10 @@
 package com.agnitas.emm.core.permission.service;
 
 import java.util.List;
-import java.util.Map;
 
 import com.agnitas.emm.core.Permission;
 
 public interface PermissionService {
-	public List<Permission> getPermissionsByCategory(String categrory);
-	
-	public List<Permission> getAllPermissions();
-
-	Map<Permission, String> getAllPermissionsAndCategories(int companyID);
+	List<Permission> getAllPermissions();
+	List<String> getAllCategoriesOrdered();
 }

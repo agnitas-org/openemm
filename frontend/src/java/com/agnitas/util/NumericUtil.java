@@ -13,11 +13,13 @@ package com.agnitas.util;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
+
 public final class NumericUtil {
 
 	private static final Pattern UNSIGNED_INTEGER_PATTERN = Pattern.compile("^\\s*\\d*\\s*$");
 	
-	public static final boolean matchedUnsignedIntegerPattern(final String string) {
+	public static boolean matchedUnsignedIntegerPattern(final String string) {
 		if(string == null)
 			return false;
 		
@@ -25,6 +27,33 @@ public final class NumericUtil {
 		
 		return m.matches();
 	}
-	
-	
+
+	/**
+	 * Tries parsing a double value. If parsing failed, a default value is returned.
+	 *
+	 * <b>Beware: This method does some strange detection of decimal separator symbol based on
+	 * number of commas and periods found in the text!</b>
+	 *
+	 * @param text text to parse
+	 * @param defaultValue default value if parsing failed
+	 *
+	 * @return parsed double value or default value
+	 */
+	public static Double tryParseDouble(String text, double defaultValue) {
+		try {
+			// Try to detect german number with comma and fix it (Locale is not available here)
+			int numberOfCommas = StringUtils.countMatches(text, ",");
+			if (numberOfCommas == 1) {
+				int numberOfDots = StringUtils.countMatches(text, ".");
+				if (numberOfDots == 0) {
+					text = text.replace(",", ".");
+				}
+			}
+
+			return Double.parseDouble(text);
+		} catch (NumberFormatException e) {
+			return defaultValue;
+		}
+	}
+
 }

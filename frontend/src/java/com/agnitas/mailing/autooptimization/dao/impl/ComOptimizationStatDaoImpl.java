@@ -143,17 +143,17 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
     public int getSend(int mailingId, String recipientsType) {
         StringBuilder queryBuilder = new StringBuilder();
         queryBuilder
-                .append("select ").append("COALESCE(SUM(x.no_of_mailings), 0) ")
-                .append("  from mailing_account_tbl x, mailing_tbl m ")
-                .append(" where x.mailing_id = ? ")
-                .append("   and x.mailing_id = m.mailing_id ")
-                .append("   and ((m.mailing_type = ? and x.status_field = 'E') or (m.mailing_type <> ?)) ");
+                .append("SELECT ").append("COALESCE(SUM(x.no_of_mailings), 0) ")
+                .append("  FROM mailing_account_tbl x, mailing_tbl m ")
+                .append(" WHERE x.mailing_id = ? ")
+                .append("   AND x.mailing_id = m.mailing_id ")
+                .append("   AND ((m.mailing_type = ? and x.status_field = 'E') OR (m.mailing_type <> ?)) ");
         if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
             queryBuilder
-                .append("   and (' x.status_field = 'A' or x.status_field = 'T')");
+                .append("   AND (' x.status_field = 'A' OR x.status_field = 'T')");
         } else if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
             queryBuilder
-                .append("   and ((m.mailing_type = ").append(MailingTypes.DATE_BASED.getCode()).append(" and x.status_field = 'R') or (x.status_field = 'W')) ");
+                .append("   AND ((m.mailing_type = ").append(MailingTypes.DATE_BASED.getCode()).append(" AND x.status_field = 'R') OR (x.status_field = 'W')) ");
         }
         return select(logger, queryBuilder.toString(), Integer.class, mailingId, MailingTypes.ACTION_BASED.getCode(), MailingTypes.ACTION_BASED.getCode());
     }

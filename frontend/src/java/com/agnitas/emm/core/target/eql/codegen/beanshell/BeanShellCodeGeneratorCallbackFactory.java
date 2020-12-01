@@ -15,6 +15,6 @@ import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveExcep
 
 public interface BeanShellCodeGeneratorCallbackFactory {
 
-	public BeanShellCodeGeneratorCallback newCodeGeneratorCallback(final int companyID) throws ProfileFieldResolveException;
+	BeanShellCodeGeneratorCallback newCodeGeneratorCallback(final int companyID) throws ProfileFieldResolveException;
 
 }

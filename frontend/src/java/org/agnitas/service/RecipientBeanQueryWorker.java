@@ -10,6 +10,9 @@
 
 package org.agnitas.service;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -18,12 +21,17 @@ import java.util.concurrent.Callable;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.apache.commons.beanutils.BasicDynaClass;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.DynaProperty;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.ComRecipientDao;
 
 /**
@@ -33,6 +41,8 @@ public class RecipientBeanQueryWorker implements Callable<PaginatedListImpl<Dyna
 	private static final transient Logger logger = Logger.getLogger(RecipientBeanQueryWorker.class);
 	
 	protected ComRecipientDao recipientDao;
+	protected ComAdmin admin;
+	protected ComProfileFieldDao profileFieldDao;
 	protected String sqlStatementForData;
 	protected Object[] sqlParametersForData;
 	protected String sortCriterion;
@@ -43,8 +53,10 @@ public class RecipientBeanQueryWorker implements Callable<PaginatedListImpl<Dyna
 	protected Set<String> columns;
 	protected Exception error;
 
-	public RecipientBeanQueryWorker(ComRecipientDao recipientDao, @VelocityCheck int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums) {
+	public RecipientBeanQueryWorker(ComRecipientDao recipientDao, ComProfileFieldDao profileFieldDao, ComAdmin admin, @VelocityCheck int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums) {
 		this.recipientDao = recipientDao;
+		this.profileFieldDao = profileFieldDao;
+		this.admin = admin;
 		this.sqlStatementForData = sqlStatementForData;
 		this.sqlParametersForData = sqlParametersForData;
 		this.sortCriterion = sortCriterion;
@@ -77,7 +89,7 @@ public class RecipientBeanQueryWorker implements Callable<PaginatedListImpl<Dyna
 			PaginatedListImpl<Recipient> recipientPaginatedList = recipientDao.getRecipients(companyID, columns, sqlStatementForData, sqlParametersForData, sortCriterion, sortedAscending, pageNumber, rownums);
 			
 			// Convert PaginatedListImpl of Recipient into PaginatedListImpl of DynaBean
-			List<DynaBean> partialListOfDynaBeans = convertPaginatedListToDynaBean(recipientPaginatedList);
+			List<DynaBean> partialListOfDynaBeans = convertPaginatedListToDynaBean(companyID, recipientPaginatedList);
 			
 			return new PaginatedListImpl<>(partialListOfDynaBeans,
 					recipientPaginatedList.getFullListSize(),
@@ -92,7 +104,7 @@ public class RecipientBeanQueryWorker implements Callable<PaginatedListImpl<Dyna
 		}
 	}
 	
-	protected List<DynaBean> convertPaginatedListToDynaBean(PaginatedListImpl<Recipient> recipientPaginatedList) throws InstantiationException, IllegalAccessException {
+	protected List<DynaBean> convertPaginatedListToDynaBean(int companyIdParam, PaginatedListImpl<Recipient> recipientPaginatedList) throws Exception {
 		List<DynaBean> partialListOfDynaBeans = new ArrayList<>();
 		if (CollectionUtils.isNotEmpty(recipientPaginatedList.getList())) {
 			DynaProperty[] properties = new DynaProperty[columns.size()];
@@ -101,11 +113,56 @@ public class RecipientBeanQueryWorker implements Callable<PaginatedListImpl<Dyna
 				properties[i++] = new DynaProperty(column.toLowerCase(), String.class);
 			}
 			BasicDynaClass dynaClass = new BasicDynaClass("recipient", null, properties);
+			List<ProfileField> profileFields = profileFieldDao.getProfileFields(companyIdParam);
 
 			for (Recipient recipient : recipientPaginatedList.getList()) {
 				DynaBean bean = dynaClass.newInstance();
 				for (String column : columns) {
-					bean.set(column.toLowerCase(), recipient.getCustParametersNotNull(column.toUpperCase()));
+					SimpleDataType simpleDataType = null;
+					for (ProfileField profileField : profileFields) {
+						if (profileField.getColumn().equalsIgnoreCase(column)) {
+							simpleDataType = profileField.getSimpleDataType();
+						}
+					}
+
+					// All values come here as String although the map is of type <String, Object>
+					String value = (String) recipient.getCustParameters().get(column.toUpperCase());
+					
+					if (simpleDataType == null || StringUtils.isBlank(value)) {
+						bean.set(column.toLowerCase(), value);
+					} else {
+						switch(simpleDataType) {
+							case Characters:
+								bean.set(column.toLowerCase(), value);
+								break;
+							case Date:
+								if (StringUtils.isBlank(value)) {
+									bean.set(column.toLowerCase(), "");
+								} else {
+									bean.set(column.toLowerCase(), admin.getDateFormat().format(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(value)));
+								}
+								break;
+							case DateTime:
+								if (StringUtils.isBlank(value)) {
+									bean.set(column.toLowerCase(), "");
+								} else {
+									bean.set(column.toLowerCase(), admin.getDateTimeFormat().format(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(value)));
+								}
+								break;
+							case Float:
+								DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols(admin.getLocale());
+								DecimalFormat floatFormat = new DecimalFormat("###0.###", decimalFormatSymbols);
+								bean.set(column.toLowerCase(), floatFormat.format(Double.parseDouble(value)));
+								break;
+							case Numeric:
+								bean.set(column.toLowerCase(), value);
+								break;
+							case Blob:
+							default:
+								bean.set(column.toLowerCase(), value);
+								break;
+						}
+					}
 				}
 				partialListOfDynaBeans.add(bean);
 			}

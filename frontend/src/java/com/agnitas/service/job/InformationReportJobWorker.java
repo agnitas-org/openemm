@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.service.JobWorker;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DataEncryptor;
@@ -74,8 +75,8 @@ public class InformationReportJobWorker extends JobWorker {
 		DataSource dataSource = daoLookupFactory.getBeanDataSource();
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
-		this.recipientReportService = (RecipientReportService) applicationContext.getBeansOfType(RecipientReportService.class).values().toArray()[0];
-		this.txtTableGenerator = applicationContext.getBean("txtTableGenerator", TableGenerator.class);
+		this.recipientReportService = (RecipientReportService) getApplicationContextForJobWorker().getBeansOfType(RecipientReportService.class).values().toArray()[0];
+		this.txtTableGenerator = getApplicationContextForJobWorker().getBean("txtTableGenerator", TableGenerator.class);
 
 		this.recipientEntityDtoConverter = new RecipientEntityDtoConverter();
 		this.recipientEntityDtoPrinter = new RecipientEntityDtoPrinter();
@@ -116,7 +117,7 @@ public class InformationReportJobWorker extends JobWorker {
 		int errorCounter = 0;
 		
 		try (RemoteFileHelper remoteFileHelper = openRemoteFileHelper(sftpServerCredentials, ftpServerCredentials)){
-			String sql = "SELECT company_id FROM company_tbl WHERE status = 'active'"
+			String sql = "SELECT company_id FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "'"
 				+ (includedCompanyIds != null && !includedCompanyIds.isEmpty() ? " AND company_id IN (" + StringUtils.join(includedCompanyIds, ", ") + ")" : "")
 				+ (excludedCompanyIds != null && !excludedCompanyIds.isEmpty() ? " AND company_id NOT IN (" + StringUtils.join(excludedCompanyIds, ", ") + ")" : "");
 			List<Integer> companyIdList = jdbcTemplate.queryForList(sql, Integer.class);
@@ -136,7 +137,7 @@ public class InformationReportJobWorker extends JobWorker {
 						}
 						
 						if (remoteFileHelper != null) {
-							remoteFileHelper.put(new ByteArrayInputStream(informationReportText.getBytes("UTF-8")), fileName);
+							remoteFileHelper.put(new ByteArrayInputStream(informationReportText.getBytes("UTF-8")), fileName, true);
 						} else {
 							File informationReportFile = new File(AgnUtils.getTempDir() + File.separator + fileName);
 							if (informationReportFile.exists()) {
@@ -160,7 +161,7 @@ public class InformationReportJobWorker extends JobWorker {
 
 	private RemoteFileHelper openRemoteFileHelper(String sftpServerCredentials, String ftpServerCredentials) throws Exception {
 		if (StringUtils.isNotBlank(sftpServerCredentials)) {
-			DataEncryptor dataEncryptor = (DataEncryptor) applicationContext.getBean("DataEncryptor");
+			DataEncryptor dataEncryptor = getApplicationContextForJobWorker().getBean("DataEncryptor", DataEncryptor.class);
 			String sftpCredentialsString = dataEncryptor.decrypt(sftpServerCredentials);
 			
 			SFtpHelper sftpHelper = new SFtpHelper(sftpCredentialsString);
@@ -173,7 +174,7 @@ public class InformationReportJobWorker extends JobWorker {
 			sftpHelper.connect();
 			return sftpHelper;
 		} else if (StringUtils.isNotBlank(ftpServerCredentials)) {
-			DataEncryptor dataEncryptor = (DataEncryptor) applicationContext.getBean("DataEncryptor");
+			DataEncryptor dataEncryptor = getApplicationContextForJobWorker().getBean("DataEncryptor", DataEncryptor.class);
 			String ftpCredentialsString = dataEncryptor.decrypt(ftpServerCredentials);
 			
 			FtpHelper ftpHelper = new FtpHelper(ftpCredentialsString);

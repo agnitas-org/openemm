@@ -18,6 +18,33 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.agnitas.beans.Mailing;
+import org.agnitas.beans.Mailinglist;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.WebStorage;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.GuiConstants;
+import org.agnitas.web.forms.BulkActionForm;
+import org.agnitas.web.forms.FormUtils;
+import org.agnitas.web.forms.PaginationForm;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
@@ -32,34 +59,8 @@ import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+
 import net.sf.json.JSONArray;
-import org.agnitas.beans.Mailing;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.GuiConstants;
-import org.agnitas.web.forms.BulkActionFrom;
-import org.agnitas.web.forms.FormUtils;
-import org.agnitas.web.forms.PaginationForm;
-import org.apache.log4j.Logger;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.ui.ModelMap;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/mailinglist")
@@ -153,24 +154,23 @@ public class MailinglistController {
 	}
 
 	@PostMapping("/save.action")
-	public String save(ComAdmin admin, @Validated MailinglistForm form, BindingResult result,
-					   RedirectAttributes redirectAttributes, Popups popups) {
+	public String save(ComAdmin admin, MailinglistForm form, RedirectAttributes redirectAttributes, Popups popups) {
 		int companyId = admin.getCompanyID();
 
-		if (isValid(companyId, form, result, popups)) {
-			int id = mailinglistService.saveMailinglist(companyId, conversionService.convert(form, MailinglistDto.class));
-			logger.info("save Mailinglist with id: " + id);
-			popups.success("default.changes_saved");
-			userActivityLogService.writeUserActivityLog(admin,
-					(form.getId() == id ? "edit " : "create ") + "mailing list",
-					String.format("%s (%d)", form.getShortname(), id), logger);
-			if(form.getStatistic() != null) {
-				redirectAttributes.addFlashAttribute("statisticParams", form.getStatistic());
-			}
-			return "redirect:/mailinglist/" + id + "/view.action";
-		} else {
+		if (!isValid(companyId, form, popups)) {
 			return "messages";
 		}
+
+		int id = mailinglistService.saveMailinglist(companyId, conversionService.convert(form, MailinglistDto.class));
+		logger.info("save Mailinglist with id: " + id);
+		popups.success("default.changes_saved");
+		userActivityLogService.writeUserActivityLog(admin,
+				(form.getId() == id ? "edit " : "create ") + "mailing list",
+				String.format("%s (%d)", form.getShortname(), id), logger);
+		if(form.getStatistic() != null) {
+			redirectAttributes.addFlashAttribute("statisticParams", form.getStatistic());
+		}
+		return "redirect:/mailinglist/" + id + "/view.action";
 	}
 	
 	@GetMapping("/{id:\\d+}/confirmDelete.action")
@@ -195,7 +195,7 @@ public class MailinglistController {
 	}
 
     @PostMapping("/confirmBulkDelete.action")
-    public String confirmBulkDelete(ComAdmin admin, @ModelAttribute("bulkDeleteForm") BulkActionFrom form, Model model, Popups popups) {
+    public String confirmBulkDelete(ComAdmin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Model model, Popups popups) {
         if (form.getBulkIds().size() == 0) {
             popups.alert("bulkAction.nothing.mailinglist");
         } else if (!isMailinglistsIndependent(form.getBulkIds(), admin.getCompanyID(), model)) {
@@ -218,7 +218,7 @@ public class MailinglistController {
 	}
 	
 	@PostMapping("/bulkDelete.action")
-	public String bulkDelete(ComAdmin admin, BulkActionFrom form, RedirectAttributes model, Popups popups) {
+	public String bulkDelete(ComAdmin admin, BulkActionForm form, RedirectAttributes model, Popups popups) {
 		int companyId = admin.getCompanyID();
 		if(isMailinglistsIndependent(form.getBulkIds(), companyId, model)) {
 			List<UserAction> userActions = form.getBulkIds().stream()
@@ -273,9 +273,9 @@ public class MailinglistController {
 
 	@GetMapping("/{id:\\d+}/usersDeleteSettings.action")
 	public String recipientsDeleteSettings(ComAdmin admin, @PathVariable("id") int mailinglistId, @ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form) {
-		form.setMailinglistId(mailinglistId);
+		form.setId(mailinglistId);
 		String shortname = mailinglistService.getMailinglistName(mailinglistId, admin.getCompanyID());
-		form.setMailinglistShortname(shortname);
+		form.setShortname(shortname);
 		form.setOnlyActiveUsers(false);
 		form.setNoAdminAndTestUsers(false);
 		return "mailinglist_recipients_delete_settings";
@@ -288,23 +288,27 @@ public class MailinglistController {
 	
 	@PostMapping("/usersDelete.action")
 	public String recipientsDelete(ComAdmin admin, @ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form, Popups popups) {
-		int mailinglistId = form.getMailinglistId();
+		int mailinglistId = form.getId();
 		mailinglistService.deleteMailinglistBindingRecipients(admin.getCompanyID(), mailinglistId, form.isOnlyActiveUsers(), form.isNoAdminAndTestUsers());
 		
 		popups.success("mailinglist.recipients.deleted");
 		
-		userActivityLogService.writeUserActivityLog(admin, "delete recipients from mailing list", getDescription(form.getMailinglistShortname(), form.getMailinglistId()));
+		userActivityLogService.writeUserActivityLog(admin, "delete recipients from mailing list", getDescription(form.getShortname(), form.getId()));
 		return "redirect:/mailinglist/" + mailinglistId + "/view.action";
 	}
 	
-	private boolean isValid(int companyId, MailinglistForm form, BindingResult result, Popups popups) {
-		if (result.hasErrors()) {
+	private boolean isValid(int companyId, MailinglistForm form, Popups popups) {
+		final String shortname = form.getShortname();
+		if(StringUtils.isBlank(shortname)) {
+			popups.field("shortname",  "error.name.is.empty");
 			return false;
 		}
-		
-		String newShortname = form.getShortname();
-		if (!mailinglistService.isShortnameUnique(newShortname, form.getId(), companyId)) {
-			popups.field("shortname", "error.mailinglist.duplicate", newShortname);
+		if(shortname.length() < 3) {
+			popups.field("shortname",  "error.name.too.short");
+			return false;
+		}
+		if (!mailinglistService.isShortnameUnique(shortname, form.getId(), companyId)) {
+			popups.field("shortname", "error.mailinglist.duplicate", shortname);
 			return false;
 		}
 		

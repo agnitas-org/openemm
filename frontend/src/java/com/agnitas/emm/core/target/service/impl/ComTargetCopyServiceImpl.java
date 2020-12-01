@@ -26,11 +26,9 @@ public final class ComTargetCopyServiceImpl implements TargetCopyService {
 		destination.setEQL(source.getEQL());
 		destination.setId(source.getId());
 		destination.setLocked(source.isLocked());
-		destination.setSimpleStructured(source.isSimpleStructured());
 		destination.setTargetDescription(source.getTargetDescription());
 		destination.setTargetName(source.getTargetName());
 		destination.setTargetSQL(source.getTargetSQL());
-		destination.setTargetStructure(source.getTargetStructure());
 		destination.setValid(source.isValid());
 		
 		return destination;

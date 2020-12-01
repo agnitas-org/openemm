@@ -14,14 +14,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import com.agnitas.beans.ComTarget;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
@@ -34,6 +32,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.beans.ComTarget;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
 
 public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements MailinglistDao {
 	
@@ -71,6 +74,10 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	@Override
 	public Mailinglist getMailinglist(int listID, @VelocityCheck int companyId) {
 		if (listID == 0 || companyId == 0) {
+			if(logger.isInfoEnabled()) {
+				logger.info(String.format("Unable to load mailinglist (mailinglist ID %d, company ID %d)", listID, companyId));
+			}
+			
 			return null;
 		} else {
 			return selectObjectDefaultNull(logger,
@@ -273,6 +280,21 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
+	public Map<Integer, Integer> getMailinglistWorldSubscribersStatistics(@VelocityCheck int companyId, int mailinglistID) {
+		Map<Integer, Integer> returnMap = new HashMap<>();
+		List<Map<String,Object>> result = select(logger, "SELECT bind.user_status AS status, COUNT(*) AS amount FROM customer_" + companyId + "_tbl cust, customer_" + companyId + "_binding_tbl bind WHERE bind.mailinglist_id = ? AND cust.customer_id = bind.customer_id GROUP BY bind.user_status", mailinglistID);
+		for (Map<String,Object> row : result) {
+			returnMap.put(((Number) row.get("status")).intValue(), ((Number) row.get("amount")).intValue());
+		}
+		for (UserStatus userStatus : UserStatus.values() ) {
+			if (!returnMap.containsKey(userStatus.getStatusCode())) {
+				returnMap.put(userStatus.getStatusCode(), 0);
+			}
+		}
+		return returnMap;
+	}
+
+	@Override
 	public boolean mailinglistExists(String mailinglistName, @VelocityCheck int companyId) {
 		return selectInt(logger, "SELECT COUNT(*) FROM mailinglist_tbl WHERE deleted=0 AND company_id = ? AND shortname = ?", companyId, mailinglistName) > 0;
 	}
@@ -353,8 +375,8 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 			mailinglistEntry.setId(resultSet.getInt("mailinglist_id"));
 			mailinglistEntry.setShortname(resultSet.getString("shortname"));
 			mailinglistEntry.setDescription(resultSet.getString("description"));
-			mailinglistEntry.setCreationDate(resultSet.getDate("creation_date"));
-			mailinglistEntry.setChangeDate(resultSet.getDate("change_date"));
+			mailinglistEntry.setCreationDate(resultSet.getTimestamp("creation_date"));
+			mailinglistEntry.setChangeDate(resultSet.getTimestamp("change_date"));
 
 			return mailinglistEntry;
 		}

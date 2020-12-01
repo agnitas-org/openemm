@@ -107,11 +107,31 @@ public abstract class AbstractLoginTrackDaoImpl extends BaseDaoImpl implements L
 	@Override
 	@DaoUpdateReturnValueCheck
 	public int deleteOldRecords(int holdBackDays, int maxRecords) {
+		if(holdBackDays < 0)
+			throw new IllegalArgumentException("holdBackDays must be >= 0");
+		if(maxRecords < 0)
+			throw new IllegalArgumentException("maxRecords must be >= 0");
+		
 		final String sql = isOracleDB()
 				? String.format("DELETE FROM %s WHERE (sysdate - creation_date) > ? AND ROWNUM <= ?", getTrackingTableName())
 				: String.format("DELETE FROM %s WHERE DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY) > creation_date LIMIT ?", getTrackingTableName());
 
 		return update(getLogger(), sql, Math.max(holdBackDays, 0), Math.max(maxRecords, 0));
+	}
+	
+	@Override
+	@DaoUpdateReturnValueCheck
+	public int deleteOldRecordsHours(int holdBackHours, int maxRecords) {
+		if(holdBackHours < 0)
+			throw new IllegalArgumentException("holdBackHours must be >= 0");
+		if(maxRecords < 0)
+			throw new IllegalArgumentException("maxRecords must be >= 0");
+		
+		final String sql = isOracleDB()
+				? String.format("DELETE FROM %s WHERE creation_date < sysdate - ? / 24.0 AND ROWNUM <= ?", getTrackingTableName())
+				: String.format("DELETE FROM %s WHERE DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? HOUR) > creation_date LIMIT ?", getTrackingTableName());
+
+		return update(getLogger(), sql, Math.max(holdBackHours, 0), Math.max(maxRecords, 0));
 	}
 	
 	@Override

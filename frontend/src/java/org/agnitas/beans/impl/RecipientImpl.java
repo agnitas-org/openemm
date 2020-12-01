@@ -12,7 +12,10 @@ package org.agnitas.beans.impl;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,7 +24,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.ProfileField;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.factory.BindingEntryFactory;
 import org.agnitas.beans.factory.RecipientFactory;
@@ -31,21 +33,28 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.ColumnInfoService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbColumnType;
 import org.agnitas.util.HttpUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.Logger;
 
+import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.impl.ComAdminDaoImpl;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import org.apache.commons.lang3.math.NumberUtils;
 
 /**
  * Manually executed test
  * Needs a running RDIR on localhost and a special form with action in DB
  */
 public class RecipientImpl implements Recipient {
+	/** The logger. */
+	private static final transient Logger logger = Logger.getLogger(ComAdminDaoImpl.class);
+	
 	protected ColumnInfoService columnInfoService;
 	protected ComRecipientDao recipientDao;
 	protected BlacklistService blacklistService;
@@ -290,7 +299,7 @@ public class RecipientImpl implements Recipient {
 		return ((Timestamp) custParameters.get("timestamp"));
 	}
 	
-	
+
 	/**
 	 * Load structure of Customer-Table for the given Company-ID in member
 	 * variable "companyID". Load profile data into map. Has to be done before
@@ -462,8 +471,28 @@ public class RecipientImpl implements Recipient {
 			if (!isAllowedName(entry.getKey())) {
 				continue;
 			}
-			if (colType.equalsIgnoreCase("DATE")) {
-				copyDate(caseInsensitiveParameters, entry.getKey(), suffix);
+			if (colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATE) || colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATETIME)) {
+				if (StringUtils.isNotBlank((String) caseInsensitiveParameters.get(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT))) {
+					String value = (String) caseInsensitiveParameters.get(entry.getKey());
+					if (StringUtils.isNotBlank(value)) {
+						try {
+							SimpleDateFormat format = new SimpleDateFormat((String) caseInsensitiveParameters.get(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT));
+							format.setLenient(false);
+							GregorianCalendar date = new GregorianCalendar();
+							date.setTime(format.parse(value));
+							setCustParameters(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, Integer.toString(date.get(Calendar.DAY_OF_MONTH)));
+							setCustParameters(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, Integer.toString(date.get(Calendar.MONTH) + 1));
+							setCustParameters(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, Integer.toString(date.get(Calendar.YEAR)));
+							setCustParameters(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR, Integer.toString(date.get(Calendar.HOUR_OF_DAY)));
+							setCustParameters(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE, Integer.toString(date.get(Calendar.MINUTE)));
+							setCustParameters(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND, Integer.toString(date.get(Calendar.SECOND)));
+						} catch (ParseException e) {
+							logger.error("Invalid value for customer field '" + entry.getKey() + "' with expected format '" + ((String) caseInsensitiveParameters.get(entry.getKey() + "_format")) + "'");
+						}
+					}
+				} else {
+					copyDate(caseInsensitiveParameters, entry.getKey(), suffix);
+				}
 			} else if (caseInsensitiveParameters.get(name + suffix) != null) {
 				String aValue = (String) caseInsensitiveParameters.get(name + suffix);
 				if (name.equalsIgnoreCase("EMAIL")) {
@@ -798,6 +827,17 @@ public class RecipientImpl implements Recipient {
 	@Override
 	public final void setDoNotTrackMe(final boolean doNotTrack) {
 		this.setCustParameters(ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK, doNotTrack ? "1" : "0");
+	}
+
+	@Override
+	public BindingEntry getBindingsByMailinglist(int mailinglistId, int type) {
+		Map<Integer, BindingEntry> entries = getAllMailingLists().getOrDefault(mailinglistId, new HashMap<>());
+		BindingEntry statusEntry = entries.getOrDefault(type, new BindingEntryImpl());
+		statusEntry.setMediaType(type);
+		statusEntry.setCustomerID(customerID);
+		statusEntry.setMailinglistID(mailinglistId);
+
+		return statusEntry;
 	}
 	
 	/**

@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -42,10 +43,16 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(RecipientStatDataSet.class);
 
-	public List<RecipientStatusRow> getRecipientStatus(@VelocityCheck int companyID, String targetID, Integer mailinglistID, int mediaType, String language) {
+	public List<RecipientStatusRow> getRecipientStatus(@VelocityCheck int companyID, String targetIdStr, Integer mailinglistID,
+			int mediaType, String language, final String hiddenFilterTargetIdStr) {
 		if (StringUtils.isBlank(language)) {
 			language = "EN";
 		}
+
+		final int targetId = NumberUtils.toInt(targetIdStr, -1);
+		final LightTarget target = targetId < 0 ? null : getDefaultTarget(getTarget(targetId, companyID));
+		final int filterTargetId = NumberUtils.toInt(hiddenFilterTargetIdStr, -1);
+		final String filterTargetSql = filterTargetId < 0 || filterTargetId == targetId ? null : getTarget(filterTargetId, companyID).getTargetSQL();
 
 		StringBuilder query = new StringBuilder();
 		List<Object> parameters = new ArrayList<>();
@@ -55,9 +62,12 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 				.append(" WHERE (bind.user_status IN (0, 1, 2, 3, 4, 5, 6, 7) OR bind.user_status IS NULL) AND cust.bounceload = 0");
 
 		// bounceload check is NEEDED here, because we also select customers without binding table entries
-		LightTarget target = getDefaultTarget(getTarget(NumberUtils.toInt(targetID), companyID));
-		if (StringUtils.isNotBlank(target.getTargetSQL())) {
+		if (target != null && StringUtils.isNotBlank(target.getTargetSQL())) {
 			query.append(" AND (").append(target.getTargetSQL()).append(")");
+		}
+
+		if(StringUtils.isNotBlank(filterTargetSql)) {
+			query.append(" AND (").append(filterTargetSql).append(")");
 		}
 
 		if (mailinglistID != null){
@@ -116,9 +126,18 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 		}
 	}
 
-	public List<RecipientMailtypeRow> getRecipientMailtype(@VelocityCheck int companyID, String targetID, Integer mailinglistID) {
-		StringBuilder query = new StringBuilder();
-		List<Object> parameters = new ArrayList<>();
+	public List<RecipientMailtypeRow> getRecipientMailtype(@VelocityCheck int companyID, String targetIdStr,
+			Integer mailinglistID, String hiddenFilterTargetIdStr) {
+
+		final StringBuilder query = new StringBuilder();
+		final List<Object> parameters = new ArrayList<>();
+		final int targetId = NumberUtils.toInt(targetIdStr, -1);
+		final String targetSql = targetId < 0 ? null : getDefaultTarget(getTarget(targetId, companyID)).getTargetSQL();
+
+		final int filterTargetId = NumberUtils.toInt(hiddenFilterTargetIdStr, -1);
+		final String filterTargetSql = filterTargetId < 0 || filterTargetId == targetId
+				? null
+				: getTarget(filterTargetId, companyID).getTargetSQL();
 
 		query.append("SELECT cust.mailtype AS mailtype, COUNT(DISTINCT cust.customer_id) AS amount ")
 				.append(" FROM ")
@@ -128,11 +147,12 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 
 		// bounceload check is not needed here, because we select on binding table where bounceload-customers has no entries
 
-		if (targetID != null) {
-			LightTarget target = getDefaultTarget(getTarget(Integer.parseInt(targetID), companyID));
-			if (StringUtils.isNotBlank(target.getTargetSQL())) {
-				query.append(" AND (").append(target.getTargetSQL()).append(")");
-			}
+		if (StringUtils.isNotBlank(targetSql)) {
+			query.append(" AND (").append(targetSql).append(")");
+		}
+
+		if (StringUtils.isNotBlank(filterTargetSql)) {
+			query.append(" AND (").append(filterTargetSql).append(")");
 		}
 
 		if (mailinglistID != null){
@@ -175,10 +195,13 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 	 * @return
 	 * @throws Exception
 	 */
-    public List<RecipientDetailRow> getRecipientDetails(@VelocityCheck int companyID, String targetID, Integer mailinglistID, Integer mediaType, String startDateString, String stopDateString, Boolean hourScale) throws Exception {
+    public List<RecipientDetailRow> getRecipientDetails(@VelocityCheck int companyID, String targetID,
+			Integer mailinglistID, Integer mediaType, String startDateString,
+			String stopDateString, Boolean hourScale, String hiddenFilterTargetId) throws Exception {
     	List<Object> parameters = new ArrayList<>();
     	String dateSelectPart;
-		LightTarget target = getDefaultTarget(getTarget(NumberUtils.toInt(targetID), companyID));
+
+        final Collection<String> targetSqls = getTargetSql(concatTargets(targetID, hiddenFilterTargetId), companyID);
 
 		Date startDate = new SimpleDateFormat("yyyy-MM-dd").parse(startDateString);
 		Date endDate;
@@ -211,7 +234,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 				.append("COUNT(*) AS amount")
 				.append(" FROM ").append(getCustomerBindingTableName(companyID)).append(" bind");
 		
-		if (StringUtils.isNotBlank(target.getTargetSQL())){
+		if (!targetSqls.isEmpty()){
 			sql.append(" JOIN ").append(getCustomerTableName(companyID)).append(" cust ON bind.customer_id = cust.customer_id");
 		}
 		
@@ -219,8 +242,8 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 
 		// bounceload check is not needed here, because we select on binding table where bounceload-customers has no entries
 
-		if (StringUtils.isNotBlank(target.getTargetSQL())) {
-			sql.append(" AND (").append(target.getTargetSQL()).append(")");
+		if (!targetSqls.isEmpty()) {
+			sql.append(" AND (").append(StringUtils.join(targetSqls, " AND ")).append(")");
 		}
 
 		if (mailinglistID != null) {
@@ -285,7 +308,23 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 
 		return returnList;
     }
-    
+
+    private String concatTargets(final String targetId, final String hiddenTargetId) {
+        final StringBuilder sbTargets = new StringBuilder();
+        if(StringUtils.isNotEmpty(targetId)) {
+            sbTargets.append(targetId);
+        }
+
+        if(StringUtils.isNotEmpty(hiddenTargetId)) {
+            if(sbTargets.length() > 0) {
+                sbTargets.append(",");
+            }
+            sbTargets.append(hiddenTargetId);
+        }
+
+        return sbTargets.toString();
+    }
+
     private static class RecipientStatusesMapCallback implements RowCallbackHandler {
 	
 		private Map<UserStatus, Integer> map;

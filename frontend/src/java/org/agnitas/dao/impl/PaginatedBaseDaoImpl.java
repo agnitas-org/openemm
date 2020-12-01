@@ -67,13 +67,13 @@ public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
 		}
 		int totalRows = selectInt(logger, countQuery, parameters);
 
+		// Check pageSize validity
+		if (pageSize < 1) {
+			pageSize = 10;
+			pageNumber = 1;
+		}
+
 		if (totalRows > 0) {
-			// Check pageSize validity
-			if (pageSize < 1) {
-				pageSize = 10;
-				pageNumber = 1;
-			}
-	
 			// Check pagenumber validity
 			if (pageNumber < 1) {
 				// Pagenumber starts with 1, not 0

@@ -42,6 +42,8 @@ import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComLightweightBirtReportImpl;
 import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
+import com.agnitas.emm.core.birtreport.dto.BirtReportType;
+import com.agnitas.emm.core.birtreport.dto.FilterType;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 
 public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBirtReportDao {
@@ -56,7 +58,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 		if (report.getId() != 0) {
 			logger.error("ReportID is invalid for insert of new report: " + report.getId());
 			return false;
-		} else if (report.getEmailRecipientList() == null || report.getEmailRecipientList().isEmpty()) {
+		} else if (CollectionUtils.isEmpty(report.getEmailRecipientList())) {
 			throw new Exception("Recipients for report are empty: " + report.getId());
 		}
 		
@@ -146,7 +148,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean update(ComBirtReport report, List<Integer> justDeactivateSettingTypes) throws Exception {
-		if (report.getEmailRecipientList() == null || report.getEmailRecipientList().isEmpty()) {
+		if (CollectionUtils.isEmpty(report.getEmailRecipientList())) {
 			throw new Exception("Recipients for report are empty: " + report.getId());
 		}
 	
@@ -209,7 +211,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 	public void deleteReportParameters(ComBirtReport report) {
 		deleteReportParameters(report, Collections.emptyList());
 	}
-	
+
 	public void deleteReportParameters(ComBirtReport report, List<Integer> skipReportSettings) {
 		try {
 			String deletionSql = "DELETE FROM birtreport_parameter_tbl WHERE report_id = ?";
@@ -314,18 +316,18 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 		public ComBirtReport mapRow(ResultSet resultSet, int row) throws SQLException {
 			try {
 				ComBirtReport report = birtReportFactory.createReport();
-				report.setId(resultSet.getBigDecimal("report_id").intValue());
-				report.setCompanyID(resultSet.getBigDecimal("company_id").intValue());
+				report.setId(resultSet.getInt("report_id"));
+				report.setCompanyID(resultSet.getInt("company_id"));
 				report.setShortname(resultSet.getString("shortname"));
 				report.setDescription(resultSet.getString("description"));
-				report.setReportActive(resultSet.getBigDecimal("active").intValue());
-				report.setReportType(resultSet.getBigDecimal("report_type").intValue());
-				report.setFormat(resultSet.getBigDecimal("format").intValue());
+				report.setReportActive(resultSet.getInt("active"));
+				report.setReportType(resultSet.getInt("report_type"));
+				report.setFormat(resultSet.getInt("format"));
 				report.setEmailSubject(resultSet.getString("email_subject"));
 				report.setEmailDescription(resultSet.getString("email_description"));
 				report.setActivationDate(resultSet.getTimestamp("activation_date"));
 				report.setEndDate(resultSet.getTimestamp("end_date"));
-				report.setActiveTab(resultSet.getBigDecimal("active_tab").intValue());
+				report.setActiveTab(resultSet.getInt("active_tab"));
 				report.setLanguage(resultSet.getString("language"));
 				report.setIntervalpattern(resultSet.getString("intervalpattern"));
 				report.setNextStart(resultSet.getTimestamp("nextstart"));
@@ -442,14 +444,17 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 				+ " ("
 					+ "nextstart < CURRENT_TIMESTAMP"
 					+ " OR "
-						+ "(report_type IN (6, 7, 8)"
+						+ "(report_type IN (" +
+					BirtReportType.TYPE_AFTER_MAILING_24HOURS.getKey() + ", " +
+					BirtReportType.TYPE_AFTER_MAILING_48HOURS.getKey() + ", " +
+					BirtReportType.TYPE_AFTER_MAILING_WEEK.getKey() + ")"
 						+ " AND "
 							+ "("
 								+ "NOT EXISTS (SELECT 1 FROM birtreport_sent_mailings_tbl WHERE birtreport_tbl.report_id = birtreport_sent_mailings_tbl.report_id)"
 								+ " OR "
 								+ "NOT EXISTS (SELECT 1 FROM birtreport_parameter_tbl WHERE birtreport_tbl.report_id = birtreport_parameter_tbl.report_id AND parameter_name = '" + ComBirtReportSettings.PREDEFINED_ID_KEY + "')"
 								+ " OR "
-								+ "EXISTS (SELECT 1 FROM birtreport_parameter_tbl WHERE birtreport_tbl.report_id = birtreport_parameter_tbl.report_id AND parameter_name = 'mailingFilter' AND parameter_value = 2)"
+								+ "EXISTS (SELECT 1 FROM birtreport_parameter_tbl WHERE birtreport_tbl.report_id = birtreport_parameter_tbl.report_id AND parameter_name = 'mailingFilter' AND parameter_value = " + FilterType.FILTER_MAILINGLIST.getKey() + ")"
 							+ ")"
 						+ ")"
 				+ ")"

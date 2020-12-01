@@ -20,7 +20,7 @@ public class DateRowMapper implements RowMapper<Date> {
 	
 	@Override
 	public Date mapRow(ResultSet resultSet, int row) throws SQLException {
-		return resultSet.getDate(1);
+		return resultSet.getTimestamp(1);
 	}
 	
 }

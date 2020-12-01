@@ -10,8 +10,6 @@
 
 package com.agnitas.web;
 
-import java.util.Map;
-
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.util.GuiConstants;
@@ -28,9 +26,9 @@ public class ComMailingContentChecker {
     }
     
     public static void checkHtmlWarningConditions(Mailing aMailing, ActionMessages messages) {
-    	for (Map.Entry<String, MailingComponent> componentEntry : aMailing.getComponents().entrySet()) {
-    		if (StringUtils.equalsIgnoreCase("text/html", componentEntry.getValue().getMimeType())) {
-    			checkHtmlWarningConditions(componentEntry.getValue().getEmmBlock(), messages);
+    	for (MailingComponent component : aMailing.getComponents().values()) {
+    		if (StringUtils.equalsIgnoreCase("text/html", component.getMimeType())) {
+    			checkHtmlWarningConditions(component.getEmmBlock(), messages);
     		}
     	}
     }

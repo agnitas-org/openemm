@@ -23,21 +23,11 @@ public interface WorkflowMailing extends WorkflowMailingAware, MailingSendingPro
 
     void setAutoReport(int autoReport);
 
-    boolean isSkipEmptyBlocks();
-
     void setSkipEmptyBlocks(boolean skipEmptyBlocks);
-
-    boolean isDoubleCheck();
 
     void setDoubleCheck(boolean doubleCheck);
 
-    @Override
-	int getMaxRecipients();
-
     void setMaxRecipients(int maxRecipients);
-
-    @Override
-	int getBlocksize();
 
     void setBlocksize(int blocksize);
 }

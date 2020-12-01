@@ -10,29 +10,20 @@
 
 package com.agnitas.beans.impl;
 
-import com.agnitas.beans.ComTrackableLink;
 import org.agnitas.beans.BaseTrackableLinkImpl;
 import org.apache.commons.lang3.StringUtils;
+
+import com.agnitas.beans.ComTrackableLink;
 
 public class ComTrackableLinkImpl extends BaseTrackableLinkImpl implements ComTrackableLink {
 
 	protected int mailingID;
-	/** Holds value of property usage. */
-	protected int usage;
 	protected boolean adminLink;
 	protected boolean deleted;
 	protected boolean extendByMailingExtensions;
-	/**
-	 * Holds value of property deepTracking.
-	 */
-	protected int deepTracking = 0;
 	/** Original URL of link. Only set, if link URL is modified after sending mailing. */
 	private String originalUrl;
 	private boolean staticValue;
-	/**
-	 * Holds value of property relevance.
-	 */
-	protected int relevance;
 	public String altText;
 
 	@Override
@@ -51,40 +42,8 @@ public class ComTrackableLinkImpl extends BaseTrackableLinkImpl implements ComTr
 	}
 
 	@Override
-	public int getUsage() {
-		return this.usage;
-	}
-
-	@Override
-	public void setUsage(int usage) {
-		this.usage = usage;
-	}
-
-	@Override
 	public int getMailingID() {
 		return this.mailingID;
-	}
-
-	@Override
-	public int getDeepTracking() {
-		return deepTracking;
-	}
-
-	@Override
-	public void setDeepTracking(int deepTracking) {
-		this.deepTracking = deepTracking;
-	}
-
-	@Override
-	@Deprecated
-	public int getRelevance() {
-		return 0;
-	}
-
-	@Override
-	@Deprecated
-	public void setRelevance(int relevance) {
-		this.relevance = 0;
 	}
 
 	@Override

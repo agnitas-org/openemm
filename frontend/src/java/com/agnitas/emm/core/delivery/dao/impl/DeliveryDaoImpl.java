@@ -10,74 +10,102 @@
 
 package com.agnitas.emm.core.delivery.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
-import com.agnitas.emm.core.delivery.dao.DeliveryDao;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
+import com.agnitas.emm.core.delivery.dao.DeliveryDao;
 
 public class DeliveryDaoImpl extends BaseDaoImpl implements DeliveryDao {
-
     private static final transient Logger LOGGER = Logger.getLogger(DeliveryDaoImpl.class);
-
-    private static final String COMPANY_ID_PLACEHOLDER = "#_company_id_#";
-    private static final String DELIVERY_TABLE_NAME_TEMPLATE = "deliver_" + COMPANY_ID_PLACEHOLDER + "_tbl";
-
-    private static final String QUERY_DELIVERIES_INFO = "SELECT id, timestamp, line FROM " + DELIVERY_TABLE_NAME_TEMPLATE + " WHERE mailing_id = ? AND customer_id = ?";
+    
+    public static String getDeliveryTableName(int companyId) {
+    	return "deliver_" + companyId + "_tbl";
+    }
 
     @Override
     public List<DeliveryInfo> getDeliveriesInfo(@VelocityCheck final int companyId, final int mailingId, final int customerId) {
-        final String query = setCompanyIdToPlaceholder(QUERY_DELIVERIES_INFO, companyId);
-        return select(LOGGER, query, new DeliveryInfoMapper(), mailingId, customerId);
+    	List<Map<String, Object>> result = select(LOGGER, "SELECT timestamp, line FROM " + getDeliveryTableName(companyId) +  " WHERE mailing_id = ? AND customer_id = ? AND (line LIKE '%dsn%' OR line LIKE '%relay%' OR line LIKE '%status%' OR line LIKE '%from%')", mailingId, customerId);
+    	Map<String, DeliveryInfo> deliveryInfoByMessageID = new HashMap<>();
+
+		final Pattern dsnPattern = Pattern.compile("dsn=(.*?)(:?, \\w+=|$)");
+		final Pattern relayPattern = Pattern.compile("relay=(.*?)(:?, \\w+=|$)");
+		final Pattern statusPattern = Pattern.compile("status=(.*?)(:?, \\w+=|$)");
+		final Pattern fromPattern = Pattern.compile("from=(.*?)(:?, \\w+=|$)");
+		
+    	for (Map<String, Object> row : result) {
+    		final String line = (String) row.get("line");
+    		
+        	// Jun  4 06:10:51
+        	//String lineDate = line.substring(0, 15);
+        	
+        	// mailer11
+        	int mailerHostShortEndIndex = line.indexOf(" ", 16);
+        	//String mailerHostShort = line.substring(16, mailerHostShortEndIndex);
+        	
+        	// postfix/smtp[21175]:
+        	int mtaDescriptorEndIndex = line.indexOf(" ", mailerHostShortEndIndex + 1);
+        	//String mtaDescriptor = line.substring(mailerHostShortEndIndex + 1, mtaDescriptorEndIndex);
+        	
+        	// 14BD1C044D:
+        	int messageIdEndIndex = line.indexOf(" ", mtaDescriptorEndIndex + 1);
+        	String messageId = line.substring(mtaDescriptorEndIndex + 1, messageIdEndIndex - 1);
+        	
+        	// to=..., from=..., ...
+        	String data = line.substring(messageIdEndIndex + 1);
+        	
+        	DeliveryInfo deliveryInfo = deliveryInfoByMessageID.get(messageId);
+        	if (deliveryInfo == null) {
+        		deliveryInfo = new DeliveryInfo();
+        		deliveryInfo.setTimestamp((Date) row.get("timestamp"));
+        		deliveryInfoByMessageID.put(messageId, deliveryInfo);
+        	}
+        	
+    		final Matcher dsnMatcher = dsnPattern.matcher(data);
+            if (dsnMatcher.find()) {
+            	deliveryInfo.setDsn(dsnMatcher.group(1).trim());
+            }
+
+    		final Matcher relayMatcher = relayPattern.matcher(data);
+            if (relayMatcher.find()) {
+            	deliveryInfo.setRelay(relayMatcher.group(1).trim());
+            }
+
+    		final Matcher statusMatcher = statusPattern.matcher(data);
+            if (statusMatcher.find()) {
+            	deliveryInfo.setStatus(statusMatcher.group(1).trim());
+            }
+
+    		final Matcher fromMatcher = fromPattern.matcher(data);
+            if (fromMatcher.find()) {
+            	deliveryInfo.setMailerHost(AgnUtils.getDomainFromEmail(fromMatcher.group(1).trim()));
+            }
+    	}
+    	List<DeliveryInfo> deliveryInfos = new ArrayList<>(deliveryInfoByMessageID.values());
+		Collections.sort(deliveryInfos, new Comparator<DeliveryInfo>() {
+			@Override
+			public int compare(DeliveryInfo o1, DeliveryInfo o2) {
+				return o1.getTimestamp().compareTo(o2.getTimestamp());
+			}
+		});
+		return deliveryInfos;
     }
 
     @Override
     public boolean checkIfDeliveryTableExists(final int companyId) {
-        return DbUtilities.checkIfTableExists(getDataSource(), setCompanyIdToPlaceholder(DELIVERY_TABLE_NAME_TEMPLATE, companyId));
-    }
-
-    private static String setCompanyIdToPlaceholder(final String query, final int companyId) {
-        if(StringUtils.isBlank(query)) {
-            return query;
-        }
-        return query.replaceAll(COMPANY_ID_PLACEHOLDER, Integer.toString(companyId));
-    }
-
-    private static class DeliveryInfoMapper implements RowMapper<DeliveryInfo> {
-
-        @Override
-        public DeliveryInfo mapRow(ResultSet resultSet, int i) throws SQLException {
-            final DeliveryInfo deliveryInfo = new DeliveryInfo();
-            deliveryInfo.setId(resultSet.getInt("id"));
-            deliveryInfo.setTimestamp(new Date(resultSet.getDate("timestamp").getTime()));
-
-            final String line = resultSet.getString("line");
-            if(StringUtils.isNotBlank(line)) {
-                deliveryInfo.setDsn(parsePropertyFromLine(line, "dsn"));
-                deliveryInfo.setRelay(parsePropertyFromLine(line, "relay"));
-                deliveryInfo.setStatus(parsePropertyFromLine(line, "status"));
-            }
-
-            return deliveryInfo;
-        }
-
-        private String parsePropertyFromLine(final String line, final String propertyName) {
-            final Pattern pattern = Pattern.compile(propertyName + "=(.*?)(:?, \\w+=|$)");
-            final Matcher matcher = pattern.matcher(line);
-            if(matcher.find()){
-                return matcher.group(1);
-            }
-            return null;
-        }
+        return DbUtilities.checkIfTableExists(getDataSource(), getDeliveryTableName(companyId));
     }
 }

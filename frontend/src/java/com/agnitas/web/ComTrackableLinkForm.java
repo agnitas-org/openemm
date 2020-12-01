@@ -15,13 +15,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
 import javax.servlet.http.HttpServletRequest;
 
-import com.agnitas.beans.ComTrackableLink;
 import org.agnitas.web.TrackableLinkForm;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMapping;
+
+import com.agnitas.beans.ComTrackableLink;
 
 public class ComTrackableLinkForm extends TrackableLinkForm {
 	
@@ -30,8 +32,6 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 	
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComTrackableLinkForm.class);
-
-	private int globalRelevance;
 
 	private boolean linkContainerVisible;
 	
@@ -129,14 +129,6 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 	 */
 	public void setCountLinksUnique(boolean countLinksUnique) {
 		this.countLinkIsUnique = countLinksUnique;
-	}
-
-	public int getGlobalRelevance() {
-		return globalRelevance;
-	}
-
-	public void setGlobalRelevance(int globalRelevance) {
-		this.globalRelevance = globalRelevance;
 	}
 
 	public boolean isLinkContainerVisible() {

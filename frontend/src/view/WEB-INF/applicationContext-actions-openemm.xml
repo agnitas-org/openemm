@@ -20,21 +20,16 @@
 
 	<bean name="/target" class="com.agnitas.web.ComTargetAction">
 		<property name="columnInfoService" ref="ColumnInfoService" />
-		<property name="targetDao" ref="TargetDao" />
 		<property name="recipientDao" ref="RecipientDao" />
-		<property name="targetRepresentationFactory" ref="TargetRepresentationFactory" />
 		<property name="targetFactory" ref="TargetFactory" />
-		<property name="targetNodeFactory" ref="TargetNodeFactory" />
 		<property name="targetService" ref="targetService" />
 		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="mailingDao" ref="MailingDao" />
 		<property name="configService" ref="ConfigService" />
 		<property name="trackableLinkDao" ref="TrackableLinkDao" />
 		<property name="birtReportDao" ref="BirtReportDao" />
 		<property name="eqlFacade" ref="EqlFacade" />
 		<property name="webStorage" ref="WebStorage" />
-		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
-		<property name="birtStatisticsService" ref="BirtStatisticsService"/>
+		<property name="mailingService" ref="MailingService" />
 	</bean>
 
 	<bean name="/mailingsend" class="com.agnitas.web.ComMailingSendActionBasic">
@@ -89,7 +84,7 @@
     </bean>
 
 	<bean name="/exportwizard" class="org.agnitas.web.ExportWizardAction">
-		<property name="targetDao" ref="TargetDao" />
+		<property name="targetService" ref="targetService" />
 		<property name="dataSource" ref="dataSource" />
 		<property name="mailinglistService" ref="MailinglistService" />
 		<property name="userActivityLogService" ref="UserActivityLogService" />
@@ -105,19 +100,14 @@
 
 	<bean name="/recipient" class="com.agnitas.web.ComRecipientAction">
 		<property name="mailinglistService" ref="MailinglistService" />
-		<property name="mailingDao" ref="MailingDao" />
-		<property name="targetDao" ref="TargetDao" />
 		<property name="configService" ref="ConfigService" />
 		<property name="recipientDao" ref="RecipientDao" />
 		<property name="futureHolder" ref="futureHolder" />
-		<property name="targetRepresentationFactory" ref="TargetRepresentationFactory" />
-		<property name="targetNodeFactory" ref="TargetNodeFactory" />
 		<property name="workerExecutorService" ref="WorkerExecutorService" />
 		<property name="recipientQueryBuilder" ref="RecipientQueryBuilder" />
 		<property name="columnInfoService" ref="ColumnInfoService" />
 		<property name="recipientFactory" ref="RecipientFactory" />
 		<property name="bindingEntryFactory" ref="BindingEntryFactory" />
-		<property name="dataSource" ref="dataSource" />
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="companyDao" ref="CompanyDao" />
 		<property name="targetService" ref="targetService" />
@@ -127,6 +117,8 @@
         <property name="blacklistService" ref="BlacklistService"/>
 		<property name="recipientService" ref="recipientService"/>
 		<property name="deliveryService" ref="deliveryService"/>
+		<property name="adminService" ref="AdminService"/>
+		<property name="mailingService" ref="MailingService" />
     </bean>
     
 	<bean name="/importprofile_columns" class="com.agnitas.web.ImportProfileColumnsAction">

@@ -10,32 +10,33 @@
 
 package org.agnitas.emm.springws.endpoint.dyntarget;
 
-import javax.annotation.Resource;
-
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.ListTargetgroupsRequest;
 import org.agnitas.emm.springws.jaxb.ListTargetgroupsResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.target.service.ComTargetService;
 
-public class ListTargetgroupsEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class ListTargetgroupsEndpoint extends BaseEndpoint {
 
-    @Resource
-    private ObjectFactory objectFactory;
-    @Resource
     private ComTargetService targetService;
 
-    @Override
-    protected Object invokeInternal(Object o) throws Exception {
-        @SuppressWarnings("unused")
-        ListTargetgroupsRequest request = (ListTargetgroupsRequest) o;
-        ListTargetgroupsResponse response = objectFactory.createListTargetgroupsResponse();
+    public ListTargetgroupsEndpoint(ComTargetService targetService) {
+        this.targetService = targetService;
+    }
 
-        for (TargetLight target : targetService.getTargetLights(Utils.getUserCompany())) {
-            ListTargetgroupsResponse.Item targetgroup = objectFactory.createListTargetgroupsResponseItem();
+    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListTargetgroupsRequest")
+    public @ResponsePayload ListTargetgroupsResponse listTargetgroups(@RequestPayload ListTargetgroupsRequest request) {
+        ListTargetgroupsResponse response = new ListTargetgroupsResponse();
+
+        for (TargetLight target : targetService.getWsTargetLights(Utils.getUserCompany())) {
+            ListTargetgroupsResponse.Item targetgroup = new ListTargetgroupsResponse.Item();
             targetgroup.setId(target.getId());
             targetgroup.setName(target.getTargetName());
             response.getItem().add(targetgroup);

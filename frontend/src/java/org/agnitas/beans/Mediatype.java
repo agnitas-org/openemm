@@ -20,6 +20,10 @@ public interface Mediatype {
     int STATUS_INACTIVE = 1;
     int STATUS_ACTIVE = 2;
 
+    static boolean isActive(Mediatype mediaType) {
+        return mediaType != null && STATUS_ACTIVE == mediaType.getStatus();
+    }
+
     /**
      * Getter for property param.
      *

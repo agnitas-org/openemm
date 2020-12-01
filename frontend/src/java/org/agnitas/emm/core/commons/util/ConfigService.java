@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
+import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DataEncryptor;
@@ -63,10 +64,14 @@ import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComServerMessageDao;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LicenseDao;
+import com.agnitas.dao.PermissionDao;
 import com.agnitas.dao.impl.ComServerMessageDaoImpl;
 import com.agnitas.dao.impl.ConfigTableDaoImpl;
 import com.agnitas.dao.impl.LicenseDaoImpl;
+import com.agnitas.dao.impl.PermissionDaoImpl;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.permission.service.PermissionService;
+import com.agnitas.emm.core.permission.service.PermissionServiceImpl;
 import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
 import com.agnitas.service.LicenseError;
@@ -97,8 +102,11 @@ public class ConfigService {
     /** Application startup timestamp **/
     private static final Date STARTUP_TIME = new Date();
     private static Version applicationVersion = null;
+    private static Server applicationType = null;
     
     private static ConfigService instance;
+    
+    private PermissionService permissionService;
 
 	/** DAO for access config table. */
 	protected ConfigTableDao configTableDao;
@@ -166,6 +174,12 @@ public class ConfigService {
 			ComServerMessageDao serverMessageDao = new ComServerMessageDaoImpl();
 			((ComServerMessageDaoImpl) serverMessageDao).setDataSource(dataSource);
 			instance.setServerMessageDao(serverMessageDao);
+			
+			PermissionDao permissionDao = new PermissionDaoImpl();
+			((PermissionDaoImpl) permissionDao).setDataSource(dataSource);
+			PermissionService permissionService = new PermissionServiceImpl();
+			((PermissionServiceImpl) permissionService).setPermissionDao(permissionDao);
+			instance.setPermissionService(permissionService);
 		}
 		return instance;
 	}
@@ -192,6 +206,13 @@ public class ConfigService {
 	
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
+
+	@Required
+	public void setPermissionService(PermissionService permissionService) {
+		this.permissionService = permissionService;
+		invalidateCache();
+		LICENSE_VALUES = null;
+	}
 	
 	/**
 	 * Set DAO accessing configuration in DB.
@@ -317,6 +338,9 @@ public class ConfigService {
 				} catch (Exception e) {
 					// The version sign is not valid. Maybe it is text like 'Unknown'.
 				}
+				applicationType = Server.getServerByName(EMM_PROPERTIES_VALUES.get(ConfigValue.ApplicationType.toString()).get(0));
+				
+	    		configTableDao.checkAndSetReleaseVersion();
 			}
 			
 			if (CONFIGURATIONVALUES == null || EXPIRATIONTIME == null || GregorianCalendar.getInstance().after(EXPIRATIONTIME)) {
@@ -518,7 +542,7 @@ public class ConfigService {
 				try {
 					String storedLicenseID = configTableDao.getAllEntriesForThisHost().get(ConfigValue.System_Licence.toString()).get(0);
 					if (StringUtils.isBlank(storedLicenseID)) {
-						configTableDao.storeEntry("system", "licence", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0));
+						configTableDao.storeEntry("system", "licence", null,  LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), "store licence value by EMM");
 						logger.info("Writing new LicenseID: " + LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0));
 					} else if (!storedLicenseID.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0))) {
 						throw new LicenseError("Invalid LicenseID", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), storedLicenseID);
@@ -627,31 +651,34 @@ public class ConfigService {
 				}
 			}
 			if (!allowedPremiumFeatures.contains("all") && !allowedPremiumFeatures.contains("ALL")) {
-				for (Entry<Permission, String> permissionEntry : Permission.getAllPermissionsAndCategories().entrySet()) {
-					if (permissionEntry.getKey().isPremium() && !allowedPremiumFeatures.contains(permissionEntry.getKey().toString())) {
-						unAllowedPremiumFeatures.add(permissionEntry.getKey().toString());
+				// Check and set or reset premium features
+				for (Permission permission : permissionService.getAllPermissions()) {
+					if (permission.isPremium() && !allowedPremiumFeatures.contains(permission.toString())) {
+						unAllowedPremiumFeatures.add(permission.toString());
 					}
 				}
 				adminDao.deleteFeaturePermissions(unAllowedPremiumFeatures);
-				companyDao.setupPremiumFeaturePermissions(allowedPremiumFeatures, unAllowedPremiumFeatures);
+				companyDao.setupPremiumFeaturePermissions(allowedPremiumFeatures, unAllowedPremiumFeatures, "Initial license setup");
 			} else {
 				// Init the permission system anyway and assign categories to the rights etc.
-				Permission.getAllPermissionsAndCategories();
+				permissionService.getAllPermissions();
 			}
 		}
 	}
 	
-	public void writeValue(final ConfigValue configurationValueID, final String value) {
+	public void writeValue(final ConfigValue configurationValueID, final String value, String description) {
 		String[] parts = configurationValueID.toString().split("\\.", 2);
 		
-		configTableDao.storeEntry(parts[0], parts[1], value);
+		configTableDao.storeEntry(parts[0], parts[1], null, value, description);
 		
 		invalidateCache();
 	}
 
+	
 	public void writeValue(final ConfigValue configurationValueID, final int companyID, final String value) {
 		writeValue(configurationValueID, companyID, value, null);
 	}
+	 
 
 	public void writeValue(final ConfigValue configurationValueID, final int companyID, final String value, final String description) {
 		companyInfoDao.writeConfigValue(companyID, configurationValueID.toString(), value, description);
@@ -659,30 +686,22 @@ public class ConfigService {
 		invalidateCache();
 	}
 
-	public void writeOrDeleteIfDefaultValue(final ConfigValue configurationValueID, final int companyID, final String value){
+	public void writeOrDeleteIfDefaultValue(final ConfigValue configurationValueID, final int companyID, final String value, String description){
 		String defaultValue = getValue(configurationValueID, 0);
-		if (StringUtils.equals(defaultValue, value) && companyID > 0){
-			String[] parts = configurationValueID.toString().split("\\.", 2);
-			if (parts.length > 1) {
-				configTableDao.deleteEntry(parts[0], parts[1] + "." + companyID);
-			}
+		if (StringUtils.equals(defaultValue, value) && companyID > 0) {
 			companyInfoDao.deleteValue(companyID, configurationValueID.toString());
 			invalidateCache();
 		} else {
-			writeValue(configurationValueID, companyID, value);
+			writeValue(configurationValueID, companyID, value, description);
 		}
 	}
 
-	public void writeBooleanValue(final ConfigValue configurationValueID, final boolean value) {
+	public void writeBooleanValue(final ConfigValue configurationValueID, final boolean value, String description) {
 		String[] parts = configurationValueID.toString().split("\\.", 2);
 		
-		configTableDao.storeEntry(parts[0], parts[1], value ? "true" : "false");
+		configTableDao.storeEntry(parts[0], parts[1], null, value ? "true" : "false", description);
 		
 		invalidateCache();
-	}
-
-	public void writeBooleanValue(final ConfigValue configurationValueID, final int companyID, final boolean value) {
-		writeBooleanValue(configurationValueID, companyID, value, null);
 	}
 
 	public void writeBooleanValue(final ConfigValue configurationValueID, final int companyID, final boolean value, String description) {
@@ -691,17 +710,13 @@ public class ConfigService {
 		invalidateCache();
 	}
 
-	public void writeOrDeleteIfDefaultBooleanValue(final ConfigValue configurationValueID, final int companyID, final boolean value){
+	public void writeOrDeleteIfDefaultBooleanValue(final ConfigValue configurationValueID, final int companyID, final boolean value, String description){
 		boolean defaultValue = getBooleanValue(configurationValueID, 0);
-		if (defaultValue == value && companyID > 0){
-			String[] parts = configurationValueID.toString().split("\\.", 2);
-			if (parts.length > 1) {
-				configTableDao.deleteEntry(parts[0], parts[1] + "." + companyID);
-			}
+		if (defaultValue == value && companyID > 0) {
 			companyInfoDao.deleteValue(companyID, configurationValueID.toString());
 			invalidateCache();
 		} else {
-			writeBooleanValue(configurationValueID, companyID, value);
+			writeBooleanValue(configurationValueID, companyID, value, description);
 		}
 	}
 	
@@ -971,7 +986,7 @@ public class ConfigService {
 	 * @return <code>true</code> if company is allowed to use webservice
 	 */
 	public boolean isWebserviceSendServiceMailingEnabled(int companyID) {
-		return getBooleanValue(ConfigValue.WebserviceEnableSendServiceMailing, companyID);
+		return getBooleanValue(Webservices.WebserviceEnableSendServiceMailing, companyID);
 	}
 
 	/**
@@ -982,7 +997,7 @@ public class ConfigService {
 	 * @return size limit
 	 */
 	public int getWebserviceBulkSizeLimit(final int companyID) {
-		return getIntegerValue(ConfigValue.WebserviceBulkSizeLimit, companyID, 1000);
+		return getIntegerValue(Webservices.WebserviceBulkSizeLimit, companyID, 1000);
 	}
 	
 	/**
@@ -1167,5 +1182,17 @@ public class ConfigService {
 
 	public void enforceExpiration() {
 		EXPIRATIONTIME = new GregorianCalendar();
+	}
+
+	public Server getApplicationType() {
+		return applicationType;
+	}
+
+	public List<Map<String, Object>> getReleaseData(String hostName, String applicationTypeParam) throws Exception {
+		return configTableDao.getReleaseData(hostName, applicationTypeParam);
+	}
+
+	public Date getCurrentDbTime() {
+		return configTableDao.getCurrentDbTime();
 	}
 }

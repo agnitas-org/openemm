@@ -17,14 +17,16 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
 import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoField;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.Company;
-import org.agnitas.beans.impl.AdminGroupImpl;
 import org.agnitas.beans.impl.CompanyImpl;
 import org.apache.commons.lang3.StringUtils;
 
@@ -49,7 +51,7 @@ public class ComAdminImpl implements ComAdmin {
 	protected Date creationDate;
 	protected Date lastPasswordChange = new Date();
 	private int defaultImportProfileID;
-	protected AdminGroup group = new AdminGroupImpl();
+	protected List<AdminGroup> groups = new ArrayList<>();
 	protected Set<Permission> adminPermissions;
 	protected Set<Permission> companyPermissions;
 	protected String statEmail;
@@ -238,8 +240,19 @@ public class ComAdminImpl implements ComAdmin {
 	 * @return Value of property groupID.
 	 */
 	@Override
-	public AdminGroup getGroup() {
-		return group;
+	public List<AdminGroup> getGroups() {
+		return groups;
+	}
+	
+	@Override
+	public List<Integer> getGroupIds() {
+		List<Integer> groupIds = new ArrayList<>();
+	    if (getGroups() != null && !getGroups().isEmpty()) {
+	    	for (AdminGroup group : getGroups()) {
+	    		groupIds.add(group.getGroupID());
+	    	}
+	    }
+	    return groupIds;
 	}
 
 	/**
@@ -248,8 +261,8 @@ public class ComAdminImpl implements ComAdmin {
 	 * @param group
 	 */
 	@Override
-	public void setGroup(AdminGroup group) {
-		this.group = group;
+	public void setGroups(List<AdminGroup> groups) {
+		this.groups = groups;
 	}
 
 	@Override
@@ -420,10 +433,10 @@ public class ComAdminImpl implements ComAdmin {
 	 */
 	@Override
 	public boolean permissionAllowed(Permission... permissions) {
-		if (Permission.permissionAllowed(getCompanyID(), adminPermissions, companyPermissions, permissions)){
+		if (Permission.permissionAllowed(adminPermissions, companyPermissions, permissions)){
 			return true;
 		} else {
-			return group != null && group.permissionAllowed(getCompanyID(), permissions);
+			return permissionAllowedByGroups(permissions);
 		}
 	}
 	
@@ -454,20 +467,20 @@ public class ComAdminImpl implements ComAdmin {
 	public DateTimeFormatter getDateTimeFormatterWithSeconds() {
 		String dateFormatPattern = DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.MEDIUM, IsoChronology.INSTANCE, getLocale());
 		dateFormatPattern = dateFormatPattern.replaceFirst("y+", "yyyy").replaceFirst(", ", " ");
-		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormatPattern, getLocale());
-		dateTimeFormatter.withZone(TimeZone.getTimeZone(getAdminTimezone()).toZoneId());
-		dateTimeFormatter.withResolverStyle(ResolverStyle.STRICT);
-		return dateTimeFormatter;
+
+		return getDateTimeFormatterByPattern(dateFormatPattern)
+				.withZone(TimeZone.getTimeZone(getAdminTimezone()).toZoneId())
+				.withResolverStyle(ResolverStyle.STRICT);
 	}
 
 	@Override
 	public DateTimeFormatter getDateTimeFormatter() {
 		String dateTimeFormatPattern = DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, getLocale());
 		dateTimeFormatPattern = dateTimeFormatPattern.replaceFirst("y+", "yyyy").replaceFirst(", ", " ");
-		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormatPattern, getLocale());
-		dateTimeFormatter.withZone(TimeZone.getTimeZone(getAdminTimezone()).toZoneId());
-		dateTimeFormatter.withResolverStyle(ResolverStyle.STRICT);
-		return dateTimeFormatter;
+
+		return getDateTimeFormatterByPattern(dateTimeFormatPattern)
+				.withZone(TimeZone.getTimeZone(getAdminTimezone()).toZoneId())
+				.withResolverStyle(ResolverStyle.STRICT);
 	}
 	
 	@Override
@@ -482,10 +495,26 @@ public class ComAdminImpl implements ComAdmin {
 	@Override
 	public DateTimeFormatter getDateFormatter() {
 		String dateFormatPattern = ((SimpleDateFormat) SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, getLocale())).toPattern().replaceFirst("y+", "yyyy");
-		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(dateFormatPattern, getLocale());
-		dateFormatter.withZone(TimeZone.getTimeZone(getAdminTimezone()).toZoneId());
-		dateFormatter.withResolverStyle(ResolverStyle.STRICT);
-		return dateFormatter;
+		return getDateTimeFormatterByPattern(dateFormatPattern)
+				.withZone(TimeZone.getTimeZone(getAdminTimezone()).toZoneId())
+				.withResolverStyle(ResolverStyle.STRICT);
+	}
+
+	private DateTimeFormatter getDateTimeFormatterByPattern(String pattern) {
+		return getDateTimeFormatterByPattern(pattern, true);
+	}
+
+	private DateTimeFormatter getDateTimeFormatterByPattern(String pattern, boolean useYYYYPattern) {
+		if (useYYYYPattern) {
+			return new DateTimeFormatterBuilder().appendPattern(pattern)
+					//fix to use yyyy instead uuuu
+					//Java 8 uses uuuu for year, not yyyy. In Java 8, yyyy means "year of era" (BC or AD)
+					.parseDefaulting(ChronoField.ERA, 1)
+					.toFormatter(getLocale());
+		} else {
+			return new DateTimeFormatterBuilder().appendPattern(pattern)
+					.toFormatter(getLocale());
+		}
 	}
 	
 	@Override
@@ -507,5 +536,19 @@ public class ComAdminImpl implements ComAdmin {
 
 	@Override public void setAltgId(int altgId) {
 		this.altgId = altgId;
+	}
+
+	@Override
+	public boolean permissionAllowedByGroups(Permission... permission) {
+		if (groups != null && !groups.isEmpty() ) {
+			for (AdminGroup adminGroup : getGroups()) {
+				if (adminGroup.permissionAllowed(permission)) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			return false;
+		}
 	}
 }

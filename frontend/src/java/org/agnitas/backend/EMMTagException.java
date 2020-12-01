@@ -12,22 +12,26 @@ package org.agnitas.backend;
 
 import org.agnitas.util.Log;
 
-/** Exception to be raised in EMMTag
+/**
+ * Exception to be raised in EMMTag
  */
 public class EMMTagException extends Exception {
 	final static long serialVersionUID = 0x055e44;
-	
-	/** Constructor
+
+	/**
+	 * Constructor
+	 *
 	 * @param data Reference to configuration
-	 * @param msg the error message
+	 * @param msg  the error message
 	 */
-	public EMMTagException (Data data, EMMTag tag, String msg) {
-		super (msg = (msg != null) && (tag != null) && (tag.mTagFullname != null) ? msg + ": " + tag.mTagFullname : msg);
+	public EMMTagException(Data data, EMMTag tag, String msg) {
+		super(msg = (msg != null) && (tag != null) && (tag.mTagFullname != null) ? msg + ": " + tag.mTagFullname : msg);
 		if ((data != null) && (msg != null)) {
-			data.logging (Log.ERROR, "emmtag", msg);
+			data.logging(Log.ERROR, "emmtag", msg);
 		}
 	}
-	public EMMTagException (String msg) {
-		this (null, null, msg);
+
+	public EMMTagException(String msg) {
+		this(null, null, msg);
 	}
 }

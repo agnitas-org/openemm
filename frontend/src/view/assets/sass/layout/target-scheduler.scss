@@ -1,0 +1,24 @@
+#tile-schedule-time {
+  table {
+    th {
+      padding: 10px 20px;
+    }
+
+    td {
+      vertical-align: bottom;
+      padding-bottom: 20px;
+    }
+
+    .period-settings-wrapper {
+      padding: 10px 30px 0 30px;
+
+      .day-wrapper {
+        margin: 20px 0 0 5px;
+      }
+    }
+
+    .schedule-settings-wrapper {
+      padding: 10px 30px 0 10px;
+    }
+  }
+}

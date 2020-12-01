@@ -130,7 +130,6 @@
 		<property name="reminderService" ref="workflowStartStopReminderService" />
 		<property name="reminderDao" ref="comWorkflowStartStopReminderDao" />
 		<property name="campaignDao" ref="CampaignDao"/>
-        <property name="eqlFacade" ref="EqlFacade"/>
     </bean>
 
 	<bean id="WorkflowActivationService" class="com.agnitas.emm.core.workflow.service.ComWorkflowActivationService">
@@ -157,7 +156,9 @@
 	</bean>
 
 <!-- ============================================================================================================================== Export -->
-	<bean id="RecipientExportWorkerFactory" class="org.agnitas.service.OpenemmRecipientExportWorkerFactory" />
+	<bean id="RecipientExportWorkerFactory" class="org.agnitas.service.OpenemmRecipientExportWorkerFactory">
+		<property name="targetService" ref="targetService"/>
+	</bean>
 
 	<bean id="ExportPredefService" class="com.agnitas.service.impl.ExportPredefServiceImpl">
 		<property name="exportPredefDao" ref="ExportPredefDao" />
@@ -195,4 +196,5 @@
 		<property name="importModeHandlerFactory" ref="ImportModeHandlerFactory" />
 		<property name="importRecipientsDao" ref="ImportRecipientsDao" />
 	</bean>
+
 </beans>

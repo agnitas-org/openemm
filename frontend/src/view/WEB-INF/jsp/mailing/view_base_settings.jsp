@@ -11,7 +11,6 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://ajaxtags.org/tags/ajax" prefix="ajax" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -70,8 +69,6 @@
     <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingBaseForm.mailingID}" />
 </c:url>
 
-<!--XYZ: view_base_settings.jsp ${workflowParams} - ${workflowId} - ${mailingBaseForm.workflowId} - ${formWorkflowId}-->
-
 <script type="text/javascript">
     (function(){
         var splits = {};
@@ -119,7 +116,7 @@
             <bean:message key="mailing.generalSettings"/>
         </a>
     </div>
-    <div id="tile-mailingGeneral" class="tile-content tile-content-forms">
+    <div id="tile-mailingGeneral" class="tile-content tile-content-forms" data-action="scroll-to">
         <div class="form-group" data-field="validator">
             <div class="col-sm-4">
                 <label class="control-label">
@@ -250,7 +247,7 @@
             <bean:message key="Targets"/>
         </a>
     </div>
-    <div id="tile-mailingTargets" class="tile-content tile-content-forms">
+    <div id="tile-mailingTargets" class="tile-content tile-content-forms" data-action="scroll-to">
         <c:choose>
             <c:when test="${mailingBaseForm.complexTargetExpression or isWorkflowDriven}">
                 <div class="form-group ${mailingBaseForm.complexTargetExpression ? 'has-feedback has-alert' : ''}">
@@ -303,12 +300,14 @@
                                        data-result-template="target-group-result-item"
                                        data-selection-template="target-group-selection-item">
                             <logic:iterate id="target" name="mailingBaseForm" property="targets">
-                            
-                            	<%-- Build link to target group editor --%>
-                                <c:url var="targetLink" value="/targetQB.do">
-                                    <c:param name="method" value="show"/>
-                                    <c:param name="targetID" value="${target.id}"/>
-                                </c:url>
+                                <c:set var="targetLink" value=""/>
+                                <c:if test="${not target.accessLimitation}">
+                                    <%-- Build link to target group editor --%>
+                                    <c:url var="targetLink" value="/targetQB.do">
+                                        <c:param name="method" value="show"/>
+                                        <c:param name="targetID" value="${target.id}"/>
+                                    </c:url>
+                                </c:if>
 
                                 <agn:agnOption value="${target.id}"
                                                data-complexity-grade="${mailingBaseForm.targetComplexities[target.id]}"
@@ -330,11 +329,10 @@
                         <%-- Target groups are editable unless mailing is sent --%>
                         <agn:agnHidden styleId="assignTargetGroups" property="assignTargetGroups" value="${not mailingBaseForm.worldMailingSend}"/>
 
-                        <c:set var="disabledTargetsInput" value="${mailingBaseForm.worldMailingSend and isALTG}"/>
-
+                        <c:set var="disabledTargetsInput" value="${mailingBaseForm.worldMailingSend}"/>
                         <agn:agnSelect styleId="targetGroupIds" property="targetGroupIds"
                                        styleClass="form-control js-select"
-                                       disabled="${mailingBaseForm.worldMailingSend}"
+                                       disabled="${disabledTargetsInput}"
                                        multiple="true"
                                        data-placeholder="${allSubscribersMessage}"
                                        data-result-template="target-group-result-item"
@@ -342,15 +340,18 @@
                                        data-action="selectTargetGroups">
                             <logic:iterate id="target" name="mailingBaseForm" property="targets">
 
-                            	<%-- Build link to target group editor --%>
-                                <c:url var="targetLink" value="/targetQB.do">
-                                    <c:param name="method" value="show"/>
-                                    <c:param name="targetID" value="${target.id}"/>
-                                </c:url>
+                                <c:set var="targetLink" value=""/>
+                                <c:if test="${not target.accessLimitation}">
+                                    <%-- Build link to target group editor --%>
+                                    <c:url var="targetLink" value="/targetQB.do">
+                                        <c:param name="method" value="show"/>
+                                        <c:param name="targetID" value="${target.id}"/>
+                                    </c:url>
+                                </c:if>
 
                                 <agn:agnOption value="${target.id}"
                                                data-complexity-grade="${mailingBaseForm.targetComplexities[target.id]}"
-                                               data-url="${targetLink}">${fn:escapeXml(target.targetName)} (${target.id})</agn:agnOption>
+                                               data-url="${targetLink}" data-locked="${target.id eq altgId}">${fn:escapeXml(target.targetName)} (${target.id})</agn:agnOption>
                             </logic:iterate>
                         </agn:agnSelect>
                     </div>
@@ -514,7 +515,11 @@
 
     </div>
         <script id="target-group-selection-item" type="text/x-mustache-template">
-            <a href="{{= element.dataset.url }}">{{- text }}</a>
+            {{ if(element.dataset.url && element.dataset.url.length) { }}
+                <a href="{{= element.dataset.url }}">{{- text }}</a>
+            {{ } else { }}
+                <span>{{- text }}</span>
+            {{ } }}
             {{ if (element.dataset.complexityGrade == '${COMPLEXITY_RED}') { }}
             <span class="circle-complexity complexity-red"></span>
             <i class="icon icon-exclamation-triangle pull-right complexity-red" style="margin-right: 4px;"

@@ -61,7 +61,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
 
   var updatePreview = function () {
     var form = AGN.Lib.Form.get($('#preview'));
-    form.setValue('reloadPreview', false);
+    form.setValue('previewForm.reload', false);
     form.setResourceSelectorOnce('#preview');
     form.submit();
   };

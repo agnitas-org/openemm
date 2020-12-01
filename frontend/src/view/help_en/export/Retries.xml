@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Number of retries]]></title>
+	<content><![CDATA[If an export could not be executed because, for example, the target server was unreachable or no disk space was available, you can specify how often the EMM should attempt to restart the export. By default, a retry is made after 15 minutes. All further attempts are also made at 15 minute intervals.]]></content>
+</HelpBalloon>

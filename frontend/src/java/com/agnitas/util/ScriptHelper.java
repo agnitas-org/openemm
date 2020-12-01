@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -82,7 +83,6 @@ import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
 
 public class ScriptHelper {
-
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ScriptHelper.class);
 
@@ -618,7 +618,35 @@ public class ScriptHelper {
 		if (helperService == null) {
 			throw new Exception("No ScriptHelperService is set. You must call setHelperService first!");
 		} else {
-			return helperService.getLastSentWorldMailingByCompanyAndMailinglist(companyIdToCheck, mailingListID);
+			int lastNewsletterMailingID = helperService.getLastSentWorldMailingByCompanyAndMailinglist(companyIdToCheck, mailingListID);
+			
+			if (lastNewsletterMailingID <= 0) {
+				// No such mailing found
+				return 0;
+			} else {
+				// Check if event-mailing entry already exists. Only one single event-mailing maildropStatus entry should exist.
+				final List<MaildropEntry> maildropStatusList = maildropStatusDao.getMaildropStatusEntriesForMailing(companyIdToCheck, lastNewsletterMailingID);
+				for (final MaildropEntry entry : maildropStatusList) {
+					if (entry.getStatus() == MaildropStatus.ACTION_BASED.getCode()) {
+						return lastNewsletterMailingID;
+					}
+				}
+
+				// Create new maildrop entry for event-mailing
+				final MaildropEntry drop = new MaildropEntryImpl();
+
+				drop.setStatus(MaildropStatus.ACTION_BASED.getCode());
+				drop.setSendDate(new java.util.Date());
+				drop.setGenDate(new java.util.Date());
+				drop.setGenStatus(1);
+				drop.setGenChangeDate(new java.util.Date());
+				drop.setMailingID(lastNewsletterMailingID);
+				drop.setCompanyID(companyIdToCheck);
+
+				maildropStatusDao.saveMaildropEntry(drop);
+
+				return lastNewsletterMailingID;
+			}
 		}
 	}
 
@@ -916,16 +944,22 @@ public class ScriptHelper {
     			return -1;
     		}
     	} catch(final UIDParseException e) {
-    		logger.error(String.format("Error parsing uid '%s'", uidString), e);
+    		if(logger.isInfoEnabled()) {
+    			logger.info(String.format("Error parsing uid '%s'", uidString), e);
+    		}
 
     		return -1;
     	} catch (final DeprecatedUIDVersionException e) {
-    		logger.error(String.format("UID '%s' of deprected version", uidString), e);
-
+    		if(logger.isInfoEnabled()) {
+    			logger.info(String.format("UID '%s' of deprected version", uidString), e);
+    		}
+    		
     		return -1;
 		} catch (final InvalidUIDException e) {
-    		logger.error(String.format("Invalid UID '%s'", uidString), e);
-
+    		if(logger.isInfoEnabled()) {
+    			logger.info(String.format("Invalid UID '%s'", uidString), e);
+    		}
+    		
     		return -1;
 		}
     }
@@ -1044,8 +1078,9 @@ public class ScriptHelper {
 	 *            the company to look in.
 	 * @return The mailingID of the last newsletter that would have been sent to
 	 *         this recipient.
+	 * @throws Exception
 	 */
-	public int findLastNewsletter(final int customerID, @VelocityCheck final int companyIdToCheck, final int mailinglist) {
+	public int findLastNewsletter(final int customerID, @VelocityCheck final int companyIdToCheck, final int mailinglist) throws Exception {
 
     	/*
     	 * **************************************************
@@ -1231,6 +1266,53 @@ public class ScriptHelper {
 			return false;
 		}
 	}
+	
+	public int random(int startLimitInclusive, int endLimitExclusive) {
+		return (int) (Math.random() * (endLimitExclusive - startLimitInclusive));
+	}
+	
+	public boolean checkEmailExcludes(String emailAddress, List<String> excludeEmailPatterns) {
+		return checkEmailIncludesExcludes(emailAddress, null, excludeEmailPatterns);
+	}
+	
+	public boolean checkEmailIncludes(String emailAddress, List<String> includeEmailPatterns) {
+		return checkEmailIncludesExcludes(emailAddress, includeEmailPatterns, null);
+	}
+	
+	public boolean checkEmailIncludesExcludes(String emailAddress, List<String> includeEmailPatterns, List<String> excludeEmailPatterns) {
+		try {
+			emailAddress = AgnUtils.checkAndNormalizeEmail(emailAddress);
+		} catch (Exception e) {
+			return false;
+		}
+
+		if (includeEmailPatterns != null) {
+			boolean foundMatchingIncludePattern = false;
+			for (String includeEmailPattern : includeEmailPatterns) {
+				if (emailMatchesPattern(emailAddress, includeEmailPattern)) {
+					foundMatchingIncludePattern = true;
+					break;
+				}
+			}
+			if (!foundMatchingIncludePattern) {
+				return false;
+			}
+		}
+		
+		if (excludeEmailPatterns != null) {
+			for (String excludeEmailPattern : excludeEmailPatterns) {
+				if (emailMatchesPattern(emailAddress, excludeEmailPattern)) {
+					return false;
+				}
+			}
+		}
+		
+		return true;
+	}
+	
+	private boolean emailMatchesPattern(String emailAddress, String emailPattern) {
+		return Pattern.matches(emailPattern.replace(".", "\\.").replace("*", ".*").replace("?", "."), emailAddress);
+	}
 
 	public void setMailingDao(final ComMailingDao mailingDao) {
 
@@ -1306,12 +1388,12 @@ public class ScriptHelper {
 		return mailingDao.getMailingSendDate(companyIdToCheck, mailingIdToCheck);
 	}
 	
-	public String getMailingSubject(final int mailingIdParameter) {
-		return mailingDao.getMailing(mailingIdParameter, companyID).getEmailParam().getSubject();
+	public String getMailingSubject(final int mailingIdParameter) throws Exception {
+		return mailingDao.getEmailSubject(companyID, mailingIdParameter);
 	}
 	
 	public String getMailingName(final int mailingIdParameter) {
-		return mailingDao.getMailing(mailingIdParameter, companyID).getShortname();
+		return mailingDao.getLightweightMailing(companyID, mailingIdParameter).getShortname();
 	}
 
 	@Required

@@ -31,12 +31,17 @@ import org.springframework.beans.factory.annotation.Required;
 public class DataEncryptor {
 	private char[] encryptorPassword;
 	private byte[] saltBytes;
+	private String saltFilePathOverride = null;
 	
 	private ConfigService configService;
 	
 	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
+	}
+	
+	public void setSaltFilePathOverride(String saltFilePathOverride) {
+		this.saltFilePathOverride = saltFilePathOverride;
 	}
 	
 	/**
@@ -46,7 +51,12 @@ public class DataEncryptor {
 	 * @throws IOException
 	 */
 	private void init() throws IOException {
-		String saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
+		String saltFilePath;
+		if (saltFilePathOverride != null) {
+			saltFilePath = saltFilePathOverride;
+		} else {
+			saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
+		}
 		@SuppressWarnings("unchecked")
 		List<String> lines = FileUtils.readLines(new File(saltFilePath), "UTF-8");
 		String encryptorPasswordString = lines.get(0).replace("“", "\""); // Replace some not allowed non-ascii password chars

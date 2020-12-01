@@ -12,23 +12,30 @@ package org.agnitas.emm.springws.endpoint.mailinglist;
 
 import org.agnitas.emm.core.mailinglist.service.MailinglistModel;
 import org.agnitas.emm.core.mailinglist.service.MailinglistService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.DeleteMailinglistRequest;
 import org.agnitas.emm.springws.jaxb.DeleteMailinglistResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class DeleteMailinglistEndpoint extends AbstractMarshallingPayloadEndpoint {
-
+@Endpoint
+public class DeleteMailinglistEndpoint extends BaseEndpoint {
 
 	private MailinglistService mailinglistService;
 
-	private ObjectFactory objectFactory;
+	@Autowired
+	public DeleteMailinglistEndpoint(@Qualifier("WS_mailinglistService") MailinglistService mailinglistService) {
+		this.mailinglistService = mailinglistService;
+	}
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		DeleteMailinglistRequest request = (DeleteMailinglistRequest) arg0;
-		DeleteMailinglistResponse response = objectFactory.createDeleteMailinglistResponse();
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteMailinglistRequest")
+	public @ResponsePayload DeleteMailinglistResponse deleteMailinglist(@RequestPayload DeleteMailinglistRequest request) throws Exception {
+		DeleteMailinglistResponse response = new DeleteMailinglistResponse();
 		
 		MailinglistModel model = new MailinglistModel();
 		model.setCompanyId(Utils.getUserCompany());
@@ -36,13 +43,5 @@ public class DeleteMailinglistEndpoint extends AbstractMarshallingPayloadEndpoin
 
 		response.setValue(mailinglistService.deleteMailinglist(model));
 		return response;
-	}
-
-	public void setMailinglistService(MailinglistService service) {
-		this.mailinglistService = service;
-	}
-	
-	public void setObjectFactory(ObjectFactory factory) {
-		this.objectFactory = factory;
 	}
 }

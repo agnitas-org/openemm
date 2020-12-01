@@ -11,7 +11,8 @@
 package org.agnitas.emm.core.mailing.dto;
 
 import org.agnitas.beans.RowsCountWebStorageEntry;
-import org.codehaus.jackson.annotate.JsonProperty;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class MailingOverviewWebStorageEntry extends RowsCountWebStorageEntry {
     @JsonProperty("mailing-type-normal")

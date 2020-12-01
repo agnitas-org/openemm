@@ -12,49 +12,29 @@ package com.agnitas.emm.core.admin.web;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComAdminPreferences;
-import com.agnitas.beans.PollingUid;
-import com.agnitas.emm.core.admin.form.AdminForm;
-import com.agnitas.emm.core.admin.form.AdminListForm;
-import com.agnitas.emm.core.admin.form.AdminListFormSearchParams;
-import com.agnitas.emm.core.admin.form.AdminPreferences;
-import com.agnitas.emm.core.admin.form.AdminRightsForm;
-import com.agnitas.emm.core.admin.form.validation.AdminFormValidator;
-import com.agnitas.emm.core.admin.service.AdminChangesLogService;
-import com.agnitas.emm.core.admin.service.AdminGroupService;
-import com.agnitas.emm.core.admin.service.AdminSavingResult;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.company.bean.CompanyEntry;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.service.ComCSVService;
-import com.agnitas.service.ComPDFService;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import com.lowagie.text.DocumentException;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.emm.core.commons.password.PasswordCheck;
 import org.agnitas.emm.core.commons.password.PasswordCheckHandler;
 import org.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
+import org.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
-import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.Tuple;
 import org.agnitas.web.forms.FormSearchParams;
@@ -76,6 +56,32 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComAdminPreferences;
+import com.agnitas.beans.PollingUid;
+import com.agnitas.emm.core.admin.form.AdminForm;
+import com.agnitas.emm.core.admin.form.AdminListForm;
+import com.agnitas.emm.core.admin.form.AdminListFormSearchParams;
+import com.agnitas.emm.core.admin.form.AdminPreferences;
+import com.agnitas.emm.core.admin.form.AdminRightsForm;
+import com.agnitas.emm.core.admin.form.validation.AdminFormValidator;
+import com.agnitas.emm.core.admin.service.AdminChangesLogService;
+import com.agnitas.emm.core.admin.service.AdminGroupService;
+import com.agnitas.emm.core.admin.service.AdminSavingResult;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.company.bean.CompanyEntry;
+import com.agnitas.emm.core.logon.service.ComLogonService;
+import com.agnitas.emm.core.logon.web.LogonControllerBasic;
+import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.service.ComCSVService;
+import com.agnitas.service.ComPDFService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.lowagie.text.DocumentException;
+
 @Controller
 @RequestMapping("/admin")
 @PermissionMapping("admin")
@@ -88,6 +94,7 @@ public class AdminController extends AbstractAdminControllerBase {
     private final ConfigService configService;
     private final ComMailinglistService mailinglistService;
     private final AdminService adminService;
+    private final ComLogonService logonService;
     private final CompanyService companyService;
     private final AdminGroupService adminGroupService;
     private final WebStorage webStorage;
@@ -102,15 +109,16 @@ public class AdminController extends AbstractAdminControllerBase {
     protected static final String FUTURE_TASK = "GET_ADMIN_LIST";
 
     public AdminController(ConfigService configService,
-                           ComMailinglistService mailinglistService,
-                           AdminService adminService,
-                           CompanyService companyService,
-                           AdminGroupService adminGroupService, WebStorage webStorage,
-                           UserActivityLogService userActivityLogService,
-                           AdminChangesLogService adminChangesLogService,
-                           PasswordCheck passwordCheck, ComCSVService csvService, ComPDFService pdfService,
-                           ConversionService conversionService,
-							ComTargetService targetService) {
+			ComMailinglistService mailinglistService,
+			AdminService adminService,
+			CompanyService companyService,
+			AdminGroupService adminGroupService, WebStorage webStorage,
+			UserActivityLogService userActivityLogService,
+			AdminChangesLogService adminChangesLogService,
+			PasswordCheck passwordCheck, ComCSVService csvService, ComPDFService pdfService,
+			ConversionService conversionService,
+			ComTargetService targetService,
+			ComLogonService logonService) {
         this.configService = configService;
         this.mailinglistService = mailinglistService;
         this.adminService = adminService;
@@ -124,6 +132,7 @@ public class AdminController extends AbstractAdminControllerBase {
         this.pdfService = pdfService;
         this.conversionService = conversionService;
         this.targetService = targetService;
+        this.logonService = logonService;
     }
 
     @RequestMapping("/list.action")
@@ -148,7 +157,7 @@ public class AdminController extends AbstractAdminControllerBase {
         Callable<ModelAndView> worker = () -> {
             model.addAttribute(ADMIN_ENTRIES_KEY, getAdminListFromAdminListForm(admin, form));
             form.setCompanies(companyService.getCreatedCompanies(companyID));
-            form.setAdminGroups(adminGroupService.getAdminGroupsByCompanyIdAndDefault(companyID));
+            form.setAdminGroups(adminGroupService.getAdminGroupsByCompanyIdAndDefault(companyID, admin));
             form.setMailinglists(mailinglistService.getAllMailingListsNames(companyID));
 
             return new ModelAndView("settings_admin_list", model.asMap());
@@ -167,7 +176,7 @@ public class AdminController extends AbstractAdminControllerBase {
         if (adminToEdit == null) {
             return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, "redirect:/admin/list.action");
         }
-        if (adminToEdit.getGroup() == null) {
+        if (adminToEdit.getGroups() == null || adminToEdit.getGroups().isEmpty()) {
             popups.alert("error.admin.invalidGroup");
         }
 
@@ -180,8 +189,20 @@ public class AdminController extends AbstractAdminControllerBase {
         userActivityLogService.writeUserActivityLog(admin, "view user", adminToEdit.getUsername());
 
         loadDataForViewPage(admin, model);
+        model.addAttribute("PASSWORD_POLICY", PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService).getPolicyName());
 
         return "settings_admin_view";
+    }
+    
+    @RequestMapping("/{adminID}/welcome.action")
+    public String sendWelcome(final ComAdmin admin, final AdminRightsForm form, final Popups popups, HttpServletRequest request) {
+    	String clientIp = request.getRemoteAddr();
+    	final int adminIdToEdit = form.getAdminID();
+    	final int companyID = admin.getCompanyID();
+    	final ComAdmin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
+    	logonService.sendWelcomeMail(adminToEdit, clientIp, LogonControllerBasic.PASSWORD_RESET_LINK_PATTERN);
+    	popups.success("admin.password.sent");
+    	return "messages";
     }
 
     @RequestMapping("/{adminID}/rights/view.action")
@@ -199,14 +220,13 @@ public class AdminController extends AbstractAdminControllerBase {
     }
 
     @PostMapping(value = "/{adminID}/save.action")
-    public String save(final ComAdmin admin, final AdminForm form, final Popups popups, final Model model,
-            final HttpSession session) {
-        if(!AdminFormValidator.validate(form, popups)){
+    public String save(final ComAdmin admin, final AdminForm form, final Popups popups, final Model model, final HttpSession session) {
+        if (!AdminFormValidator.validate(form, popups)){
             return "messages";
         }
         if (adminUsernameChangedToExisting(form)) {
             popups.alert("error.username.duplicate");
-        } else if (form.getGroupID() <= 0) {
+        } else if (form.getGroupIDs() == null || form.getGroupIDs().isEmpty()) {
             popups.alert("error.user.group");
         } else {
             if (StringUtils.isEmpty(form.getPassword()) || checkPassword(form, popups)) {
@@ -217,6 +237,8 @@ public class AdminController extends AbstractAdminControllerBase {
         }
 
         loadDataForViewPage(admin, model);
+        model.addAttribute("PASSWORD_POLICY", PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService).getPolicyName());
+
         return "settings_admin_view";
     }
 
@@ -243,6 +265,7 @@ public class AdminController extends AbstractAdminControllerBase {
 
    @RequestMapping("/create.action")
     public String create(final ComAdmin admin, AdminForm form, final Model model) {
+       	model.addAttribute("PASSWORD_POLICY", PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService).getPolicyName());
 
         loadDataForViewPage(admin, model);
 
@@ -262,7 +285,7 @@ public class AdminController extends AbstractAdminControllerBase {
             return "messages";
         }
 
-        if (form.getGroupID() <= 0) {
+        if (form.getGroupIDs() == null || form.getGroupIDs().isEmpty()) {
             popups.alert("error.user.group");
             return "messages";
         }
@@ -280,13 +303,11 @@ public class AdminController extends AbstractAdminControllerBase {
     }
 
     @RequestMapping("/list/export/csv.action")
-    public Object exportCsv(final ComAdmin admin, final AdminListForm form, final Popups popups)
-            throws UnsupportedEncodingException {
-
-        String csv = csvService.getUserCSV(getAdminListFromAdminListForm(admin, form, Integer.MAX_VALUE).getList());
+    public Object exportCsv(final ComAdmin admin, final AdminListForm form, final Popups popups) throws Exception {
+        byte[] csvData = csvService.getUserCSV(getAdminListFromAdminListForm(admin, form, Integer.MAX_VALUE).getList());
         String fileName = "users.csv";
 
-        if (csv == null) {
+        if (csvData == null) {
             popups.alert("error.export.file_not_ready");
             return "messages";
         }
@@ -296,10 +317,10 @@ public class AdminController extends AbstractAdminControllerBase {
                 + ", direction: " + form.getDir();
         userActivityLogService.writeUserActivityLog(admin, "export admins csv", description, LOGGER);
         return ResponseEntity.ok()
-                .contentLength(csv.length())
+                .contentLength(csvData.length)
                 .contentType(MediaType.parseMediaType("application/csv"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionHeaderContent(fileName))
-                .body(new InputStreamResource(new ByteArrayInputStream(csv.getBytes("UTF-8"))));
+                .body(new InputStreamResource(new ByteArrayInputStream(csvData)));
     }
 
     @RequestMapping("/list/export/pdf.action")
@@ -384,7 +405,7 @@ public class AdminController extends AbstractAdminControllerBase {
             return passwordCheck.checkAdminPassword(form.getPassword(), admin, handler);
         } else {
             // New user changes wants to set his initial password
-            return passwordCheck.checkAdminPassword(form.getPassword(), null, handler);
+            return passwordCheck.checkNewAdminPassword(form.getPassword(), form.getCompanyID(), handler);
         }
     }
 
@@ -436,44 +457,29 @@ public class AdminController extends AbstractAdminControllerBase {
 
         final ComAdmin savedAdmin = result.getResult();
 
-        if (isNew) {
-            // Log successful creation of new user
-            userActivityLogService.writeUserActivityLog(admin, "create user", savedAdmin.getUsername() + " (" + savedAdmin.getAdminID() + ")");
-        } else {
-            afterAdminUpdate(form, oldSavingAdmin, oldSavingAdminPreferences, admin, savedAdmin, session, result.isPasswordChanged());
-        }
+		if (isNew) {
+			// Log successful creation of new user
+			userActivityLogService.writeUserActivityLog(admin, "create user", savedAdmin.getUsername() + " (" + savedAdmin.getAdminID() + ")");
+		} else {
+			adminChangesLogService.getChangesAsUserActions(form, oldSavingAdmin, oldSavingAdminPreferences)
+				.forEach(action -> userActivityLogService.writeUserActivityLog(admin, action));
+			
+			if (result.isPasswordChanged()) {
+				userActivityLogService.writeUserActivityLog(admin, "change password", form.getUsername() + " (" + form.getAdminID() + ")");
+			}
+		}
 
         popups.success("default.changes_saved");
 
         return "redirect:/admin/" + savedAdmin.getAdminID() + "/view.action";
     }
 
-    private void afterAdminUpdate(AdminForm form, ComAdmin oldSavingAdmin, ComAdminPreferences oldSavingAdminPreferences,
-                                  ComAdmin admin, ComAdmin savedAdmin, HttpSession session, boolean isPasswordChanged) {
-        adminChangesLogService.getChangesAsUserActions(form, oldSavingAdmin, oldSavingAdminPreferences)
-                .forEach(action -> userActivityLogService.writeUserActivityLog(admin, action));
-
-        if (isPasswordChanged) {
-            userActivityLogService.writeUserActivityLog(admin, "change password", form.getUsername() + " (" + form.getAdminID() + ")");
-        }
-
-        // Set the new values for this session if user edit own profile via Administration -> User -> OwnProfile
-        if (savedAdmin.getAdminID() == admin.getAdminID()) {
-            ComAdminPreferences adminPreferences = adminService.getAdminPreferences(savedAdmin.getAdminID());
-
-            savedAdmin.setSupervisor(admin.getSupervisor());
-
-            session.setAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN, savedAdmin);
-            session.setAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMINPREFERENCES, adminPreferences);
-        }
-    }
-
     protected void loadDataForViewPage(final ComAdmin admin, final Model model){
-        model.addAttribute("adminGroups", adminGroupService.getAdminGroupsByCompanyIdAndDefault(admin.getCompanyID()));
+        model.addAttribute("adminGroups", adminGroupService.getAdminGroupsByCompanyIdAndDefault(admin.getCompanyID(), admin));
         model.addAttribute("layouts", adminService.getEmmLayoutsBase(admin.getCompanyID()));
         model.addAttribute("availableTimeZones", TimeZone.getAvailableIDs());
         model.addAttribute("createdCompanies", adminService.getCreatedCompanies(admin.getCompanyID()));
-		model.addAttribute("altgs", targetService.getLimitingTargetLights(admin.getCompanyID()));
+		model.addAttribute("altgs", targetService.getAccessLimitationTargetLights(admin));
     }
 
     private void initializeForm(AdminForm form, ComAdmin adminToEdit) {
@@ -489,7 +495,7 @@ public class AdminController extends AbstractAdminControllerBase {
         form.setCompanyID(adminToEdit.getCompanyID());
         form.setAdminLocale(new Locale(adminToEdit.getAdminLang(), adminToEdit.getAdminCountry()));
         form.setAdminTimezone(adminToEdit.getAdminTimezone());
-        form.setGroupID(adminToEdit.getGroup() == null ? 1 : adminToEdit.getGroup().getGroupID());
+        form.setGroupIDs(adminToEdit.getGroupIds());
         form.setCompanyName(adminToEdit.getCompanyName());
         form.setEmail(adminToEdit.getEmail());
         form.setLayoutBaseId(adminToEdit.getLayoutBaseID());
@@ -507,7 +513,9 @@ public class AdminController extends AbstractAdminControllerBase {
         form.setUsername(adminToEdit.getUsername());
         Map<String, PermissionsOverviewData.PermissionCategoryEntry> permissionsOverview =
                 adminService.getPermissionOverviewData(admin, adminToEdit);
-        model.addAttribute("permissionCategories", permissionsOverview.values());
+        List<PermissionsOverviewData.PermissionCategoryEntry> list = new ArrayList<>(permissionsOverview.values());
+        Collections.sort(list);
+        model.addAttribute("permissionCategories", list);
     }
 
     private boolean saveAdminRightsAndWriteToActivityLog(ComAdmin admin, AdminRightsForm aForm, Popups popups) {

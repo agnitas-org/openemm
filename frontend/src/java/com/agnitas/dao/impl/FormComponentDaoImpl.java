@@ -14,42 +14,55 @@ import java.io.InputStream;
 import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
+import com.agnitas.beans.FormComponent;
+import com.agnitas.beans.FormComponent.FormComponentType;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.FormComponent;
-import com.agnitas.dao.FormComponent.FormComponentType;
 import com.agnitas.dao.FormComponentDao;
 
 /**
  * The Class FormComponentDaoImpl.
  */
 public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDao {
-	/** The Constant logger. */
+	/**
+	 * The Constant logger.
+	 */
 	private static final transient Logger logger = Logger.getLogger(FormComponentDaoImpl.class);
-	
+
 	/* (non-Javadoc)
 	 * @see com.agnitas.dao.FormComponentDao#exists(int, int, int)
 	 */
 	@Override
-	public boolean exists(int formID, int companyID, int componentID) {
+	public boolean exists(int formID, @VelocityCheck int companyID, int componentID) {
 		String sql = "SELECT COUNT(*) FROM form_component_tbl WHERE form_id = ? AND company_id = ? AND id = ?";
 		int total = selectInt(logger, sql, formID, companyID, componentID);
 		return total > 0;
 	}
-	
+
+	@Override
+	public boolean exists(int formId, @VelocityCheck int companyId, String componentName) {
+		String sql = "SELECT COUNT(*) FROM form_component_tbl WHERE form_id = ? AND company_id = ? AND name = ?";
+		return selectInt(logger, sql, formId, companyId, componentName) > 0;
+	}
+
 	/* (non-Javadoc)
 	 * @see com.agnitas.dao.FormComponentDao#getFormComponentByName(int, int, java.lang.String)
 	 */
 	@Override
-	public FormComponent getFormComponent(int formID, int companyID, String imageFileName, FormComponentType componentType) {
+	public FormComponent getFormComponent(int formID, @VelocityCheck int companyID, String imageFileName, FormComponentType componentType) {
 		List<FormComponent> list;
 		if (componentType != null) {
 			list = select(logger, "SELECT * FROM form_component_tbl WHERE (form_id = ? OR form_id = 0) AND company_id = ? AND name = ? AND type = ? ORDER BY form_id DESC", new FormComponentRowMapper(), formID, companyID, imageFileName, componentType.getId());
@@ -64,7 +77,7 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 	}
 
 	/* (non-Javadoc)
-	 * @see com.agnitas.dao.FormComponentDao#save(com.agnitas.dao.FormComponent)
+	 * @see com.agnitas.dao.FormComponentDao#save(com.agnitas.beans.FormComponent)
 	 */
 	@Override
 	@DaoUpdateReturnValueCheck
@@ -74,7 +87,7 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 				if (formComponent.getId() == 0 || !exists(formComponent.getFormID(), formComponent.getCompanyID(), formComponent.getId())) {
 	                formComponent.setCreationDate(new Date());
 	                formComponent.setChangeDate(formComponent.getCreationDate());
-	                
+
 	                if (isOracleDB()) {
 	                	int newID = selectInt(logger, "SELECT form_component_tbl_seq.NEXTVAL FROM DUAL");
 	                	String sql = "INSERT INTO form_component_tbl (id, form_id, company_id, name, type, data_size, width, height, mimetype, description, creation_date, change_date) VALUES (" + AgnUtils.repeatString("?", 12, ", ") + ")";
@@ -84,7 +97,7 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 	                    } else {
 							updateBlob(logger, "UPDATE form_component_tbl SET data = ? WHERE id = ?", formComponent.getData(), newID);
 						}
-	
+
 	                    formComponent.setId(newID);
 	                } else {
 	                	String insertStatement = "INSERT INTO form_component_tbl (form_id, company_id, name, type, data_size, width, height, mimetype, description, creation_date, change_date) VALUES (" + AgnUtils.repeatString("?", 11, ", ") + ")";
@@ -95,7 +108,7 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 					return true;
 				} else {
 	                formComponent.setChangeDate(new Date());
-					
+
 					String sql = "UPDATE form_component_tbl SET form_id = ?, company_id = ?, name = ?, type = ?, data_size = ?, width = ?, height = ?, mimetype = ?, description = ?, change_date = ? WHERE id = ?";
 					int touchedLines = update(logger, sql, formComponent.getFormID(), formComponent.getCompanyID(), formComponent.getName(), formComponent.getType().getId(), formComponent.getData().length, formComponent.getWidth(), formComponent.getHeight(), formComponent.getMimeType(),  formComponent.getDescription(), formComponent.getChangeDate(), formComponent.getId());
 					if (touchedLines != 1) {
@@ -118,26 +131,26 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 	 * Gets the component descriptions.
 	 * This returns FormComponent items with all fields filled except for the data byte[]
 	 *
-	 * @param companyID the company id
+	 * @param companyID     the company id
 	 * @param componentType the component type
 	 * @return the component descriptions
 	 */
 	@Override
-	public List<FormComponent> getFormComponentDescriptions(int companyID, int formID, FormComponentType componentType) {
+	public List<FormComponent> getFormComponentDescriptions(@VelocityCheck int companyID, int formID, FormComponentType componentType) {
 		return select(logger, "SELECT id, company_id, form_id, name, type, mimetype, description, data_size, width, height, creation_date, change_date FROM form_component_tbl WHERE company_id = ? AND (form_id = ? OR form_id = 0) AND type = ?", new FormComponentRowMapperWithoutData(), companyID, formID, componentType.getId());
 	}
-	
+
 	/**
 	 * The Class FormComponentRowMapper.
 	 */
-	protected class FormComponentRowMapper extends FormComponentRowMapperWithoutData {
+	protected static class FormComponentRowMapper extends FormComponentRowMapperWithoutData {
 		/* (non-Javadoc)
 		 * @see org.springframework.jdbc.core.RowMapper#mapRow(java.sql.ResultSet, int)
 		 */
 		@Override
 		public FormComponent mapRow(ResultSet resultSet, int index) throws SQLException {
 			FormComponent component = super.mapRow(resultSet, index);
-			
+
 			Blob blob = resultSet.getBlob("data");
 			if (blob != null) {
 				try (InputStream dataStream = blob.getBinaryStream()) {
@@ -151,11 +164,11 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 			return component;
 		}
 	}
-	
+
 	/**
 	 * The Class FormComponentRowMapper without reading data byte[] (Lite/Snowflake)
 	 */
-	protected class FormComponentRowMapperWithoutData implements RowMapper<FormComponent> {
+	protected static class FormComponentRowMapperWithoutData implements RowMapper<FormComponent> {
 		/* (non-Javadoc)
 		 * @see org.springframework.jdbc.core.RowMapper#mapRow(java.sql.ResultSet, int)
 		 */
@@ -182,7 +195,7 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteFormComponent(int companyID, int formID, String componentName, FormComponentType componentType) {
+	public boolean deleteFormComponent(@VelocityCheck int companyID, int formID, String componentName, FormComponentType componentType) {
 		int touchedLines;
 		if (componentType != null) {
 			touchedLines = update(logger, "DELETE FROM form_component_tbl WHERE company_id = ? AND form_id = ? AND name = ? AND type = ?", companyID, formID, componentName, componentType.getId());
@@ -191,15 +204,100 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 		}
 		return touchedLines > 0;
 	}
-	
+
 	@Override
-	public boolean deleteFormComponentByCompany(int companyID) {
+	public boolean deleteFormComponentByCompany(@VelocityCheck int companyID) {
 		update(logger, "DELETE FROM form_component_tbl WHERE company_id = ?", companyID);
 		return selectInt(logger, "SELECT COUNT(*) FROM form_component_tbl WHERE company_id = ?", companyID) == 0;
 	}
 
 	@Override
-	public List<FormComponent> getFormComponents(int companyID, int formID) {
-		return select(logger, "SELECT id, company_id, form_id, name, type, mimetype, description, data_size, width, height, creation_date, change_date, data FROM form_component_tbl WHERE company_id = ? AND (form_id = ? OR form_id = 0)", new FormComponentRowMapper(), companyID, formID);
+	public List<FormComponent> getFormComponents(@VelocityCheck int companyID, int formID) {
+		return getFormComponents(companyID, formID, Collections.emptyList());
+	}
+
+	@Override
+	public List<FormComponent> getFormComponents(@VelocityCheck int companyId, int formID, List<FormComponentType> types) {
+		String sql = "SELECT id, company_id, form_id, name, type, mimetype, description, data_size, " +
+				"width, height, creation_date, change_date, data FROM form_component_tbl " +
+				"WHERE company_id = ? AND (form_id = ? OR form_id = 0)";
+
+		if (CollectionUtils.isNotEmpty(types)) {
+			sql += " AND " + makeBulkInClauseForInteger("type",
+					types.stream().map(FormComponentType::getId).collect(Collectors.toList()));
+		}
+
+		return select(logger, sql, new FormComponentRowMapper(), companyId, formID);
+	}
+
+	@Override
+	@DaoUpdateReturnValueCheck
+	public boolean saveFormComponent(@VelocityCheck int companyId, int formId, FormComponent component, FormComponent thumbnail) {
+		if (formId == 0) {
+			return false;
+		}
+
+		try {
+			int componentId = saveComponent(formId, companyId, component);
+			if (componentId > 0) {
+				saveComponent(formId, companyId, thumbnail);
+				return true;
+			}
+		} catch (Exception e) {
+			logger.error("Error saving form component formId: " + formId + ", component name: " + component.getName(), e);
+		}
+		return false;
+	}
+
+	private int saveComponent(int formId, int companyId, FormComponent component) throws Exception {
+		int componentId;
+		if (isOracleDB()) {
+			componentId = selectInt(logger, "SELECT form_component_tbl_seq.NEXTVAL FROM DUAL");
+			String sql = "INSERT INTO form_component_tbl " +
+					"(id, form_id, company_id, name, type, data_size, width, height, mimetype, description, creation_date, change_date) " +
+					"VALUES (" + AgnUtils.repeatString("?", 10, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+
+			int update = update(logger, sql,
+					componentId,
+					formId,
+					companyId,
+					component.getName(),
+					component.getType().getId(),
+					ArrayUtils.getLength(component.getData()),
+					component.getWidth(),
+					component.getHeight(),
+					component.getMimeType(),
+					component.getDescription());
+
+			if (update != 1) {
+				throw new RuntimeException("Illegal insert result");
+			}
+
+		} else {
+			String insertStatement = "INSERT INTO form_component_tbl " +
+					"(form_id, company_id, name, type, data_size, width, height, mimetype, description, " +
+					"creation_date, change_date) " +
+					"VALUES (" + AgnUtils.repeatString("?", 9, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+
+			componentId = insertIntoAutoincrementMysqlTable(logger, "id", insertStatement,
+					formId,
+					companyId,
+					component.getName(),
+					component.getType().getId(),
+					ArrayUtils.getLength(component.getData()),
+					component.getWidth(),
+					component.getHeight(),
+					component.getMimeType(),
+					component.getDescription());
+
+		}
+
+		if (componentId > 0) {
+			updateBlob(logger, "UPDATE form_component_tbl SET data = ? WHERE id = ?", component.getData(), componentId);
+			component.setId(componentId);
+			return componentId;
+		}
+
+		return 0;
 	}
 }

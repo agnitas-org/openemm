@@ -9,9 +9,9 @@
 <c:set var="DEPENDENT_TYPE_WORKFLOW" value="<%= ProfileFieldDependentType.WORKFLOW %>"/>
 <c:set var="DEPENDENT_TYPE_TARGET_GROUP" value="<%= ProfileFieldDependentType.TARGET_GROUP %>"/>
 
-<div class="tile js-data-table" data-sizing="container" data-table="profile-field-dependents-table">
+<div class="tile js-data-table" data-table="profile-field-dependents-table">
 
-    <div class="tile-header" data-sizing="top">
+    <div class="tile-header">
         <h2 class="headline"><mvc:message code="default.usedIn"/></h2>
 
         <ul class="tile-header-actions">
@@ -43,7 +43,7 @@
         </ul>
     </div>
 
-    <div class="tile-content" data-sizing="scroll">
+    <div class="tile-content">
         <div class="js-data-table-body" data-web-storage="profile-fields-dependents-overview" style="height: 100%;"></div>
     </div>
 

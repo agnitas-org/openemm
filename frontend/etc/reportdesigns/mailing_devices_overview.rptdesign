@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.4.0.v201405191524 Build &lt;4.4.0.v20140611-1043></property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <property name="units">in</property>
     <method name="initialize"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.com.agnitas.emm.core.mobile.service);
@@ -2083,7 +2083,7 @@ return false;
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -2145,8 +2145,16 @@ function beforeGeneration(chart, icsc)
 
 	setupPalette(paletteEntries, COLORS_15);
 
-	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString("birt.noDataAvailable", reportContext.getLocale()));
+	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;birt.noDataAvailable&quot;, reportContext.getLocale()));
 	chart.setSeriesThickness(30);
+}
+
+function beforeDrawDataPointLabel( dph, label, icsc )
+{
+	var reportContext =  icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 function setupPalette(paletteEntries, colorSequence) {
@@ -3110,7 +3118,7 @@ function translateColor(colorRgb) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -3169,8 +3177,16 @@ function beforeGeneration(chart, icsc)
 
 	setupPalette(paletteEntries, COLORS_15);
 
-	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString("birt.noDataAvailable", reportContext.getLocale()));
+	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;birt.noDataAvailable&quot;, reportContext.getLocale()));
 	chart.setSeriesThickness(30);
+}
+
+function beforeDrawDataPointLabel( dph, label, icsc )
+{
+	var reportContext =  icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 function setupPalette(paletteEntries, colorSequence) {

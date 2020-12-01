@@ -14,6 +14,7 @@ package com.agnitas.beans;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -43,7 +44,7 @@ public interface ComAdmin {
     /**
      * Returns the supervisor used for login.
      * If no supervisor was used, {@code null} is returned.
-     *  
+     * 
      * @return supervisor from login or {@code null}
      */
     Supervisor getSupervisor();
@@ -115,7 +116,8 @@ public interface ComAdmin {
 
     String getFullname();
 
-    AdminGroup getGroup();
+    List<AdminGroup> getGroups();
+	List<Integer> getGroupIds();
 
     int getLayoutID();
     int getLayoutBaseID();
@@ -146,7 +148,7 @@ public interface ComAdmin {
 
     void setFullname(String fullname);
 
-    void setGroup(AdminGroup group);
+    void setGroups(List<AdminGroup> groups);
 
     void setLayoutID(int layoutID);
 
@@ -181,4 +183,6 @@ public interface ComAdmin {
 
 	int getAltgId();
 	void setAltgId(int altgId);
+	
+	boolean permissionAllowedByGroups(Permission... permission);
 }

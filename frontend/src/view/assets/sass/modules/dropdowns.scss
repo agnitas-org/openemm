@@ -304,6 +304,29 @@ You can disable menu items by adding `.disabled` to any `<li>` inside the `.drop
   }
 }
 
+body.dark-theme .dropdown-menu {
+  background-color: $c-dt-dropdown-background;
+
+  .divider {
+    background-color: $c-dt-dropdown-divider;
+  }
+
+  & > li > button:not(.btn),
+  & > li > a,
+  & > li > .label {
+    color: $c-dt-dropdown-text;
+
+    &:hover,
+    &:focus {
+      background-color: darken($c-dt-dropdown-background, 10%);
+    }
+
+    &:active {
+      background-color: darken($c-dt-dropdown-background, 15%);
+    }
+  }
+}
+
 // Active state
 // .dropdown-menu > .active > a {
 //   &,

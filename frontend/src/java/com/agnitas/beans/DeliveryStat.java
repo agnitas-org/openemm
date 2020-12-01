@@ -21,6 +21,7 @@ public class DeliveryStat {
     public static final int STATUS_GENERATED = 3;
     public static final int STATUS_SENDING = 4;
     public static final int STATUS_SENT = 5;
+    public static final int STATUS_CANCELLED = 6;
     
     private int totalMails = 0;
     private int generatedMails = 0;

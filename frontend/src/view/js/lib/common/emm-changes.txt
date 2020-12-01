@@ -1,0 +1,4 @@
+1) jsplumb.js / jsplumb.js.min
+- fixed drag revert for group dragging (all nodes and their connections must revert);
+- added support of "grid" function parameter of draggable nodes;
+- changed group dragging the way that all "following" nodes honour the grid snapping (if any) of the main node (the one used as a handle).

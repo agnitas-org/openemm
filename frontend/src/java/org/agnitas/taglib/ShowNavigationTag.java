@@ -11,24 +11,22 @@
 package org.agnitas.taglib;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Vector;
+
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.BodyContent;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 
-import com.agnitas.emm.core.Permission;
 import org.agnitas.emm.core.navigation.ConditionsHandler;
-import org.agnitas.emm.extension.ExtensionSystem;
-import org.agnitas.emm.extension.util.ExtensionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.java.plugin.registry.Extension;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import com.agnitas.emm.core.Permission;
 
 /**
  *  Display the navigation for a page. the navigation is specified by a
@@ -44,8 +42,6 @@ public class ShowNavigationTag extends BodyTagSupport {
 	private String navigation;
 	private String highlightKey;
 	private String prefix;
-	private String declaringPlugin;
-	private String extension;
 
 	private final List<NavigationData> navigationDataList = new Vector<>();
 	private Iterator<NavigationData> navigationDataIterator;
@@ -57,23 +53,19 @@ public class ShowNavigationTag extends BodyTagSupport {
 		private final String href;
         private final Boolean hideForMysqlKey;
         private final String iconClass;
-		private final String plugin;
-		private final String extension;
 		private final String subMenu;
 		private final String hideForToken;
 		private final String upsellingRef;
 		private final boolean conditionSatisfied;
 
 		public NavigationData(String message, String token, String href, Boolean hideForMysqlKey, String iconClass,
-							  String plugin, String extension, String subMenu, String hideForToken,
+							  String subMenu, String hideForToken,
 							  String upsellingRef, boolean conditionSatisfied) {
             this.message = message;
             this.token = token;
             this.href = href;
             this.hideForMysqlKey = hideForMysqlKey;
             this.iconClass = iconClass;
-            this.plugin = plugin;
-            this.extension = extension;
 			this.subMenu = subMenu;
 			this.hideForToken = hideForToken;
 			this.upsellingRef = upsellingRef;
@@ -85,8 +77,6 @@ public class ShowNavigationTag extends BodyTagSupport {
         public String getHref() { return href; }
         public Boolean getHideForMysqlKey() { return hideForMysqlKey; }
         public String getIconClass() { return iconClass; }
-        public String getPlugin() { return plugin; }
-        public String getExtension() { return extension; }
 		public String getSubMenu() { return subMenu; }
 		public String getHideForToken() { return hideForToken; }
 		public String getUpsellingRef() { return upsellingRef; }
@@ -96,8 +86,7 @@ public class ShowNavigationTag extends BodyTagSupport {
         public String toString() {
             return "message[" + getMessage() + "], token[" + getToken() + "], " +
 					"hideForMysqlKey[" + getHideForMysqlKey().toString() + "], iconClass[" + getIconClass()
-                    + "], href[" + getHref() + "], plugin[" + (plugin !=  null ? plugin : "")
-                    + "], extension[" + (extension != null ? extension : "")
+                    + "], href[" + getHref()
 					+ "], subMenu[" + (subMenu != null ? subMenu : "")
 					+ "], upsellingRef[" + (upsellingRef != null ? upsellingRef : "")
                     + "], conditionId[" + isConditionSatisfied() + "]";
@@ -114,14 +103,6 @@ public class ShowNavigationTag extends BodyTagSupport {
 
 	public void setHighlightKey(String highlightKey) {
 		this.highlightKey = highlightKey;
-	}
-
-	public void setPlugin(String declaringPlugin) {
-		this.declaringPlugin = declaringPlugin;
-	}
-
-	public void setExtension(String extension) {
-		this.extension = extension;
 	}
 
 	@Override
@@ -155,10 +136,6 @@ public class ShowNavigationTag extends BodyTagSupport {
 
 	@Override
 	public int doEndTag() throws JspException {
-		// Reset optional attribute value
-		declaringPlugin = null;
-		extension = null;
-
 		// Emit body content
 		try {
 			BodyContent currentBodyContent = getBodyContent();
@@ -181,45 +158,28 @@ public class ShowNavigationTag extends BodyTagSupport {
 		try {
 			ResourceBundle bundle;
 
-    		if (StringUtils.isEmpty(declaringPlugin)) {
-    			if (StringUtils.isEmpty(navigation)) {
-    				return;
-				}
-
-    			try {
-					bundle = ResourceBundle.getBundle("navigation." + navigation);
-				} catch (Exception e) {
-					if (navigation.endsWith("Sub")) {
-						// no such submenu properties file found => no submenu
-						return;
-					} else {
-						throw e;
-					}
-				}
-
-    			prepareNavigationDataFromResourceBundle(bundle, null, null);
-    		} else {
-				bundle = getExtensionResourceBundle(declaringPlugin, navigation);
-	    		prepareNavigationDataFromResourceBundle(bundle, declaringPlugin, extension);
+			if (StringUtils.isEmpty(navigation)) {
+				return;
 			}
 
-    		prepareNavigationDataFromExtensionPoints(bundle);
+			try {
+				bundle = ResourceBundle.getBundle("navigation." + navigation);
+			} catch (Exception e) {
+				if (navigation.endsWith("Sub")) {
+					// no such submenu properties file found => no submenu
+					return;
+				} else {
+					throw e;
+				}
+			}
+
+			prepareNavigationDataFromResourceBundle(bundle);
 		} catch (Exception e) {
 			logger.error("Error preparing navigation data from extension: " + e.getMessage(), e);
 		}
 	}
 
-	private ResourceBundle getExtensionResourceBundle(String extensionItem, String resourceName) throws Exception {
-		ExtensionSystem extensionSystem = ExtensionUtils.getExtensionSystem(pageContext.getServletContext());
-
-		return extensionSystem.getPluginResourceBundle(extensionItem, resourceName);
-	}
-
-	private void prepareNavigationDataFromResourceBundle(ResourceBundle resourceBundle, String plugin, String extensionItem) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("Processing navigation resource bundle for plugin: " + (plugin != null ? plugin : "core system"));
-		}
-
+	private void prepareNavigationDataFromResourceBundle(ResourceBundle resourceBundle) {
         for (int i = 1;; i++) {
             String msgKey = "msg_" + i;
             if (!resourceBundle.containsKey(msgKey)) {
@@ -246,14 +206,10 @@ public class ShowNavigationTag extends BodyTagSupport {
 
 			String conditionId = "conditionId_" + i;
 
-			if (logger.isInfoEnabled()) {
-				logger.info("extension '" + extensionItem + "' in plugin '" + plugin + "' added menu item. Label key is: " + msgKey);
-			}
-
             NavigationData navigationData = new NavigationData(resourceBundle.getString(msgKey), securityToken,
                 resourceBundle.getString(hrefKey),
 				getDataQuietly(resourceBundle, hideForMysqlKey).equals("true"), getDataQuietly(resourceBundle, iconClass),
-                plugin, extensionItem, getDataQuietly(resourceBundle, subMenu), getDataQuietly(resourceBundle, hideForToken),
+                getDataQuietly(resourceBundle, subMenu), getDataQuietly(resourceBundle, hideForToken),
 				getDataQuietly(resourceBundle, upsellingRef), isConditionSatisfied(getDataQuietly(resourceBundle, conditionId)));
 
             navigationDataList.add(navigationData);
@@ -280,29 +236,6 @@ public class ShowNavigationTag extends BodyTagSupport {
         return conditionsHandler.checkCondition(conditionId);
     }
 
-	private void prepareNavigationDataFromExtensionPoints(ResourceBundle resourceBundle) throws Exception {
-		if (!resourceBundle.containsKey("navigation.plugin") || !resourceBundle.containsKey("navigation.extensionpoint")) {
-			return;
-		}
-
-		//getting data from navigation.property file for the extension point
-		String plugin = resourceBundle.getString("navigation.plugin");
-		String extensionPoint = resourceBundle.getString("navigation.extensionpoint");
-
-		ExtensionSystem extensionSystem = ExtensionUtils.getExtensionSystem(pageContext.getServletContext());
-		if(extensionSystem != null) {
-			Collection<Extension> extensions = extensionSystem.getActiveExtensions(plugin, extensionPoint);
-			for (Extension extensionItem : extensions) {
-				String resourceName = extensionItem.getParameter("navigation-bundle").valueAsString();
-
-				ResourceBundle extensionBundle = extensionSystem.getPluginResourceBundle(extensionItem.getDeclaringPluginDescriptor().getId(), resourceName);
-				prepareNavigationDataFromResourceBundle(extensionBundle, extensionItem.getDeclaringPluginDescriptor().getId(), extensionItem.getId());
-			}
-		} else {
-			logger.warn("No active Navigation extensions for plugin '" + plugin + "' defined");
-		}
-	}
-
 	private void setBodyAttributes() {
 		NavigationData navigationData = navigationDataIterator.next();
 		navigationIndex++;
@@ -321,8 +254,6 @@ public class ShowNavigationTag extends BodyTagSupport {
         pageContext.setAttribute(prefix + "_navigation_href", StringUtils.trimToEmpty(navigationData.getHref()));
         pageContext.setAttribute(prefix + "_navigation_navMsg", StringUtils.trimToEmpty(navigationData.getMessage()));
         pageContext.setAttribute(prefix + "_navigation_index", navigationIndex);
-        pageContext.setAttribute(prefix + "_navigation_plugin", StringUtils.trimToEmpty(navigationData.getPlugin()));
-        pageContext.setAttribute(prefix + "_navigation_extension", StringUtils.trimToEmpty(navigationData.getExtension()));
         pageContext.setAttribute(prefix + "_navigation_iconClass", StringUtils.trimToEmpty(navigationData.getIconClass()));
 		pageContext.setAttribute(prefix + "_navigation_submenu", StringUtils.trimToEmpty(navigationData.getSubMenu()));
 		pageContext.setAttribute(prefix + "_navigation_hideForToken", StringUtils.trimToEmpty(navigationData.getHideForToken()));

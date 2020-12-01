@@ -1,4 +1,0 @@
-<HelpBalloon>
-	<title>Änderung im Feld change_date</title>
-	<content><![CDATA[Es werden alle Datens&auml;tze exportiert, f&uuml;r die das Datum im Feld change_date in den definierten Zeitraum f&auml;llt. Um den aktuellen Tag als Grenze zu verwenden, wird "0" eingegeben.]]></content>
-</HelpBalloon>

@@ -13,7 +13,6 @@ package com.agnitas.web.forms;
 import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +50,7 @@ public class ComNewImportWizardForm extends ImportBaseFileForm {
     private String calendarDateFormat;
     private String mailinglistAddMessage;
     private int completedPercent = -1;
-    private LinkedList<LinkedList<String>> previewParsedContent;
+    private List<List<String>> previewParsedContent;
     private int all;
     private File invalidRecipientsFile;
     private File validRecipientsFile;
@@ -183,11 +182,11 @@ public class ComNewImportWizardForm extends ImportBaseFileForm {
         return actionErrors;
     }
 
-    public LinkedList<LinkedList<String>> getPreviewParsedContent() {
+    public List<List<String>> getPreviewParsedContent() {
         return previewParsedContent;
     }
 
-    public void setPreviewParsedContent(LinkedList<LinkedList<String>> previewParsedContent) {
+    public void setPreviewParsedContent(List<List<String>> previewParsedContent) {
         this.previewParsedContent = previewParsedContent;
     }
 

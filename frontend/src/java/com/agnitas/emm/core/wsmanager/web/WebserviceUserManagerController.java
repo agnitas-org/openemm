@@ -12,27 +12,6 @@ package com.agnitas.emm.core.wsmanager.web;
 
 import java.util.Objects;
 
-import javax.validation.Valid;
-
-import org.agnitas.emm.company.service.CompanyService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
@@ -49,6 +28,28 @@ import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+import org.agnitas.emm.company.service.CompanyService;
+import org.agnitas.emm.core.commons.password.PasswordCheck;
+import org.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
+import org.agnitas.emm.core.commons.password.WebservicePasswordCheckImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.WebStorage;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.web.forms.FormUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping(value = "/administration/wsmanager")
@@ -65,6 +66,8 @@ public class WebserviceUserManagerController {
     private final UserActivityLogService userActivityLogService;
     private final WebservicePermissionService webservicePermissionService;
     private final WebservicePermissionGroupService webservicePermissionGroupService;
+    
+    private final PasswordCheck passwordCheck = new WebservicePasswordCheckImpl();
 
     public WebserviceUserManagerController(final ConfigService configService,
     		final WebserviceUserService webserviceUserService,
@@ -95,10 +98,10 @@ public class WebserviceUserManagerController {
                         userListForm.getOrder(),
                         userListForm.getPage(),
                         userListForm.getNumberOfRows(),
-                        admin.permissionAllowed(Permission.MASTER_COMPANIES_SHOW)));
+                        admin.permissionAllowed(Permission.MASTER_SHOW)));
 
-        model.addAttribute("companyList", companyService.getActiveOwnCompanyEntries(admin.getCompanyID()));
-        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
+        model.addAttribute("companyList", companyService.getActiveOwnCompanyEntries(admin.getCompanyID(), true));
+        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");        
 
         writeUserActivityLog(admin, "webservice manager", "active tab - manage webservice user");
 
@@ -106,22 +109,22 @@ public class WebserviceUserManagerController {
     }
 
     @PostMapping(value = "/user/new.action")
-    public String create(ComAdmin admin, @Valid @ModelAttribute WebserviceUserForm userForm, Popups popups, final Model model) {
+    public String create(ComAdmin admin, @ModelAttribute WebserviceUserForm userForm, Popups popups, final Model model) {
         processCompanyId(admin, userForm);
         if (creationValidation(userForm, popups) ) {
             if (saveWebserviceUser(admin, true, userForm, popups)) {
                 return "redirect:/administration/wsmanager/users.action";
             }
         }
-
-        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
-
+        
+        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");        
+    
         popups.alert("error.webserviceuser.cannot_create");
         return "forward:/administration/wsmanager/users.action";
     }
 
     @PostMapping(value = "/user/update.action")
-    public String update(ComAdmin admin, @Valid @ModelAttribute WebserviceUserForm userForm, Popups popups) {
+    public String update(ComAdmin admin, @ModelAttribute WebserviceUserForm userForm, Popups popups) {
         if (editingValidation(userForm, popups)) {
             if (saveWebserviceUser(admin, false, userForm, popups)) {
                 return "redirect:/administration/wsmanager/users.action";
@@ -165,6 +168,10 @@ public class WebserviceUserManagerController {
         if (StringUtils.isBlank(userForm.getPassword())) {
             popups.field("password", "error.password.missing");
             valid = false;
+        }
+        
+        if(!this.passwordCheck.checkAdminPassword(userForm.getPassword(), null, new SpringPasswordCheckHandler(popups, "password"))) {
+        	valid = false;
         }
         
         if (userForm.getCompanyId() <= 0) {
@@ -228,9 +235,9 @@ public class WebserviceUserManagerController {
         	
         	
             model.addAttribute("webserviceUserForm", userForm);
-            model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
+            model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");        
 
-            if(this.configService.getBooleanValue(ConfigValue.WebserviceEnablePermissions, companyIdOfWebserviceUser)) {
+            if(this.configService.getBooleanValue(Webservices.WebserviceEnablePermissions, companyIdOfWebserviceUser)) {
             	final WebservicePermissions permissions = this.webservicePermissionService.listAllPermissions();
             	final WebservicePermissionGroups permissionGroups = this.webservicePermissionGroupService.listAllPermissionGroups();
            	

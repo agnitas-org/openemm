@@ -11,8 +11,6 @@
 package org.agnitas.util.quartz;
 
 import org.agnitas.emm.core.logintracking.dao.LoginTrackDao;
-import org.agnitas.service.JobWorker;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -24,61 +22,38 @@ import org.apache.log4j.Logger;
  *  INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'LoginTrackTableCleaner'), 'retentionTime', '7');
  *  INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'LoginTrackTableCleaner'), 'deleteBlockSize', '1000');
  */
-public class LoginTrackTableCleanerJobWorker extends JobWorker {
-	private static final transient Logger logger = Logger.getLogger(LoginTrackTableCleanerJobWorker.class);
+public class LoginTrackTableCleanerJobWorker extends AbstractLoginTrackTableCleanerJobWorker {
 	
 	/**
 	 * Default value of retention time (in days) for old records.
 	 */
-	public static final int DEFAULT_RETENTION_TIME = 60;
+	public static final int DEFAULT_RETENTION_TIME_DAYS = 60;
 	
 	/**
 	 * Number of records deleted with one statement.
 	 */
 	public static final int DEFAULT_DELETE_BLOCK_SIZE = 1000;
-		
-	@Override
-	public String runJob() throws Exception {
-		int retentionTime;
-		try {
-			if (StringUtils.isBlank(job.getParameters().get("retentionTime"))) {
-				retentionTime = DEFAULT_RETENTION_TIME;
-			} else {
-				retentionTime = Integer.parseInt(job.getParameters().get("retentionTime"));
-			}
-		} catch (Exception e) {
-			throw new Exception("Parameter retentionTime is missing or invalid", e);
-		}
-		
-		int deleteBlockSize;
-		try {
-			if (StringUtils.isBlank(job.getParameters().get("deleteBlockSize"))) {
-				deleteBlockSize = DEFAULT_DELETE_BLOCK_SIZE;
-			} else {
-				deleteBlockSize = Integer.parseInt(job.getParameters().get("deleteBlockSize"));
-			}
-		} catch (Exception e) {
-			throw new Exception("Parameter deleteBlockSize is missing or invalid", e);
-		}
-		
-		workWithLoginTrackDao(daoLookupFactory.getBeanGuiLoginTrackDao(), retentionTime, deleteBlockSize);
-		workWithLoginTrackDao(daoLookupFactory.getBeanWsLoginTrackDao(), retentionTime, deleteBlockSize);
-		
-		return null;
-	}
+
+	/** The logger. */
+	private static final transient Logger LOGGER = Logger.getLogger(LoginTrackTableCleanerJobWorker.class);
 	
-	private final void workWithLoginTrackDao(final LoginTrackDao loginTrackDao, final int retentionTime, final int deleteBlockSize) {
-		if(loginTrackDao == null) {
-			logger.error("no LoginTrackDao object defined");
-		} else {
-			int affectedRows;
-			// Delete in blocks
-			while((affectedRows = loginTrackDao.deleteOldRecords(retentionTime, deleteBlockSize)) > 0) {
-				if (logger.isInfoEnabled()) {
-					logger.info("deleted " + affectedRows + " records");
-				}
-			}
-		}
-		
+	@Override
+	public LoginTrackDao getLoginTrackDao() {
+		return daoLookupFactory.getBeanGuiLoginTrackDao();
+	}
+
+	@Override
+	public Logger getLogger() {
+		return LOGGER;
+	}
+
+	@Override
+	public int getDefaultRetentionTimeHours() {
+		return DEFAULT_RETENTION_TIME_DAYS * 24;
+	}
+
+	@Override
+	public int getDefaultBlockSize() {
+		return DEFAULT_DELETE_BLOCK_SIZE;
 	}
 }

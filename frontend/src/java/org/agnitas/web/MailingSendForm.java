@@ -19,7 +19,6 @@ import java.util.TimeZone;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import org.agnitas.beans.Mailing;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;
@@ -29,9 +28,10 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 
 import com.agnitas.beans.DeliveryStat;
-import com.agnitas.web.ComMailingContentForm;
+import com.agnitas.web.PreviewForm;
 
 public class MailingSendForm extends StrutsFormBase {
+	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(MailingSendForm.class);
 
     private static final long serialVersionUID = -2753995761202472679L;
@@ -60,41 +60,10 @@ public class MailingSendForm extends StrutsFormBase {
      * Holds value of property action.
      */
     protected int action;
+    
 
-    /**
-     * Holds value of property previewCustomerID.
-     */
-    protected int previewCustomerID;
-
-    protected int previewCustomerATID;
-
-    protected String previewCustomerEmail;
-
-    /**
-     * Holds value of property preview.
-     */
-    protected String preview;
-
-    /**
-     * Holds value of property previewFormat.
-     */
-    protected int previewFormat;
-
-    /**
-     * Holds value of property previewSize.
-     */
-    protected int previewSize = 1;
-
-    /**
-     * Holds value of property subjectPreview.
-     */
-    protected String subjectPreview;
-
-    /**
-     * Holds value of property senderPreview.
-     */
-    protected String senderPreview;
-
+    protected PreviewForm previewForm = new PreviewForm();
+    
     /**
      * Holds value of property sendStatText.
      */
@@ -121,11 +90,6 @@ public class MailingSendForm extends StrutsFormBase {
     protected DeliveryStat deliveryStat;
 
     /**
-     * Holds value of property hasPreviewRecipient
-     */
-    protected boolean hasPreviewRecipient;
-
-    /**
      * Indicates, whether the mailing uses deleted target groups or not.
      */
     protected boolean hasDeletedTargetGroups;
@@ -144,12 +108,7 @@ public class MailingSendForm extends StrutsFormBase {
 	 * Are there any mailing transmissions running ? ( Test- , Admin-, or Worldmailings which are currently sent ?)
 	 */
 	private boolean isTransmissionRunning;
-
-    /**
-	 * No images in preview
-	 */
-	protected boolean noImages;
-
+	
     /**
      * Holds value of property needsTarget.
      */
@@ -207,8 +166,8 @@ public class MailingSendForm extends StrutsFormBase {
     private int stepping = 0;
     
     private int blocksize = 0;
+    
     private String bounceFilterNames;
-    private boolean reloadPreview;
     
     /**
      * Reset all properties to their default values.
@@ -223,7 +182,7 @@ public class MailingSendForm extends StrutsFormBase {
             GregorianCalendar aDate = new GregorianCalendar(aZone);
             sendHour = aDate.get(GregorianCalendar.HOUR_OF_DAY);
             sendMinute = aDate.get(GregorianCalendar.MINUTE);
-            previewFormat = MailingPreviewHelper.INPUT_TYPE_HTML;
+            previewForm = new PreviewForm();
             sendStat = new HashMap<>();
         } catch (Exception e) {
             // do nothing
@@ -257,24 +216,6 @@ public class MailingSendForm extends StrutsFormBase {
             newsendDate.set(Integer.parseInt(sendDate.substring(0, 4)), Integer.parseInt(sendDate.substring(4, 6)) - 1, Integer.parseInt(sendDate.substring(6, 8)), sendHour, sendMinute);
             if (currentDate.getTime().getTime() > newsendDate.getTime().getTime()) {
                 errors.add("global", new ActionMessage("error.you_choose_a_time_before_the_current_time"));
-            }
-        }
-        if (action == MailingSendAction.ACTION_PREVIEW_SELECT){
-            ComMailingContentForm aForm = null;
-            if (req != null){
-                aForm = (ComMailingContentForm) req.getSession().getAttribute("mailingContentForm");
-                if(aForm != null) {
-					aForm.setNoImages(isNoImages());
-				}
-            }
-        }
-        if (action == MailingSendAction.ACTION_PREVIEW){
-            ComMailingContentForm aForm = null;
-            if (req != null){
-                aForm = (ComMailingContentForm) req.getSession().getAttribute("mailingContentForm");
-                if (aForm != null) {
-					setNoImages(aForm.isNoImages());
-				}
             }
         }
 
@@ -333,117 +274,6 @@ public class MailingSendForm extends StrutsFormBase {
      */
     public void setAction(int action) {
         this.action = action;
-    }
-
-    /**
-     * Getter for property previewCustomerID.
-     *
-     * @return Value of property previewCustomerID.
-     */
-    public int getPreviewCustomerID() {
-        return previewCustomerID;
-    }
-
-    /**
-     * Setter for property previewCustomerID.
-     *
-     * @param previewCustomerID New value of property previewCustomerID.
-     */
-    public void setPreviewCustomerID(int previewCustomerID) {
-        this.previewCustomerID = previewCustomerID;
-    }
-
-    /**
-     * Getter for property preview.
-     *
-     * @return Value of property preview.
-     */
-    public String getPreview() {
-        return preview;
-    }
-
-    /**
-     * Setter for property textPreview.
-     *
-     * @param preview New value of property textPreview.
-     */
-    public void setPreview(String preview) {
-        this.preview = preview;
-    }
-
-    /**
-     * Getter for property previewFormat.
-     *
-     * @return Value of property previewFormat.
-     */
-    public int getPreviewFormat() {
-        return previewFormat;
-    }
-
-    /**
-     * Setter for property previewFormat.
-     *
-     * @param previewFormat New value of property previewFormat.
-     */
-    public void setPreviewFormat(int previewFormat) {
-        this.previewFormat = previewFormat;
-        if (logger.isDebugEnabled()) {
-			logger.debug("Setting format to: " + this.previewFormat);
-		}
-    }
-
-    /**
-     * Getter for property previewSize.
-     *
-     * @return Value of property previewSize.
-     */
-    public int getPreviewSize() {
-        return previewSize;
-    }
-
-    /**
-     * Setter for property previewSize.
-     *
-     * @param previewSize New value of property previewSize.
-     */
-    public void setPreviewSize(int previewSize) {
-        this.previewSize = previewSize;
-    }
-
-    /**
-     * Getter for property subjectPreview.
-     *
-     * @return Value of property subjectPreview.
-     */
-    public String getSubjectPreview() {
-        return subjectPreview;
-    }
-
-    /**
-     * Setter for property subjectPreview.
-     *
-     * @param subjectPreview New value of property subjectPreview.
-     */
-    public void setSubjectPreview(String subjectPreview) {
-        this.subjectPreview = subjectPreview;
-    }
-
-    /**
-     * Getter for property senderPreview.
-     *
-     * @return Value of property senderPreview.
-     */
-    public String getSenderPreview() {
-        return senderPreview;
-    }
-
-    /**
-     * Setter for property senderPreview.
-     *
-     * @param senderPreview New value of property senderPreview.
-     */
-    public void setSenderPreview(String senderPreview) {
-        this.senderPreview = senderPreview;
     }
 
     public Map<Integer, Integer> getSendStats() {
@@ -850,20 +680,12 @@ public class MailingSendForm extends StrutsFormBase {
     		return true;
     	}
 
-        return (mailing.getLocked() != 0 ? true : false);
+        return mailing.getLocked() != 0;
     }
 
     public void setLocked(boolean locked) {
         mailing.setLocked(locked ? 1 : 0);
     }
-
-	public boolean isHasPreviewRecipient() {
-		return hasPreviewRecipient;
-	}
-
-	public void setHasPreviewRecipient(boolean hasPreviewRecipient) {
-		this.hasPreviewRecipient = hasPreviewRecipient;
-	}
 
 	public void setHasDeletedTargetGroups(boolean hasDeletedTargetGroups) {
 		this.hasDeletedTargetGroups = hasDeletedTargetGroups;
@@ -889,30 +711,6 @@ public class MailingSendForm extends StrutsFormBase {
 	public void setTransmissionRunning(boolean isTransmissionRunning) {
 		this.isTransmissionRunning = isTransmissionRunning;
 	}
-
-    public boolean isNoImages() {
-        return noImages;
-    }
-
-    public void setNoImages(boolean noImages) {
-        this.noImages = noImages;
-    }
-
-    public String getPreviewCustomerEmail() {
-        return previewCustomerEmail;
-    }
-
-    public void setPreviewCustomerEmail(String previewCustomerEmail) {
-        this.previewCustomerEmail = previewCustomerEmail;
-    }
-
-    public int getPreviewCustomerATID() {
-        return previewCustomerATID;
-    }
-
-    public void setPreviewCustomerATID(int previewCustomerATID) {
-        this.previewCustomerATID = previewCustomerATID;
-    }
 
     /**
      * Getter for property needsTarget.
@@ -988,11 +786,7 @@ public class MailingSendForm extends StrutsFormBase {
         return bounceFilterNames;
     }
     
-    public boolean getReloadPreview() {
-        return reloadPreview;
-    }
-    
-    public void setReloadPreview(boolean reloadPreview) {
-        this.reloadPreview = reloadPreview;
+    public PreviewForm getPreviewForm() {
+        return previewForm;
     }
 }

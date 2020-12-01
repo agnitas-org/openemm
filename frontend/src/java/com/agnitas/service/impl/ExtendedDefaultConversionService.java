@@ -10,47 +10,21 @@
 
 package com.agnitas.service.impl;
 
-import java.util.List;
 import java.util.Set;
 
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.ConverterFactory;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.stereotype.Service;
 
 import com.agnitas.service.ExtendedConversionService;
-import org.springframework.stereotype.Service;
 
 @Service("conversionService")
 public class ExtendedDefaultConversionService extends DefaultConversionService implements ExtendedConversionService {
     public ExtendedDefaultConversionService() {
         super();
-    }
-
-	@Override
-    public <S, T> List<T> convert(List<S> collection, Class<S> sourceType, Class<T> targetType) {
-        TypeDescriptor sourceTypeDesc = TypeDescriptor.collection(collection.getClass(), TypeDescriptor.valueOf(sourceType));
-        TypeDescriptor targetTypeDesc = TypeDescriptor.collection(collection.getClass(), TypeDescriptor.valueOf(targetType));
-
-        @SuppressWarnings("unchecked")
-        List<T> returnList = (List<T>) convert(collection, sourceTypeDesc, targetTypeDesc);
-        return returnList;
-    }
-
-    @Override
-    public <T, S> PaginatedListImpl<T> convertPaginatedList(PaginatedListImpl<S> paginatedList, Class<S> sourceType, Class<T> targetType) {
-        List<S> list = paginatedList.getList();
-        List<T> convertedList = convert(list, sourceType, targetType);
-
-        return new PaginatedListImpl<>(convertedList,
-                paginatedList.getFullListSize(),
-                paginatedList.getObjectsPerPage(),
-                paginatedList.getPageNumber(),
-                paginatedList.getSortCriterion(),
-                paginatedList.getSortDirection().getName());
     }
 
     @Autowired(required = false)

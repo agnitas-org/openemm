@@ -7,6 +7,11 @@
 .picker__box {
   // padding: 0 1em;
 }
+
+body.dark-theme .picker__box {
+  background-color: $c-dt-dp-background;
+}
+
 /**
  * The header containing the month and year stuff.
  */
@@ -19,6 +24,11 @@
 
   @include clearfix();
 }
+
+body.dark-theme .picker__header {
+  color: $c-dt-dp-primary-text;
+}
+
 /**
  * The month and year labels.
  */
@@ -91,6 +101,13 @@
   color: #000000;
   background: #b1dcfb;
 }
+
+body.dark-theme .picker__nav--prev:hover,
+body.dark-theme .picker__nav--next:hover {
+  background-color: darken($c-dt-dp-background, 12%);
+  color: $c-dt-dp-primary-text;
+}
+
 .picker__nav--disabled,
 .picker__nav--disabled:hover,
 .picker__nav--disabled:before,
@@ -131,6 +148,12 @@
   }
 }
 
+body.dark-theme .picker__weekday {
+  color: $c-dt-dp-primary-text;
+  background-color: darken($c-dt-dp-background, 7%);
+  border-color: $c-dt-dp-border;
+}
+
 /**
  * The days on the calendar
  */
@@ -150,6 +173,17 @@
     border-color: $c-blue-22;
   }
 }
+
+body.dark-theme .picker__day {
+  border-color: $c-dt-dp-border;
+  color: $c-dt-dp-text;
+  &:hover,
+  &:focus {
+    background-color: darken($c-dt-dp-background, 5%);
+    border-color: $c-dt-dp-border-hover;
+  }
+}
+
 .picker__day--today {
   position: relative;
 
@@ -160,6 +194,18 @@
   &:focus {
     background-color: $c-green-02 !important;
     color: $c-green-38 !important;
+  }
+}
+
+body.dark-theme .picker__day--today {
+  background-color: $c-dt-dp-today;
+  color: $c-dt-dp-text;
+  &:hover,
+  &:focus {
+    background-color: darken($c-dt-dp-today, 5%) !important;
+  }
+  .calendar-day-label {
+    color: $c-dt-dp-text;
   }
 }
 
@@ -181,6 +227,12 @@
   background-color: $c-gray-02;
   color: $c-gray-33;
 }
+
+body.dark-theme .picker__day--outfocus {
+  background-color: lighten($c-dt-dp-background, 5%);
+  color: $c-dt-dp-text;
+}
+
 .picker__day--infocus:hover,
 .picker__day--outfocus:hover {
   cursor: pointer;
@@ -196,11 +248,31 @@
   color: #000000;
   background: #b1dcfb;
 }
+
+body.dark-theme .picker__day--highlighted:hover,
+body.dark-theme .picker--focused .picker__day--highlighted {
+  border-color: #0089ec;
+  background-color: darken($c-dt-dp-background, 2%);
+  color: $c-dt-dp-primary-text;
+}
+
+body.dark-theme .picker--focused .picker__day--highlighted:hover {
+  background-color: darken($c-dt-dp-background, 5%);
+}
+
 .picker__day--selected,
 .picker__day--selected:hover,
 .picker--focused .picker__day--selected {
   background: #0089ec;
   color: #ffffff;
+}
+
+body.dark-theme .picker__day--selected,
+body.dark-theme .picker__day--selected:hover,
+body.dark-theme .picker--focused .picker__day--selected {
+  border-color: #0089ec;
+  background-color: #0089ec;
+  color: $c-dt-dp-primary-text;
 }
 .picker__day--disabled,
 .picker__day--disabled:hover,
@@ -210,9 +282,23 @@
   color: #dddddd;
   cursor: default;
 }
+
+body.dark-theme .picker__day--disabled,
+body.dark-theme .picker__day--disabled:hover,
+body.dark-theme .picker--focused .picker__day--disabled {
+  background: darken($c-dt-dp-background, 15%);
+  border-color: $c-dt-dp-border;
+  color: darken($c-dt-dp-text, 2%);
+}
+
 .picker__day--highlighted.picker__day--disabled,
 .picker__day--highlighted.picker__day--disabled:hover {
   background: #bbbbbb;
+}
+
+body.dark-theme .picker__day--highlighted.picker__day--disabled,
+body.dark-theme .picker__day--highlighted.picker__day--disabled:hover {
+  background: lighten($c-dt-dp-background, 7%);
 }
 /**
  * The footer containing the "today", "clear", and "close" buttons.
@@ -232,6 +318,15 @@
   display: inline-block;
   vertical-align: bottom;
 }
+
+body.dark-theme .picker__button--today,
+body.dark-theme .picker__button--clear,
+body.dark-theme .picker__button--close {
+  border-color: $c-dt-dp-border;
+  background-color: darken($c-dt-dp-background, 7%);
+  color: $c-dt-dp-primary-text;
+}
+
 .picker__button--today:hover,
 .picker__button--clear:hover,
 .picker__button--close:hover {
@@ -247,6 +342,16 @@
   border-color: #0089ec;
   outline: none;
 }
+
+body.dark-theme .picker__button--today,
+body.dark-theme .picker__button--clear,
+body.dark-theme .picker__button--close {
+  &:hover,
+  &:focus {
+    background-color: darken($c-dt-dp-background, 3%);
+  }
+}
+
 .picker__button--today:before,
 .picker__button--clear:before,
 .picker__button--close:before {
@@ -285,6 +390,14 @@
   color: #dddddd;
   cursor: default;
 }
+
+body.dark-theme .picker__button--today[disabled],
+body.dark-theme .picker__button--today[disabled]:hover {
+  background: darken($c-dt-dp-background, 10%);
+  border-color: $c-dt-dp-border;
+  color: $c-dt-dp-text;
+}
+
 .picker__button--today[disabled]:before {
   border-top-color: #aaaaaa;
 }

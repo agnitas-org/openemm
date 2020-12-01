@@ -83,7 +83,7 @@ public class RecipientStatController {
         
         model.addAttribute("localeDatePattern", datePickerFormat.toPattern());
         
-        model.addAttribute("targetlist", targetService.getTargetLights(admin.getCompanyID()));
+        model.addAttribute("targetlist", targetService.getTargetLights(admin));
         model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
         model.addAttribute("mediatypes", mediaTypesService.getAllowedMediaTypes(admin));
         

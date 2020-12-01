@@ -23,6 +23,7 @@ import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.context.ApplicationContextAware;
 
+import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.MailingsListProperties;
 
@@ -45,7 +46,7 @@ public interface MailingDao extends ApplicationContextAware {
      *              Id of the company that created a mailing
      * @return Mailing bean object or null
 	 */
-	Mailing getMailing(int mailingID, @VelocityCheck int companyID);
+	ComMailing getMailing(int mailingID, @VelocityCheck int companyID);
 
 	/**
 	 * Saves mailing, its mediatypes and trackable links
@@ -389,6 +390,8 @@ public interface MailingDao extends ApplicationContextAware {
      */
 	List<MailingBase> getMailingsForComparation(@VelocityCheck int companyID, int adminId);
 
+	List<MailingBase> getMailingsForComparation(@VelocityCheck int companyID, int adminId, int targetId);
+
     /**
      * Loads list of templates of certain company
      *
@@ -396,7 +399,7 @@ public interface MailingDao extends ApplicationContextAware {
      *               Id of the company
      * @return List of Mailing bean objects
      */
-	List<Mailing> getTemplates( @VelocityCheck int companyID);
+	List<Mailing> getTemplates( @VelocityCheck int companyID, int targetId);
 
     /**
      * Loads list of non-deleted templates of certain company
@@ -471,6 +474,8 @@ public interface MailingDao extends ApplicationContextAware {
 
 	List<LightweightMailing> getLightweightIntervalMailings(int companyId);
 
+	List<LightweightMailing> getLightweightIntervalMailings(int companyID, int targetId);
+
     /**
      * returns the mailing-Type for the given mailing.
      * eg. 3 means a Follow-Up mailing.
@@ -483,5 +488,5 @@ public interface MailingDao extends ApplicationContextAware {
 
     boolean isOracleDB();
 
-	List<MailingBase> getMailingTemplatesWithPreview(@VelocityCheck int companyId, String sort, String direction);
+	List<MailingBase> getMailingTemplatesWithPreview(@VelocityCheck int companyId, int targetId, String sort, String direction);
 }

@@ -39,10 +39,10 @@ public class ComServerMessageDaoImpl extends BaseDaoImpl implements ComServerMes
     @Override
     public List<ServerCommand> getCommand(Date since, Date till, ServerCommand.Server server, ServerCommand.Command command) {
     	if (since == null) {
-	        String query = "SELECT * FROM server_command_tbl WHERE execution_date < ? AND (server_name = ? OR server_name = 'ALL') AND command = ?";
+	        String query = "SELECT * FROM server_command_tbl WHERE execution_date <= ? AND (server_name = ? OR server_name = 'ALL') AND command = ?";
 	        return select(logger, query, new ServerCommandRowMapper(), till, server.toString(), command.toString());
     	} else {
-	        String query = "SELECT * FROM server_command_tbl WHERE (? < execution_date AND execution_date < ?) AND (server_name = ? OR server_name = 'ALL') AND command = ?";
+	        String query = "SELECT * FROM server_command_tbl WHERE (? < execution_date AND execution_date <= ?) AND (server_name = ? OR server_name = 'ALL') AND command = ?";
             return select(logger, query, new ServerCommandRowMapper(), since, till, server.toString(), command.toString());
     	}
     }
@@ -53,7 +53,7 @@ public class ComServerMessageDaoImpl extends BaseDaoImpl implements ComServerMes
             ServerCommand serverCommand = new ServerCommand();
             serverCommand.setCommand(ServerCommand.Command.valueOf(rs.getString("command")));
             serverCommand.setServerName(ServerCommand.Server.valueOf(rs.getString("server_name")));
-            serverCommand.setExecutionDate(rs.getDate("execution_date"));
+            serverCommand.setExecutionDate(rs.getTimestamp("execution_date"));
             serverCommand.setAdminID(rs.getInt("admin_id"));
             serverCommand.setDescription(rs.getString("description"));
             return serverCommand;

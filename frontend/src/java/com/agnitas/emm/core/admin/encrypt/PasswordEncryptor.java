@@ -54,9 +54,15 @@ public class PasswordEncryptor {
 	
 	private ConfigService configService;
 	
+	private String saltFilePathOverride = null;
+	
 	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
+	}
+	
+	public void setSaltFilePathOverride(String saltFilePathOverride) {
+		this.saltFilePathOverride = saltFilePathOverride;
 	}
 	
 	/**
@@ -79,7 +85,7 @@ public class PasswordEncryptor {
 	}
 	
 	/**
-	 * Encrypts a password using salt and obfuscation value. The obfuscation value is 
+	 * Encrypts a password using salt and obfuscation value. The obfuscation value is
 	 * a known value. The value should be different for different users.
 	 * 
 	 * @param password the password to encrypt
@@ -88,7 +94,7 @@ public class PasswordEncryptor {
 	 * @param encoder encoder used for hashing
 	 * 
 	 * @return encrypted password
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public final String encrypt(final String password, final int obfuscatingValue, final String encoding, final ByteArrayEncoder encoder) throws Exception {
 		try {
@@ -111,11 +117,16 @@ public class PasswordEncryptor {
 	 * @param obfuscatingValue obfuscation value
 	 * 
 	 * @return encrypted salt
-	 * @throws UnsupportedEncodingException 
+	 * @throws UnsupportedEncodingException
 	 */
 	private final byte[] encryptSalt(final int obfuscatingValue, final String encoding) throws Exception {
 		if (hexSaltBytes == null) {
-			String saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
+			String saltFilePath;
+			if (saltFilePathOverride != null) {
+				saltFilePath = saltFilePathOverride;
+			} else {
+				saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
+			}
 			try {
 				String hexSalt = toPasswordHexString(readSaltFromFile(new File(saltFilePath)));
 				if (encoding != null) {
@@ -144,10 +155,12 @@ public class PasswordEncryptor {
 	private static final byte[] plus(final byte[] b0, final byte[] b1) {
 		final byte[] b = new byte[b0.length + b1.length];
 		
-		for(int i = 0; i < b0.length; i++)
+		for(int i = 0; i < b0.length; i++) {
 			b[i] = b0[i];
-		for(int i = 0; i < b1.length; i++)
+		}
+		for(int i = 0; i < b1.length; i++) {
 			b[b0.length + i] = b1[i];
+		}
 		
 		return b;
 	}

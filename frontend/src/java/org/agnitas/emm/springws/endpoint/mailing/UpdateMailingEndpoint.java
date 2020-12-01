@@ -13,32 +13,32 @@ package org.agnitas.emm.springws.endpoint.mailing;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.emm.springws.jaxb.UpdateMailingRequest;
 import org.agnitas.emm.springws.jaxb.UpdateMailingRequest.TargetIDList;
-import org.agnitas.service.UserActivityLogService;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.agnitas.emm.springws.jaxb.UpdateMailingResponse;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 
-public class UpdateMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class UpdateMailingEndpoint extends BaseEndpoint {
 
-	@Resource
 	private MailingService mailingService;
-	@Resource
-	private ObjectFactory objectFactory;
-	@Resource
-	private UserActivityLogService userActivityLogService;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		UpdateMailingRequest request = (UpdateMailingRequest) arg0;
+	public UpdateMailingEndpoint(@Qualifier("MailingService") MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
 
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateMailingRequest")
+	public @ResponsePayload UpdateMailingResponse updateMailing(@RequestPayload UpdateMailingRequest request) throws Exception {
 		MailingModel model = new MailingModel();
 		model.setMailingId(request.getMailingID());
 		model.setCompanyId(Utils.getUserCompany());
@@ -66,7 +66,6 @@ public class UpdateMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
 		mailingService.updateMailing(model, userActions);
 		Utils.writeLog(userActivityLogService, userActions);
 
-		return objectFactory.createUpdateMailingResponse();
+		return new UpdateMailingResponse();
 	}
-
 }

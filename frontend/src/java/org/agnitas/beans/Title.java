@@ -44,13 +44,6 @@ public interface Title {
      * @param title New value of property id.
      */
     public void setId(int title);
-    
-    /**
-     * Setter for property shortname.
-     * 
-     * @param desc New value of property shortname.
-     */
-    public void setShortname(String desc);
 
     /**
      * Setter for property description.
@@ -79,13 +72,6 @@ public interface Title {
      * @return Value of property id.
      */
     public int getId();
-    
-    /**
-     * Getter for property shortname.
-     * 
-     * @return Value of property shortname.
-     */
-    public String getShortname();
 
     /**
      * Getter for property description.

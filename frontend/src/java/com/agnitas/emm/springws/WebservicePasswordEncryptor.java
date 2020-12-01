@@ -48,9 +48,15 @@ public final class WebservicePasswordEncryptor {
 	
 	private ConfigService configService;
 	
+	private String saltFilePathOverride = null;
+	
 	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
+	}
+	
+	public void setSaltFilePathOverride(String saltFilePathOverride) {
+		this.saltFilePathOverride = saltFilePathOverride;
 	}
 	
 	/**
@@ -61,7 +67,12 @@ public final class WebservicePasswordEncryptor {
 	 */
 	private char[] getEncryptorPasswordChars() throws IOException {
 		if (encryptorPasswordChars == null) {
-			String saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
+			String saltFilePath;
+			if (saltFilePathOverride != null) {
+				saltFilePath = saltFilePathOverride;
+			} else {
+				saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
+			}
 			@SuppressWarnings("unchecked")
 			final List<String> lines = FileUtils.readLines(new File(saltFilePath), "UTF-8");
 			final String encryptorPasswordString = lines.get(0).replace("“", "\""); // Replace some not allowed non-ascii password chars

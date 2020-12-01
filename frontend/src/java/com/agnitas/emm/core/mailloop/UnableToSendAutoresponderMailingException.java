@@ -13,7 +13,6 @@ package com.agnitas.emm.core.mailloop;
 /**
  * Exception indicating an error sending an auto-responder mail.
  */
-@Deprecated
 public class UnableToSendAutoresponderMailingException extends MailloopException {
 
 	/** Serial version UID. */

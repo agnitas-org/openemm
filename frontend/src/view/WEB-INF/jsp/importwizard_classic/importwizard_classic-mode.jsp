@@ -78,6 +78,10 @@
                                 <html:option value="<%= Integer.toString(ImportMode.TO_BLACKLIST.getIntValue()) %>"><bean:message
                                         key="import.mode.blacklist"/></html:option>
                             </emm:ShowByPermission>
+                            <emm:ShowByPermission token="import.mode.blacklist_exclusive">
+                                <html:option value="<%= Integer.toString(ImportMode.BLACKLIST_EXCLUSIVE.getIntValue()) %>"><bean:message
+                                        key="import.mode.blacklist"/></html:option>
+                            </emm:ShowByPermission>
                             <emm:ShowByPermission token="import.mode.remove_status">
                                 <html:option value="<%= Integer.toString(ImportMode.MARK_SUSPENDED.getIntValue()) %>"><bean:message
                                         key="import.mode.remove_status"/></html:option>
@@ -125,9 +129,9 @@
                         <div class="col-sm-8">
                             <html:select property="status.doubleCheck" size="1" styleClass="form-control js-select">
                                 <html:option value="<%= Integer.toString(CustomerImportStatus.DOUBLECHECK_FULL) %>"><bean:message
-                                        key="import.doublechecking.full"/></html:option>
+                                        key="default.Yes"/></html:option>
                                 <html:option value="<%= Integer.toString(CustomerImportStatus.DOUBLECHECK_NONE) %>"><bean:message
-                                        key="import.doublechecking.none"/></html:option>
+                                        key="default.No"/></html:option>
                             </html:select>
                         </div>
                     </div>

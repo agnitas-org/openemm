@@ -12,14 +12,13 @@ package com.agnitas.web;
 
 import java.util.Collection;
 import java.util.HashSet;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.web.forms.ComTargetForm;
 import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.MailingWizardAction;
 import org.agnitas.web.MailingWizardForm;
@@ -28,10 +27,14 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.web.forms.ComTargetForm;
+
 /**
  * Implementation of <strong>Action</strong> that handles Mailings
  */
-public final class ComMailingWizardAction extends MailingWizardAction {
+public class ComMailingWizardAction extends MailingWizardAction {
 
 	public static final String ACTION_NEW_TARGET = "newTarget";
 	public static final String ACTION_NEW_FIELD = "newField";
@@ -59,7 +62,7 @@ public final class ComMailingWizardAction extends MailingWizardAction {
 				targetGroups = new HashSet<>();
 				mailing.setTargetGroups(targetGroups);
 			}
-			ComTarget aTarget = targetDao.getTarget(aForm.getTargetID(), AgnUtils.getCompanyID(req));
+			ComTarget aTarget = targetService.getTargetGroup(aForm.getTargetID(), AgnUtils.getCompanyID(req));
 			if (!targetGroups.contains(aForm.getTargetID()) && aTarget != null && aTarget.getDeleted() == 0) {
 				targetGroups.add(aForm.getTargetID());
 			}
@@ -82,7 +85,8 @@ public final class ComMailingWizardAction extends MailingWizardAction {
 	}
 
 	public ActionForward addTarget(ActionMapping mapping, ActionForm form,
-                                   HttpServletRequest request, HttpServletResponse response){
+                                   HttpServletRequest request, HttpServletResponse response)
+			throws UnknownTargetGroupIdException {
         if (!AgnUtils.isUserLoggedIn(request)) {
             return mapping.findForward("logon");
         }
@@ -101,7 +105,7 @@ public final class ComMailingWizardAction extends MailingWizardAction {
             targetGroups = new HashSet<>();
             mailing.setTargetGroups(targetGroups);
         }
-        ComTarget aTarget = targetDao.getTarget(aForm.getTargetID(), AgnUtils.getCompanyID(request));
+        ComTarget aTarget = targetService.getTargetGroup(aForm.getTargetID(), AgnUtils.getCompanyID(request));
         if (!targetGroups.contains(aForm.getTargetID()) && aTarget != null && aTarget.getDeleted() == 0) {
             targetGroups.add(aForm.getTargetID());
         }
@@ -116,7 +120,6 @@ public final class ComMailingWizardAction extends MailingWizardAction {
 		}
         ComTargetForm cForm = (ComTargetForm)req.getSession().getAttribute("targetForm");
         if (cForm != null) {
-            cForm.clearRules();
             cForm.setTargetID(0);
         }
 

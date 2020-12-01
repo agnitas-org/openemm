@@ -25,6 +25,7 @@ import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationActivateDoubleOptInParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -107,8 +108,13 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
 			}
 		}
 	}
-	
-	private boolean changeBindingStatusToConfirmed(BindingEntry aEntry, int companyID, int mailingID, String remoteAddr, String referrer) throws Exception {
+
+    @Override
+    public ActionOperationType processedType() {
+        return ActionOperationType.ACTIVATE_DOUBLE_OPT_IN;
+    }
+
+    private boolean changeBindingStatusToConfirmed(BindingEntry aEntry, int companyID, int mailingID, String remoteAddr, String referrer) throws Exception {
         switch (UserStatus.getUserStatusByID(aEntry.getUserStatus())) {
             case WaitForConfirm:
                 aEntry.setUserStatus(UserStatus.Active.getStatusCode());

@@ -10,28 +10,32 @@
 
 package org.agnitas.emm.springws.endpoint.component;
 
-import javax.annotation.Resource;
-
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.emm.springws.jaxb.UpdateAttachmentRequest;
 import org.agnitas.emm.springws.jaxb.UpdateAttachmentResponse;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class UpdateAttachmentEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class UpdateAttachmentEndpoint extends BaseEndpoint {
 
-	@Resource
 	private ComponentService componentService;
-	@Resource
-	private ObjectFactory objectFactory;
-	
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		UpdateAttachmentRequest request = (UpdateAttachmentRequest) arg0;
-		
+
+	public UpdateAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService) {
+		this.componentService = componentService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateAttachmentRequest")
+	public @ResponsePayload UpdateAttachmentResponse updateAttachment(@RequestPayload UpdateAttachmentRequest request) throws Exception {
+		UpdateAttachmentResponse response = new UpdateAttachmentResponse();
+
 		ComponentModel model = new ComponentModel();
 		model.setCompanyId(Utils.getUserCompany());
 		model.setComponentId(request.getComponentID());
@@ -40,9 +44,7 @@ public class UpdateAttachmentEndpoint extends AbstractMarshallingPayloadEndpoint
 		model.setComponentName(request.getComponentName());
 		model.setData(request.getData());
 
-		UpdateAttachmentResponse response = objectFactory.createUpdateAttachmentResponse();
 		componentService.updateComponent(model);
 		return response;
 	}
-
 }

@@ -10,9 +10,13 @@
 
 package com.agnitas.util;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import org.displaytag.decorator.TableDecorator;
+import org.displaytag.model.Row;
 
 import com.agnitas.beans.ComRecipientHistory;
 
@@ -20,22 +24,44 @@ public class RecipientsTableDecorator extends TableDecorator {
     private static final String EVEN_STYLE = "recipientsTable-even";
     private static final String ODD_STYLE = "recipientsTable-odd";
 
-    private Date lastDate;
+    private List<Date> dates;
+
+    private boolean isLastOdd = true;
 
     @Override
     public String addRowClass() {
-        boolean odd = true;
-        int sortedColumn = tableModel.getSortedColumnNumber();
-        ComRecipientHistory currentItem = (ComRecipientHistory) getCurrentRowObject();
-        if (sortedColumn <= 0) {
-            if (lastDate != null && !lastDate.equals(currentItem.getChangeDate())) {
-                odd = !odd;
-            }
-        } else {
-            odd = lastDate == null ? odd : !odd;
+        if(tableModel.getSortedColumnNumber() > 0) {
+            return processUsualLogic();
         }
-        lastDate = currentItem.getChangeDate();
-        return getStyle(odd);
+
+        return groupByDate();
+    }
+
+    private String groupByDate() {
+        if(dates == null) {
+            initDates();
+        }
+        final Date currentChangeDate = ((ComRecipientHistory) getCurrentRowObject()).getChangeDate();
+        final int index = dates.indexOf(currentChangeDate);
+        return getStyle(index % 2 == 0);
+    }
+
+    private void initDates() {
+        this.dates = new ArrayList<>();
+        for (Object item: tableModel.getRowListPage()) {
+            final Row row = (Row) item;
+            final ComRecipientHistory history = (ComRecipientHistory) row.getObject();
+            final Date changeDate = history.getChangeDate();
+            if (!dates.contains(changeDate)) {
+                dates.add(changeDate);
+            }
+        }
+        Collections.sort(dates);
+    }
+
+    private String processUsualLogic() {
+        isLastOdd = !isLastOdd;
+        return getStyle(isLastOdd);
     }
 
     private String getStyle(boolean odd) {

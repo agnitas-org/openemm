@@ -17,6 +17,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.agnitas.beans.BlackListEntry;
@@ -27,6 +28,8 @@ import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType.SimpleDataType;
@@ -34,6 +37,7 @@ import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -51,6 +55,17 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 
 	private static final MailinglistRowMapper MAILINGLIST_ROW_MAPPER = new MailinglistRowMapper();
 
+	private ConfigService configService;
+	
+	@Required
+	public final void setConfigService(final ConfigService service) {
+		this.configService = Objects.requireNonNull(service, "ConfigService is null");
+	}
+
+	final ConfigService getConfigService() {
+		return this.configService;
+	}
+	
 	/**
 	 * Inserts a new entry in the blacklist table. returns false, if something
 	 * went wrong.
@@ -149,7 +164,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 		 * this is not very efficient. But for now, there are some values in the DB which
 		 * are not lowercase. Therfore, as soon as all emails are lowercase remove the
 		 * statements for better performance.
-		 */ 
+		 */
 		String whereClause = "";
 		if (StringUtils.isNotEmpty(wildcardLikePattern)) {
 			if (isOracleDB()) {
@@ -187,7 +202,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 				+ " WHERE r BETWEEN ? AND ?";
 		} else {
 			blackListQuery = "SELECT email, reason, timestamp AS creation_date FROM " + getCustomerBanTableName(companyID)
-					+ whereClause 
+					+ whereClause
 					+ sortClause
 					+ " LIMIT ?, ?";
 		}
@@ -283,7 +298,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 			return;
 		}
 		
-		String update = 
+		String update =
 			"UPDATE customer_" + companyId + "_binding_tbl" +
 			" SET user_status = ?, timestamp = CURRENT_TIMESTAMP" +
 			" WHERE customer_id IN (SELECT customer_id FROM customer_" + companyId + "_tbl WHERE email = ?)" +
@@ -303,8 +318,21 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 	 */
 	@Override
 	public boolean blacklistCheckCompanyOnly(String email, @VelocityCheck int companyID) {
+		final boolean useNewWildcards = this.getConfigService().getBooleanValue(ConfigValue.Development.UseNewBlacklistWildcards, companyID);
+		
 		try {
-			return selectInt(logger, "SELECT COUNT(*) FROM " + getCustomerBanTableName(companyID) + " WHERE ? LIKE REPLACE(REPLACE(email, '?', '_'), '*', '%')", AgnUtils.normalizeEmail(email)) > 0;
+			if(useNewWildcards) {
+				final String escapeClause = isOracleDB() ? " ESCAPE '\\'" : "";
+				
+				final String sql = String.format(
+						"SELECT COUNT(*) FROM %s WHERE ? LIKE REPLACE(REPLACE(email, '_', '\\_'), '*', '%%') %s", 
+						getCustomerBanTableName(companyID),
+						escapeClause);
+
+				return selectInt(logger, sql, AgnUtils.normalizeEmail(email)) > 0;
+			} else {
+				return selectInt(logger, "SELECT COUNT(*) FROM " + getCustomerBanTableName(companyID) + " WHERE ? LIKE REPLACE(REPLACE(email, '?', '_'), '*', '%')", AgnUtils.normalizeEmail(email)) > 0;
+			}
 		} catch (Exception e) {
 			logger.error("Error checking blacklist for email '" + email + "'", e);
 
@@ -339,6 +367,25 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 			String reason = rs.getString("reason");
 			Date creationDate = rs.getTimestamp("creation_date");
 			return new BlackListEntryImpl(email, reason, creationDate);
+		}
+	}
+
+	@Override
+	public List<BlackListEntry> getBlacklistCheckEntries(int companyID, String email) {
+		final boolean useNewWildcards = this.getConfigService().getBooleanValue(ConfigValue.Development.UseNewBlacklistWildcards, companyID);
+
+		if(useNewWildcards) {
+			final String escapeClause = isOracleDB() ? " ESCAPE '\\'" : "";
+			
+			final String sql = String.format(
+					"SELECT email, reason, timestamp AS creation_date FROM %s WHERE ? LIKE REPLACE(REPLACE(email, '_', '\\_'), '*', '%%') %s ORDER BY email", 
+					getCustomerBanTableName(companyID),
+					escapeClause);
+
+			return select(logger, sql, new BlackListEntry_RowMapper(), AgnUtils.normalizeEmail(email));
+			
+		} else {
+			return select(logger, "SELECT email, reason, timestamp AS creation_date FROM " + getCustomerBanTableName(companyID) + " WHERE ? LIKE REPLACE(REPLACE(email, '?', '_'), '*', '%') ORDER BY email", new BlackListEntry_RowMapper(), AgnUtils.normalizeEmail(email));
 		}
 	}
 }

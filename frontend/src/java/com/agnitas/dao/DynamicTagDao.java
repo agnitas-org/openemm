@@ -18,13 +18,6 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import com.agnitas.beans.DynamicTag;
 
 public interface DynamicTagDao {
-	/**
-     * Getter for dynamic tag id  by given mailing id and dynamic tag name.
-     *
-     * @return Value dynamic tag id.
-     */
-    int	getIdForName(int mailingID, String name);
-
     /**
      * Loads list of  DynamicTag objects with established properties Id and DynName for given company and mailing
      *

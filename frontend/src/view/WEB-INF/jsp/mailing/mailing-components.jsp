@@ -27,12 +27,15 @@
 <c:set var="ACTION_BULK_CONFIRM_DELETE" value="<%=ComMailingComponentsAction.ACTION_BULK_CONFIRM_DELETE%>"/>
 <c:set var="ACTION_CONFIRM_DELETE" value="<%=ComMailingComponentsAction.ACTION_CONFIRM_DELETE%>"/>
 <c:set var="ACTION_UPLOAD_SFTP" value="<%=ComMailingComponentsAction.ACTION_UPLOAD_SFTP%>"/>
+<c:set var="ACTION_RELOAD_IMAGE" value="<%=ComMailingComponentsAction.ACTION_RELOAD_IMAGE%>"/>
 <c:set var="ACTION_UPDATE_HOST_IMAGE" value="<%=ComMailingComponentsAction.ACTION_UPDATE_HOST_IMAGE%>"/>
 
 <c:set var="ACTION_LIST"                            value="<%= MailingBaseAction.ACTION_LIST %>"        scope="request" />
 <c:set var="ACTION_VIEW"							value="<%= MailingBaseAction.ACTION_VIEW %>"		scope="request" />
 <c:set var="MAILING_COMPONENT_TYPE_IMAGE"           value="<%= MailingComponent.TYPE_IMAGE %>"          scope="request" />
 <c:set var="MAILING_COMPONENT_TYPE_HOSTED_IMAGE"	value="<%= MailingComponent.TYPE_HOSTED_IMAGE %>"	scope="request" />
+
+<fmt:setLocale value="${sessionScope['emm.admin'].locale}"/>
 
 <div class="row">
     <div class="tile">
@@ -226,7 +229,7 @@
                         <c:url var="sourceSrc" value="/sc?compID=${component.id}"/>
                         <display:column titleKey="mailing.Graphics_Component" sortable="false" class="align-center">
                             <a href="${sourceSrc}" data-modal="modal-preview-image"
-                               data-modal-set="src: ${sourceSrc}, title: ${component.description}" class="inline-block">
+                               data-modal-set="src: '${sourceSrc}', fileName: '${component.componentName}', title: '${component.description}'" class="inline-block">
                                 <img data-display-dimensions="scope: tr" src="${sourceSrc}" alt="${component.description}" border="1"
                                      style="max-width: 100px; max-height: 150px; width: auto; height: auto; display: block;" />
                             </a>
@@ -309,7 +312,7 @@
                             </c:if>
 
                             <c:if test="${component.type == MAILING_COMPONENT_TYPE_IMAGE}">
-                                <button type="button" class="btn btn-regular btn-info" data-tooltip="<bean:message key='mailing.Graphics_Component.Update' />" data-form-set="update${component.id}: update" data-form-submit="${ACTION_SAVE_COMPONENTS}">
+                                <button type="button" class="btn btn-regular btn-info" data-tooltip="<bean:message key='mailing.Graphics_Component.Update' />" data-form-set="componentId: ${component.id}, action: ${ACTION_RELOAD_IMAGE}" data-form-submit="">
                                     <i class="icon icon-refresh"></i>
                                 </button>
                             </c:if>
@@ -339,7 +342,7 @@
                    </button>
                    <h4 class="modal-title"><bean:message key="grid.mediapool.images.edit"/></h4>
                </div>
-               <agn:agnForm action="/mcomponents" data-form="static" id="imgEditorForm" styleId="l-editor-form">
+               <agn:agnForm action="/mcomponents" data-form="static" id="imgEditorForm" styleId="l-editor-form" enctype="multipart/form-data">
                    <div class="modal-body">
                         <html:hidden property="mailingID"/>
                         <html:hidden property="action" value="${ACTION_UPDATE_HOST_IMAGE}"/>
@@ -374,7 +377,7 @@
                    <div class="modal-footer">
                        <button type="button" class="btn btn-regular" data-action="saveCrop"><i class="icon icon-crop"></i><span class="text"><bean:message key="image.editor.crop"/></span></button>
                        <button type="button" class="btn btn-regular" data-dismiss="modal"><i class="icon icon-times"></i><span class="text"><bean:message key="button.Cancel"/></span></button>
-                       <button type="button" class="btn btn-primary btn-regular" data-form-submit-event><i class="icon icon-save"></i><span class="text"><bean:message key="button.Save"/></span></button>
+                       <button type="button" class="btn btn-primary btn-regular" data-form-submit=""><i class="icon icon-save"></i><span class="text"><bean:message key="button.Save"/></span></button>
                    </div>
                </agn:agnForm>
            </div>
@@ -382,23 +385,7 @@
     </div>
 </script>
 
-<script id="modal-preview-image" type="text/x-mustache-template">
-    <div class="modal modal-adaptive">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close-icon close" data-dismiss="modal">
-                        <i aria-hidden="true" class="icon icon-times-circle"></i>
-                    </button>
-                    <h4 class="modal-title">{{= title }}</h4>
-                </div>
-                <div class="modal-body">
-                    <img src="{{= src }}">
-                </div>
-            </div>
-        </div>
-    </div>
-</script>
+<%@ include file="../fragments/modal-preview-image-fragment.jspf" %>
 
 <script id="upload-file" type="text/x-mustache-template">
     <div class="col-sm-6">

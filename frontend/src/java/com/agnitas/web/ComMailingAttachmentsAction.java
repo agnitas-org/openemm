@@ -137,7 +137,18 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
                         errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.errors.no_attachment_name"));
 	                    destination = mapping.findForward("list");
                 	} else if (aForm.getNewAttachment() == null || checkNewAttachmentSize(aForm, errors, messages)) {
-                		if(aForm.getNewAttachment() != null && !this.mimetypeWhitelistService.isMimeTypeWhitelisted(aForm.getNewAttachment().getContentType()) ) {
+                		/*
+                		 * Warning:
+                		 * 
+                		 * The constant 1 here does not denote the type of mailing component. It
+                		 * refers to the dropdown elements "normal attachment" (=0) and "Personalized file attachment" (=1).
+                		 */
+                		final boolean isPersonalizedPdf = aForm.getNewAttachmentType() == 1;
+                		
+                		// TODO "isPersonalizedPdf ||" disables the check of the Mimetype of the uploaded file for personalized PDFs!!!
+                		final boolean mimetypeAllowed = isPersonalizedPdf || (aForm.getNewAttachment() != null && mimetypeWhitelistService.isMimeTypeWhitelisted(aForm.getNewAttachment().getContentType()));
+                		
+                		if(aForm.getNewAttachment() != null && !mimetypeAllowed) {
                 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.errors.attachment.invalidMimeType", aForm.getNewAttachment().getContentType()));
      	                    destination = mapping.findForward("list");
                 		} else {
@@ -356,10 +367,15 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
                         aComp.setType(MailingComponent.TYPE_ATTACHMENT);
                         aComp.setComponentName(aForm.getNewAttachmentName());
                         aComp.setBinaryBlock(newAttachment.getFileData(), newAttachment.getContentType());
-                    } else {
+                   } else {
                         aComp.setType(MailingComponent.TYPE_PERSONALIZED_ATTACHMENT);
                         aComp.setComponentName(aForm.getNewAttachmentName());
                         aComp.setBinaryBlock(background.getFileData(), "application/pdf");
+                        try {
+                        	aComp.setEmmBlock(new String(newAttachment.getFileData()), "application/pdf");
+                        } catch(final Throwable t) {
+                        	logger.error("Error writing emm block", t);
+                        }
                         aMailing.findDynTagsInTemplates(new String(newAttachment.getFileData(), "UTF-8"), getApplicationContext(req));
                     }
                     aComp.setTargetID(aForm.getAttachmentTargetID());

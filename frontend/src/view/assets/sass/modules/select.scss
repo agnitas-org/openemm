@@ -48,6 +48,16 @@ Version: 3.5.1 Timestamp: Tue Jul 22 18:58:56 EDT 2014
     @include user-select(none);
 }
 
+body.dark-theme .select2-container .select2-choice {
+    color: $c-dt-input-text;
+    background-color: $c-dt-input-background;
+}
+
+body.dark-theme .select2-container .select2-choice {
+    color: $c-dt-input-text;
+    background-color: $c-dt-input-background;
+}
+
 html[dir="rtl"] .select2-container .select2-choice {
     padding: 0 8px 0 0;
 }
@@ -62,6 +72,10 @@ html[dir="rtl"] .select2-container .select2-choice {
     background-image: -moz-linear-gradient(center bottom, #eee 0%, #fff 90%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#eeeeee', GradientType=0);
     background-image: linear-gradient(to bottom, #eee 0%, #fff 90%);
+}
+
+body.dark-theme .select2-container.select2-drop-above .select2-choice {
+    background-image: none;
 }
 
 .select2-container.select2-allowclear .select2-choice .select2-chosen {
@@ -148,6 +162,12 @@ html[dir="rtl"] .select2-container .select2-choice > .select2-chosen {
     @include box-shadow(0 1px 5px rgba(34, 35, 38, 0.6));
 }
 
+body.dark-theme .select2-drop {
+    background: $c-dt-input-background;
+    color: $c-dt-input-text;
+    border-color: $c-dt-input-border;
+}
+
 .select2-drop.select2-drop-above {
     margin-top: 1px;
     border-top: 1px solid #aaa;
@@ -228,6 +248,10 @@ html[dir="rtl"] .select2-container .select2-choice .select2-arrow b {
     border-bottom: 1px solid $c-gray-11;
 }
 
+body.dark-theme .select2-search {
+    border-color: $c-dt-input-border;
+}
+
 .select2-search input {
     width: 100%;
     height: 30px;
@@ -244,6 +268,11 @@ html[dir="rtl"] .select2-container .select2-choice .select2-arrow b {
     background: #fff url('core/images/search.svg') no-repeat calc(100% - 10px)/16px;
 
     @include box-shadow(inset 0 0 1px 0 #99c6e3);
+}
+
+body.dark-theme .select2-search input {
+    background-color: $c-dt-input-background;
+    color: $c-dt-input-text;
 }
 
 html[dir="rtl"] .select2-search input {
@@ -385,9 +414,17 @@ html[dir="rtl"] .select2-results {
     border-radius: 2px;
 }
 
+body.dark-theme  .select2-results .select2-highlighted {
+    background: darken($c-dt-input-background, 10%);
+}
+
 .select2-results li em {
     background: #feffde;
     font-style: normal;
+}
+
+body.dark-theme .select2-results li em {
+    background: $c-dt-input-background;
 }
 
 .select2-results .select2-highlighted em {
@@ -399,6 +436,11 @@ html[dir="rtl"] .select2-results {
     color: #000;
 }
 
+body.dark-theme .select2-results .select2-highlighted ul {
+    background: $c-dt-input-background;
+    color: $c-dt-input-text;
+}
+
 .select2-results .select2-no-results,
 .select2-results .select2-searching,
 .select2-results .select2-ajax-error,
@@ -408,6 +450,14 @@ html[dir="rtl"] .select2-results {
     height: 30px;
     line-height: 20px;
     padding: 5px 10px;
+}
+
+body.dark-theme .select2-results .select2-no-results,
+body.dark-theme .select2-results .select2-searching,
+body.dark-theme .select2-results .select2-ajax-error,
+body.dark-theme .select2-results .select2-selection-limit {
+    background: $c-dt-input-background;
+    color: $c-dt-input-text;
 }
 
 /*
@@ -462,6 +512,10 @@ disabled look for disabled choices in the results dropdown
     border-left: 0;
 }
 
+body.dark-theme .select2-container.select2-container-disabled .select2-choice .select2-arrow {
+    background-color: $c-dt-input-background;
+}
+
 .select2-container.select2-container-disabled .select2-choice abbr {
     display: none;
 }
@@ -495,12 +549,17 @@ disabled look for disabled choices in the results dropdown
 
 }
 
+body.dark-theme .select2-container-multi .select2-choices {
+    background-color: $c-dt-tile-background;
+    border-color: $c-dt-input-border;
+}
+
 html[dir="rtl"] .select2-container-multi .select2-choices {
     padding: 0 0 0 5px;
 }
 
 .select2-locked {
-  padding: 3px 5px 3px 5px !important;
+  padding: 8px 5px 8px 5px !important;
 }
 
 .select2-container-multi .select2-choices {
@@ -543,6 +602,14 @@ html[dir="rtl"] .select2-container-multi .select2-choices li
 
     @include box-shadow(inset 0px 1px 1px -1px rgba(0, 0, 0, 0.4));
     @include transition(border-color ease-in-out .15s, box-shadow ease-in-out .15s);
+
+    @include form-control-focus();
+}
+
+body.dark-theme .select2-container-multi .select2-choices .select2-search-field input {
+    color: $c-dt-input-text;
+    background-color: $c-dt-input-background;
+    border-color: $c-dt-input-border;
 
     @include form-control-focus();
 }

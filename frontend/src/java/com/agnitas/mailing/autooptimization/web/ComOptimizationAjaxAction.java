@@ -13,14 +13,11 @@ package com.agnitas.mailing.autooptimization.web;
 import java.io.PrintWriter;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.stat.CampaignStatEntry;
-import org.agnitas.util.beans.impl.SelectOption;
-import org.ajaxtags.xml.AjaxXmlBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
@@ -29,7 +26,6 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.actions.DispatchAction;
 
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
-import com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationStatService;
 import com.agnitas.mailing.autooptimization.web.forms.ComOptimizationAjaxForm;
@@ -41,6 +37,11 @@ public class ComOptimizationAjaxAction extends DispatchAction {
 	private ComOptimizationService optimizationService;
 	private ComOptimizationStatService optimizationStatService;
 	
+	/* 
+	 * TODO Disabled by EMM-7355.
+	 * 
+	 * When no further usage detected, remove this method and ajaxtags-....jar
+	 * 
 	public ActionForward groups(ActionMapping mapping, ActionForm form,
 			HttpServletRequest request, HttpServletResponse response)
 	throws Exception {
@@ -78,6 +79,7 @@ public class ComOptimizationAjaxAction extends DispatchAction {
 		
 		return null;
 	}
+	*/
 	
 	public ActionForward splits(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response)
 	throws Exception {
@@ -136,12 +138,20 @@ public class ComOptimizationAjaxAction extends DispatchAction {
 		return mapping.findForward("stats");
 	}
 	
-	
 	@Override
 	public ActionForward unspecified(ActionMapping mapping, ActionForm form,
 			HttpServletRequest request, HttpServletResponse response)
 			throws Exception {
+		
+		/*
+		 * TODO Disabled by EMM-7355.
+		 * 
 		return groups(mapping, form, request, response);
+		 */
+		
+		logger.fatal("Called com.agnitas.mailing.autooptimization.web.ComOptimizationAjaxAction.unspecified() - has been disabled by EMM-7355");
+		
+		return null;
 	}
 	
 	

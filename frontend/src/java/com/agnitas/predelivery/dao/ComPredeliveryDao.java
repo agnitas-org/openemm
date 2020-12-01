@@ -154,7 +154,7 @@ public interface ComPredeliveryDao {
 	 * @return - list of completedLitmusItems
 	 */
 	public List<CompleteLitmusItem> getAllCompletedTestItems(int mailingID,
-			@VelocityCheck int companyID);
+			@VelocityCheck int companyID, boolean includeIncomplete);
 	
 	/**
 	 * gets all test spam items for a test that have been completed

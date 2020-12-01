@@ -12,7 +12,7 @@ package org.agnitas.emm.core.mailing.beans;
 
 import java.util.Optional;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.ComMailing;
 
 /**
  * Light-weight mailing containing only data used in lists, tables, etc.
@@ -36,13 +36,16 @@ public class LightweightMailing {
 	
 	private final Optional<String> workStatus;
 	
-	public LightweightMailing(final int companyID, final int mailingID, final String shortname, final String description, final int mailingType, final String workStatusOrNull) {
+	private final ComMailing.MailingContentType mailingContentType;
+	
+	public LightweightMailing(final int companyID, final int mailingID, final String shortname, final String description, final int mailingType, final String workStatusOrNull, final ComMailing.MailingContentType mailingContentType) {
 		this.companyID = companyID;
 		this.mailingID = mailingID;
 		this.shortname = shortname;
 		this.description = description;
 		this.mailingType = mailingType;
 		this.workStatus = Optional.ofNullable(workStatusOrNull);
+		this.mailingContentType = mailingContentType;
 	}
 	
 	/**
@@ -51,8 +54,8 @@ public class LightweightMailing {
 	 * 
 	 * @param mailing heavy-weight mailing object
 	 */
-	public LightweightMailing(final Mailing mailing) {
-		this(mailing.getCompanyID(), mailing.getId(), mailing.getShortname(), mailing.getDescription(), mailing.getMailingType(), null);
+	public LightweightMailing(final ComMailing mailing) {
+		this(mailing.getCompanyID(), mailing.getId(), mailing.getShortname(), mailing.getDescription(), mailing.getMailingType(), null, mailing.getMailingContentType());
 	}
 	
 	/**
@@ -103,4 +106,9 @@ public class LightweightMailing {
 	public Optional<String> getWorkStatus() {
 		return this.workStatus;
 	}
+
+	public final ComMailing.MailingContentType getMailingContentType() {
+		return mailingContentType;
+	}
+	
 }

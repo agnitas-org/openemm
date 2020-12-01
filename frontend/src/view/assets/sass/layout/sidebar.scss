@@ -28,3 +28,7 @@
 body.wide-sidebar .l-sidebar {
   width: 240px;
 }
+
+body.dark-theme .l-sidebar {
+  background-color: $c-dt-navigation-background;
+}

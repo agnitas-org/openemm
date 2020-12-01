@@ -36,6 +36,7 @@ import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.messages.I18nString;
 
 public class MailingRecipientExportReporter {
@@ -50,6 +51,8 @@ public class MailingRecipientExportReporter {
 	private ComMailingDao mailingDao;
 
 	private AdminService adminService;
+
+	private RecipientsReportService recipientsReportService;
 	
 	private ConfigService configService;
 
@@ -71,6 +74,11 @@ public class MailingRecipientExportReporter {
 	@Required
 	public void setAdminService(final AdminService service) {
 		this.adminService = Objects.requireNonNull(service, "Admin service is null");
+	}
+
+	@Required
+	public void setRecipientsReportService(RecipientsReportService recipientsReportService) {
+		this.recipientsReportService = recipientsReportService;
 	}
 
 	@Required
@@ -376,5 +384,9 @@ public class MailingRecipientExportReporter {
 						
 			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
+	}
+
+	public void createAndSaveExportReport(MailingRecipientExportWorker exportWorker, ComAdmin admin, boolean isError) throws Exception {
+		recipientsReportService.createAndSaveExportReport(admin, new File(exportWorker.getExportFile()).getName(), exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker, admin), isError);
 	}
 }

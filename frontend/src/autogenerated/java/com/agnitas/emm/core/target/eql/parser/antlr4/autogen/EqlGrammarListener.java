@@ -10,7 +10,7 @@
 
 // Generated from EqlGrammar.g4 by ANTLR 4.4
 
-    package com.agnitas.emm.core.target.eql.parser.antlr4.autogen;
+package com.agnitas.emm.core.target.eql.parser.antlr4.autogen;
 
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
@@ -80,6 +80,16 @@ public interface EqlGrammarListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitGeqRelationalRelationalExpression(@NotNull EqlGrammarParser.GeqRelationalRelationalExpressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link EqlGrammarParser#relational_infix_op}.
+	 * @param ctx the parse tree
+	 */
+	void enterRelational_infix_op(@NotNull EqlGrammarParser.Relational_infix_opContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link EqlGrammarParser#relational_infix_op}.
+	 * @param ctx the parse tree
+	 */
+	void exitRelational_infix_op(@NotNull EqlGrammarParser.Relational_infix_opContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code LtRelationalRelationalExpression}
 	 * labeled alternative in {@link EqlGrammarParser#relational_expression}.
@@ -408,6 +418,16 @@ public interface EqlGrammarListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitConstant_list(@NotNull EqlGrammarParser.Constant_listContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link EqlGrammarParser#timestamp_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterTimestamp_expression(@NotNull EqlGrammarParser.Timestamp_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link EqlGrammarParser#timestamp_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitTimestamp_expression(@NotNull EqlGrammarParser.Timestamp_expressionContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code AndBooleanAndExpression}
 	 * labeled alternative in {@link EqlGrammarParser#boolean_and_expression}.

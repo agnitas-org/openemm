@@ -16,13 +16,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.beans.Dependent;
-import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
-import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.commons.lang3.ArrayUtils;
+
+import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 
 /**
  * Form bean containing all the data of the target group editors.
@@ -58,8 +59,6 @@ public final class QueryBuilderTargetGroupForm extends StrutsFormBase {
 	private boolean locked;
 
 	private int mailingId;
-
-	private boolean simpleStructure;
 
 	private String workflowId;
 
@@ -183,14 +182,6 @@ public final class QueryBuilderTargetGroupForm extends StrutsFormBase {
 
 	public void setMailingId(int mailingId) {
 		this.mailingId = mailingId;
-	}
-
-	public boolean isSimpleStructure() {
-		return simpleStructure;
-	}
-
-	public void setSimpleStructure(boolean simpleStructure) {
-		this.simpleStructure = simpleStructure;
 	}
 
 	public String getWorkflowId() {

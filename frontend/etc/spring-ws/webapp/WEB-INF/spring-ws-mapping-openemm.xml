@@ -1,178 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:sws="http://www.springframework.org/schema/web-services"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+		http://www.springframework.org/schema/web-services http://www.springframework.org/schema/web-services/web-services-2.0.xsd">
 
-	<bean id="endpointMap" class="org.springframework.beans.factory.config.MapFactoryBean">
-		<property name="sourceMap">
-			<map>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}FindSubscriberRequest" value-ref="findSubscriberEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}AddSubscriberRequest" value-ref="addSubscriberEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}AddBlacklistRequest" value-ref="addBlacklistEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}GetSubscriberRequest" value-ref="getSubscriberEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}ListSubscribersRequest" value-ref="listSubscribersEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}DeleteSubscriberRequest" value-ref="deleteSubscriberEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}UpdateSubscriberRequest" value-ref="updateSubscriberEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}GetSubscriberBindingRequest" value-ref="getSubscriberBindingEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}SetSubscriberBindingRequest" value-ref="setSubscriberBindingEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}DeleteBlacklistRequest" value-ref="deleteBlacklistEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}CheckBlacklistRequest" value-ref="checkBlacklistEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}GetBlacklistItemsRequest" value-ref="getBlacklistItemsEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}AddMailinglistRequest" value-ref="addMailinglistEndpoint">
-				</entry>
-				<entry 
-                    key="{http://agnitas.org/ws/schemas}UpdateMailinglistRequest" value-ref="updateMailinglistEndpoint">
-                </entry>
-                <entry 
-                    key="{http://agnitas.org/ws/schemas}GetMailinglistRequest" value-ref="getMailinglistEndpoint">
-                </entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}DeleteMailinglistRequest" value-ref="deleteMailinglistEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}DeleteContentBlockRequest" value-ref="deleteContentBlockEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}GetContentBlockRequest" value-ref="getContentBlockEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}ListContentBlocksRequest" value-ref="listContentBlocksEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}ListContentBlockNamesRequest" value-ref="listContentBlockNamesEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}AddContentBlockRequest" value-ref="addContentBlockEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}UpdateContentBlockRequest" value-ref="updateContentBlockEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}AddMailingRequest" value-ref="addMailingEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}AddTemplateRequest" value-ref="addTemplateEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}AddMailingFromTemplateRequest" value-ref="addMailingFromTemplateEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}GetMailingRequest" value-ref="getMailingEndpoint">
-				</entry>
-				<entry
-						key="{http://agnitas.org/ws/schemas}GetMailingStatusRequest" value-ref="getMailingStatusEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}GetTemplateRequest" value-ref="getTemplateEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}UpdateMailingRequest" value-ref="updateMailingEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}UpdateTemplateRequest" value-ref="updateTemplateEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}DeleteMailingRequest" value-ref="deleteMailingEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}ListMailinglistsRequest" value-ref="listMailinglistsEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}ListMailingsRequest" value-ref="listMailingsEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}DeleteSubscriberBindingRequest" value-ref="deleteSubscriberBindingEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}DeleteTemplateRequest" value-ref="deleteTemplateEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}ListTemplatesRequest" value-ref="listTemplatesEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}ListSubscriberBindingRequest" value-ref="listSubscriberBindingEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}ListMailingsInMailinglistRequest" value-ref="listMailingsInMailinglistEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}GetAttachmentRequest" value-ref="getAttachmentEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}ListAttachmentsRequest" value-ref="listAttachmentsEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}AddAttachmentRequest" value-ref="addAttachmentEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}UpdateAttachmentRequest" value-ref="updateAttachmentEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}DeleteAttachmentRequest" value-ref="deleteAttachmentEndpoint">
-				</entry>
-				<entry 
-					key="{http://agnitas.org/ws/schemas}SendMailingRequest" value-ref="sendMailingEndpoint">
-				</entry>
-
-				<entry 
-					key="{http://agnitas.org/ws/schemas}DecryptLinkDataRequest"  value-ref="decryptLinkDataEndpoint">
-				</entry>
-				<entry
-						key="{http://agnitas.org/ws/schemas}ListTrackableLinksRequest"  value-ref="listTrackableLinksEndpoint">
-				</entry>
-				<entry
-						key="{http://agnitas.org/ws/schemas}GetTrackableLinkSettingsRequest" value-ref="getTrackableLinkSettingsEndpoint">
-				</entry>
-				<entry
-						key="{http://agnitas.org/ws/schemas}UpdateTrackableLinkSettingsRequest" value-ref="updateTrackableLinkSettingsEndpoint">
-				</entry>
-				<entry
-						key="{http://agnitas.org/ws/schemas}ListTargetgroupsRequest" value-ref="listTargetgroupsEndpoint">
-				</entry>
-				<entry
-						key="{http://agnitas.org/ws/schemas}AddMailingImageRequest" value-ref="addMailingImageEndpoint">
-				</entry>
-
-			</map>
-		</property>
-	</bean>
-
-	<!-- Endpoints -->
-	
-	<!-- attachment -->
-	<bean id="getAttachmentEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.component.GetAttachmentEndpoint" />
-	<bean id="listAttachmentsEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.component.ListAttachmentsEndpoint" />
-	<bean id="addAttachmentEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.component.AddAttachmentEndpoint" />
-	<bean id="updateAttachmentEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.component.UpdateAttachmentEndpoint" />
-	<bean id="deleteAttachmentEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.component.DeleteAttachmentEndpoint" />
-
-	<bean id="attachmentExceptionResolver"
-		class="org.agnitas.emm.springws.exceptionresolver.component.AttachmentExceptionResolver">
+	<bean id="attachmentExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.component.AttachmentExceptionResolver">
 		<property name="mappedEndpoints">
 			<set>
 				<ref bean="getAttachmentEndpoint" />
@@ -183,186 +16,80 @@
 		</property>
 	</bean>
 
-	<!-- binding -->
-	<bean id="getSubscriberBindingEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.binding.GetSubscriberBindingEndpoint" />
-	<bean id="setSubscriberBindingEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.binding.SetSubscriberBindingEndpoint" />
-	<bean id="deleteSubscriberBindingEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.binding.DeleteSubscriberBindingEndpoint" />
-	<bean id="listSubscriberBindingEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.binding.ListSubscriberBindingEndpoint" />
-
-	<bean id="decryptLinkDataEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.binding.DecryptLinkDataEndpoint" />
+    <bean id="blacklistExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.blacklist.BlacklistExceptionResolver">
+		<property name="mappedEndpoints">
+			<list>
+				<ref bean="addBlacklistEndpoint"/>
+			</list>
+		</property>
+		<property name="order" value="3"/>
+	</bean>
 	
-    <bean id="bindingExceptionResolver"
-		class="org.agnitas.emm.springws.exceptionresolver.binding.BindingExceptionResolver">
+	<bean id="mailingExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.mailing.MailingExceptionResolver">
+		<property name="mappedEndpoints">
+			<list>
+				<ref bean="sendMailingEndpoint"/>
+			</list>
+		</property>
+	</bean>
+
+    <bean id="mailinglistExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.mailinglist.MailinglistExceptionResolver" >
+		<property name="mappedEndpoints">
+			<list>
+				<ref bean="deleteMailinglistEndpoint"/>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="bindingExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.binding.BindingExceptionResolver">
 		<property name="mappedEndpoints">
 			<set>
+				<ref bean="setSubscriberBindingWithActionEndpoint" />
 				<ref bean="setSubscriberBindingEndpoint" />
-
 				<ref bean="decryptLinkDataEndpoint" />
+				
 			</set>
 		</property>
 	</bean>
 
-	<!-- blacklist -->
-	<bean id="addBlacklistEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.blacklist.AddBlacklistEndpoint" />
-	<bean id="checkBlacklistEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.blacklist.CheckBlacklistEndpoint" />
-	<bean id="deleteBlacklistEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.blacklist.DeleteBlacklistEndpoint" />
-	<bean id="getBlacklistItemsEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.blacklist.GetBlacklistItemsEndpoint" />
-
-    <bean id="blacklistExceptionResolver"
-		class="org.agnitas.emm.springws.exceptionresolver.blacklist.BlacklistExceptionResolver">
+	<bean id="mailingSummaryStatExceptionResolver" class="com.agnitas.emm.core.stat.service.impl.MailingSummaryStatExceptionResolver">
 		<property name="mappedEndpoints">
 			<set>
-				<ref bean="addBlacklistEndpoint" />
+				<ref bean="mailingSummaryStatisticJobEndpoint" />
+				<ref bean="mailingSummaryStatisticResultEndpoint" />
 			</set>
 		</property>
 	</bean>
-	
-	<!-- dyncontent -->
-	<bean id="addContentBlockEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.dyncontent.AddContentBlockEndpoint" />
-	<bean id="deleteContentBlockEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.dyncontent.DeleteContentBlockEndpoint" />
-	<bean id="getContentBlockEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.dyncontent.GetContentBlockEndpoint" />
-	<bean id="listContentBlocksEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.dyncontent.ListContentBlocksEndpoint" />
-	<bean id="updateContentBlockEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.dyncontent.UpdateContentBlockEndpoint" />
-	
-	<!-- dynname -->
-	<bean id="listContentBlockNamesEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.dynname.ListContentBlockNamesEndpoint" />
 
-	<!-- dyntarget-->
-	<bean id="listTargetgroupsEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.dyntarget.ListTargetgroupsEndpoint"/>
-
-	<!-- mailing -->
-	<bean id="addMailingEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.AddMailingEndpoint" />
-	<bean id="addTemplateEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.AddTemplateEndpoint" />
-	<bean id="addMailingFromTemplateEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.AddMailingFromTemplateEndpoint" />
-	<bean id="deleteMailingEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.DeleteMailingEndpoint" />
-	<bean id="getMailingEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.GetMailingEndpoint" />
-	<bean id="getMailingStatusEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.GetMailingStatusEndpoint" />
-	<bean id="getTemplateEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.GetTemplateEndpoint" />
-	<bean id="updateMailingEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.UpdateMailingEndpoint" />
-	<bean id="updateTemplateEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.UpdateTemplateEndpoint" />
-	<bean id="listMailingsEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.ListMailingsEndpoint" />
-	<bean id="deleteTemplateEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.DeleteTemplateEndpoint" />
-	<bean id="listTemplatesEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.ListTemplatesEndpoint" />
-	<bean id="listMailingsInMailinglistEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.ListMailingsInMailinglistEndpoint" />
-	<bean id="sendMailingEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.SendMailingEndpoint" />
-	
-	<!-- mailinglist -->
-	<bean id="addMailinglistEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailinglist.AddMailinglistEndpoint">
-		<property name="mailinglistService" ref="WS_mailinglistService" />
-		<property name="objectFactory" ref="objectFactory" />
-	</bean>
-	
-	<bean id="deleteMailinglistEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailinglist.DeleteMailinglistEndpoint">
-		<property name="mailinglistService" ref="WS_mailinglistService" />
-		<property name="objectFactory" ref="objectFactory" />
-	</bean>
-
-    <bean id="getMailinglistEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailinglist.GetMailinglistEndpoint">
-    	<property name="mailinglistService" ref="WS_mailinglistService" />
-		<property name="objectFactory" ref="objectFactory" />
-	</bean>
-	    
-    <bean id="updateMailinglistEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailinglist.UpdateMailinglistEndpoint">
-		<property name="mailinglistService" ref="WS_mailinglistService" />
-		<property name="objectFactory" ref="objectFactory" />
-    </bean>
-
-    <bean id="listMailinglistsEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailinglist.ListMailinglistsEndpoint">
-		<property name="mailinglistService" ref="WS_mailinglistService" />
-		<property name="objectFactory" ref="objectFactory" />
-    </bean>
-
-    <bean id="mailinglistExceptionResolver"
-		class="org.agnitas.emm.springws.exceptionresolver.mailinglist.MailinglistExceptionResolver">
+	<bean id="dataSourceExceptionResolver" class="com.agnitas.service.DataSourceExceptionResolver">
 		<property name="mappedEndpoints">
-			<set>
-				<ref bean="deleteMailinglistEndpoint" />
-			</set>
+			<list>
+				<ref bean="createDataSourceEndpoint"/>
+			</list>
 		</property>
 	</bean>
-    
-	<!-- recipient -->
-	<bean id="addSubscriberEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.recipient.AddSubscriberEndpoint" />
-	<bean id="deleteSubscriberEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.recipient.DeleteSubscriberEndpoint" />
-	<bean id="findSubscriberEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.recipient.FindSubscriberEndpoint" />
-	<bean id="getSubscriberEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.recipient.GetSubscriberEndpoint" />
-	<bean id="listSubscribersEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.recipient.ListSubscribersEndpoint" />
-	<bean id="updateSubscriberEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.recipient.UpdateSubscriberEndpoint" />
 
-
-
-	
-    <bean id="recipientsExceptionResolver"
-		class="org.agnitas.emm.springws.exceptionresolver.recipient.RecipientsExceptionResolver">
+	<bean id="sendServiceMailExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.SendServiceMailExceptionResolver">
 		<property name="mappedEndpoints">
-			<set>
-				<ref bean="listSubscribersEndpoint" />
-			</set>
+			<list>
+				<ref bean="sendServiceMailEndpoint"/>
+			</list>
 		</property>
 	</bean>
 
-	<!-- Trackable link -->
-	<bean id="listTrackableLinksEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.trackablelink.ListTrackableLinksEndpoint"/>
-	<bean id="getTrackableLinkSettingsEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.trackablelink.GetTrackableLinkSettingsEndpoint"/>
-	<bean id="updateTrackableLinkSettingsEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.trackablelink.UpdateTrackableLinkSettingsEndpoint"/>
-
-	<bean id="addMailingImageEndpoint" parent="abstractEndpoint" class="org.agnitas.emm.springws.endpoint.mailing.AddMailingImageEndpoint"/>
-
-
-
-	<!-- Common resolver -->
-	
-	<bean id="commonExceptionResolver"
-		class="org.agnitas.emm.springws.exceptionresolver.CommonExceptionResolver">
+	<bean id="mailingComponentExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.MailingComponentExceptionResolver">
 		<property name="mappedEndpoints">
-			<set>
-                <ref bean="addMailinglistEndpoint" />
-                <ref bean="updateMailinglistEndpoint" />            
-				<ref bean="getMailinglistEndpoint" />
-				<ref bean="deleteContentBlockEndpoint" />
-				<ref bean="deleteBlacklistEndpoint" />
-				<ref bean="checkBlacklistEndpoint" />
-				<ref bean="addMailingEndpoint" />
-				<ref bean="listContentBlocksEndpoint" />
-				<ref bean="listContentBlockNamesEndpoint" />
-				<ref bean="getContentBlockEndpoint" />
-				<ref bean="addContentBlockEndpoint" />
-				<ref bean="updateContentBlockEndpoint" />
-				<ref bean="addMailingEndpoint" />
-				<ref bean="addTemplateEndpoint" />
-				<ref bean="addMailingFromTemplateEndpoint" />
-				<ref bean="getMailingEndpoint" />
-				<ref bean="getMailingStatusEndpoint" />
-				<ref bean="getTemplateEndpoint" />
-				<ref bean="updateMailingEndpoint" />
-				<ref bean="updateTemplateEndpoint" />
-				<ref bean="deleteMailingEndpoint" />
-				<ref bean="listMailinglistsEndpoint" />
-				<ref bean="listMailingsEndpoint" />
-				<ref bean="getSubscriberBindingEndpoint" />
-				<ref bean="deleteSubscriberBindingEndpoint" />
-				<ref bean="deleteTemplateEndpoint" />
-				<ref bean="listTemplatesEndpoint" />
-				<ref bean="listSubscriberBindingEndpoint" />
-				<ref bean="listMailingsInMailinglistEndpoint" />
-				<ref bean="listAttachmentsEndpoint" />
-				<ref bean="sendMailingEndpoint" />
-				<ref bean="addSubscriberEndpoint" />
-				<ref bean="deleteSubscriberEndpoint" />
-				<ref bean="findSubscriberEndpoint" />
-				<ref bean="getSubscriberEndpoint" />
-				<ref bean="listSubscribersEndpoint" />
-				<ref bean="updateSubscriberEndpoint" />
-
-				<ref bean="listTrackableLinksEndpoint"/>
-				<ref bean="getTrackableLinkSettingsEndpoint"/>
-				<ref bean="updateTrackableLinkSettingsEndpoint"/>
-				<ref bean="listTargetgroupsEndpoint"/>
-				<ref bean="addMailingImageEndpoint"/>
-			</set>
+			<list>
+				<ref bean="updateMailingContentEndpoint"/>
+			</list>
 		</property>
 	</bean>
-	
 
-	
+    <bean id="recipientsExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.recipient.RecipientsExceptionResolver">
+		<property name="mappedEndpoints">
+			<list>
+				<ref bean="listSubscribersEndpoint"/>
+			</list>
+		</property>
+	</bean>
 </beans>

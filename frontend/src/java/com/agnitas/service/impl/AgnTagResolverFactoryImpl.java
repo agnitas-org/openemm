@@ -29,6 +29,7 @@ import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -134,7 +135,7 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
         }
 
         @Override
-		public String resolve(TagDetails tag) {
+		public String resolve(int companyID, TagDetails tag) {
             initialize(tag);
 
             switch (name) {
@@ -150,13 +151,13 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
 	                return resolveAgnTitle();
 	
 	            case "agnPROFILE":
-	                return resolveAgnProfile();
+	                return resolveAgnProfile(companyID);
 	
 	            case "agnUNSUBSCRIBE":
-	                return resolveAgnUnsubscribe();
+	                return resolveAgnUnsubscribe(companyID);
 	
 	            case "agnFORM":
-	                return resolveAgnForm();
+	                return resolveAgnForm(companyID);
 	                
 				default:
 					return resolveCustomAgnTag(tag);
@@ -221,20 +222,24 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
             }
         }
 
-        private String resolveAgnProfile() {
-            return resolveAgnForm("profile");
+        private String resolveAgnProfile(int companyID) {
+            return resolveAgnForm("profile", companyID);
         }
 
-        private String resolveAgnUnsubscribe() {
-            return resolveAgnForm("unsubscribe");
+        private String resolveAgnUnsubscribe(int companyID) {
+            return resolveAgnForm("unsubscribe", companyID);
         }
 
-        private String resolveAgnForm() {
-            return resolveAgnForm(options.get("name"));
+        private String resolveAgnForm(int companyID) {
+            return resolveAgnForm(options.get("name"), companyID);
         }
 
-        private String resolveAgnForm(String formName) {
-            return getRedirectDomain() + "/form.do?agnCI=" + companyId + "&agnFN=" + formName + "&agnUID=##AGNUID##";
+        private String resolveAgnForm(String formName, int companyID) {
+        	if (configService.getBooleanValue(ConfigValue.UseSpringMvcFormController, companyID)) {
+        		return getRedirectDomain() + "/form.action?agnCI=" + companyId + "&agnFN=" + formName + "&agnUID=##AGNUID##";
+        	} else {
+        		return getRedirectDomain() + "/form.do?agnCI=" + companyId + "&agnFN=" + formName + "&agnUID=##AGNUID##";
+        	}
         }
 
         /**

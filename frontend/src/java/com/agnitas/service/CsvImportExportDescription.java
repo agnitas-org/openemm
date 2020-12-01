@@ -15,7 +15,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -36,6 +38,9 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
+import com.agnitas.json.Json5Reader;
+import com.agnitas.json.JsonObject;
+import com.agnitas.json.JsonReader.JsonToken;
 import com.agnitas.service.ImportError.ImportErrorKey;
 
 public class CsvImportExportDescription {
@@ -56,6 +61,10 @@ public class CsvImportExportDescription {
 	private boolean zipped = false;
     private String zipPassword = null;
 	private boolean autoMapping = false;
+    private String datatype = "CSV";
+    private int referenceImportProcessActionID = 0;
+
+	private String creationDateField = "";
 
 	/**
 	 * If column with name "creation_date" and type "DATE" exists only rows with creation_date >= (export date + dateCreationDaysFrom) will be exported.
@@ -66,16 +75,6 @@ public class CsvImportExportDescription {
 	 * If column with name "creation_date" and type "DATE" exists only rows with creation_date <= (export date + dateCreationDaysTill) will be exported.
 	 */
 	private Integer dateCreationDaysTill;
-
-	/**
-	 * If column with name "change_date" and type "DATE" exists only rows with change_date >= (export date + dateChangeDaysFrom) will be exported.
-	 */
-	private Integer dateChangeDaysFrom;
-
-	/**
-	 * If column with name "change_date" and type "DATE" exists only rows with change_date <= (export date + dateChangeDaysTill) will be exported.
-	 */
-	private Integer dateChangeDaysTill;
 
 	private boolean noHeaders = false;
 	
@@ -209,26 +208,12 @@ public class CsvImportExportDescription {
 		this.dateCreationDaysTill = dateCreationDaysTill;
 	}
 
-	/**
-	 * If column with name "change_date" and type "DATE" exists only rows with change_date >= (export date + dateChangeDaysFrom) will be exported.
-	 */
-	public Integer getDateChangeDaysFrom() {
-		return dateChangeDaysFrom;
+	public String getCreationDateField() {
+		return creationDateField;
 	}
 
-	public void setDateChangeDaysFrom(Integer dateChangeDaysFrom) {
-		this.dateChangeDaysFrom = dateChangeDaysFrom;
-	}
-
-	/**
-	 * If column with name "change_date" and type "DATE" exists only rows with change_date <= (export date + dateChangeDaysTill) will be exported.
-	 */
-	public Integer getDateChangeDaysTill() {
-		return dateChangeDaysTill;
-	}
-
-	public void setDateChangeDaysTill(Integer dateChangeDaysTill) {
-		this.dateChangeDaysTill = dateChangeDaysTill;
+	public void setCreationDateField(String creationDateField) {
+		this.creationDateField = creationDateField;
 	}
 
 	public void setCheckForDuplicates(CheckForDuplicates checkForDuplicates) {
@@ -294,22 +279,57 @@ public class CsvImportExportDescription {
 	public void setAlwaysQuote(boolean alwaysQuote) {
 		this.alwaysQuote = alwaysQuote;
 	}
+	
+	public String getDatatype() {
+		return datatype;
+	}
+
+	public void setDatatype(String datatype) {
+		this.datatype = datatype;
+	}
 
 	// TODO: move to service layer
 	public void prepareColumnMapping(ComReferenceTable table, CaseInsensitiveMap<String, DbColumnType> structure, File importFile) throws Exception {
-		List<String> csvColumns;
-		try (CsvReader readerForAnalyse = new CsvReader(getImportInputStream(importFile), getEncoding(), getDelimiter(), getStringQuote())) {
-			readerForAnalyse.setAlwaysTrim(true);
-			csvColumns = readerForAnalyse.readNextCsvLine();
-		} catch (Exception e) {
-			throw new ImportError(ImportErrorKey.cannotReadImportFile);
+		List<String> importDataColumns;
+		if ("JSON".equalsIgnoreCase(datatype)) {
+			importDataColumns = new ArrayList<>();
+			try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(importFile), getEncoding())) {
+				jsonReader.readNextToken();
+				if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+					throw new Exception("Json data does not contain expected JsonArray");
+				}
+				
+				Set<String> jsonObjectAttributes = new HashSet<>();
+				while (jsonReader.readNextJsonNode()) {
+					Object currentObject = jsonReader.getCurrentObject();
+					if (currentObject == null || !(currentObject instanceof JsonObject)) {
+						throw new Exception("Json data does not contain expected JsonArray of JsonObjects");
+					}
+					jsonObjectAttributes.addAll(((JsonObject) currentObject).keySet());
+				}
+				
+				for (String jsonObjectAttribute : jsonObjectAttributes) {
+					if (StringUtils.isBlank(jsonObjectAttribute)) {
+						throw new Exception("Invalid empty json attribute for import");
+					} else if (!importDataColumns.contains(jsonObjectAttribute)) {
+						importDataColumns.add(jsonObjectAttribute);
+					}
+				}
+			}
+		} else {
+			try (CsvReader readerForAnalyse = new CsvReader(getImportInputStream(importFile), getEncoding(), getDelimiter(), getStringQuote())) {
+				readerForAnalyse.setAlwaysTrim(true);
+				importDataColumns = readerForAnalyse.readNextCsvLine();
+			} catch (Exception e) {
+				throw new ImportError(ImportErrorKey.cannotReadImportFile);
+			}
 		}
 		
-		if (csvColumns == null) {
+		if (importDataColumns == null || importDataColumns.isEmpty()) {
 			throw new ImportError(ImportErrorKey.emptyImportFile);
 		}
 			
-		String duplicateCsvColumn = CsvReader.checkForDuplicateCsvHeader(csvColumns, autoMapping);
+		String duplicateCsvColumn = CsvReader.checkForDuplicateCsvHeader(importDataColumns, autoMapping);
 		if (duplicateCsvColumn != null) {
 			throw new ImportError(ImportErrorKey.csvContainsInvalidColumn, duplicateCsvColumn);
 		}
@@ -319,18 +339,35 @@ public class CsvImportExportDescription {
 		if (autoMapping || CollectionUtils.isEmpty(columnMapping)) {
 			List<ColumnMapping> mappings = new ArrayList<>();
 
-			for (String csvColumn : csvColumns) {
+			for (String csvColumn : importDataColumns) {
 				if (structure.containsKey(csvColumn)) {
 					mappings.add(createMapping(csvColumn, csvColumn.toLowerCase(), csvColumn.equalsIgnoreCase(keyColumn)));
 				} else {
 					throw exceptionCsvInvalidColumn(csvColumn);
 				}
 			}
+			
+			if (checkForDuplicates == CheckForDuplicates.COMPLETE) {
+				// If there is no keycolumn defined, but a duplicates check is configured, all columns are keycolumns
+				// and must be configured so for creating an mandatory index on the db tables to speed up dupliacte check
+				boolean hasKeyColumn = false;
+				for (ColumnMapping mapping : mappings) {
+					if (mapping.isKeyColumn()) {
+						hasKeyColumn = true;
+						break;
+					}
+				}
+				if (!hasKeyColumn) {
+					for (ColumnMapping mapping : mappings) {
+						mapping.setKeyColumn(true);
+					}
+				}
+			}
 
 			columnMapping = mappings;
 		}
 
-		validateColumnMapping(table.isVoucher(), structure, keyColumn, csvColumns);
+		validateColumnMapping(table.isVoucher(), structure, keyColumn, importDataColumns);
 	}
 
 	private InputStream getImportInputStream(File importFile) throws FileNotFoundException {
@@ -349,8 +386,8 @@ public class CsvImportExportDescription {
 					ZipUtilities.decompressFromEncryptedZipFile(importFile, unzipPath, getZipPassword());
 					
 					// Check if there was only one file within the zip file and use it for import
-					String[] filesToImport = unzipPath.list();
-					if (filesToImport.length != 1) {
+					String[] filesToImport = unzipPath.list(); // Return null if no files found
+					if (filesToImport == null || filesToImport.length != 1) {
 						throw new Exception("Invalid number of files included in zip file");
 					}
 					InputStream dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
@@ -431,18 +468,22 @@ public class CsvImportExportDescription {
 	}
 
 	public ColumnMapping getMappingByDbColumn(String dbColumn) {
-		for (ColumnMapping mapping : columnMapping) {
-			if (mapping.getDatabaseColumn().equalsIgnoreCase(dbColumn)) {
-				return mapping;
+		if (columnMapping != null) {
+			for (ColumnMapping mapping : columnMapping) {
+				if (mapping.getDatabaseColumn().equalsIgnoreCase(dbColumn)) {
+					return mapping;
+				}
 			}
 		}
 		return null;
 	}
 
 	public ColumnMapping getMappingByFileColumn(String fileColumn) {
-		for (ColumnMapping mapping : columnMapping) {
-			if (mapping.getFileColumn().equals(fileColumn)) {
-				return mapping;
+		if (columnMapping != null) {
+			for (ColumnMapping mapping : columnMapping) {
+				if (mapping.getFileColumn() != null && mapping.getFileColumn().equals(fileColumn)) {
+					return mapping;
+				}
 			}
 		}
 		return null;
@@ -450,12 +491,22 @@ public class CsvImportExportDescription {
 
 	public List<String> getKeyColumns() {
 		List<String> keyColumns = new ArrayList<>();
-		for (ColumnMapping mapping : columnMapping) {
-			if (mapping.isKeyColumn()) {
-				keyColumns.add(mapping.getDatabaseColumn());
+		if (columnMapping != null) {
+			for (ColumnMapping mapping : columnMapping) {
+				if (mapping.isKeyColumn()) {
+					keyColumns.add(mapping.getDatabaseColumn());
+				}
 			}
 		}
 		return keyColumns;
+	}
+
+	public int getReferenceImportProcessActionID() {
+		return referenceImportProcessActionID;
+	}
+
+	public void setReferenceImportProcessActionID(int referenceImportProcessActionID) {
+		this.referenceImportProcessActionID = referenceImportProcessActionID;
 	}
 
 	@Override
@@ -492,14 +543,18 @@ public class CsvImportExportDescription {
 		}
 		
 		output.append("ColumnMapping: \n");
-		for (ColumnMapping mapping : columnMapping) {
-			output.append("\t" + mapping.getDatabaseColumn() + " = \"" + mapping.getFileColumn() + "\""
-				+ (mapping.isKeyColumn() ? " keycolumn" : "")
-				+ (mapping.isEncrypted() ? " encrypted" : "")
-				+ (mapping.isMandatory() ? " mandatory" : "")
-				+ (StringUtils.isNotEmpty(mapping.getFormat()) ? " Format: \"" + mapping.getFormat() + "\"" : "")
-				+ (StringUtils.isNotEmpty(mapping.getDefaultValue()) ? " Default: \"" + mapping.getDefaultValue() + "\"" : "")
-				+ "\n");
+		if (columnMapping != null) {
+			for (ColumnMapping mapping : columnMapping) {
+				output.append("\t" + mapping.getDatabaseColumn() + " = \"" + mapping.getFileColumn() + "\""
+					+ (mapping.isKeyColumn() ? " keycolumn" : "")
+					+ (mapping.isEncrypted() ? " encrypted" : "")
+					+ (mapping.isMandatory() ? " mandatory" : "")
+					+ (StringUtils.isNotEmpty(mapping.getFormat()) ? " Format: \"" + mapping.getFormat() + "\"" : "")
+					+ (StringUtils.isNotEmpty(mapping.getDefaultValue()) ? " Default: \"" + mapping.getDefaultValue() + "\"" : "")
+					+ "\n");
+			}
+		} else {
+			output.append("\tNo mapping");
 		}
 		
 		return output.toString();

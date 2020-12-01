@@ -10,12 +10,16 @@
 
 package org.agnitas.emm.core.userforms.impl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.agnitas.emm.core.userforms.UserformService;
+import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.exceptions.FormNotFoundException;
+import org.agnitas.util.Tuple;
 
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.userform.bean.UserForm;
@@ -28,11 +32,16 @@ public class UserformServiceImpl implements UserformService {
 	// ------------------------------------------------------------- Business Code
 
 	/** Regular expression for validation of form name. */
-	private static final transient Pattern FORM_NAME_PATTERN = Pattern.compile( "^[a-zA-Z0-9\\-_]+$"); 
-	
+	private static final transient Pattern FORM_NAME_PATTERN = Pattern.compile( "^[a-zA-Z0-9\\-_]+$");
+
 	@Override
 	public final boolean isFormNameInUse(String formName, int formId, int companyId) {
 		return userFormDao.isFormNameInUse(formName, formId, companyId);
+	}
+
+	@Override
+	public boolean isFormNameInUse(String formName, int companyId) {
+		return isFormNameInUse(formName, 0, companyId);
 	}
 
 	@Override
@@ -52,8 +61,17 @@ public class UserformServiceImpl implements UserformService {
 
 		return form;
 	}
-	
-	private final UserForm doGetUserForm(final int companyID, final String formName) throws FormNotFoundException {
+
+    @Override
+    public List<Tuple<Integer, String>> getUserFormNamesByActionID(@VelocityCheck int companyID, int actionID) {
+		if (companyID > 0 && actionID > 0) {
+			return userFormDao.getUserFormNamesByActionID(companyID, actionID);
+		}
+
+		return new ArrayList<>();
+    }
+
+    private final UserForm doGetUserForm(final int companyID, final String formName) throws FormNotFoundException {
 		try {
 			return this.userFormDao.getUserFormByName(formName, companyID);
 		}catch(final Exception e) {
@@ -75,5 +93,4 @@ public class UserformServiceImpl implements UserformService {
 	public final void setUserFormDao(final UserFormDao dao) {
 		this.userFormDao = Objects.requireNonNull(dao, "User form DAO cannot be null");
 	}
-
 }

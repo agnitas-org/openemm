@@ -12,33 +12,34 @@ package org.agnitas.emm.springws.endpoint.trackablelink;
 
 import java.util.List;
 
-import javax.annotation.Resource;
-
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.GetTrackableLinkSettingsRequest;
 import org.agnitas.emm.springws.jaxb.GetTrackableLinkSettingsResponse;
 import org.agnitas.emm.springws.jaxb.GetTrackableLinkSettingsResponse.LinkExtensions.LinkExtension;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.util.AgnUtils;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.TrackableLinkSettings;
 import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 
-public class GetTrackableLinkSettingsEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class GetTrackableLinkSettingsEndpoint extends BaseEndpoint {
 
-    @Resource
     private ComTrackableLinkService trackableLinkService;
 
-    @Resource
-    private ObjectFactory objectFactory;
+    public GetTrackableLinkSettingsEndpoint(ComTrackableLinkService trackableLinkService) {
+        this.trackableLinkService = trackableLinkService;
+    }
 
-    @Override
-    protected Object invokeInternal(Object req) throws Exception {
-        GetTrackableLinkSettingsRequest request = (GetTrackableLinkSettingsRequest) req;
-        GetTrackableLinkSettingsResponse response = objectFactory.createGetTrackableLinkSettingsResponse();
+    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetTrackableLinkSettingsRequest")
+    public @ResponsePayload GetTrackableLinkSettingsResponse getTrackableLinkSettings(@RequestPayload GetTrackableLinkSettingsRequest request) throws Exception {
+        GetTrackableLinkSettingsResponse response = new GetTrackableLinkSettingsResponse();
 
         int companyId = Utils.getUserCompany();
         int urlId = request.getUrlID();
@@ -56,7 +57,6 @@ public class GetTrackableLinkSettingsEndpoint extends AbstractMarshallingPayload
         response.setActionID(trackableLink.getActionID());
         response.setShortname(AgnUtils.getStringIfStringIsNull(trackableLink.getShortname()));
         response.setDeepTracking(trackableLink.getDeepTracking());
-        response.setRelevance(trackableLink.getRelevance());
         response.setAltText(AgnUtils.getStringIfStringIsNull(trackableLink.getAltText()));
         response.setOriginalUrl(AgnUtils.getStringIfStringIsNull(trackableLink.getOriginalUrl()));
         response.setIsAdminLink(trackableLink.isAdminLink());
@@ -66,11 +66,11 @@ public class GetTrackableLinkSettingsEndpoint extends AbstractMarshallingPayload
     }
 
     private void setLinkExtensionsToResponse(GetTrackableLinkSettingsResponse response, TrackableLinkSettings trackableLinkSettings) {
-        GetTrackableLinkSettingsResponse.LinkExtensions responseLinkExtensions = objectFactory.createGetTrackableLinkSettingsResponseLinkExtensions();
+        GetTrackableLinkSettingsResponse.LinkExtensions responseLinkExtensions = new GetTrackableLinkSettingsResponse.LinkExtensions();
         List<LinkExtension> responseLinkExtensionsList = responseLinkExtensions.getLinkExtension();
 
         for (LinkProperty linkProperty : trackableLinkSettings.getLinkProperties()) {
-            LinkExtension responseLinkExtension = objectFactory.createGetTrackableLinkSettingsResponseLinkExtensionsLinkExtension();
+            LinkExtension responseLinkExtension = new GetTrackableLinkSettingsResponse.LinkExtensions.LinkExtension();
 
             responseLinkExtension.setName(AgnUtils.getStringIfStringIsNull(linkProperty.getPropertyName()));
             responseLinkExtension.setValue(AgnUtils.getStringIfStringIsNull(linkProperty.getPropertyValue()));

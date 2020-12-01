@@ -10,6 +10,9 @@
 
 package com.agnitas.emm.core.company.converter;
 
+import java.util.Objects;
+import java.util.Optional;
+
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.BooleanUtils;
@@ -21,17 +24,21 @@ import org.springframework.stereotype.Component;
 import com.agnitas.beans.ComCompany;
 import com.agnitas.emm.core.company.dto.CompanyInfoDto;
 import com.agnitas.emm.core.company.dto.CompanySettingsDto;
+import com.agnitas.emm.core.company.enums.LoginlockSettings;
 import com.agnitas.emm.core.company.form.CompanyViewForm;
+import com.agnitas.emm.core.company.service.ComCompanyService;
 
 @Component
 public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompany, CompanyViewForm> {
     @SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(ComCompanyToCompanyViewFormConverter.class);
 
-    private ConfigService configService;
+    private final ConfigService configService;
+    private final ComCompanyService companyService;
 
-    public ComCompanyToCompanyViewFormConverter(ConfigService configService) {
+    public ComCompanyToCompanyViewFormConverter(final ConfigService configService, final ComCompanyService companyService) {
         this.configService = configService;
+        this.companyService = Objects.requireNonNull(companyService, "Company service is null");
     }
 
     @Override
@@ -81,8 +88,17 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompan
         settingsDto.setHasTwoFactorAuthentication(configService.getBooleanValue(ConfigValue.HostAuthentication, comCompany.getId()));
         
         // Settings for login tracking
-        settingsDto.setMaxFailedLoginAttempts(configService.getIntegerValue(ConfigValue.LoginTracking.WebuiMaxFailedAttempts, comCompany.getId()));
-        settingsDto.setBlockIpTime(configService.getIntegerValue(ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, comCompany.getId()));
+        final Optional<LoginlockSettings> settingsOptional = LoginlockSettings.fromSettings(
+        		configService.getIntegerValue(ConfigValue.LoginTracking.WebuiMaxFailedAttempts, comCompany.getId()), 
+        		configService.getIntegerValue(ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, comCompany.getId()) / 60);
+        settingsDto.setLoginlockSettingsName(settingsOptional.isPresent() ? settingsOptional.get().getName() : "UNDEFINED");
+        
+        // Password policy
+        settingsDto.setPasswordPolicyName(this.companyService.getPasswordPolicy(comCompany.getId()).getPolicyName());
+        settingsDto.setPasswordExpireDays(this.configService.getIntegerValue(ConfigValue.UserPasswordExpireDays, comCompany.getId()));
+        
+        // 2FA cookie
+        settingsDto.setHostauthCookieExpireDays(this.configService.getIntegerValue(ConfigValue.HostAuthenticationHostIdCookieExpireDays, comCompany.getId()));
         
         return settingsDto;
     }

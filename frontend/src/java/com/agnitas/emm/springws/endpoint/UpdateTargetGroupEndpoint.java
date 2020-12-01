@@ -10,35 +10,37 @@
 
 package com.agnitas.emm.springws.endpoint;
 
-import javax.annotation.Resource;
-
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.beans.ComTarget;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException;
-import com.agnitas.emm.springws.jaxb.ObjectFactory;
 import com.agnitas.emm.springws.jaxb.UpdateTargetGroupRequest;
+import com.agnitas.emm.springws.jaxb.UpdateTargetGroupResponse;
 
-public class UpdateTargetGroupEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class UpdateTargetGroupEndpoint extends BaseEndpoint {
 
-    private ObjectFactory objectFactory;
-
-    @Resource
     private ComTargetService targetService;
 
-    @Override
-    protected Object invokeInternal(Object requestAsObject) throws Exception {
-        UpdateTargetGroupRequest request = (UpdateTargetGroupRequest) requestAsObject;
+    public UpdateTargetGroupEndpoint(ComTargetService targetService) {
+        this.targetService = targetService;
+    }
+
+    @PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "UpdateTargetGroupRequest")
+    public @ResponsePayload UpdateTargetGroupResponse updateTargetGroup(@RequestPayload UpdateTargetGroupRequest request) throws Exception {
         int companyId = Utils.getUserCompany();
         int targetId = request.getTargetID();
         ComTarget target = targetService.getTargetGroup(targetId, companyId);
         fillUpdatedFields(request, target);
         targetService.saveTarget(target);
-        return objectFactory.createUpdateTargetGroupResponse();
+        return new UpdateTargetGroupResponse();
     }
 
     private void fillUpdatedFields(UpdateTargetGroupRequest request, ComTarget existingTarget) {
@@ -63,10 +65,5 @@ public class UpdateTargetGroupEndpoint extends AbstractMarshallingPayloadEndpoin
                 throw new WebServiceInvalidFieldsException("Empty fields are not allowed.");
             }
         }
-    }
-
-    @Required
-    public void setObjectFactory(ObjectFactory objectFactory) {
-        this.objectFactory = objectFactory;
     }
 }

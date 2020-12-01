@@ -10,38 +10,36 @@
 
 package org.agnitas.emm.springws.endpoint.recipient;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.emm.springws.jaxb.UpdateSubscriberRequest;
 import org.agnitas.emm.springws.jaxb.UpdateSubscriberResponse;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class UpdateSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class UpdateSubscriberEndpoint extends BaseEndpoint {
 
-	@Resource
 	private RecipientService recipientService;
-	@Resource
-	private ObjectFactory objectFactory;
-	
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		try {
-			UpdateSubscriberRequest request = (UpdateSubscriberRequest) arg0;
-			UpdateSubscriberResponse response = objectFactory.createUpdateSubscriberResponse();
-			
-			RecipientModel model = parseModel(request);
-			
-			String username = Utils.getUserName();
-			
-			response.setValue(recipientService.updateSubscriber(model, username));
-			return response;
-		} catch (Exception e) {
-			throw e;
-		}
+
+	public UpdateSubscriberEndpoint(RecipientService recipientService) {
+		this.recipientService = recipientService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateSubscriberRequest")
+	public @ResponsePayload UpdateSubscriberResponse updateSubscriber(@RequestPayload UpdateSubscriberRequest request) throws Exception {
+		UpdateSubscriberResponse response = new UpdateSubscriberResponse();
+
+		RecipientModel model = parseModel(request);
+
+		String username = Utils.getUserName();
+
+		response.setValue(recipientService.updateSubscriber(model, username));
+		return response;
 	}
 	
 	static RecipientModel parseModel(UpdateSubscriberRequest request) {
@@ -51,5 +49,4 @@ public class UpdateSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint
 		model.setParameters(Utils.toCaseInsensitiveMap(request.getParameters(), true));
 		return model;
 	}
-
 }

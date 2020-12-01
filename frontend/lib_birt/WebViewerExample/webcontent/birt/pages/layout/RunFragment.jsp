@@ -34,6 +34,12 @@
 	baseHref += request.getContextPath( ) + fragment.getJSPRootPath( );
 %>
 
+<%
+	if("true".equals(request.getParameter("darkmode"))) {
+		pageContext.setAttribute("darkThemeClass", "dark-theme");
+	}
+%>
+
 <%-----------------------------------------------------------------------------
 	Viewer run fragment
 -----------------------------------------------------------------------------%>
@@ -124,7 +130,7 @@
 		
 	</HEAD>
 	
-	<BODY CLASS="BirtViewer_Body"  ONLOAD="javascript:init( );" SCROLL="no" LEFTMARGIN='0px' 
+	<BODY CLASS="BirtViewer_Body ${darkThemeClass}"  ONLOAD="javascript:init( );" SCROLL="no" LEFTMARGIN='0px'
 		STYLE='overflow:hidden; direction: <%= attributeBean.isRtl()?"rtl":"ltr" %>'>
 		<!-- Header section -->
 		<TABLE ID='layout' CELLSPACING='0' CELLPADDING='0' STYLE='width:100%;height:100%'>

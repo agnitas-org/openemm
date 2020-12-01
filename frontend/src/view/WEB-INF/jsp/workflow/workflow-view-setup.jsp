@@ -21,7 +21,7 @@
 <c:set var="STATUS_TESTED" 		value="<%= WorkflowStatus.STATUS_TESTED %>" 	scope="page" />
 
 <emm:CheckLogon/>
-<emm:Permission token="workflow.edit"/>
+<emm:Permission token="workflow.show"/>
 
 <c:set var="agnNavigationKey" 		value="none" 									scope="request" />
 <c:set var="agnNavHrefAppend" 		value="&workflowId=${workflowForm.workflowId}" 	scope="request" />
@@ -89,7 +89,7 @@
             <emm:instantiate var="options" type="java.util.LinkedHashMap"  scope="request">
                 <c:set target="${itemAction}" property="dropDownItems" value="${options}"/>
 
-                <emm:ShowByPermission token="workflow.edit">
+                <emm:ShowByPermission token="workflow.change">
                     <%--Copy button --%>
                     <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
                         <c:set target="${options}" property="3" value="${option}"/>
@@ -102,34 +102,35 @@
                         </c:set>
                     </emm:instantiate>
 
+
+	                <%--Start test button --%>
+	                <c:if test="${workflowToggleTestingButtonEnabled}">
+	                    <c:choose>
+	                        <c:when test="${workflowToggleTestingButtonState}">
+	                            <c:set var="buttonText">
+	                                <mvc:message code="button.workflow.testrun.start"/>
+	                            </c:set>
+	                        </c:when>
+	                        <c:otherwise>
+	                            <c:set var="buttonText">
+	                                <mvc:message code="button.workflow.testrun.stop"/>
+	                            </c:set>
+	                        </c:otherwise>
+	                    </c:choose>
+	                    <c:set var="helperText">
+	                        <mvc:message code="button.workflow.testrun.help"/>
+	                    </c:set>
+	
+	                    <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
+	                        <c:set target="${options}" property="0" value="${option}"/>
+	                        <c:set target="${option}" property="url" value=""/>
+	                        <c:set target="${option}" property="extraAttributes" value="data-action='workflowTestBtn'  data-tooltip-help='${buttonText}' data-tooltip-help-text='${helperText}' "/>
+	                        <c:set target="${option}" property="icon" value="icon-fa5-project-diagram icon-fa5"/>
+	                        <c:set target="${option}" property="name">${buttonText}</c:set>
+	                    </emm:instantiate>
+	                </c:if>
+                
                 </emm:ShowByPermission>
-
-                <%--Start test button --%>
-                <c:if test="${workflowToggleTestingButtonEnabled}">
-                    <c:choose>
-                        <c:when test="${workflowToggleTestingButtonState}">
-                            <c:set var="buttonText">
-                                <mvc:message code="button.workflow.testrun.start"/>
-                            </c:set>
-                        </c:when>
-                        <c:otherwise>
-                            <c:set var="buttonText">
-                                <mvc:message code="button.workflow.testrun.stop"/>
-                            </c:set>
-                        </c:otherwise>
-                    </c:choose>
-                    <c:set var="helperText">
-                        <mvc:message code="button.workflow.testrun.help"/>
-                    </c:set>
-
-                    <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
-                        <c:set target="${options}" property="0" value="${option}"/>
-                        <c:set target="${option}" property="url" value=""/>
-                        <c:set target="${option}" property="extraAttributes" value="data-action='workflowTestBtn'  data-tooltip-help='${buttonText}' data-tooltip-help-text='${helperText}' "/>
-                        <c:set target="${option}" property="icon" value="icon-fa5-project-diagram icon-fa5"/>
-                        <c:set target="${option}" property="name">${buttonText}</c:set>
-                    </emm:instantiate>
-                </c:if>
 
                 <%-- Fade in Statistics button --%>
                 <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
@@ -143,20 +144,18 @@
                 </emm:instantiate>
 
                 <%-- Auto Opt Total Statistics button --%>
-                <emm:ShowByPermission token="temp.beta">
-                    <c:if test="${isTotalStatisticAvailable}">
-                        <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
-                            <c:set target="${options}" property="2" value="${option}"/>
-                            <c:set target="${option}" property="url">
-                                <c:url value="/workflow/${workflowForm.workflowId}/getTotalStatistics.action"/>
-                            </c:set>
-                            <c:set target="${option}" property="icon" value="icon-fa5 icon-fa5-chart-bar far"/>
-                            <c:set target="${option}" property="name">
-                                <mvc:message code="statistic.total"/>
-                            </c:set>
-                        </emm:instantiate>
-                    </c:if>
-                </emm:ShowByPermission>
+                <c:if test="${isTotalStatisticAvailable}">
+                    <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
+                        <c:set target="${options}" property="2" value="${option}"/>
+                        <c:set target="${option}" property="url">
+                            <c:url value="/workflow/${workflowForm.workflowId}/getTotalStatistics.action"/>
+                        </c:set>
+                        <c:set target="${option}" property="icon" value="icon-fa5 icon-fa5-chart-bar far"/>
+                        <c:set target="${option}" property="name">
+                            <mvc:message code="statistic.total"/>
+                        </c:set>
+                    </emm:instantiate>
+                </c:if>
 
                 <emm:ShowByPermission token="workflow.delete">
                     <%--Delete button --%>
@@ -176,7 +175,7 @@
         </emm:instantiate>
     </c:if>
 
-    <emm:ShowByPermission token="workflow.edit">
+    <emm:ShowByPermission token="workflow.change">
         <emm:instantiate var="itemAction" type="java.util.LinkedHashMap"  scope="request">
             <c:set target="${itemActionsSettings}" property="3" value="${itemAction}"/>
 

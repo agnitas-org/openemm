@@ -15,6 +15,8 @@ import java.util.List;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+import com.agnitas.beans.ComAdmin;
+
 public interface AdminGroupService {
-    List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(@VelocityCheck int companyId);
+    List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(@VelocityCheck int companyId, ComAdmin admin);
 }

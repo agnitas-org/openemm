@@ -12,10 +12,9 @@ package com.agnitas.emm.core.hashtag.tags;
 
 import java.util.Objects;
 
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.emm.core.hashtag.HashTag;
+import com.agnitas.emm.core.hashtag.AbstractColonHashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.exception.HashTagException;
 
@@ -23,21 +22,17 @@ import com.agnitas.emm.core.hashtag.exception.HashTagException;
  * Hash tag implementation for accessing profile fields and reference tables
  * with successive URL-encoded of content.
  */
-public class ComProfileFieldHashTag implements HashTag {
-	/** The logger. */
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(ComProfileFieldHashTag.class);
+public class ComProfileFieldHashTag extends AbstractColonHashTag {
 	
 	private ProfileFieldHashTagSupport support;
-
+	
 	@Override
-	public boolean canHandle(HashTagContext context, String tagString) {
-		// Only handle tag strings, that do not contain a "command" part (like "MD5:xxx")
-		return !tagString.contains(":");
+	public boolean isSupportedTag(String tagName, boolean hasColon) {
+		return !hasColon;
 	}
 
 	@Override
-	public String handle(final HashTagContext context, final String tagString) throws HashTagException {
+	public String handleInternal(final HashTagContext context, final String tagString, final String appendix) throws HashTagException {
 		return support.evaluateExpression(context, tagString);
 	}
 	

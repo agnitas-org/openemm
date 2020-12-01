@@ -16,12 +16,13 @@ import java.util.Objects;
 import com.agnitas.json.serializers.MessageSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.agnitas.service.UserMessageException;
+import org.apache.struts.action.ActionMessage;
 
 @JsonSerialize(using = MessageSerializer.class)
 public class Message {
-    private String code;
-    private boolean resolvable;
-    private Object[] arguments;
+    private final String code;
+    private final boolean resolvable;
+    private final Object[] arguments;
 
     public static Message of(String code, Object... arguments) {
         return new Message(code, arguments);
@@ -89,4 +90,11 @@ public class Message {
         return code.hashCode();
     }
 
+    public ActionMessage toStrutsMessage() {
+        if (resolvable) {
+            return new ActionMessage(code, arguments);
+        } else {
+            return new ActionMessage(code, false);
+        }
+    }
 }

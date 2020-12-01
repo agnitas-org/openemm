@@ -12,38 +12,36 @@ package org.agnitas.emm.springws.endpoint.mailinglist;
 
 import org.agnitas.emm.core.mailinglist.service.MailinglistModel;
 import org.agnitas.emm.core.mailinglist.service.MailinglistService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddMailinglistRequest;
 import org.agnitas.emm.springws.jaxb.AddMailinglistResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class AddMailinglistEndpoint extends AbstractMarshallingPayloadEndpoint {
-
+@Endpoint
+public class AddMailinglistEndpoint extends BaseEndpoint {
 
 	private MailinglistService mailinglistService;
 
-	private ObjectFactory objectFactory;
+	@Autowired
+	public AddMailinglistEndpoint(@Qualifier("WS_mailinglistService") MailinglistService mailinglistService) {
+		this.mailinglistService = mailinglistService;
+	}
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		AddMailinglistRequest request = (AddMailinglistRequest) arg0;
-
+    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddMailinglistRequest")
+    public @ResponsePayload AddMailinglistResponse addMailinglist(@RequestPayload AddMailinglistRequest request) throws Exception {
 		MailinglistModel model = new MailinglistModel();
 		model.setCompanyId(Utils.getUserCompany());
 		model.setShortname(request.getShortname());
 		model.setDescription(request.getDescription());
 
-		AddMailinglistResponse response = objectFactory.createAddMailinglistResponse();
+		AddMailinglistResponse response = new AddMailinglistResponse();
 		response.setMailinglistID(mailinglistService.addMailinglist(model));
 		return response;
-	}
-
-	public void setMailinglistService(MailinglistService service) {
-		this.mailinglistService = service;
-	}
-	
-	public void setObjectFactory(ObjectFactory factory) {
-		this.objectFactory = factory;
 	}
 }

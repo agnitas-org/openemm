@@ -17,19 +17,18 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.beans.impl.ExportPredefImpl;
 import org.agnitas.dao.ExportPredefDao;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
 
 public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao {
 	private static final transient Logger logger = Logger.getLogger(ExportPredefDaoImpl.class);
@@ -184,54 +183,77 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 
 	@Override
 	public List<ExportPredef> getAllByCompany(@VelocityCheck int companyId) {
-		return select(logger, "SELECT * FROM export_predef_tbl WHERE deleted = 0 AND company_id = ?", new ExportPredefRowMapper(isOracleDB()), companyId);
+		return getAllByCompany(companyId, null, 0);
 	}
 
 	@Override
-	public List<ExportPredef> getAllByCompany(@VelocityCheck int companyId, Collection<Integer> disabledMailingListIds) {
-		if (CollectionUtils.isEmpty(disabledMailingListIds)) {
-			return getAllByCompany(companyId);
+	public List<ExportPredef> getAllByCompany(@VelocityCheck int companyId, final Collection<Integer> disabledMailingListIds,
+			final int targetId) {
+		final List<Object> params = new ArrayList<>();
+		String sql = "SELECT * FROM export_predef_tbl WHERE deleted = 0 AND company_id = ?";
+		params.add(companyId);
+		if(targetId > 0) {
+			sql += " AND target_id = ? ";
+			params.add(targetId);
+		}
+		if(CollectionUtils.isNotEmpty(disabledMailingListIds)) {
+			sql += " AND mailinglist_id NOT IN (" + StringUtils.join(disabledMailingListIds, ',') + ") ";
 		}
 
-		String sqlGetAll = "SELECT * FROM export_predef_tbl " +
-				"WHERE deleted = 0 AND company_id = ? " +
-				"AND mailinglist_id NOT IN (" + StringUtils.join(disabledMailingListIds, ',') + ")";
 
-		List<ExportPredef> profiles = new ArrayList<>();
-		RowMapper<ExportPredef> rowMapper = new ExportPredefRowMapper(isOracleDB());
+		final List<ExportPredef> profiles = new ArrayList<>();
+		final RowMapper<ExportPredef> rowMapper = new ExportPredefRowMapper(isOracleDB());
+		final RowCallbackHandler rowCallbackHandler;
 
-		query(logger, sqlGetAll, rs -> {
-			if (validateMailingListIds(rs.getString("mailinglists"), disabledMailingListIds)) {
-				profiles.add(rowMapper.mapRow(rs, 0));
-			}
-		}, companyId);
+		if(CollectionUtils.isNotEmpty(disabledMailingListIds)) {
+			rowCallbackHandler = rs -> {
+				if (validateMailingListIds(rs.getString("mailinglists"), disabledMailingListIds)) {
+					profiles.add(rowMapper.mapRow(rs, 0));
+				}
+			};
+		} else {
+			rowCallbackHandler = rs -> profiles.add(rowMapper.mapRow(rs, 0));
+		}
+
+		query(logger, sql, rowCallbackHandler, params.toArray());
 
 		return profiles;
 	}
 
 	@Override
 	public List<Integer> getAllIdsByCompany(@VelocityCheck int companyId) {
-		String sqlGetIds = "SELECT export_predef_id FROM export_predef_tbl WHERE deleted = 0 AND company_id = ?";
-		return select(logger, sqlGetIds, new IntegerRowMapper(), companyId);
+		return getAllIdsByCompany(companyId, null, 0);
 	}
 
 	@Override
-	public List<Integer> getAllIdsByCompany(@VelocityCheck int companyId, Collection<Integer> disabledMailingListIds) {
-		if (CollectionUtils.isEmpty(disabledMailingListIds)) {
-			return getAllIdsByCompany(companyId);
+	public List<Integer> getAllIdsByCompany(@VelocityCheck int companyId, Collection<Integer> disabledMailingListIds,
+			final int targetId) {
+		final List<Object> params = new ArrayList<>();
+		String sqlGetIds = "SELECT export_predef_id, mailinglists FROM export_predef_tbl " +
+				"WHERE deleted = 0 AND company_id = ? ";
+		params.add(companyId);
+
+		if(targetId > 0) {
+			sqlGetIds += " AND target_id = ? ";
+			params.add(targetId);
+		}
+		if(CollectionUtils.isNotEmpty(disabledMailingListIds)) {
+			sqlGetIds += " AND mailinglist_id NOT IN (" + StringUtils.join(disabledMailingListIds, ',') + ") ";
 		}
 
-		String sqlGetIds = "SELECT export_predef_id, mailinglists FROM export_predef_tbl " +
-				"WHERE deleted = 0 AND company_id = ? " +
-				"AND mailinglist_id NOT IN (" + StringUtils.join(disabledMailingListIds, ',') + ")";
+		final List<Integer> ids = new ArrayList<>();
+		final RowCallbackHandler rowCallbackHandler;
+		if(CollectionUtils.isNotEmpty(disabledMailingListIds)) {
+			rowCallbackHandler = rs -> {
+				if (validateMailingListIds(rs.getString("mailinglists"), disabledMailingListIds)) {
+					ids.add(rs.getInt("export_predef_id"));
+				}
+			};
+		} else {
+			rowCallbackHandler = rs -> ids.add(rs.getInt("export_predef_id"));
+		}
 
-		List<Integer> ids = new ArrayList<>();
-
-		query(logger, sqlGetIds, rs -> {
-			if (validateMailingListIds(rs.getString("mailinglists"), disabledMailingListIds)) {
-				ids.add(rs.getInt("export_predef_id"));
-			}
-		}, companyId);
+		query(logger, sqlGetIds, rowCallbackHandler, params.toArray());
 
 		return ids;
 	}

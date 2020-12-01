@@ -45,6 +45,7 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
@@ -91,11 +92,6 @@ public abstract class BaseDaoImpl {
 	 */
 	private static String dbVendor = null;
 	
-	/**
-	 * Cache variable for the JdbcTemplate, so it must not be recreated everytime
-	 */
-	private JdbcTemplate jdbcTemplate = null;
-	
 	protected JavaMailService javaMailService;
 	
 	/**
@@ -139,16 +135,7 @@ public abstract class BaseDaoImpl {
 	 * @return the cached JdbcTemplate used by this object
 	 */
 	protected final JdbcTemplate getJdbcTemplate() {
-		/*
-		 * Keep this method final to avoid problems with
-		 * overriding in subclasses!
-		 */
-
-		if (jdbcTemplate == null) {
-			jdbcTemplate = new JdbcTemplate(getDataSource());
-		}
-		
-		return jdbcTemplate;
+		return new JdbcTemplate(getDataSource());
 	}
 	
 	/**
@@ -574,6 +561,13 @@ public abstract class BaseDaoImpl {
 	 */
 	protected int update(Logger logger, String statement, Object... parameter) {
 		try {
+			if (parameter != null) {
+				for (Object parameterObject : parameter) {
+					if (parameterObject != null && parameterObject.getClass().isArray()) {
+						throw new RuntimeException("Invalid usage of BaseDaoImpl 'update' method for array parameter. Use 'updateBlob' method instead.");
+					}
+				}
+			}
 			validateStatement(statement);
 			logSqlStatement(logger, statement, parameter);
 			int touchedLines = getJdbcTemplate().update(statement, parameter);
@@ -602,6 +596,61 @@ public abstract class BaseDaoImpl {
 			validateStatement(statement);
 			logSqlStatement(logger, statement);
 			getJdbcTemplate().execute(statement);
+		} catch (DataAccessException e) {
+			logSqlError(e, logger, statement);
+			throw e;
+		} catch (RuntimeException e) {
+			logSqlError(e, logger, statement);
+			throw e;
+		}
+	}
+	
+	/**
+	 * Execute DDL statements with retry on "busy resource",
+	 * 
+	 * @param logger
+	 * @param timeoutSeconds (0 = EMM System default)
+	 * @param maxNumberOfAttempts
+	 * @param waitTimeSeconds
+	 * @param statement
+	 */
+	protected void executeWithRetry(Logger logger, int timeoutSeconds, int maxNumberOfAttempts, int waitTimeSeconds, String statement) {
+		try {
+			validateStatement(statement);
+			logSqlStatement(logger, statement);
+			JdbcTemplate jdbcTemplateWithTimeout = new JdbcTemplate(getDataSource());
+			int defaultTimeout = jdbcTemplateWithTimeout.getQueryTimeout();
+			
+			int tryCount = 0;
+			while (tryCount < maxNumberOfAttempts) {
+				try {
+					tryCount++;
+					jdbcTemplateWithTimeout.setQueryTimeout(timeoutSeconds);
+					jdbcTemplateWithTimeout.execute(statement);
+					return;
+				} catch(QueryTimeoutException qe) {
+					if (tryCount < maxNumberOfAttempts) {
+						logger.warn("Execute statement reached timeout of " + timeoutSeconds + " seconds. Attempt " + tryCount + " of maximum " + maxNumberOfAttempts + ".\n" + statement);
+					} else {
+						String errorText = "Execute statement reached final timeout of " + timeoutSeconds + " seconds after " + tryCount + " attempts.\n" + statement;
+						logger.error(errorText);
+						if (javaMailService != null) {
+							javaMailService.sendExceptionMail("Execute statement reached final timeout of " + timeoutSeconds + " seconds after " + tryCount + " attempts.\nSQL: " + statement, new Exception());
+						} else {
+							logger.error("Missing javaMailService. So no erroremail was sent.");
+						}
+						throw qe;
+					}
+				} finally {
+					jdbcTemplateWithTimeout.setQueryTimeout(defaultTimeout);
+				}
+				
+				try {
+					Thread.sleep(waitTimeSeconds * 1000);
+				} catch (InterruptedException e) {
+					// Do nothing, just continue
+				}
+			}
 		} catch (DataAccessException e) {
 			logSqlError(e, logger, statement);
 			throw e;
@@ -1057,7 +1106,7 @@ public abstract class BaseDaoImpl {
 			if (isOracleDB()) {
 				sqlCheckIndices = "SELECT COUNT(*) FROM user_indexes WHERE LOWER(index_name) IN ('" + StringUtils.join(indicesToCheck, "','") + "')";
 			} else {
-				sqlCheckIndices = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE LOWER(index_name) IN ('" + StringUtils.join(indicesToCheck, "','") + "')";
+				sqlCheckIndices = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE LOWER(index_name) IN ('" + StringUtils.join(indicesToCheck, "','") + "') AND table_schema = (SELECT DATABASE())";
 			}
 
 			int existingIndicesCount = selectInt(logger, sqlCheckIndices);
@@ -1131,7 +1180,7 @@ public abstract class BaseDaoImpl {
 		return MYSQL_MAXPACKETSIZE;
 	}
 
-	private void validateStatement(String statement) {
+	protected void validateStatement(String statement) {
 		if (StringUtils.isBlank(statement)) {
 			throw new IllegalArgumentException("SQL statement is missing, empty or blank");
 		}

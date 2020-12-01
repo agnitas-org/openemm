@@ -1,3 +1,8 @@
+
+@mixin border-image($color) {
+  border-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 10px, $color 10px, $color 100%) 1 100%;
+}
+
 .query-builder {
 
   dd {
@@ -141,7 +146,7 @@
 
     // fix alignment
     margin-bottom: -10px;
-    border-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 10px, #DDD 10px, #DDD 100%) 1 100%;
+    @include border-image(#DDD);
   }
 
   // Flex value children
@@ -207,6 +212,56 @@
         display: block;
         margin: 10px 0;
       }
+    }
+  }
+
+}
+
+body.dark-theme .query-builder {
+  .rules-group-container {
+    background-color: $c-dt-qb-background;
+    @include box-shadow(inset $shadow-hardest);
+
+    .rules-group-container {
+      background-color: darken($c-dt-qb-background, 3%);
+    }
+  }
+
+  .rule-container {
+    background-color: $c-dt-qb-rule-container-background;
+
+    .rule-value-container {
+      border-color: $c-dt-qb-border;
+      @include border-image($c-dt-qb-border);
+    }
+  }
+
+  .group-conditions .btn-xs {
+    background-color: $c-dt-btn-secondary;
+
+    &:hover,
+    &:focus,
+    &.active {
+      background-color: $c-dt-btn-primary;
+    }
+
+    &:active {
+      background-color: darken($c-dt-btn-primary, 5%);
+    }
+  }
+
+  .qb-input-label {
+    color: $c-dt-qb-secondary-text;
+
+    .text {
+      color: $c-dt-qb-secondary-text;
+    }
+  }
+
+  @media screen and (max-width: $screen-sm-min) {
+    .rule-container .rule-value-container{
+      border: 0;
+      border-top: 1px solid $c-dt-qb-border;
     }
   }
 

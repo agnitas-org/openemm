@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
@@ -33,9 +34,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper;
@@ -43,7 +42,9 @@ import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLeve
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
+import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
+import com.agnitas.util.LinkUtils;
 
 /**
  * redirect servlet for links within a user formula
@@ -56,7 +57,7 @@ public class ComRdirUserForm extends HttpServlet {
 	// Dependency Injection
 
 	private ConfigService configService;
-	private UserFormDao userFormDao;
+	private FormTrackableLinkDao formTrackableLinkDao;
 	private ExtensibleUIDService extensibleUIDService;
 	private ComRecipientDao comRecipientDao;
 	private ComDeviceService comDeviceService;
@@ -76,16 +77,16 @@ public class ComRdirUserForm extends HttpServlet {
 		return configService;
 	}
 
-	public void setUserFormDao(UserFormDao userFormDao) {
-		this.userFormDao = userFormDao;
+	public void setFormTrackableLinkDao(FormTrackableLinkDao formTrackableLinkDao) {
+		this.formTrackableLinkDao = formTrackableLinkDao;
 	}
 
-	private UserFormDao getUserFormDao() {
-		if (userFormDao == null) {
+	private FormTrackableLinkDao getUserFormDao() {
+		if (formTrackableLinkDao == null) {
 			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
-			userFormDao = (UserFormDao) applicationContext.getBean("UserFormDao");
+			formTrackableLinkDao = (FormTrackableLinkDao) applicationContext.getBean("UserFormDao");
 		}
-		return userFormDao;
+		return formTrackableLinkDao;
 	}
 	
 	public void setExtensibleUIDService(ExtensibleUIDService extensibleUIDService) {
@@ -185,12 +186,17 @@ public class ComRdirUserForm extends HttpServlet {
 			try {
 				uid = getExtensibleUIDService().parse(paramUid);
 			} catch (DeprecatedUIDVersionException e) {
-				logger.warn("deprecated UID version: " + paramUid);
-				logger.debug("deprecated UID version", e);
+				if(logger.isInfoEnabled()) {
+					logger.info("deprecated UID version: " + paramUid);
+				}
 			} catch (UIDParseException e) {
-				logger.error("error parsing UID: " + paramUid, e);
+				if(logger.isInfoEnabled()) {
+					logger.info("error parsing UID: " + paramUid, e);
+				}
 			} catch (InvalidUIDException e) {
-				logger.warn("Invalid UID: " + paramUid, e);
+				if(logger.isInfoEnabled()) {
+					logger.info("Invalid UID: " + paramUid, e);
+				}
 			}
 		}
 
@@ -216,9 +222,9 @@ public class ComRdirUserForm extends HttpServlet {
 
 		if (deviceID != ComDeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
 			// The available mailing_id and customer_id should be logged in any case of a trackable link
-			if (comTrackableUserFormLink.getUsage() == ComTrackableUserFormLink.TRACKABLE_YES
-					|| comTrackableUserFormLink.getUsage() == ComTrackableUserFormLink.TRACKABLE_YES_WITH_MAILING_INFO
-					|| comTrackableUserFormLink.getUsage() == ComTrackableUserFormLink.TRACKABLE_YES_WITH_MAILING_AND_USER_INFO) {
+			if (comTrackableUserFormLink.getUsage() == BaseTrackableLink.TRACKABLE_YES
+					|| comTrackableUserFormLink.getUsage() == BaseTrackableLink.TRACKABLE_YES_WITH_MAILING_INFO
+					|| comTrackableUserFormLink.getUsage() == BaseTrackableLink.TRACKABLE_YES_WITH_MAILING_AND_USER_INFO) {
 				final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, getConfigService(), getMailingContentTypeCache());
 				String remoteAddr;
 				if (trackingLevel == TrackingLevel.ANONYMOUS) {
@@ -245,7 +251,7 @@ public class ComRdirUserForm extends HttpServlet {
 		String linkString = comTrackableUserFormLink.getFullUrl();
 		Map<String, Object> cachedRecipientData = null;
 		for (LinkProperty linkProperty : comTrackableUserFormLink.getProperties()) {
-			if (linkProperty.getPropertyType() == PropertyType.LinkExtension) {
+			if (LinkUtils.isExtension(linkProperty)) {
 				String propertyValue = linkProperty.getPropertyValue();
 				if (propertyValue != null && propertyValue.contains("##")) {
 					if (cachedRecipientData == null && uid != null) {

@@ -14,10 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.agnitas.web.forms.BulkActionFrom;
+import org.agnitas.web.forms.BulkActionForm;
 import org.apache.commons.collections4.ListUtils;
 
-public class BulkMailingComparisonForm extends BulkActionFrom {
+public class BulkMailingComparisonForm extends BulkActionForm {
 
     private List<Integer> targetIds = new ArrayList<>();
     

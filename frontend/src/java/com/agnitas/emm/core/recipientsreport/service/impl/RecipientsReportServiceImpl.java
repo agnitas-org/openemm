@@ -12,6 +12,9 @@ package com.agnitas.emm.core.recipientsreport.service.impl;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -19,15 +22,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.download.dao.DownloadDao;
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
-import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
-import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
-import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.MimeTypeService;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -38,6 +32,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.download.dao.DownloadDao;
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
+import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
+import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.MimeTypeService;
 
 public class RecipientsReportServiceImpl implements RecipientsReportService {
 
@@ -75,7 +79,7 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
     
     @Override
-    public RecipientsReport createAndSaveImportReport(ComAdmin admin, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError) {
+    public RecipientsReport createAndSaveImportReport(ComAdmin admin, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError) throws Exception {
         RecipientsReport report = new RecipientsReport();
         report.setAdminId(admin.getAdminID());
         report.setDatasourceId(datasourceId);
@@ -91,7 +95,7 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-    public RecipientsReport createAndSaveExportReport(ComAdmin admin, String filename, Date reportDate, String content, boolean isError) {
+    public RecipientsReport createAndSaveExportReport(ComAdmin admin, String filename, Date reportDate, String content, boolean isError) throws Exception {
         RecipientsReport report = new RecipientsReport();
         report.setAdminId(admin.getAdminID());
         report.setFilename(filename);
@@ -130,7 +134,14 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     public PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(ComAdmin admin, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types){
         int companyId = admin.getCompanyID();
         deleteOldReports(companyId);
-        return getReports(companyId, pageNumber, pageSize, sortProperty, dir, startDate, finishDate, getAllowedReportTypes(types, admin));
+        PaginatedListImpl<RecipientsReport> returnList = getReports(companyId, pageNumber, pageSize, sortProperty, dir, startDate, finishDate, getAllowedReportTypes(types, admin));
+        DateTimeFormatter formatter = admin.getDateTimeFormatter();
+        ZoneId dbTimezone = ZoneId.systemDefault();
+        for (RecipientsReport item : returnList.getList()) {
+    		ZonedDateTime dbZonedDateTime = ZonedDateTime.ofInstant(item.getReportDate().toInstant(), dbTimezone);
+        	item.setReportDateFormatted(formatter.format(dbZonedDateTime));
+        }
+        return returnList;
     }
 
     @Override

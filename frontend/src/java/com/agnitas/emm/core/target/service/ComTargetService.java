@@ -15,6 +15,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.agnitas.beans.Mailing;
+import org.agnitas.beans.Recipient;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
+import org.agnitas.emm.core.target.exception.TargetGroupException;
+import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
+import org.agnitas.emm.core.target.service.UserActivityLog;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.struts.action.ActionMessages;
+
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ListSplit;
@@ -23,15 +33,6 @@ import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
-import org.agnitas.beans.Mailing;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
-import org.agnitas.emm.core.target.exception.TargetGroupException;
-import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
-import org.agnitas.emm.core.target.service.UserActivityLog;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.target.TargetRepresentation;
-import org.apache.struts.action.ActionMessages;
 
 /**
  * Service for target groups.
@@ -49,18 +50,8 @@ public interface ComTargetService {
 	
 	void deleteTargetGroup(int targetGroupID, @VelocityCheck int companyID) throws TargetGroupException, TargetGroupPersistenceException;
 
-    /**
-     * Validates all target nodes and assigns error messages to correct target rule.
-     *
-     * @param representation target representation to validate
-     * @param errors collection of error messages
-     *
-     * @return true, if errors were found
-     */
-    boolean validateTargetRepresentation(TargetRepresentation representation, ActionMessages errors, @VelocityCheck int companyId);
-
     int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
-    public TargetSavingAndAnalysisResult saveTargetWithAnalysis(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
+    TargetSavingAndAnalysisResult saveTargetWithAnalysis(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
 
     int saveTarget(ComTarget target) throws TargetGroupPersistenceException;
 
@@ -140,14 +131,28 @@ public interface ComTargetService {
 	boolean isWorkflowManagerListSplit(int companyID, int targetID) throws UnknownTargetGroupIdException;
 
 	/**
-	 * Use {@link #getTargetLights(int, boolean, boolean, boolean)} instead 
-	 * @Deprecated
-	 * 
-	 * @see #getTargetLights(int, boolean, boolean, boolean)
+	 * Use it for WS if you are sure you do not need ALTG check
+	 *
+	 * @param companyID
+	 * @return
 	 */
-	List<TargetLight> getTargetLights(@VelocityCheck int companyID);
-	
-	List<TargetLight> getTargetLights(int companyID, boolean worldDelivery, boolean adminTestDelivery, boolean content);
+	List<TargetLight> getWsTargetLights(@VelocityCheck int companyID);
+
+	/**
+	 * Use {@link #getTargetLights(com.agnitas.beans.ComAdmin, boolean, boolean, boolean)} instead
+	 * @Deprecated
+	 *
+	 * @see #getTargetLights(com.agnitas.beans.ComAdmin, boolean, boolean, boolean)
+	 */
+	List<TargetLight> getTargetLights(ComAdmin admin);
+
+	List<TargetLight> getTargetLights(ComAdmin admin, boolean worldDelivery, boolean adminTestDelivery,
+			boolean content);
+
+	List<TargetLight> getTargetLights(ComAdmin admin, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery,
+			boolean content);
+
+	List<TargetLight> getTargetLights(TargetLightsOptions options);
 
 	/**
 	 * Get all the valid list split targets represented as {@link com.agnitas.beans.ListSplit}.
@@ -204,10 +209,12 @@ public interface ComTargetService {
 	 * @throws Exception on errors creating the matcher 
 	 */
  	RecipientTargetGroupMatcher createRecipientTargetGroupMatcher(final int customerID, final int companyID) throws Exception;
-	
+
+	RecipientTargetGroupMatcher createRecipientTargetGroupMatcher(Map<String, Object> recipientData, int companyID) throws Exception;
+
 	List<TargetLight> getTargetLights(@VelocityCheck int companyId, Collection<Integer> targetGroups, boolean includeDeleted);
 	
-	List<TargetLight> getSplitTargetLights(@VelocityCheck int companyId, String s);
+	List<TargetLight> getSplitTargetLights(@VelocityCheck int companyId, String splitType);
 
     PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(@VelocityCheck int companyId, int targetId, Set<TargetGroupDependentType> allowedTypes, int pageNumber, int pageSize, String sortColumn, String order);
 
@@ -221,5 +228,12 @@ public interface ComTargetService {
 
 	void initializeComplexityIndex(@VelocityCheck int companyId);
 
-	List<TargetLight> getLimitingTargetLights(@VelocityCheck int companyId);
+	List<TargetLight> getAccessLimitationTargetLights(@VelocityCheck ComAdmin admin);
+
+	boolean isBasicFullTextSearchSupported();
+
+	boolean isRecipientMatchTarget(ComAdmin admin, int targetGroupId, Recipient recipient);
+
+	boolean isRecipientMatchTarget(ComAdmin admin, int targetGroupId, int customerId);
+
 }

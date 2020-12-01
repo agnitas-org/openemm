@@ -50,7 +50,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.util.HttpUtils;
-import org.agnitas.web.forms.BulkActionFrom;
+import org.agnitas.web.forms.BulkActionForm;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
 import org.agnitas.web.forms.WorkflowParameters;
@@ -301,7 +301,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/confirmBulkDelete.action")
-    public String confirmBulkDelete(@ModelAttribute("bulkForm") BulkActionFrom form, Popups popups) {
+    public String confirmBulkDelete(@ModelAttribute("bulkForm") BulkActionForm form, Popups popups) {
         if (form.getBulkIds().size() == 0) {
             popups.alert("bulkAction.nothing.workflow");
         }
@@ -310,7 +310,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/bulkDelete.action")
-    public String bulkDelete(ComAdmin admin, BulkActionFrom form, Popups popups) {
+    public String bulkDelete(ComAdmin admin, BulkActionForm form, Popups popups) {
         Set<Integer> workflowIdsToDelete = new HashSet<>();
         List<Workflow> workflows = workflowService.getWorkflowsByIds(new HashSet<>(form.getBulkIds()), admin.getCompanyID());
 
@@ -337,7 +337,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/confirmBulkDeactivate.action")
-    public String confirmBulkDeactivate(@ModelAttribute("bulkForm") BulkActionFrom form, Popups popups) {
+    public String confirmBulkDeactivate(@ModelAttribute("bulkForm") BulkActionForm form, Popups popups) {
         if (form.getBulkIds().size() == 0) {
             popups.alert("bulkAction.nothing.workflow");
         }
@@ -346,7 +346,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/bulkDeactivate.action")
-    public String bulkDeactivate(ComAdmin admin, BulkActionFrom form, Popups popups) throws Exception {
+    public String bulkDeactivate(ComAdmin admin, BulkActionForm form, Popups popups) throws Exception {
         Set<Integer> workflowIdsToDeactivate = new HashSet<>();
         List<Workflow> workflows = workflowService.getWorkflowsByIds(new HashSet<>(form.getBulkIds()), admin.getCompanyID());
 
@@ -843,19 +843,19 @@ public class WorkflowController {
     private String getRedirectUrl(String forwardName) {
         switch (StringUtils.defaultString(forwardName)) {
             case FORWARD_USERFORM_CREATE:
+                return "/webform/new.action";
             case FORWARD_USERFORM_EDIT:
-                return "/userform.do?action=2";
-            
+                return "/webform/0/view.action";
+
             case FORWARD_REPORT_CREATE:
                 return "/statistics/report/new.action";
             case FORWARD_REPORT_EDIT:
                 return "/statistics/report/0/view.action";
     
             case FORWARD_TARGETGROUP_CREATE:
-            case FORWARD_TARGETGROUP_EDIT:
-                return "/target.do?action=2";
             case FORWARD_TARGETGROUP_CREATE_QB:
                 return "/targetQB.do?method=create";
+            case FORWARD_TARGETGROUP_EDIT:
             case FORWARD_TARGETGROUP_EDIT_QB:
                 return "/targetQB.do?method=show";
                 

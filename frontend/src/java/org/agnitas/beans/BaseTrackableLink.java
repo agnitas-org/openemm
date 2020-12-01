@@ -102,21 +102,49 @@ public interface BaseTrackableLink {
 	 * @return Value of property fullUrl.
 	 */
     String getFullUrl();
-    
+
     /**
 	 * Setter for property fullUrl.
 	 *
 	 * @param fullUrl New value of property fullUrl.
 	 */
     void setFullUrl(String fullUrl);
-    
+
+	/**
+	 * Setter for property usage.
+	 *
+	 * @param usage New value of property usage.
+	 */
+	void setUsage(int usage);
+
+	/**
+	 * Getter for property usage.
+	 *
+	 * @return Value of property usage.
+	 */
+	int getUsage();
+
+	/**
+     * Getter for property DeepTracking.
+     *
+     * @return Value of property DeepTracking.
+     */
+    int getDeepTracking();
+
+    /**
+     * Setter for property DeepTracking.
+     *
+     * @param deepTracking New value of property DeepTracking.
+     */
+    void setDeepTracking(int deepTracking);
+
     /**
 	 * Getter for property properties.
 	 *
 	 * @return Value of property properties.
 	 */
     List<LinkProperty> getProperties();
-    
+
     /**
 	 * Setter for property properties.
 	 *

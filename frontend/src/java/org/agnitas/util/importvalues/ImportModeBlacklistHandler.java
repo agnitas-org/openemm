@@ -25,6 +25,7 @@ import org.agnitas.util.DbColumnType;
 import org.apache.log4j.Logger;
 
 import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class ImportModeBlacklistHandler implements ImportModeHandler {
     @SuppressWarnings("unused")
@@ -62,7 +63,7 @@ public class ImportModeBlacklistHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign) throws Exception {
+	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, MediaTypes mediatype) throws Exception {
 		// Mark customers as blacklisted in binding table
 		int emailsMarkedAsBlacklisted = importRecipientsDao.importInBlackList(temporaryImportTableName, importProfile.getCompanyId());
 		status.setBlacklisted(emailsMarkedAsBlacklisted);
@@ -70,11 +71,17 @@ public class ImportModeBlacklistHandler implements ImportModeHandler {
 		for (Mailinglist mailinglist : mailinglistDao.getMailinglists(importProfile.getCompanyId())) {
 			for (UserStatus userStatus : UserStatus.values()) {
 				if (userStatus != UserStatus.Blacklisted) {
-					importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailinglist.getId(), userStatus.getStatusCode(), UserStatus.Blacklisted.getStatusCode(), "Blacklisted by import datasourceid: " + datasourceId);
+					importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailinglist.getId(), mediatype, userStatus.getStatusCode(), UserStatus.Blacklisted.getStatusCode(), "Blacklisted by import datasourceid: " + datasourceId);
 				}
 			}
 		}
 		
 		return null;
+	}
+
+	@Override
+	public int handleBlacklist(ImportProfile importProfile, String temporaryImportTableName) {
+		// Do nothing
+		return 0;
 	}
 }

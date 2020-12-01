@@ -276,4 +276,6 @@ public interface Recipient {
 	boolean isDoNotTrackMe();
 	
 	void setDoNotTrackMe(final boolean doNotTrack);
+
+	BindingEntry getBindingsByMailinglist(int mailinglistId, int index);
 }

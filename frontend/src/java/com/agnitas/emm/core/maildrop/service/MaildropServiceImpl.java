@@ -47,7 +47,7 @@ public class MaildropServiceImpl implements MaildropService {
 	}
 
 	@Override
-	public final int scheduleAdminMailing(final int mailingID, final int companyID, final int adminTargetID) throws MaildropException {
+	public final int scheduleAdminMailing(final int mailingID, final int companyID, final int adminTargetID) throws Exception {
 		checkMailtype(mailingID, MailingType.NORMAL);
 
 		final MaildropEntry entry = MaildropEntryFactory.newAdminMaildrop(mailingID, companyID, adminTargetID);
@@ -56,7 +56,7 @@ public class MaildropServiceImpl implements MaildropService {
 	}
 
 	@Override
-	public final int scheduleTestMailing(final int mailingID, final int companyID, final int testTargetID) throws MaildropException {
+	public final int scheduleTestMailing(final int mailingID, final int companyID, final int testTargetID) throws Exception {
 		checkMailtype(mailingID, MailingType.NORMAL);
 
 		final MaildropEntry entry = MaildropEntryFactory.newTestMaildrop(mailingID, companyID, testTargetID);
@@ -115,7 +115,7 @@ public class MaildropServiceImpl implements MaildropService {
 
 	@Override
 	public final boolean isActiveMailing(final int mailingID, final int companyID) {
-		return hasMaildropStatus(mailingID, companyID, MaildropStatus.ACTION_BASED, MaildropStatus.DATE_BASED, MaildropStatus.WORLD);		
+		return hasMaildropStatus(mailingID, companyID, MaildropStatus.ACTION_BASED, MaildropStatus.DATE_BASED, MaildropStatus.WORLD);
 	}
 
 	@Override
@@ -124,8 +124,9 @@ public class MaildropServiceImpl implements MaildropService {
 		
 		for(final MaildropEntry entry : entries) {
 			for(MaildropStatus status : statusList) {
-				if(entry.getStatus() == status.getCode())
+				if(entry.getStatus() == status.getCode()) {
 					return true;
+				}
 			}
 		}
 

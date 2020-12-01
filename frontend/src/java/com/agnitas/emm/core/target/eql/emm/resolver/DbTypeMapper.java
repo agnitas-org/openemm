@@ -22,7 +22,7 @@ public class DbTypeMapper {
 	private static final transient Logger logger = Logger.getLogger(DbTypeMapper.class);
 	
 	public static DataType mapDbType(DbColumnType columnType) {
-		SimpleDataType simpleDataType = DbColumnType.getSimpleDataType(columnType.getTypeName());
+		SimpleDataType simpleDataType = DbColumnType.getSimpleDataType(columnType.getTypeName(), columnType.getNumericScale());
 		
 		return mapDbType(simpleDataType);
 	}
@@ -35,20 +35,20 @@ public class DbTypeMapper {
 	 */
 	public static DataType mapDbType(SimpleDataType columnType) {
 		switch(columnType) {
-		
-		case Numeric:
-			return DataType.NUMERIC;
-			
-		case Characters:
-			return DataType.TEXT;
-
-		case Date:
-			return DataType.DATE;
-			
-		default:
-			logger.error("Unsupported column type " + columnType);
-			
-			throw new IllegalStateException("Unsupported column type " + columnType);
+			case Numeric:
+			case Float:
+				return DataType.NUMERIC;
+				
+			case Characters:
+				return DataType.TEXT;
+	
+			case Date:
+			case DateTime:
+				return DataType.DATE;
+				
+			default:
+				logger.error("Unsupported column type " + columnType);
+				throw new IllegalStateException("Unsupported column type " + columnType);
 		}
 	}
 

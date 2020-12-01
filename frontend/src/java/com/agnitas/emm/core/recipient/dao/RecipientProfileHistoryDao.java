@@ -12,8 +12,7 @@ package com.agnitas.emm.core.recipient.dao;
 
 import java.util.List;
 
-import org.agnitas.beans.ProfileField;
-
+import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ComRecipientHistory;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
 
@@ -41,7 +40,7 @@ public interface RecipientProfileHistoryDao {
 	 *   <li>Removing a profile field</li>
 	 *   <li>Changing the type of a profile field</li>
 	 *   <li>Changing the <i>history</li>-flag of a profile field</li>
-	 * </ul>  
+	 * </ul>
 	 * 
 	 * In case of database persistence, this method could rebuild triggers, etc.
 	 * 

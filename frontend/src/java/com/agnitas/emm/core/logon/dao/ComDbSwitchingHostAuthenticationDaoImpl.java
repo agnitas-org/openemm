@@ -99,6 +99,11 @@ public class ComDbSwitchingHostAuthenticationDaoImpl extends BaseDaoImpl impleme
 	public final void removeExpiredPendingsAuthentications(final int maxPendingHostAuthenticationsAgeMinutes) {
 		getDbBasedImplementation().removeExpiredPendingsAuthentications(maxPendingHostAuthenticationsAgeMinutes);
 	}
+
+	@Override
+	public void removeAuthentictedHost(String hostId) {
+		getDbBasedImplementation().removeAuthentictedHost(hostId);
+	}
 	
 	// ---------------------------------------------------------------------------------------------------- dependency injection
 	/**
@@ -120,4 +125,5 @@ public class ComDbSwitchingHostAuthenticationDaoImpl extends BaseDaoImpl impleme
 	public void setMysqlImplementation( ComHostAuthenticationDao dao) {
 		this.mysqlDao = dao;
 	}
+
 }

@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.emm.core.beans.Dependent;
@@ -93,7 +93,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public List<ComProfileField> getProfileFieldsWithInterest(ComAdmin admin) {
+    public List<ProfileField> getProfileFieldsWithInterest(ComAdmin admin) {
         try {
             return profileFieldDao.getProfileFieldsWithInterest(admin.getCompanyID(), admin.getAdminID());
         } catch (Exception e) {
@@ -110,9 +110,9 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public List<ComProfileField> getSortedColumnInfo(@VelocityCheck int companyId) {
+    public List<ProfileField> getSortedColumnInfo(@VelocityCheck int companyId) {
         try {
-            List<ComProfileField> columnInfoList = columnInfoService.getComColumnInfos(companyId);
+            List<ProfileField> columnInfoList = columnInfoService.getComColumnInfos(companyId);
 
             columnInfoList.sort(this::compareColumn);
 
@@ -123,7 +123,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public List<ComProfileField> getFieldWithIndividualSortOrder(@VelocityCheck int companyId, int adminId) {
+    public List<ProfileField> getFieldWithIndividualSortOrder(@VelocityCheck int companyId, int adminId) {
         try {
             return profileFieldDao.getProfileFieldsWithIndividualSortOrder(companyId, adminId);
         } catch (Exception e) {
@@ -155,7 +155,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public ComProfileField getProfileField(@VelocityCheck int companyId, String fieldName) {
+    public ProfileField getProfileField(@VelocityCheck int companyId, String fieldName) {
         try {
             return columnInfoService.getColumnInfo(companyId, fieldName);
         } catch (Exception e) {
@@ -198,11 +198,11 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public boolean createNewField(ComProfileField field, ComAdmin admin) {
+    public boolean createNewField(ProfileField field, ComAdmin admin) {
         try {
             return profileFieldDao.saveProfileField(field, admin);
         } catch (Exception e) {
-            logger.error("Something when wrong when tried to save new field", e);
+            logger.error("Something went wrong when tried to save new field", e);
 
             return false;
         }
@@ -218,11 +218,11 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public boolean updateField(ComProfileField field, ComAdmin admin) {
+    public boolean updateField(ProfileField field, ComAdmin admin) {
         try {
             return profileFieldDao.saveProfileField(field, admin);
         } catch (Exception e) {
-            logger.error("Something when wrong when tried to update new field", e);
+            logger.error("Something went wrong when tried to update new field", e);
 
             return false;
         }
@@ -240,7 +240,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public UserAction getOpenEmmChangeLog(ComProfileField field, ProfileFieldForm form) {
+    public UserAction getOpenEmmChangeLog(ProfileField field, ProfileFieldForm form) {
         List<String> changes = new ArrayList<>();
         UserAction userAction = null;
 
@@ -291,7 +291,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public UserAction getEmmChangeLog(ComProfileField field, ProfileFieldForm form) {
+    public UserAction getEmmChangeLog(ProfileField field, ProfileFieldForm form) {
         List<String> changes = new ArrayList<>();
         UserAction userAction = null;
 
@@ -352,7 +352,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
         return dependents;
     }
 
-    private int compareColumn(ComProfileField field1, ComProfileField field2) {
+    private int compareColumn(ProfileField field1, ProfileField field2) {
         if (field1.isHiddenField() == field2.isHiddenField()) {
             return 0;
         }

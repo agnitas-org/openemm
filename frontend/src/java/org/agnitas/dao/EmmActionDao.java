@@ -14,10 +14,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.emm.core.action.operations.ActionOperationType;
 import org.agnitas.actions.EmmAction;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
+
+import com.agnitas.emm.core.action.operations.ActionOperationType;
+import com.agnitas.emm.core.commons.ActivenessStatus;
 
 /**
  * DAO accessing EMM actions.
@@ -145,6 +148,8 @@ public interface EmmActionDao {
      */
     String getUserFormNames(int actionId, @VelocityCheck int companyId);
 
+    List<String> getActionUserFormNames(int actionId, @VelocityCheck int companyId);
+
     /**
      *  Loads list of emm actions with sorting
      * @return List of emm actions
@@ -157,7 +162,7 @@ public interface EmmActionDao {
      */
     List<EmmAction> getActionList(int companyID, String sortBy, boolean order, Boolean activenessFilter);
 
-    List<EmmAction> getEmmActionsByOperationType(int companyID, ActionOperationType... actionTypes);
+    List<EmmAction> getEmmActionsByOperationType(int companyID, boolean includeInactive, ActionOperationType... actionTypes);
 
     Map<Integer, Boolean> getActivenessMap(Collection<Integer> actionIds, @VelocityCheck int companyId);
 
@@ -168,4 +173,6 @@ public interface EmmActionDao {
      * @return List of emm actions
      */
     List<EmmAction> getActionListBySendMailingId(@VelocityCheck int companyId, int mailingId);
+
+    PaginatedListImpl<EmmAction> getPaginatedActionList(@VelocityCheck int companyId, String sort, String order, int page, int numberOfRows, ActivenessStatus filter);
 }

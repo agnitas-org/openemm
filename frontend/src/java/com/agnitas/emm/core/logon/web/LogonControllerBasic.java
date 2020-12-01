@@ -15,9 +15,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -47,17 +49,19 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComAdminPreferences;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.logon.beans.LogonState;
+import com.agnitas.emm.core.logon.beans.LogonStateBundle;
 import com.agnitas.emm.core.logon.forms.LogonForm;
 import com.agnitas.emm.core.logon.forms.LogonHostAuthenticationForm;
 import com.agnitas.emm.core.logon.forms.LogonPasswordChangeForm;
 import com.agnitas.emm.core.logon.forms.LogonResetPasswordForm;
 import com.agnitas.emm.core.logon.forms.validation.LogonFormValidator;
+import com.agnitas.emm.core.logon.service.ClientHostIdService;
 import com.agnitas.emm.core.logon.service.ComHostAuthenticationService;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.emm.core.logon.service.HostAuthenticationServiceException;
-import com.agnitas.emm.core.logon.service.Logon;
 import com.agnitas.emm.core.logon.service.UnexpectedLogonStateException;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
+import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.mvc.Popups;
@@ -67,7 +71,7 @@ public class LogonControllerBasic {
     private static final Logger logger = Logger.getLogger(LogonControllerBasic.class);
 
     protected static final String PASSWORD_CHANGED_KEY = "com.agnitas.emm.core.logon.web.PASSWORD_CHANGED";
-    protected static final String PASSWORD_RESET_LINK_PATTERN = "/logon/reset-password.action?username={username}&token={token}";
+    public static final String PASSWORD_RESET_LINK_PATTERN = "/logon/reset-password.action?username={username}&token={token}";
 
     protected ComLogonService logonService;
     protected LoginTrackService loginTrackService;
@@ -75,16 +79,18 @@ public class LogonControllerBasic {
     protected WebStorage webStorage;
     protected ConfigService configService;
     protected UserActivityLogService userActivityLogService;
+    protected ClientHostIdService clientHostIdService;
 
     private final LogonFormValidator logonFormValidator = new LogonFormValidator();
 
-    public LogonControllerBasic(ComLogonService logonService, LoginTrackService loginTrackService, ComHostAuthenticationService hostAuthenticationService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService) {
+    public LogonControllerBasic(ComLogonService logonService, LoginTrackService loginTrackService, ComHostAuthenticationService hostAuthenticationService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService, final ClientHostIdService clientHostIdService) {
         this.logonService = logonService;
         this.loginTrackService = loginTrackService;
         this.hostAuthenticationService = hostAuthenticationService;
         this.webStorage = webStorage;
         this.configService = configService;
         this.userActivityLogService = userActivityLogService;
+        this.clientHostIdService = Objects.requireNonNull(clientHostIdService, "ClientHostIdService is null");
     }
 
     // This exception should normally never occur unless user manually navigates to some endpoints.
@@ -104,8 +110,24 @@ public class LogonControllerBasic {
     }
 
     @Anonymous
+    @GetMapping("/logon.action")
+    public String logonView(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
+        SimpleServiceResult result = logonService.checkDatabase();
+
+        if (result.isSuccess()) {
+        	logonStateBundle.toPendingState();
+
+        	return getLogonPage(model, request.getServerName());
+        } else {
+            popups.addPopups(result);
+            model.addAttribute("supportEmergencyUrl", configService.getValue(ConfigValue.SupportEmergencyUrl));
+            return "logon_db_failure";
+        }
+    }
+
+    @Anonymous
     @PostMapping("/logon.action")
-    public String logon(Logon logon, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
+    public String logon(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
         if(!logonFormValidator.validate(form, popups)) {
             return getLogonPage(model, request.getServerName());
         }
@@ -115,7 +137,7 @@ public class LogonControllerBasic {
 
         if (result.isSuccess()) {
             ComAdmin admin = result.getResult();
-            logon.authenticate(admin);
+            logonStateBundle.toAuthenticationState(admin);
 
             HttpSession session = request.getSession();
             session.setAttribute(Globals.LOCALE_KEY, admin.getLocale());  // To be removed when Struts message tags are not in use anymore.
@@ -131,59 +153,52 @@ public class LogonControllerBasic {
             return getLogonPage(model, request.getServerName());
         }
     }
-
-    @Anonymous
-    @GetMapping("/logon.action")
-    public String logonView(Logon logon, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
-        SimpleServiceResult result = logonService.checkDatabase();
-
-        if (result.isSuccess()) {
-            logon.initialize(hostAuthenticationService::createHostId);
-            return getLogonPage(model, request.getServerName());
-        } else {
-            popups.addPopups(result);
-            model.addAttribute("supportEmergencyUrl", configService.getValue(ConfigValue.SupportEmergencyUrl));
-            return "logon_db_failure";
-        }
-    }
     
     @Anonymous
     @GetMapping("/logonoffline.action")
-    public String logonUrlOffline(Logon logon, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
+    public String logonUrlOffline(@ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
         return "logon_offline";
     }
 
     @Anonymous
     @PostMapping("/logon/authenticate-host.action")
-    public String hostAuthentication(Logon logon, @ModelAttribute("form") LogonHostAuthenticationForm form, RedirectAttributes redirectModel, Popups popups) throws HostAuthenticationServiceException {
-        ComAdmin admin = logon.getAdmin();
+    public String hostAuthentication(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonHostAuthenticationForm form, RedirectAttributes redirectModel, Popups popups, final HttpServletRequest httpRequest, final HttpServletResponse response) throws HostAuthenticationServiceException {
+        final ComAdmin admin = logonStateBundle.getAdmin();
 
-        if (logon.is(LogonState.HOST_AUTHENTICATION_SECURITY_CODE)) {
-            String authenticationCode = StringUtils.trim(form.getAuthenticationCode());
-            String hostId = logon.getHostId();
+        if (logonStateBundle.isInState(LogonState.HOST_AUTHENTICATION_SECURITY_CODE)) {
+            final String authenticationCode = StringUtils.trim(form.getAuthenticationCode());
+            final String hostId = logonStateBundle.getHostId();
 
             // Check if user submitted a valid authentication code.
             if (authenticateHost(admin, hostId, authenticationCode, popups)) {
-                logon.authenticateHost(hostId);
+            	if(form.isTrustedDevice()) {
+            		this.clientHostIdService.createAndPublishHostAuthenticationCookie(hostId, admin.getCompanyID(), response);
+            	} else {
+            		logger.info("User does not trust device - 2FA cookie not set");
+            		this.hostAuthenticationService.removeAuthentictedHost(hostId);
+            	}
+                
+            	logonStateBundle.toMaintainPasswordState();
             } else {
                 redirectModel.addFlashAttribute("form", form);
                 return "redirect:/logon/authenticate-host.action";
             }
         } else {
-            logon.require(LogonState.HOST_AUTHENTICATION);
+        	logonStateBundle.requireLogonState(LogonState.HOST_AUTHENTICATION);
 
             // Simply skip this step if host authentication is not enabled.
             if (hostAuthenticationService.isHostAuthenticationEnabled(admin.getCompanyID())) {
-                String hostId = logon.getCookieHostId();
+                // String hostId = logon.getCookieHostId();
+            	final String hostId = this.clientHostIdService.getClientHostId(httpRequest).orElse(this.clientHostIdService.createHostId());
 
                 logger.info("Host authentication is ENABLED for company of user " + admin.getUsername());
 
                 // Check if a given hostId is marked as authenticated.
                 if (authenticateHost(admin, hostId)) {
-                    logon.authenticateHost(hostId);
+                	logonStateBundle.toMaintainPasswordState();
                 } else {
                     // The hostId is unknown so should be confirmed via email.
-                    logon.expectHostAuthenticationCode();
+                    logonStateBundle.toAuthenticateHostSecurityCodeState(hostId);
 
                     String email = getEmailForHostAuthentication(admin);
                     try {
@@ -197,9 +212,8 @@ public class LogonControllerBasic {
                                 // If hostId is missing from cookies the cookies are probably disabled.
                                 popups.warning("logon.hostauth.cookies_disabled");
                             }
-
-                            // Take hostId from cookies or session (if any), generate a new one otherwise.
-                            hostAuthenticationService.sendSecurityCode(admin, logon.getHostId(hostAuthenticationService::createHostId));
+                            
+                            hostAuthenticationService.sendSecurityCode(admin, hostId);
                         }
                     } catch (CannotSendSecurityCodeException e) {
                         logger.error("Cannot send security code to " + e.getReceiver());
@@ -217,7 +231,7 @@ public class LogonControllerBasic {
                 // Host authentication is disabled for company of user. Skip this step.
                 logger.info("Host authentication is DISABLED for company of user " + admin.getUsername());
 
-                logon.authenticateHost();
+                logonStateBundle.toMaintainPasswordState();
             }
         }
 
@@ -226,10 +240,10 @@ public class LogonControllerBasic {
 
     @Anonymous
     @GetMapping("/logon/authenticate-host.action")
-    public String hostAuthenticationAskSecurityCode(Logon logon, @ModelAttribute("form") LogonHostAuthenticationForm form, Model model, HttpServletRequest request) {
-        logon.require(LogonState.HOST_AUTHENTICATION_SECURITY_CODE);
+    public String hostAuthenticationAskSecurityCode(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonHostAuthenticationForm form, Model model, HttpServletRequest request) {
+    	logonStateBundle.requireLogonState(LogonState.HOST_AUTHENTICATION_SECURITY_CODE);
 
-        model.addAttribute("adminMailAddress", getEmailForHostAuthentication(logon.getAdmin()));
+        model.addAttribute("adminMailAddress", getEmailForHostAuthentication(logonStateBundle.getAdmin()));
         model.addAttribute("supportMailAddress", configService.getValue(ConfigValue.Mailaddress_Support));
         model.addAttribute("layoutdir", logonService.getLayoutDirectory(request.getServerName()));
 
@@ -238,40 +252,40 @@ public class LogonControllerBasic {
 
     @Anonymous
     @PostMapping("/logon/maintain-password.action")
-    public String maintainPassword(Logon logon) {
-        logon.require(LogonState.MAINTAIN_PASSWORD);
+    public String maintainPassword(final LogonStateBundle logonStateBundle) {
+    	logonStateBundle.requireLogonState(LogonState.MAINTAIN_PASSWORD);
 
-        PasswordState state = logonService.getPasswordState(logon.getAdmin());
+        PasswordState state = logonService.getPasswordState(logonStateBundle.getAdmin());
 
         if (state != PasswordState.VALID) {
-            logon.expectPasswordChange();
-            return "redirect:/logon/change-password.action";
+        	logonStateBundle.toPasswordChangeState();
+        	return "redirect:/logon/change-password.action";
         }
 
-        logon.complete();
+        logonStateBundle.toCompleteState();
         return "forward:/start.action";
     }
 
     @Anonymous
     @PostMapping("/logon/change-password.action")
-    public String changePassword(Logon logon, @ModelAttribute("form") LogonPasswordChangeForm form, RedirectAttributes model, Popups popups) {
-        logon.require(LogonState.CHANGE_ADMIN_PASSWORD, LogonState.CHANGE_SUPERVISOR_PASSWORD);
+    public String changePassword(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonPasswordChangeForm form, RedirectAttributes model, Popups popups) {
+    	logonStateBundle.requireLogonState(LogonState.CHANGE_ADMIN_PASSWORD, LogonState.CHANGE_SUPERVISOR_PASSWORD);
 
-        ComAdmin admin = logon.getAdmin();
+        ComAdmin admin = logonStateBundle.getAdmin();
 
         if (form.isSkip()) {
             PasswordState state = logonService.getPasswordState(admin);
 
             // In some cases a password change cannot be skipped.
             if (state == PasswordState.VALID || state == PasswordState.EXPIRING) {
-                logon.complete();
+            	logonStateBundle.toCompleteState();
                 return "forward:/start.action";
             }
         } else {
             SimpleServiceResult result = logonService.setPassword(admin, form.getPassword());
 
             if (result.isSuccess()) {
-                logon.complete();
+            	logonStateBundle.toCompleteState();
                 // Show success page which indicates that password has been changed.
                 model.addFlashAttribute(PASSWORD_CHANGED_KEY, true);
             } else {
@@ -286,16 +300,16 @@ public class LogonControllerBasic {
 
     @Anonymous
     @GetMapping("/logon/change-password.action")
-    public String changePassword(Logon logon, @ModelAttribute("form") LogonPasswordChangeForm form, Model model, HttpServletRequest request) {
+    public String changePassword(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonPasswordChangeForm form, Model model, HttpServletRequest request) {
         model.addAttribute("layoutdir", logonService.getLayoutDirectory(request.getServerName()));
 
         if (model.containsAttribute(PASSWORD_CHANGED_KEY)) {
-            logon.require(LogonState.COMPLETE);
+        	logonStateBundle.requireLogonState(LogonState.COMPLETE);
             return "logon_password_changed";
         } else {
-            logon.require(LogonState.CHANGE_ADMIN_PASSWORD, LogonState.CHANGE_SUPERVISOR_PASSWORD);
+        	logonStateBundle.requireLogonState(LogonState.CHANGE_ADMIN_PASSWORD, LogonState.CHANGE_SUPERVISOR_PASSWORD);
 
-            ComAdmin admin = logon.getAdmin();
+            ComAdmin admin = logonStateBundle.getAdmin();
             PasswordState state = logonService.getPasswordState(admin);
 
             // Expiration date is only required if password is already expired or a "deadline" is coming.
@@ -324,16 +338,16 @@ public class LogonControllerBasic {
 
     @Anonymous
     @PostMapping("/start.action")
-    public String start(Logon logon, ComAdmin admin, ComAdminPreferences preferences, @RequestParam(required = false) String webStorageJson, Model model, Popups popups) {
+    public String start(final LogonStateBundle logonStateBundle, ComAdmin admin, ComAdminPreferences preferences, @RequestParam(required = false) String webStorageJson, Model model, Popups popups, final HttpServletRequest request) {
         if (admin == null) {
-            logon.require(LogonState.COMPLETE);
+        	logonStateBundle.requireLogonState(LogonState.COMPLETE);
 
             if (webStorageJson == null) {
-                return getLogonCompletePage(logon.getAdmin(), model);
+                return getLogonCompletePage(logonStateBundle.getAdmin(), model);
             }
 
             // Finalize logon procedure, drop temporary data, setup session attributes.
-            return complete(logon.end(), webStorageJson, popups);
+            return complete(logonStateBundle.toCompleteState(request), webStorageJson, popups);
         } else {
             // Redirect to EMM start page.
             return getStartPageRedirection(admin, preferences);
@@ -342,10 +356,10 @@ public class LogonControllerBasic {
 
     @Anonymous
     @GetMapping("/start.action")
-    public String startView(Logon logon, ComAdmin admin, ComAdminPreferences preferences, Model model) {
+    public String startView(final LogonStateBundle logonStateBundle, ComAdmin admin, ComAdminPreferences preferences, Model model) {
         if (admin == null) {
-            logon.require(LogonState.COMPLETE);
-            return getLogonCompletePage(logon.getAdmin(), model);
+        	logonStateBundle.requireLogonState(LogonState.COMPLETE);
+            return getLogonCompletePage(logonStateBundle.getAdmin(), model);
         } else {
             // Admin is already in, redirect to EMM start page.
             return getStartPageRedirection(admin, preferences);
@@ -354,7 +368,7 @@ public class LogonControllerBasic {
 
     @Anonymous
     @PostMapping("/logon/reset-password.action")
-    public String resetPassword(Logon logon, @ModelAttribute("form") LogonResetPasswordForm form, RedirectAttributes model, Popups popups, HttpServletRequest request) throws HostAuthenticationServiceException {
+    public String resetPassword(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonResetPasswordForm form, RedirectAttributes model, Popups popups, HttpServletRequest request) throws HostAuthenticationServiceException {
         String clientIp = request.getRemoteAddr();
 
         if (StringUtils.isNotEmpty(form.getUsername()) && StringUtils.isNotEmpty(form.getToken())) {
@@ -366,12 +380,12 @@ public class LogonControllerBasic {
                 // Mark this host as authenticated (if authentication is enabled).
                 if (hostAuthenticationService.isHostAuthenticationEnabled(admin.getCompanyID())) {
                     // Take hostId from cookies or session (if any), generate a new one otherwise.
-                    String hostId = logon.getHostId(hostAuthenticationService::createHostId);
+                	final String hostId = this.clientHostIdService.getClientHostId(request).orElse(this.clientHostIdService.createHostId());
 
                     hostAuthenticationService.writeHostAuthentication(admin, hostId);
                 }
 
-                logon.complete(admin);
+                logonStateBundle.toCompleteState(admin);
 
                 writeUserActivityLog(admin, "change password", admin.getUsername() + " (" + admin.getAdminID() + ")");
                 writeUserActivityLog(admin, UserActivityLogActions.LOGIN_LOGOUT.getLocalValue(), "logged in after password reset via " + admin.getEmail() + " from " + AgnUtils.getIpAddressForStorage(request));
@@ -395,17 +409,28 @@ public class LogonControllerBasic {
 
         return "redirect:/logon/reset-password.action";
     }
-
+    
     @Anonymous
     @GetMapping("/logon/reset-password.action")
-    public String resetPasswordView(Logon logon, @ModelAttribute("form") LogonResetPasswordForm form, Model model, HttpServletRequest request) {
+    public String resetPasswordView(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonResetPasswordForm form, Model model, Popups popups, HttpServletRequest request) {
         model.addAttribute("layoutdir", logonService.getLayoutDirectory(request.getServerName()));
         model.addAttribute("helplanguage", logonService.getHelpLanguage(null));
 
         if (StringUtils.isNotEmpty(form.getUsername()) && StringUtils.isNotEmpty(form.getToken())) {
-            return "logon_password_reset";
+        	if (!logonService.existsPasswordResetTokenHash(form.getUsername(), form.getToken())) {
+        		logonService.riseErrorCount(form.getUsername());
+        		ServiceResult<ComAdmin> result = new ServiceResult<>(null, false, Message.of("error.passwordReset.auth"));
+        		popups.addPopups(result);
+                return "redirect:/logon/reset-password.action";
+        	} else if (!logonService.isValidPasswordResetTokenHash(form.getUsername(), form.getToken())) {
+        		ServiceResult<ComAdmin> result = new ServiceResult<>(null, false, Message.of("error.passwordReset.expired", ComLogonService.TOKEN_EXPIRATION_MINUTES, configService.getValue(ConfigValue.SystemUrl) + "/logon/reset-password.action"));
+        		popups.addPopups(result);
+                return "redirect:/logon/reset-password.action";
+        	} else {
+        		return "logon_password_reset";
+        	}
         } else {
-            ComAdmin admin = logon.getAdmin();
+            ComAdmin admin = logonStateBundle.getAdmin();
 
             if (admin != null && StringUtils.isEmpty(form.getUsername()) && StringUtils.isEmpty(form.getEmail())) {
                 form.setUsername(admin.getUsername());
@@ -542,7 +567,7 @@ public class LogonControllerBasic {
         model.addAttribute("layoutdir", logonService.getLayoutDirectory(serverName));
         return "logon";
     }
-
+    
     protected String getLogonIframeUrl() {
 		try {
 			String connectionUrl;
@@ -554,7 +579,6 @@ public class LogonControllerBasic {
 				//Locale english -> Set connectionUrl to english url
 				connectionUrl = "https://www.agnitas.de/en/openemm-login/";
 			}
-			logger.error("No Error: checking " + connectionUrl);
 			//Try connection
 			URL logonIframeUrl = new URL(connectionUrl);
 			
@@ -565,7 +589,6 @@ public class LogonControllerBasic {
 			//Connection successful -> Return normal logon
 			return connectionUrl;
 		} catch (IOException e) {
-			logger.error("No Error: checking failed: " + e.getMessage(), e);
 			//Any connection attempt was not successful -> Return nothing
 			return null;
 		}
@@ -596,7 +619,7 @@ public class LogonControllerBasic {
                 .collect(Collectors.toList());
     }
 
-    private void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
+    protected void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
         userActivityLogService.writeUserActivityLog(admin, userAction);
     }
 

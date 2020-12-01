@@ -10,17 +10,27 @@
 
 package com.agnitas.emm.core.target.eql.codegen;
 
+import com.agnitas.emm.core.target.eql.ast.AbstractEqlNode;
 import com.agnitas.emm.core.target.eql.ast.BinaryOperatorRelationalEqlNode;
+import com.agnitas.emm.core.target.eql.ast.TimestampExpressionNode;
 
 public class DateFormatFaultyCodeException extends FaultyCodeException {
 	private static final long serialVersionUID = 419496062568416660L;
 	
 	private final String dateFormat;
 	
-	public DateFormatFaultyCodeException(BinaryOperatorRelationalEqlNode node, Throwable cause) {
-		super(node, "Error parsing date format '" + node.getDateFormat() + "'", cause);
+	public DateFormatFaultyCodeException(final BinaryOperatorRelationalEqlNode node, final Throwable cause) {
+		this(node.getDateFormat(), node, cause);
+	}
+	
+	public DateFormatFaultyCodeException(final TimestampExpressionNode node, final Throwable cause) {
+		this(node.getDateFormat(), node, cause);
+	}
+
+	private DateFormatFaultyCodeException(final String dateFormat, final AbstractEqlNode node, final Throwable cause) {
+		super(node, String.format("Error parsing date format '%s'", dateFormat), cause);
 		
-		this.dateFormat = node.getDateFormat();
+		this.dateFormat = dateFormat;
 	}
 	
 	public String getDateFormat() {

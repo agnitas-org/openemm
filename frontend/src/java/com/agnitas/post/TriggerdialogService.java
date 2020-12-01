@@ -11,16 +11,19 @@
 package com.agnitas.post;
 
 import java.util.Date;
-
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import java.util.List;
 
 import com.agnitas.beans.ComMailing;
-import com.agnitas.web.ComMailingSendForm;
 
 public interface TriggerdialogService {
+	public static final String MASCAMPAIGNID_PREFIX = "EMM_Mailing_";
+	
 	boolean isPostMailing(ComMailing mailing);
 	boolean existsCampaign(int companyID, int mailingID, String shortname) throws Exception;
-	void createExternalMailing(ComMailingSendForm aForm, LightweightMailing mailing) throws Exception;
+	void createExternalMailing(ComMailing mailing) throws Exception;
+	void updateExternalMailing(ComMailing mailing) throws Exception;
 	void createTriggerdialogDelivery(int companyID, int mailingID, Date sendDate);
-	String createSsoUrl(String triggerDialogBasicUrl, String ssoSharedSecret, String triggerDialogMasId, String triggerDialogMasClientId, String ssoUsername, String ssoEmail, String ssoFirstname, String ssoLastname, int validityInMinutes) throws Exception;
+	String createSsoUrl(String triggerDialogBasicUrl, String ssoSharedSecret, int triggerDialogMasId, String triggerDialogMasClientId, String ssoUsername, String ssoEmail, String ssoFirstname, String ssoLastname, int validityInMinutes) throws Exception;
+	List<String> getExternalMailingFields(int companyID, int mailingID);
+	void storeExternalMailingFields(int companyID, int mailingID, List<String> fields);
 }

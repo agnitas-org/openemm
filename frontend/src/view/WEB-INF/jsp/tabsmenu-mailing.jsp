@@ -10,20 +10,18 @@
 <%--@elvariable id="_navigation_token" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_href" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_navMsg" type="java.lang.String"--%>
-<%--@elvariable id="_navigation_plugin" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_hideForToken" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_upsellingRef" type="java.lang.String"--%>
 
 <%--@elvariable id="agnNavigationKey" type="java.lang.String"--%>
 <%--@elvariable id="agnHighlightKey" type="java.lang.String"--%>
-<%--@elvariable id="agnPluginId" type="java.lang.String"--%>
 <%--@elvariable id="agnExtensionId" type="java.lang.String"--%>
 <%--@elvariable id="agnNavHrefAppend" type="java.lang.String"--%>
 <%--@elvariable id="agnNavHrefParams" type="java.util.LinkedHashMap"--%>
 
 <c:set var="shownTabsCount" value="0" scope="page"/>
 
-<emm:ShowNavigation navigation="${agnNavigationKey}" highlightKey="${agnHighlightKey}" plugin="${agnPluginId}" extension="${agnExtensionId}">
+<emm:ShowNavigation navigation="${agnNavigationKey}" highlightKey="${agnHighlightKey}">
     <emm:ShowByPermission token="${_navigation_token}">
         <c:set var="hideForToken" value="false"/>
 
@@ -41,9 +39,7 @@
 
 <c:if test="${shownTabsCount > 1}">
     <emm:ShowNavigation navigation='${agnNavigationKey}'
-                        highlightKey='${agnHighlightKey}'
-                        plugin='${agnPluginId}'
-                        extension='${agnExtensionId}'>
+                        highlightKey='${agnHighlightKey}'>
         <c:set var="showTabsItem" value="false"/>
         <c:set var="showUpsellingPage" value="false"/>
 
@@ -62,12 +58,7 @@
         </c:if>
 
         <c:set var="linkMsg">
-            <c:if test="${empty _navigation_plugin}">
-                <bean:message key="${_navigation_navMsg}"/>
-            </c:if>
-            <c:if test="${not empty _navigation_plugin}">
-                <emm:message key="${_navigation_navMsg}" plugin="${_navigation_plugin}"/>
-            </c:if>
+            <bean:message key="${_navigation_navMsg}"/>
         </c:set>
 
         <c:set var="navigationLink" value="${_navigation_href.concat(agnNavHrefAppend)}"/>

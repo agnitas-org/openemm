@@ -143,7 +143,7 @@ public interface ComWorkflowDao {
 
     /**
      * Get a list of active workflows depending on customer profile field (referenced by {@code column}) that is required
-     * to be trackable (see {@link com.agnitas.beans.ComProfileField#getHistorize()}).
+     * to be trackable (see {@link com.agnitas.beans.ProfileField#getHistorize()}).
      *
      * @param column the column name of the profile field to check.
      * @param companyId an identifier of the current user's company.

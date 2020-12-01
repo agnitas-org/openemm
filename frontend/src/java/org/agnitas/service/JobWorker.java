@@ -11,7 +11,9 @@
 package org.agnitas.service;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.dao.JobQueueDao;
@@ -104,6 +106,7 @@ public abstract class JobWorker implements Runnable {
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
+	
 	public void setBeanLookupFactory(BeanLookupFactory beanLookupFactory) {
 		this.beanLookupFactory = beanLookupFactory;
 	}
@@ -230,4 +233,29 @@ public abstract class JobWorker implements Runnable {
 		Map<String, String> parameters = job.getParameters();
 		return new CompaniesConstraints(parameters.get("includedCompanyIds"), parameters.get("excludedCompanyIds"));
 	}
+	
+	protected ApplicationContext getApplicationContextForJobWorker() {
+		return applicationContext;
+	}
+
+	/**
+	 * Treats the value of given parameter as list of integers.
+	 * The parsed list is returned or <code>null</code> if parameter is not defined.
+	 * 
+	 * Separator of values can be: &quot;,&quot;, &quot;;&quot; &quot;|&quot; or spaces.
+	 * 
+	 * @param parameterName name of worker parameter
+	 * 
+	 * @return parsed list or <code>null</code>
+	 */
+	public final List<Integer> parameterAsIntegerListOrNull(final String parameterName) {
+		final String listAsString = job.getParameters().get(parameterName);
+		
+		if(StringUtils.isNoneBlank(listAsString)) {
+			return AgnUtils.splitAndTrimList(listAsString).stream().map(Integer::parseInt).collect(Collectors.toList());
+		} else {
+			return null;
+		}
+	}
+
 }

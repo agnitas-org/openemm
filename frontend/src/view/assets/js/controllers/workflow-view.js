@@ -232,7 +232,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
             campaignManagerSettings: campaignManagerSettings,
             allUsedEntity: allUsedEntity,
             workflowURL: constants.workflowURL,
-            componentURL: constants.componentURL
+            componentURL: constants.componentURL,
+            mailingThumbnailURL: data.mailingThumbnailURL
         });
 
         editorsHelper = campaignManager.getEditorsHelper();

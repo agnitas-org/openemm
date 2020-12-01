@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
@@ -101,4 +102,9 @@ public class ActionOperationSendMailingImpl implements EmmActionOperation {
 			}
 		}
 	}
+
+    @Override
+    public ActionOperationType processedType() {
+        return ActionOperationType.SEND_MAILING;
+    }
 }

@@ -14,9 +14,12 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
 import org.apache.log4j.Logger;
 
 /**
@@ -132,7 +135,7 @@ public class FtpHelper implements RemoteFileHelper {
 			if (!ftpClient.login(user, password)) {
 				ftpClient.logout();
 				throw new Exception("Authentication failed");
-            }
+			}
 		} catch (Exception e) {
 			close();
 			throw new Exception("Connection failed");
@@ -164,15 +167,51 @@ public class FtpHelper implements RemoteFileHelper {
 		if (fileNames != null) {
 			List<String> returnList = new ArrayList<>();
 			for (String fileEntry : fileNames) {
+				String fileEntryName;
 				if (fileEntry.contains("/")) {
-					returnList.add(fileEntry.substring(fileEntry.lastIndexOf("/") + 1));
+					fileEntryName = fileEntry.substring(fileEntry.lastIndexOf("/") + 1);
 				} else {
-					returnList.add(fileEntry);
+					fileEntryName = fileEntry;
+				}
+				if (!".".equals(fileEntryName) && ! "..".equals(fileEntryName)) {
+					returnList.add(fileEntryName);
 				}
 			}
 			return returnList;
 		} else {
-			return new ArrayList<>();
+			// Some FTP servers can only execute "ls" on directories
+			if (!path.endsWith("/")) {
+				String parentDirectory;
+				String fileName;
+				if (path.contains("/")) {
+					parentDirectory = path.substring(0, path.lastIndexOf("/"));
+					fileName = path.substring(path.lastIndexOf("/") + 1);
+				} else {
+					parentDirectory = "/";
+					fileName = path;
+				}
+				fileNames = ftpClient.listNames(parentDirectory);
+				if (fileNames != null) {
+					List<String> returnList = new ArrayList<>();
+					Pattern fileNamePattern = Pattern.compile("^" + fileName.replace("^", "\\^").replace("$", "\\$").replace(".", "\\.").replace("*", ".*").replace("?", ".") + "$");
+					for (String fileEntry : fileNames) {
+						String fileEntryName;
+						if (fileEntry.contains("/")) {
+							fileEntryName = fileEntry.substring(fileEntry.lastIndexOf("/") + 1);
+						} else {
+							fileEntryName = fileEntry;
+						}
+						if (fileNamePattern.matcher(fileEntryName).find()) {
+							returnList.add(fileEntryName);
+						}
+					}
+					return returnList;
+				} else {
+					return new ArrayList<>();
+				}
+			} else {
+				return new ArrayList<>();
+			}
 		}
 	}
 	
@@ -187,12 +226,12 @@ public class FtpHelper implements RemoteFileHelper {
 	public boolean directoryExists(String directoryPath) throws Exception {
 		checkForConnection();
 		ftpClient.changeWorkingDirectory(directoryPath);
-        int returnCode = ftpClient.getReplyCode();
-        if (returnCode == 550) {
-            return false;
-        } else {
-        	return true;
-        }
+		int returnCode = ftpClient.getReplyCode();
+		if (returnCode == 550) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 	
 	/**
@@ -215,27 +254,54 @@ public class FtpHelper implements RemoteFileHelper {
 	 * @param dst the dst
 	 */
 	@Override
-	public void put(InputStream inputStream, String destination) throws Exception {
+	public void put(InputStream inputStream, String destination, boolean useTempFileNameWhileUploading) throws Exception {
 		checkForConnection();
-		ftpClient.storeFile(destination, inputStream);
+		if (useTempFileNameWhileUploading) {
+			ftpClient.storeFile(destination + ".tmp", inputStream);
+			ftpClient.rename(destination + ".tmp", destination);
+		} else {
+			ftpClient.storeFile(destination, inputStream);
+		}
 	}
 
 	/**
 	 * Gets the file.
 	 *
-	 * @param name the name
+	 * @param filePathAndName the path and name
 	 * @return the input stream
 	 */
 	@Override
-	public InputStream get(String name) throws Exception {
+	public InputStream get(String filePathAndName) throws Exception {
 		checkForConnection();
-		InputStream inputStream = ftpClient.retrieveFileStream(name);
-	    int returnCode = ftpClient.getReplyCode();
-	    if (inputStream != null && returnCode != 550) {
-	    	return new FtpInputStream(inputStream, this);
-	    } else {
-	    	throw new Exception("File not found");
-	    }
+		InputStream inputStream = ftpClient.retrieveFileStream(filePathAndName);
+		int returnCode = ftpClient.getReplyCode();
+		if (inputStream != null && returnCode != 550) {
+			return new FtpInputStream(inputStream, this);
+		} else {
+			throw new Exception("File not found");
+		}
+	}
+
+	@Override
+	public Date getModifyDate(String filePathAndName) throws Exception {
+		checkForConnection();
+		FTPFile file = ftpClient.mlistFile(filePathAndName);
+		if (file != null) {
+			return file.getTimestamp().getTime();
+		} else {
+			throw new Exception("File not found");
+		}
+	}
+
+	@Override
+	public long getFileSize(String filePathAndName) throws Exception {
+		checkForConnection();
+		FTPFile file = ftpClient.mlistFile(filePathAndName);
+		if (file != null) {
+			return file.getSize();
+		} else {
+			throw new Exception("File not found");
+		}
 	}
 	
 	private void checkForConnection() throws Exception {

@@ -40,7 +40,7 @@ public class MailinglistServiceImpl implements MailinglistService {
 
 	@Override
 	@Transactional
-	@Validate("addMailinglist")
+	@Validate(groups = MailinglistModel.AddGroup.class)
 	public int addMailinglist(MailinglistModel model) {
         Mailinglist mailinglist = new MailinglistImpl();
         mailinglist.setCompanyID(model.getCompanyId());
@@ -51,7 +51,7 @@ public class MailinglistServiceImpl implements MailinglistService {
 
 	@Override
 	@Transactional
-	@Validate("updateMailinglist")
+	@Validate(groups = MailinglistModel.UpdateGroup.class)
     public void updateMailinglist(MailinglistModel model) throws MailinglistException {
 		Mailinglist mailinglist = getMailinglist(model);
 		mailinglist.setShortname(model.getShortname());
@@ -61,7 +61,7 @@ public class MailinglistServiceImpl implements MailinglistService {
 
     @Override
     @Transactional
-    @Validate("getMailinglist")
+    @Validate(groups =  MailinglistModel.GetGroup.class)
     public Mailinglist getMailinglist(MailinglistModel model) throws MailinglistException {
         Mailinglist mailingList = mailinglistDao.getMailinglist(model.getMailinglistId(), model.getCompanyId());
         if (mailingList == null) {
@@ -72,7 +72,7 @@ public class MailinglistServiceImpl implements MailinglistService {
 
 	@Override
 	@Transactional
-	@Validate("getMailinglist")
+	@Validate(groups =  MailinglistModel.GetGroup.class)
 	public boolean deleteMailinglist(MailinglistModel model) throws MailinglistException {
 		int mailingListId = model.getMailinglistId();
 		int companyId = model.getCompanyId();
@@ -91,7 +91,7 @@ public class MailinglistServiceImpl implements MailinglistService {
 
 	@Override
 	@Transactional
-	@Validate("company")
+	@Validate(groups = MailinglistModel.CompanyGroup.class)
 	public List<Mailinglist> getMailinglists(MailinglistModel model) {
 		return listMailinglists(model.getCompanyId());
 	}
@@ -99,7 +99,6 @@ public class MailinglistServiceImpl implements MailinglistService {
 
 	@Override
 	@Transactional
-	@Validate("company")
 	public List<Mailinglist> listMailinglists(final int companyID) {
 		return mailinglistDao.getMailinglists(companyID);
 	}

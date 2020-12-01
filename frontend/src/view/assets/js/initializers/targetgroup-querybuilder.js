@@ -372,6 +372,10 @@
         }
       };
 
+      if(!options.mail_tracking_available) {
+        delete augmentations['received mailing'];
+      }
+
       result.forEach(function(element) {
         var properties = augmentations[element.id];
         if (properties) {

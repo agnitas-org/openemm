@@ -14,21 +14,26 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComProfileField;
-import com.agnitas.beans.impl.ComRecipientLiteImpl;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
-import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
-import com.agnitas.emm.core.recipient.service.FieldsSaveResults;
-import com.agnitas.service.ServiceResult;
+import javax.servlet.http.HttpServletRequest;
+
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
 import org.agnitas.emm.core.recipient.service.impl.ProfileFieldNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.web.RecipientForm;
 import org.apache.commons.beanutils.DynaBean;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.impl.ComRecipientLiteImpl;
+import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
+import com.agnitas.emm.core.recipient.service.FieldsSaveResults;
+import com.agnitas.service.ServiceResult;
 
 public interface RecipientService {
 
@@ -50,11 +55,11 @@ public interface RecipientService {
 
 	boolean updateSubscriber(RecipientModel model, String username) throws Exception;
 	
-	List<RecipientLightDto> getDuplicateRecipients(ComAdmin admin, String email) throws Exception;
-	
+	List<RecipientLightDto> getDuplicateRecipients(ComAdmin admin, String fieldName, int recipientId) throws Exception;
+
 	ServiceResult<FieldsSaveResults> saveBulkRecipientFields(ComAdmin admin, int targetId, int mailinglistId, Map<String, RecipientFieldDto> fieldChanges);
 	
-	File getDuplicateAnalysisCsv(ComAdmin admin, Map<String, String> fieldsMap, Set<String> selectedColumns, String sort, String order) throws Exception;
+	File getDuplicateAnalysisCsv(ComAdmin admin, String searchFieldName, Map<String, String> fieldsMap, Set<String> selectedColumns, String sort, String order) throws Exception;
 	
 	RecipientLightDto getRecipientDto(@VelocityCheck int companyId, int recipientId);
     
@@ -74,13 +79,16 @@ public interface RecipientService {
 
 	void confirmEmailAddressChange(ComExtensibleUID uid, String confirmationCode) throws Exception;
 	
-	List<ComProfileField> getRecipientBulkFields(@VelocityCheck int companyId);
+	List<ProfileField> getRecipientBulkFields(@VelocityCheck int companyId);
     
     int calculateRecipient(ComAdmin admin, int targetId, int mailinglistId);
 	
 	boolean deleteRecipients(ComAdmin admin, Set<Integer> bulkIds);
+
+	Callable<PaginatedListImpl<DynaBean>> getRecipientWorker(HttpServletRequest request, RecipientForm form, Set<String> recipientDbColumns, String sort, String direction, int pageNumber, int rownums) throws Exception;
+
+	PaginatedListImpl<DynaBean> getPaginatedDuplicateList(ComAdmin admin, String searchFieldName, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception;
 	
-	boolean deleteDuplicateRecipients(ComAdmin admin, Set<Integer> bulkIds, String email);
+	List<Integer> listRecipientIdsByTargetGroup(final int targetId, final int companyId);
 	
-	PaginatedListImpl<DynaBean> getPaginatedDuplicateList(ComAdmin admin, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception;
 }

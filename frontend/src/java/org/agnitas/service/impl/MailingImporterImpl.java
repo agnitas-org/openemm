@@ -27,7 +27,6 @@ import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.beans.Mediatype;
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.DynamicTagContentImpl;
 import org.agnitas.beans.impl.MailingComponentImpl;
 import org.agnitas.dao.MailinglistDao;
@@ -90,20 +89,20 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
      * Import simple mailing or grid mailing or templates
      */
 	@Override
-	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, boolean importGridTemplateAllowed, boolean isGrid) throws Exception {
-		return importMailingFromJson(companyID, input, importAsTemplate, null, null, importGridTemplateAllowed, isGrid);
+	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, boolean importGridTemplateAllowed, boolean overwriteTemplate, boolean isGrid) throws Exception {
+		return importMailingFromJson(companyID, input, importAsTemplate, null, null, importGridTemplateAllowed, overwriteTemplate, isGrid);
 	}
 
     /**
      * Import simple mailing or template
      */
 	@Override
-	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean importGridTemplateAllowed, boolean isGrid) throws Exception {
-		return importMailingFromJson(companyID, input, importAsTemplate, shortName, description, importGridTemplateAllowed, true, isGrid);
+	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean importGridTemplateAllowed, boolean overwriteTemplate, boolean isGrid) throws Exception {
+		return importMailingFromJson(companyID, input, importAsTemplate, shortName, description, importGridTemplateAllowed, true, overwriteTemplate, isGrid);
 	}
 	
 	@Override
-	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean importGridTemplateAllowed, boolean checkIsTemplate, boolean isGrid) throws Exception {
+	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean importGridTemplateAllowed, boolean overwriteTemplate, boolean checkIsTemplate, boolean isGrid) throws Exception {
 		Map<String, Object[]> warnings = new HashMap<>();
 		try (JsonReader reader = new JsonReader(input, "UTF-8")) {
 			JsonNode jsonNode = reader.read();
@@ -291,7 +290,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		}
 
 		if (jsonObject.containsPropertyKey("links")) {
-			Map<String, TrackableLink> trackableLinks = new HashMap<>();
+			Map<String, ComTrackableLink> trackableLinks = new HashMap<>();
 			for (Object linkObject : (JsonArray) jsonObject.get("links")) {
 				JsonObject linkJsonObject = (JsonObject) linkObject;
 				ComTrackableLink trackableLink = new ComTrackableLinkImpl();
@@ -304,16 +303,16 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 					trackableLink.setDeepTracking((Integer) linkJsonObject.get("deep_tracking"));
 				}
 
-				if (linkJsonObject.containsPropertyKey("relevance")) {
-					trackableLink.setRelevance((Integer) linkJsonObject.get("relevance"));
-				}
-
 				if (linkJsonObject.containsPropertyKey("usage")) {
 					trackableLink.setUsage((Integer) linkJsonObject.get("usage"));
 				}
 
 				if (linkJsonObject.containsPropertyKey("action_id")) {
 					trackableLink.setActionID(actionIdMappings.get(linkJsonObject.get("action_id")));
+				}
+				
+				if (linkJsonObject.containsPropertyKey("administrative")) {
+					trackableLink.setAdminLink((Boolean) linkJsonObject.get("administrative"));
 				}
 
 				if (linkJsonObject.containsPropertyKey("properties")) {

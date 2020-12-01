@@ -11,7 +11,6 @@
 package com.agnitas.emm.core;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,7 +23,6 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.agnitas.util.Caret;
 import org.agnitas.beans.TagDetails;
 import org.agnitas.beans.impl.TagDetailsImpl;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
@@ -47,20 +45,21 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.ComCompany;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
-import com.agnitas.emm.core.hashtag.HashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.service.HashTagEvaluationService;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
 import com.agnitas.emm.grid.grid.beans.GridCustomPlaceholderType;
 import com.agnitas.service.AgnTagService;
+import com.agnitas.util.Caret;
 import com.agnitas.util.DeepTrackingToken;
+import com.agnitas.util.LinkUtils;
+import com.agnitas.util.StringUtil;
 import com.agnitas.util.backend.Decrypt;
 
 public class LinkServiceImpl implements LinkService {
@@ -103,10 +102,7 @@ public class LinkServiceImpl implements LinkService {
 	
 	private ComMailingParameterDao mailingParameterDao;
 	
-	private HashTag unencodedProfileFieldHashTag;
-	
 	private HashTagEvaluationService hashTagEvaluationService;
-	
 
 	/**
 	 * Map cache from mailingID to baseUrl
@@ -144,11 +140,6 @@ public class LinkServiceImpl implements LinkService {
 	}
 	
 	@Required
-	public final void setUnencodedProfileFieldHashTag(final HashTag hashTag) {
-		this.unencodedProfileFieldHashTag = hashTag;
-	}
-	
-	@Required
 	public final void setHashTagEvaluationService(final HashTagEvaluationService service) {
 		this.hashTagEvaluationService = Objects.requireNonNull(service, "HashTagEvaluationSerice is null");
 	}
@@ -171,7 +162,7 @@ public class LinkServiceImpl implements LinkService {
 			if (link.getProperties() != null && link.getProperties().size() > 0) {
 				// Create redirect Url with new extensions
 				for (LinkProperty linkProperty : link.getProperties()) {
-					if (linkProperty.getPropertyType() == PropertyType.LinkExtension) {
+					if (LinkUtils.isExtension(linkProperty)) {
 						String propertyName = replaceHashTags(link, agnUidString, customerID, referenceTableRecordSelector, linkProperty.getPropertyName(), staticValueMap);
 						String propertyValue = replaceHashTags(link, agnUidString, customerID, referenceTableRecordSelector, linkProperty.getPropertyValue(), staticValueMap);
 						
@@ -229,12 +220,16 @@ public class LinkServiceImpl implements LinkService {
 			currentPosition = hashTagEnd;
 			
 			if (hashTagContent.equals("AGNUID")) {
+				// TODO Move to own hashtag class and add to hashtag registry
 				hashTagReplacement = agnUidString;
 			} else if (hashTagContent.equals("MAILING_ID")) {
+				// TODO Move to own hashtag class and add to hashtag registry
 				hashTagReplacement = Integer.toString(link.getMailingID());
 			} else if (hashTagContent.equals("URL_ID")) {
+				// TODO Move to own hashtag class and add to hashtag registry
 				hashTagReplacement = Integer.toString(link.getId());
 			} else if (hashTagContent.equals("PUBID") || hashTagContent.startsWith("PUBID:")) {
+				// TODO Move to own hashtag classes and add to hashtag registry
 				String[] parts = hashTagContent.split(":", 3);
 
 				if (pubid == null) {
@@ -257,6 +252,7 @@ public class LinkServiceImpl implements LinkService {
 				
 				hashTagReplacement = pubid.createID();
 			} else if (hashTagContent.startsWith("SENDDATE-UNENCODED:")) {
+				// TODO Move to own hashtag class and add to hashtag registry
 				String format = hashTagContent.substring(hashTagContent.indexOf(':') + 1);
 				
 				try {
@@ -276,6 +272,7 @@ public class LinkServiceImpl implements LinkService {
 					hashTagReplacement = "";
 				}
 			} else if (hashTagContent.startsWith("MAILING:") || hashTagContent.startsWith("MAILING-UNENCODED:")) {
+				// TODO Move to own hashtag classes and add to hashtag registry
 				try {
 					String paramName = hashTagContent.substring(hashTagContent.indexOf(':') + 1);
 					ComMailingParameter parameter = mailingParameterDao.getParameterByName(paramName, link.getMailingID(), link.getCompanyID());
@@ -294,8 +291,6 @@ public class LinkServiceImpl implements LinkService {
 					logger.warn("Error processing ##MAILING:...#", e);
 					hashTagReplacement = "";
 				}
-			} else if (hashTagContent.startsWith("UNENCODED:")) {	  // TODO: Replace this with a registry, that selects the correct hash tag. (-> AGNEMM-2731)
-				hashTagReplacement = executeHashTag(this.unencodedProfileFieldHashTag, hashTagContent, hashTagContext);
 			} else {
 				// Handle hash tag by registry and evaluation service here
 				try {
@@ -305,13 +300,6 @@ public class LinkServiceImpl implements LinkService {
 
 					hashTagReplacement = "";
 				}
-				
-            	try {
-            		hashTagReplacement = URLEncoder.encode(hashTagReplacement, "UTF8");
-            	} catch(UnsupportedEncodingException e) {
-            		logger.error("Error while URL-encoding", e);
-            		hashTagReplacement = "";
-            	}
 			}
 			
 			if (hashTagReplacement != null) {
@@ -325,16 +313,6 @@ public class LinkServiceImpl implements LinkService {
 		}
 		
 		return returnLinkString.toString();
-	}
-
-	@Deprecated // Removed without replacement
-	private static final String executeHashTag(final HashTag tag, final String tagString, final HashTagContext context) {
-		try {
-			return tag.handle(context, tagString);
-		} catch(final Exception e) {
-			logger.error("Error processing tag string: " + tagString + " (company " + context.getCompanyID() + ", link " + context.getCurrentTrackableLink().getId() + ", tag class " + tag.getClass().getCanonicalName() + ")", e);
-			return "";
-		}
 	}
 	
 	/**
@@ -644,10 +622,10 @@ public class LinkServiceImpl implements LinkService {
 					tag.setEndPos(endIndexOfAgnFormTag);
 					tag.setFullText(text.substring(startIndexOfAgnFormTag, endIndexOfAgnFormTag));
 				}
-				int startIndexOfFormName = tag.getFullText().indexOf('"') + 1;
-				int endIndexOfFormName = tag.getFullText().indexOf('"', startIndexOfFormName);
+				int startIndexOfFormName = StringUtil.firstIndexOf(tag.getFullText(), '\'', '"') + 1;
+				int endIndexOfFormName = StringUtil.firstIndexOf(tag.getFullText(), startIndexOfFormName, '\'', '"');
 				tag.setName(tag.getFullText().substring(startIndexOfFormName, endIndexOfFormName));
-				text = text.replaceAll("\\[agnFORM name=\".*?\"\\]", agnTagService.resolve(tag, companyID, mailingID, mailinglistID, 0));
+				text = text.replaceAll("\\[agnFORM name=(?:\"|').*?(?:\"|')\\]", agnTagService.resolve(tag, companyID, mailingID, mailinglistID, 0));
 
 				if (text.contains("[agnFORM")) {
 					logger.error("scanForLinks: Html-text has an unresolved agnFORM-Tag");
@@ -859,12 +837,12 @@ public class LinkServiceImpl implements LinkService {
 	}
 
 	@Override
-	public Integer getLineNumberOfFirstInvalidLink(String text) {
+	public int getLineNumberOfFirstInvalidLink(String text) {
 		Matcher matcher = INVALID_HREF_WITH_WHITESPACE_PATTERN.matcher(text);
 		if (matcher.find()) {
 			return AgnUtils.getLineNumberOfTextposition(text, matcher.start());
 		} else {
-			return null;
+			return -1;
 		}
 	}
 
@@ -927,30 +905,12 @@ public class LinkServiceImpl implements LinkService {
 		}
 		return null;
 	}
-	
-	public static List<LinkProperty> getLinkExtensions(String urlEncodedExtensionString) {
-		List<LinkProperty> resultList = new ArrayList<>();
-		if (StringUtils.isNotBlank(urlEncodedExtensionString)) {
-			if (urlEncodedExtensionString.startsWith("?")) {
-				urlEncodedExtensionString = urlEncodedExtensionString.substring(1);
-			}
-			for (String keyValueParamString : urlEncodedExtensionString.split("&")) {
-				String[] parts = keyValueParamString.split("=");
-				if (StringUtils.isNotBlank(parts[0])) {
-					try {
-						if (parts.length > 1 && StringUtils.isNotBlank(parts[1])) {
-							resultList.add(new LinkProperty(PropertyType.LinkExtension, URLDecoder.decode(parts[0], "UTF-8"), URLDecoder.decode(parts[1], "UTF-8")));
-						} else {
-							resultList.add(new LinkProperty(PropertyType.LinkExtension, URLDecoder.decode(parts[0], "UTF-8"), ""));
-						}
-					} catch (UnsupportedEncodingException e) {
-						logger.error("Error occured: " + e.getMessage(), e);
-					}
-				}
-			}
-		}
-		return resultList;
-	}
+
+    @Override
+    public List<LinkProperty> getDefaultExtensions(@VelocityCheck int companyId) {
+        String defaultExtension = configService.getValue(ConfigValue.DefaultLinkExtension, companyId);
+        return LinkUtils.parseLinkExtension(defaultExtension);
+    }
 
 	private ParseLinkRuntimeException createParseException(String message, Matcher matcher, String text) {
 		Caret caret = Caret.at(text, matcher.start());

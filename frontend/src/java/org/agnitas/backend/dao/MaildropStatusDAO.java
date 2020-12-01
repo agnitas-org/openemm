@@ -261,46 +261,98 @@ public class MaildropStatusDAO {
 	 * update genstatus for statusID
 	 */
 	public boolean updateGenStatus (DBase dbase, int fromStatus, int toStatus) throws SQLException {
-		int	count;
+		try (DBase.With with = dbase.with ()) {
+			int	count;
 		
-		DBase.Retry <Integer>	r = dbase.new Retry <Integer> ("genstatus", dbase, dbase.jdbc ()) {
-			@Override
-			public void execute () throws SQLException {
-				String	query =
-					"UPDATE maildrop_status_tbl " +
-					"SET genchange = CURRENT_TIMESTAMP, genstatus = ? " +
-					"WHERE status_id = ?" + (fromStatus > 0 ? " AND genstatus = ?" : "");
-				try (Connection conn = dbase.getConnection (query, toStatus, statusID, fromStatus)) {
-					boolean	autoCommit = conn.getAutoCommit ();
+			DBase.Retry <Integer>	r = dbase.new Retry <Integer> ("genstatus", dbase, with.jdbc ()) {
+				@Override
+				public void execute () throws SQLException {
+					String	query =
+						"UPDATE maildrop_status_tbl " +
+						"SET genchange = CURRENT_TIMESTAMP, genstatus = ? " +
+						"WHERE status_id = ?" + (fromStatus > 0 ? " AND genstatus = ?" : "");
+					try (Connection conn = dbase.getConnection (query, toStatus, statusID, fromStatus)) {
+						boolean	autoCommit = conn.getAutoCommit ();
 					
-					try {
-						if (! autoCommit) {
-							conn.setAutoCommit (true);
-						}
-						try (PreparedStatement prep = conn.prepareStatement (query)) {
-							prep.setLong (1, toStatus);
-							prep.setLong (2, statusID);
-							if (fromStatus > 0) {
-								prep.setLong (3, fromStatus);
+						try {
+							if (! autoCommit) {
+								conn.setAutoCommit (true);
 							}
-							priv = prep.executeUpdate ();
+							try (PreparedStatement prep = conn.prepareStatement (query)) {
+								prep.setLong (1, toStatus);
+								prep.setLong (2, statusID);
+								if (fromStatus > 0) {
+									prep.setLong (3, fromStatus);
+								}
+								priv = prep.executeUpdate ();
+							}
+						} finally {
+							conn.setAutoCommit (autoCommit);
 						}
-					} finally {
-						conn.setAutoCommit (autoCommit);
+					}
+					if (priv == 1) {
+						Map <String, Object>	rq;
+						
+						rq = dbase.querys (jdbc,
+								   "SELECT genstatus " +
+								   "FROM maildrop_status_tbl " +
+								   "WHERE status_id = :statusID",
+								   "statusID", statusID);
+						if (rq == null) {
+							dbase.logging (Log.ERROR, "genstatus", "Failed to query maildrop_status_tbl.status_id = " + statusID);
+						} else {
+							Object	obj = rq.get ("genstatus");
+							int	genstatus = -1;
+							
+							if (obj == null) {
+								dbase.logging (Log.ERROR, "genstatus", "genstatus IS NULL for status_id " + statusID + " but should be " + toStatus);
+							} else {
+								genstatus = dbase.asInt (obj);
+								if (genstatus != toStatus) {
+									dbase.logging (Log.ERROR, "genstatus", "genstatus = " + genstatus + " but should be " + toStatus + " for status_id " + statusID);
+								} else {
+									dbase.logging (Log.INFO, "genstatus", "genstatus = " + genstatus + " as expected for status_id " + statusID);
+								}
+							}
+							if (genstatus != toStatus) {
+								int	updatedLines = dbase.update (jdbc,
+										      "UPDATE maildrop_status_tbl " +
+										      "SET genstatus = :toStatus, genchange = CURRENT_TIMESTAMP " +
+										      "WHERE status_id = :statusID",
+										      "toStatus", toStatus,
+										      "statusID", statusID);
+								if (updatedLines != 1) {
+									dbase.logging (Log.ERROR, "genstatus", "Failed to retry update genstatus to " + toStatus + " for status_id " + statusID);
+								} else {
+									genstatus = dbase.queryInt (jdbc,
+												    "SELECT genstatus " + 
+												    "FROM maildrop_status_tbl " +
+												    "WHERE status_id = :statusID",
+												    "statusID", statusID);
+									if (genstatus != toStatus) {
+										dbase.logging (Log.ERROR, "genstatus", "Even failed setting genstatus to " + toStatus + " for status_id " + statusID + " in retry");
+									} else {
+										dbase.logging (Log.INFO, "genstatus", "Retry setting genstatus to " + toStatus + " for status_id " + statusID + " seems to have succeeded");
+									}
+								}
+							}
+						}
+					} else {
+						dbase.logging (Log.ERROR, "genstatus", "Primary update of genstatus failed, expected 1 row, but " + priv + " rows are affected");
 					}
 				}
+			};
+			if (dbase.retry (r)) {
+				count = r.priv;
+				if (count == 1) {
+					dbase.logging (Log.INFO, "genstatus", "Updated genstatus " + (fromStatus > 0 ? "from " + fromStatus + " " : "") + "to " + toStatus + " for statusID " + statusID);
+				} else {
+					dbase.logging (Log.INFO, "genstatus", "Failed to update genstatus " + (fromStatus > 0 ? "from " + fromStatus + " " : "") + "to " + toStatus + " for statusID " + statusID + ", affected " + count + " rows");
+				}
+				return count == 1;
 			}
-		};
-		if (dbase.retry (r)) {
-			count = r.priv;
-			if (count == 1) {
-				dbase.logging (Log.INFO, "genstatus", "Updated genstatus " + (fromStatus > 0 ? "from " + fromStatus : "") + "to " + toStatus + " for statusID " + statusID);
-			} else {
-				dbase.logging (Log.INFO, "genstatus", "Failed to update genstatus " + (fromStatus > 0 ? "from " + fromStatus : "") + "to " + toStatus + " for statusID " + statusID + ", affected " + count + " rows");
-			}
-			return count == 1;
+			throw r.error;
 		}
-		throw r.error;
 	}
 
 	public boolean updateGenStatus_old (DBase dbase, int fromStatus, int toStatus) throws SQLException {

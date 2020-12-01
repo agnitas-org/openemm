@@ -126,22 +126,20 @@
 
                     <ul class="dropdown-menu">
 
-                        <emm:ShowByPermission token="mailing.send.admin.target">
-                            <li class="dropdown-header"><bean:message key="UserRight.Target-Groups.targets.show"/></li>
-                            <li>
-                                <label class="label">
-                                    <html:checkbox property="showWorldDelivery" styleClass="js-form-change" />
-                                    <bean:message key="target.worldDelivery"/>
-                                </label>
-                            </li>
-                            <li>
-                                <label class="label">
-                                    <html:checkbox property="showTestAndAdminDelivery" styleClass="js-form-change" />
-                                    <bean:message key="target.adminAndTestDelivery"/>
-                                </label>
-                            </li>
-                            <li class="divider"></li>
-                        </emm:ShowByPermission>
+                        <li class="dropdown-header"><bean:message key="Targets"/></li>
+                        <li>
+                            <label class="label">
+                                <html:checkbox property="showWorldDelivery" styleClass="js-form-change" />
+                                <bean:message key="target.worldDelivery"/>
+                            </label>
+                        </li>
+                        <li>
+                            <label class="label">
+                                <html:checkbox property="showTestAndAdminDelivery" styleClass="js-form-change" />
+                                <bean:message key="target.adminAndTestDelivery"/>
+                            </label>
+                        </li>
+                        <li class="divider"></li>
 
                         <li class="dropdown-header"><bean:message key="listSize"/></li>
                         <li>
@@ -278,30 +276,28 @@
                 </display:table>
             </div>
 
-            <emm:ShowByPermission token="mailing.send.admin.target">
-                <emm:instantiate var="appliedFilters" type="java.util.LinkedHashMap">
-                    <c:if test="${targetForm.showWorldDelivery}">
-                        <c:set target="${appliedFilters}" property="${appliedFilters.size()}"><bean:message key="target.worldDelivery"/></c:set>
-                    </c:if>
+            <emm:instantiate var="appliedFilters" type="java.util.LinkedHashMap">
+                <c:if test="${targetForm.showWorldDelivery}">
+                    <c:set target="${appliedFilters}" property="${appliedFilters.size()}"><bean:message key="target.worldDelivery"/></c:set>
+                </c:if>
 
-                    <c:if test="${targetForm.showTestAndAdminDelivery}">
-                        <c:set target="${appliedFilters}" property="${appliedFilters.size()}"><bean:message key="target.adminAndTestDelivery"/></c:set>
-                    </c:if>
-                </emm:instantiate>
+                <c:if test="${targetForm.showTestAndAdminDelivery}">
+                    <c:set target="${appliedFilters}" property="${appliedFilters.size()}"><bean:message key="target.adminAndTestDelivery"/></c:set>
+                </c:if>
+            </emm:instantiate>
 
-                <script data-initializer="targetgroup-overview-filters" type="application/json">
-                    {
-                        "filters": ${emm:toJson(appliedFilters.values())}
-                    }
-                </script>
+            <script data-initializer="targetgroup-overview-filters" type="application/json">
+                {
+                    "filters": ${emm:toJson(appliedFilters.values())}
+                }
+            </script>
 
-                <script id="targetgroup-overview-filters" type="text/x-mustache-template">
-                    <div class='well'>
-                        <strong><bean:message key="mailing.showing"/></strong>
-                        {{- filters.join(', ') }}
-                    </div>
-                </script>
-            </emm:ShowByPermission>
+            <script id="targetgroup-overview-filters" type="text/x-mustache-template">
+                <div class='well'>
+                    <strong><bean:message key="mailing.showing"/></strong>
+                    {{- filters.join(', ') }}
+                </div>
+            </script>
 
         </div>
     </div>

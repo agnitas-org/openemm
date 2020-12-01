@@ -10,47 +10,38 @@
 
 package com.agnitas.emm.springws.endpoint;
 
-import java.util.Objects;
-
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.mailing.service.FullviewService;
 import com.agnitas.emm.springws.jaxb.GetFullviewUrlRequest;
 import com.agnitas.emm.springws.jaxb.GetFullviewUrlResponse;
-import com.agnitas.emm.springws.jaxb.ObjectFactory;
 
-public class GetFullviewUrlEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class GetFullviewUrlEndpoint extends BaseEndpoint {
     
-	private ObjectFactory objectFactory;
-	
 	private FullviewService fullviewService;
-	
-    @Override
-	protected final Object invokeInternal(final Object requestObject) throws Exception {
-    	final GetFullviewUrlRequest request = (GetFullviewUrlRequest) requestObject;
-    	
+
+	public GetFullviewUrlEndpoint(FullviewService fullviewService) {
+		this.fullviewService = fullviewService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "GetFullviewUrlRequest")
+	public @ResponsePayload GetFullviewUrlResponse getFullviewUrl(@RequestPayload GetFullviewUrlRequest request) throws Exception {
     	final int companyID = Utils.getUserCompany();
     	final int mailingID = request.getMailingID();
     	final int customerID = request.getCustomerID();
     	final String formNameOrNull = request.getFormName();
     	
-    	final String url = this.fullviewService.getFullviewUrl(companyID, mailingID, customerID, formNameOrNull);
+    	final String url = fullviewService.getFullviewUrl(companyID, mailingID, customerID, formNameOrNull);
     	
-    	final GetFullviewUrlResponse response = this.objectFactory.createGetFullviewUrlResponse();
+    	final GetFullviewUrlResponse response = new GetFullviewUrlResponse();
     	response.setUrl(url);
     	
     	return response;
-    }
-    
-    @Required
-    public final void setObjectFactory(final ObjectFactory objectFactory) {
-        this.objectFactory = Objects.requireNonNull(objectFactory, "Object factory cannot be null");
-    }
-    
-    @Required
-    public final void setFullviewService(final FullviewService service) {
-    	this.fullviewService = Objects.requireNonNull(service, "Fullview service cannot be null");
     }
 }

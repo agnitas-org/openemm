@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@page import="com.agnitas.beans.ComProfileField"%>
+<%@page import="com.agnitas.beans.ProfileField"%>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
@@ -8,10 +8,10 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="profileForm" type="com.agnitas.emm.core.profilefields.form.ProfileFieldForm"--%>
-<%--@elvariable id="fields" type="com.agnitas.beans.impl.ComProfileFieldImpl"--%>
+<%--@elvariable id="fields" type="com.agnitas.beans.impl.ProfileFieldImpl"--%>
 
 <c:set var="MAX_SORT_INDEX" value="${1000}"/>
-<c:set var="MODE_EDIT_NOT_VISIBLE" value="<%= ComProfileField.MODE_EDIT_NOT_VISIBLE %>"/>
+<c:set var="MODE_EDIT_NOT_VISIBLE" value="<%=ProfileField.MODE_EDIT_NOT_VISIBLE%>"/>
 
 <mvc:form servletRelativeAction="/profiledb.action" data-form="resource" modelAttribute="profileForm">
     <script type="application/json" data-initializer="web-storage-persist">
@@ -88,7 +88,7 @@
                         </c:if>
                     </display:column>
 
-                    <display:column headerClass="profile_fields_defvalue_head" class="profile_fields_defvalue" titleKey="Default_Value" sortable="true" sortProperty="defaultValue">
+                    <display:column headerClass="profile_fields_defvalue_head" class="profile_fields_defvalue" titleKey="settings.Default_Value" sortable="true" sortProperty="defaultValue">
                         ${fn:escapeXml(fields.defaultValue)}
                     </display:column>
 

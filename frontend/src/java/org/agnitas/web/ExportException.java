@@ -17,6 +17,11 @@ import com.agnitas.messages.I18nString;
 public class ExportException extends RuntimeException {
 	private static final long serialVersionUID = 754385941659930987L;
 	
+	/**
+	 * In case of e.g. network errors or auth credential erros, we may retry an autoexport, if set to do so
+	 */
+	private boolean retryable = false;
+	
 	public enum Reason {
 		FileTransferError("error.filetransfer.createFile"),
 		ConnectionError("error.connection.fileserver");
@@ -44,8 +49,9 @@ public class ExportException extends RuntimeException {
 		return additionalData;
 	}
 
-	public ExportException(Reason reason, Object... additionalData) {
+	public ExportException(boolean retryable, Reason reason, Object... additionalData) {
 		super();
+		this.retryable = retryable;
 		this.reason = reason;
 		this.additionalData = additionalData;
 	}
@@ -65,5 +71,9 @@ public class ExportException extends RuntimeException {
 		} else {
 			return super.getMessage();
 		}
+	}
+
+	public boolean isRetryable() {
+		return retryable;
 	}
 }

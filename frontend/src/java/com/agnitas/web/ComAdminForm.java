@@ -14,12 +14,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+
 import javax.servlet.http.HttpServletRequest;
 
-import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.GenericValidator;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
@@ -55,17 +55,8 @@ public class ComAdminForm extends StrutsFormBase {
 	private String language;
 	private Locale adminLocale;
 	private String passwordConfirm;
-
-
-	/**
-	 * Holds value of property userRights.
-	 */
 	private Set<String> userRights;
-
-	/**
-	 * Holds value of property groupID.
-	 */
-	private int groupID = 0;
+	private String[] groupIDs = new String[]{};
 
 	// constructor:
 	public ComAdminForm() {
@@ -94,6 +85,7 @@ public class ComAdminForm extends StrutsFormBase {
 		setAdminLocale(Locale.GERMANY);
 		setAdminTimezone("Europe/Berlin");
 		userRights = new HashSet<>();
+		groupIDs = new String[]{};
 	}
 	
 	/**
@@ -142,8 +134,13 @@ public class ComAdminForm extends StrutsFormBase {
 				actionErrors.add("companyName", new ActionMessage("error.company.tooLong"));
 			}
 
-			if (GenericValidator.isBlankOrNull(this.email) || !AgnitasEmailValidator.getInstance().isValid(email)) {
+			if (StringUtils.isBlank(email) || !AgnUtils.isEmailValid(email)) {
 				actionErrors.add("mailForReport", new ActionMessage("error.invalid.email"));
+			}
+
+			statEmail = StringUtils.defaultIfEmpty(statEmail, "");
+			if (StringUtils.isNotBlank(statEmail) && !AgnUtils.isEmailValid(statEmail)) {
+				actionErrors.add("statEmail", new ActionMessage("error.invalid.email.statistics"));
 			}
 		}
 		return actionErrors;
@@ -487,22 +484,21 @@ public class ComAdminForm extends StrutsFormBase {
 	}
 
 	/**
-	 * Getter for property groupID.
+	 * Getter for property groupIDs.
 	 *
 	 * @return Value of property groupID.
 	 */
-	public int getGroupID() {
-		return groupID;
+	public String[] getGroupIDs() {
+		return groupIDs;
 	}
 
 	/**
-	 * Setter for property groupID.
+	 * Setter for property groupIDs.
 	 *
 	 * @param groupID
-	 *            New value of property groupID.
+	 *            New value of property groupIDs.
 	 */
-	public void setGroupID(int groupID) {
-		this.groupID = groupID;
+	public void setGroupIDs(String[] groupIDs) {
+		this.groupIDs = groupIDs;
 	}
-
 }

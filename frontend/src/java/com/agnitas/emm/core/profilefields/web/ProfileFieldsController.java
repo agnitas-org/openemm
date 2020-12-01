@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import org.agnitas.beans.ProfileField;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -42,7 +41,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
@@ -106,7 +105,7 @@ public class ProfileFieldsController {
     @RequestMapping("/profiledb/{fieldname}/view.action")
     public String view(ComAdmin admin, @PathVariable("fieldname") String fieldName, ModelMap model) {
         final int companyId = admin.getCompanyID();
-        ComProfileField field = profileFieldService.getProfileField(companyId, fieldName);
+        ProfileField field = profileFieldService.getProfileField(companyId, fieldName);
 
         if (!model.containsAttribute("profileForm")) {
             ProfileFieldForm form;
@@ -144,7 +143,7 @@ public class ProfileFieldsController {
     public String dependents(ComAdmin admin, @PathVariable("fieldname") String fieldName, Model model, Popups popups) {
         int companyId = admin.getCompanyID();
 
-        ComProfileField field = profileFieldService.getProfileField(companyId, fieldName);
+        ProfileField field = profileFieldService.getProfileField(companyId, fieldName);
         if (field == null) {
             popups.alert("Error");
             return "redirect:/profiledb.action";
@@ -161,7 +160,7 @@ public class ProfileFieldsController {
         if (StringUtils.isBlank(profileForm.getFieldname())) {
             popups.alert("error.profiledb.invalid_fieldname", "''");
         } else {
-            ComProfileField field = profileFieldService.getProfileField(admin.getCompanyID(), profileForm.getFieldname());
+            ProfileField field = profileFieldService.getProfileField(admin.getCompanyID(), profileForm.getFieldname());
 
             boolean isNewField = Objects.isNull(field);
 
@@ -290,7 +289,7 @@ public class ProfileFieldsController {
     }
 
     private boolean createField(ComAdmin admin, ProfileFieldForm form) {
-        ComProfileField field = conversionService.convert(form, ComProfileField.class);
+        ProfileField field = conversionService.convert(form, ProfileField.class);
         field.setCompanyID(admin.getCompanyID());
 
         writeUserActivityLog(admin, profileFieldService.getCreateFieldLog(form.getShortname()));
@@ -298,7 +297,7 @@ public class ProfileFieldsController {
         return profileFieldService.createNewField(field, admin);
     }
 
-    private boolean updateField(ComAdmin admin, ComProfileField field, ProfileFieldForm form) {
+    private boolean updateField(ComAdmin admin, ProfileField field, ProfileFieldForm form) {
         UserAction openEmmChangeLog = profileFieldService.getOpenEmmChangeLog(field, form);
         UserAction emmChangeLog = profileFieldService.getEmmChangeLog(field, form);
 
@@ -328,7 +327,7 @@ public class ProfileFieldsController {
         return profileFieldService.updateField(field, admin);
     }
 
-    private void validateField(ComAdmin admin, ProfileFieldForm form, ComProfileField profileField, Popups popups) {
+    private void validateField(ComAdmin admin, ProfileFieldForm form, ProfileField profileField, Popups popups) {
         final int companyId = admin.getCompanyID();
 
         if (!validationService.isValidDbFieldName(form.getFieldname())) {
@@ -347,6 +346,10 @@ public class ProfileFieldsController {
 
         if (validationService.isInvalidIntegerField(form.getFieldType(), form.getFieldDefault())) {
             popups.alert("error.profiledb.numeric.invalid");
+        }
+
+        if (validationService.isInvalidFloatField(form.getFieldType(), form.getFieldDefault())) {
+            popups.alert("error.profiledb.float.invalid");
         }
 
         if (validationService.isInvalidVarcharField(form.getFieldType(), form.getFieldLength())) {

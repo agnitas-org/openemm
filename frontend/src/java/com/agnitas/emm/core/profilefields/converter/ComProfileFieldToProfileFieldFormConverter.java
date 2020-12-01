@@ -10,18 +10,17 @@
 
 package com.agnitas.emm.core.profilefields.converter;
 
-import org.agnitas.beans.ProfileField;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
 
 @Component
-public class ComProfileFieldToProfileFieldFormConverter implements Converter<ComProfileField, ProfileFieldForm> {
+public class ComProfileFieldToProfileFieldFormConverter implements Converter<ProfileField, ProfileFieldForm> {
 
     @Override
-    public ProfileFieldForm convert(ComProfileField field) {
+    public ProfileFieldForm convert(ProfileField field) {
         ProfileFieldForm form = new ProfileFieldForm();
 
         form.setFieldname(field.getColumn());

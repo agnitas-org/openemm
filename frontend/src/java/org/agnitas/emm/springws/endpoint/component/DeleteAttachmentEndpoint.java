@@ -10,36 +10,37 @@
 
 package org.agnitas.emm.springws.endpoint.component;
 
-import javax.annotation.Resource;
-
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.DeleteAttachmentRequest;
 import org.agnitas.emm.springws.jaxb.DeleteAttachmentResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class DeleteAttachmentEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class DeleteAttachmentEndpoint extends BaseEndpoint {
 
-	@Resource
 	private ComponentService componentService;
-	@Resource
-	private ObjectFactory objectFactory;
-	
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		DeleteAttachmentRequest request = (DeleteAttachmentRequest) arg0;
-		
+
+	public DeleteAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService) {
+		this.componentService = componentService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteAttachmentRequest")
+	public @ResponsePayload DeleteAttachmentResponse deleteAttachment(@RequestPayload DeleteAttachmentRequest request) {
+		DeleteAttachmentResponse response = new DeleteAttachmentResponse();
 		ComponentModel model = new ComponentModel();
 		model.setCompanyId(Utils.getUserCompany());
 		model.setComponentId(request.getComponentID());
 		model.setComponentType(MailingComponent.TYPE_ATTACHMENT);
 
-		DeleteAttachmentResponse response = objectFactory.createDeleteAttachmentResponse();
 		componentService.deleteComponent(model);
 		return response;
 	}
-
 }

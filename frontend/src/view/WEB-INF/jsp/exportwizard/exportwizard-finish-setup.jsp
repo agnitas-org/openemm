@@ -42,7 +42,7 @@
         <c:set target="${itemActionsSettings}" property="0" value="${element0}"/>
         <c:set target="${element0}" property="btnCls" value="btn btn-regular btn-inverse"/>
         <c:set target="${element0}" property="iconBefore" value="icon-reply"/>
-        <c:set target="${element0}" property="extraAttributes" value="data-form-set='backButtonPressed: true' data-form-action='${ACTION_VIEW}' data-form-target='#exportWizardForm'"/>
+        <c:set target="${element0}" property="extraAttributes" value="data-form-action='${ACTION_VIEW}' data-form-target='#exportWizardForm'"/>
         <c:set target="${element0}" property="name">
             <bean:message key="button.Back"/>
         </c:set>

@@ -17,13 +17,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.servlet.http.HttpServletRequest;
 
-import com.agnitas.beans.LinkProperty;
 import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
+
+import com.agnitas.beans.LinkProperty;
 
 public abstract class BaseTrackableLinkForm extends StrutsFormBase {
 
@@ -76,11 +78,6 @@ public abstract class BaseTrackableLinkForm extends StrutsFormBase {
      * Holds value of property deepTracking.
      */
     protected int deepTracking;
-
-    /**
-     * Holds value of property relevance.
-     */
-    protected int relevance;
     
     /**
      * Holds value of property links.
@@ -98,8 +95,6 @@ public abstract class BaseTrackableLinkForm extends StrutsFormBase {
     protected List<LinkProperty> commonLinkExtensions;
     
     protected boolean companyHasDefaultLinkExtension = false;
-
-    protected Map<Integer, Integer> linkItemRelevance = new HashMap<>();
 
 	protected Map<Integer, String> linkItemName = new HashMap<>();
 	
@@ -300,22 +295,6 @@ public abstract class BaseTrackableLinkForm extends StrutsFormBase {
     }
 
     /**
-     * Getter for property relevance.
-     * @return Value of property relevance.
-     */
-    public int getRelevance() {
-        return this.relevance;
-    }
-
-    /**
-     * Setter for property relevance.
-     * @param relevance New value of property relevance.
-     */
-    public void setRelevance(int relevance) {
-        this.relevance = relevance;
-    }
-
-    /**
      * Getter for property description.
      * @return Value of property description.
      */
@@ -346,36 +325,6 @@ public abstract class BaseTrackableLinkForm extends StrutsFormBase {
     public void setAltText(String altText) {
         this.altText = altText;
     }
-    
-    /**
-     * Getter for property linkItemRelevance by link id.
-     * @param id link identifier
-     * @return Value of property link name for specific link.
-     */
-    public int getLinkItemRelevance(int id){
-        return linkItemRelevance.getOrDefault(id, 0);
-    }
-    
-    /**
-     * Setter for property linkItemRelevance.
-     * @param id link id
-     * @param value new value of relevance
-     */
-    public void setLinkItemRelevance(int id, int value) {
-        linkItemRelevance.put(id, value);
-    }
-    
-    public void clearLinkItemRelevance() {
-        this.linkItemRelevance.clear();
-    }
-    
-    /**
-     * Getter for property linkItemRelevance.
-     * @return Value of property linkItemRelevance.
-     */
-    public Map<Integer, Integer> getLinkItemsRelevance() {
-		return linkItemRelevance;
-	}
 	
 	/**
      * Getter for property linkItemName by link id.
@@ -443,8 +392,9 @@ public abstract class BaseTrackableLinkForm extends StrutsFormBase {
     }
 
     public void setBulkID(int id, String value) {
-        if (value != null && (value.equals("on") || value.equals("yes") || value.equals("true")))
-            this.bulkIDs.add(id);
+        if (value != null && (value.equals("on") || value.equals("yes") || value.equals("true"))) {
+			this.bulkIDs.add(id);
+		}
     }
 
     public Set<Integer> getBulkIDs() {

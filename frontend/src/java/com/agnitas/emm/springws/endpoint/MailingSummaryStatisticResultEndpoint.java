@@ -18,10 +18,15 @@ import java.util.Map.Entry;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.Utils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.stat.beans.MailingStatJobDescriptor;
 import com.agnitas.emm.core.stat.beans.MailingStatisticTgtGrp;
@@ -32,24 +37,26 @@ import com.agnitas.emm.springws.jaxb.GroupStatisticInfo;
 import com.agnitas.emm.springws.jaxb.MailingSummaryStatisticResultRequest;
 import com.agnitas.emm.springws.jaxb.MailingSummaryStatisticResultResponse;
 import com.agnitas.emm.springws.jaxb.MailingSummaryStatisticResultResponse.Items;
-import com.agnitas.emm.springws.jaxb.ObjectFactory;
 import com.agnitas.emm.springws.jaxb.StatisticEntry;
 import com.agnitas.reporting.birt.external.dataset.CommonKeysService;
 
-public class MailingSummaryStatisticResultEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class MailingSummaryStatisticResultEndpoint extends BaseEndpoint {
 	private static final Logger classLogger = Logger.getLogger(MailingSummaryStatisticJobEndpoint.class);
 
 	private MailingSummaryStatisticJobService mailingSummaryStatisticJobService;
-	private ObjectFactory comObjectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Entered MailingSummaryStatisticResultEndpoint.invokeInternal()");
+	public MailingSummaryStatisticResultEndpoint(MailingSummaryStatisticJobService mailingSummaryStatisticJobService) {
+		this.mailingSummaryStatisticJobService = mailingSummaryStatisticJobService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "MailingSummaryStatisticResultRequest")
+	public @ResponsePayload MailingSummaryStatisticResultResponse mailingSummaryStatisticResult(@RequestPayload MailingSummaryStatisticResultRequest request) throws Exception {
+		if (classLogger.isInfoEnabled()) {
+			classLogger.info( "Entered MailingSummaryStatisticResultEndpoint.mailingSummaryStatisticResult()");
 		}
 		
-		MailingSummaryStatisticResultRequest request = (MailingSummaryStatisticResultRequest) arg0;
-		MailingSummaryStatisticResultResponse response = comObjectFactory.createMailingSummaryStatisticResultResponse();
+		MailingSummaryStatisticResultResponse response = new MailingSummaryStatisticResultResponse();
 
 		MailingStatJobDescriptor job = mailingSummaryStatisticJobService.getStatisticJob(request.getStatisticJobID());
 		response.setStatisticJobStatus(job.getStatus());
@@ -71,30 +78,28 @@ public class MailingSummaryStatisticResultEndpoint extends AbstractMarshallingPa
 					}
 				} catch (NumberFormatException e) {
 					throw new TargetGroupsStringFormatException();
-				} catch (DataAccessException e) {
-					throw e;
 				}
 			}
 		}
 		
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Leaving MailingSummaryStatisticResultEndpoint.invokeInternal()");
+		if (classLogger.isInfoEnabled()) {
+			classLogger.info( "Leaving MailingSummaryStatisticResultEndpoint.mailingSummaryStatisticResult()");
 		}
 		
 		return response;
 	}
 	
 	private void addGroupStat(int jobId, int targetGroupId, MailingSummaryStatisticResultResponse response) throws DataAccessException {
-		GroupStatisticInfo groupStat = comObjectFactory.createGroupStatisticInfo();
+		GroupStatisticInfo groupStat = new GroupStatisticInfo();
 		groupStat.setTargetGroupId(targetGroupId);
 		
-		com.agnitas.emm.springws.jaxb.GroupStatisticInfo.Items items = comObjectFactory.createGroupStatisticInfoItems();
+		GroupStatisticInfo.Items items = new GroupStatisticInfo.Items();
 		groupStat.setItems(items);
 		
 		try {
 			MailingStatisticTgtGrp block = mailingSummaryStatisticJobService.getStatisticTgtGrp(jobId, targetGroupId);
 			for (Entry<Integer, StatisticValue> entry : block.getStatValues().entrySet()) {
-				StatisticEntry stEntry = comObjectFactory.createStatisticEntry();
+				StatisticEntry stEntry = new StatisticEntry();
 				stEntry.setToken(CommonKeysService.tokenByIndex(entry.getKey()));
 				stEntry.setValue(beanToJax(entry.getValue()));
 				items.getValue().add(stEntry);
@@ -115,19 +120,9 @@ public class MailingSummaryStatisticResultEndpoint extends AbstractMarshallingPa
 			return null;
 		}
 		
-		com.agnitas.emm.springws.jaxb.StatisticValue jaxStat = comObjectFactory.createStatisticValue();
+		com.agnitas.emm.springws.jaxb.StatisticValue jaxStat = new com.agnitas.emm.springws.jaxb.StatisticValue();
 		jaxStat.setValue(stat.getValue());
 		jaxStat.setQuotient(new BigDecimal(stat.getQuotient()));
 		return jaxStat;
 	}
-
-	public void setMailingSummaryStatisticJobService(
-			MailingSummaryStatisticJobService mailingSummaryStatisticJobService) {
-		this.mailingSummaryStatisticJobService = mailingSummaryStatisticJobService;
-	}
-
-	public void setComObjectFactory(ObjectFactory comObjectFactory) {
-		this.comObjectFactory = comObjectFactory;
-	}
-
 }

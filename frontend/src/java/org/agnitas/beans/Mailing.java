@@ -17,25 +17,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
+import com.agnitas.beans.ComTrackableLink;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 
-public interface Mailing extends MailingBase {
-    @Deprecated
-    int INPUT_TYPE_TEXT = MailingPreviewHelper.INPUT_TYPE_TEXT;
-    @Deprecated
-    int INPUT_TYPE_HTML = MailingPreviewHelper.INPUT_TYPE_HTML;
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 
+public interface Mailing extends MailingBase {
     int TARGET_MODE_OR = 0;
     int TARGET_MODE_AND = 1;
 
@@ -190,8 +186,8 @@ public interface Mailing extends MailingBase {
 
     MediatypeEmail getEmailParam();
 
-    Map<String, TrackableLink> getTrackableLinks();
-    void setTrackableLinks(Map<String, TrackableLink> trackableLinks);
+    Map<String, ComTrackableLink> getTrackableLinks();
+    void setTrackableLinks(Map<String, ComTrackableLink> trackableLinks);
 
     void init( @VelocityCheck int companyID, ApplicationContext con);
 

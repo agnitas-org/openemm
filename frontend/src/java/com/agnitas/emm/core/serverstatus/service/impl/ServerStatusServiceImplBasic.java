@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.serverstatus.service.impl;
 
+import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,6 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.zip.ZipOutputStream;
 
 import javax.servlet.ServletContext;
 
@@ -30,6 +33,7 @@ import org.agnitas.service.JobDto;
 import org.agnitas.service.JobQueueService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.ZipUtilities;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -402,5 +406,44 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 	@Override
 	public boolean checkActiveNode() {
 		return jobQueueService.checkActiveNode();
+	}
+	
+	@Override
+	public File getFullTbl(String dbStatement, String tableName) throws Exception {
+		return serverStatusDao.getFullTbl(dbStatement, tableName);
+	}
+	
+	@Override
+	public File downloadConfigFile() throws IOException, Exception {
+		File zippedFile = File.createTempFile(AgnUtils.getTempDir() + "/ConfigTables_", ".zip");
+		ZipOutputStream zipOutput = ZipUtilities.openNewZipOutputStream(zippedFile);
+		
+		String[] allTables = {"config_tbl", "company_tbl", "company_info_tbl", "serverset_tbl", "serverprop_tbl"};
+		
+		String[] allSelects = {"select * from config_tbl order by class, name", 
+				"select * from company_tbl order by company_id", 
+				"select * from company_info_tbl order by company_id, cname", 
+				"select * from serverset_tbl order by set_id", 
+				"select * from serverprop_tbl order by mailer, mvar"
+				};
+		
+		for (int i = 0; i < allTables.length; i++) {
+			try {
+				
+				File fullTbl = getFullTbl(allSelects[i], allTables[i]);
+				
+				if (fullTbl != null) {
+					ZipUtilities.addFileToOpenZipFileStream(fullTbl, zipOutput);
+				}
+			
+			} catch (IOException ex) {
+				logger.error("Error writing file." + ex);
+				throw ex;
+			}
+		}
+		
+		ZipUtilities.closeZipOutputStream(zipOutput);
+		
+		return zippedFile;
 	}
 }

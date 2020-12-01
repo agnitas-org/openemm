@@ -10,19 +10,24 @@
 
 package org.agnitas.backend.dao;
 
-import	java.sql.SQLException;
-import	java.util.HashMap;
-import	java.util.HashSet;
-import	java.util.Map;
-import	java.util.Set;
-import	org.agnitas.backend.DBase;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import org.agnitas.backend.DBase;
 
 public class ConfigDAO {
-	private Map <String, Map <String, String>>	config;
+	private Map<String, Map<String, String>> config;
 
 	public ConfigDAO (DBase dbase, String user, String ... hostnames) throws SQLException {
 		config = new HashMap <> ();
-		
+		reread (dbase, user, hostnames);
+	}
+	
+	public void reread (DBase dbase, String user, String ... hostnames) throws SQLException {
+		config.clear ();
 		try (DBase.With with = dbase.with ()) {
 			Set <String>	seenByHost = new HashSet <> ();
 			
@@ -39,20 +44,44 @@ public class ConfigDAO {
 						Map <String, String>	entry = config.get (configClass);
 					
 						if (entry == null) {
-							entry = new HashMap <> ();
-							config.put (configClass, entry);
+							entry = new HashMap<>();
+							config.put(configClass, entry);
 						}
-						entry.put (configName, configValue);
+						entry.put(configName, configValue);
 						if (configHostname != null) {
-							seenByHost.add (key);
+							seenByHost.add(key);
 						}
 					}
 				}
 			}
 		}
 	}
+
+	public Map<String, String> getClassEntry(String className) {
+		return config.get(className);
+	}
 	
-	public Map <String, String> getClassEntry (String className) {
-		return config.get (className);
+	public void add (DBase dbase, String className, String name, String value, String hostname, String description) throws SQLException {
+		try (DBase.With with = dbase.with ()) {
+			if (dbase.update (with.jdbc (),
+					  "UPDATE config_tbl " +
+					  "SET value = :value, change_date = current_timestamp " +
+					  "WHERE class = :class AND name = :name AND hostname = :hostname",
+					  "value", value,
+					  "class", className,
+					  "name", name,
+					  "hostname", hostname) == 0) {
+				dbase.update (with.jdbc (),
+					      "INSERT INTO config_tbl " +
+					      "       (class, name, value, hostname, description, creation_date, change_date) " +
+					      "VALUES " +
+					      "       (:class, :name, :value, :hostname, :description, current_timestamp, current_timestamp)",
+					      "class", className,
+					      "value", value,
+					      "name", name,
+					      "hostname", hostname,
+					      "description", description);
+			}
+		}
 	}
 }

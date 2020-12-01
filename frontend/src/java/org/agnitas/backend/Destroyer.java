@@ -16,43 +16,51 @@ import java.util.StringTokenizer;
 
 import org.agnitas.util.Log;
 
-/** this class is used to remove pending mailings
+/**
+ * this class is used to remove pending mailings
  */
 public class Destroyer {
-	/** Class to filter filenames for deletion
+	/**
+	 * Class to filter filenames for deletion
 	 */
 	private static class DestroyFilter implements FilenameFilter {
-		/** the mailing ID */
-		private long	mailingID;
+		/**
+		 * the mailing ID
+		 */
+		private long mailingID;
 
-		/** Constructor
+		/**
+		 * Constructor
+		 *
 		 * @param mailing_id the mailing ID to filter files for
 		 */
-		public DestroyFilter (long mailing_id) {
-			super ();
+		public DestroyFilter(long mailing_id) {
+			super();
 			mailingID = mailing_id;
 		}
 
-		/** If a file matches the filter
-		 * @param dir home directory of the file
+		/**
+		 * If a file matches the filter
+		 *
+		 * @param dir  home directory of the file
 		 * @param name name of the file
 		 * @return true, if it should be deleted
 		 */
 		@Override
-		public boolean accept (File dir, String name) {
-			boolean		st;
+		public boolean accept(File dir, String name) {
+			boolean st;
 			StringTokenizer tok;
 
 			st = false;
-			tok = new StringTokenizer (name, "=");
-			if (tok.countTokens () == 6) {
+			tok = new StringTokenizer(name, "=");
+			if (tok.countTokens() == 6) {
 				int n;
-				long	mid;
+				long mid;
 
 				for (n = 0; n < 3; ++n) {
-					tok.nextToken ();
+					tok.nextToken();
 				}
-				mid = Long.decode (tok.nextToken ()).longValue ();
+				mid = Long.decode(tok.nextToken()).longValue();
 				if (mid == mailingID) {
 					st = true;
 				}
@@ -61,62 +69,73 @@ public class Destroyer {
 		}
 	}
 
-	/** The mailing ID */
-	private long	mailingID;
-	/** Reference to configuration */
-	private Data	data;
+	/**
+	 * The mailing ID
+	 */
+	private long mailingID;
+	/**
+	 * Reference to configuration
+	 */
+	private Data data;
 
-	/** Constructor
+	/**
+	 * Constructor
+	 *
 	 * @param mailing_id the mailing ID for the mailing to destroy
 	 */
-	public Destroyer (long mailing_id) throws Exception {
+	public Destroyer(long mailing_id) throws Exception {
 		if (mailing_id <= 0) {
-			throw new Exception ("Mailing_id is less or equal 0");
+			throw new Exception("Mailing_id is less or equal 0");
 		}
 		mailingID = mailing_id;
-		data =new Data ("destroyer");
+		data = new Data("destroyer");
 	}
 
-	/** Cleanup
+	/**
+	 * Cleanup
 	 */
-	public void done () throws Exception {
-		data.done ();
+	public void done() throws Exception {
+		data.done();
 	}
 
-	/** Start destruction
+	/**
+	 * Start destruction
+	 *
 	 * @return message string
 	 */
-	public String destroy () throws Exception {
-		String	msg;
-		String	path;
+	public String destroy() throws Exception {
+		String msg;
+		String path;
 
 		msg = "Destroy:";
-		path = data.targetPath ();
+		path = data.targetPath();
 		msg += " [" + path;
 		try {
-			msg += " " + doDestroy (path);
+			msg += " " + doDestroy(path);
 			msg += " done";
 		} catch (Exception e) {
-			msg += " failed: " + e.toString ();
+			msg += " failed: " + e.toString();
 		}
 		msg += "]";
 		return msg;
 	}
 
-	/** Remove file(s) found in directory
+	/**
+	 * Remove file(s) found in directory
+	 *
 	 * @param path the directory to search for
 	 * @return number of files deleted
 	 */
-	private int doDestroy (String path) throws Exception {
-		File	file;
-		File	files[];
+	private int doDestroy(String path) throws Exception {
+		File file;
+		File[] files;
 		int n;
 
-		file = new File (path);
-		files = file.listFiles (new DestroyFilter (mailingID));
+		file = new File(path);
+		files = file.listFiles(new DestroyFilter(mailingID));
 		for (n = 0; n < files.length; ++n) {
-			if (! files[n].delete ()) {
-				data.logging (Log.ERROR, "destroy", "File " + files[n] + " cannot be removed");
+			if (!files[n].delete()) {
+				data.logging(Log.ERROR, "destroy", "File " + files[n] + " cannot be removed");
 			}
 		}
 		return files.length;

@@ -41,6 +41,10 @@ For proper visual presentation all `.cards` should be wrapped in a `<div class="
 
   background-color: $c-blue-01;
 }
+body.dark-theme .card-panel {
+  color: $c-card-text;
+  background-color: $c-card-background;
+}
 
 .card-panel > .row {
   display:flex;
@@ -78,10 +82,26 @@ For proper visual presentation all `.cards` should be wrapped in a `<div class="
       }
     }
   }
-
-
 }
 
+body.dark-theme .card {
+  &:hover:not(.disabled),
+  &:focus:not(.disabled),
+  &:active:not(.disabled),
+  &.active:not(.disabled) {
+    background-color: lighten($c-card-background, 10%);
+    border-color: $c-card-border;
+
+    .card-body {
+      .description {
+        color: $c-card-text;
+      }
+      .headline {
+        color: $c-card-text-headline;
+      }
+    }
+  }
+}
 .card-body {
   text-align: left;
 
@@ -106,6 +126,15 @@ For proper visual presentation all `.cards` should be wrapped in a `<div class="
   }
 
 }
+body.dark-theme .card-body {
+
+  .headline {
+    color: $c-card-text-headline;
+  }
+  .description {
+    color: $c-card-text;
+  }
+}
 
 .card-image {
   width: auto;
@@ -113,4 +142,9 @@ For proper visual presentation all `.cards` should be wrapped in a `<div class="
   background-color: $c-white;
 
   @include shadow-variant(soft);
+}
+
+body.dark-theme .card-image {
+  color: $c-card-text;
+  background-color: $c-card-background;
 }

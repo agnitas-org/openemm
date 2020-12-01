@@ -10,45 +10,18 @@
 
 package com.agnitas.emm.core.serverstatus.web;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.JobDto;
-import org.agnitas.service.JobQueueService;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.ServerCommand;
-import org.agnitas.util.ServerCommand.Command;
-import org.agnitas.util.ServerCommand.Server;
-import org.agnitas.util.TarGzUtilities;
-import org.agnitas.util.ZipUtilities;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.http.MediaType;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.web.util.UriUtils;
+import java.util.Map;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComCompanyDao;
@@ -70,6 +43,39 @@ import com.agnitas.util.Version;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.Anonymous;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.JobDto;
+import org.agnitas.service.JobQueueService;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.HttpUtils;
+import org.agnitas.util.ServerCommand;
+import org.agnitas.util.ServerCommand.Command;
+import org.agnitas.util.ServerCommand.Server;
+import org.agnitas.util.TarGzUtilities;
+import org.agnitas.util.TextTable;
+import org.agnitas.util.ZipUtilities;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.UriUtils;
 
 public class ServerStatusControllerBasic {
 	private static final Logger logger = Logger.getLogger(ServerStatusControllerBasic.class);
@@ -164,7 +170,24 @@ public class ServerStatusControllerBasic {
 
 		return "redirect:/serverstatus/view.action";
 	}
-
+	
+	@RequestMapping(value = "/config/download.action", method = { RequestMethod.GET, RequestMethod.POST}, produces = "application/zip")
+	public Object downloadConfig() throws Exception {
+		File configFile = null;
+		try {
+			// get file
+			configFile = serverStatusService.downloadConfigFile();
+			return ResponseEntity.ok()
+					.header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=\"" + configFile.getName() + "\";")
+					.contentLength(configFile.length())
+					.contentType(MediaType.parseMediaType("application/zip"))
+					.body(new DeleteFileAfterSuccessReadResource(configFile));
+		} catch (IOException ex) {
+			logger.error("Error writing file to output stream. Filename was " + "'" + configFile + "'", ex);
+			throw new RuntimeException("IOError writing file to output stream");
+		}
+	}
+	
 	@RequestMapping(value = "/job/start.action", method = { RequestMethod.GET, RequestMethod.POST })
 	public String startJob(ComAdmin admin, RedirectAttributes model, ServerStatusForm form, Popups popups) {
 		if (!statusFormValidator.validateJobDescription(form, popups)) {
@@ -271,6 +294,59 @@ public class ServerStatusControllerBasic {
 	}
 
 	@Anonymous
+	@RequestMapping(value = "/release.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.TEXT_PLAIN_VALUE)
+	public @ResponseBody Object showReleaseVersions(@RequestParam(value = "hostname", required = false) String hostName, @RequestParam(value = "application", required = false) String application, @RequestParam(value = "format", required = false) String outputFormat) throws Exception {
+		List<Map<String, Object>> data = configService.getReleaseData(hostName, application);
+		SimpleDateFormat format = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS);
+		
+		TextTable textTable = new TextTable("startup_timestamp", "hostname", "application", "version_number", "build_time", "build_host", "build_user");
+		
+		for (Map<String, Object> item : data) {
+			textTable.startNewLine();
+			textTable.addValueToCurrentLine(format.format((Date) item.get("startup_timestamp")));
+			textTable.addValueToCurrentLine((String) item.get("host_name"));
+			textTable.addValueToCurrentLine((String) item.get("application_name"));
+			textTable.addValueToCurrentLine((String) item.get("version_number"));
+			if (item.get("build_time") != null) {
+				textTable.addValueToCurrentLine(format.format((Date) item.get("build_time")));
+			} else {
+				textTable.addValueToCurrentLine("");
+			}
+			textTable.addValueToCurrentLine((String) item.get("build_host"));
+			textTable.addValueToCurrentLine((String) item.get("build_user"));
+		}
+		
+		String headText = "Release Log" + (StringUtils.isNotBlank(hostName) ? " " + hostName : "") + (StringUtils.isNotBlank(application) ? " " + application : "");
+		
+		if ("html".equalsIgnoreCase(outputFormat)) {
+			return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/html"))
+                .body(new InputStreamResource(new ByteArrayInputStream(textTable.toHtmlString(headText).getBytes("UTF-8"))));
+		} else if ("csv".equalsIgnoreCase(outputFormat)) {
+			return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/comma-separated-values"))
+                .body(new InputStreamResource(new ByteArrayInputStream(textTable.toCsvString().getBytes("UTF-8"))));
+		} else {
+			return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/plain"))
+                .body(new InputStreamResource(new ByteArrayInputStream(textTable.toString().getBytes("UTF-8"))));
+		}
+	}
+
+	@Anonymous
+	@RequestMapping(value = "/premium.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.TEXT_PLAIN_VALUE)
+	public @ResponseBody String showPremiumPermissionsList() {
+		List<String> premiumList = new ArrayList<>();
+		for (Permission permission : Permission.getAllSystemPermissions()) {
+			if (permission.isPremium()) {
+				premiumList.add(permission.getTokenString());
+			}
+		}
+		Collections.sort(premiumList);
+		return StringUtils.join(premiumList, "\n");
+	}
+
+	@Anonymous
 	@RequestMapping(value = "/jobqueuestatus.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.TEXT_PLAIN_VALUE)
 	public @ResponseBody String showJobqueueStatus(HttpServletRequest request, HttpServletResponse response) {
 		ComAdmin admin = AgnUtils.getAdmin(request);
@@ -278,7 +354,7 @@ public class ServerStatusControllerBasic {
 			try {
 				// User has no session, but try to logon user by given
 				// parameters (this is
-				// especially for nagios checks)
+				// especially for nagios/icinga checks)
 				if (StringUtils.isNotEmpty(request.getParameter("username")) && StringUtils.isNotEmpty(request.getParameter("password"))) {
 					admin = logonService.getAdminByCredentials(request.getParameter("username"), request.getParameter("password"), request.getRemoteAddr());
 				}
@@ -327,7 +403,7 @@ public class ServerStatusControllerBasic {
 			try {
 				// User has no session, but try to logon user by given
 				// parameters (this is
-				// especially for nagios checks)
+				// especially for nagios/icinga checks)
 				if (StringUtils.isNotEmpty(request.getParameter("username")) && StringUtils.isNotEmpty(request.getParameter("password"))) {
 					admin = logonService.getAdminByCredentials(request.getParameter("username"), request.getParameter("password"), request.getRemoteAddr());
 				}
@@ -369,7 +445,7 @@ public class ServerStatusControllerBasic {
 			try {
 				// User has no session, but try to logon user by given
 				// parameters (this is
-				// especially for nagios checks)
+				// especially for nagios/icinga checks)
 				if (StringUtils.isNotEmpty(request.getParameter("username")) && StringUtils.isNotEmpty(request.getParameter("password"))) {
 					admin = logonService.getAdminByCredentials(request.getParameter("username"), request.getParameter("password"), request.getRemoteAddr());
 				}
@@ -421,7 +497,7 @@ public class ServerStatusControllerBasic {
 			try {
 				// User has no session, but try to logon user by given
 				// parameters (this is
-				// especially for nagios checks)
+				// especially for nagios/icinga checks)
 				if (StringUtils.isNotEmpty(request.getParameter("username")) && StringUtils.isNotEmpty(request.getParameter("password"))) {
 					admin = logonService.getAdminByCredentials(request.getParameter("username"), request.getParameter("password"), request.getRemoteAddr());
 				}

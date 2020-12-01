@@ -116,7 +116,7 @@ public class SendActionbasedMailingServiceImpl implements SendActionbasedMailing
 		 * @throws Exception on errors processing the method.
 		 */
 		public Mailgun get() throws Exception {
-			final String cacheId = Integer.toString(companyId) + "_" + Integer.toString(mailingId);
+			final String cacheId = companyId + "_" + mailingId;
 			Mailgun mailgun = getMailgunCache().get(cacheId);
 
 			if (mailgun == null) {

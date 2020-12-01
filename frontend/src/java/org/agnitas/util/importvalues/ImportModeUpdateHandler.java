@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class ImportModeUpdateHandler implements ImportModeHandler {
     private static final transient Logger logger = Logger.getLogger(ImportModeUpdateHandler.class);
@@ -69,7 +70,7 @@ public class ImportModeUpdateHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign) throws Exception {
+	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, MediaTypes mediatype) throws Exception {
 		if (mailingListIdsToAssign != null && mailingListIdsToAssign.size() > 0) {
 			Map<Integer, Integer> mailinglistAssignStatistics = new HashMap<>();
 			if (importProfile.getActionForNewRecipients() > 0) {
@@ -107,7 +108,7 @@ public class ImportModeUpdateHandler implements ImportModeHandler {
 			} else  {
 				// Insert bindings for new and existing customers (subscribe to mailinglists)
 		    	for (int mailingListId : mailingListIdsToAssign) {
-		    		int existingCustomerSubscribed = importRecipientsDao.assignExistingCustomerWithoutBindingToMailingList(temporaryImportTableName, importProfile.getCompanyId(), mailingListId, UserStatus.Active);
+		    		int existingCustomerSubscribed = importRecipientsDao.assignExistingCustomerWithoutBindingToMailingList(temporaryImportTableName, importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Active);
 		    		
 		    		mailinglistAssignStatistics.put(mailingListId, existingCustomerSubscribed);
 		    	}
@@ -116,5 +117,10 @@ public class ImportModeUpdateHandler implements ImportModeHandler {
 		} else {
 			return null;
 		}
+	}
+
+	@Override
+	public int handleBlacklist(ImportProfile importProfile, String temporaryImportTableName) {
+		return importRecipientsDao.removeBlacklistedEmails(temporaryImportTableName, importProfile.getCompanyId());
 	}
 }

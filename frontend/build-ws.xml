@@ -76,41 +76,58 @@
 				</not>
 			</condition>
 		</fail>
-
-		<!-- Check for available PropertiesConfigFile  -->
-		<available file="build/properties/${deploytarget}.xml" property="isPropertiesConfigFileAvailable" />
-		<fail message="Invalid deploytarget: ${deploytarget} (Missing build/properties/${deploytarget}.xml)">
-			<condition>
-				<isfalse value="${isPropertiesConfigFileAvailable}" />
-			</condition>
-		</fail>
+		<property name="applicationtype" value="WS" />
 	</target>
 	
 	<target name="createPropertiesFiles" depends="setDeploytarget" description="Create emm-ws/emm/log4j.properties">
 		<mkdir dir="${deploydir}${appname}/WEB-INF/classes" />
 
-		<mergexml source="${basecss}/build/templates/template.configuration.webservices.xml" change="build/properties/${deploytarget}.xml" dest="${deploydir}${appname}/WEB-INF/classes/configuration.webservices.xml" overwrite="true" />
-		
 		<!-- Copy and sign license file -->
-		<propertyregex property="licenseName" input="${deploytarget}" regexp="^([^.]*)\..*" select="\1" casesensitive="false" />
 		<if>
 			<available file="build/properties/${deploytarget}.emm.license.xml"/>
 			<then>
 				<copy file="build/properties/${deploytarget}.emm.license.xml" tofile="${deploydir}${appname}/WEB-INF/classes/emm.license.xml" />
 			</then>
 			<else>
+				<propertyregex property="licenseName" input="${deploytarget}" regexp="^([^.]*)\..*" select="\1" casesensitive="false" />
 				<copy file="build/properties/${licenseName}.emm.license.xml" tofile="${deploydir}${appname}/WEB-INF/classes/emm.license.xml" />
 			</else>
 		</if>
 
-		<delete file="${deploydir}${appname}/WEB-INF/classes/emm-ws.properties" />
 		<delete file="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
 		<delete file="${deploydir}${appname}/WEB-INF/classes/log4j.properties" />
 		<echo message="emm-ws/emm/log4j.properties deleted" />
 
-		<xslt in="${deploydir}${appname}/WEB-INF/classes/configuration.webservices.xml" out="${deploydir}${appname}/WEB-INF/classes/emm-ws.properties" style="${basecss}/build/templates/emm-ws.properties.xslt" />
-		<xslt in="${deploydir}${appname}/WEB-INF/classes/configuration.webservices.xml" out="${deploydir}${appname}/WEB-INF/classes/emm.properties" style="${basecss}/build/templates/emm.properties.xslt" />
-		<xslt in="${deploydir}${appname}/WEB-INF/classes/configuration.webservices.xml" out="${deploydir}${appname}/WEB-INF/classes/log4j.properties" style="${basecss}/build/templates/log4j.properties.xslt" />
+		<delete file="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
+		<copy file="${basecss}/build/templates/emm.properties" tofile="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
+		<echo file="${deploydir}${appname}/WEB-INF/classes/emm.properties" append="true" message="ApplicationType=${applicationtype}${line.separator}" />
+		<tstamp>
+			<format property="current_timestamp" pattern="yyyy-MM-dd HH:mm:ss"/>
+		</tstamp>
+		<echo file="${deploydir}${appname}/WEB-INF/classes/emm.properties" append="true" message="BuildTime=${current_timestamp}${line.separator}" />
+		<exec executable="hostname" outputproperty="hostname"/>
+		<echo file="${deploydir}${appname}/WEB-INF/classes/emm.properties" append="true" message="BuildHost=${hostname}${line.separator}" />
+		<property environment="env" />
+		<condition property="buildUserRaw" value="${env.ORIGINAL_USER}">
+			<isset property="env.ORIGINAL_USER" />
+		</condition>
+		<condition property="buildUserRaw" value="${env.USERNAME}">
+			<and>
+				<not>
+					<isset property="buildUserRaw" />
+				</not>
+				<isset property="env.USERNAME" />
+			</and>
+		</condition>
+		<condition property="buildUserRaw" value="Unknown">
+			<not>
+				<isset property="buildUserRaw"/>
+			</not>
+		</condition>
+		<propertyregex property="buildUser" input="${buildUserRaw}" regexp="([^@]*).*" select="\1" casesensitive="false" />
+		<echo file="${deploydir}${appname}/WEB-INF/classes/emm.properties" append="true" message="BuildUser=${buildUser}${line.separator}" />
+		
+		<copy file="${basecss}/build/templates/log4j-ws.properties" tofile="${deploydir}${appname}/WEB-INF/classes/log4j.properties" overwrite="true" />
 		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${deploytarget}">
 			<include name="log4j.properties" />
 			<replacetoken>${deploytarget}</replacetoken>
@@ -136,6 +153,7 @@
 				<include name="new_messages.properties" />
 			</fileset>
             <fileset dir="${emmEtcPath}/validation">
+				<include name="validation-constraints-basic.xml" />
                 <include name="validator-rules.xml" />
                 <include name="validator-messages.properties" />
             </fileset>
@@ -193,7 +211,7 @@
 		</xmltask>
 		<xmltask
 				source="${emmEtcPath}/spring-ws/webapp/WEB-INF/spring-ws-common.xml"
-				dest="${emmSourcePath}/view/WEB-INF/spring-ws-common.xml"
+				dest="${deploydir}${appname}/WEB-INF/spring-ws-common.xml"
 				preserveType="true">
 			<insert path="/:beans/:bean[last()]" position="after">
 				<![CDATA[
@@ -207,7 +225,7 @@
 		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-permissions-basic.xml" />
 		
 		<xmltask
-				source="${emmSourcePath}/../etc/spring-ws/webapp/WEB-INF/spring-ws-common.xml"
+				source="${emmEtcPath}/spring-ws/webapp/WEB-INF/spring-ws-common.xml"
 				dest="${deploydir}${appname}/WEB-INF/spring-ws-common.xml"
 				preserveType="true">
 			<insert path="/:beans/:bean[last()]" position="after">

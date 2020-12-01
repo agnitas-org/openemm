@@ -31,7 +31,7 @@ public abstract class ComBindingServiceImpl extends BindingServiceImpl implement
 	private ComEmmActionService emmActionService;
 	
 	@Override
-	@Validate("setBinding")
+	@Validate(groups = BindingModel.SetGroup.class)
 	public final boolean setBindingWithActionId(final BindingModel model, final boolean runActionInBackground) throws MailinglistException {
 		setBindingInTransaction(model);  // Need this method call to set bindings (and only bindings) within transation
 

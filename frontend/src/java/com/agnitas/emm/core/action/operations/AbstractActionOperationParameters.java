@@ -16,8 +16,25 @@ import org.apache.struts.action.ActionMessages;
 
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTrackpointDao;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-public abstract class AbstractActionOperationParameters extends ActionOperationParameters {
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = ActionOperationActivateDoubleOptInParameters.class, name = "ActivateDoubleOptIn"),
+    @JsonSubTypes.Type(value = ActionOperationContentViewParameters.class, name = "ContentView"),
+    @JsonSubTypes.Type(value = ActionOperationExecuteScriptParameters.class, name = "ExecuteScript"),
+    @JsonSubTypes.Type(value = ActionOperationGetArchiveListParameters.class, name = "GetArchiveList"),
+    @JsonSubTypes.Type(value = ActionOperationGetArchiveMailingParameters.class, name = "GetArchiveMailing"),
+    @JsonSubTypes.Type(value = ActionOperationGetCustomerParameters.class, name = "GetCustomer"),
+    @JsonSubTypes.Type(value = ActionOperationIdentifyCustomerParameters.class, name = "IdentifyCustomer"),
+    @JsonSubTypes.Type(value = ActionOperationSendMailingParameters.class, name = "SendMailing"),
+    @JsonSubTypes.Type(value = ActionOperationServiceMailParameters.class, name = "ServiceMail"),
+    @JsonSubTypes.Type(value = ActionOperationSubscribeCustomerParameters.class, name = "SubscribeCustomer"),
+    @JsonSubTypes.Type(value = ActionOperationUnsubscribeCustomerParameters.class, name = "UnsubscribeCustomer"),
+    @JsonSubTypes.Type(value = ActionOperationUpdateCustomerParameters.class, name = "UpdateCustomer")
+})
+public abstract class AbstractActionOperationParameters  implements ActionOperationParameters {
 	private int id;
 	private int companyId;
 	private int actionId;
@@ -69,10 +86,8 @@ public abstract class AbstractActionOperationParameters extends ActionOperationP
 		AbstractActionOperationParameters other = (AbstractActionOperationParameters) obj;
 		if (id == 0) {
 			return false;
-		} else if (id != other.id) {
-			return false;
 		}
-		return true;
+		return id == other.id;
 	}
 
 	@Override
@@ -80,10 +95,12 @@ public abstract class AbstractActionOperationParameters extends ActionOperationP
 		return id;
 	}
 
+	@Deprecated
 	public boolean validate(ActionMessages errors, Locale locale, ComRecipientDao recipientDao, ComTrackpointDao trackpointDao) throws Exception {
 		return true;
 	}
 
+	@Deprecated
 	public String getUalDescription(AbstractActionOperationParameters oldOperation) {
 		return "";
 	}

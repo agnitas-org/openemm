@@ -12,13 +12,13 @@ package org.agnitas.web;
 
 import java.io.IOException;
 import java.util.Map;
-
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.agnitas.dao.ComRecipientDao;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.dao.MailingComponentDao;
@@ -30,8 +30,6 @@ import org.agnitas.util.HttpUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-
-import com.agnitas.dao.ComRecipientDao;
 
 public class ShowComponent extends HttpServlet {
 
@@ -94,7 +92,9 @@ public class ShowComponent extends HttpServlet {
         }
 	
 		String customerIDStr = req.getParameter("customerID");
+		String targetGroupIDStr = req.getParameter("targetGroupID");
 		int customerID = NumberUtils.toInt(customerIDStr);
+		int targetGroupID = NumberUtils.toInt(targetGroupIDStr);
         
         MailingComponent comp = getComponentDao().getMailingComponent(compId, AgnUtils.getCompanyID(req));
         
@@ -119,22 +119,13 @@ public class ShowComponent extends HttpServlet {
 				        out=response.getOutputStream();
 				       
 				        byte[] attachment;
-				        int mailingID = comp.getMailingID();
-				                            
 				        if (MailingComponentType.PersonalizedAttachment.getCode() == comp.getType()) {
-				        	Page page;
-				            if(customerID == 0){ // no customerID is available, take the 1st available test recipient
-				            	Map<Integer,String> recipientList = getRecipientDao().getAdminAndTestRecipientsDescription(comp.getCompanyID(), mailingID);
-				            	customerID = recipientList.keySet().iterator().next();
-				            }
-				            Preview preview = getPreviewFactory().createPreview();
-				            page = preview.makePreview(mailingID, customerID, false);
-				            attachment = page.getAttachment(comp.getComponentName());
+				        	attachment = getPersonalizedAttachment(comp, customerID, targetGroupID);
 				        } else {
 				        	attachment = comp.getBinaryBlock();
 				        }
 				        
-				        len= attachment.length;
+				        len = attachment.length;
 				        response.setContentLength((int)len);
 				        out.write(attachment);
 				        out.flush();
@@ -155,7 +146,26 @@ public class ShowComponent extends HttpServlet {
 			}
         }
     }
-
+	
+	private byte[] getPersonalizedAttachment(MailingComponent comp, int customerID, int targetGroupID) {
+    	if (comp == null) {
+    		return new byte[0];
+		}
+    	int mailingID = comp.getMailingID();
+		Page page;
+    	Preview preview = getPreviewFactory().createPreview();
+    	if (customerID > 0) {
+			page = preview.makePreview(mailingID, customerID, false);
+		} else if (targetGroupID > 0) {
+    		page = preview.makePreview(mailingID, 0, targetGroupID);
+		} else {
+			Map<Integer,String> recipientList = getRecipientDao().getAdminAndTestRecipientsDescription(comp.getCompanyID(), mailingID);
+			customerID = recipientList.keySet().iterator().next();
+			page = preview.makePreview(mailingID, customerID, false);
+		}
+		return page == null ? new byte[0] : page.getAttachment(comp.getComponentName());
+	}
+	
 	private MailingComponentDao getComponentDao() {
 		if (mailingComponentDao == null) {
 			mailingComponentDao = (MailingComponentDao) WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("MailingComponentDao");

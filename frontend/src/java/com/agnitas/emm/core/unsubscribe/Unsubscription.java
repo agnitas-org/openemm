@@ -15,13 +15,11 @@ import java.util.Objects;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.dao.UserStatus;
 
-import com.agnitas.beans.ComMailing;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 
 final class Unsubscription {
-	
 	/** DAO accessing mailing data. */
 	private final ComMailingDao mailingDao;
 	
@@ -33,17 +31,15 @@ final class Unsubscription {
 		this.bindingEntryDao = Objects.requireNonNull(bindingEntryDao, "Binding entry DAO is null");
 	}
 
-	
 	public final void performUnsubscription(final ComExtensibleUID uid, final String remark) {
-		final ComMailing mailing = (ComMailing) mailingDao.getMailing(uid.getMailingID(), uid.getCompanyID());
-		final int mailinglist = mailing.getMailinglistID();
-
-		final BindingEntry entry = bindingEntryDao.get(uid.getCustomerID(), uid.getCompanyID(), mailinglist, 0);
-		entry.setUserStatus(UserStatus.UserOut.getStatusCode());
-		entry.setExitMailingID(mailing.getId());
-
-		entry.setUserRemark(remark);
-		bindingEntryDao.updateBinding(entry, uid.getCompanyID());
+		final int mailinglistID = mailingDao.getMailinglistId(uid.getMailingID(), uid.getCompanyID());
+		if (mailinglistID > 0) {
+			final BindingEntry entry = bindingEntryDao.get(uid.getCustomerID(), uid.getCompanyID(), mailinglistID, 0);
+			entry.setUserStatus(UserStatus.UserOut.getStatusCode());
+			entry.setExitMailingID(uid.getMailingID());
+	
+			entry.setUserRemark(remark);
+			bindingEntryDao.updateBinding(entry, uid.getCompanyID());
+		}
 	}
-
 }

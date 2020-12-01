@@ -153,7 +153,7 @@ figures = BirtReporUtils.unpackFigures(params["figures"]);
 reportContext.setGlobalVariable("figures", figures);
 
 recipientsStatisticDataSet = new RecipientsStatisticDataSet();
-tempTableIds = recipientsStatisticDataSet.initRecipientsStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"], params["figures"]);
+tempTableIds = recipientsStatisticDataSet.initRecipientsStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"], params["figures"], params["hiddenTargetId"]);
 tableInRowId = tempTableIds.get('tempTableInfoInRowId'); 
 tableInColId = tempTableIds.get('tempTableInfoInColumnId');
 reportContext.setPersistentGlobalVariable("accountName", recipientsStatisticDataSet.getAccountName(params["accountId"]));
@@ -164,10 +164,10 @@ reportContext.setPersistentGlobalVariable("startDateFormated", dateFormat(params
 
 recipientsDetailedStatisticDataSet = new RecipientsDetailedStatisticDataSet();
 if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_DETAILED)) {
-	recipientsDetailedStatisticDataSet.initRecipientsStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"]);
+	recipientsDetailedStatisticDataSet.initRecipientsStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"], params["hiddenTargetId"]);
 }
 if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {
-	recipientsDetailedStatisticDataSet.initRecipientsDynamicStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"]);
+	recipientsDetailedStatisticDataSet.initRecipientsDynamicStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"], params["hiddenTargetId"]);
 }
 
 currentMailingListNumber = 1;
@@ -204,7 +204,7 @@ reportContext.setPersistentGlobalVariable("message_Subscribers", I18nString.getL
 reportContext.setPersistentGlobalVariable("message_birt.recipient.unsubscribers", I18nString.getLocaleString("statistic.Opt_Outs", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_Bounces", I18nString.getLocaleString("statistic.Bounces", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_recipientsStatistic.active", I18nString.getLocaleString("recipient.MailingState1", reportContext.getLocale()));
-reportContext.setPersistentGlobalVariable("message_statistic.TotalClickSubscribers.short", I18nString.getLocaleString("statistic.clicker", reportContext.getLocale()));
+reportContext.setPersistentGlobalVariable("message_statistic.clicker", I18nString.getLocaleString("statistic.clicker", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_birt.report.opens", I18nString.getLocaleString("birt.report.opens", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_statistic.pc", I18nString.getLocaleString("statistic.pc", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_report.openers.total", I18nString.getLocaleString("report.openers.total", reportContext.getLocale()));
@@ -339,6 +339,22 @@ reportContext.setPersistentGlobalVariable("statistic.blacklisted", I18nString.ge
             <property name="valueType">static</property>
             <property name="dataType">string</property>
             <property name="distinct">true</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="hiddenTargetId" id="5106">
+            <property name="hidden">false</property>
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
             <structure name="format">
@@ -1425,7 +1441,12 @@ for (var i = 0; i < statList.size(); i++) {
 row["mailinglistId"] = listCharts.get(currentRow)['mailingListId'];
 row["mailinglist"] = listCharts.get(currentRow)['mailingList'];
 row['targetGroupId'] = listCharts.get(currentRow)['targetGroupId']
-row["caption"] = listCharts.get(currentRow)['name'];
+nameValue = listCharts.get(currentRow)['name'];
+if (row['targetGroupId'] <= 1 || nameValue == 'subscriber.all_recipient') {
+	row["caption"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
+} else {
+	row["caption"] = nameValue;
+}
 row["value"] = listCharts.get(currentRow)['value'];
 row["allCountRecipient"] = parseInt(reportContext.getPersistentGlobalVariable("allCountRecipient-" + row["mailinglistId"]));
 row["mailingListGroupId"] = listCharts.get(currentRow)['mailingListGroupId'];
@@ -11442,7 +11463,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
                                 <list-property name="arguments">
                                     <structure>
                                         <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">if (dataSetRow["categoryIndx"] == RecipientsStatisticDataSet.CLICKER_END_DATE_INDEX) {reportContext.getPersistentGlobalVariable("message_statistic.TotalClickSubscribers.short")} else {""}</expression>
+                                        <expression name="value" type="javascript">if (dataSetRow["categoryIndx"] == RecipientsStatisticDataSet.CLICKER_END_DATE_INDEX) {reportContext.getPersistentGlobalVariable("message_statistic.clicker")} else {""}</expression>
                                     </structure>
                                 </list-property>
                             </structure>
@@ -15293,7 +15314,7 @@ currentMailingListNumber++;]]></method>
                             <structure>
                                 <property name="name">category_1</property>
                                 <expression name="expression" type="javascript">if (data["category"] == RecipientsStatisticDataSet.CLICKER_TRACKED_END_DATE_INDEX) {
-reportContext.getPersistentGlobalVariable("message_statistic.TotalClickSubscribers.short")
+reportContext.getPersistentGlobalVariable("message_statistic.clicker")
 } else if (data["category"] == RecipientsStatisticDataSet.CLICKER_PC_END_DATE_INDEX) {
 reportContext.getPersistentGlobalVariable("message_statistic.pc");
 } else if (data["category"] == RecipientsStatisticDataSet.CLICKER_TABLET_END_DATE_INDEX) {
@@ -16261,7 +16282,7 @@ function beforeGeneration( chart, icsc )
       </Label>
       <DataDefinition>
         <Definition>if (row[&quot;categoryIndx&quot;] == RecipientsStatisticDataSet.CLICKER_TRACKED_END_DATE_INDEX) {
-Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;statistic.TotalClickSubscribers.short&quot;, reportContext.getLocale())
+Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;statistic.clicker&quot;, reportContext.getLocale())
 } else if (row[&quot;categoryIndx&quot;] == RecipientsStatisticDataSet.CLICKER_PC_END_DATE_INDEX) {
 Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;statistic.pc&quot;, reportContext.getLocale());
 } else if (row[&quot;categoryIndx&quot;] == RecipientsStatisticDataSet.CLICKER_TABLET_END_DATE_INDEX) {

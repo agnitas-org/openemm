@@ -735,6 +735,21 @@ select[size] {
   // [converter] extracted textarea& to textarea.form-control
 }
 
+body.dark-theme .form-control {
+  &:not(.ace_editor) {
+    color: $c-dt-input-text;
+    background-color: $c-dt-input-background;
+  }
+  border-color: $c-dt-input-border;
+
+  @include form-control-focus($c-dt-input-focus);
+
+  &:disabled,
+  &[readonly] {
+    background-color: $c-dt-input-disabled-background;
+  }
+}
+
 .form-control-small {
   @extend .form-control;
 
@@ -1053,11 +1068,17 @@ input[type="checkbox"] {
   color: $c-gray-55;
 }
 
+body.dark-theme .help-block {
+  color: $c-dt-input-label;
+}
 
 .control-label {
   width: 100%;
 }
 
+body.dark-theme label {
+  color: $c-dt-input-label;
+}
 
 
 // ATTENTION: FORMS MADE HORIZONTAL BY DEFAULT!

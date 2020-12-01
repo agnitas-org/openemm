@@ -12,7 +12,7 @@
 
             <div id="gt-wrapper" class="tile-content"
                  <c:if test="${not isFullscreenTileSizingDisabled}">
-                 data-sizing="scroll" data-action="scroll-to" data-scroll-retain=""
+                 data-sizing="scroll" data-scroll-retain=""
                  </c:if>
                     >
                 <tiles:insert attribute="content"/>

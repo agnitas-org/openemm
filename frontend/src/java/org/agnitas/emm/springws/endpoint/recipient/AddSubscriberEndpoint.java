@@ -18,53 +18,53 @@ import javax.annotation.Resource;
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddSubscriberRequest;
 import org.agnitas.emm.springws.jaxb.AddSubscriberResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.agnitas.service.UserActivityLogService;
 import org.apache.log4j.Logger;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.springws.subscriptionrejection.service.SubscriptionRejectionService;
 
-//Removed annotation to get noticed about deprecated base class @SuppressWarnings("deprecation")
-public class AddSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
-	/** The logger. */
-	private static final transient Logger classLogger = Logger.getLogger( AddSubscriberEndpoint.class);
+@Endpoint
+public class AddSubscriberEndpoint extends BaseEndpoint {
+	private static final transient Logger classLogger = Logger.getLogger(AddSubscriberEndpoint.class);
 	
-	@Resource
 	private RecipientService recipientService;
+
 	@Resource
-	private ObjectFactory objectFactory;
-	@Resource
-	private UserActivityLogService userActivityLogService;
-	
-	@Resource
+	@Lazy
 	private SubscriptionRejectionService subscriptionRejectionService;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Entered AddSubscriberEndpoint.invokeInternal()");
+	public AddSubscriberEndpoint(RecipientService recipientService) {
+		this.recipientService = recipientService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddSubscriberRequest")
+	public @ResponsePayload AddSubscriberResponse addSubscriber(@RequestPayload AddSubscriberRequest request) throws Exception {
+		if (classLogger.isInfoEnabled()) {
+			classLogger.info( "Entered AddSubscriberEndpoint.addSubscriber()");
 		}
 			
-		final AddSubscriberRequest request = (AddSubscriberRequest) arg0;
-		final AddSubscriberResponse response = objectFactory.createAddSubscriberResponse();
-		final RecipientModel model = parseModel(request);
-		final int companyID = Utils.getUserCompany();
+		AddSubscriberResponse response = new AddSubscriberResponse();
+		RecipientModel model = parseModel(request);
+		int companyID = Utils.getUserCompany();
 		
-		if(this.subscriptionRejectionService != null) {
-			this.subscriptionRejectionService.checkSubscriptionData(companyID, model);
+		if (subscriptionRejectionService != null) {
+			subscriptionRejectionService.checkSubscriptionData(companyID, model);
 		} else {
-			if(classLogger.isDebugEnabled()) {
+			if (classLogger.isDebugEnabled()) {
 				classLogger.debug("No subscription rejection service set");
 			}
 		}
-			
-		
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Calling recipient service layer");
+
+		if (classLogger.isInfoEnabled()) {
+			classLogger.info("Calling recipient service layer");
 		}
 
 		String username = Utils.getUserName();
@@ -72,16 +72,16 @@ public class AddSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 		response.setCustomerID(recipientService.addSubscriber(model, username, companyID, userActions));
 		Utils.writeLog(userActivityLogService, userActions);
 
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Leaving AddSubscriberEndpoint.invokeInternal()");
+		if (classLogger.isInfoEnabled()) {
+			classLogger.info("Leaving AddSubscriberEndpoint.addSubscriber()");
 		}
 
 		return response;
 	}
 	
 	static RecipientModel parseModel(AddSubscriberRequest request) {
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Parsing recipient model");
+		if (classLogger.isInfoEnabled()) {
+			classLogger.info("Parsing recipient model");
 		}
 		
 		RecipientModel model = new RecipientModel();
@@ -90,10 +90,7 @@ public class AddSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 		model.setKeyColumn(request.getKeyColumn());
 		model.setOverwrite(request.isOverwrite());
 		model.setParameters(Utils.toCaseInsensitiveMap(request.getParameters(), true));
-		
-		
-		
+
 		return model;
 	}
-
 }

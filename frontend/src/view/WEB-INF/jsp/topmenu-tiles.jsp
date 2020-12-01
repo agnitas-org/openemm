@@ -51,13 +51,8 @@
                 %>
                 <li class="top_menu_point">
                     <html:link page="<%= _navigation_href %>" styleClass="<%= styleClass %>">
-                    	<c:if test="${empty _navigation_plugin}">
-		                   	<bean:message key="<%= _navigation_navMsg %>"/>
-		                </c:if>
-		                <c:if test="${not empty _navigation_plugin}">
-			                <emm:message key="${_navigation_navMsg}" plugin="${_navigation_plugin}"/>
-		                </c:if>
-                    </html:link>
+	                   	<bean:message key="<%= _navigation_navMsg %>"/>
+	                </html:link>
                 </li>
             </emm:ShowByPermission>
         </emm:ShowNavigation>
@@ -86,12 +81,7 @@
                             <label>|</label>
                             <% } %>
                             <html:link page="<%= _sub_navigation_href %>" styleClass="<%= \"top_navigation_level2\" + subCssClassPostfix %>">
-                            	<c:if test="${empty _sub_navigation_plugin}">
-	                            	<bean:message key="<%= _sub_navigation_navMsg %>"/>
-	                            </c:if>
-	                            <c:if test="${not empty _sub_navigation_plugin}">
-	                            	<emm:message key="${_sub_navigation_navMsg}" plugin="${_sub_navigation_plugin}"/>
-	                            </c:if>
+                            	<bean:message key="<%= _sub_navigation_navMsg %>"/>
                             </html:link>
                         </li>
                     </emm:ShowByPermission>

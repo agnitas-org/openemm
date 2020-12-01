@@ -6,11 +6,9 @@
 <c:set var="agnTitleKey" 			value="default.A_EMM" 		scope="request" />
 <c:set var="agnSubtitleKey" 		value="Dashboard" 			scope="request" />
 <c:set var="sidemenu_active" 		value="Dashboard" 			scope="request" />
-<c:set var="sidemenu_sub_active"	value="Dashboard.summary"	scope="request" />
-<c:set var="agnHighlightKey" 		value="Dashboard.summary" 	scope="request" />
 <c:set var="agnHelpKey" 			value="dashboard" 			scope="request" />
 
 <c:set var="agnSubtitleValue" scope="request">
     <i class="icon-fa5 icon-fa5-desktop"></i>
-    <mvc:message code="Dashboard.summary" />
+    <mvc:message code="Dashboard" />
 </c:set>

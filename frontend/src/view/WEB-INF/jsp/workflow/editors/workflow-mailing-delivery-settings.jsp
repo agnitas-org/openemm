@@ -4,7 +4,6 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://ajaxtags.org/tags/ajax" prefix="ajax" %>
 
 <c:set var="AUTOMATIC_REPORT_NONE" value="<%= WorkflowMailing.AUTOMATIC_REPORT_NONE %>" scope="page"/>
 <c:set var="AUTOMATIC_REPORT_1DAY" value="<%= WorkflowMailing.AUTOMATIC_REPORT_1DAY %>" scope="page"/>

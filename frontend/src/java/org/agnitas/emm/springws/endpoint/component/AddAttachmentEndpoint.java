@@ -10,28 +10,31 @@
 
 package org.agnitas.emm.springws.endpoint.component;
 
-import javax.annotation.Resource;
-
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddAttachmentRequest;
 import org.agnitas.emm.springws.jaxb.AddAttachmentResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class AddAttachmentEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class AddAttachmentEndpoint extends BaseEndpoint {
 
-	@Resource
 	private ComponentService componentService;
-	@Resource
-	private ObjectFactory objectFactory;
-	
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		AddAttachmentRequest request = (AddAttachmentRequest) arg0;
-		
+
+	public AddAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService) {
+		this.componentService = componentService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddAttachmentRequest")
+	public @ResponsePayload AddAttachmentResponse addAttachment(@RequestPayload AddAttachmentRequest request) throws Exception {
+		AddAttachmentResponse response = new AddAttachmentResponse();
 		ComponentModel model = new ComponentModel();
 		model.setCompanyId(Utils.getUserCompany());
 		model.setMailingId(request.getMailingID());
@@ -40,9 +43,7 @@ public class AddAttachmentEndpoint extends AbstractMarshallingPayloadEndpoint {
 		model.setComponentName(request.getComponentName());
 		model.setData(request.getData());
 
-		AddAttachmentResponse response = objectFactory.createAddAttachmentResponse();
 		response.setComponentID(componentService.addComponent(model));
 		return response;
 	}
-
 }

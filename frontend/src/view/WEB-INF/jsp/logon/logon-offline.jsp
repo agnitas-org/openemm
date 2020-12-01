@@ -39,12 +39,12 @@
 
 	p {
 		margin: 0;
-		font-size: 1.4em;
+		font-size: 1.8em;
 	}
 
 	h1 {
 		margin: 0;
-		font-size: 4.8em;
+		font-size: 4.2em;
 	}
 
 	h2 {
@@ -158,7 +158,7 @@
 	
 	.version--wrapper {
 		background-image: url("/assets/core/images/logonPageOffline/Version.jpg");
-		background-position: center 75%;
+		background-position: 100% 90%;
 		background-repeat: no-repeat;
 		background-size: cover;
 		align-items: center;
@@ -166,13 +166,17 @@
 	}
 	
 	.version__text {
-		color: #ffffff;
+		color: #FFFFFF;
 		padding: 0 50% 2em 0;
 	}
 	
 	.version__text--headline {
-		color: #ffffff;
+		color: #FFFFFF;
 		padding-bottom: 1em;
+	}
+	
+	.version__text--headline > h1{
+		color: #FFFFFF;
 	}
 	
 	.version__text--content {

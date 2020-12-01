@@ -11,9 +11,9 @@
 package org.agnitas.web.forms;
 
 /**
- * @deprecated use {@link org.agnitas.web.forms.BulkActionFrom} directly unless you need some extra parameters.
+ * @deprecated use {@link BulkActionForm} directly unless you need some extra parameters.
  */
 @Deprecated
-public class BulkDeleteForm extends BulkActionFrom {
+public class BulkDeleteForm extends BulkActionForm {
 	// nothing to do
 }

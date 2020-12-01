@@ -81,14 +81,9 @@ public class InitialPasswordEncryptor {
 				
 				int adminID = 1;
 				File saltFile = new File(replaceHomeVariables(args[0]));
-				File sqlFile = new File(replaceHomeVariables(args[1]));
 		
 				InitialPasswordEncryptor passwordEncryptor = new InitialPasswordEncryptor(saltFile);
 				String emmPasswordHash = passwordEncryptor.encrypt(password, adminID, "UTF-8");
-				
-				try (FileOutputStream outputStream = new FileOutputStream(sqlFile)) {
-					outputStream.write(("UPDATE admin_tbl SET secure_password_hash = '" + emmPasswordHash + "', pwdchange_date = CURRENT_TIMESTAMP, is_one_time_pass = 1 WHERE admin_id = " + adminID + ";").getBytes("UTF-8"));
-				}
 
 				System.out.println(emmPasswordHash);
 			}

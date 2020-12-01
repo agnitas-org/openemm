@@ -10,6 +10,8 @@
 
 package org.agnitas.util.importvalues;
 
+import org.agnitas.util.DateUtilities;
+
 /**
  * Values for dateFormat property of import profile
  */
@@ -22,7 +24,8 @@ public enum DateFormat {
 	ddMMyyyyHHmmss("dd.MM.yyyy HH:mm:ss", "import.date.format.ddMMyyyyHHmmss", 5),
 	ddMMyy("dd.MM.yy", "import.date.format.ddMMyy", 6),
 	MM_dd_yyyy_hh_mm_ss("MM/dd/yyyy hh:mm:ss", "import.date.format.MM_dd_yyyy_hh_mm_ss", 7),
-	yyyy_MM_dd("yyyy-MM-dd", "import.date.format.yyyy_MM_dd", 8);
+	yyyy_MM_dd("yyyy-MM-dd", "import.date.format.yyyy_MM_dd", 8),
+	ISO8601(DateUtilities.ISO_8601_DATETIME_FORMAT, "import.date.format.iso8601", 9);
 
 	/**
 	 * The value that will be used during csv-file parsing

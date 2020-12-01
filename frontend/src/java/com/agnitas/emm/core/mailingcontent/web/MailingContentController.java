@@ -14,6 +14,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpSession;
 
+import com.agnitas.emm.core.mailing.service.MailingService;
 import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
@@ -51,17 +52,20 @@ public class MailingContentController {
     private MailingContentService mailingContentService;
     private DynTagChainValidator dynTagChainValidator;
     private PreviewImageService previewImageService;
+    private final MailingService mailingService;
 
     public MailingContentController(ExtendedConversionService extendedConversionService,
                                     UserActivityLogService userActivityLogService,
                                     MailingContentService mailingContentService,
                                     DynTagChainValidator dynTagChainValidator,
-                                    PreviewImageService previewImageService) {
+                                    PreviewImageService previewImageService,
+                                    final MailingService mailingService) {
         this.extendedConversionService = extendedConversionService;
         this.userActivityLogService = userActivityLogService;
         this.mailingContentService = mailingContentService;
         this.dynTagChainValidator = dynTagChainValidator;
         this.previewImageService = previewImageService;
+        this.mailingService = mailingService;
     }
 
     @GetMapping("/name/{id:\\d+}/view.action")
@@ -82,7 +86,7 @@ public class MailingContentController {
             return new DataResponseDto<>(popups, false);
         }
 
-        Mailing mailing = mailingContentService.getMailing(admin.getCompanyID(), dynTagDto.getMailingId());
+        Mailing mailing = mailingService.getMailing(admin.getCompanyID(), dynTagDto.getMailingId());
 
         try {
             // editing or creating

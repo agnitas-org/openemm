@@ -80,20 +80,20 @@ public class JavaMailServiceImpl implements JavaMailService {
 	/**
 	 * Send an email with error comment and error-Exception and stack trace to the address taken from mailaddress.error property.
 	 *
-	 * @param comment
+	 * @param errorText
 	 *            Text that is added before the exception.
 	 * @param e
 	 *            The exception to log.
 	 * @return true if all went ok.
 	 */
 	@Override
-	public boolean sendExceptionMail(String comment, Throwable e) {
+	public boolean sendExceptionMail(String errorText, Throwable e) {
 		String toAddress = configService.getValue(ConfigValue.Mailaddress_Error);
 		if (toAddress != null) {
 			if (StringUtils.isNotBlank(toAddress)) {
 				StringBuilder messageBuilder = new StringBuilder();
-				if (comment != null) {
-					messageBuilder.append(comment).append("\n");
+				if (errorText != null) {
+					messageBuilder.append(errorText).append("\n");
 				}
 				messageBuilder.append("Exception:\n").append(AgnUtils.throwableToString(e, -1));
 
@@ -312,13 +312,16 @@ public class JavaMailServiceImpl implements JavaMailService {
 				msg.setContent(multipartMixed);
 			}
 			
-			Transport.send(msg);
-			
-			if (logger.isDebugEnabled()) {
-				logger.debug("Sending java email:\nfrom: " + fromAddress + "\nto: " + toAddressList + "\nsubject: " + subject);
+			try(final Transport transport = session.getTransport("smtp")) {
+				transport.connect();
+				transport.sendMessage(msg, msg.getRecipients(Message.RecipientType.TO));
+				
+				if (logger.isDebugEnabled()) {
+					logger.debug("Sending java email:\nfrom: " + fromAddress + "\nto: " + toAddressList + "\nsubject: " + subject);
+				}
+				
+				return true;
 			}
-			
-			return true;
 		} catch (Exception e) {
 			logger.error("Error sending email via " + smtpMailRelayHostname + ": " + e.getMessage() + " \nemailSubject: " + subject + " \nemailContent: " + (StringUtils.isBlank(bodyText) ? bodyHtml : bodyText), e);
 			return false;

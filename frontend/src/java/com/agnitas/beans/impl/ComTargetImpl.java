@@ -10,22 +10,10 @@
 
 package com.agnitas.beans.impl;
 
-import java.util.List;
-
-import javax.servlet.jsp.JspException;
-
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetRepresentation;
-import org.agnitas.target.impl.TargetNodeDate;
-import org.agnitas.target.impl.TargetNodeNumeric;
-import org.agnitas.target.impl.TargetNodeString;
-import org.agnitas.target.impl.TargetRepresentationImpl;
-import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
-import org.springframework.context.ApplicationContext;
 
 import com.agnitas.beans.ComTarget;
+import com.agnitas.emm.core.target.eql.EqlFacade;
 
 import bsh.Interpreter;
 
@@ -40,13 +28,8 @@ public class ComTargetImpl extends TargetLightImpl implements ComTarget {
 	/** Fragment of SQL WHERE clause built from the target group. */
     protected String targetSQL;
 
-    /** Serialized form of target group. (Will be replaced by EQL) */
-    protected TargetRepresentation targetStructure;
-
     /** Flag, if target group is used for admin and test delivery. */
 	private boolean adminTestDelivery;
-	
-	private boolean simpleStructure;
 	
 	/** EQL code representing the target group. */
 	private String eql;
@@ -108,77 +91,16 @@ public class ComTargetImpl extends TargetLightImpl implements ComTarget {
         return targetSQL; 
     }
 
-    /** Getter for property targetStructure.
-     * @return Value of property targetStructure.
-     */
     @Override
-	public TargetRepresentation getTargetStructure() {
-        return this.targetStructure;
-    }
-
-    /** Setter for property targetStructure.
-     * @param targetStructure New value of property targetStructure.
-     */
-    @Override
-	public void setTargetStructure(TargetRepresentation targetStructure) {
-        if (targetStructure.getClass().getName().equals("com.agnitas.query.TargetRepresentation")) {
-            TargetRepresentationImpl newrep = new TargetRepresentationImpl();
-            List<TargetNode> nodes = targetStructure.getAllNodes();
-            
-            for (int n = 0; n < nodes.size (); ++n) {
-                TargetNode  tmp = nodes.get(n);
-                String      prim = tmp.getPrimaryField();
-
-                if (prim != null) {
-                    tmp.setPrimaryField(prim.toLowerCase());
-                }
-                
-                String      tname = tmp.getClass().getName();
-                TargetNode  newtarget = null;
-                
-                if (tname.equals ("com.agnitas.query.TargetNodeNumeric")) {
-                    newtarget = new TargetNodeNumeric ();
-                } else if (tname.equals ("com.agnitas.query.TargetNodeString")) {
-                    newtarget = new TargetNodeString ();
-                } else if (tname.equals ("com.agnitas.query.TargetNodeDate")) {
-                    newtarget = TargetNodeDate.withDefaultDateFormat(ConfigService.isOracleDB());
-                }
-                if (newtarget != null) {
-                    newtarget.setOpenBracketBefore (tmp.isOpenBracketBefore ());
-                    newtarget.setCloseBracketAfter (tmp.isCloseBracketAfter ());
-                    newtarget.setChainOperator (tmp.getChainOperator ());
-                    newtarget.setPrimaryOperator (tmp.getPrimaryOperator ());
-                    newtarget.setPrimaryField (tmp.getPrimaryField ());
-                    newtarget.setPrimaryFieldType (tmp.getPrimaryFieldType ());
-                    newtarget.setPrimaryValue (tmp.getPrimaryValue ());
-                    
-                    tmp = newtarget;
-                }
-                newrep.addNode (tmp);
-            }
-            targetStructure = newrep;
-        }
-        this.targetStructure = targetStructure;
-    }
-
-    @Override
-	public boolean isCustomerInGroup(Interpreter interpreter) {
+	public boolean isCustomerInGroup(Interpreter interpreter, final EqlFacade eqlFacade) {
         try {
-            return (Boolean) interpreter.eval(String.format("return (%s)", targetStructure.generateBsh()));
+        	final String bshCode = eqlFacade.convertEqlToBeanShellExpression(this);
+        	
+            return (Boolean) interpreter.eval(String.format("return (%s)", bshCode));
         } catch (Exception e) {
             logger.error("isCustomerInGroup: " + e.getMessage(), e);
             return false;
         }
-    }
-
-    @Override
-	public boolean isCustomerInGroup(int customerID, ApplicationContext con) throws JspException {
-		Interpreter aBsh = AgnUtils.getBshInterpreter(companyID, customerID, con);
-		if (aBsh == null) {
-			return false;
-		}
-
-        return this.isCustomerInGroup(aBsh);
     }
 
 	@Override
@@ -200,14 +122,5 @@ public class ComTargetImpl extends TargetLightImpl implements ComTarget {
 	public String getEQL() {
 		return this.eql;
 	}
-	
-	@Override
-	public void setSimpleStructured(boolean simpleStructured) {
-		this.simpleStructure = simpleStructured;
-	}
 
-	@Override
-	public boolean isSimpleStructured() {
-		return this.simpleStructure;
-	}
 }

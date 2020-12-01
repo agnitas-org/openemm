@@ -25,13 +25,14 @@
                 {{ } }}
                 <div class="modal-fixed-body">
                     <div id="tab-enlargedContent-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height">
-                        <div id="enlargedContentEditor" class="form-control"></div>
+                        <div id="enlargedContentEditor" class="form-control" ${disableContentEditing eq true ? 'readonly' : ''}></div>
                     </div>
-                    <div id="tab-enlargedContent-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height" data-full-tags="{{- isFullHtmlTags }}">
+                    <div id="tab-enlargedContent-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height" >
                         <textarea id="enlargedContent"
                                   name="enlargedContent"
                                   class="form-control js-editor js-wysiwyg full-height"
-                                  data-browse-mailing-id="${mailingId}">{{-content}}</textarea>
+                                  data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
+                                  ${disableContentEditing eq true ? 'readonly' : ''}>{{-content}}</textarea>
                     </div>
                 </div>
                 <div class="modal-fixed-footer standard-footer">
@@ -40,11 +41,13 @@
                             <i class="icon icon-times"></i>
                             <span class="text"><bean:message key="button.Cancel"/></span>
                         </button>
-                        <button type="button" class="btn btn-primary btn-large"
-                                data-action="updateContent">
-                            <i class="icon icon-check"></i>
-                            <span class="text"><bean:message key="button.Apply"/></span>
-                        </button>
+                        <c:if test="${disableContentEditing ne true}">
+                            <button type="button" class="btn btn-primary btn-large"
+                                    data-action="updateContent">
+                                <i class="icon icon-check"></i>
+                                <span class="text"><bean:message key="button.Apply"/></span>
+                            </button>
+                        </c:if>
                     </div>
                 </div>
             </form>

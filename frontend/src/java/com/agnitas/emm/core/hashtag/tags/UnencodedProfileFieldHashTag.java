@@ -42,4 +42,10 @@ public class UnencodedProfileFieldHashTag extends AbstractColonHashTag {
 		this.support = Objects.requireNonNull(support, "Profile field Hashtag support is null");
 	}
 
+	@Override
+	public String encodeResult(String unencodedResult) {
+		// This hash tag does not URL-encode the result 
+		return unencodedResult;
+	}
+
 }

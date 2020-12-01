@@ -19,7 +19,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.sql.DataSource;
 
-import org.agnitas.beans.Company;
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
@@ -76,7 +76,7 @@ public final class RebuildBindingHistoryTriggersOnStartupListener implements Ser
 			}
 
 			for (final int companyID : markedCompanies) {
-				if (Company.STATUS_ACTIVE.equals(getCompanyDao().getCompany(companyID).getStatus())) {
+				if (CompanyStatus.ACTIVE == getCompanyDao().getCompany(companyID).getStatus()) {
 					try {
 						logger.warn(String.format("Rebuilding binding history triggers for company %d", companyID));
 					

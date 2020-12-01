@@ -11,18 +11,18 @@
 package com.agnitas.service.impl;
 
 
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.AdminGroup;
+import org.agnitas.util.CsvWriter;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComAdminGroupDao;
 import com.agnitas.service.ComCSVService;
 
 public class ComCSVServiceImpl implements ComCSVService {
-    public static final String DEFAULT_SEPARATOR = ",";
-    public static final String DEFAULT_DELIMITER = "\"";
     /** DAO for accessing admin group data. */
 	protected ComAdminGroupDao adminGroupDao;
 	
@@ -32,46 +32,23 @@ public class ComCSVServiceImpl implements ComCSVService {
 	}
 
     @Override
-	public String getUserCSV(List<AdminEntry> users){
-        StringBuilder sb = new StringBuilder();
-        writeUserCSVHeaders(sb);
-        for (AdminEntry user : users) {
-        	List<AdminGroup> adminGroups = adminGroupDao.getAdminGroupByAdminID(user.getId());
-        	for (AdminGroup adminGroup : adminGroups) {
-        		writeUserCSVLine(user, adminGroup.getShortname(), sb);
-        	}
+	public byte[] getUserCSV(List<AdminEntry> users) throws Exception{
+    	ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try (CsvWriter csvWriter = new CsvWriter(outputStream)) {
+        	csvWriter.writeValues("Username","Firstname", "Lastname", "Email", "Usergroup");
+        	
+	        for (AdminEntry user : users) {
+	        	List<AdminGroup> adminGroups = adminGroupDao.getAdminGroupsByAdminID(user.getCompanyID(), user.getId());
+	        	StringBuilder adminGroupsList = new StringBuilder();
+	        	for (AdminGroup adminGroup : adminGroups) {
+	        		if (adminGroupsList.length() > 0) {
+	        			adminGroupsList.append(", ");
+	        		}
+	        		adminGroupsList.append(adminGroup.getShortname());
+	        	}
+	        	csvWriter.writeValues(user.getUsername(), user.getFirstname(), user.getFullname(), user.getEmail(), adminGroupsList.toString());
+	        }
         }
-        return sb.toString();
-    }
-
-    private void writeUserCSVLine(AdminEntry user, String adminGroup, StringBuilder sb){
-        writeCSVValue(user.getUsername(), DEFAULT_DELIMITER, DEFAULT_SEPARATOR, sb);
-        writeCSVValue(user.getFirstname(), DEFAULT_DELIMITER, DEFAULT_SEPARATOR, sb);
-        writeCSVValue(user.getFullname(), DEFAULT_DELIMITER, DEFAULT_SEPARATOR, sb);
-        writeCSVValue(user.getEmail(), DEFAULT_DELIMITER, DEFAULT_SEPARATOR, sb);
-        writeCSVValue(adminGroup, DEFAULT_DELIMITER, "", sb);
-        writeCSVLineBreak(sb);
-    }
-
-    private void writeUserCSVHeaders(StringBuilder sb){
-        writeCSVValue("Username", DEFAULT_DELIMITER, DEFAULT_SEPARATOR, sb);
-        writeCSVValue("Firstname", DEFAULT_DELIMITER, DEFAULT_SEPARATOR, sb);
-        writeCSVValue("Lastname", DEFAULT_DELIMITER, DEFAULT_SEPARATOR, sb);
-        writeCSVValue("Email", DEFAULT_DELIMITER, DEFAULT_SEPARATOR, sb);
-        writeCSVValue("Usergroup", DEFAULT_DELIMITER, "", sb);
-        writeCSVLineBreak(sb);
-    }
-
-    private void writeCSVValue(Object value, String delimiter, String separator, StringBuilder sb){
-        sb.append(delimiter);
-        if(value != null){
-            sb.append(value.toString());
-        }
-        sb.append(delimiter);
-        sb.append(separator);
-    }
-
-    private void writeCSVLineBreak(StringBuilder sb){
-        sb.append("\n");
+        return outputStream.toByteArray();
     }
 }

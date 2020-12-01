@@ -5,6 +5,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm"%>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <%--@elvariable id="adminForm" type="com.agnitas.emm.core.admin.form.AdminForm"--%>
 <%--@elvariable id="createdCompanies" type="java.util.List"--%>
@@ -54,7 +55,6 @@
                         <mvc:option value="0"><mvc:message code="recipient.gender.0.short"/></mvc:option>
                         <mvc:option value="1"><mvc:message code="recipient.gender.1.short"/></mvc:option>
                         <emm:ShowByPermission token="recipient.gender.extended">
-                            <mvc:option value="3"><mvc:message code="recipient.gender.3.short"/></mvc:option>
                             <mvc:option value="4"><mvc:message code="recipient.gender.4.short"/></mvc:option>
                             <mvc:option value="5"><mvc:message code="recipient.gender.5.short"/></mvc:option>
                         </emm:ShowByPermission>
@@ -120,7 +120,7 @@
             </c:if>
         </div>
     </div>
-    <emm:JspExtensionPoint plugin="emm_core" point="admin.view.pos2" />
+
     <div class="tile">
         <div class="tile-header">
             <h2 class="headline"><mvc:message code="settings.UserSettings"/></h2>
@@ -137,19 +137,17 @@
             <emm:ShowByPermission token="admin.setgroup">
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label" for="groupID"><mvc:message code="settings.Usergroup"/></label>
+                        <label class="control-label" for="groupIDs"><mvc:message code="settings.Usergroup"/></label>
                     </div>
                     <div class="col-sm-8">
-                        <mvc:select cssClass="form-control js-select" path="groupID" size="1" styleId="groupID">
-                            <mvc:options itemValue="groupID" itemLabel="shortname" items="${adminGroups}"/>
-                        </mvc:select>
+                    	<mvc:select path="groupIDs" id="groupIDs" cssClass="form-control js-select" multiple="true">
+	                        <c:forEach var="adminGroup" items="${adminGroups}">
+	                            <mvc:option value="${adminGroup.groupID}">${fn:escapeXml(adminGroup.shortname)}</mvc:option>
+	                        </c:forEach>
+	                    </mvc:select>
                     </div>
                 </div>
             </emm:ShowByPermission>
-
-            <emm:HideByPermission token="admin.setgroup">
-                <mvc:hidden path="groupID"/>
-            </emm:HideByPermission>
 
             <div class="form-group">
                 <div class="col-sm-4">
@@ -174,7 +172,7 @@
                     <div class="col-sm-8">
                         <div class="input-group">
                             <div class="input-group-controls">
-                                <mvc:password path="password" id="password" cssClass="form-control js-password-strength" size="52" />
+                                <mvc:password path="password" id="password" cssClass="form-control js-password-strength" size="52" data-rule="${PASSWORD_POLICY}"/>
                             </div>
                             <div class="input-group-addon">
                                 <span class="addon js-password-strength-indicator hidden">

@@ -19,16 +19,12 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.springframework.util.StringUtils;
 
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 
 public class TimeBasedDataSet extends BIRTDataSet {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(TimeBasedDataSet.class);
-	
 	protected static String getCustomerTableName(int companyId) {
 		return "customer_" + companyId + "_tbl";
 	}

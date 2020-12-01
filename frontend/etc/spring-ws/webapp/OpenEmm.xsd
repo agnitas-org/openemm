@@ -1055,7 +1055,6 @@
 				<xs:element name="actionID" type="xs:int"/>
 				<xs:element name="shortname" type="xs:string"/>
 				<xs:element name="deepTracking" type="xs:int"/>
-				<xs:element name="relevance" type="xs:int"/>
 				<xs:element name="altText" type="xs:string"/>
 				<xs:element name="originalUrl" type="xs:string"/>
 				<xs:element name="isAdminLink" type="xs:boolean"/>
@@ -1087,7 +1086,6 @@
 				<xs:element name="actionID" type="xs:int" minOccurs="0"/>
 				<xs:element name="shortname" type="xs:string" minOccurs="0"/>
 				<xs:element name="deepTracking" type="xs:int" minOccurs="0"/>
-				<xs:element name="relevance" type="xs:int" minOccurs="0"/>
 				<xs:element name="altText" type="xs:string" minOccurs="0"/>
 				<xs:element name="isAdminLink" type="xs:boolean" minOccurs="0"/>
 				<xs:element name="linkExtensions" minOccurs="0">

@@ -1,11 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"
          import="org.agnitas.util.*, java.util.*, java.text.*, org.agnitas.web.*, org.agnitas.beans.*"  errorPage="/error.do" %>
+<%@ page import="org.agnitas.util.importvalues.ImportMode" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-
+<c:set var="updateOnlyModeCode" value="<%= ImportMode.UPDATE.getIntValue() %>"/>
 
 
 <agn:agnForm action="/importwizard" enctype="multipart/form-data" data-form="resource">
@@ -55,7 +57,7 @@
                             </logic:equal>
                         </thead>
                         <tbody>
-                            <logic:equal value="true" name="importWizardForm" property="mailingTypeMissing">
+                            <c:if test="${importWizardForm.mailingTypeMissing and importWizardForm.getMode() != updateOnlyModeCode}">
                             <tr>
                                 <td><bean:message key="recipient.mailingtype"/>&nbsp;&nbsp;</td>
                                 <td>
@@ -72,7 +74,7 @@
                                     </html:select>
                                 </td>
                             <tr>
-                            </logic:equal>
+                                </c:if>
                         </tbody>
                     </table>
                 </div>

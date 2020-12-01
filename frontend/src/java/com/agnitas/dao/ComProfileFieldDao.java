@@ -13,16 +13,17 @@ package com.agnitas.dao;
 import java.util.List;
 import java.util.Set;
 
+import org.agnitas.beans.LightProfileField;
 import org.agnitas.dao.ProfileFieldDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbColumnType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 
 public interface ComProfileFieldDao extends ProfileFieldDao {
 	int MAX_SORT_INDEX = 1000;
-	
+
 	boolean mayAdd(@VelocityCheck int companyID);
 
 	boolean isNearLimit(int companyID);
@@ -32,44 +33,46 @@ public interface ComProfileFieldDao extends ProfileFieldDao {
 	int getCurrentFieldCount(int companyID) throws Exception;
 
     @Override
-	ComProfileField getProfileField(@VelocityCheck int companyID, String column) throws Exception;
+	ProfileField getProfileField(@VelocityCheck int companyID, String column) throws Exception;
 
-    ComProfileField getProfileField(@VelocityCheck int companyID, String column, int adminId) throws Exception;
-    
-    List<ComProfileField> getComProfileFields(@VelocityCheck int companyID) throws Exception;
-    
-    List<ComProfileField> getComProfileFields(@VelocityCheck int companyID, int adminID) throws Exception;
+    ProfileField getProfileField(@VelocityCheck int companyID, String column, int adminId) throws Exception;
 
-    List<ComProfileField> getComProfileFields(@VelocityCheck int companyID, int adminID, boolean customSorting) throws Exception;
+    List<ProfileField> getComProfileFields(@VelocityCheck int companyID) throws Exception;
 
-	CaseInsensitiveMap<String, ComProfileField> getComProfileFieldsMap(@VelocityCheck int companyID) throws Exception;
+    List<ProfileField> getComProfileFields(@VelocityCheck int companyID, int adminID) throws Exception;
 
-	CaseInsensitiveMap<String, ComProfileField> getComProfileFieldsMap(@VelocityCheck int companyID, boolean determineDefaultValues) throws Exception;
-	
-    CaseInsensitiveMap<String, ComProfileField> getComProfileFieldsMap(@VelocityCheck int companyID, int adminID) throws Exception;
-    
+    List<ProfileField> getComProfileFields(@VelocityCheck int companyID, int adminID, boolean customSorting) throws Exception;
+
+	List<LightProfileField> getLightProfileFields(@VelocityCheck int companyId) throws Exception;
+
+	CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(@VelocityCheck int companyID) throws Exception;
+
+	CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(@VelocityCheck int companyID, boolean determineDefaultValues) throws Exception;
+
+    CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(@VelocityCheck int companyID, int adminID) throws Exception;
+
     @Override
-	ComProfileField getProfileFieldByShortname(@VelocityCheck int companyID, String shortName) throws Exception;
-    
-    ComProfileField getProfileFieldByShortname(@VelocityCheck int companyID, String shortName, int adminID) throws Exception;
-    
-	List<ComProfileField> getProfileFieldsWithIndividualSortOrder(@VelocityCheck int companyID, int adminID) throws Exception;
-    
-	List<ComProfileField> getProfileFieldsWithInterest(@VelocityCheck int companyID, int adminID) throws Exception;
+	ProfileField getProfileFieldByShortname(@VelocityCheck int companyID, String shortName) throws Exception;
 
-	List<ComProfileField> getHistorizedProfileFields(@VelocityCheck int companyID) throws Exception;
+    ProfileField getProfileFieldByShortname(@VelocityCheck int companyID, String shortName, int adminID) throws Exception;
+
+	List<ProfileField> getProfileFieldsWithIndividualSortOrder(@VelocityCheck int companyID, int adminID) throws Exception;
+
+	List<ProfileField> getProfileFieldsWithInterest(@VelocityCheck int companyID, int adminID) throws Exception;
+
+	List<ProfileField> getHistorizedProfileFields(@VelocityCheck int companyID) throws Exception;
 
 	boolean checkAllowedDefaultValue(@VelocityCheck int companyID, String columnName, String fieldDefault) throws Exception;
 
 	/**
 	 * Returns the user-selected profile fields in history.
-	 * 
+	 *
 	 * @param companyID company ID
-	 * 
+	 *
 	 * @return list of user-selected profile fields in history.
 	 */
 	Set<String> listUserSelectedProfileFieldColumnsWithHistoryFlag(@VelocityCheck int companyID);
-	
+
 	boolean deleteByCompany(@VelocityCheck int companyID);
 
 	/**
@@ -90,7 +93,7 @@ public interface ComProfileFieldDao extends ProfileFieldDao {
 	 * @return whether ({@code true}) or not ({@code false}) a column changes can be tracked.
 	 */
 	boolean isTrackableColumn(String column, @VelocityCheck int companyId);
-	
+
 	int countCustomerEntries(@VelocityCheck final int companyID);
 
 	boolean checkProfileFieldExists(@VelocityCheck final int companyID, final String fieldNameOnDatabase) throws Exception;

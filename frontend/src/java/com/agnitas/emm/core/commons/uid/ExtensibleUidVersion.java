@@ -15,12 +15,12 @@ import java.util.Objects;
 
 public enum ExtensibleUidVersion {
 
-	/** Version of the legacy UID. <b>Important note:</b> This version cannot be referenced by version number anymore. Version 0 now denotes "highest available UID version". */
-	@Deprecated
-	LEGACY_UID(0),
-	
-	/** Version of XUID using MD5. */
-	XUID_WITH_MD5(1),
+	/*
+	 * These UID version are not longer support:
+	 * 
+	 * LEGACY_UID(0): 		Legacy UID. This version cannot be referenced by version number anymore. Version 0 now denotes "highest available UID version".
+	 * XUID_WITH_MD5(1):	Version of XUID using MD5.
+	 */
 
 	/** Version of XUID using SHA-512. */
 	XUID_WITH_SHA512(2),
@@ -81,9 +81,4 @@ public enum ExtensibleUidVersion {
 
 		return this.versionCode < otherVersionCode.intValue();
 	}
-
-	public final boolean isOlderThan(final ExtensibleUidVersion version) {
-		return !Objects.isNull(version) || !isOlderThan(version.versionCode);
-	}
-
 }

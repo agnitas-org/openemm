@@ -40,9 +40,12 @@ import com.agnitas.emm.core.target.eql.ast.NumericConstantListItemEqlNode;
 import com.agnitas.emm.core.target.eql.ast.ProfileFieldAtomEqlNode;
 import com.agnitas.emm.core.target.eql.ast.ReceivedMailingRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.RelationalBooleanEqlNode;
+import com.agnitas.emm.core.target.eql.ast.RelationalInfixOperator;
+import com.agnitas.emm.core.target.eql.ast.RelationalInfixOperatorNode;
 import com.agnitas.emm.core.target.eql.ast.StartsWithRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.StringConstantListItemEqlNode;
 import com.agnitas.emm.core.target.eql.ast.StringConstantWithEscapeCharsAtomEqlNode;
+import com.agnitas.emm.core.target.eql.ast.TimestampExpressionNode;
 import com.agnitas.emm.core.target.eql.ast.TodayAtomEqlNode;
 import com.agnitas.emm.core.target.eql.codegen.util.StringUtil;
 import com.agnitas.emm.core.target.eql.parser.EqlParserConfiguration;
@@ -88,6 +91,7 @@ import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.Pr
 import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.QuotedProfilefieldNameContext;
 import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.ReceivedMailingRelationalExpressionContext;
 import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.RelationalBooleanParenthesisExpressionContext;
+import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.Relational_infix_opContext;
 import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.SignedFactorTermContext;
 import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.SimpleProfilefieldNameContext;
 import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.StringConstantAtomContext;
@@ -95,6 +99,7 @@ import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.St
 import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.StringSingleQuoteContext;
 import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.SubExpressionContext;
 import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.TermExpressionContext;
+import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.Timestamp_expressionContext;
 import com.agnitas.emm.core.target.eql.parser.antlr4.autogen.EqlGrammarParser.TodayConstantAtomContext;
 
 /**
@@ -229,7 +234,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 		
-		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.InfixOperator.EQ, right, dateFormat);
+		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, RelationalInfixOperator.EQ, right, dateFormat);
 		
 		nodeStack.push(node);
 	}
@@ -243,7 +248,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 		
-		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.InfixOperator.GEQ, right, dateFormat);
+		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, RelationalInfixOperator.GEQ, right, dateFormat);
 		
 		nodeStack.push(node);
 	}
@@ -257,7 +262,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 
-		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.InfixOperator.LT, right, dateFormat);
+		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, RelationalInfixOperator.LT, right, dateFormat);
 		
 		nodeStack.push(node);
 	}
@@ -271,7 +276,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 
-		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.InfixOperator.NEQ, right, dateFormat);
+		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, RelationalInfixOperator.NEQ, right, dateFormat);
 		
 		nodeStack.push(node);
 	}
@@ -285,7 +290,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 
-		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.InfixOperator.LEQ, right, dateFormat);
+		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, RelationalInfixOperator.LEQ, right, dateFormat);
 		
 		nodeStack.push(node);
 	}
@@ -299,7 +304,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 
-		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.InfixOperator.GT, right, dateFormat);
+		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, RelationalInfixOperator.GT, right, dateFormat);
 		
 		nodeStack.push(node);
 	}
@@ -554,6 +559,36 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		}
 	}
 
+	// ------------------------------------------------------------------------------------------------------------------------------- Misc  nodes
+	@Override
+	public final void exitRelational_infix_op(final Relational_infix_opContext ctx) {
+		if(ctx.EQ() != null) {
+			nodeStack.push(new RelationalInfixOperatorNode(RelationalInfixOperator.EQ, Antlr4BasedCodeLocation.fromParserRuleContext(ctx)));
+		} else if(ctx.NEQ() != null) {
+			nodeStack.push(new RelationalInfixOperatorNode(RelationalInfixOperator.NEQ, Antlr4BasedCodeLocation.fromParserRuleContext(ctx)));
+		} else if(ctx.LT() != null) {
+			nodeStack.push(new RelationalInfixOperatorNode(RelationalInfixOperator.LT, Antlr4BasedCodeLocation.fromParserRuleContext(ctx)));
+		} else if(ctx.LEQ() != null) {
+			nodeStack.push(new RelationalInfixOperatorNode(RelationalInfixOperator.LEQ, Antlr4BasedCodeLocation.fromParserRuleContext(ctx)));
+		} else if(ctx.GT() != null) {
+			nodeStack.push(new RelationalInfixOperatorNode(RelationalInfixOperator.GT, Antlr4BasedCodeLocation.fromParserRuleContext(ctx)));
+		} else if(ctx.GEQ() != null) {
+			nodeStack.push(new RelationalInfixOperatorNode(RelationalInfixOperator.GEQ, Antlr4BasedCodeLocation.fromParserRuleContext(ctx)));
+		} else {
+			throw new RuntimeException(String.format("Unhandled relational infix operator: '%s'", ctx.getText()));
+		}
+	}
+
+	@Override
+	public final void exitTimestamp_expression(final Timestamp_expressionContext ctx) {
+		assert nodeStack.size() >= 3;
+		
+		final String dateFormat = StringUtil.replaceEscapedChars(((StringConstantWithEscapeCharsAtomEqlNode) nodeStack.pop()).getValue());
+		final AbstractExpressionalEqlNode expressionalNode = (AbstractExpressionalEqlNode) nodeStack.pop();
+		final RelationalInfixOperatorNode operatorNode = (RelationalInfixOperatorNode) nodeStack.pop();
+		
+		nodeStack.push(new TimestampExpressionNode(operatorNode.getOperator(), expressionalNode, dateFormat, Antlr4BasedCodeLocation.fromParserRuleContext(ctx)));
+	}
 
 	
 	// ------------------------------------------------------------------------------------------------------------------------------- Unused because just forwarding AST node
@@ -631,5 +666,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 	@Override public void enterDate_format(Date_formatContext ctx) { /* unused */ }
 	@Override public void exitDate_format(Date_formatContext ctx) { /* unused */ }
 	@Override public void visitErrorNode(ErrorNode ctx) { /* unused */ }
+	@Override public final void enterRelational_infix_op(final Relational_infix_opContext ctx) { /* unused */ }
+	@Override public final void enterTimestamp_expression(final Timestamp_expressionContext ctx) { /* unused */ }
 
 }

@@ -16,15 +16,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 import javax.sql.DataSource;
 
 import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.ProfileField;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.binding.service.BindingService;
 import org.agnitas.emm.core.recipient.service.RecipientsModel.CriteriaEquals;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.CsvColInfo;
@@ -35,6 +34,8 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import com.agnitas.beans.ComRecipientHistory;
 import com.agnitas.beans.ComRecipientMailing;
 import com.agnitas.beans.ComRecipientReaction;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.WebtrackingHistoryEntry;
 import com.agnitas.beans.impl.ComRecipientLiteImpl;
 import com.agnitas.beans.impl.RecipientDates;
@@ -42,6 +43,8 @@ import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface ComRecipientDao {
+    String SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT = "_FORMAT";
+    
     String SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY = "_DAY_DATE";
     String SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH = "_MONTH_DATE";
     String SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR = "_YEAR_DATE";
@@ -148,16 +151,6 @@ public interface ComRecipientDao {
     boolean mayAdd(@VelocityCheck int companyID, int count);
 
     /**
-     * Check whether the number of recipients is not critical after adding
-     * the given number of recipients.
-     *
-     * @param companyID The id of the company to check.
-     * @param count the number of recipients that should be added.
-     * @return true if it is allowed to add the given number of recipients.
-     */
-    boolean isNearLimit(@VelocityCheck int companyID, int count);
-
-    /**
      * Inserts new customer record in Database with a fresh customer-id
      *
      * @return true on success
@@ -209,21 +202,6 @@ public interface ComRecipientDao {
      */
     void updateStatusByColumn(@VelocityCheck int companyId, String columnName, String columnValue, int newStatus, String remark) throws Exception;
 
-    /**
-     * Update binding status of all subscribers with matching email address.
-     * 
-     * <b>Note: This method duplicates {@link BindingService#updateBindingStatusByEmailPattern(int, String, int, String)}</b>
-     * 
-     * @param companyId company ID
-     * @param emailPattern emailPattern
-     * @param newStatus new status
-     * @param remark remark for status update
-     * @throws Exception
-     * 
-     * @see BindingService#updateBindingStatusByEmailPattern(int, String, int, String)
-     */
-    void updateStatusByEmailPattern(@VelocityCheck int companyId, String emailPattern, int newStatus, String remark) throws Exception;
-    
     /**
      * Find Subscriber by providing the id of the company, a column-name and a value.
      *
@@ -365,8 +343,6 @@ public interface ComRecipientDao {
      */
     List<Recipient> getBouncedMailingRecipients(@VelocityCheck int companyId, int mailingId);
 
-    void deleteDuplicateRecipients(@VelocityCheck int companyID, List<Integer> list, String email);
-
     /**
      * Check of existence of customer in database for given id
      *
@@ -445,4 +421,14 @@ public interface ComRecipientDao {
 	void logMailingDelivery(int companyID, int maildropStatusID, int customerID, int mailingID);
 
 	DbColumnType getColumnDataType(int companyId, String columnName) throws Exception;
+
+	List<Integer> getRecipientIDs(int companyID, String keyColumn, String keyValue);
+
+	CaseInsensitiveMap<String, Object> getCustomerData(int companyID, int customerID, TimeZone timeZone);
+
+    boolean isRecipientMatchTarget(int companyId, String targetExpression, int customerId);
+
+    boolean isNotSavedRecipientDataMatchTarget(int companyId, String targetExpression, Recipient recipient) throws Exception;
+    
+    public List<Integer> listRecipientIdsByTargetGroup(final int companyId, final ComTarget target);
 }

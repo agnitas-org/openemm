@@ -11,6 +11,7 @@
 package com.agnitas.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import org.agnitas.beans.EmmLayoutBase;
 import org.agnitas.dao.EmmLayoutBaseDao;
@@ -20,4 +21,5 @@ public interface ComEmmLayoutBaseDao extends EmmLayoutBaseDao {
 	List<EmmLayoutBase> getEmmLayoutsBase(@VelocityCheck int companyID);
 	boolean deleteLayoutByCompany(@VelocityCheck int companyID);
 	String getLayoutDirectory(String requestDomain);
+	Map<String, Integer> getMappedDomains();
 }

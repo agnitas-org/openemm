@@ -35,7 +35,6 @@ import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
-import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.backend.Mailgun;
 import org.agnitas.beans.DynamicTagContent;
@@ -46,8 +45,8 @@ import org.agnitas.beans.TrackableLink;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.preview.AgnTagException;
 import org.agnitas.preview.TagSyntaxChecker;
-import org.agnitas.util.AgnUtils;
 import org.agnitas.util.SafeString;
+import org.agnitas.util.beanshell.BeanShellInterpreterFactory;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.DateConverter;
@@ -59,14 +58,17 @@ import org.springframework.context.ApplicationContext;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.LinkService;
 import com.agnitas.emm.core.LinkService.LinkScanResult;
+import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.service.AgnDynTagGroupResolverFactory;
 import com.agnitas.service.AgnTagService;
@@ -84,7 +86,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	protected Map<String, DynamicTag> dynTags = new LinkedHashMap<>();
 	protected Map<String, MailingComponent> components = new LinkedHashMap<>();
 	protected Hashtable<String, MailingComponent> attachments;
-	protected Map<String, TrackableLink> trackableLinks = new LinkedHashMap<>();
+	protected Map<String, ComTrackableLink> trackableLinks = new LinkedHashMap<>();
 	protected int clickActionID;
 	protected int openActionID;
 	protected Set<MaildropEntry> maildropStatus = new LinkedHashSet<>();
@@ -186,7 +188,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	public Vector<String> findDynTagsInTemplates(String aTemplate, ApplicationContext con) throws Exception {
 		AgnTagService service = con.getBean("AgnTagService", AgnTagService.class);
 		AgnDynTagGroupResolverFactory resolverFactory = con.getBean("AgnDynTagGroupResolverFactory", AgnDynTagGroupResolverFactory.class);
-		List<DynamicTag> tags = service.getDynTags(aTemplate, resolverFactory.create(id));
+		List<DynamicTag> tags = service.getDynTags(aTemplate, resolverFactory.create(companyID, id));
 
 		Vector<String> names = new Vector<>();
 		for (DynamicTag tag : tags) {
@@ -453,7 +455,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
-	public Map<String, TrackableLink> getTrackableLinks() {
+	public Map<String, ComTrackableLink> getTrackableLinks() {
 		return trackableLinks;
 	}
 
@@ -738,7 +740,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	 * @param trackableLinks
 	 */
 	@Override
-	public void setTrackableLinks(Map<String, TrackableLink> trackableLinks) {
+	public void setTrackableLinks(Map<String, ComTrackableLink> trackableLinks) {
 		this.trackableLinks = trackableLinks;
 	}
 
@@ -883,26 +885,26 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 	@Override
 	public void init( @VelocityCheck int newCompanyID, ApplicationContext con) {
-		MailingComponent comp = null;
-		Mediatype type = null;
+		MailingComponent comp;
+		Mediatype type;
 
 		this.companyID = newCompanyID;
 
-		comp = (MailingComponent) con.getBean("MailingComponent");
+		comp = con.getBean("MailingComponent", MailingComponent.class);
 		comp.setCompanyID(newCompanyID);
 		comp.setComponentName("agnText");
 		comp.setType(MailingComponent.TYPE_TEMPLATE);
 		comp.setEmmBlock("[agnDYN name=\"Text-Version\"/]", "text/plain");
 		components.put("agnText", comp);
 
-		comp = (MailingComponent) con.getBean("MailingComponent");
+		comp = con.getBean("MailingComponent", MailingComponent.class);
 		comp.setCompanyID(newCompanyID);
 		comp.setComponentName("agnHtml");
 		comp.setType(MailingComponent.TYPE_TEMPLATE);
 		comp.setEmmBlock("[agnDYN name=\"HTML-Version\"/]", "text/html");
 		components.put("agnHtml", comp);
 
-		type = (Mediatype) con.getBean("MediatypeEmail");
+		type = con.getBean("MediatypeEmail", Mediatype.class);
 		type.setCompanyID(newCompanyID);
 		mediatypes.put(MediaTypes.EMAIL.getMediaCode(), type);
 	}
@@ -976,7 +978,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	public Object clone(ApplicationContext con) {
 		Mailing tmpMailing = (Mailing) con.getBean("Mailing");
 		MailingComponent compNew = null;
-		TrackableLink linkNew = null;
+		ComTrackableLink linkNew = null;
 		DynamicTag tagNew = null;
 		DynamicTagContent contentNew = null;
 
@@ -1013,12 +1015,13 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 			}
 
 			// copy urls
-			for (TrackableLink linkOrg : trackableLinks.values()) {
-				linkNew = (TrackableLink) con.getBean("TrackableLink");
+			for (ComTrackableLink linkOrg : trackableLinks.values()) {
+				linkNew = con.getBean("TrackableLink", ComTrackableLink.class);
 				BeanUtils.copyProperties(linkNew, linkOrg);
 				linkNew.setId(0);
 				linkNew.setMailingID(0);
 				linkNew.setActionID(linkOrg.getActionID());
+				linkNew.setAdminLink(linkOrg.isAdminLink());
 				tmpMailing.getTrackableLinks().put(linkNew.getFullUrl(), linkNew);
 			}
 
@@ -1138,11 +1141,11 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	@Override
 	public Map<Integer, ComTarget> getAllowedTargets(ApplicationContext myContext) {
 		if (allowedTargets == null) {
-			ComTargetDao dao = (ComTargetDao) myContext.getBean("TargetDao");
+			ComTargetDao dao = myContext.getBean("TargetDao", ComTargetDao.class);
 
 			allowedTargets = dao.getAllowedTargets(companyID);
 			if (allowedTargets != null) {
-				ComTarget aTarget = (ComTarget) myContext.getBean("Target");
+				ComTarget aTarget = myContext.getBean("Target", ComTarget.class);
 
 				aTarget.setCompanyID(companyID);
 				aTarget.setId(0);
@@ -1312,6 +1315,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 	private static class TargetGroupMatcher {
     	private ApplicationContext context;
+    	private final EqlFacade eqlFacade;
 		private int companyId;
 
 		private ComTargetDao targetDao;
@@ -1324,8 +1328,10 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 			this.companyId = companyId;
 
 			targetDao = context.getBean("TargetDao", ComTargetDao.class);
+			this.eqlFacade = context.getBean("EqlFacade", EqlFacade.class);
 
-			interpreter = AgnUtils.getBshInterpreter(companyId, customerId, context);
+			BeanShellInterpreterFactory beanShellInterpreterFactory = context.getBean("BeanShellInterpreterFactory", BeanShellInterpreterFactory.class);
+			interpreter = beanShellInterpreterFactory.createBeanShellInterpreter(companyId, customerId);
 			if (interpreter == null) {
 				throw new Exception("error.template.dyntags.bshInterpreter");
 			}
@@ -1340,7 +1346,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 			} else {
 				ComTarget target = targetsCache.computeIfAbsent(targetId, this::getTarget);
 
-				if (target.isCustomerInGroup(interpreter)) {
+				if (target.isCustomerInGroup(interpreter, this.eqlFacade)) {
 					return true;
 				}
 			}

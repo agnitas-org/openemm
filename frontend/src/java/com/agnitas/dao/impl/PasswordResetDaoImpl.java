@@ -40,8 +40,13 @@ public class PasswordResetDaoImpl extends BaseDaoImpl implements PasswordResetDa
 	}
 
 	@Override
-	public boolean existsPasswordResetTokenHash(String username, String tokenHash) {
+	public boolean isValidPasswordResetTokenHash(String username, String tokenHash) {
 		return selectObjectDefaultNull(logger, "SELECT token_hash FROM admin_password_reset_tbl pwd, admin_tbl admin WHERE pwd.admin_id = admin.admin_id AND admin.username = ? AND pwd.token_hash = ? AND pwd.valid_until > CURRENT_TIMESTAMP AND error_count < ?", new StringRowMapper(), username, tokenHash, MAXIMUM_TOKEN_CHECKS) != null;
+	}
+
+	@Override
+	public boolean existsPasswordResetTokenHash(String username, String tokenHash) {
+		return selectObjectDefaultNull(logger, "SELECT token_hash FROM admin_password_reset_tbl pwd, admin_tbl admin WHERE pwd.admin_id = admin.admin_id AND admin.username = ? AND pwd.token_hash = ?", new StringRowMapper(), username, tokenHash) != null;
 	}
 
 	@Override

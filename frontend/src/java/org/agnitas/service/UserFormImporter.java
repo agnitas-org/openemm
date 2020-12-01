@@ -12,9 +12,11 @@ package org.agnitas.service;
 
 import java.io.InputStream;
 
-public interface UserFormImporter {
-	FormImportResult importUserFormFromJson(int companyID, InputStream input) throws Exception;
+import com.agnitas.beans.ComAdmin;
 
-	FormImportResult importUserFormFromJson(int companyID, InputStream input, String formName, String description) throws Exception;
-	
+public interface UserFormImporter {
+
+	FormImportResult importUserForm(ComAdmin admin, InputStream input) throws Exception;
+
+	FormImportResult importUserForm(ComAdmin admin, InputStream input, String formName, String description) throws Exception;
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">MailingSummaryDataCube.MailingSummaryDataSet.x</property>
@@ -108,6 +108,8 @@ if(params["selectedTargets"] != null ) {
 mailingCompareDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingCompareDataSet();
 tempTableID = mailingCompareDataSet.prepareReport(selectedMailings, params["companyID"], selectedTargets, params["recipientsType"]);
 reportContext.setPersistentGlobalVariable("tempTableID", new Integer(tempTableID));
+
+reportContext.setGlobalVariable("isDarkmode", params["darkmode"]);
 
 targetNum = 0;
 
@@ -252,6 +254,19 @@ if(reportContext.getOutputFormat() == "csv" ) {
             <structure name="format">
                 <property name="category">Unformatted</property>
             </structure>
+        </scalar-parameter>
+        <scalar-parameter name="darkmode" id="2832">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">boolean</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">False</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">check-box</property>
+            <structure name="format"/>
         </scalar-parameter>
     </parameters>
     <data-sources>
@@ -1490,6 +1505,11 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	var labelWidth = (digitsCount * 9) + (commaCount * 2); // the size of digit is 9, the size of comma is 2
 	var startOfLable = labelCenter - (labelWidth / 2);
 	label.getInsets().setRight(startOfLable * 1.5);
+	
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 function getColorDefinition( styleName ) {
@@ -2693,6 +2713,11 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	var labelWidth = (digitsCount * 9) + (commaCount * 2); // the size of digit is 9, the size of comma is 2
 	var startOfLable = labelCenter - (labelWidth / 2);
 	label.getInsets().setRight(startOfLable * 1.5);
+
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 function getColorDefinition( styleName ) {
@@ -3894,6 +3919,11 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	var labelWidth = (digitsCount * 9) + (commaCount * 2); // the size of digit is 9, the size of comma is 2
 	var startOfLable = labelCenter - (labelWidth / 2);
 	label.getInsets().setRight(startOfLable * 1.5);
+
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 function getColorDefinition( styleName ) {
@@ -5095,6 +5125,11 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	var labelWidth = (digitsCount * 9) + (commaCount * 2); // the size of digit is 9, the size of comma is 2
 	var startOfLable = labelCenter - (labelWidth / 2);
 	label.getInsets().setRight(startOfLable * 1.5);
+
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 function getColorDefinition( styleName ) {
@@ -6302,6 +6337,11 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	var labelWidth = (digitsCount * 9) + (commaCount * 2); // the size of digit is 9, the size of comma is 2
 	var startOfLable = labelCenter - (labelWidth / 2);
 	label.getInsets().setRight(startOfLable * 1.5);
+
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 function getColorDefinition( styleName ) {
@@ -7509,6 +7549,11 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	var labelWidth = (digitsCount * 9) + (commaCount * 2); // the size of digit is 9, the size of comma is 2
 	var startOfLable = labelCenter - (labelWidth / 2);
 	label.getInsets().setRight(startOfLable * 1.5);
+
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 function getColorDefinition( styleName ) {
@@ -9034,6 +9079,11 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	var labelWidth = (digitsCount * 9) + (commaCount * 2) + 9 + 2 + 9; // with last symbols '.0%'
 	var startOfLable = labelCenter - (labelWidth / 2);
 	label.getInsets().setRight(startOfLable * 1.5);
+
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 function getColorDefinition( styleName ) {
@@ -10260,6 +10310,11 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	var labelWidth = (digitsCount * 9) + (commaCount * 2) + 9 + 2 + 9; // with last symbols '.0%'
 	var startOfLable = labelCenter - (labelWidth / 2);
 	label.getInsets().setRight(startOfLable * 1.5);
+
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 function getColorDefinition( styleName ) {
@@ -11468,6 +11523,11 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	var labelWidth = (digitsCount * 9) + (commaCount * 2) + 9 + 2 + 9; // with last symbols '.0%'
 	var startOfLable = labelCenter - (labelWidth / 2);
 	label.getInsets().setRight(startOfLable * 1.5);
+
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 function getColorDefinition( styleName ) {
@@ -12675,6 +12735,11 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	var labelWidth = (digitsCount * 9) + (commaCount * 2) + 9 + 2 + 9; // with last symbols '.0%'
 	var startOfLable = labelCenter - (labelWidth / 2);
 	label.getInsets().setRight(startOfLable * 1.5);
+
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 
 function getColorDefinition( styleName ) {

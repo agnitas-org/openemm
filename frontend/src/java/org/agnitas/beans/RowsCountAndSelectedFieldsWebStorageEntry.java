@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class RowsCountAndSelectedFieldsWebStorageEntry extends RowsCountWebStorageEntry {
     @JsonProperty("fields")

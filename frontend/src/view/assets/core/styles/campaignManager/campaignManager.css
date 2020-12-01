@@ -10,6 +10,10 @@
     overflow: scroll;
 }
 
+body.dark-theme #viewPort {
+    display: table-cell;
+}
+
 #invisible {
     visibility: hidden;
     height: 1px;
@@ -459,6 +463,10 @@ footer#footnotes-container {
 
 /*Context menu*/
 
+.context-menu-item {
+    color: black;
+}
+
 .context-menu-item.icon-delete {
     background-image: url(../../images/campaignManager/delete_context.png);
 }
@@ -745,6 +753,10 @@ footer#footnotes-container {
     display: block;
     text-align: left;
     margin-left: 1px;
+}
+
+body.dark-theme .icon-extra-info {
+    color: black;
 }
 
 .icon-extra-info-center {

@@ -1,4 +1,4 @@
 <HelpBalloon>
-	<title>Adresse de l'exp&eacute;diteur</title>
+	<title><![CDATA[Adresse de l'exp&eacute;diteur]]></title>
 	<content><![CDATA[L'adresse de l'exp&eacute;diteur est l'adresse indiqu&eacute;e comme exp&eacute;diteur de l'e-mail. Vous devriez donc utiliser une adresse utile, telle que newsroom@yourcompany.com, qui existe bel et bien. L'adresse de r&eacute;ponse au courriel est l'adresse de courriel pour les r&eacute;ponses. Il est possible d'attribuer des noms diff&eacute;rents au nom complet de l'exp&eacute;diteur et &agrave; la r&eacute;ponse au nom complet, respectivement. Si vous n'entrez qu'un seul nom, par exemple dans le champ Nom complet de l'exp&eacute;diteur, il sera utilis&eacute; comme r&eacute;ponse au nom complet.]]></content>
 </HelpBalloon>

@@ -18,8 +18,12 @@ import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMaili
 import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getNavigationLocationName;
 import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getStatisticLoadType;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -29,6 +33,8 @@ import org.agnitas.beans.AdminGroup;
 import org.agnitas.emm.core.commons.password.PasswordCheck;
 import org.agnitas.emm.core.commons.password.PasswordCheckHandler;
 import org.agnitas.emm.core.commons.password.StrutsPasswordCheckHandler;
+import org.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
+import org.agnitas.emm.core.commons.password.util.PasswordUtil;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.logintracking.LoginTrackServiceRequestHelper;
@@ -156,12 +162,19 @@ public class ComUserSelfServiceAction extends DispatchAction {
         fillRequestWithOriginalValues(request, admin);
         
         request.setAttribute("SHOW_SUPERVISOR_PERMISSION_MANAGEMENT", admin.getSupervisor() == null && this.configService.getBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, admin.getCompanyID()));
-
+        request.setAttribute("PASSWORD_POLICY", PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService).getPolicyName());
+        	
 		return mapping.findForward("show");
 	}
 	
 	public ActionForward save(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-	    try {
+		final ComAdmin admin = AgnUtils.getAdmin(request);
+		if (admin == null) {
+			return mapping.findForward("logon");
+		}
+        request.setAttribute("PASSWORD_POLICY", PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService).getPolicyName());
+
+        try {
 			ActionMessages errors = new ActionMessages();
 			
 			if (form == null || !(form instanceof ComAdminForm)) {
@@ -169,11 +182,6 @@ public class ComUserSelfServiceAction extends DispatchAction {
 			}
 
             ComAdminForm adminForm = (ComAdminForm) form;
-			ComAdmin admin = AgnUtils.getAdmin(request);
-
-			if (admin == null) {
-				return mapping.findForward("logon");
-			}
 
             ComAdminPreferences adminPreferences = adminPreferencesDao.getAdminPreferences(admin.getAdminID());
             FormUtils.syncNumberOfRows(webStorage, ComWebStorage.ADMIN_LOGIN_LOG_OVERVIEW, adminForm);
@@ -261,16 +269,18 @@ public class ComUserSelfServiceAction extends DispatchAction {
 
 				// Set new Timezone
 				admin.setAdminTimezone(adminForm.getAdminTimezone());
-
-                //Set user group
-                AdminGroup group = adminGroupDao.getAdminGroup(adminForm.getGroupID(), adminForm.getCompanyID());
+				
                 //Set gender
                 admin.setGender(adminForm.getGender());
 
-                if (group != null){
-                    admin.setGroup(group);
+                //Set user group
+                if (adminForm.getGroupIDs() != null && admin.permissionAllowed(Permission.ADMIN_SETGROUP)) {
+	                List<AdminGroup> adminGroups = new ArrayList<>();
+	                for (String adminGroupId : adminForm.getGroupIDs()) {
+	                	adminGroups.add(adminGroupDao.getAdminGroup(Integer.parseInt(adminGroupId), adminForm.getCompanyID()));
+	                }
+                    admin.setGroups(adminGroups);
                 }
-
 			} catch (Exception e) {
 				logger.error("ComUserSelfServiceAction.save: " + e.getMessage(), e);
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
@@ -328,6 +338,9 @@ public class ComUserSelfServiceAction extends DispatchAction {
 				// Set new Password
 				if (StringUtils.isNotEmpty(adminForm.getPassword())) {
 					// Only change if user entered a new password
+					
+					
+					
 					PasswordCheckHandler handler = new StrutsPasswordCheckHandler(errors, "password");
 					if (adminService.isAdminPassword(admin, adminForm.getPassword())) {
 						errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.password_must_differ"));
@@ -387,7 +400,11 @@ public class ComUserSelfServiceAction extends DispatchAction {
         comAdminForm.setFullname(admin.getFullname());
         comAdminForm.setAdminLocale(new Locale(admin.getAdminLang(), admin.getAdminCountry()));
         comAdminForm.setAdminTimezone(admin.getAdminTimezone());
-        comAdminForm.setGroupID(admin.getGroup().getGroupID());
+        String[] groupIds = new String[admin.getGroupIds().size()];
+        for (int i = 0; i < admin.getGroupIds().size(); i++) {
+        	groupIds[i] = Integer.toString(admin.getGroupIds().get(i));
+        }
+        comAdminForm.setGroupIDs(groupIds);
         comAdminForm.setStatEmail(admin.getStatEmail());
         comAdminForm.setCompanyName(admin.getCompanyName());
         comAdminForm.setEmail(admin.getEmail());
@@ -413,16 +430,9 @@ public class ComUserSelfServiceAction extends DispatchAction {
      * @param admin current admin
      */
     protected void fillRequestWithOriginalValues(HttpServletRequest request, ComAdmin admin){
-        try {
-            if(admin.permissionAllowed(Permission.ADMIN_SETGROUP)){
-                request.setAttribute("adminGroups", adminGroupDao.getAdminGroupsByCompanyIdAndDefault(AgnUtils.getCompanyID(request)));
-            }
-        } catch (Exception e) {
-            logger.error("ComUserSelfServiceAction.showChangeForm: " + e.getMessage(), e);
-        }
+        request.setAttribute("availableAdminGroups", adminGroupDao.getAdminGroupsByCompanyIdAndDefault(AgnUtils.getCompanyID(request), admin.getGroupIds()));
 
-        request.setAttribute("availableLayouts", layoutBaseDao.getEmmLayoutsBase(admin.getCompanyID()));
-
+        request.setAttribute("availableLayouts", adminService.getEmmLayoutsBase(admin.getCompanyID()));
     }
 
     /** Service class for accessing user activity log. */
@@ -489,7 +499,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
                         userName + ". Email changed from " + admin.getEmail() + " to " + adminForm.getEmail());
             }
             //Log changes of password
-            if (passwordCheck.passwordChanged(admin.getUsername(), adminForm.getPassword())){
+            if (PasswordUtil.passwordChanged(adminService, admin.getUsername(), adminForm.getPassword())){
                 writeUserActivityLog(admin, "edit user", userName + ". Password changed");
             }
             //Log changes of language
@@ -530,12 +540,18 @@ public class ComUserSelfServiceAction extends DispatchAction {
             }
             
             // Log changes of userGroup
-            if (admin.getGroup().getGroupID() != adminForm.getGroupID()){
-                String oldGroupName = admin.getGroup().getGroupID() == 0 ? "None" : admin.getGroup().getShortname();
-                String newGroupName = adminForm.getGroupID() == 0 ? "None" : adminGroupDao.getAdminGroup(adminForm.getGroupID(), adminForm.getCompanyID()).getShortname();
+            Set<Integer> currentGroupIds = new HashSet<>(admin.getGroupIds());
+            Set<Integer> newGroupIds = new HashSet<>();
+            if (adminForm.getGroupIDs() != null) {
+            	for (String groupId : adminForm.getGroupIDs()) {
+            		newGroupIds.add(Integer.parseInt(groupId));
+            	}
+            }
+            if (!currentGroupIds.equals(newGroupIds)) {
+                String oldGroupIdsList = StringUtils.join(currentGroupIds, ",");
+                String newGroupIdsList = StringUtils.join(newGroupIds, ",");
 
-                writeUserActivityLog(admin, "edit user",
-                        userName + ". User Group changed from " + oldGroupName + " to " + newGroupName);
+                writeUserActivityLog(admin, "edit user", userName + ". User Group changed from " + oldGroupIdsList + " to " + newGroupIdsList);
             }
 
             if (logger.isInfoEnabled()) {

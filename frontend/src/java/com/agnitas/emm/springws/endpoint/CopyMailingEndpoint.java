@@ -10,31 +10,34 @@
 
 package com.agnitas.emm.springws.endpoint;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException;
 import com.agnitas.emm.springws.jaxb.CopyMailingRequest;
 import com.agnitas.emm.springws.jaxb.CopyMailingResponse;
-import com.agnitas.emm.springws.jaxb.ObjectFactory;
 
-public class CopyMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class CopyMailingEndpoint extends BaseEndpoint {
 
-    private ObjectFactory objectFactory;
-
-    @Resource
     private CopyMailingService copyMailingService;
 
-    @Override
-    protected Object invokeInternal(Object requestObject) throws Exception {
-        CopyMailingRequest request = (CopyMailingRequest) requestObject;
+    @Autowired
+    public CopyMailingEndpoint(CopyMailingService copyMailingService) {
+        this.copyMailingService = copyMailingService;
+    }
+
+    @PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "CopyMailingRequest")
+    public @ResponsePayload CopyMailingResponse copyMailing(@RequestPayload CopyMailingRequest request) throws Exception {
         validateRequest(request);
-        CopyMailingResponse response = objectFactory.createCopyMailingResponse();
+        CopyMailingResponse response = new CopyMailingResponse();
         int copyId = copyMailingService.copyMailing(Utils.getUserCompany(), request.getMailingId(), Utils.getUserCompany(), request.getNameOfCopy(), request.getDescriptionOfCopy());
         response.setCopyId(copyId);
         return response;
@@ -45,10 +48,5 @@ public class CopyMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
         if (StringUtils.isBlank(nameOfCopy)) {
             throw new WebServiceInvalidFieldsException("Field nameOfCopy is empty.");
         }
-    }
-
-    @Required
-    public void setObjectFactory(ObjectFactory objectFactory) {
-        this.objectFactory = objectFactory;
     }
 }

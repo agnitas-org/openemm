@@ -47,7 +47,7 @@
 
 <c:choose>
     <c:when test="${isMailingGrid}">
-        <c:set var="isTabsMenuShown" 		value="false" 																				scope="request" />
+        <c:set var="isTabsMenuShown" 		value="false" scope="request" />
 
         <emm:include page="/WEB-INF/jsp/mailing/fragments/mailing-grid-navigation.jsp"/>
 
@@ -56,12 +56,12 @@
             <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingAttachmentsForm.mailingID}"/>
         </emm:instantiate>
 
-        <c:set var="agnTitleKey" 			value="Mailing" 																			scope="request" />
-        <c:set var="agnSubtitleKey" 		value="Mailing" 																			scope="request" />
-        <c:set var="sidemenu_active" 		value="Mailings" 																			scope="request" />
-        <c:set var="sidemenu_sub_active"	value="none" 																				scope="request" />
-        <c:set var="agnHighlightKey" 		value="mailing.Attachments" 																scope="request" />
-        <c:set var="agnHelpKey" 			value="mailingAttachments" 																	scope="request" />
+        <c:set var="agnTitleKey" 			value="Mailing" 						scope="request" />
+        <c:set var="agnSubtitleKey" 		value="Mailing" 						scope="request" />
+        <c:set var="sidemenu_active" 		value="Mailings" 						scope="request" />
+        <c:set var="sidemenu_sub_active"	value="none" 						    scope="request" />
+        <c:set var="agnHighlightKey" 		value="mailing.Attachments" 			scope="request" />
+        <c:set var="agnHelpKey" 			value="mailingAttachments" 				scope="request" />
 
         <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
             <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

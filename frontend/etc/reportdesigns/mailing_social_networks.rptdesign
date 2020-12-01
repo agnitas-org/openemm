@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.4.0.v201405191524 Build &lt;4.4.0.v20140611-1043></property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
     <property name="units">in</property>
-    <method name="initialize"><![CDATA[if(reportContext.getOutputFormat()!="pdf") {
+    <method name="initialize"><![CDATA[
+reportContext.setGlobalVariable("isDarkmode", params["darkmode"]);
+
+if(reportContext.getOutputFormat()!="pdf") {
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("reportParameters").drop();
 }
 if(reportContext.getOutputFormat()!="csv") {
@@ -85,6 +88,19 @@ if(reportContext.getOutputFormat()=="csv") {
             <structure name="format">
                 <property name="category">Unformatted</property>
             </structure>
+        </scalar-parameter>
+        <scalar-parameter name="darkmode" id="938">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">boolean</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">False</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">check-box</property>
+            <structure name="format"/>
         </scalar-parameter>
     </parameters>
     <data-sources>
@@ -912,7 +928,7 @@ return true;
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -949,6 +965,14 @@ function getColorDefinition( styleName ) {
 	var blue =  &quot;0x&quot;+color.substr(5,2);
 	return ColorDefinitionImpl.create(red,green,blue);
 }
+
+function beforeDrawDataPointLabel( dph, label, icsc ) {
+	var reportContext =  icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
 </Script>
   <Units>Points</Units>
   <SeriesThickness>10.0</SeriesThickness>
@@ -1234,9 +1258,9 @@ function getColorDefinition( styleName ) {
           <Thickness>1</Thickness>
           <Color>
             <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
+            <Red>136</Red>
+            <Green>136</Green>
+            <Blue>136</Blue>
           </Color>
           <Visible>true</Visible>
         </LeaderLineAttributes>
@@ -1620,7 +1644,7 @@ function getColorDefinition( styleName ) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -1653,6 +1677,13 @@ function getColorDefinition( styleName ) {
 	var green =  &quot;0x&quot;+color.substr(3,2);
 	var blue =  &quot;0x&quot;+color.substr(5,2);
 	return ColorDefinitionImpl.create(red,green,blue);
+}
+
+function beforeDrawDataPointLabel( dph, label, icsc ) {
+	var reportContext =  icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -1940,9 +1971,9 @@ function getColorDefinition( styleName ) {
           <Thickness>1</Thickness>
           <Color>
             <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
+            <Red>136</Red>
+            <Green>136</Green>
+            <Blue>136</Blue>
           </Color>
           <Visible>true</Visible>
         </LeaderLineAttributes>

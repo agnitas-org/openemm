@@ -13,17 +13,21 @@ package org.agnitas.service.impl;
 import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
 import javax.annotation.Resource;
 
-import com.agnitas.beans.LinkProperty;
-import com.agnitas.dao.UserFormDao;
-import com.agnitas.json.JsonWriter;
-import com.agnitas.userform.bean.UserForm;
-import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 import org.agnitas.service.UserFormExporter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+
+import com.agnitas.beans.LinkProperty;
+import com.agnitas.dao.UserFormDao;
+import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
+import com.agnitas.json.JsonWriter;
+import com.agnitas.userform.bean.UserForm;
+import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 
 public class UserFormExporterImpl extends ActionExporter implements UserFormExporter {
 	/** The logger. */
@@ -31,6 +35,9 @@ public class UserFormExporterImpl extends ActionExporter implements UserFormExpo
 	
 	@Resource(name="UserFormDao")
 	protected UserFormDao userFormDao;
+
+	@Resource(name="FormTrackableLinkDao")
+	protected FormTrackableLinkDao trackableLinkDao;
 
 	@Override
 	public void exportUserFormToJson(int companyID, int formID, OutputStream output) throws Exception {
@@ -80,10 +87,12 @@ public class UserFormExporterImpl extends ActionExporter implements UserFormExpo
 				writeJsonObjectAttribute(writer, "error_use_url", userForm.isErrorUseUrl());
 			}
 
-			if (userForm.getTrackableLinks() != null && userForm.getTrackableLinks().size() > 0) {
+			Map<String, ComTrackableUserFormLink> trackableLinks = trackableLinkDao.getUserFormTrackableLinks(formID, companyID);
+
+			if (trackableLinks != null && trackableLinks.size() > 0) {
 				writer.openJsonObjectProperty("links");
 				writer.openJsonArray();
-				for (ComTrackableUserFormLink trackableLink : userForm.getTrackableLinks().values()) {
+				for (ComTrackableUserFormLink trackableLink : trackableLinks.values()) {
 					writer.openJsonObject();
 					
 					writeJsonObjectAttribute(writer, "id", trackableLink.getId());
@@ -97,10 +106,6 @@ public class UserFormExporterImpl extends ActionExporter implements UserFormExpo
 					
 					if (trackableLink.getDeepTracking() > 0) {
 						writeJsonObjectAttribute(writer, "deep_tracking", trackableLink.getDeepTracking());
-					}
-					
-					if (trackableLink.getRelevance() > 0) {
-						writeJsonObjectAttribute(writer, "relevance", trackableLink.getRelevance());
 					}
 					
 					if (trackableLink.getUsage() > 0) {

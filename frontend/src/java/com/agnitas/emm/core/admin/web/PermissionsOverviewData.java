@@ -12,8 +12,9 @@
 package com.agnitas.emm.core.admin.web;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,10 +28,6 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
 
 public class PermissionsOverviewData {
-    
-    private static List<String> standardCategories = Arrays.asList(Permission.ORDERED_STANDARD_RIGHT_CATEGORIES);
-    private static List<String> premiumCategories = Arrays.asList(Permission.ORDERED_PREMIUM_RIGHT_CATEGORIES);
-    
     public static final int ROOT_ADMIN_ID = 1;
     public static final int ROOT_GROUP_ID = 1;
     
@@ -51,20 +48,23 @@ public class PermissionsOverviewData {
     public static class Builder {
         private ComAdmin admin;
         private ComAdmin adminToEdit;
-        private boolean masterShowAllowed;
-        private boolean newPermissionManagement;
+        private AdminGroup groupToEdit;
     
         private Set<Permission> visiblePermissions;
         private Set<Permission> companyPermissions;
         private boolean groupPermissions;
         private boolean allowedForGroup;
-    
+        
         public void setAdmin(ComAdmin admin) {
             this.admin = admin;
         }
     
         public void setAdminToEdit(ComAdmin adminToEdit) {
             this.adminToEdit = adminToEdit;
+        }
+    
+        public void setGroupToEdit(AdminGroup groupToEdit) {
+            this.groupToEdit = groupToEdit;
         }
     
         public void setVisiblePermissions(Set<Permission> visiblePermissions) {
@@ -78,10 +78,6 @@ public class PermissionsOverviewData {
         public void setGroupPermissions(boolean groupPermissions) {
             this.groupPermissions = groupPermissions;
         }
-        
-        public void setNewPermissionManagement(boolean newPermissionManagement) {
-            this.newPermissionManagement = newPermissionManagement;
-        }
     
         public PermissionsOverviewData build() {
             // For information on rules for changing user rights, see:
@@ -90,34 +86,28 @@ public class PermissionsOverviewData {
             
             if (groupPermissions && !allowedForGroup) {
                 return options;
+            } else {
+	            assert admin != null;
+	            
+	            if (adminToEdit == null) {
+	                adminToEdit = admin;
+	            }
+	            
+	            Set<Permission> filtered = visiblePermissions.stream()
+	                    .filter(permission -> (!Permission.CATEGORY_KEY_SYSTEM.equals(permission.getCategory()) || admin.permissionAllowed(permission) || admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID))
+	                    .collect(Collectors.toSet());
+	    
+	            Map<String, PermissionCategoryEntry> permissionsCategories;
+	            if (!groupPermissions) {
+	            	permissionsCategories = collectPermissionsByCategory(adminToEdit, filtered);
+	            } else {
+	            	permissionsCategories = collectPermissionsByCategory(groupToEdit, filtered);
+	            }
+	            sortPermissionsMap(permissionsCategories);
+	            
+	            options.permissionsCategories.putAll(permissionsCategories);
+	            return options;
             }
-            
-            assert admin != null;
-            
-            if (adminToEdit == null) {
-                adminToEdit = admin;
-            }
-            
-            masterShowAllowed = admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID;
-            
-            List<String> categories = new ArrayList<>();
-            categories.addAll(standardCategories);
-            categories.addAll(premiumCategories);
-            
-            if (masterShowAllowed) {
-                categories.add(Permission.CATEGORY_KEY_SYSTEM);
-                categories.add(Permission.CATEGORY_KEY_OTHERS);
-            }
-    
-            Set<Permission> filtered = visiblePermissions.stream()
-                    .filter(permission -> categories.contains(permission.getCategory()))
-                    .collect(Collectors.toSet());
-    
-            Map<String, PermissionCategoryEntry> permissionsCategories = collectPermissionsByCategory(adminToEdit.getGroup(), filtered);
-            sortPermissionsMap(permissionsCategories);
-            
-            options.permissionsCategories.putAll(permissionsCategories);
-            return options;
         }
     
         private void sortPermissionsMap(Map<String, PermissionCategoryEntry> permissionsCategories) {
@@ -128,51 +118,89 @@ public class PermissionsOverviewData {
             }
         }
     
-        private Map<String, PermissionCategoryEntry> collectPermissionsByCategory(AdminGroup adminGroup, Set<Permission> filteredVisiblePermissions) {
-            Map<String, PermissionCategoryEntry> permissionsCategories = new TreeMap<>();
-            for (Permission permission : filteredVisiblePermissions) {
-                String subCategoryName = StringUtils.defaultString(permission.getSubCategory());
-                String categoryName = permission.getCategory();
-    
-                PermissionSubCategoryEntry subCategory =
-                        permissionsCategories.computeIfAbsent(categoryName, PermissionCategoryEntry::new)
-                        .subCategories.computeIfAbsent(subCategoryName, PermissionSubCategoryEntry::new);
-                
-                subCategory.permissions.add(getPermissionEntry(adminGroup, permission));
-            }
-            return permissionsCategories;
+        private Map<String, PermissionCategoryEntry> collectPermissionsByCategory(ComAdmin adminToCollectPermissionsFor, Set<Permission> filteredVisiblePermissions) {
+			Map<String, PermissionCategoryEntry> permissionsCategories = new TreeMap<>();
+			List<Permission> filteredAndSortedVisiblePermissions = new ArrayList<>(filteredVisiblePermissions);
+			Collections.sort(filteredAndSortedVisiblePermissions);
+			for (Permission permission : filteredAndSortedVisiblePermissions) {
+			    String categoryName = permission.getCategory();
+
+			    if (categoryName != null) {
+				    String subCategoryName = StringUtils.defaultString(permission.getSubCategory());
+				    PermissionSubCategoryEntry subCategory =
+				            permissionsCategories.computeIfAbsent(categoryName, PermissionCategoryEntry::new)
+				            .subCategories.computeIfAbsent(subCategoryName, PermissionSubCategoryEntry::new);
+				    
+				    PermissionEntry permissionEntry = new PermissionEntry();
+			    	
+			    	permissionEntry.name = permission.toString();
+			    	permissionEntry.granted = adminToCollectPermissionsFor.permissionAllowed(permission);
+			    	
+				    for (AdminGroup adminGroup : adminToCollectPermissionsFor.getGroups()) {
+				    	if (adminGroup != null && adminGroup.permissionAllowed(permission)) {
+							permissionEntry.adminGroup = adminGroup;
+				    		break;
+				    	}
+				    }
+				    
+					if (permissionEntry.adminGroup != null) {
+			    		permissionEntry.changeable = false;
+					} else if (permission.isPremium()) {
+						permissionEntry.changeable = companyPermissions.contains(permission);
+					} else if (Permission.CATEGORY_KEY_SYSTEM.equals(permission.getCategory())) {
+						permissionEntry.changeable = admin.permissionAllowed(permission) || admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID;
+					} else {
+						permissionEntry.changeable = true;
+					}
+					
+					subCategory.permissions.add(permissionEntry);
+			    }
+			}
+			return permissionsCategories;
         }
     
-        private PermissionEntry getPermissionEntry(AdminGroup adminGroup, Permission permission) {
-            String categoryName = permission.getCategory();
+        private Map<String, PermissionCategoryEntry> collectPermissionsByCategory(AdminGroup groupToCollectPermissionsFor, Set<Permission> filteredVisiblePermissions) {
+			Map<String, PermissionCategoryEntry> permissionsCategories = new TreeMap<>();
+			List<Permission> filteredAndSortedVisiblePermissions = new ArrayList<>(filteredVisiblePermissions);
+			Collections.sort(filteredAndSortedVisiblePermissions);
+			for (Permission permission : filteredAndSortedVisiblePermissions) {
+			    String categoryName = permission.getCategory();
 
-            PermissionEntry permissionEntry = new PermissionEntry();
-            permissionEntry.name = permission.toString();
-            permissionEntry.granted = adminToEdit.permissionAllowed(permission);
-            
-            if (!groupPermissions && adminGroup != null && adminGroup.permissionAllowed(adminGroup.getCompanyID(), permission)) {
-                permissionEntry.drivenByAdminCategory = true;
-                permissionEntry.changeable = false;
-                permissionEntry.adminGroup = adminGroup;
-            } else if (newPermissionManagement) {
-            	if (permission.isPremium()) {
-                    permissionEntry.changeable = companyPermissions.contains(permission);
-                } else if (Permission.CATEGORY_KEY_SYSTEM.equals(permission.getCategory()) || Permission.CATEGORY_KEY_OTHERS.equals(permission.getCategory())) {
-                    permissionEntry.changeable = admin.permissionAllowed(permission) || masterShowAllowed;
-                } else {
-                	permissionEntry.changeable = true;
-                }
-            } else {
-            	if (standardCategories.contains(categoryName)) {
-                    permissionEntry.changeable = true;
-                } else if (premiumCategories.contains(categoryName)) {
-                    permissionEntry.changeable = companyPermissions.contains(permission);
-                } else {
-                    permissionEntry.changeable = admin.permissionAllowed(permission) || masterShowAllowed;
-                }
-            }
-            
-            return permissionEntry;
+			    if (categoryName != null) {
+				    String subCategoryName = StringUtils.defaultString(permission.getSubCategory());
+				    PermissionSubCategoryEntry subCategory =
+				            permissionsCategories.computeIfAbsent(categoryName, PermissionCategoryEntry::new)
+				            .subCategories.computeIfAbsent(subCategoryName, PermissionSubCategoryEntry::new);
+				    
+				    PermissionEntry permissionEntry = new PermissionEntry();
+			    	
+			    	permissionEntry.name = permission.toString();
+			    	
+			    	if (groupToCollectPermissionsFor != null) {
+				    	permissionEntry.granted = groupToCollectPermissionsFor.permissionAllowed(permission);
+				    	
+					    for (AdminGroup adminGroup : groupToCollectPermissionsFor.getParentGroups()) {
+					    	if (adminGroup != null && adminGroup.permissionAllowed(permission)) {
+								permissionEntry.adminGroup = adminGroup;
+					    		break;
+					    	}
+					    }
+			    	}
+				    
+					if (permissionEntry.adminGroup != null) {
+			    		permissionEntry.changeable = false;
+					} else if (permission.isPremium()) {
+						permissionEntry.changeable = companyPermissions.contains(permission);
+					} else if (Permission.CATEGORY_KEY_SYSTEM.equals(permission.getCategory())) {
+						permissionEntry.changeable = admin.permissionAllowed(permission) || admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID;
+					} else {
+						permissionEntry.changeable = true;
+					}
+					
+					subCategory.permissions.add(permissionEntry);
+			    }
+			}
+			return permissionsCategories;
         }
     
         public void setAllowedForGroup(boolean allowedForGroup) {
@@ -187,18 +215,16 @@ public class PermissionsOverviewData {
     public static class PermissionEntry {
         
         private boolean changeable;
-        private AdminGroup adminGroup;
-        private boolean drivenByAdminCategory;
+        private AdminGroup adminGroup = null;
         private String name;
-        private boolean granted;
+        private boolean granted = false;
     
         public PermissionEntry() {
         }
     
-        public PermissionEntry(boolean changeable, AdminGroup adminGroup, boolean drivenByAdminCategory, String name, boolean granted) {
+        public PermissionEntry(boolean changeable, AdminGroup adminGroup, String name, boolean granted) {
             this.changeable = changeable;
             this.adminGroup = adminGroup;
-            this.drivenByAdminCategory = drivenByAdminCategory;
             this.name = name;
             this.granted = granted;
         }
@@ -220,7 +246,7 @@ public class PermissionsOverviewData {
         }
         
         public boolean isShowInfoTooltip() {
-            return !changeable && drivenByAdminCategory && adminGroup != null;
+            return !changeable && adminGroup != null;
         }
     }
     
@@ -242,7 +268,7 @@ public class PermissionsOverviewData {
         }
     }
     
-    public static class PermissionCategoryEntry {
+    public static class PermissionCategoryEntry implements Comparable<PermissionCategoryEntry> {
         private String name;
         private Map<String, PermissionSubCategoryEntry> subCategories;
         
@@ -256,7 +282,35 @@ public class PermissionsOverviewData {
         }
     
         public Map<String, PermissionSubCategoryEntry> getSubCategories() {
-            return subCategories;
+        	Map<String, PermissionSubCategoryEntry> returnMap = new LinkedHashMap<>();
+        	List<String> subCategoryKeys = new ArrayList<>(subCategories.keySet());
+        	for (String subCategory : subCategoryKeys) {
+        		returnMap.put(subCategory, subCategories.get(subCategory));
+        	}
+            return returnMap;
+        }
+        
+        @Override
+    	public int compareTo(PermissionCategoryEntry otherPermissionCategoryEntry) {
+        	if (otherPermissionCategoryEntry == null) {
+    			return 1;
+    		} else {
+    			int categoryIndex = Integer.MAX_VALUE;
+    			for (int index = 0; index < Permission.CATEGORY_DISPLAY_ORDER.length; index++) {
+    				if (Permission.CATEGORY_DISPLAY_ORDER[index].equals(getName())) {
+    					categoryIndex = index;
+    					break;
+    				}
+    			}
+    			int otherCategoryIndex = Integer.MAX_VALUE;
+    			for (int index = 0; index < Permission.CATEGORY_DISPLAY_ORDER.length; index++) {
+    				if (Permission.CATEGORY_DISPLAY_ORDER[index].equals(otherPermissionCategoryEntry.getName())) {
+    					otherCategoryIndex = index;
+    					break;
+    				}
+    			}
+    			return Integer.compare(categoryIndex, otherCategoryIndex);
+    		}
         }
     }
 }

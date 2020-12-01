@@ -10,21 +10,22 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.beans.SendPerDomainStatRow;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.messages.I18nString;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.beans.SendPerDomainStatRow;
 
 public class TopDomainsDataSet extends BIRTDataSet {
 	private static final transient Logger logger = Logger.getLogger(TopDomainsDataSet.class);
@@ -181,7 +182,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 
 		int overallSentMailings;
 		if (mailingTrackingDataAvailable) {
-			overallSentMailings = selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, success_" + companyID + "_tbl succ WHERE cust.customer_id = succ.customer_id AND succ.mailing_id = ?", mailingID);
+			overallSentMailings = selectInt(logger, "SELECT COUNT(*) FROM mailtrack_" + companyID + "_tbl WHERE mailing_id = ?", mailingID);
 		} else {
 			overallSentMailings = selectInt(logger, "SELECT SUM(COALESCE(no_of_mailings, 0)) FROM mailing_account_tbl WHERE mailing_id = ?", mailingID);
 		}
@@ -202,7 +203,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 				int targetSentMailings = 0;
 				if (mailingTrackingDataAvailable) {
 					targetSentMailings = selectInt(logger,
-						"SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, success_" + companyID + "_tbl succ WHERE cust.customer_id = succ.customer_id AND succ.mailing_id = ?"
+						"SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, mailtrack_" + companyID + "_tbl track WHERE cust.customer_id = track.customer_id AND track.mailing_id = ?"
 							+ " AND (" + target.getTargetSQL() + ")",
 						mailingID);
 				}
@@ -223,8 +224,8 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		// CATEGORY_SENT_EMAILS available only if there is mailtracking data
 		if (mailingTrackingDataAvailable) {
 			String overallDomainsSql = "SELECT COUNT(*) AS mails_per_domain, domain_name"
-				+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, success_" + companyID + "_tbl succ"
-					+ " WHERE cust.customer_id = succ.customer_id AND succ.mailing_id = ?)" + (isOracleDB() ? "" : " sub")
+				+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, mailtrack_" + companyID + "_tbl track"
+					+ " WHERE cust.customer_id = track.customer_id AND track.mailing_id = ?)" + (isOracleDB() ? "" : " sub")
 				+ " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY mails_per_domain DESC";
 			if (domainsMax > 1) {
 				if (isOracleDB()) {
@@ -262,8 +263,8 @@ public class TopDomainsDataSet extends BIRTDataSet {
 				for (LightTarget target : targets) {
 					if (mailingTrackingDataAvailable) {
 						String targetDomainsSql = "SELECT COUNT(*) AS mails_per_domain, domain_name"
-							+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, success_" + companyID + "_tbl succ"
-								+ " WHERE cust.customer_id = succ.customer_id AND succ.mailing_id = ?"
+							+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, mailtrack_" + companyID + "_tbl track"
+								+ " WHERE cust.customer_id = track.customer_id AND track.mailing_id = ?"
 									+ " AND (" + target.getTargetSQL() + "))" + (isOracleDB() ? "" : " sub")
 							+ " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY mails_per_domain DESC";
 						if (domainsMax > 1) {
@@ -311,13 +312,13 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	
 	private void insertHardBouncesIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
 		insertBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains,
-				new Rule("bounce.detail < 510", CATEGORY_NAME_HARDBOUNCES, CATEGORY_HARDBOUNCES));
+				new Rule("bounce.detail >= 510", CATEGORY_NAME_HARDBOUNCES, CATEGORY_HARDBOUNCES));
 
 	}
 	
 	private void insertSoftBouncesIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
 		insertBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains,
-				new Rule("bounce.detail >= 510", CATEGORY_NAME_SOFTBOUNCES, CATEGORY_SOFTBOUNCES));
+				new Rule("bounce.detail < 510", CATEGORY_NAME_SOFTBOUNCES, CATEGORY_SOFTBOUNCES));
 	}
 
 	public static class Rule {
@@ -645,6 +646,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 		otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).setDomainName(I18nString.getLocaleString("statistic.Other", language));
 		otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).setDomainNameIndex(domainsMax + 1);
+		otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).setCategoryIndex(CATEGORY_CLICKERS);
 		overallDomainsRows.add(otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID));
 		insertIntoTempTable(tempTableID, overallDomainsRows);
 
@@ -684,6 +686,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 				}
 				otherDomainsMap.get(target.getId()).setDomainName(I18nString.getLocaleString("statistic.Other", language));
 				otherDomainsMap.get(target.getId()).setDomainNameIndex(domainsMax + 1);
+				otherDomainsMap.get(target.getId()).setCategoryIndex(CATEGORY_CLICKERS);
 				targetDomainsRows.add(otherDomainsMap.get(target.getId()));
 				insertIntoTempTable(tempTableID, targetDomainsRows);
 				domainTargetGroupIndex++;
@@ -691,7 +694,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 	}
 
-	protected void updateRates(int tempTableID, List<LightTarget> targets, boolean mailtrackingDataAvailable) throws Exception {
+	private void updateRates(int tempTableID, List<LightTarget> targets, boolean mailtrackingDataAvailable) throws Exception {
 		boolean targetsAvailable = CollectionUtils.isNotEmpty(targets);
 
 		int totalSentEmails = getTotalSentEmails(tempTableID, CommonKeys.ALL_SUBSCRIBERS_INDEX);
@@ -792,10 +795,6 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			row.getValue(),
 			row.getRate()
 		);
-	}
-
-	protected String getTemporaryTableName(int tempTableID) {
-		return "tmp_report_aggregation_" + tempTableID + "_tbl";
 	}
 
 	public String getDomainFromEmailExpression(boolean topLevelDomains) {

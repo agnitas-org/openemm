@@ -10,8 +10,10 @@
 
 package org.agnitas.web;
 
-import org.apache.commons.text.StringEscapeUtils;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 public class HtmlReporterHelper {
 	public static String WHITE_COLORCODE = "FFFFFF";
@@ -174,7 +176,7 @@ public class HtmlReporterHelper {
 			.append("							<tr>\n")
 			.append("								<td dir=\"ltr\" valign=\"top\" style=\"padding: 0;\">\n")
 			.append("									<div align=\"right\" style=\"float:right;\">\n")
-			.append("										<img src=\"https://emm.agnitas.de/assets/core/images/facelift/agnitas-emm-logo.svg\" align=\"left\" style=\"padding-top:5px; padding-right:5px;\">\n")
+			.append("										<img src=\"" + ConfigService.getInstance().getValue(ConfigValue.SystemUrl) + "/layout/0/logo.svg\" align=\"left\" style=\"padding-top:5px; padding-right:5px;\">\n")
 			.append("									<div style=\"float: right; font-family: Proxima Nova Helvetica Neue,Arial,sans-serif; font-size: 28px; white-space: nowrap; color: #0071b9; text-align:left;\">EMM<div style=\"font-size: 13px; white-space: nowrap; color: #8d8d8f;\">").append(versionText).append("</div></div>\n")
 			.append("									</div>\n")
 			.append("								</td>\n")

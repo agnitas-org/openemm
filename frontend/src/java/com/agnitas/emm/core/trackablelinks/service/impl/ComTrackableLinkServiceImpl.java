@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.trackablelinks.service.impl;
 
+import static org.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,7 +38,6 @@ import org.springframework.context.ApplicationContext;
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.beans.TrackableLinkListItem;
 import com.agnitas.beans.TrackableLinkModel;
 import com.agnitas.beans.TrackableLinkSettings;
@@ -46,8 +47,6 @@ import com.agnitas.emm.core.trackablelinks.exceptions.MailingNotSentException;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkUnknownLinkIdException;
 import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
-
-import static org.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
 
 /**
  * Service class dealing with trackable links.
@@ -66,25 +65,35 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     /** Service dealing with mailings. */
     private MailingService mailingService;
 
-
     @Override
     public void addExtensions(ComMailing aMailing, Set<Integer> linksIds, List<LinkProperty> passedLinkProperties) {
-        Collection<TrackableLink> trackableLinkList = aMailing.getTrackableLinks().values();
-        if ((trackableLinkList.size() > 0) && (linksIds.size() > 0)) {
-            if(passedLinkProperties.size() > 0) {
-                for (TrackableLink link : trackableLinkList) {
-                    if (linksIds.contains(link.getId())) {
-                        // Change link properties
-                        // boolean changedProperty = false;
-                        Set<LinkProperty> updatedProperties = link.getProperties().stream()
-                                .filter(property -> property.getPropertyType() != PropertyType.LinkExtension)
-                                .collect(Collectors.toSet());
-                        updatedProperties.addAll(passedLinkProperties);
-                        link.setProperties(new ArrayList<>(updatedProperties));
-                    }
-                }
-            }
-        }
+		Collection<ComTrackableLink> trackableLinkList = aMailing.getTrackableLinks().values();
+		if ((trackableLinkList.size() > 0) && (linksIds.size() > 0)) {
+			if (passedLinkProperties.size() > 0) {
+				List<LinkProperty> commonLinkExtensions = aMailing.getCommonLinkExtensions();
+				for (TrackableLink link : trackableLinkList) {
+					if (linksIds.contains(link.getId())) {
+						List<LinkProperty> updatedProperties = new ArrayList<>(link.getProperties());
+						
+						// Remove the old common link extensions, but keep the links specific ones
+						for (LinkProperty oldCommonLinkExtension : commonLinkExtensions) {
+							List<LinkProperty> toRemove = new ArrayList<>();
+							for (LinkProperty linkExtension : updatedProperties) {
+								if (oldCommonLinkExtension.getPropertyName().equals(linkExtension.getPropertyName()) && oldCommonLinkExtension.getPropertyValue().equals(linkExtension.getPropertyValue())) {
+									toRemove.add(linkExtension);
+								}
+							}
+							updatedProperties.removeAll(toRemove);
+						}
+						
+						// Add new common link extensions
+						updatedProperties.addAll(passedLinkProperties);
+						
+						link.setProperties(updatedProperties);
+					}
+				}
+			}
+		}
     }
 
     @Override
@@ -151,23 +160,6 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     @Override
-    public void saveGlobalRelevance(ComMailing aMailing, Set<Integer> bulkLinkIds, int globalRelevance, Map<Integer, Integer> linkItemsRelevance) {
-        try {
-            for (TrackableLink aLink : aMailing.getTrackableLinks().values()) {
-                int id = aLink.getId();
-                int linkItemRelevance = linkItemsRelevance.getOrDefault(id, 0);
-                if (aLink.getRelevance() != linkItemRelevance) {
-                    aLink.setRelevance(linkItemRelevance);
-                } else if ((globalRelevance != KEEP_UNCHANGED) && bulkLinkIds.contains(id)) {
-                    aLink.setRelevance(globalRelevance);
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    @Override
     public boolean saveEveryPositionLinks(ComMailing aMailing, ApplicationContext aContext, Set<Integer> bulkLinkIds) throws Exception {
         List<String> links = aMailing.getTrackableLinks().values().stream()
                 .filter(Objects::nonNull)
@@ -229,7 +221,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     
     @Override
     public TrackableLinkSettings getTrackableLinkSettings(int linkID, @VelocityCheck int companyId) {
-        ComTrackableLink trackableLink = (ComTrackableLink) trackableLinkDao.getTrackableLink(linkID, companyId);
+        ComTrackableLink trackableLink = trackableLinkDao.getTrackableLink(linkID, companyId);
         if (trackableLink == null) {
             throw new TrackableLinkUnknownLinkIdException(linkID);
         }
@@ -268,7 +260,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     
     /**
      * Checks, if URL editing is allowed for given link.
-     *  
+     * 
      * @param link link to check
      * 
      * @throws TrackableLinkException if URL editing is not allowed
@@ -279,7 +271,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     
     /**
      * Checks, if URL editing is allowed for given mailing.
-     *  
+     * 
      * @param mailingID mailing ID
      * @param companyID company ID of mailing
      * 
@@ -361,7 +353,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     private ComTrackableLink mergeTrackableLinkData(TrackableLinkModel trackableLinkModel) {
-        ComTrackableLink trackableLink = (ComTrackableLink) trackableLinkDao.getTrackableLink(trackableLinkModel.getId(), trackableLinkModel.getCompanyID());
+        ComTrackableLink trackableLink = trackableLinkDao.getTrackableLink(trackableLinkModel.getId(), trackableLinkModel.getCompanyID());
 
         if (trackableLink == null) {
             throw new TrackableLinkUnknownLinkIdException(trackableLinkModel.getId());
@@ -372,7 +364,6 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
         int actionId = mergeFields(trackableLink.getActionID(), trackableLinkModel.getActionID());
         String shortname = mergeFields(trackableLink.getShortname(), trackableLinkModel.getShortname());
         int deepTracking = mergeFields(trackableLink.getDeepTracking(), trackableLinkModel.getDeepTracking());
-        int relevance = mergeFields(trackableLink.getRelevance(), trackableLinkModel.getRelevance());
         String altText = mergeFields(trackableLink.getAltText(), trackableLinkModel.getAltText());
         String originalUrl = getOriginalUrl(trackableLink, trackableLinkModel);
         boolean isAdminLink = mergeFields(trackableLink.isAdminLink(), trackableLinkModel.getAdminLink());
@@ -383,7 +374,6 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
         trackableLink.setActionID(actionId);
         trackableLink.setShortname(shortname);
         trackableLink.setDeepTracking(deepTracking);
-        trackableLink.setRelevance(relevance);
         trackableLink.setAltText(altText);
         trackableLink.setOriginalUrl(originalUrl);
         trackableLink.setAdminLink(isAdminLink);

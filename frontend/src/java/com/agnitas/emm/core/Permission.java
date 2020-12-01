@@ -11,7 +11,6 @@
 package com.agnitas.emm.core;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,23 +18,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
 
-import com.agnitas.messages.DBMessagesResource;
-import com.agnitas.messages.I18nString;
+public class Permission implements Comparable<Permission> {
+	public static final String[] CATEGORY_DISPLAY_ORDER = new String[] { "General", "Mailing", "Template", "Campaigns", "Subscriber-Editor", "ImportExport", "Target-Groups", "Statistics", "Forms", "Actions", "Administration", "NegativePermissions", "System", "Premium", "PushNotifications", "Messenger" };
 
-public class Permission {
-	public static final String[] ORDERED_STANDARD_RIGHT_CATEGORIES = new String[] { "General", "Mailing", "Template", "Campaigns", "Subscriber-Editor", "ImportExport", "Statistics", "Target-Groups", "Mailinglist", "Forms", "Actions", "Administration", "NegativePermissions" };
-	public static final String[] ORDERED_PREMIUM_RIGHT_CATEGORIES = new String[] { "Premium", "Account", "PushNotifications", "Messenger" };
-	public static final List<String> PREMIUM_RIGHT_CATEGORIES_LIST = Arrays.asList(ORDERED_PREMIUM_RIGHT_CATEGORIES);
 	public static final String CATEGORY_KEY_SYSTEM = "System";
-	public static final String CATEGORY_KEY_OTHERS = "others";
 	public static final String USERRIGHT_MESSAGEKEY_PREFIX = "UserRight.";
 
-	private static Map<Permission, String> CATEGORY_BY_SYSTEM_PERMISSIONS = null;
 	private static final Map<String, Permission> ALL_PERMISSIONS = new HashMap<>();
 
 	public static final Permission ACTIONS_CHANGE = new Permission("actions.change", true, false);
@@ -72,9 +62,11 @@ public class Permission {
 	public static final Permission FORMS_IMPORT = new Permission("forms.import", true, false);
 	public static final Permission FORMS_SHOW = new Permission("forms.show", true, false);
 
+	public static final Permission IMPORT_MEDIATYPE = new Permission("import.mediatype", false, true);
 	public static final Permission IMPORT_MODE_ADD = new Permission("import.mode.add", true, false);
 	public static final Permission IMPORT_MODE_ADD_UPDATE = new Permission("import.mode.add_update", true, false);
 	public static final Permission IMPORT_MODE_BLACKLIST = new Permission("import.mode.blacklist", true, false);
+	public static final Permission IMPORT_MODE_BLACKLIST_EXCLUSIVE = new Permission("import.mode.blacklist_exclusive", true, false);
 	public static final Permission IMPORT_MODE_BOUNCE = new Permission("import.mode.bounce", true, false);
 	public static final Permission IMPORT_MODE_BOUNCEREACTIVATE = new Permission("import.mode.bouncereactivate", false, true);
 	public static final Permission IMPORT_MODE_DOUBLECHECKING = new Permission("import.mode.doublechecking", true, false);
@@ -85,7 +77,7 @@ public class Permission {
 	public static final Permission IMPORT_MODE_DUPLICATES = new Permission("import.mode.duplicates", true, false);
 	/** Import customer data without subscribing it to a mailinglist **/
 	public static final Permission IMPORT_WITHOUT_MAILINGLIST = new Permission("import.mailinglist.without", false, true);
-
+	
 	public static final Permission MAILING_ATTACHMENTS_SHOW = new Permission("mailing.attachments.show", true, false);
 	public static final Permission MAILING_CAN_SEND_ALWAYS = new Permission("mailing.can_send_always", true, false);
 	public static final Permission MAILING_CHANGE = new Permission("mailing.change", true, false);
@@ -121,9 +113,6 @@ public class Permission {
 
 	public static final Permission MEDIATYPE_EMAIL = new Permission("mediatype.email", true, false);
 
-	public static final Permission PLUGINMANAGER_CHANGE = new Permission("pluginmanager.change", true, false);
-	public static final Permission PLUGINMANAGR_SHOW = new Permission("pluginmanager.show", true, false);
-
 	public static final Permission PROFILEFIELD_SHOW = new Permission("profileField.show", true, false);
 	public static final Permission PROFILEFIELD_VISIBLE = new Permission("profileField.visible", true, false);
 
@@ -137,7 +126,7 @@ public class Permission {
 	public static final Permission RECIPIENT_PROFILEFIELD_HTML_ALLOWED = new Permission("recipient.profileField.html.allowed", true, true);
 	public static final Permission RECIPIENT_SHOW = new Permission("recipient.show", true, false);
 	public static final Permission RECIPIENT_TRACKING_VETO = new Permission("recipient.tracking.veto", true, false);
-	public static final Permission RECIPIENT_HISTORY_MAILING_DELIVERY = new Permission("recipient.history.mailing.delivery", false, false);
+	public static final Permission RECIPIENT_HISTORY_MAILING_DELIVERY = new Permission("recipient.history.mailing.delivery", false, true);
 
 	public static final Permission ROLE_CHANGE = new Permission("role.change", true, false);
 	public static final Permission ROLE_DELETE = new Permission("role.delete", true, false);
@@ -170,8 +159,6 @@ public class Permission {
 	public static final Permission TEMPLATE_DELETE = new Permission("template.delete", true, false);
 	public static final Permission TEMPLATE_SHOW = new Permission("template.show", true, false);
 
-	public static final Permission UPDATE_SHOW = new Permission("update.show", false, true);
-
 	public static final Permission WEBSERVICE_USER_CHANGE = new Permission("webservice.user.change", true, true);
 	public static final Permission WEBSERVICE_USER_CREATE = new Permission("webservice.user.create", true, true);
 	public static final Permission WEBSERVICE_USER_SHOW = new Permission("webservice.user.show", true, true);
@@ -181,9 +168,12 @@ public class Permission {
 	public static final Permission WIZARD_IMPORTCLASSIC = new Permission("wizard.importclassic", true, false);
 
 	public static final Permission WORKFLOW_ACTIVATE = new Permission("workflow.activate", true, false);
+	public static final Permission WORKFLOW_CHANGE = new Permission("workflow.change", true, false);
 	public static final Permission WORKFLOW_DELETE = new Permission("workflow.delete", true, false);
-	public static final Permission WORKFLOW_EDIT = new Permission("workflow.edit", true, false);
 	public static final Permission WORKFLOW_SHOW = new Permission("workflow.show", true, false);
+	
+	public static final Permission FORMS_EXPORT = new Permission("forms.export", true, false);
+	public static final Permission MAILING_EXPORT = new Permission("mailing.export", true, false);
 
 	// Permissions Extended
 
@@ -224,7 +214,7 @@ public class Permission {
 	public static final Permission RECIPIENT_HISTORY_MAILING = new Permission("recipient.history.mailing", false, true);
 	public static final Permission RECIPIENT_IMPORT_ENCRYPTED = new Permission("recipient.import.encrypted", false, true);
 	/**	user activity log permissions **/
-	public static final Permission MASTERLOG_SHOW = new Permission("user.activity.log.rollback", false, true);
+	public static final Permission MASTERLOG_SHOW = new Permission("masterlog.show", false, true);
 	public static final Permission TEMP_ALPHA = new Permission("temp.alpha", false, true);
 	public static final Permission TEMP_BETA = new Permission("temp.beta", false, true);
 	public static final Permission TEMP_GAMMA = new Permission("temp.gamma", false, true);
@@ -235,9 +225,11 @@ public class Permission {
 	public static final Permission MEDIATYPE_SMS = new Permission("mediatype.sms", false, true);
 	public static final Permission MEDIATYPE_WHATSAPP = new Permission("mediatype.whatsapp", false, true);
 
-	public static final Permission FORMS_MIGRATION = new Permission("forms.migration", false, false);
+	public static final Permission ACTIONS_MIGRATION = new Permission("actions.migration", false, false);
 
 	public static final Permission MAILING_RESUME_WORLD = new Permission("mailing.resume.world", false, false);
+	
+	public static final Permission RESTFUL_ALLOWED = new Permission("restful.allowed", false, false);
 
 	private String category = null;
 	private String subCategory = null;
@@ -352,113 +344,65 @@ public class Permission {
 		}
 		return permissionList.toArray(new Permission[permissionList.size()]);
 	}
-	
-	/**
-	 * Read all permissions available on the current system and their category from
-	 * the messages
-	 */
-	public static Map<Permission, String> getAllPermissionsAndCategories() {
-		// Read all permissions available on the current system
-		if (CATEGORY_BY_SYSTEM_PERMISSIONS == null) {
-			Map<Permission, String> categoryBySystemPermissions = new HashMap<>();
-			Map<Permission, String> subCategoryBySystemPermissions = new HashMap<>();
-
-			List<String> standardCategories = Arrays.asList(ORDERED_STANDARD_RIGHT_CATEGORIES);
-
-			if (I18nString.MESSAGE_RESOURCES == null) {
-				// On ConfigService startup check for i18n data
-				// Might be used by ConfigurationValidityCheckListener
-				new DBMessagesResource().init();
-			}
-
-			// Collect all rights by their message key
-			if (I18nString.MESSAGE_RESOURCES != null && I18nString.MESSAGE_RESOURCES.getAvailableKeys() != null) {
-				for (String messageKey : I18nString.MESSAGE_RESOURCES.getAvailableKeys()) {
-					if (messageKey.startsWith(USERRIGHT_MESSAGEKEY_PREFIX)) {
-						String category = messageKey.substring(USERRIGHT_MESSAGEKEY_PREFIX.length(),
-								messageKey.indexOf(".", USERRIGHT_MESSAGEKEY_PREFIX.length()));
-						String subCategory = null;
-						if (category.contains("#")) {
-							subCategory = category.substring(category.indexOf("#") + 1);
-							category = category.substring(0, category.indexOf("#"));
-						}
-						if (!PREMIUM_RIGHT_CATEGORIES_LIST.contains(category) && !standardCategories.contains(category)
-								&& !CATEGORY_KEY_SYSTEM.equals(category)) {
-							// Unknown categories are used as "others"
-							category = CATEGORY_KEY_OTHERS;
-							subCategory = null;
-						}
-
-						String right = messageKey.substring(USERRIGHT_MESSAGEKEY_PREFIX.length() + category.length()
-								+ (subCategory != null && StringUtils.isNotEmpty(subCategory) ? subCategory.length() + 1
-										: 0)
-								+ 1);
-						Permission currentPermission = getPermissionByToken(right);
-						if (currentPermission != null) {
-							currentPermission.setCategory(category);
-							currentPermission.setSubCategory(subCategory);
-							// Only use messagekeys which have a permission item
-							if (!categoryBySystemPermissions.containsKey(currentPermission)
-									|| !category.equals(CATEGORY_KEY_OTHERS)) {
-								// Only use duplicate entries if they don't move a right from standard category
-								// into others-category
-								categoryBySystemPermissions.put(currentPermission, category);
-							}
-							//ASO???
-							subCategoryBySystemPermissions.put(currentPermission, subCategory);
-						}
-					}
-				}
-			}
-
-			// Add rights to category "others", which have no message key category and
-			// therefore cannot be found in messages
-			for (Permission permission : ALL_PERMISSIONS.values()) {
-				if (!categoryBySystemPermissions.containsKey(permission) &&
-						Permission.ALWAYS_ALLOWED != permission && Permission.ALWAYS_DISALLOWED != permission) {
-					categoryBySystemPermissions.put(permission, CATEGORY_KEY_OTHERS);
-					permission.setCategory(CATEGORY_KEY_OTHERS);
-				}
-			}
-
-			CATEGORY_BY_SYSTEM_PERMISSIONS = categoryBySystemPermissions;
-		}
-		return CATEGORY_BY_SYSTEM_PERMISSIONS;
-	}
 
 	/**
 	 * @param allowedPremiumPermissions
 	 * @return Returns true if grantedPermissions contains any of
 	 *         checkedPermissions.
 	 */
-	public static boolean permissionAllowed(int companyID, Collection<Permission> grantedPermissions, Collection<Permission> allowedPremiumPermissions, Permission... checkedPermissions) {
-		if ("new".equalsIgnoreCase(ConfigService.getInstance().getValue(ConfigValue.PermissionSystem, companyID))) {
-			for (Permission permission : checkedPermissions) {
-				if (permission == null || permission == Permission.ALWAYS_DISALLOWED) {
-					return false;
-				} else if (permission == Permission.ALWAYS_ALLOWED) {
+	public static boolean permissionAllowed(Collection<Permission> grantedPermissions, Collection<Permission> allowedPremiumPermissions, Permission... checkedPermissions) {
+		for (Permission permission : checkedPermissions) {
+			if (permission == null || permission == Permission.ALWAYS_DISALLOWED) {
+				return false;
+			} else if (permission == Permission.ALWAYS_ALLOWED) {
+				return true;
+			} else if (grantedPermissions.contains(permission)) {
+				if (!permission.isPremium() || (allowedPremiumPermissions != null && allowedPremiumPermissions.contains(permission))) {
 					return true;
-				} else if (grantedPermissions.contains(permission)) {
-					if (!permission.isPremium() || (allowedPremiumPermissions != null && allowedPremiumPermissions.contains(permission))) {
-						return true;
-					}
 				}
 			}
-			return false;
+		}
+		return false;
+	}
+
+	@Override
+	public int compareTo(Permission otherPermission) {
+		if (otherPermission == null) {
+			return 1;
+		} else if (getCategory() == null && otherPermission.getCategory() != null) {
+			return 1;
+		} else if (getCategory() != null && otherPermission.getCategory() == null) {
+			return -1;
+		} else if (getCategory() == null && otherPermission.getCategory() == null) {
+			return Integer.compare(getSortOrder(), otherPermission.getSortOrder());
 		} else {
-			for (Permission permission : checkedPermissions) {
-				if (permission == null || permission == Permission.ALWAYS_DISALLOWED) {
-					return false;
-				} else if (permission == Permission.ALWAYS_ALLOWED) {
-					return true;
-				} else if (grantedPermissions.contains(permission)) {
-					if (!Permission.PREMIUM_RIGHT_CATEGORIES_LIST.contains(permission.getCategory())
-							|| (allowedPremiumPermissions != null && allowedPremiumPermissions.contains(permission))) {
-						return true;
-					}
+			int categoryIndex = Integer.MAX_VALUE;
+			for (int index = 0; index < Permission.CATEGORY_DISPLAY_ORDER.length; index++) {
+				if (Permission.CATEGORY_DISPLAY_ORDER[index].equals(getCategory())) {
+					categoryIndex = index;
+					break;
 				}
 			}
-			return false;
+			int otherCategoryIndex = Integer.MAX_VALUE;
+			for (int index = 0; index < Permission.CATEGORY_DISPLAY_ORDER.length; index++) {
+				if (Permission.CATEGORY_DISPLAY_ORDER[index].equals(otherPermission.getCategory())) {
+					otherCategoryIndex = index;
+					break;
+				}
+			}
+			if (categoryIndex != otherCategoryIndex) {
+				return Integer.compare(categoryIndex, otherCategoryIndex);
+			} else if (getSubCategory() == null && otherPermission.getSubCategory() != null) {
+				return 1;
+			} else if (getSubCategory() != null && otherPermission.getSubCategory() == null) {
+				return -1;
+			} else if (getSubCategory() == null && otherPermission.getSubCategory() == null) {
+				return Integer.compare(getSortOrder(), otherPermission.getSortOrder());
+			} else if (!getSubCategory().equals(otherPermission.getSubCategory())) {
+				return getSubCategory().compareTo(otherPermission.getSubCategory());
+			} else {
+				return Integer.compare(getSortOrder(), otherPermission.getSortOrder());
+			}
 		}
 	}
 }

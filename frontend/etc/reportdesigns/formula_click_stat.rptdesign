@@ -584,7 +584,7 @@ return false;]]></method>
                                     <property name="borderTopWidth">1px</property>
                                     <text-data id="1893">
                                         <property name="textAlign">left</property>
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Brutto", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Clicks", reportContext.getLocale())</expression>
                                     </text-data>
                                 </cell>
                                 <cell id="1875">
@@ -600,7 +600,7 @@ return false;]]></method>
                                     <property name="borderTopWidth">1px</property>
                                     <text-data id="1895">
                                         <property name="textAlign">left</property>
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Netto", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker", reportContext.getLocale())</expression>
                                     </text-data>
                                 </cell>
                             </row>

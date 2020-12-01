@@ -14,14 +14,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
+
 import javax.sql.DataSource;
 
-import com.agnitas.dao.impl.ComBindingEntryDaoImpl;
-import com.agnitas.emm.core.report.bean.CompositeBindingEntryHistory;
-import com.agnitas.emm.core.report.bean.PlainBindingEntryHistory;
-import com.agnitas.emm.core.report.bean.impl.CompositeBindingEntryHistoryImpl;
-import com.agnitas.emm.core.report.bean.impl.PlainBindingEntryHistoryImpl;
-import com.agnitas.emm.core.report.dao.BindingEntryHistoryDao;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
@@ -30,6 +25,13 @@ import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.dao.impl.ComBindingEntryDaoImpl;
+import com.agnitas.emm.core.report.bean.CompositeBindingEntryHistory;
+import com.agnitas.emm.core.report.bean.PlainBindingEntryHistory;
+import com.agnitas.emm.core.report.bean.impl.CompositeBindingEntryHistoryImpl;
+import com.agnitas.emm.core.report.bean.impl.PlainBindingEntryHistoryImpl;
+import com.agnitas.emm.core.report.dao.BindingEntryHistoryDao;
 
 public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements BindingEntryHistoryDao {
 
@@ -147,12 +149,12 @@ public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements 
             bindingEntryHistory.setUserType(resultSet.getString(columnNamePrefix + "user_type"));
             bindingEntryHistory.setUserStatus(resultSet.getInt(columnNamePrefix + "user_status"));
             bindingEntryHistory.setUserRemark(resultSet.getString(columnNamePrefix + "user_remark"));
-            bindingEntryHistory.setTimestamp(resultSet.getDate(columnNamePrefix + "timestamp"));
-            bindingEntryHistory.setCreationDate(resultSet.getDate(columnNamePrefix + "creation_date"));
+            bindingEntryHistory.setTimestamp(resultSet.getTimestamp(columnNamePrefix + "timestamp"));
+            bindingEntryHistory.setCreationDate(resultSet.getTimestamp(columnNamePrefix + "creation_date"));
             bindingEntryHistory.setExitMailingId(resultSet.getInt(columnNamePrefix + "exit_mailing_id"));
             bindingEntryHistory.setMediaType(resultSet.getInt(columnNamePrefix + "mediatype"));
             bindingEntryHistory.setChangeType(resultSet.getInt(columnNamePrefix + "change_type"));
-            bindingEntryHistory.setTimestampChange(resultSet.getDate(columnNamePrefix + "timestamp_change"));
+            bindingEntryHistory.setTimestampChange(resultSet.getTimestamp(columnNamePrefix + "timestamp_change"));
             bindingEntryHistory.setClientInfo(resultSet.getString(columnNamePrefix + "client_info"));
             bindingEntryHistory.setEmail(resultSet.getString(columnNamePrefix + "email"));
 
@@ -202,12 +204,12 @@ public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements 
             compositeBindingHistory.setUserType(resultSet.getString(columnPrefix + "user_type"));
             compositeBindingHistory.setUserStatus(resultSet.getInt(columnPrefix + "user_status"));
             compositeBindingHistory.setUserRemark(resultSet.getString(columnPrefix + "user_remark"));
-            compositeBindingHistory.setTimestamp(resultSet.getDate(columnPrefix + "timestamp"));
-            compositeBindingHistory.setCreationDate(resultSet.getDate(columnPrefix + "creation_date"));
+            compositeBindingHistory.setTimestamp(resultSet.getTimestamp(columnPrefix + "timestamp"));
+            compositeBindingHistory.setCreationDate(resultSet.getTimestamp(columnPrefix + "creation_date"));
             compositeBindingHistory.setExitMailingId(resultSet.getInt(columnPrefix + "exit_mailing_id"));
             compositeBindingHistory.setMediaType(resultSet.getInt(columnPrefix + "mediatype"));
             compositeBindingHistory.setChangeType(resultSet.getInt(columnPrefix + "change_type"));
-            compositeBindingHistory.setTimestampChange(resultSet.getDate(columnPrefix + "timestamp_change"));
+            compositeBindingHistory.setTimestampChange(resultSet.getTimestamp(columnPrefix + "timestamp_change"));
             compositeBindingHistory.setClientInfo(resultSet.getString(columnPrefix + "client_info"));
             compositeBindingHistory.setEmail(resultSet.getString(columnPrefix + "email"));
 

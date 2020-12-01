@@ -164,6 +164,10 @@ For optimal spacing between multiple horizontal `.btn`s, they can be nested insi
   @include content-spacing();
 }
 
+body.dark-theme .btn {
+  @include button-variant($c-white, $c-transparent, $c-dt-border);
+}
+
 // Alternate buttons
 // --------------------------------------------------
 // button-variant(color, background-color, border-color: transparent)
@@ -171,12 +175,24 @@ For optimal spacing between multiple horizontal `.btn`s, they can be nested insi
   @include button-variant($c-white, $c-blue-27);
 }
 
+body.dark-theme .btn-primary {
+  @include button-variant($c-dt-primary-text, $c-dt-btn-primary);
+}
+
 .btn-secondary {
   @include button-variant($c-white, $c-blue-56);
 }
 
+body.dark-theme .btn-secondary {
+  @include button-variant($c-dt-btn-secondary-text, $c-dt-btn-secondary);
+}
+
 .btn-inverse {
   @include button-variant($c-blue-27, $c-white);
+}
+
+body.dark-theme .btn-inverse {
+  @include button-variant($c-dt-btn-primary, $c-dt-primary-text);
 }
 
 // contextual variants
@@ -184,7 +200,7 @@ For optimal spacing between multiple horizontal `.btn`s, they can be nested insi
   $state: nth($conf, 1);
   $color: nth($conf, 2);
 
-  .btn-#{$state} {
+  body.dark-theme .btn-#{$state}, .btn-#{$state} {
     @include button-variant($c-white, $color);
   }
 }

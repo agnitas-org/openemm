@@ -102,6 +102,8 @@ public class AutoImport extends AutoImportLight {
 	
 	private boolean emptyFileAllowed;
 	
+	private boolean alwaysReport = false;
+	
 	public int getAdminId() {
 		return adminId;
 	}
@@ -348,6 +350,7 @@ public class AutoImport extends AutoImportLight {
 	public boolean isOnlyImportNewFiles() {
 		return !alwaysImportFile;
 	}
+	
 	/**
 	 * Inverted property to alwaysImportFile
 	 */
@@ -409,6 +412,14 @@ public class AutoImport extends AutoImportLight {
 
 	public boolean isEmptyFileAllowed() {
 		return emptyFileAllowed;
+	}
+
+	public boolean isAlwaysReport() {
+		return alwaysReport;
+	}
+
+	public void setAlwaysReport(boolean alwaysReport) {
+		this.alwaysReport = alwaysReport;
 	}
 
 	public static class UsedFile {

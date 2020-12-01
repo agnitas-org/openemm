@@ -14,7 +14,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Date;
 
-import com.agnitas.web.ShowImageServlet;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -24,6 +23,8 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+
+import com.agnitas.web.ShowImageServlet;
 
 public class MailingComponentImpl implements MailingComponent {
 	private static final transient Logger logger = Logger.getLogger( MailingComponentImpl.class);
@@ -139,12 +140,13 @@ public class MailingComponentImpl implements MailingComponent {
 
 	@Override
 	public void setEmmBlock(String emmBlock, String mimeType) {
-		// Only store one of type of data: emmblock or binblock
+		// Wrong: Only store one of type of data: emmblock or binblock
+		// Correct: Personalized PDF attachments require emmblock and binblock to be filled with different files
 		// Clear datatype only if this is the only set datatype
 		// binblock sometimes contains an array "byte[1] = {0}", which also signals empty binary data
 		if (StringUtils.isNotEmpty(emmBlock) || (binaryBlock == null || binaryBlock.length <= 1)) {
 			this.emmBlock = emmBlock;
-			binaryBlock = null;
+			// binaryBlock = null;
 			if (mimeType != null) {
 				this.mimeType = mimeType;
 			} else {
@@ -162,12 +164,13 @@ public class MailingComponentImpl implements MailingComponent {
 
 	@Override
 	public void setBinaryBlock(byte[] binaryBlock, String mimeType) {
-		// Only store one of type of data: emmblock or binblock
+		// Wrong: Only store one of type of data: emmblock or binblock
+		// Correct: Personalized PDF attachments require emmblock and binblock to be filled with different files
 		// Clear datatype only if this is the only set datatype
 		// binblock sometimes contains an array "byte[1] = {0}", which also signals empty binary data
 		if ((binaryBlock != null && binaryBlock.length > 1) || StringUtils.isEmpty(emmBlock)) {
 			this.binaryBlock = binaryBlock;
-			emmBlock = null;
+			// emmBlock = null;
 			if (mimeType != null) {
 				this.mimeType = mimeType;
 			} else {

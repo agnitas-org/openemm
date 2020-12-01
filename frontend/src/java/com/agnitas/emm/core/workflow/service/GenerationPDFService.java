@@ -15,19 +15,11 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
-
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.SafeString;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
 import com.lowagie.text.DocumentException;
@@ -37,6 +29,14 @@ import com.lowagie.text.pdf.BaseFont;
 import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.PdfStamper;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.HttpUtils;
+import org.agnitas.util.SafeString;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
+import static org.apache.http.HttpStatus.SC_OK;
 
 public class GenerationPDFService {
 
@@ -63,8 +63,8 @@ public class GenerationPDFService {
 
 		try {
 			int responseStatusCode = HttpUtils.getResponseStatusCode(url);
-			if (responseStatusCode != HttpURLConnection.HTTP_OK) {
-				throw new Exception("Missing or wrong url for generating PDF: " + url);
+			if (responseStatusCode != SC_OK) {
+				throw new Exception("Missing or wrong url for generating PDF: " + url + ", response code: " + responseStatusCode);
 			}
 			// render workflow into PDF
             File pdfInitialFile = File.createTempFile("preview_", ".pdf", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));

@@ -3,19 +3,36 @@ AGN.Lib.Controller.new('mailing-send', function() {
     Modal = AGN.Lib.Modal,
     Confirm = AGN.Lib.Confirm,
     Page = AGN.Lib.Page,
-    Template = AGN.Lib.Template,
-    Tooltip = AGN.Lib.Tooltip;
+    Template = AGN.Lib.Template;
 
   var ADMIN_TARGET_SINGLE_RECIPIENT = -1;
 
   var Helpers = {
     disableSendButtons: function() {
-      $('#test-send-controls-group').hide();
+      $('#test-send-controls-group #adminSendButton').addClass('disabled');
+      $('#test-send-controls-group #testSendButton').addClass('disabled');
     },
     enableSendButtons: function() {
+      $('#test-send-controls-group #adminSendButton').removeClass('disabled');
+      $('#test-send-controls-group #testSendButton').removeClass('disabled');
+    },
+    hideTestSendConfigBlock: function() {
+      $('#test-send-controls-group').hide();
+    },
+    showTestSendConfigBlock: function() {
       $('#test-send-controls-group').show();
+    },
+    hideTestBlockMessage: function() {
+      $('#test-send-status-block').hide();
+    },
+    showTestBlockMessage: function() {
+      $('#test-send-status-block').show();
     }
   };
+
+  this.addDomInitializer("test-run-recipients-select", function () {
+    updateTestRunButtons(this.el);
+  });
 
   this.addAction({
     'click': 'configure-delivery-mailing-size-warning'
@@ -38,7 +55,8 @@ AGN.Lib.Controller.new('mailing-send', function() {
     'click': 'configure-delivery'
   }, function() {
     this.el.prop('disabled', true);
-    Page.reload(this.el.data('url'));
+    Page.reload(this.el.data('url'), true);
+    this.el.prop('disabled', false);
   });
 
   this.addAction({
@@ -148,9 +166,11 @@ AGN.Lib.Controller.new('mailing-send', function() {
 
   this.addDomInitializer('transmission-status', function() {
     if (this.config.isRunning) {
-      Helpers.disableSendButtons();
+      Helpers.hideTestSendConfigBlock();
+      Helpers.showTestBlockMessage();
     } else {
-      Helpers.enableSendButtons();
+      Helpers.showTestSendConfigBlock();
+      Helpers.hideTestBlockMessage();
     }
   });
 
@@ -179,10 +199,16 @@ AGN.Lib.Controller.new('mailing-send', function() {
   });
 
   this.addAction({change: 'admin-target-group'}, function() {
-    var isSingleRecipientValue = this.el.val() == ADMIN_TARGET_SINGLE_RECIPIENT;
-    $('#test-recipients-table').toggleClass('hidden', (!isSingleRecipientValue));
-    $('#adminSendButton').toggleClass('hidden', isSingleRecipientValue);
+    updateTestRunButtons(this.el);
   });
+
+  function updateTestRunButtons(testRunDropdown) {
+    if(testRunDropdown) {
+      var isSingleRecipientValue = testRunDropdown.val() == ADMIN_TARGET_SINGLE_RECIPIENT;
+      $('#test-recipients-table').toggleClass('hidden', (!isSingleRecipientValue));
+      $('#adminSendButton').toggleClass('hidden', isSingleRecipientValue);
+    }
+  }
 
   this.addAction({change: 'prioritization-toggle'}, function() {
     var $toggle = this.el;

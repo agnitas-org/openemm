@@ -14,8 +14,6 @@
 <%--@elvariable id="_navigation_isHideAnyCase" type="java.lang.Boolean"--%>
 <%--@elvariable id="_navigation_navMsg" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_index" type="java.lang.Integer"--%>
-<%--@elvariable id="_navigation_plugin" type="java.lang.String"--%>
-<%--@elvariable id="_navigation_extension" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_iconClass" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_submenu" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_hideForToken" type="java.lang.String"--%>
@@ -29,8 +27,6 @@
 <%--@elvariable id="_sub_navigation_isHideAnyCase" type="java.lang.Boolean"--%>
 <%--@elvariable id="_sub_navigation_navMsg" type="java.lang.String"--%>
 <%--@elvariable id="_sub_navigation_index" type="java.lang.Integer"--%>
-<%--@elvariable id="_sub_navigation_plugin" type="java.lang.String"--%>
-<%--@elvariable id="_sub_navigation_extension" type="java.lang.String"--%>
 <%--@elvariable id="_sub_navigation_iconClass" type="java.lang.String"--%>
 <%--@elvariable id="_sub_navigation_submenu" type="java.lang.String"--%>
 <%--@elvariable id="_sub_navigation_hideForToken" type="java.lang.String"--%>
@@ -88,12 +84,7 @@
 
             <c:set var="sideMenuItem">
                 <i class="menu-item-logo icon-fa5 icon-fa5-${_navigation_iconClass}"></i>
-                <c:if test="${empty _navigation_plugin}">
-                    <span class="menu-item-text"><bean:message key="${_navigation_navMsg}" /></span>
-                </c:if>
-                <c:if test="${not empty _navigation_plugin}">
-                    <span class="menu-item-text"><emm:message key="${_navigation_navMsg}" plugin="${_navigation_plugin}"/></span>
-                </c:if>
+	            <span class="menu-item-text"><bean:message key="${_navigation_navMsg}" /></span>
                 <i class="nav-arrow icon-fa5<c:if test="${isSubmenuAvailable}"> icon-fa5-caret-down</c:if>"></i>
             </c:set>
 
@@ -171,14 +162,7 @@
                             <c:if test="${showSubMenuItem}">
                                 <li>
                                     <a href="${subItemPage}" class="menu-item ${_sub_navigation_isHighlightKey ? 'active' : ''}">
-                                            <c:choose>
-                                                <c:when test="${empty _sub_navigation_plugin}">
-                                                    <bean:message key="${_sub_navigation_navMsg}" />
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <emm:message key="${_sub_navigation_navMsg}" plugin="${_sub_navigation_plugin}"/>
-                                                </c:otherwise>
-                                            </c:choose>
+		                                <bean:message key="${_sub_navigation_navMsg}" />
                                     </a>
                                 </li>
                             </c:if>

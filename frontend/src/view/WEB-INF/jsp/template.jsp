@@ -20,6 +20,7 @@
 <c:set var="START_PAGE_DASHBOARD" value="<%= ComAdminPreferences.START_PAGE_DASHBOARD%>" scope="page"/>
 <c:set var="START_PAGE_CALENDAR" value="<%= ComAdminPreferences.START_PAGE_CALENDAR%>" scope="page"/>
 <c:set var="isWideSidebarWebStorageBundleKey" value="<%= WebStorage.IS_WIDE_SIDEBAR%>" scope="page"/>
+<c:set var="DARK_MODE_THEME_TYPE" value="<%= EmmLayoutBase.ThemeType.DARK_MODE%>" scope="page"/>
 
 <c:set var="isTabsMenuShown" value="true" scope="request"/>
 <c:set var="isBreadcrumbsShown" value="false" scope="request"/>
@@ -33,7 +34,7 @@
 <tiles:insert attribute="head-tag"/>
 
 <emm:webStorage var="isWideSidebarBundle" key="${isWideSidebarWebStorageBundleKey}"/>
-<body class="${isWideSidebarBundle.isTrue() ? 'wide-sidebar' : ''}">
+<body class="${isWideSidebarBundle.isTrue() ? 'wide-sidebar' : ''} ${emmLayoutBase.getThemeType() eq DARK_MODE_THEME_TYPE ? 'dark-theme' : ''}">
 
     <div class="loader">
         <i class="icon icon-refresh icon-spin"></i> <bean:message key="default.loading" />
@@ -58,14 +59,7 @@
                             <c:set var="agnHeadLineIconClass" value="${_navigation_iconClass}"/>
 
                             <c:set var="agnHeadLineFirstCrumb">
-                                <c:choose>
-                                    <c:when test="${not empty _navigation_plugin}">
-                                        <emm:message key="${_navigation_navMsg}" plugin="${_navigation_plugin}"/>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <bean:message key="${_navigation_navMsg}" />
-                                    </c:otherwise>
-                                </c:choose>
+                                <bean:message key="${_navigation_navMsg}" />
                             </c:set>
                         </c:if>
                     </emm:ShowNavigation>
@@ -91,14 +85,7 @@
                                     <c:set var="crumb">
                                         <c:choose>
                                             <c:when test="${not empty agnBreadcrumb.textKey}">
-                                                <c:choose>
-                                                    <c:when test="${empty agnPluginId}">
-                                                        <bean:message key="${agnBreadcrumb.textKey}"/>
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <emm:message key="${agnBreadcrumb.textKey}" plugin="${agnPluginId}"/>
-                                                    </c:otherwise>
-                                                </c:choose>
+	                                            <bean:message key="${agnBreadcrumb.textKey}"/>
                                             </c:when>
                                             <c:when test="${not empty agnBreadcrumb.text}">
                                                 ${fn:escapeXml(agnBreadcrumb.text)}
@@ -199,8 +186,8 @@
                         <br/>
 
                         <%
-                        // Show Version on non-live servers only
-                        if (!ConfigService.getInstance().getBooleanValue(ConfigValue.IsLiveInstance)) {
+                        // Show Version on non-live servers only (and on all OpenEMM)
+                        if (!ConfigService.getInstance().getBooleanValue(ConfigValue.IsLiveInstance) || "Inhouse".equalsIgnoreCase(ConfigService.getInstance().getValue(ConfigValue.System_License_Type)) || ConfigService.getInstance().getIntegerValue(ConfigValue.System_Licence) == 0) {
                         %>
                             <p class="version-sign">
                                 <strong><%= ConfigService.getInstance().getValue(ConfigValue.ApplicationVersion) %></strong>
@@ -230,7 +217,7 @@
     <!-- Main Content END -->
 
 
-    <tiles:insert attribute="footer_piwik"/>
+    <tiles:insert attribute="footer_matomo"/>
 
     <tiles:insert attribute="messages"/>
 

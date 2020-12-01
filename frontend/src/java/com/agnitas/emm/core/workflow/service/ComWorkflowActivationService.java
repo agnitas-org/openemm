@@ -42,6 +42,7 @@ import org.agnitas.target.TargetFactory;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -366,7 +367,7 @@ public class ComWorkflowActivationService {
 	}
 
 	private ComMailing getMailingToUpdate(int companyId, int mailingId, Map<Integer, ComMailing> mailingsToUpdate) {
-    	return mailingsToUpdate.computeIfAbsent(mailingId, mId -> (ComMailing) mailingDao.getMailing(mId, companyId));
+    	return mailingsToUpdate.computeIfAbsent(mailingId, mId -> mailingDao.getMailing(mId, companyId));
 	}
 
 	private void saveUpdatedMailings(Map<Integer, ComMailing> mailingsToUpdate) {
@@ -552,11 +553,8 @@ public class ComWorkflowActivationService {
 		optimization.setStatus(ComOptimization.STATUS_NOT_STARTED);
 
 		optimization.setEvalType(decisionIcon.getAoDecisionCriteria());
-		try {
-			optimization.setThreshold(Integer.parseInt(decisionIcon.getThreshold()));
-		} catch (NumberFormatException e) {
-			optimization.setThreshold(0);
-		}
+		optimization.setThreshold(NumberUtils.toInt(decisionIcon.getThreshold()));
+
 		optimization.setSendDate(decisionIcon.getDecisionDate());
 		optimization.setTestMailingsSendDate(testSendDate);
 		// @todo: we don't have setting in decision-icon for that, so we just set that to false?

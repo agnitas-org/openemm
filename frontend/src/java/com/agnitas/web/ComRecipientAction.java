@@ -23,6 +23,8 @@ import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_MAILTYPE;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_TITLE;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -40,7 +42,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.agnitas.beans.ProfileField;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.beans.impl.RecipientImpl;
@@ -70,14 +71,17 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComRecipientHistory;
 import com.agnitas.beans.ComRecipientMailing;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.recipient.service.RecipientType;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ComColumnInfoService;
@@ -109,11 +113,14 @@ public class ComRecipientAction extends RecipientAction {
     public static final int ACTION_MODAL_MAILING_DELIVERY_HISTORY = ORG_ACTION_LAST + 15;
 
     public static final int ACTION_SAVE_BACK_TO_LIST = ORG_ACTION_LAST + 16;
-    
+
+    public static final int ACTION_CHECK_LIMITACCESS = ORG_ACTION_LAST + 17;
+
     /** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComRecipientAction.class);
 	/** DAO for accessing company data. */
 	protected ComCompanyDao companyDao;
+	protected AdminService adminService;
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
 
@@ -133,6 +140,11 @@ public class ComRecipientAction extends RecipientAction {
     public void setCompanyDao(ComCompanyDao companyDao) {
 		this.companyDao = companyDao;
 	}
+
+	@Required
+    public void setAdminService(AdminService adminService) {
+        this.adminService = adminService;
+    }
 
     // ----------------------------------------------------------------------------------------------------------------
 	// Business Injection
@@ -164,6 +176,8 @@ public class ComRecipientAction extends RecipientAction {
             return "mailing_delivery_history";
         case ACTION_SAVE_BACK_TO_LIST:
              return "save_back_to_list";
+        case ACTION_CHECK_LIMITACCESS:
+             return "check_limit_access";
         default:
             return super.subActionMethodName(subAction);
         }
@@ -205,9 +219,23 @@ public class ComRecipientAction extends RecipientAction {
         ComAdmin admin = AgnUtils.getAdmin(req);
         assert Objects.nonNull(admin);
 
+        if (aForm.getAction() == ACTION_CHECK_LIMITACCESS) {
+            HttpUtils.responseJson(res, "{\"accessAllowed\" : " + isRecipientMatchAltgTarget(admin, aForm.getRecipientID()) + "}");
+
+            return null;
+        }
+
         req.setAttribute("mailtracking", AgnUtils.isMailTrackingAvailable(admin));
 
         try {
+            if (!isRecipientMatchAltgTarget(admin, aForm.getRecipientID())) {
+                logger.error(String.format("Recipient(ID: %d) doesn't match limit access target group - Admin (ID: %d)", aForm.getRecipientID(), admin.getAdminID()));
+                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.access.limit.targetgroup"));
+
+                aForm.setAction(ACTION_LIST);
+                aForm.setRecipientID(0);
+            }
+
             switch(aForm.getAction()) {
             	case ACTION_OVERVIEW_START:
             		// all we do here is to set the overview parameter
@@ -571,10 +599,14 @@ public class ComRecipientAction extends RecipientAction {
         List<ProfileField> profileFields = columnInfoService.getColumnInfos(admin.getCompanyID(), admin.getAdminID());
         for (ProfileField profileField : profileFields) {
         	if (profileField.getSimpleDataType() == SimpleDataType.Date) {
-        		if (profileField.getModeEdit() == ProfileField.MODE_EDIT_READONLY) {
-        			convertDateColumnInDataMap(admin.getDateTimeFormat(), dataMap, profileField.getColumn());
-        		} else {
-        			convertDateColumnInDataMap(admin.getDateFormat(), dataMap, profileField.getColumn());
+        		convertDateColumnInDataMap(admin.getDateFormat(), dataMap, profileField.getColumn());
+        	} else if (profileField.getSimpleDataType() == SimpleDataType.DateTime) {
+        		convertDateColumnInDataMap(admin.getDateTimeFormat(), dataMap, profileField.getColumn());
+        	} else if (profileField.getSimpleDataType() == SimpleDataType.Float) {
+        		if (StringUtils.isNotBlank((String) dataMap.get(profileField.getColumn()))) {
+	        		DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols(admin.getLocale());
+					DecimalFormat floatFormat = new DecimalFormat("###0.###", decimalFormatSymbols);
+	        		dataMap.put(profileField.getColumn(), floatFormat.format(Double.parseDouble((String) dataMap.get(profileField.getColumn()))));
         		}
         	}
         }
@@ -600,14 +632,14 @@ public class ComRecipientAction extends RecipientAction {
 	}
 
     @Override
-    protected boolean saveRecipient(RecipientForm aForm, HttpServletRequest req, ActionMessages errors) throws Exception {
+    protected ActionForward saveRecipient(RecipientForm aForm, HttpServletRequest req, ActionMessages errors, ActionMapping mapping) throws Exception {
         final int companyId = AgnUtils.getCompanyID(req);
         final ComAdmin admin = AgnUtils.getAdmin(req);
         final boolean isNewRecipient = aForm.getRecipientID() == 0;
         final String newEmail = aForm.getEmail().trim();
         final boolean newEmailBlacklisted = blacklistService.blacklistCheck(newEmail, companyId),
                 oldEmailBlacklisted;
-
+        final ActionForward destination;
         Map<String, ProfileField> profileFieldsMap = columnInfoService.getColumnInfoMap(companyId, admin.getAdminID());
 
         Recipient cust = recipientFactory.newRecipient();
@@ -619,26 +651,48 @@ public class ComRecipientAction extends RecipientAction {
 
 			Map<String, Object> data = recipientDao.getCustomerDataFromDb(companyId, cust.getCustomerID());
 
-            writeRecipientChangesLog(data, aForm, admin);
-
 			oldEmailBlacklisted = blacklistService.blacklistCheck((String) data.get(COLUMN_EMAIL), companyId);
 
             Map<String, Object> column = aForm.getColumnMap();
             for (Entry<String, Object> entry : column.entrySet()) {
-                data.put(entry.getKey(), entry.getValue());
-                if (profileFieldsMap.containsKey(entry.getKey()) && profileFieldsMap.get(entry.getKey()).getSimpleDataType() == SimpleDataType.Date && profileFieldsMap.get(entry.getKey()).getModeEdit() == ProfileField.MODE_EDIT_EDITABLE) {
-                	if (StringUtils.isNotBlank((String) entry.getValue())) {
-	                	GregorianCalendar newDateValue = new GregorianCalendar();
-	                	newDateValue.setTime(admin.getDateFormat().parse((String) entry.getValue()));
-	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, newDateValue.get(Calendar.DAY_OF_MONTH));
-	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, newDateValue.get(Calendar.MONTH) + 1);
-	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, newDateValue.get(Calendar.YEAR));
-                	} else {
-	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, "");
-	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, "");
-	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, "");
-                	}
-                }
+                try {
+					data.put(entry.getKey(), entry.getValue());
+					if (profileFieldsMap.containsKey(entry.getKey()) && profileFieldsMap.get(entry.getKey()).getSimpleDataType() == SimpleDataType.Date && profileFieldsMap.get(entry.getKey()).getModeEdit() == ProfileField.MODE_EDIT_EDITABLE) {
+						if (StringUtils.isNotBlank((String) entry.getValue())) {
+					    	GregorianCalendar newDateValue = new GregorianCalendar();
+					    	newDateValue.setTime(admin.getDateFormat().parse((String) entry.getValue()));
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, newDateValue.get(Calendar.DAY_OF_MONTH));
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, newDateValue.get(Calendar.MONTH) + 1);
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, newDateValue.get(Calendar.YEAR));
+						} else {
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, "");
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, "");
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, "");
+						}
+					} else if (profileFieldsMap.containsKey(entry.getKey()) && profileFieldsMap.get(entry.getKey()).getSimpleDataType() == SimpleDataType.DateTime && profileFieldsMap.get(entry.getKey()).getModeEdit() == ProfileField.MODE_EDIT_EDITABLE) {
+						if (StringUtils.isNotBlank((String) entry.getValue())) {
+					    	GregorianCalendar newDateValue = new GregorianCalendar();
+					    	newDateValue.setTime(admin.getDateTimeFormat().parse((String) entry.getValue()));
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, newDateValue.get(Calendar.DAY_OF_MONTH));
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, newDateValue.get(Calendar.MONTH) + 1);
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, newDateValue.get(Calendar.YEAR));
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR, newDateValue.get(Calendar.HOUR_OF_DAY));
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE, newDateValue.get(Calendar.MINUTE));
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND, newDateValue.get(Calendar.SECOND));
+						} else {
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, "");
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, "");
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, "");
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR, "");
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE, "");
+							data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND, "");
+						}
+					} else if (profileFieldsMap.containsKey(entry.getKey()) && profileFieldsMap.get(entry.getKey()).getSimpleDataType() == SimpleDataType.Float && profileFieldsMap.get(entry.getKey()).getModeEdit() == ProfileField.MODE_EDIT_EDITABLE) {
+						data.put(entry.getKey(), AgnUtils.normalizeNumber(admin.getLocale(), (String) entry.getValue()));
+					}
+				} catch (Exception e) {
+					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.import.invalidDataForField", entry.getKey()));
+				}
             }
 
 			data.put(COLUMN_GENDER, Integer.toString(aForm.getGender()));
@@ -655,7 +709,14 @@ public class ComRecipientAction extends RecipientAction {
 
 //			storeSpecificFields(aForm, data, admin);
 			cust.setCustParameters(data);
+
+			destination = getConfirmationPage(req, cust, mapping);
+			if (destination != null) {
+			    return destination;
+            }
+
 			recipientDao.updateInDB(cust);
+            writeRecipientChangesLog(data, aForm, admin);
 		} else {
 		    oldEmailBlacklisted = false;
 			if (!recipientDao.mayAdd(companyId, 1)) {
@@ -664,7 +725,7 @@ public class ComRecipientAction extends RecipientAction {
 					allowedRecipientNumber = ConfigService.getInstance().getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, companyId);
 				}
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.maxcustomersexceeded", recipientDao.getNumberOfRecipients(companyId), allowedRecipientNumber));
-				return false;
+				return mapping.findForward("messages");
 			}
 
 			Map<String, Object> data = recipientDao.getCustomerDataFromDb(companyId, aForm.getRecipientID());
@@ -683,6 +744,26 @@ public class ComRecipientAction extends RecipientAction {
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, "");
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, "");
                 	}
+                } else if (profileFieldsMap.containsKey(entry.getKey()) && profileFieldsMap.get(entry.getKey()).getSimpleDataType() == SimpleDataType.DateTime && profileFieldsMap.get(entry.getKey()).getModeEdit() == ProfileField.MODE_EDIT_EDITABLE) {
+                	if (StringUtils.isNotBlank((String) entry.getValue())) {
+	                	GregorianCalendar newDateValue = new GregorianCalendar();
+	                	newDateValue.setTime(admin.getDateTimeFormat().parse((String) entry.getValue()));
+	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, newDateValue.get(Calendar.DAY_OF_MONTH));
+	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, newDateValue.get(Calendar.MONTH) + 1);
+	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, newDateValue.get(Calendar.YEAR));
+	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR, newDateValue.get(Calendar.HOUR_OF_DAY));
+	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE, newDateValue.get(Calendar.MINUTE));
+	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND, newDateValue.get(Calendar.SECOND));
+                	} else {
+	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, "");
+	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, "");
+	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, "");
+	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR, "");
+	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE, "");
+	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND, "");
+                	}
+                } else if (profileFieldsMap.containsKey(entry.getKey()) && profileFieldsMap.get(entry.getKey()).getSimpleDataType() == SimpleDataType.Float && profileFieldsMap.get(entry.getKey()).getModeEdit() == ProfileField.MODE_EDIT_EDITABLE) {
+                	data.put(entry.getKey(), AgnUtils.normalizeNumber(admin.getLocale(), (String) entry.getValue()));
                 }
 			}
 			data.put(COLUMN_GENDER, Integer.toString(aForm.getGender()));
@@ -701,6 +782,12 @@ public class ComRecipientAction extends RecipientAction {
             }
 			storeSpecificFields(aForm, data, admin);
 			cust.setCustParameters(data);
+
+			destination = getConfirmationPage(req, cust, mapping);
+			if (destination != null) {
+			    return destination;
+            }
+
 			cust.setCustomerID(recipientDao.insertNewCust(cust));
 			aForm.setRecipientID(cust.getCustomerID());
 
@@ -710,8 +797,40 @@ public class ComRecipientAction extends RecipientAction {
 
 		saveBindings(aForm, req, isNewRecipient, newEmailBlacklisted, oldEmailBlacklisted);
 		updateCustBindingsFromAdminReq(cust, req);
-		return true;
+		return null;
 	}
+
+    protected boolean isRecipientMatchAltgTarget(ComAdmin admin, int recipientId) {
+        final int altgId = adminService.getAccessLimitTargetId(admin);
+		if (recipientId <= 0 || altgId <= 0) {
+			return true;
+		}
+
+        if(logger.isDebugEnabled()) {
+            logger.debug("Recipient with id: " + recipientId + " has to be checked for ALTG: " + altgId);
+        }
+
+        final boolean isMatch = targetService.isRecipientMatchTarget(admin, altgId, recipientId);
+
+        if(!isMatch) {
+            logger.warn("Recipient with id: " + recipientId + " is not allowed for ALTG: " + altgId);
+        }
+
+        return isMatch;
+    }
+
+    protected ActionForward getConfirmationPage(HttpServletRequest request, Recipient recipient, ActionMapping mapping) {
+        ComAdmin admin = AgnUtils.getAdmin(request);
+        int altgId = adminService.getAccessLimitTargetId(admin);
+        if(altgId > 0 && !"true".equals(request.getParameter("ignoreConfirm"))) {
+			boolean isMatch = targetService.isRecipientMatchTarget(admin, altgId, recipient);
+			if (!isMatch) {
+                return mapping.findForward("confirm_save");
+			}
+		}
+
+        return null;
+    }
 
     private boolean deleteRecipientsBulk(ComRecipientForm form, HttpServletRequest req) {
         final Set<Integer> ids = form.getBulkIds();

@@ -11,7 +11,7 @@
 package org.agnitas.emm.springws;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -23,7 +23,7 @@ public class WsDefinitionWrapper extends org.springframework.ws.wsdl.wsdl11.Defa
 	private static final transient Logger logger = Logger.getLogger(WsDefinitionWrapper.class);
 	
 	public WsDefinitionWrapper(ConfigService configService) {
-		String webservicesUrl = configService.getValue(ConfigValue.WebservicesUrl);
+		String webservicesUrl = configService.getValue(Webservices.WebservicesUrl);
 		if (StringUtils.isBlank(webservicesUrl)) {
 			logger.error("Configvalue 'webservicesUrl' is missing or empty");
 		} else {

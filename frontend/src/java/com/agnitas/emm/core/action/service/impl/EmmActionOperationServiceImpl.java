@@ -10,20 +10,26 @@
 
 package com.agnitas.emm.core.action.service.impl;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.InitializingBean;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionOperationService;
+import com.agnitas.emm.core.action.service.UnknownEmmActionExecutor;
 
 public class EmmActionOperationServiceImpl implements EmmActionOperationService, InitializingBean {
 
-	// TODO: Change type of key to ActionOperationType (-> Spring context!)
-	private Map<String, EmmActionOperation> operations = new HashMap<>();
+	private List<EmmActionOperation> executors = new ArrayList<>();
+
+	public void setExecutors(List<EmmActionOperation> executors) {
+		this.executors = executors;
+	}
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -32,13 +38,19 @@ public class EmmActionOperationServiceImpl implements EmmActionOperationService,
 
 	@Override
 	public boolean executeOperation(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors errors) throws Exception {
-		final boolean result = operations.get(operation.getOperationType().getName()).execute(operation, params, errors);
-		
+		EmmActionOperation executor = getExecutor(operation.getOperationType());
+		final boolean result = executor.execute(operation, params, errors);
+
 		return result && errors.isEmpty();
 	}
 
-	public void setOperations(Map<String, EmmActionOperation> operations) {
-		this.operations = operations;
-	}
+	public EmmActionOperation getExecutor(ActionOperationType type) throws UnknownEmmActionExecutor {
+		for (EmmActionOperation executor: executors) {
+			if (executor.processedType() == type) {
+				return executor;
+			}
+		}
 
+		throw new UnknownEmmActionExecutor(type);
+	}
 }

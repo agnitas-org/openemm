@@ -21,7 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.ImageButton;
 import org.agnitas.emm.core.recipient.dto.RecipientFrequencyCounterDto;
-import org.agnitas.target.TargetOperator;
+import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.SafeString;
 import org.agnitas.web.forms.StrutsFormBase;
@@ -52,7 +52,7 @@ public class RecipientForm extends StrutsFormBase  {
 	private static transient final Factory<ImageButton> imageButtonFactory = new ImageButtonFactory();
 	private static transient final Factory<String> emptyStringFactory = new EmptyStringFactory();
 	private static transient final Factory<Integer> zeroIntegerFactory = new ZeroIntegerFactory();
-	private static transient final Factory<TargetOperator[]> nullFactory = FactoryUtils.nullFactory();
+	private static transient final Factory<ConditionalOperator[]> nullFactory = FactoryUtils.nullFactory();
 
 	public static transient final int COLUMN_TYPE_STRING = 0;
 	public static transient final int COLUMN_TYPE_NUMERIC = 1;
@@ -91,7 +91,7 @@ public class RecipientForm extends StrutsFormBase  {
     private List<String> dateFormatList;
     private List<Integer> secondaryOperatorList;
     private List<String> secondaryValueList;
-    private List<TargetOperator[]> validTargetOperatorsList;
+    private List<ConditionalOperator[]> validTargetOperatorsList;
     private List<String> columnNameList;
     private List<Integer> columnTypeList;
     private String[] selectedFields = ArrayUtils.EMPTY_STRING_ARRAY;
@@ -151,7 +151,7 @@ public class RecipientForm extends StrutsFormBase  {
         dateFormatList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), emptyStringFactory));
         secondaryOperatorList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), zeroIntegerFactory));
         secondaryValueList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), emptyStringFactory));
-        validTargetOperatorsList = GrowthList.growthList(LazyList.lazyList(new ArrayList<TargetOperator[]>(), nullFactory));
+        validTargetOperatorsList = GrowthList.growthList(LazyList.lazyList(new ArrayList<ConditionalOperator[]>(), nullFactory));
         columnNameList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), emptyStringFactory));
         columnTypeList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), zeroIntegerFactory));
 		advancedSearchVisible = false;
@@ -611,23 +611,18 @@ public class RecipientForm extends StrutsFormBase  {
      *
      * @return Value of property bindingEntry.
      */
-    public BindingEntry getBindingEntry(int id) {
-        Map<Integer, BindingEntry> sub=null;
+    public BindingEntry getBindingEntry(int ignoreType, int id) {
+        Map<Integer, BindingEntry> sub =
+                mailing.computeIfAbsent(id, unused -> new HashMap<>());
 
-        sub = mailing.get(id);
-        if (sub == null) {
-            sub = new HashMap<>();
-            mailing.put(id, sub);
-        }
-
-        if (sub.get(0) == null) {
-            BindingEntry entry=(BindingEntry) getWebApplicationContext().getBean("BindingEntry");
-
+        BindingEntry bindingEntry = sub.computeIfAbsent(0, unused -> {
+            BindingEntry entry = getWebApplicationContext().getBean("BindingEntry", BindingEntry.class);
             entry.setMailinglistID(id);
             entry.setMediaType(0);
-            sub.put(0, entry);
-        }
-        return sub.get(0);
+            return entry;
+        });
+
+        return bindingEntry;
     }
 
     /**
@@ -635,16 +630,14 @@ public class RecipientForm extends StrutsFormBase  {
      *
      * @param id New value of property bindingEntry.
      */
-    public void setBindingEntry(int id, BindingEntry info) {
-        Map<Integer, BindingEntry> sub=null;
-        Integer mt= info.getMediaType();
+    public void setBindingEntry(int id, BindingEntry entry) {
+        int type = entry.getMediaType();
+        BindingEntry bindingEntry = getBindingEntry(type, id);
 
-        sub = mailing.get(id);
-        if (sub == null) {
-            sub= new HashMap<>();
+        if (bindingEntry != null) {
+            Map<Integer, BindingEntry> sub = mailing.computeIfAbsent(id, unused -> new HashMap<>());
+            sub.put(type, entry);
         }
-        sub.put(mt, info);
-        mailing.put(id, sub);
     }
 
     /**
@@ -847,11 +840,11 @@ public class RecipientForm extends StrutsFormBase  {
 		return this.columnAndTypeList;
 	}
 
-	public void setValidTargetOperators(int index, TargetOperator[] operators) {
+	public void setValidTargetOperators(int index, ConditionalOperator[] operators) {
 		this.validTargetOperatorsList.set(index, operators);
 	}
 
-	public TargetOperator[] getValidTargetOperators(int index) {
+	public ConditionalOperator[] getValidTargetOperators(int index) {
 		return this.validTargetOperatorsList.get(index);
 	}
 

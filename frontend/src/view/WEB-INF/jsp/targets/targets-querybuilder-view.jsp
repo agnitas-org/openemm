@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
-<%@page import="org.agnitas.target.TargetNode"%>
+<%@page import="org.agnitas.target.ConditionalOperator" %>
 <%@page import="org.agnitas.util.AgnUtils"%>
 <%@page import="org.agnitas.web.TargetForm"%>
 <%@page import="com.agnitas.web.ComTargetAction"%>
@@ -28,8 +28,8 @@
 <c:set var="COLUMN_TYPE_INTERVAL_MAILING" value="<%= TargetForm.COLUMN_TYPE_INTERVAL_MAILING %>" scope="page" />
 <c:set var="COLUMN_TYPE_STRING" value="<%= TargetForm.COLUMN_TYPE_STRING %>" scope="page" />
 
-<c:set var="OPERATOR_IS" value="<%= TargetNode.OPERATOR_IS.getOperatorCode() %>" scope="page" />
-<c:set var="OPERATOR_MOD" value="<%= TargetNode.OPERATOR_MOD.getOperatorCode() %>" scope="page" />
+<c:set var="OPERATOR_IS" value="<%= ConditionalOperator.IS.getOperatorCode() %>" scope="page" />
+<c:set var="OPERATOR_MOD" value="<%= ConditionalOperator.MOD.getOperatorCode() %>" scope="page" />
 
 <c:set var="COMPLEXITY_RED" value="<%= TargetComplexityGrade.RED %>" scope="page"/>
 <c:set var="COMPLEXITY_YELLOW" value="<%= TargetComplexityGrade.YELLOW %>" scope="page"/>

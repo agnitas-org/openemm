@@ -380,17 +380,32 @@ public class DateUtilities {
 				continue;
 			} else if (!timingParameter.contains(":")) {
 				if (AgnUtils.isDigit(timingParameter)) {
-					// daily execution on given time
-					nextStartByThisParameter.set(GregorianCalendar.HOUR_OF_DAY, Integer.parseInt(timingParameter.substring(0, 2)));
-					nextStartByThisParameter.set(GregorianCalendar.MINUTE, Integer.parseInt(timingParameter.substring(2)));
-					nextStartByThisParameter.set(GregorianCalendar.SECOND, 0);
-					nextStartByThisParameter.set(GregorianCalendar.MILLISECOND, 0);
-	
-					// Move next start into future (+1 day) until rule is matched
-					// Move also when meeting holiday rule
-					while (!nextStartByThisParameter.after(now) && (returnStart == null || nextStartByThisParameter.before(returnStart))
-							|| AgnUtils.dayListIncludes(excludedDays, nextStartByThisParameter)) {
-						nextStartByThisParameter.add(GregorianCalendar.DAY_OF_MONTH, 1);
+					if (timingParameter.length() == 4) {
+						// daily execution on given time
+						nextStartByThisParameter.set(GregorianCalendar.HOUR_OF_DAY, Integer.parseInt(timingParameter.substring(0, 2)));
+						nextStartByThisParameter.set(GregorianCalendar.MINUTE, Integer.parseInt(timingParameter.substring(2)));
+						nextStartByThisParameter.set(GregorianCalendar.SECOND, 0);
+						nextStartByThisParameter.set(GregorianCalendar.MILLISECOND, 0);
+		
+						// Move next start into future (+1 day) until rule is matched
+						// Move also when meeting holiday rule
+						while (!nextStartByThisParameter.after(now) && (returnStart == null || nextStartByThisParameter.before(returnStart))
+								|| AgnUtils.dayListIncludes(excludedDays, nextStartByThisParameter)) {
+							nextStartByThisParameter.add(GregorianCalendar.DAY_OF_MONTH, 1);
+						}
+					} else if (timingParameter.length() == 8) {
+						// execution on given day
+						try {
+							SimpleDateFormat format = new SimpleDateFormat("ddMMyyyy");
+							format.setTimeZone(timeZone);
+							nextStartByThisParameter.setTime(format.parse(timingParameter));
+						} catch (ParseException e) {
+							throw new RuntimeException("Invalid interval description");
+						}
+						
+						if (AgnUtils.dayListIncludes(excludedDays, nextStartByThisParameter)) {
+							continue;
+						}
 					}
 				} else if (timingParameter.contains("*") && timingParameter.length() == 4) {
 					// daily execution on given time with wildcards '*' like '*4*5'
@@ -720,6 +735,17 @@ public class DateUtilities {
 		returnDate.setTime(initDate);
 		returnDate.add(Calendar.MINUTE, minutesToAdd);
 		return returnDate.getTime();
+    }
+	
+	public static Date getDateOfYearsAgo(Date initDate, int yearsAgo) {
+		GregorianCalendar returnDate = new GregorianCalendar();
+		returnDate.setTime(initDate);
+		returnDate.add(Calendar.YEAR, -yearsAgo);
+		return returnDate.getTime();
+    }
+    
+    public static Date getDateOfYearsAgo(int yearsAgo) {
+    	return getDateOfYearsAgo(new Date(), yearsAgo);
     }
 
     public static Date getDateOfDaysAgo(Date initDate, int daysAgo) {
@@ -1191,6 +1217,12 @@ public class DateUtilities {
 		return format;
 	}
 
+	public static SimpleDateFormat getDateTimeFormat(int dateStyle, int timeStyle, Locale locale) {
+		SimpleDateFormat format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(dateStyle, timeStyle, locale);
+		format.applyPattern(format.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
+		return format;
+	}
+
 	/**
 	 * Get locale-dependent date/time format pattern using predefined notations (see {@link DateFormat#FULL},
 	 * {@link DateFormat#LONG}, {@link DateFormat#MEDIUM}, {@link DateFormat#SHORT} and {@link DateFormat#DEFAULT}).
@@ -1202,6 +1234,7 @@ public class DateUtilities {
 	 */
 	public static String getDateTimeFormatPattern(int dateStyle, int timeStyle, Locale locale) {
 		SimpleDateFormat format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(dateStyle, timeStyle, locale);
+		format.applyPattern(format.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
 		return format.toPattern();
 	}
 
@@ -1217,6 +1250,11 @@ public class DateUtilities {
 	public static SimpleDateFormat getDateFormat(int style, Locale locale, TimeZone timezone) {
 		SimpleDateFormat format = (SimpleDateFormat) SimpleDateFormat.getDateInstance(style, locale);
 		format.setTimeZone(timezone);
+		return format;
+	}
+	
+	public static SimpleDateFormat getDateFormat(int style, Locale locale) {
+		SimpleDateFormat format = (SimpleDateFormat) SimpleDateFormat.getDateInstance(style, locale);
 		return format;
 	}
 

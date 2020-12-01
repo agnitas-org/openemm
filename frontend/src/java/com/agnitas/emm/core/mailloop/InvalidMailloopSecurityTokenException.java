@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.mailloop;
 
-@Deprecated
 public class InvalidMailloopSecurityTokenException extends MailloopException {
 
 	/** Serial version UID. */

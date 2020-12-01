@@ -156,4 +156,9 @@ public class TrackableLinkForm extends BaseTrackableLinkForm {
     public void clearLinkItemTrackable() {
         this.linkItemTrackable.clear();
     }
+
+    @Override
+	public void setDir(final String orderDirection) {
+        setOrder(orderDirection);
+    }
 }

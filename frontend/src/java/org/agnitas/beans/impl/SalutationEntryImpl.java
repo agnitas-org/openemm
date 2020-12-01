@@ -20,14 +20,14 @@ public class SalutationEntryImpl implements SalutationEntry {
     private Integer titleId;
     private Integer companyID;
 
-    public SalutationEntryImpl(Integer titleId, String description, Integer companyID) {
+    public SalutationEntryImpl(int titleId, String description, int companyID) {
         this.titleId = titleId;
         this.description = description;
         this.companyID = companyID;
     }
 
     @Override
-	public Integer getTitleId() {
+	public int getTitleId() {
         return titleId;
     }
 
@@ -35,8 +35,9 @@ public class SalutationEntryImpl implements SalutationEntry {
 	public String getDescription() {
         return description;
     }
-    
-    public Integer getCompanyID() {
+
+    @Override
+    public int getCompanyID() {
         return companyID;
     }
 }

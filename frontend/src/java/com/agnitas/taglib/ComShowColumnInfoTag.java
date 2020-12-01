@@ -26,7 +26,7 @@ import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.service.ComColumnInfoService;
  
 /**
@@ -126,7 +126,7 @@ public class ComShowColumnInfoTag extends TagSupport implements BodyTag {
 				table = AgnUtils.getAdmin(pageContext).getCompany().getId();
 			}
 	
-			List<ComProfileField> comProfileFieldMap = getColumnInfoService().getComColumnInfos(table, AgnUtils.getAdmin(pageContext).getAdminID(), useCustomSorting);
+			List<ProfileField> comProfileFieldMap = getColumnInfoService().getComColumnInfos(table, AgnUtils.getAdmin(pageContext).getAdminID(), useCustomSorting);
 	
 			if (comProfileFieldMap.size() <= 0) {
 				return SKIP_BODY;
@@ -145,10 +145,10 @@ public class ComShowColumnInfoTag extends TagSupport implements BodyTag {
 	@Override
 	public int doAfterBody() throws JspException {
 		@SuppressWarnings("unchecked")
-		Iterator<ComProfileField> profileFieldIterator = (Iterator<ComProfileField>) pageContext.getAttribute("__" + iteratorID + "_data");
+		Iterator<ProfileField> profileFieldIterator = (Iterator<ProfileField>) pageContext.getAttribute("__" + iteratorID + "_data");
 		try {
 			while (profileFieldIterator.hasNext()) {
-				ComProfileField fieldMap = profileFieldIterator.next();
+				ProfileField fieldMap = profileFieldIterator.next();
 				if (sys_columns == null || !sys_columns.contains(fieldMap.getColumn().toLowerCase())) {
 	 				if (fieldMap.getDataType() != null) {
 						pageContext.setAttribute("_" + iteratorID + "_data_type", fieldMap.getDataType());

@@ -43,7 +43,13 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
      * en: "Recipient development detailed (Opt-ins, Opt-outs, Bounces)"
      * de: "Empfängerentwicklung detailliert (Anmeldungen, Abmeldungen, Bounces)"
      */
-    public void initRecipientsStatistic(@VelocityCheck int companyId, String selectedMailingLists, String selectedTargetsAsString, String startDate, String stopDate) throws Exception {
+    public void initRecipientsStatistic(@VelocityCheck int companyId, String selectedMailingLists,
+			String selectedTargetsAsString, String startDate, String stopDate, final String hiddenFilterTargetIdStr)
+			throws Exception {
+
+        final int hiddenTargetId = NumberUtils.toInt(hiddenFilterTargetIdStr, -1);
+        final LightTarget hiddenTarget = hiddenTargetId <= 0 ? null : getTarget(hiddenTargetId, companyId);
+
     	List<Integer> mailingListIds = new ArrayList<>();
 		for (String mailingListIdString : selectedMailingLists.split(",")) {
 			mailingListIds.add(NumberUtils.toInt(mailingListIdString));
@@ -58,11 +64,13 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 			mailinglistIndex++;
 
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
-			insertStatistic(companyId, mailinglistID, mailinglistIndex, null, targetGroupIndex, dateStart, dateStop);
+			insertStatistic(companyId, mailinglistID, mailinglistIndex, null, targetGroupIndex, dateStart,
+                    dateStop, hiddenTarget);
    
 			for (LightTarget target : getTargets(selectedTargetsAsString, companyId)) {
             	targetGroupIndex++;
-            	insertStatistic(companyId, mailinglistID, mailinglistIndex, target, targetGroupIndex, dateStart, dateStop);
+            	insertStatistic(companyId, mailinglistID, mailinglistIndex, target, targetGroupIndex, dateStart,
+                        dateStop, hiddenTarget);
             }
         }
     }
@@ -73,7 +81,12 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
      * en: "Net recipient development (progress of active recipients)"
      * de: "Empfängerentwicklung netto (Verlauf der aktiven Empfänger)"
      */
-    public void initRecipientsDynamicStatistic(@VelocityCheck int companyId, String selectedMailingLists, String selectedTargetsAsString, String startDate, String stopDate) throws Exception {
+    public void initRecipientsDynamicStatistic(@VelocityCheck int companyId, String selectedMailingLists,
+            String selectedTargetsAsString, String startDate, String stopDate, final String hiddenFilterTargetIdStr) throws Exception {
+
+        final int hiddenTargetId = NumberUtils.toInt(hiddenFilterTargetIdStr, -1);
+        final LightTarget hiddenTarget = hiddenTargetId <= 0 ? null : getTarget(hiddenTargetId, companyId);
+
     	List<Integer> mailingListIds = new ArrayList<>();
 		for (String mailingListIdString : selectedMailingLists.split(",")) {
 			mailingListIds.add(NumberUtils.toInt(mailingListIdString));
@@ -88,19 +101,24 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 			mailinglistIndex++;
 	
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
-			insertDynamicStatistic(companyId, mailinglistID, mailinglistIndex, null, targetGroupIndex, dateStart, dateStop);
+			insertDynamicStatistic(companyId, mailinglistID, mailinglistIndex, null, targetGroupIndex, dateStart,
+                    dateStop, hiddenTarget);
 			
             for (LightTarget target : getTargets(selectedTargetsAsString, companyId)) {
             	targetGroupIndex++;
-            	insertDynamicStatistic(companyId, mailinglistID, mailinglistIndex, target, targetGroupIndex, dateStart, dateStop);
+            	insertDynamicStatistic(companyId, mailinglistID, mailinglistIndex, target, targetGroupIndex, dateStart,
+                        dateStop, hiddenTarget);
             }
         }
     }
 	
-	private void insertDynamicStatistic(int companyId, int mailinglistID, int mailinglistIndex, LightTarget target, int targetGroupIndex, Date dateStart, Date dateStop) throws Exception {
+	private void insertDynamicStatistic(int companyId, int mailinglistID, int mailinglistIndex, LightTarget target,
+            int targetGroupIndex, Date dateStart, Date dateStop, final LightTarget hiddenTarget) {
     	String mailinglistName = getMailinglistName(companyId, mailinglistID);
-		RecipientsDetailedStatisticsRow currentAmounts = getRecipientDetailedStatAmountsBeforeDate(companyId, mailinglistID, mailinglistName, mailinglistIndex, target, targetGroupIndex, dateStart);
-		List<RecipientsDetailedStatisticsRow> data = getRecipientDetailedStat(companyId, mailinglistID, mailinglistName, mailinglistIndex, target, targetGroupIndex, dateStart, dateStop);
+		RecipientsDetailedStatisticsRow currentAmounts = getRecipientDetailedStatAmountsBeforeDate(companyId,
+                mailinglistID, mailinglistName, mailinglistIndex, target, targetGroupIndex, dateStart, hiddenTarget);
+		List<RecipientsDetailedStatisticsRow> data = getRecipientDetailedStat(companyId, mailinglistID, mailinglistName,
+                mailinglistIndex, target, targetGroupIndex, dateStart, dateStop, hiddenTarget);
 		// Sum up data for absolute numbers per date
 		for (RecipientsDetailedStatisticsRow row : data) {
 			currentAmounts.countActive += row.countActive;
@@ -116,9 +134,11 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 		dynamicStatList.addAll(data);
 	}
 	
-	private void insertStatistic(int companyId, int mailinglistID, int mailinglistIndex, LightTarget target, int targetGroupIndex, Date dateStart, Date dateStop) throws Exception {
+	private void insertStatistic(int companyId, int mailinglistID, int mailinglistIndex, LightTarget target,
+            int targetGroupIndex, Date dateStart, Date dateStop, final LightTarget hiddenTarget) {
 		String mailinglistName = getMailinglistName(companyId, mailinglistID);
-    	statList.addAll(getRecipientDetailedStat(companyId, mailinglistID, mailinglistName, mailinglistIndex, target, targetGroupIndex, dateStart, dateStop));
+    	statList.addAll(getRecipientDetailedStat(companyId, mailinglistID, mailinglistName, mailinglistIndex, target,
+                targetGroupIndex, dateStart, dateStop, hiddenTarget));
 	}
 	
 	public List<RecipientsDetailedStatisticsRow> getStatistic() {
@@ -129,10 +149,14 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
         return dynamicStatList;
     }
 
-    private List<RecipientsDetailedStatisticsRow> getRecipientDetailedStat(@VelocityCheck int companyId, int mailinglistId, String mailinglistName, int mailinglistIndex, LightTarget target, int targetGroupIndex, Date dateStart, Date dateStop) throws Exception {
+    private List<RecipientsDetailedStatisticsRow> getRecipientDetailedStat(@VelocityCheck int companyId, int mailinglistId,
+            String mailinglistName, int mailinglistIndex, LightTarget target, int targetGroupIndex, Date dateStart, Date dateStop,
+            final LightTarget hiddenTarget) {
     	try {
     		TreeMap<String, RecipientsDetailedStatisticsRow> dataMap = new TreeMap<>();
     		target = getDefaultTarget(target);
+
+    		final String hiddenTargetSql = getHiddenTargetSql(target, hiddenTarget);
 	        
 	        // Create a RecipientsDetailedStatisticsRow entry for each day within the given time period
 	        GregorianCalendar nextDate = new GregorianCalendar();
@@ -151,28 +175,27 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 	        String sql = "SELECT " + dateTruncFunction + "(bind.timestamp) changedate, user_status, COUNT(*) amount " +
 					" FROM " + getCustomerBindingTableName(companyId) + " bind";
 	        
-	        if (StringUtils.isNotBlank(target.getTargetSQL())) {
-	        	sql += ", customer_" + companyId + "_tbl cust";
+	        if (StringUtils.isNotBlank(target.getTargetSQL()) || StringUtils.isNotBlank(hiddenTargetSql)) {
+	        	sql += " JOIN customer_" + companyId + "_tbl cust ON bind.customer_id = cust.customer_id ";
 	        }
 	        sql += " WHERE bind.mailinglist_id = ?";
 	        sql += " AND " + dateTruncFunction + "(bind.timestamp) >= ?";
 	        sql += " AND " + dateTruncFunction + "(bind.timestamp) <= ?";
-	        
-	        if (StringUtils.isNotBlank(target.getTargetSQL())) {
-	        	sql += " AND bind.customer_id = cust.customer_id AND (" + target.getTargetSQL() + ")";
-	        }
-	        
-	        sql += " GROUP BY " + dateTruncFunction + "(bind.timestamp), user_status";
+
+            if (StringUtils.isNotBlank(target.getTargetSQL())) {
+                sql += " AND (" + target.getTargetSQL() + ")";
+            }
+
+            if (StringUtils.isNotBlank(hiddenTargetSql)) {
+                sql += " AND (" + hiddenTargetSql + ")";
+            }
+
+            sql += " GROUP BY " + dateTruncFunction + "(bind.timestamp), user_status";
 	        sql += " ORDER BY " + dateTruncFunction + "(bind.timestamp), user_status";
 	        
 	        List<Map<String, Object>> result = select(logger, sql, mailinglistId, dateStart, dateStop);
 	        for (Map<String, Object> resultRow : result) {
-	            Date entryDate = (Date) resultRow.get("changedate");
-	            RecipientsDetailedStatisticsRow row = dataMap.get(new SimpleDateFormat("yyyy-MM-dd").format(entryDate));
-	            int userStatusCode = ((Number) resultRow.get("user_status")).intValue();
-	            int amount = ((Number) resultRow.get("amount")).intValue();
-	            UserStatus status = getUserStatus(userStatusCode);
-	            calculateAmount(status, amount, row);
+                calculateAmount(resultRow, dataMap);
 	        }
 	        
 	        if (getConfigService().getBooleanValue(ConfigValue.UseBindingHistoryForRecipientStatistics, companyId)) {
@@ -181,12 +204,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 				
 				List<Map<String, Object>> hstResult = select(logger, hstSql, mailinglistId, dateStart, dateStop);
 		        for (Map<String, Object> resultRow : hstResult) {
-		            Date entryDate = (Date) resultRow.get("changedate");
-		            RecipientsDetailedStatisticsRow row = dataMap.get(new SimpleDateFormat("yyyy-MM-dd").format(entryDate));
-		            int userStatusCode = ((Number) resultRow.get("user_status")).intValue();
-		            int amount = ((Number) resultRow.get("amount")).intValue();
-		            UserStatus status = getUserStatus(userStatusCode);
-		            calculateAmount(status, amount, row);
+                    calculateAmount(resultRow, dataMap);
 		        }
 			}
 	        
@@ -204,24 +222,32 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 		}
     }
 
-    private RecipientsDetailedStatisticsRow getRecipientDetailedStatAmountsBeforeDate(@VelocityCheck int companyId, int mailinglistId, String mailinglistName, int mailinglistIndex, LightTarget target, int targetGroupIndex, Date beforeDate) throws Exception {
+    private RecipientsDetailedStatisticsRow getRecipientDetailedStatAmountsBeforeDate(@VelocityCheck int companyId,
+            int mailinglistId, String mailinglistName, int mailinglistIndex, LightTarget target, int targetGroupIndex,
+            Date beforeDate, final LightTarget hiddenTarget) {
     	try {
     		target = getDefaultTarget(target);
+
+    		final String hiddenTargetSql = getHiddenTargetSql(target, hiddenTarget);
+
         	RecipientsDetailedStatisticsRow nextRecipientsDetailedStatisticsRow =
 					new RecipientsDetailedStatisticsRow(beforeDate,
 							mailinglistId, mailinglistName, mailinglistIndex,
 							target.getId(), target.getName(), targetGroupIndex);
 	        
 	        String sql = "SELECT user_status, COUNT(*) amount FROM " + getCustomerBindingTableName(companyId) + " bind";
-	        if (StringUtils.isNotBlank(target.getTargetSQL())) {
-	        	sql += ", customer_" + companyId + "_tbl cust";
+	        if (StringUtils.isNotBlank(target.getTargetSQL()) || StringUtils.isNotBlank(hiddenTargetSql)) {
+	        	sql += " JOIN customer_" + companyId + "_tbl cust ON bind.customer_id = cust.customer_id ";
 	        }
 	        sql += " WHERE bind.mailinglist_id = ?";
 	        sql += " AND bind.timestamp < ?";
-	        
-	        if (StringUtils.isNotBlank(target.getTargetSQL())) {
-	        	sql += " AND bind.customer_id = cust.customer_id AND (" + target.getTargetSQL() + ")";
-	        }
+
+            if (StringUtils.isNotBlank(target.getTargetSQL())) {
+                sql += " AND (" + target.getTargetSQL() + ")";
+            }
+            if (StringUtils.isNotBlank(hiddenTargetSql)) {
+                sql += " AND (" + hiddenTargetSql + ")";
+            }
 	        
 	        sql += " GROUP BY user_status";
 	        
@@ -239,4 +265,14 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 			throw e;
 		}
     }
+
+    private static void calculateAmount(final Map<String, Object> resultRow, final TreeMap<String, RecipientsDetailedStatisticsRow> dataMap) {
+        final Date entryDate = (Date) resultRow.get("changedate");
+        final RecipientsDetailedStatisticsRow row = dataMap.get(new SimpleDateFormat("yyyy-MM-dd").format(entryDate));
+        final int userStatusCode = ((Number) resultRow.get("user_status")).intValue();
+        final int amount = ((Number) resultRow.get("amount")).intValue();
+        final UserStatus status = getUserStatus(userStatusCode);
+        calculateAmount(status, amount, row);
+    }
+
 }

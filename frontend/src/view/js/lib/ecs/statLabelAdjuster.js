@@ -46,16 +46,14 @@
     }
 
     function checkNotEmptyRectangle(rectangle) {
-        return rectangle.left != rectangle.right && rectangle.top != rectangle.bottom;
+        return rectangle.left !== rectangle.right && rectangle.top !== rectangle.bottom;
     }
 
     function getRectangles(a) {
         var rectangle = a.getBoundingClientRect();
-        var rects = $.map(a.children, getRectangles);
+        var rects = _.map(a.children, getRectangles);//lodash because JS map or Jquery map do not work for wkhtmltopdf
         rects.push(rectangle);
-        return $.map(rects, function(rectangle) {
-            return checkNotEmptyRectangle(rectangle) ? rectangle : null;
-        });
+        return _.filter(rects, checkNotEmptyRectangle);
     }
 
     function getRectangleArea(rectangle) {
@@ -121,7 +119,7 @@
             var biggestRectangle = rectangles[0];
 
             for(var k = 0; k < rectangles.length; k++) {
-              var balloon = createBalloon(bgColor);
+              var balloon = createBalloon(bgColor, codedUrlId);
               adjustBalloon(balloon, rectangles[k]);
 
               if (getRectangleArea(biggestRectangle) < getRectangleArea(rectangles[k])) {
@@ -129,7 +127,7 @@
               }
             }
 
-            var tag = createTag(bgColor, clickValue);
+            var tag = createTag(bgColor, clickValue, codedUrlId);
             adjustTag(tag, biggestRectangle);
           }
         }
@@ -142,15 +140,18 @@
       showPopups();
     }
 
-    function createBalloon(color) {
+    function createBalloon(color, uid) {
         var myDiv = document.createElement('div');
         myDiv.style.backgroundColor = color;
         myDiv.className = 'clicks-statistic-balloon';
+        myDiv.setAttribute('urlId', uid);
+        myDiv.addEventListener('mouseover', highlightTag, false);
+        myDiv.addEventListener('mouseout', removeTagHighlighting, false)
         document.body.appendChild(myDiv);
         return myDiv;
     }
 
-    function createTag(color, text) {
+    function createTag(color, text, uid) {
         var myDiv = document.createElement('div');
         myDiv.innerHTML = text;
         myDiv.style.backgroundColor = color;
@@ -160,6 +161,8 @@
         myDiv.style.fontSize = '11px';
         myDiv.style.zIndex = "10";
         myDiv.style.whiteSpace = 'nowrap';
+        myDiv.style.opacity = '0.8';
+        myDiv.setAttribute('urlId', uid);
         myDiv.className = 'clicks-statistic-tag';
         document.body.appendChild(myDiv);
         return myDiv;
@@ -183,14 +186,37 @@
         $(e).css("position", "absolute");
         $(e).css("textAlign", "center");
 
+        var leftValue = rectangle.right - $(e).outerWidth();
+        if(leftValue < 0) {
+           leftValue = 0;
+        }
         $(e).css({
-            left: rectangle.right - $(e).outerWidth(),
+            left: leftValue,
             top: rectangle.bottom
         });
     }
 
     function setImagesLoadedEvent() {
-      $(window.document.body).imagesLoaded().progress(_.throttle(updatePopopsPositions, 100)).always(updatePopopsPositions);
+      $(window.document.body).imagesLoaded()
+        .progress(_.throttle(updatePopopsPositions, 100))
+        .always(function() {
+          updatePopopsPositions();
+          window.status = "heatmapLoadFinished";
+        });
+    }
+
+    function highlightTag(e) {
+      var $tag = $('.clicks-statistic-tag[urlId="' +  $(e.target).attr('urlId') + '"]'),
+        zIndex = $tag.css('z-index') || 0;
+      $tag.css('z-index', 1000 + zIndex*1);
+      $tag.css('opacity', '1.0');
+    }
+
+    function removeTagHighlighting(e) {
+      var $tag = $('.clicks-statistic-tag[urlId="' + $(e.target).attr('urlId') + '"]'),
+        zIndex = Math.max($tag.css('z-index') || 0, 1000);
+      $tag.css('z-index', zIndex - 1000);
+      $tag.css('opacity', '0.8');
     }
 
     if (window.addEventListener) {

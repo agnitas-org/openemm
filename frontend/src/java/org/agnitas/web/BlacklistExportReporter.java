@@ -34,6 +34,7 @@ import com.agnitas.beans.ComCompany;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.messages.I18nString;
 
 public class BlacklistExportReporter {
@@ -46,6 +47,8 @@ public class BlacklistExportReporter {
 	private ComCompanyDao companyDao;
 	
 	private AdminService adminService;
+
+	private RecipientsReportService recipientsReportService;
 	
 	private ConfigService configService;
 
@@ -58,9 +61,15 @@ public class BlacklistExportReporter {
 	public void setCompanyDao(ComCompanyDao companyDao) {
 		this.companyDao = companyDao;
 	}
-	
-	public final void setAdminService(final AdminService service) {
+
+	@Required
+	public void setAdminService(final AdminService service) {
 		this.adminService = Objects.requireNonNull(service, "Admin service is null");
+	}
+
+	@Required
+	public void setRecipientsReportService(RecipientsReportService recipientsReportService) {
+		this.recipientsReportService = recipientsReportService;
 	}
 
 	@Required
@@ -109,7 +118,7 @@ public class BlacklistExportReporter {
 			Locale locale = admin.getLocale();
 			ComCompany company = companyDao.getCompany(exportWorker.getAutoExport().getCompanyId());
 			
-			String subject = I18nString.getLocaleString("ResultMsg", locale) + " \"" + I18nString.getLocaleString("Blacklist", locale) + "\" (" + I18nString.getLocaleString("Company", locale) + ": " + company.getShortname() + ")";
+			String subject = I18nString.getLocaleString("ResultMsg", locale) + " \"" + I18nString.getLocaleString("recipient.Blacklist", locale) + "\" (" + I18nString.getLocaleString("Company", locale) + ": " + company.getShortname() + ")";
 			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
 			String bodyText = generateLocalizedExportTextReport(exportWorker, admin) + "\n" + additionalContent;
 			
@@ -120,7 +129,7 @@ public class BlacklistExportReporter {
 	private String generateLocalizedExportTextReport(BlacklistExportWorker exportWorker, ComAdmin admin) throws Exception {
 		Locale locale = admin.getLocale();
 		
-		String reportContent = I18nString.getLocaleString("ResultMsg", locale) + " \"" + I18nString.getLocaleString("Blacklist", locale) + "\":\n\n";
+		String reportContent = I18nString.getLocaleString("ResultMsg", locale) + " \"" + I18nString.getLocaleString("recipient.Blacklist", locale) + "\":\n\n";
 
 		reportContent += I18nString.getLocaleString("decode.licenseID", locale) + ": " + configService.getValue(ConfigValue.System_Licence) + "\n";
 		
@@ -139,7 +148,7 @@ public class BlacklistExportReporter {
 			reportContent += "User: " + exportWorker.getUsername();
 		}
 		
-		reportContent += I18nString.getLocaleString("export.type", locale) + ": " + I18nString.getLocaleString("Blacklist", locale) + "\n";
+		reportContent += I18nString.getLocaleString("export.type", locale) + ": " + I18nString.getLocaleString("recipient.Blacklist", locale) + "\n";
 		
 		String profileContent = "";
 
@@ -189,7 +198,7 @@ public class BlacklistExportReporter {
 		if (exportWorker.getAutoExport() != null) {
 			title = "AutoExport: " + exportWorker.getAutoExport().getShortname() + " (ID: " + exportWorker.getAutoExport().getAutoExportId() + ")";
 		} else {
-			title = "Export: \"" + I18nString.getLocaleString("Blacklist", locale) + "\"";
+			title = "Export: \"" + I18nString.getLocaleString("recipient.Blacklist", locale) + "\"";
 		}
 		
 		StringBuilder htmlContent = new StringBuilder(HtmlReporterHelper.getHtmlPrefixWithCssStyles(title));
@@ -244,7 +253,7 @@ public class BlacklistExportReporter {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("User", exportWorker.getUsername()));
 		}
 		
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("export.type", locale), I18nString.getLocaleString("Blacklist", locale)));
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("export.type", locale), I18nString.getLocaleString("recipient.Blacklist", locale)));
 				
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Charset", locale), exportWorker.getEncoding()));
 
@@ -321,11 +330,15 @@ public class BlacklistExportReporter {
 			Locale locale = admin.getLocale();
 			ComCompany company = companyDao.getCompany(exportWorker.getAutoExport().getCompanyId());
 			
-			String subject = "Export-ERROR: " + I18nString.getLocaleString("ResultMsg", locale) + ": " + " \"" + I18nString.getLocaleString("Blacklist", locale) + "\" (" + I18nString.getLocaleString("Company", locale) + ": " + company.getShortname() + ")";
+			String subject = "Export-ERROR: " + I18nString.getLocaleString("ResultMsg", locale) + ": " + " \"" + I18nString.getLocaleString("recipient.Blacklist", locale) + "\" (" + I18nString.getLocaleString("Company", locale) + ": " + company.getShortname() + ")";
 			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
 			String bodyText = "Export-ERROR:\n" + generateLocalizedExportTextReport(exportWorker, admin) + "\n" + additionalContent;
 						
 			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
+	}
+
+	public void createAndSaveExportReport(BlacklistExportWorker exportWorker, ComAdmin admin, boolean isError) throws Exception {
+		recipientsReportService.createAndSaveExportReport(admin, new File(exportWorker.getExportFile()).getName(), exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker, admin), isError);
 	}
 }

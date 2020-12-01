@@ -29,4 +29,18 @@
 	<bean id="WorkerExecutorService" class="java.util.concurrent.ScheduledThreadPoolExecutor">
 		<constructor-arg value="10" type="int" />
 	</bean>
+	<!-- 
+	<bean id="WorkerExecutorService" class="java.util.concurrent.ScheduledThreadPoolExecutor">
+		<constructor-arg value="10" type="int" />
+		<constructor-arg type="java.util.concurrent.ThreadFactory">
+			<bean class="com.agnitas.util.threads.NamingThreadFactory">
+				<constructor-arg type="java.util.concurrent.ThreadFactory">
+					<bean class="java.util.concurrent.Executors" factory-method="defaultThreadFactory" />
+				</constructor-arg>
+				<constructor-arg type="java.lang.String" value="WorkerExecutorService-reports-thread" />
+			</bean>
+		</constructor-arg>
+	</bean>
+	-->
+	
 </beans>

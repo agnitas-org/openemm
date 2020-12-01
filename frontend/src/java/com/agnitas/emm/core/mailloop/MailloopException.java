@@ -15,7 +15,6 @@ import com.agnitas.emm.core.mailloop.service.MailloopService;
 /**
  * Exception indicating an error in {@link MailloopService}.
  */
-@Deprecated
 public class MailloopException extends Exception {
 
 	/** Serial version UID. */

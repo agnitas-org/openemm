@@ -626,7 +626,7 @@ public final class ComImportWizardAction extends StrutsActionBase {
 		return mapping.findForward("view_status");
 	}
 
-    private void createReportResult(ComAdmin admin, ProfileImportWorker profileImportWorker, ComImportWizardForm comImportWizardForm, boolean isError) {
+    private void createReportResult(ComAdmin admin, ProfileImportWorker profileImportWorker, ComImportWizardForm comImportWizardForm, boolean isError) throws Exception {
 		// Create report, statistics data for GUI
     	Map<String, String> resultMailingListAdded = new HashMap<>();
     	if (profileImportWorker.getMailinglistAssignStatistics() != null) {
@@ -642,12 +642,12 @@ public final class ComImportWizardAction extends StrutsActionBase {
 		Date my_time = my_calendar.getTime();
 		
 		String filename = Long.toString(my_time.getTime()) + ".csv";
-		String csvfile = generateLocalizedImportCSVReport(admin.getLocale(), my_time, profileImportWorker.getStatus(), comImportWizardForm.getMode());
+		String csvfile = generateLocalizedImportCSVReport(admin.getLocale(), my_time, profileImportWorker.getImportProfile(), profileImportWorker.getStatus(), comImportWizardForm.getMode());
 
 		reportService.createAndSaveImportReport(admin, filename, comImportWizardForm.getDatasourceID(), new Date(), csvfile, -1, isError);
 	}
 	
-	private String generateLocalizedImportCSVReport(Locale locale, Date my_time, CustomerImportStatus status, int mode) {
+	private String generateLocalizedImportCSVReport(Locale locale, Date my_time, ImportProfile importProfile, CustomerImportStatus status, int mode) {
 		String csvfile = "";
 		csvfile += SafeString.getLocaleString("import.SubscriberImport", locale);
 		csvfile += "\n" + SafeString.getLocaleString("settings.fieldType.DATE", locale) + ": ; \"" + my_time + "\"\n";
@@ -659,7 +659,7 @@ public final class ComImportWizardAction extends StrutsActionBase {
 		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_gender", locale) + ":;" + status.getError("gender");
 		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_date", locale) + ":;" + status.getError("date");
 		csvfile += "\n" + SafeString.getLocaleString("csv_errors_linestructure", locale) + ":;" + status.getError("structure");
-		csvfile += "\n" + SafeString.getLocaleString("import.result.csvlines", locale) + ":;" + status.getCsvLines();
+		csvfile += "\n" + SafeString.getLocaleString("import.result.filedataitems", locale) + ":;" + status.getCsvLines();
 		csvfile += "\n" + SafeString.getLocaleString("import.RecipientsAllreadyinDB", locale) + ":;" + status.getAlreadyInDb();
 		if (mode == ImportMode.ADD.getIntValue() || mode == ImportMode.ADD_AND_UPDATE.getIntValue()) {
 			csvfile += "\n" + SafeString.getLocaleString("import.result.imported", locale) + ":;" + status.getInserted();
@@ -690,7 +690,7 @@ public final class ComImportWizardAction extends StrutsActionBase {
     	// Using ProfileImportWorker behind ClassicImport-GUI
     	
     	// Store uploaded import file
-    	File importFile = new File(File.createTempFile("upload_csv_file_" + companyID + "_" + adminID + "_", ".csv", AgnUtils.createDirectory(IMPORT_FILE_DIRECTORY)).getAbsolutePath());
+    	File importFile = new File(File.createTempFile("upload_csv_file_" + companyID + "_" + adminID + "_", ".csv", AgnUtils.createDirectory(IMPORT_FILE_DIRECTORY + "/" + admin.getCompanyID())).getAbsolutePath());
         try (InputStream inputStream = aForm.getCsvFile().getInputStream()) {
             try (FileOutputStream outputStream = new FileOutputStream(importFile, false)) {
             	IOUtils.copy(inputStream, outputStream);

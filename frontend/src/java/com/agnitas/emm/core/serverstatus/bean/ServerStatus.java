@@ -30,6 +30,7 @@ public class ServerStatus {
     private String javaVersion;
     private String tempDir;
     private String sysTime;
+    private String sysTimeDb;
     private String buildTime;
     private String startupTime;
     private String configExpirationTime;
@@ -67,6 +68,10 @@ public class ServerStatus {
     
     public String getSysTime() {
         return sysTime;
+    }
+    
+    public String getSysTimeDb() {
+        return sysTimeDb;
     }
     
     public String getBuildTime() {
@@ -208,6 +213,7 @@ public class ServerStatus {
             serverStatus.buildTime = dateFormat.format(ConfigService.getBuildTime());
             serverStatus.startupTime = dateFormat.format(startupTime);
             serverStatus.sysTime = dateFormat.format(now);
+            serverStatus.sysTimeDb = dateFormat.format(configService.getCurrentDbTime());
             serverStatus.uptime = startupTime == null ? "0" : DateUtil.getTimespanString(now.getTime() - startupTime.getTime(), locale);
             serverStatus.configExpirationTime = expirationTime == null ? "Null" : dateFormat.format(expirationTime);
     

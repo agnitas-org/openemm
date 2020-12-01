@@ -14,6 +14,17 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 
 
 public class BindingModel {
+	public interface SetGroup {
+    	// do nothing
+    }
+
+	public interface GetGroup {
+    	// do nothing
+    }
+	
+	public interface ListGroup {
+    	// do nothing
+    }
 
 	private int companyId;
 	private int customerId;

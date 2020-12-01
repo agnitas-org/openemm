@@ -10,27 +10,30 @@
 
 package org.agnitas.emm.springws.endpoint.binding;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.binding.service.BindingModel;
 import org.agnitas.emm.core.binding.service.BindingService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.DeleteSubscriberBindingRequest;
 import org.agnitas.emm.springws.jaxb.DeleteSubscriberBindingResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class DeleteSubscriberBindingEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class DeleteSubscriberBindingEndpoint extends BaseEndpoint {
 
-	@Resource
 	private BindingService bindingService;
-	@Resource
-	private ObjectFactory objectFactory;
-	
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		DeleteSubscriberBindingRequest request = (DeleteSubscriberBindingRequest) arg0;
-		DeleteSubscriberBindingResponse response = objectFactory.createDeleteSubscriberBindingResponse();
+
+	public DeleteSubscriberBindingEndpoint(@Qualifier("BindingService") BindingService bindingService) {
+		this.bindingService = bindingService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteSubscriberBindingRequest")
+	public @ResponsePayload DeleteSubscriberBindingResponse deleteSubscriberBinding(@RequestPayload DeleteSubscriberBindingRequest request) throws Exception {
+		DeleteSubscriberBindingResponse response = new DeleteSubscriberBindingResponse();
 		
 		BindingModel model = parseModel(request);
 
@@ -47,6 +50,4 @@ public class DeleteSubscriberBindingEndpoint extends AbstractMarshallingPayloadE
 		model.setMediatype(request.getMediatype());
 		return model;
 	}
-
-
 }

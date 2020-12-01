@@ -13,11 +13,11 @@ package org.agnitas.dao;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-import org.agnitas.beans.ProfileField;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 
 public interface ProfileFieldDao {

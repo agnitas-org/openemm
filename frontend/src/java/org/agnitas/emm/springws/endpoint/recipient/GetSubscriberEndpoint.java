@@ -12,30 +12,32 @@ package org.agnitas.emm.springws.endpoint.recipient;
 
 import java.util.Map;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.GetSubscriberRequest;
 import org.agnitas.emm.springws.jaxb.GetSubscriberResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.util.CaseInsensitiveSet;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class GetSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class GetSubscriberEndpoint extends BaseEndpoint {
 
-	@Resource
 	private RecipientService recipientService;
-	@Resource
-	private ObjectFactory objectFactory;
-	
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		GetSubscriberRequest request = (GetSubscriberRequest) arg0;
-		GetSubscriberResponse response = objectFactory.createGetSubscriberResponse();
+
+	public GetSubscriberEndpoint(RecipientService recipientService) {
+		this.recipientService = recipientService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetSubscriberRequest")
+	public @ResponsePayload GetSubscriberResponse getSubscriber(@RequestPayload GetSubscriberRequest request) {
+		GetSubscriberResponse response = new GetSubscriberResponse();
 
 		RecipientModel model = parseModel(request);
 
@@ -43,7 +45,7 @@ public class GetSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 		recipientService.checkColumnsAvailable(model);
 
 		Map<String, Object> parameters = recipientService.getSubscriber(model);
-		populateResponse(request, response, parameters, objectFactory);
+		populateResponse(request, response, parameters);
 		return response;
 	}
 	
@@ -67,13 +69,12 @@ public class GetSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 		return model;
 	}
 
-	static void populateResponse(GetSubscriberRequest request, GetSubscriberResponse response, Map<String, Object> parameters, ObjectFactory objectFactory) {
+	static void populateResponse(GetSubscriberRequest request, GetSubscriberResponse response, Map<String, Object> parameters) {
 		if (parameters != null && parameters.size() > 0) {
-			response.setParameters(Utils.toJaxbMap(parameters, objectFactory));
+			response.setParameters(Utils.toJaxbMap(parameters));
 			response.setCustomerID(request.getCustomerID());
 		} else {
 			response.setCustomerID(0);
 		}
 	}
-
 }

@@ -28,8 +28,6 @@
 
 		<form-bean name="mailingComponentsForm" type="com.agnitas.web.forms.ComMailingComponentsForm" />
 
-		<form-bean name="formComponentsForm" type="com.agnitas.web.forms.FormComponentsForm" />
-
 		<form-bean name="mailingAttachmentsForm" type="com.agnitas.web.forms.ComMailingAttachmentsForm" />
 
 		<form-bean name="mailingSendForm" type="com.agnitas.web.ComMailingSendForm" />
@@ -39,12 +37,6 @@
 		<form-bean name="trackableLinkForm" type="com.agnitas.web.ComTrackableLinkForm" />
 
 		<form-bean name="predeliveryForm" type="com.agnitas.predelivery.web.ComPredeliveryForm" />
-
-		<form-bean name="trackableUserFormLinkForm" type="com.agnitas.userform.trackablelinks.web.ComTrackableUserFormLinkForm" />
-
-		<form-bean name="trackableUserFormLinkStatForm" type="com.agnitas.userform.trackablelinks.web.ComTrackableUserFormLinkStatForm" />
-
-		<form-bean name="userFormEditForm" type="com.agnitas.web.forms.ComUserFormEditForm" />
 
 		<form-bean name="userFormExecuteForm" type="org.agnitas.web.UserFormExecuteForm" />
 
@@ -152,12 +144,12 @@
 		<!-- Process a mailing content request -->
 		<action path="/mailingcontent" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingContentForm" scope="request" input="mailing_content_list">
 			<forward name="list" path="mailing_content_list" />
+			<forward name="generate_text_confirm" path="generate_text_question_ajax" />
 		</action>
 
 		<!-- Process MailingComponents -->
 		<action path="/mcomponents" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingComponentsForm" scope="request" input="mailing_components">
 			<forward name="list" path="mailing_components" />
-			<forward name="component_edit" path="mailing_components_upload_ajax" />
             <forward name="delete" path="mailing_components_delete_ajax" />
             <forward name="bulk_delete_confirm" path="mailing_components_bulk_delete" />
             <forward name="messages" path="messages" />
@@ -308,6 +300,7 @@
 			<forward name="recipient_webtracking_history" path="recipient_webtracking_history" />
 			<forward name="reactions_history" path="recipient_reactions_history" />
 			<forward name="mailing_delivery_info" path="mailing_delivery_info"/>
+			<forward name="confirm_save" path="recipient_confirm_save_modal" />
 			<forward name="messages" path="messages" />
 		</action>
 
@@ -402,39 +395,9 @@
 		
 		<action path="/newTargetGroup" type="org.apache.struts.actions.ForwardAction" parameter="/targetQB.do?method=create" />
 
-		<!-- Process a userform -->
-		<action path="/userform" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="userFormEditForm" scope="request" input="/userform.do?action=7">
-			<forward name="view" path="userform_view" />
-			<forward name="list" path="userform_list" />
-			<forward name="delete" path="userform_delete_ajax" />
-			<forward name="success" path="userform_view" />
-			<forward name="bulk_delete_confirm" path="userform_bulk_delete_ajax" />
-			<forward name="workflow_view" path="/workflow/{WORKFLOW_ID}/view.action" />
-			<forward name="import" path="userform_import" />
-			<forward name="importView" path="import_view" />
-		</action>
-
-		<!-- Process FormComponents -->
-		<action path="/formcomponents" parameter="method" type="org.springframework.web.struts.DelegatingActionProxy" name="formComponentsForm" scope="request" input="form_components">
-			<forward name="list" path="form_components" />
-			<forward name="component_edit" path="/userform/component_upload.jsp" />
-            <forward name="delete" path="formcomponents_delete_ajax" />
-		</action>
-
 		<!-- Process a userform (execute) -->
 		<action path="/form" type="org.springframework.web.struts.DelegatingActionProxy" name="userFormExecuteForm" scope="request" input="/WEB-INF/jsp/support/form_not_found.jsp">
 			<forward name="form_not_found" path="/WEB-INF/jsp/support/form_not_found.jsp" />
-		</action>
-
-		<!-- Process a trackable user form link -->
-		<action path="/trackuserformlink" parameter="method" type="org.springframework.web.struts.DelegatingActionProxy" name="trackableUserFormLinkForm" scope="request">
-			<forward name="view" path="userform_trackablelink_view" />
-			<forward name="list" path="userform_trackablelink_list" />
-			<forward name="messages" path="messages" />
-		</action>
-
-		<action path="/trackuserformlinkstat" parameter="method" type="org.springframework.web.struts.DelegatingActionProxy" name="trackableUserFormLinkStatForm" scope="request">
-			<forward name="stat" path="userform_userform_stats" />
 		</action>
 
 		<!-- Process actions -->
@@ -449,9 +412,6 @@
 
 		<action path="/support" type="org.springframework.web.struts.DelegatingActionProxy" parameter="method" scope="request" name="supportForm" input="/WEB-INF/jsp/support/form_not_found.jsp">
 			<forward name="form_not_found_sent" path="/WEB-INF/jsp/support/form_not_found_sent.jsp" />
-		</action>
-
-		<action path="/extension" type="org.apache.struts.actions.ForwardAction" parameter="extensionInTiles">
 		</action>
 
         <!-- Do not use com.agnitas.web.perm.DelegatingActionProxySecured here. This action is called by some script from internal that has no EMM user. -->

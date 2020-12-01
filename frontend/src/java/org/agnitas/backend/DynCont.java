@@ -10,28 +10,43 @@
 
 package org.agnitas.backend;
 
-
 /**
  * Holds all information about one dynamic content block
  */
 public class DynCont {
-	/** constant for always matching */
-	public static final long	MATCH_NEVER = -1;
-	/** constant for never matching */
-	public static final long	MATCH_ALWAYS = 0;
+	/**
+	 * constant for always matching
+	 */
+	public static final long MATCH_NEVER = -1;
+	/**
+	 * constant for never matching
+	 */
+	public static final long MATCH_ALWAYS = 0;
 
-	/** Unique content ID */
-	public long			id = 0;
-	/** ID for the target condiition */
-	public long			targetID = 0;
-	/** order to describe importance of this part */
-	public long			order = 0;
-	/** textual content */
-	public BlockData		text = null;
-	/** HTML content */
-	public BlockData		html = null;
-	/** the condition */
-	public String			condition = null;
+	/**
+	 * Unique content ID
+	 */
+	public long id = 0;
+	/**
+	 * ID for the target condiition
+	 */
+	public long targetID = 0;
+	/**
+	 * order to describe importance of this part
+	 */
+	public long order = 0;
+	/**
+	 * textual content
+	 */
+	public BlockData text = null;
+	/**
+	 * HTML content
+	 */
+	public BlockData html = null;
+	/**
+	 * the condition
+	 */
+	public String condition = null;
 
 	/**
 	 * Constructor

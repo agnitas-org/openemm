@@ -61,8 +61,6 @@ by default using SI
 * */
 
 (function () {
-    var AGN_TAG_REGEX = /\[agn[^\]]+]/g;
-
     AGN.Lib.Helpers = {
 
         paramsFromUrl: function (url) {
@@ -231,19 +229,192 @@ by default using SI
             };
         },
 
-        escapeAgnTags: function(string) {
+        replaceAgnTags: function(html, replacementFn) {
             try {
-                if (string) {
-                    return string.replace(AGN_TAG_REGEX, function(match) {
-                        return _.escape(match);
-                    });
+                return html.replace(
+                    /\[(agn[A-Z0-9]+)(?:[^'"\]]|'.*?'|".*?")+]/g,
+                    function(whole, tagName) {
+                        var tag = $('<' + whole.substring(1, whole.length - 1) + '>')[0];
+
+                        if (tag instanceof HTMLElement) {
+                            var tagAttributes = tag.attributes;
+                            var attributes = {};
+
+                            for (var i = 0; i < tagAttributes.length; i++) {
+                                var tagAttribute = tagAttributes[i];
+                                attributes[tagAttribute.nodeName] = tagAttribute.nodeValue;
+                            }
+
+                            return replacementFn({name: tagName, attributes: attributes}, whole);
+                        }
+
+                        return whole;
+                    }
+                );
+            } catch (e) {
+                // Do nothing.
+            }
+
+            return html;
+        },
+
+        escapeAgnTags: function(html) {
+            try {
+                if (html) {
+                    return html.replace(
+                        /\[agn[A-Z0-9]+(?:[^'"\]]|'.*?'|".*?")+]/g,
+                        function(whole) {
+                            // If no attributes defined then there's nothing to escape.
+                            // If no quotation marks found it's probably already escaped.
+                            if (whole.includes('\'') || whole.includes('"')) {
+                                return _.escape(whole);
+                            } else {
+                                return whole;
+                            }
+                        }
+                    );
                 }
             } catch (e) {
                 // Do nothing.
             }
 
-            return string;
+            return html;
+        },
+
+        unescapeAgnTags: function(html) {
+            try {
+                if (html) {
+                    return html.replace(
+                        // Make sure it's required to unescape.
+                        /\[agn[A-Z0-9]+(?:(?!&#39;|&quot;)[^'"\]]|=\s*&#39;.*?&#39;|=\s*&quot;.*?&quot;)*]/g,
+                        function(whole) {
+                            return _.unescape(whole);
+                        }
+                    );
+                }
+            } catch (e) {
+                // Do nothing.
+            }
+
+            return html;
         }
+    };
+
+    /*
+    // Run these tests manually in browser's console in order to verify your changes to escapeAgnTags/unescapeAgnTags.
+    try {
+        function testEscapeAgnTags(expectedResult, html) {
+            var actualResult = AGN.Lib.Helpers.escapeAgnTags(html);
+            if (expectedResult != actualResult) {
+                console.error("Test failed!\nExpected: " + expectedResult + "\nActual: " + actualResult);
+            }
+        }
+
+        function testUnescapeAgnTags(expectedResult, html) {
+            var actualResult = AGN.Lib.Helpers.unescapeAgnTags(html);
+            if (expectedResult != actualResult) {
+                console.error("Test failed!\nExpected: " + expectedResult + "\nActual: " + actualResult);
+            }
+        }
+
+        // Nothing to escape.
+        testEscapeAgnTags(
+            '<span>[agnCUSTOMERID]</span>',
+            '<span>[agnCUSTOMERID]</span>'
+        );
+
+        // Normal escape.
+        testEscapeAgnTags(
+            '<span>[agnDB column=&quot;creation_date&quot;]</span>',
+            '<span>[agnDB column="creation_date"]</span>'
+        );
+
+        // Multiple attributes escape.
+        testEscapeAgnTags(
+            '<span>[agnDB column=&quot;creation_date&quot; foo=&quot;bar&quot;]</span>',
+            '<span>[agnDB column="creation_date" foo="bar"]</span>'
+        );
+
+        // Multiple tags escape.
+        testEscapeAgnTags(
+            '<span>[agnDB column=&quot;creation_date&quot;]</span><span>[agnDB column=&quot;foo&quot;]</span>',
+            '<span>[agnDB column="creation_date"]</span><span>[agnDB column="foo"]</span>'
+        );
+
+        // Prevent double escape.
+        testEscapeAgnTags(
+            '<span>[agnDB column=&quot;creation_date&quot;]</span>',
+            '<span>[agnDB column=&quot;creation_date&quot;]</span>'
+        );
+
+        // Prevent invalid agn-tag escape.
+        testEscapeAgnTags(
+            '<span>[ agnDB column="creation_date"]</span>',
+            '<span>[ agnDB column="creation_date"]</span>'
+        );
+
+        // Normal escape inside attribute.
+        testEscapeAgnTags(
+            '<span title="[agnDB column=&quot;creation_date&quot;]">Creation date</span>',
+            '<span title="[agnDB column="creation_date"]">Creation date</span>'
+        );
+
+        // Prevent double escape inside attribute.
+        testEscapeAgnTags(
+            '<span title="[agnDB column=&quot;creation_date&quot;]">Creation date</span>',
+            '<span title="[agnDB column=&quot;creation_date&quot;]">Creation date</span>'
+        );
+
+        // Nothing to unescape.
+        testUnescapeAgnTags(
+            '<span>[agnCUSTOMERID]</span>',
+            '<span>[agnCUSTOMERID]</span>'
+        );
+
+        // Normal unescape.
+        testUnescapeAgnTags(
+            '<span>[agnDB column="creation_date"]</span>',
+            '<span>[agnDB column=&quot;creation_date&quot;]</span>'
+        );
+
+        // Multiple attributes unescape.
+        testUnescapeAgnTags(
+            '<span>[agnDB column="creation_date" foo="bar"]</span>',
+            '<span>[agnDB column=&quot;creation_date&quot; foo=&quot;bar&quot;]</span>'
+        );
+
+        // Multiple tags unescape.
+        testUnescapeAgnTags(
+            '<span>[agnDB column="creation_date"]</span><span>[agnDB column="foo"]</span>',
+            '<span>[agnDB column=&quot;creation_date&quot;]</span><span>[agnDB column=&quot;foo&quot;]</span>'
+        );
+
+        // Prevent unescaping of what's not escaped.
+        testUnescapeAgnTags(
+            '<span>[agnFOO foo="aaa&quot;bbb" bar="xxx&quot;yyy"]</span>',
+            '<span>[agnFOO foo="aaa&quot;bbb" bar="xxx&quot;yyy"]</span>'
+        );
+
+        // Prevent invalid agn-tag unescape.
+        testUnescapeAgnTags(
+            '<span>[ agnDB column=&quot;creation_date&quot;]</span>',
+            '<span>[ agnDB column=&quot;creation_date&quot;]</span>'
+        );
+
+        // Normal unescape inside attribute.
+        testUnescapeAgnTags(
+            '<span title="[agnDB column="creation_date"]">Creation date</span>',
+            '<span title="[agnDB column=&quot;creation_date&quot;]">Creation date</span>'
+        );
+
+        // Prevent unescaping of what's not escaped inside attribute.
+        testUnescapeAgnTags(
+            '<span title="[agnFOO foo="aaa&quot;bbb" bar="xxx&quot;yyy"]">Creation date</span>',
+            '<span title="[agnFOO foo="aaa&quot;bbb" bar="xxx&quot;yyy"]">Creation date</span>'
+        );
+    } catch (e) {
+        console.error(e);
     }
+    */
 
 })();

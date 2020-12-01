@@ -5,7 +5,6 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
-<%@ taglib uri="http://ajaxtags.org/tags/ajax" prefix="ajax" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
@@ -185,7 +184,7 @@
                     </display:column>
 
                     <display:column class="table-actions">
-                        <emm:ShowByPermission token="actions.change">
+                        <emm:ShowByPermission token="actions.show">
                             <html:link styleClass="js-row-show hidden" titleKey="action.Edit_Action" page="/action.do?action=${ACTION_VIEW}&actionID=${emmaction.id}"></html:link>
                         </emm:ShowByPermission>
                         <emm:ShowByPermission token="actions.delete">

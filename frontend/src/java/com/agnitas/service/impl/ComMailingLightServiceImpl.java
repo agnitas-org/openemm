@@ -13,7 +13,6 @@ package com.agnitas.service.impl;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.beans.factory.annotation.Required;
@@ -46,7 +45,7 @@ public class ComMailingLightServiceImpl implements ComMailingLightService {
                 .noneMatch(id -> id == parentMailingId);
 
         if (parentMailingId > 0 && parentMailingId != mailingId && isParentIdNotInResultsList) {
-            Mailing parentMailing = mailingDao.getMailing(parentMailingId, companyID);
+            ComMailing parentMailing = mailingDao.getMailing(parentMailingId, companyID);
             results.add(new LightweightMailingWithMailingList(parentMailing, parentMailing.getMailinglistID()));
         }
         return results;

@@ -33,7 +33,7 @@ public class ActionOperationUpdateCustomerDaoImpl extends AbstractActionOperatio
 		operation.setUpdateType(((Number) row.get("update_type")).intValue());
 		operation.setUpdateValue((String) row.get("update_value"));
 		Number tpId = (Number) row.get("trackpoint_id");
-		if (tpId != null && tpId.intValue() != -1 && selectInt(logger, "SELECT COUNT(*) FROM trackpoint_def_tbl WHERE trackpoint_id = ?", Integer.class, tpId) == 0) {
+		if (tpId != null && tpId.intValue() != -1 && selectInt(logger, "SELECT COUNT(*) FROM trackpoint_def_tbl WHERE trackpoint_id = ?", tpId.intValue()) == 0) {
 			// Also pass 'predefined' revenue trackpoint referenced id (-1)
 			tpId = null;
 			operation.setUseTrack(false);

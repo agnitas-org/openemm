@@ -16,6 +16,16 @@ Changes that prevent the plugin from turning img-element attributes into styles.
 5) /plugins/table/plugin.js
 Removed transformation of width attribute to width style. GWUA-4097
 
+6) /plugins/showprotected/plugin.js and /plugins/showprotected/dialogs/protected.js
+Implemented actual text inlining instead of icon.
+
+7) /plugins/showprotected/plugin.js
+Changed to prevent making widget of head('meta' and 'script') and comment elements.
+
+8) /ckeditor-emm-helper.jsp
+Implemented replace defaultHtmlFilterRulesForAll to prevent remove class attribute from <html> tag if fullPage is true. GWUA-4607
+Introduced allowExternalScript parameter that allows external script tags
+
 ******* CUSTOM IMPLEMENTATION *******
 EMM implementations which should also be saved after migration of ckeditor:
 1) /plugins/emm/*

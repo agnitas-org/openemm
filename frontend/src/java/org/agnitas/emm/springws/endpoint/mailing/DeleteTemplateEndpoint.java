@@ -10,28 +10,33 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.DeleteTemplateRequest;
 import org.agnitas.emm.springws.jaxb.DeleteTemplateResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 
-public class DeleteTemplateEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class DeleteTemplateEndpoint extends BaseEndpoint {
 
-	@Resource
 	private MailingService mailingService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		DeleteTemplateRequest request = (DeleteTemplateRequest) arg0;
-		DeleteTemplateResponse response = objectFactory.createDeleteTemplateResponse();
+	@Autowired
+	public DeleteTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteTemplateRequest")
+	public @ResponsePayload DeleteTemplateResponse deleteTemplate(@RequestPayload DeleteTemplateRequest request) {
+		DeleteTemplateResponse response = new DeleteTemplateResponse();
 		MailingModel model = new MailingModel();
 		model.setCompanyId(Utils.getUserCompany());
 		model.setMailingId(request.getTemplateID());

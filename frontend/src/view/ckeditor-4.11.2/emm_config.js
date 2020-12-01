@@ -51,6 +51,10 @@ CKEDITOR.editorConfig = function(config) {
      */
     config.disallowedContent = 'script; iframe; *[on*];';
 
+    // Protect all custom tags having a namespace.
+    config.protectedSource.push(/<\w+:\w+[^>]*>/g);
+    config.protectedSource.push(/<!--[\s\S]*?-->\s*/g);
+
     /**
      * Completely turns off filter rules for next tags and their children.
      */
@@ -103,7 +107,8 @@ CKEDITOR.editorConfig = function(config) {
 
     /*true converts special characters to HTML entities*/
     /*FCKConfig.ProcessHTMLEntities*/
-    config.entities = false;
+    config.entities = true;
+    config.entities_processNumerical = true;
 
     /*true shows border for tables with border=0*/
     /*FCKConfig.ShowBorders*/
@@ -177,7 +182,7 @@ CKEDITOR.editorConfig = function(config) {
 /*ADVANCED*/
 
     // It seems like the 'font' plugin is already provided (inlined) by ckeditor.js, but we propose to load it just in case (it wont override inlined version)
-    config.extraPlugins = 'emm,image,htmlwriter,table,tabletools,pastefromword';
+    config.extraPlugins = 'emm,image,htmlwriter,table,tabletools,pastefromword,showprotected';
     config.removePlugins = 'uploadimage';
 
     config.toolbar_EMM =

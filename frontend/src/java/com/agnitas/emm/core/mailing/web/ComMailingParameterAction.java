@@ -24,7 +24,6 @@ import org.agnitas.web.StrutsActionBase;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -80,7 +79,7 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 			parameterForm.setColumnwidthsList(getInitializedColumnWidthList(4));
 		}
 
-		if (StringUtils.isNotBlank(parameterQuery) || NumberUtils.isNumber(mailingQuery)) {
+		if (StringUtils.isNotBlank(parameterQuery) || AgnUtils.isNumber(mailingQuery)) {
 			parameters = mailingParameterService.getParametersBySearchQuery(admin.getCompanyID(), parameterQuery, mailingQuery);
 			// saving parameters for the next request
 			parameterForm.setParameterSearchQuery(parameterQuery);

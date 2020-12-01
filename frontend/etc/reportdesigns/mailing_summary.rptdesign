@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">MailingSummaryDataCube.MailingSummaryDataSet.x</property>
@@ -37,6 +37,7 @@ importPackage(org.eclipse.birt.chart.model.attribute.impl);
 importPackage(Packages.com.agnitas.messages);
 importPackage(Packages.org.apache.commons.lang);
 
+reportContext.setGlobalVariable("isDarkmode", params["darkmode"]);
 
 if(reportContext.getOutputFormat() == "pdf" || reportContext.getOutputFormat() == "csv") {
 	reportContext.setPersistentGlobalVariable("showNet", new Boolean(true));
@@ -409,6 +410,19 @@ reportContext.setGlobalVariable("getTranslationByCategoryFunction", getTranslati
             <property name="distinct">true</property>
             <simple-property-list name="defaultValue">
                 <value type="constant">true</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">check-box</property>
+            <structure name="format"/>
+        </scalar-parameter>
+        <scalar-parameter name="darkmode" id="1132">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">boolean</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">false</value>
             </simple-property-list>
             <list-property name="selectionList"/>
             <property name="paramType">simple</property>
@@ -2075,7 +2089,7 @@ return false;]]></method>
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -2154,6 +2168,9 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 		percentFormatted = formatter.format(percent);
 		label.getCaption().setValue(label.getCaption().getValue() + ' (' + percentFormatted +'%)');
 	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 };
 
 /**
@@ -2197,6 +2214,7 @@ function beforeDrawDataPoint( dph, fill, icsc )
 
 function beforeDrawAxisLabel( axis, label, icsc )
 {
+	var reportContext = icsc.getExternalContext().getObject();
 	var getTranslationByCategory = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getTranslationByCategoryFunction&quot;);
 
 	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
@@ -2207,6 +2225,9 @@ function beforeDrawAxisLabel( axis, label, icsc )
 		var translated = StringUtils.abbreviate(getTranslationByCategory(caption.getValue()), 30);
 	 	caption.setValue(translated);
 	 	axis.setLabel(label);
+	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }
 </Script>
@@ -3845,7 +3866,7 @@ row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -3937,6 +3958,9 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 		percentFormatted = formatter.format(percent);
 		label.getCaption().setValue(label.getCaption().getValue() + ' (' + percentFormatted +'%)');
 	}
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 };
 
 /**
@@ -3980,6 +4004,7 @@ function beforeDrawDataPoint( dph, fill, icsc )
 
 function beforeDrawAxisLabel( axis, label, icsc )
 {
+	var reportContext = icsc.getExternalContext().getObject();
 	var getTranslationByCategory = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getTranslationByCategoryFunction&quot;);
 
 	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
@@ -3990,6 +4015,10 @@ function beforeDrawAxisLabel( axis, label, icsc )
 		var translated = StringUtils.abbreviate(getTranslationByCategory(caption.getValue()), 30);
 	 	caption.setValue(translated);
 	 	axis.setLabel(label);
+	}
+	
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
 	}
 }</Script>
   <Units>Points</Units>
@@ -6204,7 +6233,7 @@ hasPercentageRepresentation(dimension["CategoryGroup"]["category"]["categoryKey"
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -6285,7 +6314,18 @@ function beforeDrawDataPointLabel( dph, label, icsc )
 	labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot; &quot; + message;
 	//labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot;\n&quot; + message;
 	label.getCaption().setValue(labelText);
+
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
+
+function beforeDrawMarkerLine(axis, line, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		line.getLabel().getCaption().getColor().set(255, 255, 255);
+	}
+};
 </Script>
   <Units>Points</Units>
   <SeriesThickness>20.0</SeriesThickness>
@@ -6531,9 +6571,9 @@ function beforeDrawDataPointLabel( dph, label, icsc )
           <Thickness>1</Thickness>
           <Color>
             <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
+            <Red>136</Red>
+            <Green>136</Green>
+            <Blue>136</Blue>
           </Color>
           <Visible>true</Visible>
         </LeaderLineAttributes>
@@ -6945,7 +6985,7 @@ function beforeDrawDataPointLabel( dph, label, icsc )
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -6965,7 +7005,7 @@ importPackage( Packages.java.text);
 
 /**
  * Called before rendering Series.
- * 
+ *
  * @param series
  *            Series
  * @param isr
@@ -6978,14 +7018,14 @@ importPackage( Packages.java.text);
 function beforeGeneration( chart, icsc )
 {
 	reportContext = icsc.getExternalContext().getObject();
-	
+
 	sd = chart.getSeriesDefinitions( ).get( 0 );
-	sd.getSeriesPalette( ).getEntries( ).clear( );	
-			
-	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-blue&quot;));		
+	sd.getSeriesPalette( ).getEntries( ).clear( );
+
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-blue&quot;));
 	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-petrol&quot;));
 	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-light-green&quot;));
-	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-dark-green&quot;));			
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-dark-green&quot;));
 	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-orange&quot;));
 }
 
@@ -6999,7 +7039,7 @@ function getColorDefinition( styleName ) {
 
 /**
  * Called before rendering the label for each datapoint.
- * 
+ *
  * @param dph
  *            DataPointHints
  * @param label
@@ -7024,13 +7064,17 @@ function beforeDrawDataPointLabel( dph, label, icsc )
 		messageKey = &quot;statistic.smarttv&quot;;
 	} else {
 		messageKey = &quot;report.opens.pc.and.mobile.chartLabel&quot;;
-	} 
-	var reportContext =  icsc.getExternalContext().getObject();	
+	}
+	var reportContext =  icsc.getExternalContext().getObject();
 	var message = Packages.com.agnitas.messages.I18nString.getLocaleString(messageKey, reportContext.getLocale());
 	labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot; &quot; + message;
 	//labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot;\n&quot; + message;
 	//labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot;\n&quot; + labelText.substring(labelText.lastIndexOf(&quot;(&quot;));
 	label.getCaption().setValue(labelText);
+
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -7612,9 +7656,9 @@ function beforeDrawDataPointLabel( dph, label, icsc )
           <Thickness>1</Thickness>
           <Color>
             <Transparency>255</Transparency>
-            <Red>0</Red>
-            <Green>0</Green>
-            <Blue>0</Blue>
+            <Red>136</Red>
+            <Green>136</Green>
+            <Blue>136</Blue>
           </Color>
           <Visible>true</Visible>
         </LeaderLineAttributes>
@@ -8224,6 +8268,10 @@ dimension["CategoryGroup"]["category"]["category_index"] &lt;= CommonKeys.ACTIVI
                     <text-data id="1039">
                         <property name="style">footnote</property>
                         <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.ActivityRate.explanation", reportContext.getLocale())</expression>
+                    </text-data>
+                    <text-data id="754">
+                        <property name="style">footnote</property>
+                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.withoutConfirmation.explanation", reportContext.getLocale())</expression>
                     </text-data>
                     <text-data id="753">
                         <property name="style">footnote</property>

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.DateUtilities;
 import org.apache.log4j.Logger;
 
@@ -60,7 +61,8 @@ public class ComparisonBirtDataSet extends BIRTDataSet {
         countOfOnceSending.append(" AND mst.senddate < CURRENT_DATE");
         countOfOnceSending.append(" AND senddate >= ?");
         
-        int successExpirationDays = selectInt(logger, "SELECT expire_success FROM company_tbl WHERE company_id = (SELECT company_id FROM mailing_tbl WHERE mailing_id = ?)", mailingId);
+        int companyId = selectInt(logger, "SELECT company_id FROM mailing_tbl WHERE mailing_id = ?", mailingId);
+        int successExpirationDays = getConfigService().getIntegerValue(ConfigValue.ExpireSuccess, companyId);
         Date successExpirationDate = DateUtilities.getDateOfDaysAgo(successExpirationDays);
 
         StringBuilder unitedCount = new StringBuilder();

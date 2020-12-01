@@ -68,18 +68,17 @@ public class ComRecipientForm extends RecipientForm {
      *
      * @return Value of property bindingEntry.
      */
-    private BindingEntry getBindingEntry(int type, int id) {
+	@Override
+    public BindingEntry getBindingEntry(int type, int id) {
         Map<Integer, BindingEntry> sub =
                 mailing.computeIfAbsent(id, unused -> new HashMap<>());
-    
-        BindingEntry bindingEntry = sub.computeIfAbsent(type, t -> {
+
+        return sub.computeIfAbsent(type, t -> {
             BindingEntry entry = getWebApplicationContext().getBean("BindingEntry", BindingEntry.class);
             entry.setMailinglistID(id);
             entry.setMediaType(t);
             return entry;
         });
-        
-        return bindingEntry;
     }
 
     public BindingEntry getEmailEntry(int id) {

@@ -35,6 +35,7 @@ import com.agnitas.dao.ComDatasourceDescriptionDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
@@ -265,8 +266,13 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 
 		return true;
 	}
-	
-	private final void associateWithPushEndpoint(final int customerID, final int companyID, final String endpoint) {
+
+    @Override
+    public ActionOperationType processedType() {
+        return ActionOperationType.SUBSCRIBE_CUSTOMER;
+    }
+
+    private final void associateWithPushEndpoint(final int customerID, final int companyID, final String endpoint) {
 		try {
 			if(pushSubscriptionService != null) {
 				pushSubscriptionService.associateWithCustomerID(endpoint, customerID, companyID);

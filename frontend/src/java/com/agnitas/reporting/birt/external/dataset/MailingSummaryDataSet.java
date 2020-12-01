@@ -1236,7 +1236,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		List<Object> parameters = new ArrayList<>();
 
         if (targetSql != null && targetSql.contains("cust.")) {
-			queryBuilder.append(", customer_" + companyID + "_tbl cust");
+			queryBuilder.append(", customer_").append(companyID).append("_tbl cust");
 			queryBuilder.append(" WHERE r.mailing_id = ? AND r.customer_id = cust.customer_id");
 		} else {
 			queryBuilder.append(" WHERE r.mailing_id = ?");
@@ -1262,9 +1262,12 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		}
 
 		if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
-			queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+			queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE bind.user_type IN ('")
+                    .append(UserType.World.getTypeCode()).append("', '").append(UserType.WorldVIP.getTypeCode())
+                    .append("') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         } else if(CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-        	queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+        	queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE bind.user_type IN ('")
+                    .append(UserType.Admin.getTypeCode()).append("', '").append(UserType.TestUser.getTypeCode()).append("', '").append(UserType.TestVIP.getTypeCode()).append("') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         }
 
 		List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
@@ -1384,7 +1387,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		List<Object> parameters = new ArrayList<>();
 
         if (targetSql != null && targetSql.contains("cust.")) {
-			queryBuilder.append(", customer_" + companyID + "_tbl cust");
+			queryBuilder.append(", customer_").append(companyID).append("_tbl cust");
 			queryBuilder.append(" WHERE r.mailing_id = ? AND r.customer_id = cust.customer_id");
 		} else {
 			queryBuilder.append(" WHERE r.mailing_id = ?");
@@ -1414,9 +1417,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		}
 
 		if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
-			queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+			queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE bind.user_type IN ('").append(UserType.World.getTypeCode()).append("', '").append(UserType.WorldVIP.getTypeCode()).append("') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         } else if(CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-        	queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+        	queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE bind.user_type IN ('").append(UserType.Admin.getTypeCode()).append("', '").append(UserType.TestUser.getTypeCode()).append("', '").append(UserType.TestVIP.getTypeCode()).append("') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         }
 
 		List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
@@ -1446,7 +1449,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		List<Object> parameters = new ArrayList<>();
 
         if (targetSql != null && targetSql.contains("cust.")) {
-			queryBuilder.append(", customer_" + companyID + "_tbl cust");
+			queryBuilder.append(", customer_").append(companyID).append("_tbl cust");
 			queryBuilder.append(" WHERE o.mailing_id = ? AND o.customer_id = cust.customer_id");
 		} else {
 			queryBuilder.append(" WHERE o.mailing_id = ?");
@@ -1458,7 +1461,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		parameters.add(mailingID);
 
         // Exclude clickers with combinations of deviceclasses
-        queryBuilder.append(" AND NOT EXISTS (SELECT 1 FROM onepixellog_device_" + companyID + "_tbl opl WHERE opl.device_class_id != o.device_class_id AND opl.mailing_id = o.mailing_id AND opl.customer_id = o.customer_id)");
+        queryBuilder.append(" AND NOT EXISTS (SELECT 1 FROM onepixellog_device_").append(companyID).append("_tbl opl WHERE opl.device_class_id != o.device_class_id AND opl.mailing_id = o.mailing_id AND opl.customer_id = o.customer_id)");
 
 		if (StringUtils.isNotBlank(startDateString) && StringUtils.isNotBlank(endDateString)) {
 			queryBuilder.append(" AND (? <= o.creation AND o.creation < ?)");

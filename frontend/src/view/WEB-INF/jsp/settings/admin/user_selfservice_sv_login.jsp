@@ -14,6 +14,8 @@
 <%--@elvariable id="supervisorGrantLoginPermissionForm" type="com.agnitas.web.forms.SupervisorGrantLoginPermissionForm"--%>
 <%--@elvariable id="LOCALE_DATE_PATTERN" type="java.lang.String"--%>
 
+<fmt:setLocale value="${sessionScope['emm.admin'].locale}"/>
+
 <c:if test="${SHOW_SUPERVISOR_PERMISSION_MANAGEMENT}">
 	<agn:agnForm id="supervisorGrantLoginPermissionForm" action="grantSupervisorLoginPermission.do">
 		<div class="tile">

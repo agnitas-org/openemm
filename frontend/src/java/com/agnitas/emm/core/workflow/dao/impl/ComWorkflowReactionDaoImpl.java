@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.TimeZone;
 
 import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
@@ -78,7 +79,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
     @Override
     public List<ComWorkflowReaction> getReactionsToCheck(CompaniesConstraints constraints) {
         String sqlGetReactionsToCheck = "SELECT r.* FROM workflow_reaction_tbl r " +
-                "JOIN company_tbl c ON c.company_id = r.company_id AND c.status NOT IN ('deleted', 'deletion in progress') " +
+                "JOIN company_tbl c ON c.company_id = r.company_id AND c.status NOT IN ('" + CompanyStatus.DELETED.getDbValue() + "', '" + CompanyStatus.DELETION_IN_PROGRESS.getDbValue() + "') " +
                 "WHERE r.start_date <= CURRENT_TIMESTAMP AND r.active = 1 " +
                 DbUtilities.asCondition("AND %s ", constraints, "r.company_id") +
                 "ORDER BY reaction_id";
@@ -94,7 +95,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
             "JOIN workflow_reaction_decl_tbl d ON d.company_id = s.company_id AND d.reaction_id = s.reaction_id AND d.step_id = s.step_id " +
             "JOIN workflow_reaction_tbl r ON r.company_id = s.company_id AND r.reaction_id = s.reaction_id " +
             "JOIN workflow_tbl w ON w.company_id = s.company_id AND w.workflow_id = r.workflow_id AND w.status IN (?, ?) " +
-            "JOIN company_tbl c ON c.company_id = s.company_id AND c.status NOT IN ('deleted', 'deletion in progress') " +
+            "JOIN company_tbl c ON c.company_id = s.company_id AND c.status NOT IN ('" + CompanyStatus.DELETED.getDbValue() + "', '" + CompanyStatus.DELETION_IN_PROGRESS.getDbValue() + "') " +
             "WHERE s.step_date <= CURRENT_TIMESTAMP AND s.done = 0 " + DbUtilities.asCondition("AND %s ", constraints, "s.company_id") +
             "ORDER BY s.company_id, s.reaction_id, s.case_id, s.step_date, s.step_id";
         return select(logger, sqlGetStepsToMake, new StepRowMapper(), WorkflowStatus.STATUS_ACTIVE.getId(), WorkflowStatus.STATUS_TESTING.getId());

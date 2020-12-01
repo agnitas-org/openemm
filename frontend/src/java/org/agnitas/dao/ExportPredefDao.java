@@ -96,9 +96,12 @@ public interface ExportPredefDao {
      *                The id of the company for export definitions.
      * @param disabledMailingListIds
      *                The list of ids of disabled mailing lists.
+     * @param targetId
+     *                The target id.
      * @return  List of ExportPredef or empty list.
      */
-    List<ExportPredef> getAllByCompany(@VelocityCheck int companyId, Collection<Integer> disabledMailingListIds);
+    List<ExportPredef> getAllByCompany(@VelocityCheck int companyId, Collection<Integer> disabledMailingListIds,
+            int targetId);
 
     /**
      * Loads ids of all export definitions of certain company.
@@ -116,8 +119,10 @@ public interface ExportPredefDao {
      *                The id of the company for export definitions.
      * @param disabledMailingListIds
      *                The list of ids of disabled mailing lists.
+     * @param targetId
+     *                The target id.
      * @return  List of ids or empty list.
      */
-    List<Integer> getAllIdsByCompany(@VelocityCheck int companyId, Collection<Integer> disabledMailingListIds);
-
+	List<Integer> getAllIdsByCompany(@VelocityCheck int companyId, Collection<Integer> disabledMailingListIds,
+			int targetId);
 }

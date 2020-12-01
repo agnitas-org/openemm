@@ -35,7 +35,6 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="actionID" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *         &lt;element name="shortname" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="deepTracking" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
- *         &lt;element name="relevance" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *         &lt;element name="altText" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="isAdminLink" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/>
  *         &lt;element name="linkExtensions" minOccurs="0">
@@ -82,7 +81,6 @@ public class UpdateTrackableLinkSettingsRequest {
     protected Integer actionID;
     protected String shortname;
     protected Integer deepTracking;
-    protected Integer relevance;
     protected String altText;
     protected Boolean isAdminLink;
     protected UpdateTrackableLinkSettingsRequest.LinkExtensions linkExtensions;
@@ -198,30 +196,6 @@ public class UpdateTrackableLinkSettingsRequest {
      */
     public void setDeepTracking(Integer value) {
         this.deepTracking = value;
-    }
-
-    /**
-     * Gets the value of the relevance property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Integer }
-     *     
-     */
-    public Integer getRelevance() {
-        return relevance;
-    }
-
-    /**
-     * Sets the value of the relevance property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Integer }
-     *     
-     */
-    public void setRelevance(Integer value) {
-        this.relevance = value;
     }
 
     /**

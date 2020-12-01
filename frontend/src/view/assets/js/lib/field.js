@@ -574,20 +574,19 @@ The required field helps with preventing a form from submit, when its field valu
 
     // Decide, which rules to use
     var ruleName = this.$strength.attr("data-rule"); // Do not use data('rule') here, because the value is read once and cached
-    var rule = PasswordField._getRule(ruleName);
-    var minLength = rule.minLength,
-      checks = rule.checks;
-
-    if (pass.length < minLength) {
-      errors.push(t('fields.password.lessThen', minLength));
-      return errors;
+    
+    var policy = AGN.Lib.PasswordPolicies.find_password_policy(ruleName);
+    
+    var errorKeys = policy(pass);
+    
+    if(errorKeys != null && errorKeys.length > 0) {
+        errors.push(t('fields.password.errors.unsafe'));
+        
+        for(var i = 0; i < errorKeys.length; i++) {
+        	errors.push(t(errorKeys[i]));
+        }
     }
-
-    if(!_.every(checks, function(check) {
-      return self.passesCheck(pass, check);
-    })) {
-      errors.push(t('fields.password.errors.unsafe'));
-    }
+    
     return errors;
   };
 

@@ -90,8 +90,17 @@ td.full-width {
     border: 1px solid #e2e3e3;
 }
 
+body.dark-theme .table > tbody > tr > th,
+body.dark-theme .table > tbody > tr > td {
+    border-color: #666; /*$c-dt-table-border*/
+}
+
 .table tbody th {
     color: #434446;
+}
+
+body.dark-theme .table tbody th {
+    color: #fff; /*$c-dt-table-header-text*/
 }
 
 .table .table-head > th,
@@ -105,12 +114,28 @@ td.full-width {
     font-weight: bold; /*new*/
 }
 
+body.dark-theme .table .table-head > th,
+body.dark-theme .table .table-head > td,
+body.dark-theme .table th.table-head {
+    background-color: #282828; /*$c-dt-table-background*/
+    border-color: #666; /*$c-dt-table-border*/
+    color: #fff; /*$c-dt-table-header-text*/
+}
+
 .table tbody > tr > td {
     color: #707173;
 }
 
+body.dark-theme .table tbody > tr > td {
+    color: #cccdcd; /*$c-dt-table-text*/
+}
+
 .table-striped > tbody > tr:nth-child(even) {
     background-color: #f9f9f9;
+}
+
+body.dark-theme .table-striped > tbody > tr:nth-child(even) {
+    background-color: #3d3d3d; /*lighten($c-dt-table-background, 5%);*/
 }
 
 .footnote {
@@ -137,6 +162,10 @@ a {
     color: #707173;
 }
 
+body.dark-theme a {
+    color: #cccdcd; /*$c-dt-table-text*/
+}
+
 .well {
     border: 1px solid #e2e3e3;
     border-radius: 2px;
@@ -144,6 +173,10 @@ a {
     display: inline-block;
     line-height: 16px;
     padding: 7px 10px;
+}
+
+body.dark-theme .well {
+    color: #cccdcd; /*$c-dt-table-text*/
 }
 
 .well.no-border{
@@ -175,6 +208,10 @@ a {
     font-size: 18px;
     font-weight: 600;
     line-height: 22px;
+}
+
+body.dark-theme .headline {
+    color: #fff;
 }
 
 .js-reorder-left, .js-reorder-right {

@@ -12,10 +12,22 @@
   }
 }
 
+body.dark-theme .dropzone {
+  background-color: $c-dt-dropzone-background;
+
+  &.drag-over {
+    border-color: $c-dt-dropzone-border;
+  }
+}
+
 .dropzone-text {
   text-align: center;
 
   strong {
     color: $c-blue-27;
   }
+}
+
+body.dark-theme .dropzone-text strong {
+  color: $c-dt-dropzone-text;
 }

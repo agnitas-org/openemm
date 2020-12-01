@@ -14,7 +14,9 @@ package org.agnitas.beans;
  * This is the Snowflake/Light version of the Title bean
  */
 public interface SalutationEntry {
-    Integer getTitleId();
+    int getTitleId();
 
     String getDescription();
+
+    int getCompanyID();
 }

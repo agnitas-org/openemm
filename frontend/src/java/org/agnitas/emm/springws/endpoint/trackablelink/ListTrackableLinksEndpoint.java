@@ -12,30 +12,32 @@ package org.agnitas.emm.springws.endpoint.trackablelink;
 
 import java.util.List;
 
-import javax.annotation.Resource;
-
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.ListTrackableLinksRequest;
 import org.agnitas.emm.springws.jaxb.ListTrackableLinksResponse;
 import org.agnitas.emm.springws.jaxb.ListTrackableLinksResponse.TrackableLink;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.util.AgnUtils;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.beans.TrackableLinkListItem;
 import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 
-public class ListTrackableLinksEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class ListTrackableLinksEndpoint extends BaseEndpoint {
 
-    @Resource
     private ComTrackableLinkService trackableLinkService;
-    @Resource
-    private ObjectFactory objectFactory;
 
-    @Override
-    protected Object invokeInternal(Object req) throws Exception {
-        ListTrackableLinksRequest request = (ListTrackableLinksRequest) req;
-        ListTrackableLinksResponse response = objectFactory.createListTrackableLinksResponse();
+    public ListTrackableLinksEndpoint(ComTrackableLinkService trackableLinkService) {
+        this.trackableLinkService = trackableLinkService;
+    }
+
+    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListTrackableLinksRequest")
+    public @ResponsePayload ListTrackableLinksResponse listTrackableLinks(@RequestPayload ListTrackableLinksRequest request) throws Exception {
+        ListTrackableLinksResponse response = new ListTrackableLinksResponse();
 
         int companyId = Utils.getUserCompany();
         int mailingId = request.getMailingID();
@@ -50,7 +52,7 @@ public class ListTrackableLinksEndpoint extends AbstractMarshallingPayloadEndpoi
         List<TrackableLink> trackableLinksListResponse = response.getTrackableLink();
 
         for (TrackableLinkListItem trackableLinkItem : trackableLinksList) {
-            TrackableLink trackableLink = objectFactory.createListTrackableLinksResponseTrackableLink();
+            TrackableLink trackableLink = new ListTrackableLinksResponse.TrackableLink();
 
             trackableLink.setUrlID(trackableLinkItem.getId());
             trackableLink.setUrl(AgnUtils.getStringIfStringIsNull(trackableLinkItem.getFullUrl()));

@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.web.ComTargetAction" %>
-<%@ page import="org.agnitas.target.TargetNode" %>
+<%@ page import="org.agnitas.target.ChainOperator" %>
+<%@ page import="org.agnitas.target.ConditionalOperator" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
@@ -40,8 +41,8 @@
             <c:choose>
                 <c:when test="${index != 0}">
                     <html:select styleClass="form-control" property="chainOperatorNew" size="1" disabled="${TARGET_LOCKED}">
-                        <html:option value="<%= Integer.toString(TargetNode.CHAIN_OPERATOR_AND) %>" key="default.and" />
-                        <html:option value="<%= Integer.toString(TargetNode.CHAIN_OPERATOR_OR) %>" key="default.or" />
+                        <html:option value="<%= Integer.toString(ChainOperator.AND.getOperatorCode()) %>" key="default.and" />
+                        <html:option value="<%= Integer.toString(ChainOperator.OR.getOperatorCode()) %>" key="default.or" />
                     </html:select>
                 </c:when>
                 <c:otherwise>
@@ -78,7 +79,7 @@
 
         <td>
             <agn:agnSelect property="primaryOperatorNew" size="1"  styleClass="form-control" disabled="${TARGET_LOCKED}" data-action="primaryOperatorNew">
-                <logic:iterate collection="<%= TargetNode.ALL_OPERATORS %>" id="all_operator">
+                <logic:iterate collection="<%= ConditionalOperator.values() %>" id="all_operator">
                     <c:if test="${not HIDE_SPECIAL_TARGET_FEATURES or (not (all_operator.operatorKey eq 'yes' or all_operator.operatorKey eq 'no'))}">
                         <html:option value="${all_operator.operatorCode}"><bean:message key="target.operator.${all_operator.operatorKey}" /></html:option>
                     </c:if>

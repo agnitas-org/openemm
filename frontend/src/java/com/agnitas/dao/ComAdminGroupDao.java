@@ -34,7 +34,7 @@ public interface ComAdminGroupDao {
      */
 	List<AdminGroup> getAdminGroupsByCompanyId( @VelocityCheck int companyId);
 
-	List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(@VelocityCheck int companyId);
+	List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(@VelocityCheck int companyId, List<Integer> additionalAdminGroupIds);
 
 	PaginatedListImpl<AdminGroup> getAdminGroupsByCompanyIdInclCreator(@VelocityCheck int companyId, int adminId, String sort, String direction, int page, int rownums);
     
@@ -46,9 +46,15 @@ public interface ComAdminGroupDao {
 
     List<String> getAdminsOfGroup(@VelocityCheck int companyId, int groupId);
     
-    List<AdminGroup> getAdminGroupByAdminID(int adminId);
+    List<AdminGroup> getAdminGroupsByAdminID(int companyID, int adminId);
     
     Set<String> getGroupPermissionsTokens(int adminGroupId);
 
 	AdminGroup getAdminGroupByName(String adminGroupName, int companyID);
+
+	Set<String> getParentGroupsPermissionTokens(int adminGroupId);
+
+	List<Integer> getParentGroupIds(int adminGroupId);
+
+	List<String> getGroupNamesUsingGroup(int companyId, int groupId);
 }

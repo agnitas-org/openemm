@@ -14,12 +14,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.AgnTagDto;
 import org.agnitas.beans.TagDetails;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DynTagException;
 
+import com.agnitas.beans.AgnTagDto;
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.DynamicTag;
 
 public interface AgnTagService {
@@ -48,16 +48,22 @@ public interface AgnTagService {
     List<TagDetails> collectTags(String content, Predicate<TagDetails> predicate);
 
     /**
+     * A shortcut for {@link #resolveTags(String, boolean, AgnTagResolver)} with {@code recursive = true}.
+     */
+    String resolveTags(int companyID, String content, AgnTagResolver resolver) throws Exception;
+
+    /**
      * Perform substitution for all found agn-tags (except dynamic tags). This is recursive algorithm so if some tag
      * is replaced with a text containing another tags then all these tags will be resolved as well.
      * Attention: keep in mind that improper implementation of {@code resolveTag} may cause infinite recursion!
      *
      * @param content a text content to parse and resolve tags (if any) within.
+     * @param recursive whether ({@code true}) or not ({@code false}) a content produced by {@code resolver} should be scanned for tags again.
      * @param resolver an instance of {@link AgnTagResolver} to be used to translate found tags (replace with text string).
      * @return translated content.
      * @throws Exception if parsing error occurred.
      */
-    String resolveTags(String content, AgnTagResolver resolver) throws Exception;
+    String resolveTags(int companyID, String content, boolean recursive, AgnTagResolver resolver) throws Exception;
 
     /**
      * Perform substitution for all found agn-tags (except dynamic tags). An optimized (due to caching) combination of

@@ -9,8 +9,12 @@
 <c:set var="ACTION_LIST" value="<%= ComTargetAction.ACTION_LIST%>"/>
 
 <c:set var="isTabsMenuShown" 		value="true" 									scope="request" />
+
 <c:set var="agnNavigationKey" 		value="TargetQBEdit" 							scope="request" />
-<c:set var="agnNavHrefAppend" 		value="&targetID=${editTargetForm.targetID}" 	scope="request" />
+<emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+    <c:set target="${agnNavHrefParams}" property="target-id" value="${editTargetForm.targetID}"/>
+</emm:instantiate>
+
 <c:set var="agnTitleKey" 			value="Target" 									scope="request" />
 <c:set var="agnSubtitleKey" 		value="Target" 									scope="request" />
 <c:set var="sidemenu_active" 		value="Targetgroups" 							scope="request" />

@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.birtreport.bean.impl;
 
+import java.util.Objects;
+
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 
 public class ComLightweightBirtReportImpl implements ComLightweightBirtReport {
@@ -56,5 +58,26 @@ public class ComLightweightBirtReportImpl implements ComLightweightBirtReport {
     @Override
     public boolean isHidden() {
         return hidden;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ComLightweightBirtReportImpl that = (ComLightweightBirtReportImpl) o;
+        return reportID == that.reportID &&
+                hidden == that.hidden &&
+                Objects.equals(shortname, that.shortname) &&
+                Objects.equals(description, that.description);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(reportID, shortname, description, hidden);
     }
 }

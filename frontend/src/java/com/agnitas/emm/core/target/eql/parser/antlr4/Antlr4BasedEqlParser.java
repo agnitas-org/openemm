@@ -61,8 +61,10 @@ public class Antlr4BasedEqlParser implements EqlParser {
 			logger.info("Parsing EQL statment: \n" + eql + "\n--- END OF CODE ---");
 		}
 	
+		final String nonNullEql = eql != null ? eql : "1=1";
+		
 		try {
-			try(final Reader reader = new StringReader(eql)) {
+			try(final Reader reader = new StringReader(nonNullEql)) {
 				final ANTLRInputStream charInput = new ANTLRInputStream(reader);
 				final EqlGrammarLexer lexer = new EqlGrammarLexer(charInput);
 				final CommonTokenStream tokens = new CommonTokenStream(lexer);

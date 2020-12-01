@@ -56,6 +56,17 @@
   }
 }
 
+body.dark-theme .table-list {
+
+  th {
+    color: $c-dt-table-header-text;
+  }
+
+  td, a {
+    color: $c-dt-table-text;
+  }
+}
+
 .recipientsTable-odd {
   td {
     background-color: #fff;
@@ -65,4 +76,12 @@
   td {
     background-color: #e4e3e3;
   }
+}
+
+body.dark-theme .recipientsTable-odd td {
+  background-color: lighten($c-dt-table-background, 5%);
+}
+
+body.dark-theme .recipientsTable-even  td {
+  background-color: $c-dt-table-background;
 }

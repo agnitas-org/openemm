@@ -16,28 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.ComProfileField;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ComMailingComponentDao;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComProfileFieldDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.service.ComMailingContentService;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.util.preview.PreviewImageService;
 import org.agnitas.beans.AdminPreferences;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
@@ -48,6 +31,7 @@ import org.agnitas.dao.AdminPreferencesDao;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.preview.TAGCheckFactory;
 import org.agnitas.preview.TagSyntaxChecker;
@@ -65,6 +49,24 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.dao.ComMailingComponentDao;
+import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.service.ComMailingContentService;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.util.preview.PreviewImageService;
+
 public class ComMailingContentAction extends StrutsActionBase {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComMailingContentAction.class);
@@ -72,6 +74,9 @@ public class ComMailingContentAction extends StrutsActionBase {
 	public static final int ACTION_VIEW_CONTENT = ACTION_LAST + 1;
 	public static final int ACTION_IMPORT_CONTENT = ACTION_LAST + 2;
 	public static final int ACTION_GENERATE_TEXT_FROM_HTML = ACTION_LAST + 3;
+	public static final int ACTION_GENERATE_TEXT_FROM_HTML_CONFIRM = ACTION_LAST + 4;
+    
+    public static final int CONTENT_ACTION_LAST = ACTION_LAST + 4;
 
 	protected ComProfileFieldDao profileFieldDao;
 	protected ComMailingContentService mailingContentService;
@@ -88,13 +93,11 @@ public class ComMailingContentAction extends StrutsActionBase {
 	protected TAGCheckFactory tagCheckFactory;
 	protected CharacterEncodingValidator characterEncodingValidator;
 
-	/** DAO accessing mailing data. */
-	protected ComMailingDao mailingDao;
 	protected MailingFactory mailingFactory;
 	protected DynamicTagContentFactory dynamicTagContentFactory;
 
-	/** DAO accessing target groups. */
-	protected ComTargetDao targetDao;
+	/** Service accessing target groups. */
+	protected ComTargetService targetService;
 
 	/** Configuration service. */
 	protected ConfigService configService;
@@ -111,15 +114,18 @@ public class ComMailingContentAction extends StrutsActionBase {
                 return "view_content";
             case ACTION_IMPORT_CONTENT:
                 return "import_content";
-            case ACTION_GENERATE_TEXT_FROM_HTML:
-                return "generate_text_from_html";
+			case ACTION_GENERATE_TEXT_FROM_HTML:
+				return "generate_text_from_html";
+			case ACTION_GENERATE_TEXT_FROM_HTML_CONFIRM:
+				return "generate_text_from_html_confirm";
+    			
             default:
                 return super.subActionMethodName(subAction);
         }
     }
 
 	@Override
-	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
+	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException, Exception {
 		ComMailingContentForm aForm = (ComMailingContentForm) form;
 		ActionMessages errors = new ActionMessages();
 		ActionMessages messages = new ActionMessages();
@@ -176,6 +182,16 @@ public class ComMailingContentAction extends StrutsActionBase {
 
 			return mapping.findForward("list");
 
+		case ACTION_GENERATE_TEXT_FROM_HTML_CONFIRM:
+			if (isMailingEditable(admin, form)) {
+				final LightweightMailing mailing = mailingService.getLightweightMailing(admin.getCompanyID(), form.getMailingID());
+				form.setShortname(mailing.getShortname());
+				return mapping.findForward("generate_text_confirm");
+			} else {
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("status_changed"));
+				return null;
+			}
+
 		default:
 			return null;
 		}
@@ -218,9 +234,9 @@ public class ComMailingContentAction extends StrutsActionBase {
 	}
 
 	private void loadMailing(ComMailingContentForm form, HttpServletRequest req) {
-		Mailing mailing = mailingDao.getMailing(form.getMailingID(), AgnUtils.getCompanyID(req));
-
 		ComAdmin admin = AgnUtils.getAdmin(req);
+		Mailing mailing = mailingService.getMailing(admin.getCompanyID(), form.getMailingID());
+
 		AdminPreferences adminPreferences = adminPreferencesDao.getAdminPreferences(admin.getAdminID());
 
 		if (mailing == null) {
@@ -250,7 +266,7 @@ public class ComMailingContentAction extends StrutsActionBase {
 		writeUserActivityLog(admin, "view " + (form.isIsTemplate() ? "template" : "mailing"),
 				form.getShortname() + " (" + form.getMailingID() + ")");
 
-		form.setEnableTextGeneration(mailingContentService.isGenerationAvailable(mailing));
+		form.setEnableTextGeneration(!form.isIsTemplate() && mailingContentService.isGenerationAvailable(mailing));
 
 		if (mailing.getId() > 0) {
 			form.setIsMailingUndoAvailable(mailingBaseService.checkUndoAvailable(mailing.getId()));
@@ -287,16 +303,17 @@ public class ComMailingContentAction extends StrutsActionBase {
 		}
 	}
 
-	private void loadTargetGroups(ComMailingContentForm form, HttpServletRequest req) {
+	protected void loadTargetGroups(ComMailingContentForm form, HttpServletRequest req) {
 		final boolean showContentBlockTargetGroupsOnly = !AgnUtils.allowed(req, Permission.MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS);
 		
-		final List<TargetLight> list = targetDao.getTargetLights(AgnUtils.getCompanyID(req), true, true, false, showContentBlockTargetGroupsOnly);
+		final List<TargetLight> list = targetService
+				.getTargetLights(AgnUtils.getAdmin(req), true, true, false, showContentBlockTargetGroupsOnly);
 		
 		form.setAvailableTargetGroups(list);
 	}
 
 	private void loadAvailableInterestGroups(ComMailingContentForm form, HttpServletRequest req) {
-		List<ComProfileField> availableInterestFields = Collections.emptyList();
+		List<ProfileField> availableInterestFields = Collections.emptyList();
 		try {
 			availableInterestFields = profileFieldDao.getProfileFieldsWithInterest(AgnUtils.getCompanyID(req), AgnUtils.getAdminId(req));
 		} catch (Exception e) {
@@ -344,10 +361,6 @@ public class ComMailingContentAction extends StrutsActionBase {
 		this.characterEncodingValidator = characterEncodingValidator;
 	}
 
-	public void setMailingDao(ComMailingDao mailingDao) {
-		this.mailingDao = mailingDao;
-	}
-
 	public void setMailingFactory(MailingFactory mailingFactory) {
 		this.mailingFactory = mailingFactory;
 	}
@@ -359,12 +372,12 @@ public class ComMailingContentAction extends StrutsActionBase {
 	/**
 	 * Sets DAO accessing target groups.
 	 *
-	 * @param targetDao
+	 * @param targetService
 	 *            DAO accessing target groups
 	 */
 	@Required
-	public void setTargetDao(ComTargetDao targetDao) {
-		this.targetDao = targetDao;
+	public void setTargetService(ComTargetService targetService) {
+		this.targetService = targetService;
 	}
 
 	@Required

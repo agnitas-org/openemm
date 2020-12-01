@@ -10,28 +10,31 @@
 
 package org.agnitas.emm.springws.endpoint.component;
 
-import javax.annotation.Resource;
-
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.ListAttachmentsRequest;
 import org.agnitas.emm.springws.jaxb.ListAttachmentsResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class ListAttachmentsEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class ListAttachmentsEndpoint extends BaseEndpoint {
 
-	@Resource
 	private ComponentService componentService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		ListAttachmentsRequest request = (ListAttachmentsRequest) arg0;
-		ListAttachmentsResponse response = objectFactory.createListAttachmentsResponse();
+	public ListAttachmentsEndpoint(@Qualifier("componentService") ComponentService componentService) {
+		this.componentService = componentService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListAttachmentsRequest")
+	public @ResponsePayload ListAttachmentsResponse listAttachments(@RequestPayload ListAttachmentsRequest request) {
+		ListAttachmentsResponse response = new ListAttachmentsResponse();
 		
 		ComponentModel model = new ComponentModel();
 		model.setCompanyId(Utils.getUserCompany());
@@ -43,10 +46,9 @@ public class ListAttachmentsEndpoint extends AbstractMarshallingPayloadEndpoint 
         }
 
         for (MailingComponent component : componentService.getComponents(model)) {
-			response.getItem().add(new ResponseBuilder(objectFactory).createResponse(component, false, request.isUseISODateFormat()));
+			response.getItem().add(new AttachmentResponseBuilder().createResponse(component, false, request.isUseISODateFormat()));
 		}
 			
 		return response;
 	}
-
 }

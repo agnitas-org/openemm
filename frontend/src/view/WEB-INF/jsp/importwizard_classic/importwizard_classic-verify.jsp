@@ -7,14 +7,14 @@
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 
 
-<% int tmpOffset = 0;
+<% 
+	int tmpOffset = 0;
     int tmpOffset2 = 0;
     int tmpSize = 0;
     if (session.getAttribute("importWizardForm") != null) {
         tmpOffset = ((ComImportWizardForm) session.getAttribute("importWizardForm")).getPreviewOffset();
         tmpSize = ((ComImportWizardForm) session.getAttribute("importWizardForm")).getParsedContent().size();
     }
-
 %>
 
 <agn:agnForm action="/importwizard" enctype="multipart/form-data" data-form="resource">
@@ -114,40 +114,31 @@
                                 </thead>
                                 <tbody>
                                 <%
-                                    Object leElement = null;
-                                    Class leClass = null;
-                                    SimpleDateFormat aFormatter = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, (Locale) session.getAttribute(org.apache.struts.Globals.LOCALE_KEY));
-                                    aFormatter.applyPattern(aFormatter.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
+                                    SimpleDateFormat dateTimeFormat = AgnUtils.getAdmin(session).getDateTimeFormat();
                                 %>
                                 <logic:iterate id="element2" indexId="element2idx" name="importWizardForm"
                                                offset="<%= Integer.toString(tmpOffset) %>" length="5" property="parsedContent"
                                                scope="session">
                                     <tr>
                                         <logic:iterate id="element3" name="element2" scope="page">
-                                            <td><% leElement = pageContext.getAttribute("element3");
-                                                String value = null;
-                                                if (leElement != null) {
-                                                    leClass = leElement.getClass();
-                                                    if (leClass.getName().equals("java.lang.String")) {
-                                                        value = StringEscapeUtils.escapeHtml4((String) leElement);
-                                                    } else if (leClass.getName().equals("java.lang.Double")) {
-                                                        value = "" + ((Double) leElement).longValue();
-                                                    }
-                                                    if (leClass.getName().equals("java.util.Date")) {
-                                                        value = aFormatter.format((java.util.Date) leElement);
-                                                    }
-                                                /*if(leClass.getName().equals("java.lang.String")) {
-                                                    out.print("<input name=\"dummy\" type=\"text\" size=\"13\" value=\""+StringEscapeUtils.escapeHtml((String)leElement)+"\" readonly>");
-                                                }
-                                                if(leClass.getName().equals("java.lang.Double")) {
-                                                    out.print("<input name=\"dummy\" type=\"text\" size=\"8\" value=\""+((Double)leElement).longValue()+"\" readonly>");
-                                                }
-                                                if(leClass.getName().equals("java.util.Date")) {
-                                                    out.print("<input name=\"dummy\" type=\"text\" size=\"13\" value=\""+aFormatter.format((java.util.Date)leElement)+"\" readonly>");
-                                                }*/
-                                                } else {
-                                                    value = "";
-                                                } %>
+                                            <td><%
+	                                            	Object leElement = pageContext.getAttribute("element3");
+	                                                String value;
+	                                                if (leElement != null) {
+	                                                	String className = leElement.getClass().getName();
+	                                                    if (className.equals("java.lang.String")) {
+	                                                        value = StringEscapeUtils.escapeHtml4((String) leElement);
+	                                                    } else if (className.equals("java.lang.Double")) {
+	                                                        value = "" + ((Double) leElement).longValue();
+	                                                    } else if (className.equals("java.util.Date")) {
+	                                                        value = dateTimeFormat.format((java.util.Date) leElement);
+	                                                    } else {
+		                                                    value = "";
+		                                                }
+	                                                } else {
+	                                                    value = "";
+	                                                }
+												%>
                                                 <input class="form-control" name="dummy" type="text" size="13" value="<%= value %>" readonly>
                                             </td>
                                         </logic:iterate>

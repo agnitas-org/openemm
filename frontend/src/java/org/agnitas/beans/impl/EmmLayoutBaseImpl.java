@@ -19,6 +19,7 @@ public class EmmLayoutBaseImpl implements EmmLayoutBase {
 	private String cssURL;
 	private String jsURL;
 	private String shortname;
+	private ThemeType themeType;
     private int menuPosition = MENU_POSITION_DEFAULT;
     private int livepreviewPosition = LIVEPREVIEW_POSITION_RIGHT;
 	
@@ -28,6 +29,8 @@ public class EmmLayoutBaseImpl implements EmmLayoutBase {
 		this.imagesURL = baseUrl + "/images";
 		this.cssURL = baseUrl + "/styles";
 		this.jsURL = baseUrl + "/js";
+
+		this.themeType = ThemeType.STANDARD;
 	}
 	/* (non-Javadoc)
 	 * @see org.agnitas.beans.EmmBaseLayout#getId()
@@ -127,4 +130,14 @@ public class EmmLayoutBaseImpl implements EmmLayoutBase {
 	public void setLivepreviewPosition(int livepreviewPosition) {
         this.livepreviewPosition = livepreviewPosition;
     }
+
+	@Override
+	public ThemeType getThemeType() {
+		return themeType;
+	}
+
+	@Override
+	public void setThemeType(ThemeType themeType) {
+		this.themeType = themeType;
+	}
 }

@@ -14,35 +14,35 @@ package org.agnitas.backend;
  * Keep track of an Image
  */
 public class Image {
-	private long	id;
-	private String	name;
-	private String	filename;
-	private String	link;
-		
-	public Image (long nId, String nName, String nFilename, String nLink) {
+	private long id;
+	private String name;
+	private String filename;
+	private String link;
+
+	public Image(long nId, String nName, String nFilename, String nLink) {
 		id = nId;
 		name = nName;
 		filename = nFilename;
 		link = nLink;
 	}
-	
-	public long id () {
+
+	public long id() {
 		return id;
 	}
-	
-	public String name () {
+
+	public String name() {
 		return name;
 	}
-	
-	public String filename () {
+
+	public String filename() {
 		return filename;
 	}
-	
-	public String link () {
+
+	public String link() {
 		return link;
 	}
-	
-	public void link (String nLink) {
+
+	public void link(String nLink) {
 		link = nLink;
 	}
 }

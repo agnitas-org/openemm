@@ -26,23 +26,23 @@ public class MailingClicksDataSet extends BIRTDataSet {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(MailingClicksDataSet.class);
 	
-	public List<ClickingRecipientsRow> getClickingRecipients(String mailingID , String companyID , Boolean includeAdminAndTestMails) {
-		// TODO: Company ID is not checkable. Change to "int"
-		List<ClickingRecipientsRow> list = new ArrayList<>();
-		String query = "SELECT 'clicking recipients' recipients, COUNT(DISTINCT customer_id) clicking_recipients"
-			+ " FROM rdirlog_" + companyID + "_tbl"
-			+ " WHERE mailing_id = " + mailingID;
+	public List<ClickingRecipientsRow> getClickingRecipients(String mailingIdString, String companyIdString, Boolean includeAdminAndTestMails) {
+		int companyID = Integer.parseInt(companyIdString);
+		int mailingID = Integer.parseInt(mailingIdString);
 
-		int totalSent =  new MailingSendDataSet().getTotalSend(Integer.parseInt(mailingID), includeAdminAndTestMails);
-		List<Map<String, Object>> result = select(logger, query);
+		List<ClickingRecipientsRow> list = new ArrayList<>();
+		String query = "SELECT COUNT(DISTINCT customer_id) clicking_recipients FROM rdirlog_" + companyID + "_tbl WHERE mailing_id = ?";
+
+		int totalSent = new MailingSendDataSet().getTotalSend(mailingID, includeAdminAndTestMails);
+		List<Map<String, Object>> result = select(logger, query, mailingID);
 		if (result.size() > 0) {
 			ClickingRecipientsRow tmp = new ClickingRecipientsRow();
-			tmp.setCategory((String) result.get(0).get("recipients"));
+			tmp.setCategory("clicking recipients");
 			tmp.setClicking_recpients(((Number) result.get(0).get("clicking_recipients")).intValue());
-			if ( totalSent != 0 ) {
-				tmp.setClicking_recipients_percent( (float) FormatTools.roundDecimal(tmp.getClicking_recpients() * 1.0f / totalSent, 1));
+			if (totalSent != 0) {
+				tmp.setClicking_recipients_percent((float) FormatTools.roundDecimal(tmp.getClicking_recpients() * 1.0f / totalSent, 1));
 			}
-			list.add( tmp );
+			list.add(tmp);
 		}
 		return list;
 	}

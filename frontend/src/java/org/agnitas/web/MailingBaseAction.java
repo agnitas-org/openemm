@@ -48,7 +48,6 @@ import org.agnitas.util.HtmlUtils;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.SafeString;
 import org.agnitas.web.forms.MailingBaseForm;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.Globals;
@@ -63,6 +62,7 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComCampaignDao;
@@ -180,7 +180,8 @@ public class MailingBaseAction extends StrutsActionBase {
         ActionMessages errors = new ActionMessages();
     	ActionMessages messages = new ActionMessages();
     	ActionForward destination = null;
-        int companyId = AgnUtils.getCompanyID(request);
+        final ComAdmin admin = AgnUtils.getAdmin(request);
+        final int companyId = admin.getCompanyID();
 
         aForm = (MailingBaseForm)form;
 
@@ -311,10 +312,10 @@ public class MailingBaseAction extends StrutsActionBase {
                 	aForm.setTemplateShortname(SafeString.getLocaleString("mailing.No_Template", (Locale) request.getSession().getAttribute(Globals.LOCALE_KEY)));
                 }
 
-                prepareMailinglists(aForm, AgnUtils.getAdmin(request));
+                prepareMailinglists(aForm, admin);
                 aForm.setCampaigns(campaignDao.getCampaignList(companyId,"lower(shortname)",1));
                 aForm.setTargetGroupsList(targetService.getTargetLights(companyId, aForm.getTargetGroups(), true));
-                aForm.setTargets(targetService.getTargetLights(companyId));
+                aForm.setTargets(targetService.getTargetLights(admin));
                 aForm.setTargetComplexities(targetService.getTargetComplexities(companyId));
             }
         }
@@ -369,7 +370,7 @@ public class MailingBaseAction extends StrutsActionBase {
      * @param req request
      * @throws Exception
      */
-    protected void loadMailing(MailingBaseForm aForm, HttpServletRequest req) throws Exception {
+    protected ComMailing loadMailing(MailingBaseForm aForm, HttpServletRequest req) throws Exception {
         throw new UnsupportedOperationException();
     }
 
@@ -506,7 +507,7 @@ public class MailingBaseAction extends StrutsActionBase {
     }
 
     private void collectParametersChanges(String valueName, Object oldValue, Object newValue, StringBuilder actionMessage, List<String> actions, String editKeyword) {
-        if (!ObjectUtils.equals(oldValue, newValue)) {
+        if (!Objects.equals(oldValue, newValue)) {
             actionMessage.append("mailing ")
                     .append(valueName)
                     .append(" from ")

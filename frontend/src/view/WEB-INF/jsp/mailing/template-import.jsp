@@ -39,6 +39,26 @@
 							</button>
 						</div>
 					</div>
+                </div>
+				<div class="col-sm-4">
+					<html:hidden property="__STRUTS_CHECKBOX_importTemplateOverwrite" value="false" />
+					<table>
+						<tr>
+							<td>
+								<label data-form-change class="toggle">
+									<html:checkbox styleId="import_duplicates" property="importTemplateOverwrite" />
+									<div class="toggle-control"></div>
+								</label>
+								&nbsp;
+							</td>
+							<td>
+								<label class="control-label">
+									<bean:message key="import.template.overwrite" />
+									<button type="button" class="icon icon-help" data-help="help_${helplanguage}/mailing/OverwriteTemplate.xml"></button>
+								</label>
+							</td>
+						</tr>
+					</table>
 				</div>
 			</div>
 		</div>

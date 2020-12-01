@@ -1,18 +1,37 @@
 <HelpBalloon>
-	<title>Mailing search</title>
-	<content><![CDATA[The mailing search allows you to search different fields of your mailings. If you would like to enter multiple terms at the same time then you can use the following options:<br><br>
-<b>Specific search using quotation marks</b><br><br>
-For example: “We wish”<br><br>
-If two or more terms are enclosed in quotation marks, the EMM will search fields using this specific sequence of words. No results containing only one of the words will be displayed.<br><br>
-<b>Combination using the plus sign</b><br><br>
-For example: “We wish” + Christmas<br><br>
-If two or more terms are linked by a plus sign, only results containing all terms will be displayed.<br><br>
-<b>Combination using the space bar</b><br><br>
-For example: Christmas "New Year"<br><br>
-Where two or more terms are separated by a space, this is referred to as an OR search. All hits will be shown that contain at least one of the search terms entered.<br><br>
-<b>Terms in brackets</b><br><br>
-For example: “We wish” + (Christmas "New Year")<br><br>
-The example displayed would show all hits that both contain the phrase “We wish” and also contain either Christmas or New Year. However, the result must contain at least one of the terms in brackets since these are connected by a plus sign.<br><br>
-It is possible to use the various combination options in any order you wish.<br><br>
-For example: "We wish" + (merry happy) + (Christmas "New Year")]]></content>
+	<title>Search</title>
+	<content><![CDATA[With the search function you can search through different fields. You can also use wildcards in the search field and link several terms:
+<br><br>
+<b>question mark as placeholder for an unknown character</b><br>
+For example: Birthday mailing
+<br><br>
+If it is not clear whether the term birthday mailing was written with a hyphen or a space and the unknown character is replaced by a question mark, the EMM will show all existing hits that are within the specified letter sequence. A question mark always stands for an unknown character, several question marks can also be used within one term.
+<br><br>
+<b>Asterisk and percent sign as placeholder for any number of unknown characters</b><br>
+For example: Christmas* / Christmas%<br><br>
+The asterisk or percentage sign stands for any number of characters and can also include several words. The example shown would display all hits beginning with "Christmas", e.g. Christmas greetings, Christmas edition, Christmas 2020.
+<br><br>
+If you would like to enter several terms at the same time, the following linking options are available:
+<br><br>
+<b>exact search by quotation marks</b><br>
+For example: "We wish"
+<br><br>
+If two or more terms are enclosed in quotation marks, the EMM searches the fields for exactly this word order. It will not display results that contain only one of the terms or where both terms were used in a different order.
+<br><br>
+<b>link by plus sign</b><br>
+For example: "We wish" + birthday
+<br><br>
+If two or more terms are linked with a plus sign, only results that contain all terms are displayed.
+<br><br>
+<b> linking by spaces</b><br>
+For example: birthday name day<br>
+<br><br>
+If two or more terms are separated by a space, the search is an OR search. All hits are displayed that contain at least one of the searched terms.<br><br>
+<b>brackets terms</b><br>
+For example: "We wish" + (birthday name day)
+<br><br>
+The example shown would display all hits that contain the word sequence "We wish" and either birthday or name day. However, the result must contain at least one of the terms in the brackets with a plus sign in between.
+<br><br>
+It is allowed to nest the different possibilities into each other as you like.<br><br>
+For example: "We wish" + ("all the best" "all the love") + (birthday name day)]]></content>
 </HelpBalloon>

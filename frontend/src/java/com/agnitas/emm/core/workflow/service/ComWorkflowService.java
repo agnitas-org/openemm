@@ -17,7 +17,7 @@ import java.util.Set;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
@@ -98,9 +98,9 @@ public interface ComWorkflowService {
 
 	List<TargetLight> getAllTargets(int companyId);
 
-	List<ComProfileField> getHistorizedProfileFields(int companyId) throws Exception;
+	List<ProfileField> getHistorizedProfileFields(int companyId) throws Exception;
 
-	List<ComProfileField> getProfileFields(int companyId) throws Exception;
+	List<ProfileField> getProfileFields(int companyId) throws Exception;
 
 	List<AdminEntry> getAdmins(int companyId);
 
@@ -262,8 +262,6 @@ public interface ComWorkflowService {
      */
     void deleteWorkflowTargetConditions(@VelocityCheck int companyId, int workflowId);
     
-    void convertTargetRepresentationToEQL(@VelocityCheck int companyId);
-
     List<Workflow> getDependentWorkflowOnMailing(@VelocityCheck int companyId, int mailingId);
 
     JSONArray getWorkflowListJson(ComAdmin admin);

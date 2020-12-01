@@ -88,7 +88,9 @@
                 </div>
                 <div class="col-sm-8">
 
-                    <html:select styleClass="form-control js-select" styleId="recipient-export-targetgroup" property="targetID">
+                    <html:select styleClass="form-control js-select"
+                                 styleId="recipient-export-targetgroup"
+                                 property="targetID">
                         <html:option value="0" key="default.All" />
                         <c:forEach var="target" items="${exportWizardForm.targetGroups}">
                             <html:option value="${target.id}">
@@ -150,10 +152,8 @@
 
 
         <div class="tile-content tile-content-forms" id="recipient-export-tile-columns">
-            <div class="tile">
-                <div class="tile-notification tile-notification-info">
-                    <bean:message key="export.wizard.hint.export.columns" />
-                </div>
+            <div class="notification-simple notification-info">
+                <bean:message key="export.wizard.hint.export.columns"/>
             </div>
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">

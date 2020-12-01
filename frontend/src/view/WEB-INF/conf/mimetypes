@@ -17,6 +17,7 @@ application/pdf                 pdf PDF Pdf
 
 text/comma-separated-values     csv CSV Csv
 text/plain                      txt TXT Txt
+text/xml						xml XML fo FO
 
 font/ttf                        ttf TTF Ttf
 font/otf                        otf OTF Otf
@@ -33,3 +34,4 @@ video/mpeg                      mpg Mpg MPG
 video/x-flv                     flv Flv FLV
 video/3gpp2                     3g2 3G2
 video/3gpp                      3gp 3GP
+

@@ -49,6 +49,7 @@ public final class EditorContentSynchronizer {
 	 *
 	 * @throws EditorContentSynchronizationException on errors synchronizing the editors data.
 	 */
+	@Deprecated // TODO Removed without replacement. Not used.
 	public final TargetgroupViewFormat synchronizeEditors(final ComAdmin admin, final QueryBuilderTargetGroupForm form) throws EditorContentSynchronizationException {
 		final TargetgroupViewFormat currentFormat = TargetgroupViewFormat.fromCode(form.getFormat());
 		

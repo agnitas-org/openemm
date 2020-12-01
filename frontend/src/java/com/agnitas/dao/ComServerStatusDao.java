@@ -10,6 +10,7 @@
 
 package com.agnitas.dao;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -18,22 +19,24 @@ import java.util.Map;
  */
 public interface ComServerStatusDao {
 	boolean checkDatabaseConnection();
+
 	boolean checkDatabaseVersion(int majorVersion, int minorVersion, int microVersion, int hotfixVersion);
+
 	String getJobWorkerStatus(String string);
-	int executeUpdate(String updateStatement, Object... parameter);
-	List<Map<String, Object>> select(String selectStatement, Object... parameter);
-	int selectInt(String selectStatement, Object... parameter);
+
 	String getDbUrl() throws Exception;
-	
+
 	String getDbVendor();
-	
+
 	Map<String, String> geDbInformation();
-	
+
 	int getLogEntryCount();
-	
+
 	List<String> getErrorJobsStatuses();
-	
+
 	List<String> getDKIMKeys();
-	
+
 	List<String> killRunningImports();
+
+	File getFullTbl(String dbStatement, String tableName) throws Exception;
 }

@@ -12,22 +12,30 @@ package org.agnitas.emm.springws.endpoint.mailinglist;
 
 import org.agnitas.emm.core.mailinglist.service.MailinglistModel;
 import org.agnitas.emm.core.mailinglist.service.MailinglistService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.emm.springws.jaxb.UpdateMailinglistRequest;
 import org.agnitas.emm.springws.jaxb.UpdateMailinglistResponse;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class UpdateMailinglistEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class UpdateMailinglistEndpoint extends BaseEndpoint {
 	
     private MailinglistService mailinglistService;
 
-    private ObjectFactory objectFactory;
+    @Autowired
+    public UpdateMailinglistEndpoint(@Qualifier("WS_mailinglistService") MailinglistService mailinglistService) {
+        this.mailinglistService = mailinglistService;
+    }
 
-    @Override
-    protected Object invokeInternal(Object arg0) throws Exception {
-        UpdateMailinglistRequest request = (UpdateMailinglistRequest) arg0;
-        UpdateMailinglistResponse response = objectFactory.createUpdateMailinglistResponse();
+    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateMailinglistRequest")
+    public @ResponsePayload UpdateMailinglistResponse updateMailinglist(@RequestPayload UpdateMailinglistRequest request) throws Exception {
+        UpdateMailinglistResponse response = new UpdateMailinglistResponse();
 
         MailinglistModel model = new MailinglistModel();
         model.setCompanyId(Utils.getUserCompany());
@@ -38,13 +46,4 @@ public class UpdateMailinglistEndpoint extends AbstractMarshallingPayloadEndpoin
         mailinglistService.updateMailinglist(model);
         return response;
     }
-
-
-	public void setMailinglistService(MailinglistService service) {
-		this.mailinglistService = service;
-	}
-	
-	public void setObjectFactory(ObjectFactory factory) {
-		this.objectFactory = factory;
-	}
 }

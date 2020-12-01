@@ -11,6 +11,7 @@
 package org.agnitas.util;
 
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.List;
 
 import org.xbill.DNS.InvalidTypeException;
@@ -39,7 +40,7 @@ public class DNS {
 		if (timeoutInSeconds > 0) {
 			try {
 				resolv = new SimpleResolver ();
-				resolv.setTimeout (timeoutInSeconds);
+				resolv.setTimeout (Duration.ofSeconds (timeoutInSeconds));
 			} catch (UnknownHostException e) {
 				if (log != null) {
 					log.out (Log.WARNING, "dns", "Failed to find proper DNS host: " + e.toString ());
@@ -72,7 +73,6 @@ public class DNS {
 	 * @param domain the domain to lookup the DNS for a text record
 	 * @return       the text record content, if found, null otherwise
 	 */
-	@SuppressWarnings ("unchecked")
 	public String queryText (String domain) {
 		String		rc = null;
 		Record[]	r = query (domain, Type.TXT);

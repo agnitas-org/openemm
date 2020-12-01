@@ -21,8 +21,10 @@ import org.springframework.context.ApplicationContextAware;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationContentViewParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 
 public class ActionOperationContentViewImpl implements EmmActionOperation, ApplicationContextAware {
 	
@@ -65,12 +67,12 @@ public class ActionOperationContentViewImpl implements EmmActionOperation, Appli
 
             try {
              	if(tagName.compareTo("") == 0) {
-               		archiveHtml=aMailing.getPreview(aMailing.getHtmlTemplate().getEmmBlock(), Mailing.INPUT_TYPE_HTML, customerID, true, con);
+               		archiveHtml=aMailing.getPreview(aMailing.getHtmlTemplate().getEmmBlock(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, true, con);
                	} else {
-               		archiveHtml=aMailing.getPreview("[agnDYN name=\""+tagName+"\"/]", Mailing.INPUT_TYPE_HTML, customerID, true, con);
+               		archiveHtml=aMailing.getPreview("[agnDYN name=\""+tagName+"\"/]", MailingPreviewHelper.INPUT_TYPE_HTML, customerID, true, con);
                	}
-                archiveSender=aMailing.getPreview(aMailing.getEmailParam().getFromAdr(), Mailing.INPUT_TYPE_HTML, customerID, con);
-                archiveSubject=aMailing.getPreview(aMailing.getEmailParam().getSubject(), Mailing.INPUT_TYPE_HTML, customerID, con);
+                archiveSender=aMailing.getPreview(aMailing.getEmailParam().getFromAdr(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, con);
+                archiveSubject=aMailing.getPreview(aMailing.getEmailParam().getSubject(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, con);
                 returnValue=true;
             } catch (Exception e) {
               	logger.error("archive problem: "+e, e);
@@ -85,7 +87,12 @@ public class ActionOperationContentViewImpl implements EmmActionOperation, Appli
         return returnValue;
 	}
 
-	public void setMailingDao(MailingDao mailingDao) {
+    @Override
+    public ActionOperationType processedType() {
+        return ActionOperationType.CONTENT_VIEW;
+    }
+
+    public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 

@@ -18,27 +18,29 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+
 import javax.sql.DataSource;
+
+import org.agnitas.emm.core.recipient.RecipientUtils;
+import org.agnitas.service.GenericExportWorker;
+import org.agnitas.service.RecipientDuplicateSqlOptions;
+import org.agnitas.service.RecipientQueryBuilder;
+import org.agnitas.util.SqlPreparedStatementManager;
+import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.messages.I18nString;
-import org.agnitas.emm.core.recipient.RecipientUtils;
-import org.agnitas.service.GenericExportWorker;
-import org.agnitas.service.RecipientQueryBuilder;
-import org.agnitas.service.RecipientSqlOptions;
-import org.agnitas.util.SqlPreparedStatementManager;
-import org.apache.log4j.Logger;
 
 public class DuplicatedRecipientsExportWorker extends GenericExportWorker {
     private static final transient Logger LOGGER = Logger.getLogger(DuplicatedRecipientsExportWorker.class);
 
     private RecipientQueryBuilder recipientQueryBuilder;
     private ComAdmin admin;
-    private RecipientSqlOptions sqlOptions;
+    private RecipientDuplicateSqlOptions sqlOptions;
     private List<String> selectedFields;
     private Map<String, String> fieldsNames;
 
-    public DuplicatedRecipientsExportWorker(RecipientQueryBuilder recipientQueryBuilder, ComAdmin admin, RecipientSqlOptions sqlOptions, List<String> selectedFields, Map<String, String> fieldsNames) {
+    public DuplicatedRecipientsExportWorker(RecipientQueryBuilder recipientQueryBuilder, ComAdmin admin, RecipientDuplicateSqlOptions sqlOptions, List<String> selectedFields, Map<String, String> fieldsNames) {
         this.admin = admin;
         this.recipientQueryBuilder = recipientQueryBuilder;
         this.sqlOptions = sqlOptions;
@@ -110,7 +112,7 @@ public class DuplicatedRecipientsExportWorker extends GenericExportWorker {
         private DateFormat dateTimeFormat;
         private ZoneId exportTimezone;
         private List<String> selectedColumns;
-        private RecipientSqlOptions sqlOptions;
+        private RecipientDuplicateSqlOptions sqlOptions;
         private Map<String, String> fieldsNames;
 
         public Builder(DataSource dataSource, RecipientQueryBuilder recipientQueryBuilder) {
@@ -128,7 +130,7 @@ public class DuplicatedRecipientsExportWorker extends GenericExportWorker {
             return this;
         }
     
-        public DuplicatedRecipientsExportWorker.Builder setSqlOptions(RecipientSqlOptions sqlOptions) {
+        public DuplicatedRecipientsExportWorker.Builder setSqlOptions(RecipientDuplicateSqlOptions sqlOptions) {
             this.sqlOptions = sqlOptions;
             return this;
         }

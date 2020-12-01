@@ -12,14 +12,15 @@ package com.agnitas.emm.core.commons.password;
 
 import org.agnitas.emm.core.commons.password.PasswordCheckHandler;
 import org.agnitas.emm.core.commons.password.PasswordCheckImpl;
-import org.agnitas.emm.core.commons.password.PasswordConstraintException;
-import org.agnitas.emm.core.commons.password.PasswordMatchesCurrentPasswordException;
-import org.agnitas.emm.core.commons.password.PasswordUtil;
+import org.agnitas.emm.core.commons.password.PolicyViolationException;
+import org.agnitas.emm.core.commons.password.util.PasswordCheckUtil;
+import org.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
 import com.agnitas.emm.core.supervisor.service.ComSupervisorService;
+import com.agnitas.messages.Message;
 import com.agnitas.service.SimpleServiceResult;
 
 /**
@@ -34,16 +35,18 @@ public class ComPasswordCheckImpl extends PasswordCheckImpl implements ComPasswo
     @Override
     public boolean checkSupervisorPassword(String password, Supervisor supervisor, PasswordCheckHandler handler) throws SupervisorException {
         try {
-            PasswordUtil.checkPasswordConstraints(password);
+        	PasswordPolicyUtil.loadSupervisorPasswordPolicy(getConfigService()).getPasswordPolicy().checkPassword(password);
 
             // Check that given password differs from current supervisor password
             if (this.supervisorService.isCurrentPassword(supervisor, password)) {
-                throw new PasswordMatchesCurrentPasswordException();
+            	handler.handleMatchesCurrentPassword();
+            	
+            	return false;
             }
 
             return true;
-        } catch (PasswordConstraintException e) {
-            handleException(e, handler);
+        } catch (final PolicyViolationException e) {
+        	PasswordCheckUtil.invokeHandler(e, handler);
 
             return false;
         }
@@ -52,27 +55,28 @@ public class ComPasswordCheckImpl extends PasswordCheckImpl implements ComPasswo
     @Override
     public SimpleServiceResult checkSupervisorPassword(String password, Supervisor supervisor) throws SupervisorException {
         try {
-            PasswordUtil.checkPasswordConstraints(password);
+        	PasswordPolicyUtil.loadSupervisorPasswordPolicy(getConfigService()).getPasswordPolicy().checkPassword(password);
 
             // Check that given password differs from current supervisor password
             if (supervisorService.isCurrentPassword(supervisor, password)) {
-                throw new PasswordMatchesCurrentPasswordException();
+				return new SimpleServiceResult(false, Message.of("error.password_must_differ"));
             }
 
             return new SimpleServiceResult(true);
-        } catch (PasswordConstraintException e) {
-            return new SimpleServiceResult(false, asMessage(e));
+        } catch (final PolicyViolationException e) {
+            return new SimpleServiceResult(false, PasswordCheckUtil.policyViolationsToMessages(e));
         }
     }
 
     @Override
     public boolean checkSupervisorPassword(String password, PasswordCheckHandler handler) {
         try {
-            PasswordUtil.checkPasswordConstraints(password);
+        	PasswordPolicyUtil.loadSupervisorPasswordPolicy(getConfigService()).getPasswordPolicy().checkPassword(password);
             return true;
-        } catch (PasswordConstraintException e) {
-            handleException(e, handler);
-            return false;
+        } catch (final PolicyViolationException e) {
+           	PasswordCheckUtil.invokeHandler(e, handler);
+
+           	return false;
         }
     }
 

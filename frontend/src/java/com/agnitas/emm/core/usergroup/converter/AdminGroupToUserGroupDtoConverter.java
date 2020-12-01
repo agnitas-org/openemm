@@ -10,6 +10,9 @@
 
 package com.agnitas.emm.core.usergroup.converter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.agnitas.beans.AdminGroup;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
@@ -26,6 +29,15 @@ public class AdminGroupToUserGroupDtoConverter implements Converter<AdminGroup, 
         userGroup.setCompanyId(source.getCompanyID());
         userGroup.setShortname(source.getShortname());
         userGroup.setDescription(source.getDescription());
+        
+        if (source.getParentGroupIds() != null) {
+            List<String> adminGroupIds = new ArrayList<>();
+            for (int adminGroupId : source.getParentGroupIds()) {
+            	adminGroupIds.add(Integer.toString(adminGroupId));
+            }
+            userGroup.setParentGroupIDs(adminGroupIds.toArray(new String[0]));
+        }
+        
         return userGroup;
     }
 }

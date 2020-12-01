@@ -127,7 +127,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 	private String filterCreationDateEnd;
 	private String[] selectedFields = ArrayUtils.EMPTY_STRING_ARRAY;
 	private String targetExpression;
-	private int scrollTop;
 	private boolean changeMailing;
 	private boolean frequencyCounterDisabled;
 	private boolean mailingListFrequencyCountEnabled;
@@ -146,6 +145,8 @@ public class ComMailingBaseForm extends MailingBaseForm {
 	protected boolean mailingTypeInterval;
 
 	private FormFile uploadFile;
+
+	private boolean importTemplateOverwrite = false;
 
 	private ComMailingParameterDao.IntervalType intervalType = ComMailingParameterDao.IntervalType.None;
 
@@ -232,6 +233,8 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		selectedFields = ArrayUtils.EMPTY_STRING_ARRAY;
 
 		uploadFile = null;
+		
+		importTemplateOverwrite = false;
 
 		setTargetGroups(Collections.emptyList());
 		setTargetExpression(StringUtils.EMPTY);
@@ -254,14 +257,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 	public String getFilterCreationDateBegin() {
 		return filterCreationDateBegin;
-	}
-
-	public int getScrollTop() {
-		return scrollTop;
-	}
-
-	public void setScrollTop(int scrollTop) {
-		this.scrollTop = scrollTop;
 	}
 
 	public void setFilterCreationDateBegin(String filterCreationDateBegin) {
@@ -1217,6 +1212,14 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 	public void setIntervalNumberOfMonth(int numberOfMonth) {
 		this.numberOfMonth = numberOfMonth;
+	}
+
+	public boolean isImportTemplateOverwrite() {
+		return importTemplateOverwrite;
+	}
+
+	public void setImportTemplateOverwrite(boolean importTemplateOverwrite) {
+		this.importTemplateOverwrite = importTemplateOverwrite;
 	}
 
 	public FormFile getUploadFile() {

@@ -15,7 +15,6 @@ import java.util.Map;
 import com.agnitas.service.ServiceResult;
 import org.agnitas.util.GuiConstants;
 import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 
 import com.agnitas.messages.Message;
@@ -28,14 +27,6 @@ public class StrutsPopups implements Popups {
 
     public static final String MESSAGES_KEY = "org.apache.struts.action.ACTION_MESSAGE";
     public static final String ERRORS_KEY = "org.apache.struts.action.ERROR";
-
-    private static ActionMessage adopt(Message message) {
-        if (message.isResolvable()) {
-            return new ActionMessage(message.getCode(), message.getArguments());
-        } else {
-            return new ActionMessage(message.getCode(), false);
-        }
-    }
 
     private static StrutsPopups from(ActionMessages messages, ActionErrors errors) {
         if (messages == null && errors == null) {
@@ -62,8 +53,8 @@ public class StrutsPopups implements Popups {
         }
     }
 
-    private ActionMessages messages;
-    private ActionErrors errors;
+    private final ActionMessages messages;
+    private final ActionErrors errors;
 
     public StrutsPopups() {
         messages = new ActionMessages();
@@ -85,7 +76,7 @@ public class StrutsPopups implements Popups {
 
     @Override
     public Popups alert(Message popup) {
-        errors.add(ActionErrors.GLOBAL_MESSAGE, adopt(popup));
+        errors.add(ActionErrors.GLOBAL_MESSAGE, popup.toStrutsMessage());
         return this;
     }
 
@@ -101,7 +92,7 @@ public class StrutsPopups implements Popups {
 
     @Override
     public Popups warning(Message popup) {
-        messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, adopt(popup));
+        messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, popup.toStrutsMessage());
         return this;
     }
 
@@ -117,7 +108,7 @@ public class StrutsPopups implements Popups {
 
     @Override
     public Popups success(Message popup) {
-        messages.add(ActionMessages.GLOBAL_MESSAGE, adopt(popup));
+        messages.add(ActionMessages.GLOBAL_MESSAGE, popup.toStrutsMessage());
         return this;
     }
 
@@ -141,7 +132,7 @@ public class StrutsPopups implements Popups {
 
     @Override
     public Popups field(String field, Message popup) {
-        errors.add(field, adopt(popup));
+        errors.add(field, popup.toStrutsMessage());
         return this;
     }
 

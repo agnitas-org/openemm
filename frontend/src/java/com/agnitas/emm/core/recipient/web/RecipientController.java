@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
 import com.agnitas.emm.core.recipient.forms.RecipientBulkForm;
@@ -62,14 +62,14 @@ public class RecipientController {
 	
 	@RequestMapping("/bulkView.action")
     public String bulkView(ComAdmin admin, RecipientBulkForm form, Model model) {
-		List<ComProfileField> recipientColumns = recipientService.getRecipientBulkFields(admin.getCompanyID());
-		form.setRecipientFieldChanges(recipientColumns.stream().map(ComProfileField::getColumn).collect(Collectors.toList()));
+		List<ProfileField> recipientColumns = recipientService.getRecipientBulkFields(admin.getCompanyID());
+		form.setRecipientFieldChanges(recipientColumns.stream().map(ProfileField::getColumn).collect(Collectors.toList()));
 
 		model.addAttribute("recipientColumns", recipientColumns);
 		
 		model.addAttribute("hasAnyDisabledMailingLists", mailinglistApprovalService.hasAnyDisabledMailingListsForAdmin(admin));
 		model.addAttribute("mailingLists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
-		model.addAttribute("targetGroups", targetService.getTargetLights(admin.getCompanyID()));
+		model.addAttribute("targetGroups", targetService.getTargetLights(admin));
 		model.addAttribute("calculatedRecipients", recipientService.calculateRecipient(admin, form.getTargetId(), form.getMailinglistId()));
 		
 		model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());

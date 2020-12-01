@@ -11,38 +11,43 @@
 package com.agnitas.emm.springws.endpoint;
 
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.apache.log4j.Logger;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.springws.jaxb.GetMailingContentRequest;
 import com.agnitas.emm.springws.jaxb.GetMailingContentResponse;
 import com.agnitas.emm.springws.jaxb.MailingContent;
-import com.agnitas.emm.springws.jaxb.ObjectFactory;
 
-public class GetMailingContentEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class GetMailingContentEndpoint extends BaseEndpoint {
 	private static final Logger classLogger = Logger.getLogger(GetMailingContentEndpoint.class);
 
-	private ObjectFactory comObjectFactory;
 	private MailingService mailingService;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Entered MailingTemplatesContentEndpoint.invokeInternal()");
+	public GetMailingContentEndpoint(@Qualifier("MailingService") MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "GetMailingContentRequest")
+	public @ResponsePayload GetMailingContentResponse getMailingcontent(@RequestPayload GetMailingContentRequest request) {
+		if (classLogger.isInfoEnabled()) {
+			classLogger.info( "Entered MailingTemplatesContentEndpoint.getMailingcontent()");
 		}
 		
-		GetMailingContentRequest request = (GetMailingContentRequest) arg0;
-		GetMailingContentResponse response = comObjectFactory.createGetMailingContentResponse();
+		GetMailingContentResponse response = new GetMailingContentResponse();
 
 		int mailingId = request.getMailingId();
 		int companyId = Utils.getUserCompany();
 
-		com.agnitas.emm.springws.jaxb.GetMailingContentResponse.Items items
-			= comObjectFactory.createGetMailingContentResponseItems();
-		for (MailingComponent component
-				: mailingService.getMailingComponents(mailingId, companyId)) {
+		GetMailingContentResponse.Items items = new GetMailingContentResponse.Items();
+		for (MailingComponent component : mailingService.getMailingComponents(mailingId, companyId)) {
 			MailingContent mailingContent = new MailingContent();
 			mailingContent.setName(component.getComponentName());
 			mailingContent.setContent(component.getEmmBlock());
@@ -50,19 +55,10 @@ public class GetMailingContentEndpoint extends AbstractMarshallingPayloadEndpoin
 		}
 		response.setItems(items);
 		
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Leaving GetMailingContentEndpoint.invokeInternal()");
+		if (classLogger.isInfoEnabled()) {
+			classLogger.info( "Leaving GetMailingContentEndpoint.getMailingcontent()");
 		}
 		
 		return response;
 	}
-
-	public void setComObjectFactory(ObjectFactory comObjectFactory) {
-		this.comObjectFactory = comObjectFactory;
-	}
-
-	public void setMailingService(MailingService mailingService) {
-		this.mailingService = mailingService;
-	}
-
 }

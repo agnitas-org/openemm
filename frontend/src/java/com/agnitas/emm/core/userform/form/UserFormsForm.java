@@ -10,30 +10,8 @@
 
 package com.agnitas.emm.core.userform.form;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.agnitas.web.forms.ActivenessPaginationForm;
 
-import com.agnitas.emm.core.userform.service.UserFormFilter;
-import org.agnitas.web.forms.PaginationForm;
-
-public class UserFormsForm extends PaginationForm {
-	
-	private UserFormFilter filter = UserFormFilter.NONE;
-	private Map<Integer, Boolean> activeness = new HashMap<>();
-	
-	public UserFormFilter getFilter() {
-		return filter;
-	}
-	
-	public void setFilter(UserFormFilter filter) {
-		this.filter = filter;
-	}
-	
-	public Map<Integer, Boolean> getActiveness() {
-		return activeness;
-	}
-	
-	public void setActiveness(Map<Integer, Boolean> activeness) {
-		this.activeness = activeness;
-	}
+public class UserFormsForm extends ActivenessPaginationForm {
+	//nothing do
 }

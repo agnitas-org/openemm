@@ -14,6 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.springframework.context.ApplicationContext;
+
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
@@ -21,10 +26,6 @@ import com.agnitas.beans.TrackableLinkListItem;
 import com.agnitas.beans.TrackableLinkModel;
 import com.agnitas.beans.TrackableLinkSettings;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
-import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.springframework.context.ApplicationContext;
 
 /**
  * Service interface for trackable links.
@@ -67,8 +68,6 @@ public interface ComTrackableLinkService {
 	void setMailingLinkExtension(ComMailing aMailing, String linkExtension);
 
     void setLegacyLinkExtensionMarker(ComMailing aMailing, Map<Integer, Boolean> linksToExtends);
-
-	void saveGlobalRelevance(ComMailing aMailing, Set<Integer> bulkLinkIds, int globalRelevance, Map<Integer, Integer> linkItemsRelevance);
 	
 	boolean saveEveryPositionLinks(ComMailing aMailing, ApplicationContext aContext, Set<Integer> bulkLinks) throws Exception;
 
@@ -109,4 +108,5 @@ public interface ComTrackableLinkService {
     void removeGlobalAndIndividualLinkExtensions(@VelocityCheck int companyId, int mailingId) throws Exception;
 
 	void updateTrackableLinkSettings(TrackableLinkModel trackableLinkModel);
+
 }

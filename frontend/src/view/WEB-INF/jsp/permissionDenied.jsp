@@ -11,7 +11,7 @@
         <div class="loginbox_top"></div>
 
         <div class="loginbox_content">
-            <img src="${absoluteImagePath}/facelift/agnitas-emm-logo.png" border="0" class="logon_image">
+            <img src="/layout/0/logo.png" border="0" class="logon_image">
             <br>
             <span class="logon_page_emm_title"><bean:message key="permission.denied.title"/></span>
             <div class="loginbox_row">

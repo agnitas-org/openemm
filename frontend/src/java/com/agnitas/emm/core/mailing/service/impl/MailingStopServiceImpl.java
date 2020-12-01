@@ -29,7 +29,6 @@ import com.agnitas.emm.core.serverprio.server.ServerPrioService;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.CodeGenerationFlags;
 import com.agnitas.emm.core.target.eql.codegen.CodeGenerationFlags.Flag;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 
 /**
@@ -43,7 +42,7 @@ public final class MailingStopServiceImpl implements MailingStopService {
 	/** Service dealing with mailings. */
 	private MailingService mailingService;
 	
-	/** Service deleaing with maildrops. */
+	/** Service dealing with maildrops. */
 	private MaildropService maildropService;
 	
 	/** Service dealing with server prios. */
@@ -54,16 +53,23 @@ public final class MailingStopServiceImpl implements MailingStopService {
 	private EqlFacade eqlFacade;
 	
 	@Override
-	public final boolean stopRegularMailing(final int companyID, final int mailingID, final boolean includeUnscheduled) throws MailingStopServiceException {
-		final LightweightMailing mailing = this.mailingService.getLightweightMailing(companyID, mailingID);
+	public final boolean isStopped(final int mailingID) {
+		return serverPrioService.isMailGenerationAndDeliveryPaused(mailingID);
+	}
 
-		// Check that designated mailing is a regular mailing
-		requireRegularMailing(mailing);
+	@Override
+	public final boolean stopMailing(final int companyID, final int mailingID, final boolean includeUnscheduled) throws MailingStopServiceException {
+		final LightweightMailing mailing = this.mailingService.getLightweightMailing(companyID, mailingID);
+		
+		// Check that designated mailing can be stopped
+		requireStoppableMailing(mailing);
 		
 		return stopMailing(mailing, includeUnscheduled);
 	}
 	
 	private final boolean stopMailing(final LightweightMailing mailing, final boolean includeUnscheduled) {
+		assert canStopMailing(mailing);		// Ensured by caller
+		
 		// Try to cancel mailing before starting generation
 		final boolean mailingStoppedBeforeGeneration = this.maildropService.stopWorldMailingBeforeGeneration(mailing.getCompanyID(), mailing.getMailingID());
 
@@ -74,7 +80,7 @@ public final class MailingStopServiceImpl implements MailingStopService {
 			return true;
 		} else {
 			// Stopping before generation was not successful. Generation or delivery is in progress.
-			final boolean result = serverPrioService != null && serverPrioService.pauseMailGenerationAndDelivery(mailing.getMailingID());
+			final boolean result = serverPrioService.pauseMailGenerationAndDelivery(mailing.getMailingID());
 			
 			if(result) {
                 mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), "canceled");
@@ -96,13 +102,14 @@ public final class MailingStopServiceImpl implements MailingStopService {
 	}
 
 	@Override
-	public final boolean resumeRegularMailing(int companyID, int mailingID) throws MailingStopServiceException {
+	public final boolean resumeMailing(int companyID, int mailingID) throws MailingStopServiceException {
 		final LightweightMailing mailing = mailingService.getLightweightMailing(companyID, mailingID);
 		
-		// Check that designated mailing is a regular mailing
-		requireRegularMailing(mailing);
+		// Check that designated mailing can be resumed
+		requireResumableMailing(mailing);
 		
-		return serverPrioService != null && serverPrioService.resumeMailGenerationAndDelivery(mailingID);
+		// Resuming mailing is only possible with a ServerPrioService set for this service
+		return serverPrioService.resumeMailGenerationAndDelivery(mailingID);
 	}
 
 	@Override
@@ -159,48 +166,53 @@ public final class MailingStopServiceImpl implements MailingStopService {
 	}
 	
 	@Override
-	public final boolean canStopRegularMailing(final int companyID, final int mailingID) {
+	public final boolean canStopMailing(final int companyID, final int mailingID) {
 		final LightweightMailing mailing = this.mailingService.getLightweightMailing(companyID, mailingID);
 
-		return canStopRegularMailing(mailing);
+		return canStopMailing(mailing);
 	}
 	
-	private final boolean canStopRegularMailing(final LightweightMailing mailing) {
+	private final boolean canStopMailing(final LightweightMailing mailing) {
 		final boolean inProgress = this.maildropService.hasMaildropStatus(mailing.getMailingID(), mailing.getCompanyID(), MaildropStatus.WORLD)
 				&& !this.mailingService.isDeliveryComplete(mailing);
 		
 		return inProgress
-				&& !canResumeRegularMailing(mailing);
+				&& !canResumeMailing(mailing);
 	}
 	
 	@Override
-	public final boolean canResumeRegularMailing(final int companyID, final int mailingID) {
+	public final boolean canResumeMailing(final int companyID, final int mailingID) {
 		final LightweightMailing mailing = this.mailingService.getLightweightMailing(companyID, mailingID);
 
-		return canResumeRegularMailing(mailing);
+		return canResumeMailing(mailing);
 	}
 	
-	private final boolean canResumeRegularMailing(final LightweightMailing mailing) {
-		if(serverPrioService != null && checkIsRegularMailing(mailing)) {
-			return this.serverPrioService.isMailGenerationAndDeliveryPaused(mailing.getMailingID());
-		} else {
-			return false;
-		}
-		
+	private final boolean canResumeMailing(final LightweightMailing mailing) {
+		return isStopped(mailing.getMailingID());
 	}
-
-	private final void requireRegularMailing(final LightweightMailing mailing) throws MailingStopServiceException {
-		if(!checkIsRegularMailing(mailing)) {
+	
+	private final void requireStoppableMailing(final LightweightMailing mailing) throws MailingStopServiceException {
+		if(!canStopMailing(mailing)) {
+			final String msg = String.format("Mailing %d cannot be stopped", mailing.getMailingID());
+			
 			if(LOGGER.isInfoEnabled()) {
-				LOGGER.info(String.format("Mailing %d is not a WORLD mailing", mailing));
+				LOGGER.info(msg);
 			}
 			
-			throw new MailingStopServiceException("Not a REGULAR mailing");
+			throw new MailingStopServiceException(msg);
 		}
 	}
 	
-	private final boolean checkIsRegularMailing(final LightweightMailing mailing) {
-		return mailing.getMailingType() == MailingType.NORMAL.getCode();
+	private final void requireResumableMailing(final LightweightMailing mailing) throws MailingStopServiceException {
+		if(!canResumeMailing(mailing)) {
+			final String msg = String.format("Mailing %d cannot be resumed", mailing.getMailingID());
+			
+			if(LOGGER.isInfoEnabled()) {
+				LOGGER.info(msg);
+			}
+			
+			throw new MailingStopServiceException(msg);
+		}
 	}
 
 	@Required
@@ -213,8 +225,9 @@ public final class MailingStopServiceImpl implements MailingStopService {
 		this.maildropService = Objects.requireNonNull(service, "Maildrop service is null");
 	}
 	
+	@Required
 	public final void setServerPrioService(final ServerPrioService service) {
-		this.serverPrioService = Objects.requireNonNull(service, "Server prio service is null");
+		this.serverPrioService =Objects.requireNonNull(service, "Server prio service is null");
 	}
 	
 	@Required

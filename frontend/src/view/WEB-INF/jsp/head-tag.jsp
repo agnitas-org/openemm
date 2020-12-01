@@ -5,7 +5,6 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="agnRefresh" type="java.lang.String"--%>
-<%--@elvariable id="agnPluginId" type="java.lang.String"--%>
 <%--@elvariable id="agnTitleKey" type="java.lang.String"--%>
 <%--@elvariable id="agnHighlightKey" type="java.lang.String"--%>
 
@@ -28,24 +27,12 @@
     <c:set var="title" scope="page"><bean:message key="default.A_EMM"/></c:set>
     <c:set var="subtitle" value="" scope="page"/>
 
-    <c:choose>
-        <c:when test="${not empty agnPluginId}">
-            <c:if test="${not empty agnTitleKey}">
-                <c:set var="title"><emm:message key="${agnTitleKey}" plugin="${agnPluginId}"/></c:set>
-            </c:if>
-            <c:if test="${not empty agnHighlightKey}">
-                <c:set var="subtitle"><emm:message key="${agnHighlightKey}" plugin="${agnPluginId}"/></c:set>
-            </c:if>
-        </c:when>
-        <c:otherwise>
-            <c:if test="${not empty agnTitleKey}">
-                <c:set var="title"><bean:message key="${agnTitleKey}"/></c:set>
-            </c:if>
-            <c:if test="${not empty agnHighlightKey}">
-                <c:set var="subtitle"><bean:message key="${agnHighlightKey}"/></c:set>
-            </c:if>
-        </c:otherwise>
-    </c:choose>
+    <c:if test="${not empty agnTitleKey}">
+        <c:set var="title"><bean:message key="${agnTitleKey}"/></c:set>
+    </c:if>
+    <c:if test="${not empty agnHighlightKey}">
+        <c:set var="subtitle"><bean:message key="${agnHighlightKey}"/></c:set>
+    </c:if>
 
     <c:choose>
         <c:when test="${not empty subtitle}">

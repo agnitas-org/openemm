@@ -13,7 +13,7 @@ package org.agnitas.dao;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.beans.TrackableLink;
+import com.agnitas.beans.ComTrackableLink;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.TrackableLinkListItem;
@@ -25,23 +25,24 @@ public interface TrackableLinkDao {
      *
      * @return Value of trackableLink.
      */
-    TrackableLink getTrackableLink(int linkID, @VelocityCheck int companyID);
+    ComTrackableLink getTrackableLink(int linkID, @VelocityCheck int companyID);
     
     /**
      * Getter for property trackableLink by link id and company id.
      *
      * @return Value of trackableLink.
      */
-    TrackableLink getTrackableLink(String url, @VelocityCheck int companyID, int mailingID);
+    ComTrackableLink getTrackableLink(String url, @VelocityCheck int companyID, int mailingID);
 
     /**
      * Saves trackableLink.
      *
      * @return Saved trackableLink id.
+     * @param link
      */
-    int saveTrackableLink(TrackableLink link);
+    int saveTrackableLink(ComTrackableLink link);
     
-    void batchSaveTrackableLinks(@VelocityCheck int companyID, int mailingId, Map<String, TrackableLink> trackableLinksMap, boolean removeUnusedLinks);
+    void batchSaveTrackableLinks(@VelocityCheck int companyID, int mailingId, Map<String, ComTrackableLink> trackableLinksMap, boolean removeUnusedLinks);
 
 	List<TrackableLinkListItem> listTrackableLinksForMailing(@VelocityCheck int companyID, int mailingID);
 }

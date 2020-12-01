@@ -25,7 +25,7 @@
     <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
 </c:url>
 
-<c:set var="recipientExists" value="${recipientForm.recipientID != 0}"/>
+<c:set var="recipientExists" value="${recipientForm.recipientID gt 0}"/>
 
 <c:set var="reportTooltipMessage" scope="request">
     <bean:message key="recipient.report.rightOfAccess.mouseover"/>

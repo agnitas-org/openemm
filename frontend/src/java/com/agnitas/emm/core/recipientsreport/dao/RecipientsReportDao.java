@@ -13,13 +13,14 @@ package com.agnitas.emm.core.recipientsreport.dao;
 import java.io.File;
 import java.util.Date;
 
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+
 public interface RecipientsReportDao {
 
-    void createReport(@VelocityCheck int companyId, RecipientsReport report, String fileContent);
+    void createReport(@VelocityCheck int companyId, RecipientsReport report, String fileContent) throws Exception;
 
     String getReportTextContent(@VelocityCheck int companyId, int reportId);
 

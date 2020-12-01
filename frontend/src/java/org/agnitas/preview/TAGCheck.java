@@ -13,8 +13,11 @@ package org.agnitas.preview;
 import java.util.List;
 
 public interface TAGCheck {
-    void done ();
-    boolean check (String tag, StringBuffer report);
-    boolean check (String tag);
-    boolean checkContent (String content, StringBuffer report, List <String> failures);
+	void done();
+
+	boolean check(String tag, StringBuffer report);
+
+	boolean check(String tag);
+
+	boolean checkContent(String content, StringBuffer report, List<String> failures);
 }

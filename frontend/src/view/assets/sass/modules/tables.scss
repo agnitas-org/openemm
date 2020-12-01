@@ -291,6 +291,10 @@ table td a {
   color: $c-gray-55;
 }
 
+body.dark-theme table td a {
+  color: $c-dt-table-text;
+}
+
 .table {
   width: 100%;
   max-width: 100%;
@@ -393,6 +397,16 @@ table td a {
       color: $c-black;
     }
 
+    &.sortable:not(.sorted.order1, .sorted.order2) {
+      > a {
+        &:before {
+          font-family: FontAwesome;
+          content: $fa-var-sort;
+          margin-right: 5px;
+        }
+      }
+    }
+
     &.sorted {
       // desc
       &.order1 {
@@ -472,6 +486,39 @@ table td a {
 
 }
 
+body.dark-theme .table {
+
+  background-color: $c-dt-table-background;
+
+
+  &.disabled {
+    text-decoration: none;
+    background-color: $c-dt-table-disabled-background;
+  }
+
+  > thead,
+  > tbody,
+  > tfoot {
+    > tr {
+      >th, > td {
+        border-color: $c-dt-table-border;
+      }
+
+      > td {
+        color: $c-dt-table-text;
+      }
+    }
+  }
+
+  > thead > tr > th {
+    background-color: $c-dt-table-header-background;
+
+    > a:not(.btn) {
+      color: $c-dt-table-header-text;
+    }
+
+  }
+}
 // Condensed table w/ half padding
 
 .table-condensed {
@@ -530,6 +577,19 @@ table td a {
   }
 }
 
+body.dark-theme .table-bordered {
+  border-color: $c-dt-table-border;
+  > thead,
+  > tbody,
+  > tfoot {
+    > tr {
+      > th,
+      > td {
+        border-color: $c-dt-table-border;
+      }
+    }
+  }
+}
 
 // Zebra-striping
 //
@@ -540,6 +600,15 @@ table td a {
     > td,
     > th {
       background-color: $c-gray-02;
+    }
+  }
+}
+
+body.dark-theme .table-striped:not(.disabled) {
+   > tbody > tr:nth-child(even):not(.error-row) {
+    > td,
+    > th {
+      background-color: lighten($c-dt-table-background, 5%);
     }
   }
 }
@@ -566,6 +635,22 @@ table td a {
   }
 }
 
+body.dark-theme .table-hover:not(.disabled) {
+  > tbody > tr:hover:not(.error-row) {
+    > td,
+    > th {
+      background-color: lighten($c-dt-table-background, 10%);
+    }
+  }
+
+  > tbody > tr:active:not(.error-row),
+  > tbody > tr:focus:not(.error-row) {
+    > td,
+    > th {
+      background-color: lighten($c-dt-table-background, 15%);
+    }
+  }
+}
 
 // Table cell sizing
 //

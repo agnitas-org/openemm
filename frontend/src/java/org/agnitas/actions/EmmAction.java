@@ -112,16 +112,12 @@ public interface EmmAction extends Serializable {
      */
     int getUsed();
     
-    /**
-     * Set the number of forms, which use this action. This will not be persisted in the database.
-     * @param used
-     */
-    void setUsed(int used);
-
     String getFormNames();
 
-    void setFormNames(String formNames);
-    
+    List<String> getFormNameList();
+
+    void setFormNameList(List<String> formNameList);
+
     Timestamp getChangeDate();
 
 	void setChangeDate(Timestamp changeDate);

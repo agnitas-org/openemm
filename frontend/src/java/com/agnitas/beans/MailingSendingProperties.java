@@ -18,4 +18,8 @@ public interface MailingSendingProperties {
 
     int getMaxRecipients();
 
+    boolean isSkipEmptyBlocks();
+
+    boolean isDoubleCheck();
+
 }

@@ -10,7 +10,11 @@
 
 package org.agnitas.emm.core.userforms;
 
+import java.util.List;
+
+import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.exceptions.FormNotFoundException;
+import org.agnitas.util.Tuple;
 
 import com.agnitas.userform.bean.UserForm;
 
@@ -18,36 +22,36 @@ import com.agnitas.userform.bean.UserForm;
  * Service layer for forms.
  */
 public interface UserformService {
-	
+
 	/**
 	 * Checks, if there is another form with same name.
-	 * 
-	 * @param formName name of form
-	 * @param formId ID of current form
+	 *
+	 * @param formName  name of form
+	 * @param formId    ID of current form
 	 * @param companyId company ID
-	 * 
 	 * @return true, if form name is already in use
 	 */
 	boolean isFormNameInUse(final String formName, final int formId, final int companyId);
 
+	boolean isFormNameInUse(final String formName, final int companyId);
+
 	/**
 	 * Checks, if the form name does not contain invalid characters.
-	 * 
+	 *
 	 * @param formName form name to check
-	 * 
 	 * @return true, if form name is valid
 	 */
 	boolean isValidFormName(final String formName);
 
 	/**
 	 * Load user form for given form name.
-	 * 
+	 *
 	 * @param companyID company ID
-	 * @param formName form name
-	 * 
+	 * @param formName  form name
 	 * @return user form
-	 * 
 	 * @throws FormNotFoundException if given form name is unknown
 	 */
 	UserForm getUserForm(final int companyID, final String formName) throws FormNotFoundException;
+
+	List<Tuple<Integer, String>> getUserFormNamesByActionID(@VelocityCheck int companyID, int actionID);
 }

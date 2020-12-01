@@ -12,20 +12,24 @@ package com.agnitas.emm.springws.endpoint;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.servicemail.SendServiceMailService;
-import com.agnitas.emm.springws.WebserviceNotAllowedException;
-import com.agnitas.emm.springws.jaxb.ObjectFactory;
+import com.agnitas.emm.springws.exception.WebserviceNotAllowedException;
 import com.agnitas.emm.springws.jaxb.SendServiceMailRequest;
+import com.agnitas.emm.springws.jaxb.SendServiceMailResponse;
 
 /**
  * Endpoint for webservice &quot;SendServiceMail&quot;.
  */
-public class SendServiceMailEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class SendServiceMailEndpoint extends BaseEndpoint {
 	/** The logger. */
 	private static final transient Logger classLogger = Logger.getLogger(SendServiceMailEndpoint.class);
 	
@@ -34,17 +38,17 @@ public class SendServiceMailEndpoint extends AbstractMarshallingPayloadEndpoint 
 	
 	/** Service providing configuration. */
 	private ConfigService configService;
-	
-	/** Object factory for response objects. */
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object requestObject) throws Exception {
+	public SendServiceMailEndpoint(SendServiceMailService sendServiceMailingService, ConfigService configService) {
+		this.sendServiceMailingService = sendServiceMailingService;
+		this.configService = configService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "SendServiceMailRequest")
+	public @ResponsePayload SendServiceMailResponse sendServiceMail(@RequestPayload SendServiceMailRequest request) throws Exception {
 		if (Utils.getUserCompany() == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
     		throw new Exception("error.company.mailings.sent.forbidden");
     	} else {
-			SendServiceMailRequest request = (SendServiceMailRequest) requestObject;
-	
 			int companyID = Utils.getUserCompany();
 			int actionID = request.getActionID();
 			int customerID = request.getCustomerID();
@@ -63,37 +67,7 @@ public class SendServiceMailEndpoint extends AbstractMarshallingPayloadEndpoint 
 				classLogger.info("Sending service mail triggered successfully");
 			}
 	
-			return objectFactory.createSendServiceMailResponse();
+			return new SendServiceMailResponse();
     	}
-	}
-
-	/**
-	 * Set service for sending service mails.
-	 * 
-	 * @param service service for sending service mails
-	 */
-	@Required
-	public void setSendServiceMailService(SendServiceMailService service) {
-		this.sendServiceMailingService = service;
-	}
-	
-	/**
-	 * Set object factory.
-	 * 
-	 * @param factory object factory
-	 */
-	@Required
-	public void setObjectFactory(ObjectFactory factory) {
-		this.objectFactory = factory;
-	}
-	
-	/**
-	 * Set service providing configuration data.
-	 * 
-	 * @param service service providing configuration data
-	 */
-	@Required
-	public void setConfigService(ConfigService service) {
-		this.configService = service;
 	}
 }

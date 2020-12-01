@@ -901,4 +901,188 @@ $tool-panel-box-padding: 4px 4px 10px 4px;
 
 }
 
+ body.dark-theme .ag-#{$ag-style} {
 
+   .ag-root {
+     border-color: $c-dt-table-border;
+   }
+
+   .ag-cell-data-changed {
+     background-color: lighten($c-dt-table-background, 10%);;
+   }
+
+   .ag-cell {
+     color: $c-dt-table-text;
+   }
+
+   .ag-cell-focus,
+   .ag-cell-no-focus {
+     border-bottom: none;
+   }
+
+   .ag-cell-focus,
+   .ag-cell-no-focus,
+   .ag-ltr .ag-cell-no-focus,
+   .ag-rtl .ag-cell-no-focus,
+   .ag-ltr .ag-cell-focus,
+   .ag-rtl .ag-cell-focus,
+   .ag-rtl .ag-cell-first-right-pinned,
+   .ag-ltr .ag-cell-first-right-pinned,
+   .ag-rtl .ag-cell-last-left-pinned,
+   .ag-ltr .ag-cell-last-left-pinned,
+   .ag-cell-highlight,
+   .ag-large-text {
+     border-color: $c-dt-table-border;
+   }
+
+   // HEADER SECTION
+
+   .ag-header {
+     color: $c-dt-table-header-text;
+     background-color: $c-dt-table-header-background;
+     border-color: $c-dt-table-border;
+   }
+
+   .ag-header-icon {
+     color: $c-dt-table-header-text;
+     fill: $c-dt-table-header-text;
+   }
+
+   .ag-header-cell-sorted-asc,
+   .ag-header-cell-sorted-desc {
+     .ag-header-icon,
+     .ag-header-cell-text {
+       color: $c-dt-table-header-text;
+     }
+   }
+
+   .ag-layout-for-print .ag-header-container {
+     background: $c-dt-table-header-background;
+     border-color: $c-dt-table-border;
+   }
+
+   .ag-ltr .ag-header-cell,
+   .ag-rtl .ag-header-cell {
+     border-color: $c-dt-table-border;
+   }
+
+   .ag-header-cell-moving {
+     background-color: darken($c-dt-table-background, 10%);
+   }
+
+   .ag-ltr .ag-header-group-cell,
+   .ag-rtl .ag-header-group-cell,
+   .ag-ltr .ag-pinned-right-header,
+   .ag-rtl .ag-pinned-left-header,
+   .ag-header-group-cell-with-group {
+     border-color: $c-dt-table-border;
+   }
+
+   .ag-body,
+   .ag-row-odd {
+     background-color: $c-dt-table-background;
+   }
+
+   .ag-row-even {
+     background-color:  lighten($c-dt-table-background, 5%);
+   }
+
+   .ag-row-selected {
+     background-color: lighten($c-dt-table-background, 7%);
+   }
+
+   .ag-row-stub {
+     background-color: $c-dt-table-background;
+   }
+
+   .ag-floating-top,
+   .ag-floating-top .ag-row,
+   .ag-floating-bottom,
+   .ag-floating-bottom .ag-row{
+     background-color: $c-dt-table-header-background;
+   }
+
+   .ag-overlay-loading-wrapper {
+     background-color: transparentize(lighten($c-dt-table-background, 10%), 0.5);
+   }
+
+   .ag-overlay-loading-center {
+     background-color: $c-dt-table-background;
+     border-color: $c-dt-table-border;
+     color: $c-dt-table-text;
+   }
+
+   .ag-overlay-no-rows-center {
+     background-color: darken($c-dt-table-background, 5%);
+     border-color: $c-dt-table-border;
+     color: $c-dt-table-text;
+   }
+
+   .ag-group-cell-entire-row,
+   .ag-footer-cell-entire-row {
+     background-color: $c-dt-table-background;
+   }
+
+   .ag-menu {
+     border-color: $c-dt-dropdown-border;
+     background-color: $c-dt-dropdown-background;
+     .ag-tab-header {
+       background-color: $c-dt-dropdown-background;
+     }
+     .ag-tab-selected {
+       background-color: darken($c-dt-dropdown-background, 10%);
+       border-color: $c-dt-dropdown-border;
+     }
+   }
+
+   .ag-filter-apply-panel {
+     border-color: $c-dt-dropdown-border;
+     color: $c-dt-dropdown-text;
+   }
+
+   .ag-status-bar,
+   ag-column-drop-cell {
+     color: $c-dt-table-text;
+     background-color: $c-dt-table-background;
+     border-color: $c-dt-table-border;
+   }
+
+   .ag-column-drop-empty-message {
+     color: $c-dt-table-text;
+   }
+
+   .ag-column-drop {
+     background-color: $c-dt-table-background;
+   }
+
+   .ag-row-even:hover,
+   .ag-row-odd:hover {
+     background-color: lighten($c-dt-table-background, 15%) !important;
+   }
+
+   .ag-filter-apply-panel {
+     padding: 0;
+
+     a {
+       background-color: $c-dt-btn-secondary;
+       color: $c-dt-btn-secondary-text;
+       border-radius: 2px;
+
+       margin: 10px;
+
+       &:hover,
+       &:focus {
+         background-color: darken($c-dt-btn-secondary, 10%);
+       }
+
+       &:active {
+         background-color: darken($c-dt-btn-secondary, 15%);
+       }
+     }
+   }
+
+   .ag-header-cell-menu-button,
+   .ag-header-cell-filtered .ag-header-cell-menu-button {
+     color: $c-dt-table-header-text;
+   }
+ }

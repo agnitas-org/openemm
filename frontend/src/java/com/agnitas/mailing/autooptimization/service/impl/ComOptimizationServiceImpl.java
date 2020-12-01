@@ -57,9 +57,7 @@ import org.agnitas.stat.CampaignStatEntry;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.beans.impl.SelectOption;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.collections4.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
@@ -129,15 +127,18 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 	 */
 	@Override
 	public int save(ComOptimization optimization) {
-		
-		List<Integer> testMailingIDs = optimization.getTestmailingIDs();
-		for(Integer mailingID:testMailingIDs) {
-			Mailing testmailing = mailingDao.getMailing(mailingID, optimization.getCompanyID());
-			MediatypeEmail emailParam  = testmailing.getEmailParam();
-			emailParam.setDoublechecking(optimization.isDoubleCheckingActivated());
-			mailingDao.saveMailing(testmailing, false);
+		List<Integer> testMailingIds = optimization.getTestmailingIDs();
+
+		//if optimization is workflow driven - don't change mediatype email parameters
+		if (optimization.getWorkflowId() <= 0) {
+			for (Integer mailingId : testMailingIds) {
+				Mailing testmailing = mailingDao.getMailing(mailingId, optimization.getCompanyID());
+				MediatypeEmail emailParam = testmailing.getEmailParam();
+				emailParam.setDoublechecking(optimization.isDoubleCheckingActivated());
+				mailingDao.saveMailing(testmailing, false);
+			}
 		}
-		
+
 		return optimizationDao.save(optimization);
 	}
 
@@ -262,7 +263,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 			optimization.setStatus(STATUS_EVAL_IN_PROGRESS);
 
 			save(optimization);
-		
+
 			int bestMailing = calculateBestMailing(optimization);
 			logger.debug( "finishOptimization(), optimization ID " + optimization.getId() + ", bestMailing = " + bestMailing + ", hashCode(this) = " + this.hashCode());
 
@@ -276,7 +277,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 				List<ComMailingParameter> orgMailingParameters = mailingParameterService.getMailingParameters(optimization.getCompanyID(), bestMailing);
 				
 				int copiedMailingID = copyMailingService.copyMailing(orgMailing.getCompanyID(), orgMailing.getId(), orgMailing.getCompanyID(), orgMailing.getShortname(), orgMailing.getDescription());
-				Mailing mailing = mailingDao.getMailing(copiedMailingID, orgMailing.getCompanyID());
+				ComMailing mailing = mailingDao.getMailing(copiedMailingID, orgMailing.getCompanyID());
 
 				mailing.setCampaignID(orgMailing.getCampaignID());
 				mailing.setMailingType(orgMailing.getMailingType());
@@ -301,7 +302,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 
 				splitPart = targetDao.getListSplitTarget(optimization.getSplitType(), i, optimization.getCompanyID());
 
-				((ComMailing) mailing).setSplitID(splitPart.getId());
+				mailing.setSplitID(splitPart.getId());
 				mailing.setMailTemplateID(bestMailing);
 				
 				// Create clone copy of mailing parameters
@@ -317,13 +318,13 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 						
 						copiedMailingParameters.add(copiedMailingParameter);
 					}
-					((ComMailing) mailing).setParameters(copiedMailingParameters);
+					mailing.setParameters(copiedMailingParameters);
 				}
 
 				if (mailingDao.saveMailing(mailing, false) != 0) {
-					if (((ComMailing) mailing).getParameters() != null) {
+					if (mailing.getParameters() != null) {
 						// Save mailing parameters only if list of parameters is not null
-						mailingParameterService.updateParameters(mailing.getCompanyID(), mailing.getId(), ((ComMailing) mailing).getParameters(), 0);
+						mailingParameterService.updateParameters(mailing.getCompanyID(), mailing.getId(), mailing.getParameters(), 0);
 					}
 					MaildropEntry orgDropEntry = getEffectiveMaildrop(orgMailing.getMaildropStatus(), optimization.isTestRun());
 					int blockSize = 0;
@@ -727,40 +728,18 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 	}
 
 	@Override
-	public List<SelectOption> getTestMailingList(ComOptimization optimization,final
-			List<Integer> excludedMailingIDs) {
-				
-		Map<Integer, String> groups = optimizationDao.getGroups(optimization.getCampaignID(),optimization.getCompanyID(), optimization.getId());
+	public List<SelectOption> getTestMailingList(ComOptimization optimization) {
+		Map<Integer, String> groups = optimizationDao.getGroups(optimization.getCampaignID(), optimization.getCompanyID(), optimization.getId());
 
-		List<SelectOption> mailingNames = new ArrayList<>();
-		if( groups == null ) {
-			return mailingNames;
+		if (MapUtils.isEmpty(groups)) {
+			return Collections.emptyList();
 		}
 
-		Set<Entry<Integer, String>> mailingStuff = groups.entrySet();
-		
-		for (Entry<Integer,String> row : mailingStuff) {
-			SelectOption option = new SelectOption();
-			option.setValue(Integer.toString(((Number) (row.getKey()))
-					.intValue()));
-			option.setText(row.getValue());
-			mailingNames.add(option);
-		}
-		
-		// filter excluded Mailings
-		if( excludedMailingIDs != null && excludedMailingIDs.size() > 0) {
-			CollectionUtils.filter(mailingNames, new Predicate<SelectOption>() {
-				@Override
-				public boolean evaluate(SelectOption option) {
-					return ! excludedMailingIDs.contains(Integer.parseInt(option.getValue()));
-				}
-				
-			});
-		}
-
-		return mailingNames;
+		List<SelectOption> options = new ArrayList<>(groups.size());
+		groups.forEach((mailingId, shortname) -> options.add(new SelectOption(Integer.toString(mailingId), shortname)));
+		return options;
 	}
-	
+
 	// helper methods
 	@Override
 	public int getSplitNumbers(@VelocityCheck int companyID, String splitType) {

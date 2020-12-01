@@ -10,8 +10,10 @@
 
 package com.agnitas.emm.core.recipientsreport.dao.impl;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -53,14 +55,14 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     }
 
     @Override
-    public void createReport(@VelocityCheck int companyId, RecipientsReport report, String fileContent) {
+    public void createReport(@VelocityCheck int companyId, RecipientsReport report, String fileContent) throws Exception {
 		if (report.getReportDate() == null) {
 			report.setReportDate(new Date());
         }
 		
         if (isOracleDB()) {
             int reportId = selectInt(logger, "SELECT recipients_report_tbl_seq.NEXTVAL FROM DUAL");
-            String sql = "INSERT INTO recipients_report_tbl (recipients_report_id, report_date, filename, datasource_id, admin_id, type, company_id, report, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO recipients_report_tbl (recipients_report_id, report_date, filename, datasource_id, admin_id, type, company_id, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             update(logger, sql,
                 reportId,
                 report.getReportDate(),
@@ -69,13 +71,13 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
                 report.getAdminId(),
                 report.getType().name(),
                 companyId,
-                AgnUtils.normalizeTextLineBreaks(fileContent),
                 report.getFileId(),
                 report.getAutoImportID(),
                 report.isError() ? 1 : 0);
             report.setId(reportId);
+            update(logger, "UPDATE recipients_report_tbl SET report = ? WHERE recipients_report_id = ?", fileContent, report.getId());
         } else {
-        	String sql = "INSERT INTO recipients_report_tbl (report_date, filename, datasource_id, admin_id, type, company_id, report, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        	String sql = "INSERT INTO recipients_report_tbl (report_date, filename, datasource_id, admin_id, type, company_id, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             int newId = insertIntoAutoincrementMysqlTable(logger, "recipients_report_id", sql,
                 report.getReportDate(),
                 report.getFilename(),
@@ -83,11 +85,13 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
                 report.getAdminId(),
                 report.getType().name(),
                 companyId,
-                AgnUtils.normalizeTextLineBreaks(fileContent),
                 report.getFileId(),
                 report.getAutoImportID(),
                 report.isError() ? 1 : 0);
             report.setId(newId);
+            try (InputStream inputStream = new ByteArrayInputStream(AgnUtils.normalizeTextLineBreaks(fileContent).getBytes("UTF-8"))) {
+            	updateBlob(logger, "UPDATE recipients_report_tbl SET report = ? WHERE recipients_report_id = ?", inputStream, report.getId());
+            }
         }
     }
 
@@ -95,7 +99,7 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     public void createSupplementalReportData(@VelocityCheck int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception {
         if (isOracleDB()) {
             int reportId = selectInt(logger, "SELECT recipients_report_tbl_seq.NEXTVAL FROM DUAL");
-            String sql = "INSERT INTO recipients_report_tbl (recipients_report_id, report_date, filename, datasource_id, admin_id, type, company_id, report, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO recipients_report_tbl (recipients_report_id, report_date, filename, datasource_id, admin_id, type, company_id, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             update(logger, sql,
                 reportId,
                 report.getReportDate(),
@@ -104,13 +108,13 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
                 report.getAdminId(),
                 report.getType().name(),
                 companyId,
-                textContent,
                 report.getFileId(),
                 report.getAutoImportID(),
                 report.isError() ? 1 : 0);
             report.setId(reportId);
+            update(logger, "UPDATE recipients_report_tbl SET report = ? WHERE recipients_report_id = ?", textContent, report.getId());
         } else {
-        	String sql = "INSERT INTO recipients_report_tbl (report_date, filename, datasource_id, admin_id, type, company_id, report, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        	String sql = "INSERT INTO recipients_report_tbl (report_date, filename, datasource_id, admin_id, type, company_id, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             int newId = insertIntoAutoincrementMysqlTable(logger, "recipients_report_id", sql,
                 report.getReportDate(),
                 report.getFilename(),
@@ -118,11 +122,13 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
                 report.getAdminId(),
                 report.getType().name(),
                 companyId,
-                textContent,
                 report.getFileId(),
                 report.getAutoImportID(),
                 report.isError() ? 1 : 0);
             report.setId(newId);
+            try (InputStream inputStream = new ByteArrayInputStream(textContent.getBytes("UTF-8"))) {
+            	updateBlob(logger, "UPDATE recipients_report_tbl SET report = ? WHERE recipients_report_id = ?", inputStream, report.getId());
+            }
         }
         try (FileInputStream inputStream = new FileInputStream(temporaryDataFile)) {
         	updateBlob(logger, "UPDATE recipients_report_tbl SET content = ? WHERE recipients_report_id = ?", inputStream, report.getId());

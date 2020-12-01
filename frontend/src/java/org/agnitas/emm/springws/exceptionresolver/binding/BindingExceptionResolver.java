@@ -14,11 +14,11 @@ import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionExc
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.springws.exceptionresolver.CommonExceptionResolver;
+import org.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
 import org.agnitas.exceptions.InvalidUserStatusException;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 
-public class BindingExceptionResolver extends CommonExceptionResolver {
+public class BindingExceptionResolver extends AbstractEmmExceptionResolver {
 
 	@Override
 	protected SoapFaultDefinition getFaultDefinition(Object endpoint,

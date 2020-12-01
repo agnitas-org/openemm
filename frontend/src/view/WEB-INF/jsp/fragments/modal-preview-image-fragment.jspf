@@ -1,0 +1,18 @@
+
+<script id="modal-preview-image" type="text/x-mustache-template">
+    <div class="modal modal-adaptive">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close-icon close" data-dismiss="modal">
+                        <i aria-hidden="true" class="icon icon-times-circle"></i>
+                    </button>
+                    <h4 class="modal-title">{{- typeof(fileName) == 'undefined' ? '' : fileName}}</h4>
+                </div>
+                <div class="modal-body">
+                    <img src="{{- src }}" alt="{{- typeof(title) == 'undefined' ? '' : title }}" style="width: auto; margin: auto; display: block;"/>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

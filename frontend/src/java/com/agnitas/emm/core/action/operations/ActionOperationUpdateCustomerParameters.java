@@ -103,123 +103,126 @@ public class ActionOperationUpdateCustomerParameters extends AbstractActionOpera
 		
 		if (useTrack) {
 			if (trackingPointId == -1) {
-				if (simpleDataType != SimpleDataType.Numeric) {
+				if (simpleDataType != SimpleDataType.Numeric && simpleDataType != SimpleDataType.Float) {
 		            errors.add("trackingPointId", new ActionMessage("error.action.trackpoint.type", "Numeric", dataType.getTypeName()));
 					return false;
 				}
 				return true;
 			}
 			
-			if (trackpointDao != null) {
-				ComTrackpointDef tp = trackpointDao.get(trackingPointId, getCompanyId());
-				if (tp == null) {
-		            errors.add("trackingPointId", new ActionMessage("error.action.dbAccess"));
-					return false;
-				}
-				
+			ComTrackpointDef tp = trackpointDao.get(trackingPointId, getCompanyId());
+			if (tp == null) {
+	            errors.add("trackingPointId", new ActionMessage("error.action.dbAccess"));
+				return false;
+			} else {
 				switch (tp.getType()) {
 					case ComTrackpointDef.TYPE_ALPHA:
 						if (simpleDataType != SimpleDataType.Characters) {
 				            errors.add("trackingPointId", new ActionMessage("error.action.trackpoint.type", "Alphanumeric", dataType.getTypeName()));
 							return false;
+						} else {
+							return true;
 						}
-						break;
 					case ComTrackpointDef.TYPE_NUM:
-						if (simpleDataType != SimpleDataType.Numeric) {
+						if (simpleDataType != SimpleDataType.Numeric && simpleDataType != SimpleDataType.Float) {
 				            errors.add("trackingPointId", new ActionMessage("error.action.trackpoint.type", "Numeric", dataType.getTypeName()));
 							return false;
+						} else {
+							return true;
 						}
-						break;
 					case ComTrackpointDef.TYPE_SIMPLE:
-						if (simpleDataType != SimpleDataType.Numeric) {
+						if (simpleDataType != SimpleDataType.Numeric && simpleDataType != SimpleDataType.Float) {
 				            errors.add("trackingPointId", new ActionMessage("error.action.trackpoint.type", "Simple", dataType.getTypeName()));
 							return false;
+						} else {
+							return true;
 						}
-						break;
 					default:
-			            errors.add("Unkmow TP type and " + dataType.getTypeName() + " column", new ActionMessage("error.action.trackpoint.type"));
+			            errors.add("Unknown TP type " + dataType.getTypeName(), new ActionMessage("error.action.trackpoint.type"));
 						return false;
 				}
-				System.out.println("TP.type is " + tp.getType() + " Colum type is " + dataType.toString());
 			}
-		}
-		
-    	if (StringUtils.isNotBlank(columnName)) {
-			switch (simpleDataType) {
-				case Blob:
-					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidFieldType", columnName));
-					return false;
-				case Date:
-					if (updateType == ActionOperationUpdateCustomerParameters.TYPE_INCREMENT_BY) {
-						try {
-							Double.parseDouble(updateValue);
-							return true;
-						} catch (Exception e) {
-							errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
-							return false;
-						}
-					} else if (updateType == ActionOperationUpdateCustomerParameters.TYPE_DECREMENT_BY) {
-						try {
-							Double.parseDouble(updateValue);
-							return true;
-						} catch (Exception e) {
-							errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
-							return false;
-						}
-					} else if (updateType == ActionOperationUpdateCustomerParameters.TYPE_SET_VALUE) {
-						Matcher matcher = DATE_ARITHMETICS_PATTERN.matcher(updateValue.toUpperCase());
-						if (matcher.matches()) {
-							if (matcher.group(2) != null) {
-								// Is safe, because group 2 must match "+" or "-" according to reg exp.
-								try {
-									Double.parseDouble(matcher.group(3));
-									return true;
-								} catch (Exception e) {
-									errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
-									return false;
-								}
-							} else if (DbUtilities.isNowKeyword(updateValue)) {
-								updateValue = "CURRENT_TIMESTAMP";
-								return true;
-							} else {
-								SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
-								format.setLenient(false);
-								try {
-									format.parse(updateValue);
-									return true;
-								} catch (ParseException e) {
-									errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
-									return false;
-								}
-							}
-						} else {
+		} else {
+	    	if (StringUtils.isBlank(columnName)) {
+	    		return true;
+	    	} else {
+				switch (simpleDataType) {
+					case Blob:
+						errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidFieldType", columnName));
+						return false;
+					case Date:
+					case DateTime:
+						if (updateType == ActionOperationUpdateCustomerParameters.TYPE_INCREMENT_BY) {
 							try {
-								SimpleDateFormat format = new SimpleDateFormat(DateUtilities.YYYYMMDD);
-								format.setLenient(false);
-								format.parse(updateValue);
+								Double.parseDouble(updateValue);
 								return true;
 							} catch (Exception e) {
 								errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
 								return false;
 							}
+						} else if (updateType == ActionOperationUpdateCustomerParameters.TYPE_DECREMENT_BY) {
+							try {
+								Double.parseDouble(updateValue);
+								return true;
+							} catch (Exception e) {
+								errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
+								return false;
+							}
+						} else if (updateType == ActionOperationUpdateCustomerParameters.TYPE_SET_VALUE) {
+							Matcher matcher = DATE_ARITHMETICS_PATTERN.matcher(updateValue.toUpperCase());
+							if (matcher.matches()) {
+								if (matcher.group(2) != null) {
+									// Is safe, because group 2 must match "+" or "-" according to reg exp.
+									try {
+										Double.parseDouble(matcher.group(3));
+										return true;
+									} catch (Exception e) {
+										errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
+										return false;
+									}
+								} else if (DbUtilities.isNowKeyword(updateValue)) {
+									updateValue = "CURRENT_TIMESTAMP";
+									return true;
+								} else {
+									SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
+									format.setLenient(false);
+									try {
+										format.parse(updateValue);
+										return true;
+									} catch (ParseException e) {
+										errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
+										return false;
+									}
+								}
+							} else {
+								try {
+									SimpleDateFormat format = new SimpleDateFormat(DateUtilities.YYYYMMDD);
+									format.setLenient(false);
+									format.parse(updateValue);
+									return true;
+								} catch (Exception e) {
+									errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
+									return false;
+								}
+							}
+						} else {
+							throw new Exception("Invalid update value type");
 						}
-					} else {
-						throw new Exception("Invalid update value type");
-					}
-				case Numeric:
-					if (AgnUtils.isDouble(updateValue)) {
-						return false;
-					} else {
-						errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Numeric.getMessageKey(), locale), updateValue));
-						return false;
-					}
-				case Characters:
-					// No special conditions for characters
-					return true;
-				default:
-					throw new Exception("Unknown db field type");
-			}
-        }
-		return true;
+					case Numeric:
+					case Float:
+						if (AgnUtils.isDouble(updateValue)) {
+							return true;
+						} else {
+							errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Numeric.getMessageKey(), locale), updateValue));
+							return false;
+						}
+					case Characters:
+						// No special conditions for characters
+						return true;
+					default:
+						throw new Exception("Unknown db field type");
+				}
+	        }
+		}
 	}
 }

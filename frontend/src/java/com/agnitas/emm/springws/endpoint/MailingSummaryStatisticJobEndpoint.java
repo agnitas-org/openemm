@@ -10,47 +10,44 @@
 
 package com.agnitas.emm.springws.endpoint;
 
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.Utils;
 import org.apache.log4j.Logger;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.stat.service.MailingSummaryStatisticJobService;
 import com.agnitas.emm.springws.jaxb.MailingSummaryStatisticJobRequest;
 import com.agnitas.emm.springws.jaxb.MailingSummaryStatisticJobResponse;
-import com.agnitas.emm.springws.jaxb.ObjectFactory;
 
-public class MailingSummaryStatisticJobEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class MailingSummaryStatisticJobEndpoint extends BaseEndpoint {
 	private static final Logger classLogger = Logger.getLogger(MailingSummaryStatisticJobEndpoint.class);
 
 	private MailingSummaryStatisticJobService mailingSummaryStatisticJobService;
-	private ObjectFactory comObjectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Entered MailingSummaryStatisticJobEndpoint.invokeInternal()");
+	public MailingSummaryStatisticJobEndpoint(MailingSummaryStatisticJobService mailingSummaryStatisticJobService) {
+		this.mailingSummaryStatisticJobService = mailingSummaryStatisticJobService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "MailingSummaryStatisticJobRequest")
+	public @ResponsePayload MailingSummaryStatisticJobResponse mailingSummaryStatisticJob(@RequestPayload MailingSummaryStatisticJobRequest request) throws Exception {
+		if (classLogger.isInfoEnabled()) {
+			classLogger.info( "Entered MailingSummaryStatisticJobEndpoint.mailingSummaryStatisticJob()");
 		}
 		
-		MailingSummaryStatisticJobRequest request = (MailingSummaryStatisticJobRequest) arg0;
-		MailingSummaryStatisticJobResponse response = comObjectFactory.createMailingSummaryStatisticJobResponse();
+		MailingSummaryStatisticJobResponse response = new MailingSummaryStatisticJobResponse();
 		
 		int id = mailingSummaryStatisticJobService.startSummaryStatisticJob(request.getMailingID(),
 				request.getTargetGroups(), null /*request.getRecipientsType()*/);
 		
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Leaving MailingSummaryStatisticJobEndpoint.invokeInternal()");
+		if (classLogger.isInfoEnabled()) {
+			classLogger.info( "Leaving MailingSummaryStatisticJobEndpoint.mailingSummaryStatisticJob()");
 		}
 		
 		response.setStatisticJobID(id);
 		return response;
 	}
-
-	public void setMailingSummaryStatisticJobService(
-			MailingSummaryStatisticJobService mailingSummaryStatisticJobService) {
-		this.mailingSummaryStatisticJobService = mailingSummaryStatisticJobService;
-	}
-
-	public void setComObjectFactory(ObjectFactory comObjectFactory) {
-		this.comObjectFactory = comObjectFactory;
-	}
-
 }

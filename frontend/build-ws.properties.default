@@ -8,8 +8,8 @@ CATALINA_HOME=/opt/agnitas.com/software/tomcat
 deploydir=${user.home}/webapps
 
 # Webapplication directory name (may contain version tag info like "/css_8.10.334-hf1" to be seen in GUI, mostly for localhost tests "/ws")
-# Buildname example: openemm-webservices_20.04.000.000
-appname=/openemm-webservices_20.04.000.000
+# Buildname example: openemm-webservices_20.10.000.000
+appname=/openemm-webservices_20.10.000.000
 
 # Deploytarget:
 deploytarget=openemm.ws

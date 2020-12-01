@@ -14,7 +14,6 @@ import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.factory.MailingComponentFactory;
 import org.agnitas.beans.impl.MailingComponentImpl;
 
-
 public class MailingComponentFactoryImpl implements MailingComponentFactory {
     @Override
     public MailingComponent newMailingComponent() {

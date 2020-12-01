@@ -51,7 +51,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 	private ExtendedConversionService conversionService;
 	
 	@Override
-	@Validate("commonBlacklist")
+	@Validate
 	public boolean insertBlacklist(BlacklistModel model) {
 		if (checkBlacklist(model)) {
 			throw new BlacklistAlreadyExistException();
@@ -71,13 +71,13 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	@Validate("commonBlacklist")
+	@Validate
 	public boolean deleteBlacklist(BlacklistModel model) {
 		return blacklistDao.delete(model.getCompanyId(), model.getEmail());
 	}
 
 	@Override
-	@Validate("commonBlacklist")
+	@Validate
 	public boolean checkBlacklist(BlacklistModel model) {
 		List<String> list = blacklistDao.getBlacklist(model.getCompanyId());
 		for (String regex : list) {
@@ -139,7 +139,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 		boolean isSuccessfullyInserted = blacklistDao.insert(companyId, email, reason);
 		if (isSuccessfullyInserted) {
 			String remark = "Blacklisted by " + adminId;
-			recipientDao.updateStatusByEmailPattern(companyId, email, UserStatus.Blacklisted.getStatusCode(), remark);
+			bindingService.updateBindingStatusByEmailPattern(companyId, email, UserStatus.Blacklisted.getStatusCode(), remark);
 		}
 
 		return isSuccessfullyInserted;

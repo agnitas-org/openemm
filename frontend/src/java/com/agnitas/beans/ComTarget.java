@@ -10,11 +10,7 @@
 
 package com.agnitas.beans;
 
-import javax.servlet.jsp.JspException;
-
-import org.agnitas.target.TargetRepresentation;
-import org.springframework.context.ApplicationContext;
-
+import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.target.service.RecipientTargetGroupMatcher;
 
@@ -34,18 +30,6 @@ public interface ComTarget extends TargetLight {
     String getTargetSQL();
 
     /**
-     * Getter for property targetStructure.
-     * 
-     * @return Value of property targetStructure.
-     * 
-     * Use setEQL() instead.
-     * 
-     * @see #setEQL(String)
-     */
-    @Deprecated
-    TargetRepresentation getTargetStructure();
-
-    /**
      * Getter for property customerInGroup.
      * 
      * @return Value of property customerInGroup.
@@ -53,21 +37,7 @@ public interface ComTarget extends TargetLight {
      * @see ComTargetService#createRecipientTargetGroupMatcher(int, int)
      * @see RecipientTargetGroupMatcher
      */
-    @Deprecated
-    boolean isCustomerInGroup(Interpreter interpreter);
-
-     /**
-     * Getter for property customerInGroup.
-     * 
-     * @return Value of property customerInGroup.
-     * @throws JspException 
-     * 
-     * @see ComTargetService#createRecipientTargetGroupMatcher(int, int)
-     * @see RecipientTargetGroupMatcher
-     */
-    @Deprecated
-    boolean isCustomerInGroup(int customerID, ApplicationContext con) throws JspException;
-
+    boolean isCustomerInGroup(Interpreter interpreter, final EqlFacade eqlFacade);
 
     /**
      * Setter for property targetSQL.
@@ -75,18 +45,6 @@ public interface ComTarget extends TargetLight {
      * @param sql New value of property targetSQL.
      */
     void setTargetSQL(String sql);
-
-    /**
-     * Setter for property targetStructure.
-     * 
-     * @param targetStructure New value of property targetStructure.
-     * 
-     * Use getEQL() instead.
-     * 
-     * @see #getEQL()
-     */
-    @Deprecated
-    void setTargetStructure(TargetRepresentation targetStructure);
 
 	boolean isAdminTestDelivery();
 	void setAdminTestDelivery( boolean adminTestDelivery);
@@ -104,19 +62,5 @@ public interface ComTarget extends TargetLight {
 	 * @return EQL representation of target group
 	 */
 	String getEQL();
-	
-	/**
-	 * Set flag, if target group is simple structured (and therefore visualizable with
-	 * legacy editor).
-	 * 
-	 * @param simpleStructured true, if structure of target group is simple
-	 */
-	void setSimpleStructured(boolean simpleStructured);
-	
-	/**
-	 * Returns, if target group is simple structured and visualizable with legacy editor.
-	 * 
-	 * @return true, if target group is simple structured
-	 */
-	boolean isSimpleStructured();
+
 }

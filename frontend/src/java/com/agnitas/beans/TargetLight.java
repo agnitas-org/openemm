@@ -192,4 +192,7 @@ public interface TargetLight {
 
 	void setComplexityIndex(int complexityIndex);
 
+	void setAccessLimitation(boolean accessLimitation);
+
+	boolean isAccessLimitation();
 }

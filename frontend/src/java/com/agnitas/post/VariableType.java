@@ -11,25 +11,31 @@
 package com.agnitas.post;
 
 public enum VariableType {
-	String("string"),
-	Number("float"),
+	String("string", 10),
+	Number("float", 10),
 	
 	/** value may not be empty */
-	Zip("zip"),
+	Zip("zip", 80),
 	
 	/** 2 uppercase letters, ISO 3166-1-alpha-2 */
-	CountryCode("countryCode"),
+	CountryCode("countryCode", 10),
 
 	/** value must be wellformed url */
-	Imageurl("imageurl");
+	Imageurl("imageurl", 10);
 
 	private String key;
+	private int dataTypeId;
 
 	public String getKey() {
 		return key;
 	}
 
-	private VariableType(String key) {
+	public int getDataTypeId() {
+		return dataTypeId;
+	}
+
+	private VariableType(String key, int dataTypeId) {
 		this.key = key;
+		this.dataTypeId = dataTypeId;
 	}
 }

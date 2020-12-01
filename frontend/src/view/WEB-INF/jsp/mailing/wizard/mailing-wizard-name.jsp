@@ -77,26 +77,24 @@
                         <html:textarea styleId="mailing.description" styleClass="form-control v-resizable" property="mailing.description"/>
                     </div>
                 </div>
+                <c:if test="${isEnableTrackingVeto}">
+                    <div class="form-group">
+                        <div class="col-sm-4">
+                            <label class="control-label" for="mailingContentTypeAdvertising">
+                                <bean:message key="mailing.contentType.advertising"/>
+                                <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/AdvertisingMsg.xml" tabindex="-1" type="button"></button>
+                            </label>
+                        </div>
+                        <div class="col-sm-8">
+                            <html:hidden property="__STRUTS_CHECKBOX_mailingContentTypeAdvertising" value="false" />
+                            <label class="toggle">
+                                <html:checkbox property="mailingContentTypeAdvertising" styleId="mailingContentTypeAdvertising"/>
+                                <div class="toggle-control"></div>
+                            </label>
+                        </div>
+                    </div>
+                </c:if>
             </div>
-
-			<c:if test="${isEnableTrackingVeto}"> 
-	        	<div class="form-group">
-	            	<div class="col-sm-4">
-	                	<label class="control-label" for="mailingContentTypeAdvertising">
-	                    	<bean:message key="mailing.contentType.advertising"/>
-	                        <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/AdvertisingMsg.xml" tabindex="-1" type="button"></button>
-	                 	</label>
-	              	</div>
-	              	<div class="col-sm-8">
-		           		<html:hidden property="__STRUTS_CHECKBOX_mailingContentTypeAdvertising" value="false" />
-		  				<label class="toggle">
-		  					<html:checkbox property="mailingContentTypeAdvertising" styleId="mailingContentTypeAdvertising"/>
-		                  	<div class="toggle-control"></div>
-		  				</label>
-	           		</div>
-	    		</div>
- 			</c:if>
-
             <div class="tile-footer">
                 <a href="#" class="btn btn-large pull-left" data-form-action="previous">
                     <i class="icon icon-angle-left"></i>

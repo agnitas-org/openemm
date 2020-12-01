@@ -13,31 +13,30 @@ package org.agnitas.emm.springws.endpoint.recipient;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.DeleteSubscriberRequest;
 import org.agnitas.emm.springws.jaxb.DeleteSubscriberResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.agnitas.service.UserActivityLogService;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class DeleteSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class DeleteSubscriberEndpoint extends BaseEndpoint {
 
-	@Resource
 	private RecipientService recipientService;
-	@Resource
-	private ObjectFactory objectFactory;
-	@Resource
-	private UserActivityLogService userActivityLogService;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		DeleteSubscriberRequest request = (DeleteSubscriberRequest) arg0;
-		DeleteSubscriberResponse response = objectFactory.createDeleteSubscriberResponse();
+	public DeleteSubscriberEndpoint(RecipientService recipientService) {
+		this.recipientService = recipientService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteSubscriberRequest")
+	public @ResponsePayload DeleteSubscriberResponse deleteSubscriber(@RequestPayload DeleteSubscriberRequest request) {
+		DeleteSubscriberResponse response = new DeleteSubscriberResponse();
 
 		RecipientModel model = parseModel(request);
 
@@ -54,5 +53,4 @@ public class DeleteSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint
 		model.setCustomerId(request.getCustomerID());
 		return model;
 	}
-
 }

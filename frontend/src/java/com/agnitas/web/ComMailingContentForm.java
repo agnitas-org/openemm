@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 
 import com.agnitas.beans.ComContentSource;
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.Permission;
@@ -49,7 +49,7 @@ public class ComMailingContentForm extends StrutsFormBase {
     public static final String PROPERTY_VALUE_PREFIX = "propertyValue_";
 
     private List<TargetLight> availableTargetGroups;
-    private List<ComProfileField> availableInterestGroups;
+    private List<ProfileField> availableInterestGroups;
     private List<ComContentSource> availableContentSources;
 
     /**
@@ -63,23 +63,23 @@ public class ComMailingContentForm extends StrutsFormBase {
     private boolean isTemplate;
     private boolean worldMailingSend;
     private boolean showHTMLEditor;
-    protected boolean noImages;
+//    protected boolean noImages;
     private int dynNameID;
     private int newTargetID;
     private String newContent;
     private Map<String, DynamicTag> tags;
     private Map<Integer, DynamicTagContent> content;
     private int contentID;
-    private int previewFormat;
-    private int previewSize;
-    private int previewCustomerID;
+//    private int previewFormat;
+//    private int previewSize;
+//    private int previewCustomerID;
     private int mailinglistID;
     private int mailFormat;
     private String dynName;
     private int mailingContentView;
     private String dynInterestGroup;
     private boolean enableTextGeneration;
-    private int previewType = -1;
+//    private int previewType = -1;
     private int workflowId;
     private int gridTemplateId;
     private boolean showDateSettings = false;
@@ -93,6 +93,11 @@ public class ComMailingContentForm extends StrutsFormBase {
     private boolean mailingExclusiveLockingAcquired = false;
 
     private List<String> dynTagNames = new ArrayList<>();
+	
+	private String externalCustomerFieldAdd = "";
+	private String externalCustomerFieldRemove = "";
+	private String externalReferenceFieldAdd = "";
+	private String externalReferenceFieldRemove = "";
     
     /**
      * Validate the properties that have been set from this HTTP request,
@@ -121,7 +126,7 @@ public class ComMailingContentForm extends StrutsFormBase {
      * @return Value of property mailingID.
      */
     public int getMailingID() {
-        return this.mailingID;
+        return mailingID;
     }
 
     /**
@@ -352,59 +357,7 @@ public class ComMailingContentForm extends StrutsFormBase {
         this.contentID = contentID;
     }
 
-    /**
-     * Getter for property previewFormat.
-     *
-     * @return Value of property previewFormat.
-     */
-    public int getPreviewFormat() {
-        return this.previewFormat;
-    }
 
-    /**
-     * Setter for property previewFormat.
-     *
-     * @param previewFormat New value of property previewFormat.
-     */
-    public void setPreviewFormat(int previewFormat) {
-        this.previewFormat = previewFormat;
-    }
-
-    /**
-     * Getter for property previewSize.
-     *
-     * @return Value of property previewSize.
-     */
-    public int getPreviewSize() {
-        return this.previewSize;
-    }
-
-    /**
-     * Setter for property previewSize.
-     *
-     * @param previewSize New value of property previewSize.
-     */
-    public void setPreviewSize(int previewSize) {
-        this.previewSize = previewSize;
-    }
-
-    /**
-     * Getter for property previewCustomerID.
-     *
-     * @return Value of property previewCustomerID.
-     */
-    public int getPreviewCustomerID() {
-        return this.previewCustomerID;
-    }
-
-    /**
-     * Setter for property previewCustomerID.
-     *
-     * @param previewCustomerID New value of property previewCustomerID.
-     */
-    public void setPreviewCustomerID(int previewCustomerID) {
-        this.previewCustomerID = previewCustomerID;
-    }
 
     /**
      * Getter for property mailinglistID.
@@ -502,14 +455,6 @@ public class ComMailingContentForm extends StrutsFormBase {
         this.mailingContentView = mailingContentView;
     }
 
-    public boolean isNoImages() {
-        return noImages;
-    }
-
-    public void setNoImages(boolean noImages) {
-        this.noImages = noImages;
-    }
-
     public int getTargetID(String index) {
         DynamicTagContent tag = getContent().get(NumberUtils.toInt(index));
         if (tag == null) {
@@ -590,11 +535,11 @@ public class ComMailingContentForm extends StrutsFormBase {
         this.availableTargetGroups = availableTargetGroups;
     }
 
-    public List<ComProfileField> getAvailableInterestGroups() {
+    public List<ProfileField> getAvailableInterestGroups() {
         return availableInterestGroups;
     }
 
-    public void setAvailableInterestGroups(List<ComProfileField> availableInterestGroups) {
+    public void setAvailableInterestGroups(List<ProfileField> availableInterestGroups) {
         this.availableInterestGroups = availableInterestGroups;
     }
 
@@ -622,14 +567,6 @@ public class ComMailingContentForm extends StrutsFormBase {
         this.enableTextGeneration = enableTextGeneration;
     }
 
-    public int getPreviewType() {
-        return this.previewType;
-    }
-
-    public void setPreviewType(int previewType) {
-        this.previewType = previewType;
-    }
-
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         mailingID = 0;
@@ -637,9 +574,13 @@ public class ComMailingContentForm extends StrutsFormBase {
         contentID = 0;
         newContent = "";
         newTargetID = 0;
-        noImages = false;
 
         gridTemplateId = 0;
+        
+		externalCustomerFieldAdd = "";
+		externalCustomerFieldRemove = "";
+		externalReferenceFieldAdd = "";
+		externalReferenceFieldRemove = "";
     }
 
     public int getWorkflowId() {
@@ -697,4 +638,36 @@ public class ComMailingContentForm extends StrutsFormBase {
     public List<String> getDynTagNames() {
         return dynTagNames;
     }
+
+	public String getExternalCustomerFieldAdd() {
+		return externalCustomerFieldAdd;
+	}
+
+	public void setExternalCustomerFieldAdd(String externalCustomerFieldAdd) {
+		this.externalCustomerFieldAdd = externalCustomerFieldAdd;
+	}
+
+	public String getExternalCustomerFieldRemove() {
+		return externalCustomerFieldRemove;
+	}
+
+	public void setExternalCustomerFieldRemove(String externalCustomerFieldRemove) {
+		this.externalCustomerFieldRemove = externalCustomerFieldRemove;
+	}
+
+	public String getExternalReferenceFieldAdd() {
+		return externalReferenceFieldAdd;
+	}
+
+	public void setExternalReferenceFieldAdd(String externalReferenceFieldAdd) {
+		this.externalReferenceFieldAdd = externalReferenceFieldAdd;
+	}
+
+	public String getExternalReferenceFieldRemove() {
+		return externalReferenceFieldRemove;
+	}
+
+	public void setExternalReferenceFieldRemove(String externalReferenceFieldRemove) {
+		this.externalReferenceFieldRemove = externalReferenceFieldRemove;
+	}
 }

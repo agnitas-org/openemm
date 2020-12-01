@@ -15,7 +15,6 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
-import org.agnitas.beans.ProfileField;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -29,7 +28,7 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
@@ -128,6 +127,13 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     }
 
     @Override
+    public boolean isInvalidFloatField(String fieldType, String fieldDefault) {
+        return DbColumnType.GENERIC_TYPE_FLOAT.equals(fieldType)
+                && StringUtils.isNotEmpty(fieldDefault)
+                && !AgnUtils.isDouble(fieldDefault);
+    }
+
+    @Override
     public boolean isAllowedDefaultValue(String fieldType, String defaultValue, SimpleDateFormat dateFormat) {
         return DbUtilities.checkAllowedDefaultValue(fieldType, defaultValue, dateFormat);
     }
@@ -186,7 +192,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
         String newValue = fieldChange.getNewValue();
         String fieldName = fieldChange.getShortname();
 
-        ComProfileField profileField = null;
+        ProfileField profileField = null;
         try {
             profileField = profileFieldDao.getProfileField(admin.getCompanyID(), fieldChange.getShortname());
         } catch (Exception e) {
@@ -208,7 +214,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
             value = "";
         } else {
             switch (fieldChange.getType()) {
-                case Date:
+	            case Date:
                     SimpleDateFormat dateFormat = admin.getDateFormat();
                     String dateFormatPattern = dateFormat.toPattern();
                     try {
@@ -219,18 +225,43 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
                                I18nString.getLocaleString(DbColumnType.SimpleDataType.Date.getMessageKey(), locale) + "(" + dateFormatPattern + ")");
                     }
                     break;
+	            case DateTime:
+                    SimpleDateFormat dateTimeFormat = admin.getDateTimeFormat();
+                    String dateTimeFormatPattern = dateTimeFormat.toPattern();
+                    try {
+                        newValue = StringUtils.replace(newValue, dateTimeFormatPattern, "");
+                        value = dateTimeFormat.parse(newValue);
+                    } catch (Exception e) {
+                       message = Message.of("error.bulkAction.datatype", fieldName,
+                               I18nString.getLocaleString(DbColumnType.SimpleDataType.DateTime.getMessageKey(), locale) + "(" + dateTimeFormatPattern + ")");
+                    }
+                    break;
                 case Numeric:
-                    String normalizedValue = AgnUtils.normalizeNumber(locale, newValue);
+                    String normalizedNumericValue = AgnUtils.normalizeNumber(locale, newValue);
                     int numericPrecision = profileField.getNumericPrecision();
                     int numericScale = profileField.getNumericScale();
-                    if (!AgnUtils.isDouble(normalizedValue)) {
+                    if (!AgnUtils.isDouble(normalizedNumericValue)) {
                         message = Message.of("error.bulkAction.datatype", fieldName,
                                 I18nString.getLocaleString(DbColumnType.SimpleDataType.Numeric.getMessageKey(), locale));
-                    } else if (!isValidProfileFieldNumberSize(normalizedValue, numericPrecision, numericScale)) {
+                    } else if (!isValidProfileFieldNumberSize(normalizedNumericValue, numericPrecision, numericScale)) {
                         message = getMessageWithFieldName(fieldName,"error.contentLengthExceedsLimit", locale,
                                 String.format("(%d,%d)", numericPrecision, numericScale));
                     } else {
-                        value = normalizedValue;
+                        value = normalizedNumericValue;
+                    }
+                    break;
+                case Float:
+                    String normalizedFloatValue = AgnUtils.normalizeNumber(locale, newValue);
+                    int floatPrecision = profileField.getNumericPrecision();
+                    int floatScale = profileField.getNumericScale();
+                    if (!AgnUtils.isDouble(normalizedFloatValue)) {
+                        message = Message.of("error.bulkAction.datatype", fieldName,
+                                I18nString.getLocaleString(DbColumnType.SimpleDataType.Float.getMessageKey(), locale));
+                    } else if (!isValidProfileFieldNumberSize(normalizedFloatValue, floatScale, floatScale)) {
+                        message = getMessageWithFieldName(fieldName,"error.contentLengthExceedsLimit", locale,
+                                String.format("(%d,%d)", floatPrecision, floatScale));
+                    } else {
+                        value = normalizedFloatValue;
                     }
                     break;
                 case Characters:

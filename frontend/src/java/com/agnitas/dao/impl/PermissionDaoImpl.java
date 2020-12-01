@@ -12,9 +12,11 @@ package com.agnitas.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -39,12 +41,6 @@ public class PermissionDaoImpl extends BaseDaoImpl implements PermissionDao {
 		
 		return list;
     }
-    
-    @Override
-	public List<Permission> getPermissionsByCategory(String categrory) {
-    	String sql = "SELECT permission_name, category, sub_category, sort_order, feature_package FROM permission_tbl WHERE category = ?";
-		return select(logger, sql, new Permission_RowMapper(), categrory);
-    }
 
     protected class Permission_RowMapper implements RowMapper<Permission> {
 		@Override
@@ -62,5 +58,33 @@ public class PermissionDaoImpl extends BaseDaoImpl implements PermissionDao {
 				return null;
 			}
 		}
+	}
+
+	@Override
+	public List<String> getAllCategoriesOrdered() {
+		String sql = "SELECT DISTINCT category, sub_category FROM permission_tbl ORDER BY category, sub_category";
+		List<String> categoriesFromDB = select(logger, sql, new StringRowMapper());
+		List<String> allCategoriesOrdered = new ArrayList<>();
+		for (String orderedCategory : Permission.CATEGORY_DISPLAY_ORDER) {
+			if (categoriesFromDB.contains(orderedCategory)) {
+				allCategoriesOrdered.add(orderedCategory);
+				categoriesFromDB.remove(orderedCategory);
+			}
+		}
+		
+		boolean addSystemAtEnd = false;
+		if (categoriesFromDB.contains(Permission.CATEGORY_KEY_SYSTEM)) {
+			addSystemAtEnd = true;
+			categoriesFromDB.remove(Permission.CATEGORY_KEY_SYSTEM);
+		}
+		
+		// add all remaining categories which do not have a special sort order
+		allCategoriesOrdered.addAll(categoriesFromDB);
+		
+		if (addSystemAtEnd) {
+			allCategoriesOrdered.add(Permission.CATEGORY_KEY_SYSTEM);
+		}
+		
+		return allCategoriesOrdered;
 	}
 }

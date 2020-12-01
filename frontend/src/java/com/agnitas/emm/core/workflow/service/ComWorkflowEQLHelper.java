@@ -10,27 +10,17 @@
 
 package com.agnitas.emm.core.workflow.service;
 
-import static com.agnitas.emm.core.target.eql.emm.eql.EqlUtils.getValidOperator;
-import static org.agnitas.target.TargetNode.OPERATOR_IS;
-import static org.agnitas.util.DbColumnType.GENERIC_TYPE_CHAR;
-import static org.agnitas.util.DbColumnType.GENERIC_TYPE_DATE;
-import static org.agnitas.util.DbColumnType.GENERIC_TYPE_DOUBLE;
-import static org.agnitas.util.DbColumnType.GENERIC_TYPE_INTEGER;
-import static org.agnitas.util.DbColumnType.GENERIC_TYPE_VARCHAR;
+import static org.agnitas.target.ConditionalOperator.IS;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
-import org.agnitas.beans.ProfileField;
 import org.agnitas.service.ColumnInfoService;
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetOperator;
-import org.agnitas.target.impl.TargetNodeDate;
-import org.agnitas.target.impl.TargetNodeNumeric;
-import org.agnitas.target.impl.TargetNodeString;
+import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.apache.commons.lang3.StringUtils;
@@ -38,6 +28,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
 import com.agnitas.emm.core.target.eql.codegen.util.StringUtil;
 import com.agnitas.emm.core.target.eql.emm.eql.EQLCreationException;
@@ -55,7 +46,8 @@ public class ComWorkflowEQLHelper {
  
 	private static final String DATE_CURRENT_TIMESTAMP = "CURRENT_TIMESTAMP";
 	private static final String DATE_SYSDATE = "SYSDATE";
-	private static final String DATE_NOW = "NOW()";
+    private static final String DATE_NOW = "NOW()";
+    private static final String DATE_TODAY = "TODAY";
 	
 	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.###########", new DecimalFormatSymbols(Locale.US));
     private static final String DEFAULT_EQL_DATE_PATTERN = DateUtilities.YYYYMMDD;
@@ -143,34 +135,33 @@ public class ComWorkflowEQLHelper {
     }
     
     private String generateNumericEQL(String resolvedFieldName, int operator, String value, int operator2, String value2, boolean disableThreeValuedLogic) throws EQLCreationException {
-    
-        TargetOperator targetOperator = getValidOperator(TargetNodeNumeric.getValidOperators(), operator);
-        TargetOperator targetOperator2 = getValidOperator(TargetNodeNumeric.getValidOperators(), operator2);
-        
-        if (targetOperator == null || targetOperator == TargetNode.OPERATOR_MOD && targetOperator2 == null) {
+        final Optional<ConditionalOperator> targetOperator = ConditionalOperator.getOperatorForNumberByCode(operator);
+        final Optional<ConditionalOperator> targetOperator2 = ConditionalOperator.getOperatorForNumberByCode(operator2);
+
+        if (!targetOperator.isPresent() || targetOperator.get() == ConditionalOperator.MOD && !targetOperator2.isPresent()) {
             throw new EQLCreationException("No or invalid primary operator defined");
         }
-        
-        if(targetOperator == OPERATOR_IS) {
+
+        if(targetOperator.get() == IS) {
             return String.format("%s %s", resolvedFieldName, EqlUtils.getIsEmptyOperatorValue(value));
         }
         
         double floatValue = NumberUtils.toDouble(value, 0.0f);
         value = DECIMAL_FORMAT.format(floatValue);
     
-        if (targetOperator == TargetNode.OPERATOR_MOD) {
+        if (targetOperator.get() == ConditionalOperator.MOD) {
             double floatValue2 = NumberUtils.toDouble(value2, 0.0f);
             value2 = DECIMAL_FORMAT.format(floatValue2);
-            return EqlUtils.makeEquation(resolvedFieldName, targetOperator, value, targetOperator2, value2, disableThreeValuedLogic);
+            return EqlUtils.makeEquation(resolvedFieldName, targetOperator.get(), value, targetOperator2.orElse(null), value2, disableThreeValuedLogic);
         } else {
-            return EqlUtils.makeEquation(resolvedFieldName, targetOperator, value, disableThreeValuedLogic);
+            return EqlUtils.makeEquation(resolvedFieldName, targetOperator.get(), value, disableThreeValuedLogic);
         }
     }
     
     private String getTrackingVetoEQL(boolean isExcludeVetoed) {
         if(isExcludeVetoed) {
             try {
-                return " OR " + generateNumericEQL("`sys_tracking_veto`", TargetNode.OPERATOR_EQ.getOperatorCode(), "1", true);
+                return " OR " + generateNumericEQL("`sys_tracking_veto`", ConditionalOperator.EQ.getOperatorCode(), "1", true);
             } catch (EQLCreationException e) {
                 logger.error("Cannot get tracking veto EQL", e);
             }
@@ -180,13 +171,15 @@ public class ComWorkflowEQLHelper {
     }
     
     private String generateDateEQL(String resolvedFieldName, String field, int operatorCode, String dateFormat, String value, boolean disableThreeValuedLogic) throws EQLCreationException {
-        TargetOperator targetOperator = getValidOperator(TargetNodeDate.getValidOperators(), operatorCode);
+        final Optional<ConditionalOperator> targetOperatorOptional = ConditionalOperator.getOperatorForDateByCode(operatorCode);
         
-        if (targetOperator == null) {
+        if (!targetOperatorOptional.isPresent()) {
             throw new EQLCreationException("No or invalid primary operator defined");
         }
+
+        final ConditionalOperator targetOperator = targetOperatorOptional.get();
         
-        if(targetOperator == OPERATOR_IS) {
+        if(targetOperator == IS) {
             return String.format("%s %s", resolvedFieldName, EqlUtils.getIsEmptyOperatorValue(value));
         }
         
@@ -194,11 +187,13 @@ public class ComWorkflowEQLHelper {
         String dateFormatEQL = EqlUtils.toEQLDateFormat(StringUtils.defaultIfEmpty(dateFormat, DEFAULT_EQL_DATE_PATTERN));
 
         if (DATE_CURRENT_TIMESTAMP.equalsIgnoreCase(field) || DATE_SYSDATE.equalsIgnoreCase(field) || DATE_NOW.equalsIgnoreCase(field)) {
-            eql = String.format("TODAY %s %s DATEFORMAT %s", targetOperator.getOperatorSymbol(), StringUtil.makeEqlStringConstant(value), StringUtil.makeEqlStringConstant(dateFormatEQL));
+            eql = String.format("TODAY %s %s DATEFORMAT %s", targetOperator.getEqlSymbol(), StringUtil.makeEqlStringConstant(value), StringUtil.makeEqlStringConstant(dateFormatEQL));
         } else {
             value = StringUtils.upperCase(value);
-    
-            if (value.startsWith(DATE_CURRENT_TIMESTAMP)) {
+
+            if(value.startsWith(DATE_TODAY)) {
+                value = "TODAY" + value.substring(DATE_TODAY.length());
+            } else if (value.startsWith(DATE_CURRENT_TIMESTAMP)) {
                 value = "TODAY" + value.substring(DATE_CURRENT_TIMESTAMP.length());
             } else if (value.startsWith(DATE_SYSDATE)) {
                 value = "TODAY" + value.substring(DATE_SYSDATE.length());
@@ -217,18 +212,18 @@ public class ComWorkflowEQLHelper {
     }
  
 	private String generateStringEQL(String resolvedFieldName, int operator, String value, boolean disableThreeValuedLogic) throws EQLCreationException {
-        TargetOperator targetOperator = getValidOperator(TargetNodeString.getValidOperators(), operator);
+        final ConditionalOperator targetOperator = ConditionalOperator.getOperatorForStringByCode(operator).orElse(null);
 
-		if (targetOperator == TargetNode.OPERATOR_IS) {
+		if (targetOperator == ConditionalOperator.IS) {
 		    return String.format("%s %s", resolvedFieldName, EqlUtils.getIsEmptyOperatorValue(value));
 		}
   
-		if (targetOperator == TargetNode.OPERATOR_MOD) {
+		if (targetOperator == ConditionalOperator.MOD) {
 			throw new EQLCreationException("No or invalid primary operator defined");
 		}
 		
         Object eqlValue;
-        if (targetOperator == TargetNode.OPERATOR_LIKE || targetOperator == TargetNode.OPERATOR_NLIKE) {
+        if (targetOperator == ConditionalOperator.LIKE || targetOperator == ConditionalOperator.NOT_LIKE) {
             eqlValue = StringUtil.makeEqlMatchingPattern(value);
         } else {
             eqlValue = StringUtil.makeEqlStringConstant(value);
@@ -297,16 +292,16 @@ public class ComWorkflowEQLHelper {
                 expression.append("(");
             }
     
-            switch (StringUtils.trimToEmpty(DbColumnType.dbType2String(type))) {
-				case GENERIC_TYPE_VARCHAR:
-				case GENERIC_TYPE_CHAR:
+            switch (StringUtils.trimToEmpty(DbColumnType.dbType2String(type, 0))) {
+				case DbColumnType.GENERIC_TYPE_VARCHAR:
 					expression.append(generateStringEQL(resolvedFieldName, operator, value, disableThreeValuedLogic));
 					break;
-				case GENERIC_TYPE_INTEGER:
-				case GENERIC_TYPE_DOUBLE:
+				case DbColumnType.GENERIC_TYPE_INTEGER:
+				case DbColumnType.GENERIC_TYPE_FLOAT:
 					expression.append(generateNumericEQL(resolvedFieldName, operator, value, disableThreeValuedLogic));
 					break;
-				case GENERIC_TYPE_DATE:
+				case DbColumnType.GENERIC_TYPE_DATE:
+				case DbColumnType.GENERIC_TYPE_DATETIME:
 					expression.append(generateDateEQL(resolvedFieldName, field, operator, dateFormat, value, disableThreeValuedLogic));
 					break;
 				default:

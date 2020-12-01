@@ -16,7 +16,7 @@ public enum Gender {
 	MALE(0),
 	FEMALE(1),
 	UNKNOWN(2),
-	FEMALE2(3), // Fräulein, Ms. (optional)
+	// FEMALE2(3), // Fräulein, Ms. (optional)
 	PRAXIS(4), // Doctor's office (optional)
 	COMPANY(5);
 
@@ -39,7 +39,12 @@ public enum Gender {
 				return item;
 			}
 		}
-		throw new Exception("Invalid int value for Gender: " + storageValue);
+		if (storageValue == 3) {
+			// Fallback for deprecated old value FEMALE2
+			return FEMALE;
+		} else {
+			throw new Exception("Invalid int value for Gender: " + storageValue);
+		}
 	}
 	
 	public static Gender getGenderByDefaultGenderMapping(String value) {

@@ -17,7 +17,7 @@ package org.agnitas.beans;
  * - provide default constructor;
  * - use default values for all the fields (just in case some or all properties are invalid or missing from browser's local storage);
  * - validate passed values in setters (never trust values coming from browser's local storage);
- * - use annotations {@link org.codehaus.jackson.annotate} to have a control over JSON (de-) serialization.
+ * - use annotations {@link com.fasterxml.jackson.annotation} to have a control over JSON (de-) serialization.
  */
 public interface WebStorageEntry extends Cloneable {
     /**

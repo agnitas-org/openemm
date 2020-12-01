@@ -57,7 +57,7 @@
                 </ul>
             </div>
 
-            <div id="tab-templates-preview" class="card-panel hidden" data-sizing="scroll">
+            <div id="tab-templates-preview" class="card-panel" data-sizing="scroll">
                 <div class="row flexbox">
                     <c:forEach var="template" items="${mailingBaseForm.templateMailingBases}">
                         <div class="col-xs-6 col-sm-4 col-md-3 card-content">

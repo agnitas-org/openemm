@@ -106,19 +106,19 @@ importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.com.agnitas.reporting.birt.external.utils);
 
 recipientsStatisticDataSet = new RecipientsStatisticDataSet();
-tempTableIds = recipientsStatisticDataSet.initRecipientsStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"], params["figures"]);
+tempTableIds = recipientsStatisticDataSet.initRecipientsStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"], params["figures"], params["hiddenTargetId"]);
 tableInRowId = tempTableIds.get('tempTableInfoInRowId');
 tableInColId = tempTableIds.get('tempTableInfoInColumnId');
 reportContext.setPersistentGlobalVariable("accountName", recipientsStatisticDataSet.getAccountName(params["accountId"]));
 reportContext.setPersistentGlobalVariable("reportName", recipientsStatisticDataSet.getReportName(params["reportId"]));
 
 recipientsDetailedStatisticDataSet = new RecipientsDetailedStatisticDataSet();
-recipientsDetailedStatisticDataSet.initRecipientsStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"]);
+recipientsDetailedStatisticDataSet.initRecipientsStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"], params["hiddenTargetId"]);
 
 figures = BirtReporUtils.unpackFigures(params["figures"]);
 reportContext.setGlobalVariable("figures", figures);
 if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {
-	recipientsDetailedStatisticDataSet.initRecipientsDynamicStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"]);
+	recipientsDetailedStatisticDataSet.initRecipientsDynamicStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"], params["hiddenTargetId"]);
 }
 
 percentFormatter = NumberFormat.getPercentInstance();
@@ -277,6 +277,21 @@ reportContext.setPersistentGlobalVariable("stopDateFormated", dateFormat(new Sim
             <property name="valueType">static</property>
             <property name="dataType">string</property>
             <property name="distinct">true</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="hiddenTargetId" id="7428">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
             <structure name="format">

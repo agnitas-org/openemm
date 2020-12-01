@@ -22,7 +22,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.agnitas.beans.ProfileField;
+import org.agnitas.beans.LightProfileField;
+import org.agnitas.beans.impl.LightProfileFieldImpl;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -40,9 +41,9 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComProfileField;
 import com.agnitas.beans.ComProfileFieldPermission;
-import com.agnitas.beans.impl.ComProfileFieldImpl;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.impl.ProfileFieldImpl;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
@@ -78,6 +79,9 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	private static final String FIELD_ALLOWED_VALUES = "allowed_values";
 
 	private static final String[] FIELD_NAMES = new String[] { FIELD_COMPANY_ID, FIELD_COLUMN_NAME, FIELD_SHORTNAME, FIELD_DESCRIPTION, FIELD_DEFAULT_VALUE, FIELD_MODE_EDIT, FIELD_MODE_INSERT, FIELD_GROUP, FIELD_SORT, FIELD_LINE, FIELD_CREATION_DATE, FIELD_ISINTEREST, FIELD_CHANGE_DATE, FIELD_HISTORIZE, FIELD_ALLOWED_VALUES };
+
+	private static final String SELECT_LIGHT_PROFILEFIELDS_BY_COMPANYID = "SELECT " + String.join(", ", FIELD_COLUMN_NAME, FIELD_SHORTNAME) + " FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? ORDER BY " + FIELD_SORT + ", LOWER(" + FIELD_SHORTNAME + "), LOWER(" + FIELD_COLUMN_NAME + ")";
+    private static final String SELECT_LIGHT_PROFILEFIELDS_BY_COMPANYID_HISTORIZEDONLY = "SELECT " + String.join(", ", FIELD_COLUMN_NAME, FIELD_SHORTNAME) + " FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND " + FIELD_HISTORIZE + " = 1 ORDER BY " + FIELD_SORT + ", LOWER(" + FIELD_SHORTNAME + "), LOWER(" + FIELD_COLUMN_NAME + ")";
 
 	private static final String SELECT_PROFILEFIELDS_BY_COMPANYID = "SELECT " + StringUtils.join(FIELD_NAMES, ", ") + " FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? ORDER BY " + FIELD_SORT + ", LOWER(" + FIELD_SHORTNAME + "), LOWER(" + FIELD_COLUMN_NAME + ")";
     private static final String SELECT_PROFILEFIELDS_BY_COMPANYID_HISTORIZEDONLY = "SELECT " + StringUtils.join(FIELD_NAMES, ", ") + " FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND " + FIELD_HISTORIZE + " = 1 ORDER BY " + FIELD_SORT + ", LOWER(" + FIELD_SHORTNAME + "), LOWER(" + FIELD_COLUMN_NAME + ")";
@@ -144,7 +148,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	}
 
 	@Override
-	public ComProfileField getProfileField(@VelocityCheck int companyID, String columnName) throws Exception {
+	public ProfileField getProfileField(@VelocityCheck int companyID, String columnName) throws Exception {
 		if (companyID <= 0) {
 			throw new RuntimeException("Invalid companyId for getProfileField");
 		} else if (StringUtils.isBlank(columnName)) {
@@ -154,9 +158,9 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 			if (columnType == null) {
 				return null;
 			} else {
-				List<ComProfileField> profileFieldList = select(logger, SELECT_PROFILEFIELD_BY_COMPANYID_AND_COLUMNNAME, new ComProfileField_RowMapper(), companyID, columnName);
+				List<ProfileField> profileFieldList = select(logger, SELECT_PROFILEFIELD_BY_COMPANYID_AND_COLUMNNAME, new ComProfileField_RowMapper(), companyID, columnName);
 				if (profileFieldList == null || profileFieldList.size() < 1) {
-					ComProfileField dbOnlyField = new ComProfileFieldImpl();
+					ProfileField dbOnlyField = new ProfileFieldImpl();
 					dbOnlyField.setCompanyID(companyID);
 					dbOnlyField.setColumn(columnName);
 					dbOnlyField.setShortname(columnName);
@@ -167,11 +171,13 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 					dbOnlyField.setNullable(columnType.isNullable());
 					dbOnlyField.setDefaultValue(DbUtilities.getColumnDefaultValue(getDataSource(), "customer_" + companyID + "_tbl", columnName));
 					dbOnlyField.setHiddenField(HIDDEN_COLUMNS.contains(columnName.trim()));
+					dbOnlyField.setMaxDataSize(maxDataSize(columnType));
+
 					return dbOnlyField;
 				} else if (profileFieldList.size() > 1) {
 					throw new RuntimeException("Invalid number of entries found in getProfileField: " + profileFieldList.size());
 				} else {
-					ComProfileField comProfileField = profileFieldList.get(0);
+					ProfileField comProfileField = profileFieldList.get(0);
 					comProfileField.setCompanyID(companyID);
 					comProfileField.setDataType(columnType.getTypeName());
 					comProfileField.setDataTypeLength(columnType.getCharacterLength());
@@ -181,6 +187,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 					comProfileField.setCreationDate(profileFieldList.get(0).getCreationDate());
 					comProfileField.setChangeDate(profileFieldList.get(0).getChangeDate());
 					comProfileField.setHiddenField(HIDDEN_COLUMNS.contains(columnName.trim()));
+					comProfileField.setMaxDataSize(maxDataSize(columnType));
 					return comProfileField;
 				}
 			}
@@ -188,11 +195,11 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	}
 
     @Override
-    public ComProfileField getProfileField(@VelocityCheck int companyID, String columnName, int adminID) throws Exception {
+    public ProfileField getProfileField(@VelocityCheck int companyID, String columnName, int adminID) throws Exception {
     	if (companyID <= 0) {
 			return null;
 		} else {
-            ComProfileField profileField = getProfileField(companyID, columnName);
+            ProfileField profileField = getProfileField(companyID, columnName);
             if (profileField == null) {
             	return null;
             } else {
@@ -211,17 +218,17 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
     }
 	
 	@Override
-	public ComProfileField getProfileFieldByShortname(@VelocityCheck int companyID, String shortName) throws Exception {
+	public ProfileField getProfileFieldByShortname(@VelocityCheck int companyID, String shortName) throws Exception {
 		if (companyID <= 0) {
 			return null;
 		} else {
-			List<ComProfileField> profileFieldList = select(logger, SELECT_PROFILEFIELD_BY_COMPANYID_AND_SHORTNAME, new ComProfileField_RowMapper(), companyID, shortName);
+			List<ProfileField> profileFieldList = select(logger, SELECT_PROFILEFIELD_BY_COMPANYID_AND_SHORTNAME, new ComProfileField_RowMapper(), companyID, shortName);
 			if (profileFieldList == null || profileFieldList.size() < 1) {
 				return null;
 			} else if (profileFieldList.size() > 1) {
 				throw new RuntimeException("Invalid number of entries found in getProfileFieldByShortname: " + profileFieldList.size());
 			} else {
-				ComProfileField comProfileField = profileFieldList.get(0);
+				ProfileField comProfileField = profileFieldList.get(0);
 				DbColumnType columnType = DbUtilities.getColumnDataType(getDataSource(), "customer_" + companyID + "_tbl", comProfileField.getColumn());
 				if (columnType == null) {
 	            	return null;
@@ -239,11 +246,11 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	}
 	
 	@Override
-	public ComProfileField getProfileFieldByShortname(@VelocityCheck int companyID, String shortName, int adminID) throws Exception {
+	public ProfileField getProfileFieldByShortname(@VelocityCheck int companyID, String shortName, int adminID) throws Exception {
 		if (companyID <= 0) {
 			return null;
 		} else {
-			ComProfileField profileField = getProfileFieldByShortname(companyID, shortName);
+			ProfileField profileField = getProfileFieldByShortname(companyID, shortName);
             if (profileField == null) {
             	return null;
             } else {
@@ -266,11 +273,11 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 		if (companyID <= 0) {
 			return null;
 		} else {
-			CaseInsensitiveMap<String, ComProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID, false);
-			List<ComProfileField> comProfileFieldList = new ArrayList<>(comProfileFieldMap.values());
+			CaseInsensitiveMap<String, ProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID, false);
+			List<ProfileField> comProfileFieldList = new ArrayList<>(comProfileFieldMap.values());
 			
 			// Sort by SortingIndex or shortname
-			sortComProfileList(comProfileFieldList);
+			sortProfileFields(comProfileFieldList);
 
 			// Convert from List<ComProfileField> to List<ProfileField>
 			List<ProfileField> returnList = new ArrayList<>();
@@ -282,7 +289,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	
 	@Override
 	public List<ProfileField> getProfileFields(@VelocityCheck int companyID, int adminID) throws Exception {
-		List<ComProfileField> fields = getComProfileFields(companyID, adminID);
+		List<ProfileField> fields = getComProfileFields(companyID, adminID);
 
 		if (fields == null) {
 			return null;
@@ -292,36 +299,50 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	}
 
 	@Override
-	public List<ComProfileField> getComProfileFields(int companyID) throws Exception {
+	public List<ProfileField> getComProfileFields(int companyID) throws Exception {
 		if (companyID <= 0) {
 			return null;
 		} else {
-			CaseInsensitiveMap<String, ComProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID);
-			List<ComProfileField> comProfileFieldList = new ArrayList<>(comProfileFieldMap.values());
+			CaseInsensitiveMap<String, ProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID);
+			List<ProfileField> comProfileFieldList = new ArrayList<>(comProfileFieldMap.values());
 			
 			// Sort by SortingIndex or shortname
-			sortComProfileList(comProfileFieldList);
+			sortProfileFields(comProfileFieldList);
 			
 			return comProfileFieldList;
 		}
 	}
 	
 	@Override
-	public List<ComProfileField> getComProfileFields(@VelocityCheck int companyID, int adminID) throws Exception {
+	public List<ProfileField> getComProfileFields(@VelocityCheck int companyID, int adminID) throws Exception {
 		return getComProfileFields(companyID, adminID, false);
 	}
 
 	@Override
-	public List<ComProfileField> getComProfileFields(@VelocityCheck int companyID, int adminID, boolean customSorting) throws Exception {
+	public List<ProfileField> getComProfileFields(@VelocityCheck int companyID, int adminID, boolean customSorting) throws Exception {
 		return getComProfileFields(companyID, adminID, customSorting, false);
 	}
-	
-    public List<ComProfileField> getComProfileFields(@VelocityCheck int companyID, int adminID, boolean customSorting, final boolean noNotNullConstraintCheck) throws Exception {
+
+	@Override
+	public List<LightProfileField> getLightProfileFields(@VelocityCheck int companyId) throws Exception {
+		CaseInsensitiveMap<String, LightProfileField> fieldsMap = getLightProfileFieldsMap(companyId, false);
+
+		if (fieldsMap == null) {
+			return null;
+		}
+
+		List<LightProfileField> fields = new ArrayList<>(fieldsMap.values());
+		sortProfileFields(fields);
+
+		return fields;
+	}
+
+    public List<ProfileField> getComProfileFields(@VelocityCheck int companyID, int adminID, boolean customSorting, final boolean noNotNullConstraintCheck) throws Exception {
 		if (companyID <= 0) {
 			return null;
 		} else {
-			CaseInsensitiveMap<String, ComProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID, adminID, noNotNullConstraintCheck);
-			List<ComProfileField> comProfileFieldList = new ArrayList<>(comProfileFieldMap.values());
+			CaseInsensitiveMap<String, ProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID, adminID, noNotNullConstraintCheck);
+			List<ProfileField> comProfileFieldList = new ArrayList<>(comProfileFieldMap.values());
 
 			// Sort by SortingIndex or shortname
             if (customSorting) {
@@ -329,7 +350,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
             }
             // Sort by shortname (or by column if shortname is empty)
             else {
-                sortComProfileList(comProfileFieldList);
+                sortProfileFields(comProfileFieldList);
             }
 
 			return comProfileFieldList;
@@ -341,10 +362,10 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 		if (companyID <= 0) {
 			return null;
 		} else {
-			CaseInsensitiveMap<String, ComProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID);
+			CaseInsensitiveMap<String, ProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID);
 			CaseInsensitiveMap<String, ProfileField> returnMap = new CaseInsensitiveMap<>();
 
-			for (Entry<String, ComProfileField> entry : comProfileFieldMap.entrySet()) {
+			for (Entry<String, ProfileField> entry : comProfileFieldMap.entrySet()) {
 				returnMap.put(entry.getKey(), entry.getValue());
 			}
 			
@@ -353,24 +374,24 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	}
 	
 	@Override
-	public CaseInsensitiveMap<String, ComProfileField> getComProfileFieldsMap(@VelocityCheck int companyID) throws Exception {
+	public CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(@VelocityCheck int companyID) throws Exception {
 		return getComProfileFieldsMap(companyID, true);
 	}
 
 	@Override
-	public CaseInsensitiveMap<String, ComProfileField> getComProfileFieldsMap(@VelocityCheck int companyID, boolean determineDefaultValues) throws Exception {
+	public CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(@VelocityCheck int companyID, boolean determineDefaultValues) throws Exception {
 		return getComProfileFieldsMap(companyID, determineDefaultValues, false);
 	}
 
-	private CaseInsensitiveMap<String, ComProfileField> getComProfileFieldsMap(@VelocityCheck int companyID, boolean determineDefaultValues, boolean excludeNonHistorized) throws Exception {
+	private CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(@VelocityCheck int companyID, boolean determineDefaultValues, boolean excludeNonHistorized) throws Exception {
 		if (companyID <= 0) {
 			return null;
 		} else {
-            CaseInsensitiveMap<String, ComProfileField> returnMap = new CaseInsensitiveMap<>();
+            CaseInsensitiveMap<String, ProfileField> returnMap = new CaseInsensitiveMap<>();
 
             String sqlSelectFields = excludeNonHistorized ? SELECT_PROFILEFIELDS_BY_COMPANYID_HISTORIZEDONLY : SELECT_PROFILEFIELDS_BY_COMPANYID;
-			CaseInsensitiveMap<String, ComProfileField> customFieldsMap = new CaseInsensitiveMap<>();
-            for (ComProfileField field : select(logger, sqlSelectFields, new ComProfileField_RowMapper(), companyID)) {
+			CaseInsensitiveMap<String, ProfileField> customFieldsMap = new CaseInsensitiveMap<>();
+            for (ProfileField field : select(logger, sqlSelectFields, new ComProfileField_RowMapper(), companyID)) {
                 customFieldsMap.put(field.getColumn(), field);
             }
 
@@ -380,14 +401,14 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 
 			for (Entry<String, DbColumnType> entry : dbDataTypes.entrySet()) {
 				String columnName = entry.getKey();
-				ComProfileField field = customFieldsMap.get(columnName);
+				ProfileField field = customFieldsMap.get(columnName);
 
 				if (field == null) {
                     if (excludeNonHistorized && !RecipientProfileHistoryUtil.isDefaultColumn(columnName)) {
                         continue;
                     }
 
-					field = new ComProfileFieldImpl();
+					field = new ProfileFieldImpl();
 					field.setCompanyID(companyID);
 					field.setColumn(columnName);
 					field.setShortname(columnName);
@@ -403,6 +424,8 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 				field.setNumericPrecision(columnType.getNumericPrecision());
 				field.setNumericScale(columnType.getNumericScale());
 				field.setNullable(columnType.isNullable());
+				
+				field.setMaxDataSize(maxDataSize(columnType));
 				
 				//fields are shown as read only in recipient view
 				if (field.getColumn().equalsIgnoreCase("creation_date") ||
@@ -424,6 +447,54 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 		}
 	}
 
+	private final int maxDataSize(final DbColumnType type) {
+		switch(type.getSimpleDataType()) {
+		case Blob:				return type.getCharacterLength();
+		case Characters:		return type.getCharacterLength();
+		case Date:				return type.getCharacterLength();
+		case DateTime:			return type.getCharacterLength();
+		case Float:				return type.getNumericPrecision() + type.getNumericScale();
+		case Numeric:			return type.getNumericPrecision() + type.getNumericScale();
+		default:				return 5; // Some mean approximation
+		}
+	}
+	
+	private CaseInsensitiveMap<String, LightProfileField> getLightProfileFieldsMap(@VelocityCheck int companyId, boolean excludeNonHistorized) throws Exception {
+		if (companyId <= 0) {
+			return null;
+		}
+
+		CaseInsensitiveMap<String, LightProfileField> map = new CaseInsensitiveMap<>();
+
+		String sqlSelectFields = excludeNonHistorized ? SELECT_LIGHT_PROFILEFIELDS_BY_COMPANYID_HISTORIZEDONLY : SELECT_LIGHT_PROFILEFIELDS_BY_COMPANYID;
+		CaseInsensitiveMap<String, LightProfileField> customFieldsMap = new CaseInsensitiveMap<>();
+		for (LightProfileField field : select(logger, sqlSelectFields, new LightProfileField_RowMapper(), companyId)) {
+			customFieldsMap.put(field.getColumn(), field);
+		}
+
+		List<String> dbColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyId + "_tbl");
+		// Exclude this one according to AGNEMM-1817, AGNEMM-1924 and AGNEMM-1925
+		dbColumns.remove(ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD);
+
+		for (String columnName : dbColumns) {
+			LightProfileField field = customFieldsMap.get(columnName);
+
+			if (field == null) {
+				if (excludeNonHistorized && !RecipientProfileHistoryUtil.isDefaultColumn(columnName)) {
+					continue;
+				}
+
+				field = new LightProfileFieldImpl();
+				field.setColumn(columnName);
+				field.setShortname(columnName);
+			}
+
+			map.put(field.getColumn(), field);
+		}
+
+		return map;
+	}
+
 	@Override
 	public CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(@VelocityCheck int companyID, int adminID) throws Exception {
 		return getProfileFieldsMap(companyID, adminID, false);
@@ -433,10 +504,10 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 		if (companyID == 0) {
 			return null;
 		} else {
-			CaseInsensitiveMap<String, ComProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID, adminID, noNotNullConstraintCheck);
+			CaseInsensitiveMap<String, ProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID, adminID, noNotNullConstraintCheck);
 			CaseInsensitiveMap<String, ProfileField> returnMap = new CaseInsensitiveMap<>();
 
-			for (Entry<String, ComProfileField> entry : comProfileFieldMap.entrySet()) {
+			for (Entry<String, ProfileField> entry : comProfileFieldMap.entrySet()) {
 				returnMap.put(entry.getKey(), entry.getValue());
 			}
 			return returnMap;
@@ -444,17 +515,17 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	}
 
     @Override
-    public CaseInsensitiveMap<String, ComProfileField> getComProfileFieldsMap(@VelocityCheck int companyID, int adminID) throws Exception {
+    public CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(@VelocityCheck int companyID, int adminID) throws Exception {
     	return getComProfileFieldsMap(companyID, adminID, false);
     }
-    
-    public CaseInsensitiveMap<String, ComProfileField> getComProfileFieldsMap(@VelocityCheck int companyID, int adminID, final boolean noNotNullConstraintCheck) throws Exception {
+
+    public CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(@VelocityCheck int companyID, int adminID, final boolean noNotNullConstraintCheck) throws Exception {
         if (companyID <= 0) {
             return null;
         } else {
-			CaseInsensitiveMap<String, ComProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID, noNotNullConstraintCheck);
-			CaseInsensitiveMap<String, ComProfileField> returnMap = new CaseInsensitiveMap<>();
-			for (ComProfileField comProfileField : comProfileFieldMap.values()) {
+			CaseInsensitiveMap<String, ProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID, noNotNullConstraintCheck);
+			CaseInsensitiveMap<String, ProfileField> returnMap = new CaseInsensitiveMap<>();
+			for (ProfileField comProfileField : comProfileFieldMap.values()) {
 				List<ComProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ComProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn(), adminID);
             	if (profileFieldPermissionList != null && profileFieldPermissionList.size() > 1) {
     				throw new RuntimeException("Invalid number of permission entries found in getProfileFields: " + profileFieldPermissionList.size());
@@ -471,14 +542,14 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
     }
 
     @Override
-    public List<ComProfileField> getProfileFieldsWithIndividualSortOrder(@VelocityCheck int companyID, int adminID) throws Exception {
+    public List<ProfileField> getProfileFieldsWithIndividualSortOrder(@VelocityCheck int companyID, int adminID) throws Exception {
 		if (companyID <= 0) {
 			return null;
 		} else {
-			List<ComProfileField> comProfileFieldList = select(logger, SELECT_PROFILEFIELDS_BY_COMPANYID_HAVINGSORT, new ComProfileField_RowMapper(), companyID);
+			List<ProfileField> comProfileFieldList = select(logger, SELECT_PROFILEFIELDS_BY_COMPANYID_HAVINGSORT, new ComProfileField_RowMapper(), companyID);
 			CaseInsensitiveMap<String, DbColumnType> dbDataTypes = DbUtilities.getColumnDataTypes(getDataSource(), "customer_" + companyID + "_tbl");
-			List<ComProfileField> returnList = new ArrayList<>();
-			for (ComProfileField comProfileField : comProfileFieldList) {
+			List<ProfileField> returnList = new ArrayList<>();
+			for (ProfileField comProfileField : comProfileFieldList) {
 				boolean found = false;
 				for (String columnName : dbDataTypes.keySet()) {
 					if (columnName.equalsIgnoreCase(comProfileField.getColumn())) {
@@ -515,14 +586,14 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
     }
 
     @Override
-    public List<ComProfileField> getProfileFieldsWithInterest(@VelocityCheck int companyID, int adminID) throws Exception {
+    public List<ProfileField> getProfileFieldsWithInterest(@VelocityCheck int companyID, int adminID) throws Exception {
 		if (companyID <= 0) {
 			return null;
 		} else {
-			List<ComProfileField> comProfileFieldList = select(logger, SELECT_PROFILEFIELDS_BY_COMPANYID_HAVINGINTEREST, new ComProfileField_RowMapper(), companyID);
+			List<ProfileField> comProfileFieldList = select(logger, SELECT_PROFILEFIELDS_BY_COMPANYID_HAVINGINTEREST, new ComProfileField_RowMapper(), companyID);
 			CaseInsensitiveMap<String, DbColumnType> dbDataTypes = DbUtilities.getColumnDataTypes(getDataSource(), "customer_" + companyID + "_tbl");
-			List<ComProfileField> returnList = new ArrayList<>();
-			for (ComProfileField comProfileField : comProfileFieldList) {
+			List<ProfileField> returnList = new ArrayList<>();
+			for (ProfileField comProfileField : comProfileFieldList) {
 				boolean found = false;
 				for (String columnName : dbDataTypes.keySet()) {
 					if (columnName.equalsIgnoreCase(comProfileField.getColumn())) {
@@ -552,21 +623,21 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 			}
 
 			// Sort by SortingIndex or shortname
-			sortComProfileList(returnList);
+			sortProfileFields(returnList);
 			
 			return returnList;
 		}
     }
 
 	@Override
-	public List<ComProfileField> getHistorizedProfileFields(@VelocityCheck int companyID) throws Exception {
-		CaseInsensitiveMap<String, ComProfileField> map = getComProfileFieldsMap(companyID, false, true);
+	public List<ProfileField> getHistorizedProfileFields(@VelocityCheck int companyID) throws Exception {
+		CaseInsensitiveMap<String, ProfileField> map = getComProfileFieldsMap(companyID, false, true);
 		if (map == null) {
 			return null;
 		}
 
 		// Sort by SortingIndex or shortname
-		return sortComProfileList(map);
+		return sortProfileFields(map);
 	}
 
 	/**
@@ -575,88 +646,83 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	@Override
 	@DaoUpdateReturnValueCheck
     public boolean saveProfileField(ProfileField field, ComAdmin admin) throws Exception {
-		if (!(field instanceof ComProfileField)) {
-			logger.error("Invalid type of ProfileField for storage. Expected type is ComProfileField");
-			throw new RuntimeException("Invalid type of ProfileField for storage. Expected type is ComProfileField");
-		} else {
-			ComProfileField comProfileField = (ComProfileField) field;
-			ComProfileField previousProfileField = getProfileField(comProfileField.getCompanyID(), comProfileField.getColumn());
+		ProfileField comProfileField = field;
+		ProfileField previousProfileField = getProfileField(comProfileField.getCompanyID(), comProfileField.getColumn());
+		
+		if (("NUMBER".equalsIgnoreCase(comProfileField.getDataType()) || "FLOAT".equalsIgnoreCase(comProfileField.getDataType()) || "DOUBLE".equalsIgnoreCase(comProfileField.getDataType()) || "INTEGER".equalsIgnoreCase(comProfileField.getDataType())) && StringUtils.isNotBlank(comProfileField.getDefaultValue())) {
+			comProfileField.setDefaultValue(AgnUtils.normalizeNumber(admin.getLocale(), comProfileField.getDefaultValue()));
+		}
+
+		String[] allowedValues = comProfileField.getAllowedValues();
+		String allowedValuesJson = null;
+		if (allowedValues != null) {
+			JSONArray array = new JSONArray();
+			array.addAll(Arrays.asList(allowedValues));
+			allowedValuesJson = array.toString();
+		}
+
+		if (previousProfileField == null) {
+			// Check if new shortname already exists before a new column is added to dbtable
+			if (getProfileFieldByShortname(comProfileField.getCompanyID(), comProfileField.getShortname()) != null) {
+				throw new Exception("New shortname for customerprofilefield already exists");
+			}
+
+			// Change DB Structure if needed (throws an Exception if change is not possible)
+			boolean createdDbField = addColumnToDbTable(comProfileField.getCompanyID(), comProfileField.getColumn(), comProfileField.getDataType(), comProfileField.getDataTypeLength(), comProfileField.getDefaultValue(), admin.getDateFormat(), !comProfileField.getNullable());
+			if (!createdDbField) {
+				throw new Exception("DB-field could not be created");
+			}
 			
-			if (("NUMBER".equalsIgnoreCase(comProfileField.getDataType()) || "FLOAT".equalsIgnoreCase(comProfileField.getDataType()) || "DOUBLE".equalsIgnoreCase(comProfileField.getDataType()) || "INTEGER".equalsIgnoreCase(comProfileField.getDataType())) && StringUtils.isNotBlank(comProfileField.getDefaultValue())) {
-				comProfileField.setDefaultValue(AgnUtils.normalizeNumber(admin.getLocale(), comProfileField.getDefaultValue()));
+			// Shift other entries if needed
+			if (comProfileField.getSort() < MAX_SORT_INDEX) {
+				update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " + 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " >= ?", comProfileField.getSort());
+			}
+			
+			// Insert new entry
+			String statementString = "INSERT INTO " + TABLE + " (" + FIELD_COMPANY_ID + ", " + FIELD_COLUMN_NAME + ", " + FIELD_ADMIN_ID + ", " + FIELD_SHORTNAME + ", " + FIELD_DESCRIPTION + ", " + FIELD_DEFAULT_VALUE + ", " + FIELD_MODE_EDIT + ", " + FIELD_MODE_INSERT + ", " + FIELD_LINE + ", " + FIELD_SORT + ", " + FIELD_ISINTEREST + ", " + FIELD_CREATION_DATE + ", " + FIELD_CHANGE_DATE + ", " + FIELD_HISTORIZE + ", " + FIELD_ALLOWED_VALUES + ") VALUES (?, UPPER(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
+			update(logger, statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getDefaultValue(), field.getModeEdit(), field.getModeInsert(), comProfileField.getLine(), comProfileField.getSort(), comProfileField.getInterest(), comProfileField.getHistorize(), allowedValuesJson);
+		} else {
+			// Check if new shortname already exists before a new column is added to dbtable
+			if (!previousProfileField.getShortname().equals(comProfileField.getShortname())
+					&& getProfileFieldByShortname(comProfileField.getCompanyID(), comProfileField.getShortname()) != null) {
+				throw new Exception("New shortname for customerprofilefield already exists");
 			}
 
-			String[] allowedValues = comProfileField.getAllowedValues();
-			String allowedValuesJson = null;
-			if (allowedValues != null) {
-				JSONArray array = new JSONArray();
-				array.addAll(Arrays.asList(allowedValues));
-				allowedValuesJson = array.toString();
+			// Change DB Structure if needed (throws an Exception if change is not possible)
+			if (comProfileField.getDataType() != null) {
+    			boolean alteredDbField = alterColumnTypeInDbTable(comProfileField.getCompanyID(), comProfileField.getColumn(), comProfileField.getDataType(), comProfileField.getDataTypeLength(), comProfileField.getDefaultValue(), admin.getDateFormat(), !comProfileField.getNullable());
+    			if (!alteredDbField) {
+    				throw new Exception("DB-field could not be changed");
+    			}
 			}
-
-    		if (previousProfileField == null) {
-    			// Check if new shortname already exists before a new column is added to dbtable
-    			if (getProfileFieldByShortname(comProfileField.getCompanyID(), comProfileField.getShortname()) != null) {
-    				throw new Exception("New shortname for customerprofilefield already exists");
-    			}
-
-    			// Change DB Structure if needed (throws an Exception if change is not possible)
-    			boolean createdDbField = addColumnToDbTable(comProfileField.getCompanyID(), comProfileField.getColumn(), comProfileField.getDataType(), comProfileField.getDataTypeLength(), comProfileField.getDefaultValue(), admin.getDateFormat(), !comProfileField.getNullable());
-    			if (!createdDbField) {
-    				throw new Exception("DB-field could not be created");
-    			}
-    			
-    			// Shift other entries if needed
+			
+			// Shift other entries if needed
+			if (comProfileField.getSort() != previousProfileField.getSort()) {
     			if (comProfileField.getSort() < MAX_SORT_INDEX) {
-    				update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " + 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " >= ?", comProfileField.getSort());
+    				if (comProfileField.getSort() < previousProfileField.getSort()) {
+    					update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " + 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " >= ? AND " + FIELD_SORT + " < ?", comProfileField.getSort(), previousProfileField.getSort());
+    				} else {
+    					update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " - 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " > ? AND " + FIELD_SORT + " <= ?", comProfileField.getSort(), previousProfileField.getSort());
+    				}
+    			} else if (previousProfileField.getSort() < MAX_SORT_INDEX) {
+    				update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " - 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " > ?", previousProfileField.getSort());
     			}
-    			
-    			// Insert new entry
-    			String statementString = "INSERT INTO " + TABLE + " (" + FIELD_COMPANY_ID + ", " + FIELD_COLUMN_NAME + ", " + FIELD_ADMIN_ID + ", " + FIELD_SHORTNAME + ", " + FIELD_DESCRIPTION + ", " + FIELD_DEFAULT_VALUE + ", " + FIELD_MODE_EDIT + ", " + FIELD_MODE_INSERT + ", " + FIELD_LINE + ", " + FIELD_SORT + ", " + FIELD_ISINTEREST + ", " + FIELD_CREATION_DATE + ", " + FIELD_CHANGE_DATE + ", " + FIELD_HISTORIZE + ", " + FIELD_ALLOWED_VALUES + ") VALUES (?, UPPER(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
+			}
+			
+			if (selectInt(logger, "SELECT COUNT(*) FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND LOWER(" + FIELD_COLUMN_NAME + ") = LOWER(?)", field.getCompanyID(), field.getColumn()) < 1) {
+    			// Insert new entry for some manually by db-support in db added fields
+				String statementString = "INSERT INTO " + TABLE + " (" + FIELD_COMPANY_ID + ", " + FIELD_COLUMN_NAME + ", " + FIELD_ADMIN_ID + ", " + FIELD_SHORTNAME + ", " + FIELD_DESCRIPTION + ", " + FIELD_DEFAULT_VALUE + ", " + FIELD_MODE_EDIT + ", " + FIELD_MODE_INSERT + ", " + FIELD_LINE + ", " + FIELD_SORT + ", " + FIELD_ISINTEREST + ", " + FIELD_CREATION_DATE + ", " + FIELD_CHANGE_DATE + ", " + FIELD_HISTORIZE + ", " + FIELD_ALLOWED_VALUES + ") VALUES (?, UPPER(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
     			update(logger, statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getDefaultValue(), field.getModeEdit(), field.getModeInsert(), comProfileField.getLine(), comProfileField.getSort(), comProfileField.getInterest(), comProfileField.getHistorize(), allowedValuesJson);
-    		} else {
-    			// Check if new shortname already exists before a new column is added to dbtable
-    			if (!previousProfileField.getShortname().equals(comProfileField.getShortname())
-    					&& getProfileFieldByShortname(comProfileField.getCompanyID(), comProfileField.getShortname()) != null) {
-    				throw new Exception("New shortname for customerprofilefield already exists");
-    			}
+			} else {
+    			// Update existing entry
+    			update(logger, "UPDATE " + TABLE + " SET " + FIELD_SHORTNAME + " = ?, " + FIELD_DESCRIPTION + " = ?, " + FIELD_DEFAULT_VALUE + " = ?, " + FIELD_MODE_EDIT + " = ?, " + FIELD_MODE_INSERT + " = ?, " + FIELD_LINE + " = ?, " + FIELD_SORT + " = ?, " + FIELD_ISINTEREST + " = ?, " + FIELD_CHANGE_DATE + " = CURRENT_TIMESTAMP, " + FIELD_HISTORIZE + " = ?, " + FIELD_ALLOWED_VALUES + " = ? WHERE " + FIELD_COMPANY_ID + " = ? AND UPPER(" + FIELD_COLUMN_NAME + ") = UPPER(?) AND " + FIELD_ADMIN_ID + " IN (0, ?)",
+   					field.getShortname().trim(), field.getDescription(), field.getDefaultValue(), field.getModeEdit(), field.getModeInsert(), comProfileField.getLine(), comProfileField.getSort(), comProfileField.getInterest(), comProfileField.getHistorize(), allowedValuesJson, field.getCompanyID(), field.getColumn(), field.getAdminID());
+			}
+		}
 
-    			// Change DB Structure if needed (throws an Exception if change is not possible)
-    			if (comProfileField.getDataType() != null) {
-	    			boolean alteredDbField = alterColumnTypeInDbTable(comProfileField.getCompanyID(), comProfileField.getColumn(), comProfileField.getDataType(), comProfileField.getDataTypeLength(), comProfileField.getDefaultValue(), admin.getDateFormat(), !comProfileField.getNullable());
-	    			if (!alteredDbField) {
-	    				throw new Exception("DB-field could not be changed");
-	    			}
-    			}
-    			
-    			// Shift other entries if needed
-    			if (comProfileField.getSort() != previousProfileField.getSort()) {
-	    			if (comProfileField.getSort() < MAX_SORT_INDEX) {
-	    				if (comProfileField.getSort() < previousProfileField.getSort()) {
-	    					update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " + 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " >= ? AND " + FIELD_SORT + " < ?", comProfileField.getSort(), previousProfileField.getSort());
-	    				} else {
-	    					update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " - 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " > ? AND " + FIELD_SORT + " <= ?", comProfileField.getSort(), previousProfileField.getSort());
-	    				}
-	    			} else if (previousProfileField.getSort() < MAX_SORT_INDEX) {
-	    				update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " - 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " > ?", previousProfileField.getSort());
-	    			}
-    			}
-    			
-    			if (selectInt(logger, "SELECT COUNT(*) FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND LOWER(" + FIELD_COLUMN_NAME + ") = LOWER(?)", field.getCompanyID(), field.getColumn()) < 1) {
-        			// Insert new entry for some manually by db-support in db added fields
-    				String statementString = "INSERT INTO " + TABLE + " (" + FIELD_COMPANY_ID + ", " + FIELD_COLUMN_NAME + ", " + FIELD_ADMIN_ID + ", " + FIELD_SHORTNAME + ", " + FIELD_DESCRIPTION + ", " + FIELD_DEFAULT_VALUE + ", " + FIELD_MODE_EDIT + ", " + FIELD_MODE_INSERT + ", " + FIELD_LINE + ", " + FIELD_SORT + ", " + FIELD_ISINTEREST + ", " + FIELD_CREATION_DATE + ", " + FIELD_CHANGE_DATE + ", " + FIELD_HISTORIZE + ", " + FIELD_ALLOWED_VALUES + ") VALUES (?, UPPER(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
-        			update(logger, statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getDefaultValue(), field.getModeEdit(), field.getModeInsert(), comProfileField.getLine(), comProfileField.getSort(), comProfileField.getInterest(), comProfileField.getHistorize(), allowedValuesJson);
-    			} else {
-	    			// Update existing entry
-	    			update(logger, "UPDATE " + TABLE + " SET " + FIELD_SHORTNAME + " = ?, " + FIELD_DESCRIPTION + " = ?, " + FIELD_DEFAULT_VALUE + " = ?, " + FIELD_MODE_EDIT + " = ?, " + FIELD_MODE_INSERT + " = ?, " + FIELD_LINE + " = ?, " + FIELD_SORT + " = ?, " + FIELD_ISINTEREST + " = ?, " + FIELD_CHANGE_DATE + " = CURRENT_TIMESTAMP, " + FIELD_HISTORIZE + " = ?, " + FIELD_ALLOWED_VALUES + " = ? WHERE " + FIELD_COMPANY_ID + " = ? AND UPPER(" + FIELD_COLUMN_NAME + ") = UPPER(?) AND " + FIELD_ADMIN_ID + " IN (0, ?)",
-	   					field.getShortname().trim(), field.getDescription(), field.getDefaultValue(), field.getModeEdit(), field.getModeInsert(), comProfileField.getLine(), comProfileField.getSort(), comProfileField.getInterest(), comProfileField.getHistorize(), allowedValuesJson, field.getCompanyID(), field.getColumn(), field.getAdminID());
-    			}
-    		}
-
-    		doPostProcessing(field.getCompanyID());
-    		
-    		return true;
-    	}
+		doPostProcessing(field.getCompanyID());
+		
+		return true;
     }
     
     @Override
@@ -726,10 +792,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	@Override
 	public int getMaximumCompanySpecificFieldCount(@VelocityCheck int companyID) throws Exception {
 		int systemMaxFields = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfProfileFields);
-		int companyMaxFields = selectIntWithDefaultValue(logger, "SELECT max_fields FROM company_tbl WHERE company_id = ?", 0, companyID);
-		if (companyMaxFields == 0) {
-			companyMaxFields = configService.getIntegerValue(ConfigValue.MaxFields, companyID);
-		}
+		int companyMaxFields = configService.getIntegerValue(ConfigValue.MaxFields, companyID);
 		int maxCompanySpecificFields;
 		if (companyMaxFields < systemMaxFields || systemMaxFields < 0) {
 			maxCompanySpecificFields = companyMaxFields;
@@ -840,39 +903,20 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
     	}
 	}
 
-	private List<ComProfileField> sortComProfileList(CaseInsensitiveMap<String, ComProfileField> map) {
-		List<ComProfileField> fields = new ArrayList<>(map.values());
-		sortComProfileList(fields);
+	private <T extends LightProfileField> List<T> sortProfileFields(CaseInsensitiveMap<String, T> map) {
+		List<T> fields = new ArrayList<>(map.values());
+		sortProfileFields(fields);
 		return fields;
 	}
 
-	private void sortComProfileList(List<ComProfileField> listToSort) {
-		Collections.sort(listToSort, new Comparator<ComProfileField>() {
-			@Override
-			public int compare(ComProfileField comProfileField1, ComProfileField comProfileField2) {
-                String compareString1 = comProfileField1.getShortname();
-                if (StringUtils.isEmpty(compareString1)) {
-                    compareString1 = comProfileField1.getColumn();
-                }
-                String compareString2 = comProfileField2.getShortname();
-                if (StringUtils.isEmpty(compareString2)) {
-                    compareString2 = comProfileField2.getColumn();
-                }
-                if (compareString1 != null && compareString2 != null) {
-                    return compareString1.toLowerCase().compareTo(compareString2.toLowerCase());
-                } else if (compareString1 != null) {
-                    return 1;
-                } else {
-                    return -1;
-                }
-			}
-		});
+	private void sortProfileFields(List<? extends LightProfileField> listToSort) {
+		listToSort.sort(Comparator.comparing(field -> StringUtils.lowerCase(StringUtils.defaultIfEmpty(field.getShortname(), field.getColumn()))));
 	}
 
-    private void sortCustomComProfileList(List<ComProfileField> listToSort) {
-		Collections.sort(listToSort, new Comparator<ComProfileField>() {
+    private void sortCustomComProfileList(List<ProfileField> listToSort) {
+		Collections.sort(listToSort, new Comparator<ProfileField>() {
 			@Override
-			public int compare(ComProfileField comProfileField1, ComProfileField comProfileField2) {
+			public int compare(ProfileField comProfileField1, ProfileField comProfileField2) {
 				if (comProfileField1.getSort() < MAX_SORT_INDEX && comProfileField2.getSort() < MAX_SORT_INDEX) {
 					if (comProfileField1.getSort() < comProfileField2.getSort()) {
 						return -1;
@@ -928,10 +972,10 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 		}
 	}
 
-    private class ComProfileField_RowMapper implements RowMapper<ComProfileField> {
+    private static class ComProfileField_RowMapper implements RowMapper<ProfileField> {
 		@Override
-		public ComProfileField mapRow(ResultSet resultSet, int row) throws SQLException {
-			ComProfileField readProfileField = new ComProfileFieldImpl();
+		public ProfileField mapRow(ResultSet resultSet, int row) throws SQLException {
+			ProfileField readProfileField = new ProfileFieldImpl();
 
 			readProfileField.setCompanyID(resultSet.getInt(FIELD_COMPANY_ID));
 			readProfileField.setShortname(resultSet.getString(FIELD_SHORTNAME));
@@ -984,7 +1028,19 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 		}
 	}
 
-    private class ComProfileFieldPermission_RowMapper implements RowMapper<ComProfileFieldPermission> {
+    private static class LightProfileField_RowMapper implements RowMapper<LightProfileField> {
+		@Override
+		public LightProfileField mapRow(ResultSet resultSet, int row) throws SQLException {
+			LightProfileField field = new LightProfileFieldImpl();
+
+			field.setShortname(resultSet.getString(FIELD_SHORTNAME));
+			field.setColumn(resultSet.getString(FIELD_COLUMN_NAME));
+
+			return field;
+		}
+	}
+
+    private static class ComProfileFieldPermission_RowMapper implements RowMapper<ComProfileFieldPermission> {
 		@Override
 		public ComProfileFieldPermission mapRow(ResultSet resultSet, int row) throws SQLException {
 			ComProfileFieldPermission readProfileFieldPermission = new ComProfileFieldPermission();

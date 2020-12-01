@@ -1,175 +1,33 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
-<%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%--@elvariable id="formId" type="java.lang.Integer"--%>
+<%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
+<%--@elvariable id="adminTimeFormat" type="java.lang.String"--%>
+<%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
+
+<%--@elvariable id="imageSrcPattern" type="java.lang.String"--%>
+<%--@elvariable id="imageSrcPatternNoCache" type="java.lang.String"--%>
+<%--@elvariable id="imageThumbnailPattern" type="java.lang.String"--%>
+
+<fmt:setLocale value="${sessionScope['emm.admin'].locale}"/>
 
 <div class="row">
-    <div class="tile">
-        <div class="tile-header">
-            <a href="#" class="headline" data-toggle-tile="#tile-imageUpload">
-                <i class="tile-toggle icon icon-angle-up"></i>
-                <bean:message key="mailing.Graphics_Component.imageUpload"/>
-            </a>
-            <ul class="tile-header-nav">
-                <emm:ShowByPermission token="mailing.components.change">
-                    <li class="active">
-                        <a href="#" data-toggle-tab="#tab-dragAndDropImageUpload">
-                            <bean:message key="mailing.Graphics_Components"/>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" data-toggle-tab="#tab-imageUploadZipFolder">
-                            <bean:message key="mailing.Graphics_Component.zipFolder"/>
-                        </a>
-                    </li>
-                </emm:ShowByPermission>
-            </ul>
-        </div>
 
-        <div id="tile-imageUpload" class="tile-content">
-            <emm:ShowByPermission token="mailing.components.change">
-                <div data-initializer="upload">
-                    <agn:agnForm action="/formcomponents" enctype="multipart/form-data" class="form-vertical" data-form="resource" data-custom-loader="">
-                        <agn:agnHidden property="formID"/>
-                        <agn:agnHidden property="method" value="upload"/>
+    <%-- UPLOADING FORMS--%>
+    <%@ include file="userform-components-upload-fragment.jspf" %>
 
-                        <div id="tab-dragAndDropImageUpload">
-                            <div class="tile-content-forms">
-                                <div class="dropzone" data-upload-dropzone="">
-                                    <div class="dropzone-text">
-                                        <strong>
-                                            <i class="icon icon-reply"></i>&nbsp;<bean:message key="upload_dropzone.title"/>
-                                        </strong>
-                                        <span class="btn btn-regular btn-primary btn-upload">
-                                            <i class="icon icon-cloud-upload"></i>
-                                            <span class="text"><bean:message key="button.multiupload.select"/></span>
-                                            <input type="file" name="newFiles[]" multiple="multiple" data-upload="">
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+    <c:set var="baseComponentLink" value="${fn:replace(imageSrcPattern, '{form-id}', formId)}"/>
 
-                            <div class="hidden" data-upload-add="">
-                                <div class="actions actions-top">
-                                    <div class="action-left">
-                                        <button type="button" class="btn btn-regular" data-upload-reset="">
-                                            <i class="icon icon-times"></i>
-                                        <span class="text">
-                                            <bean:message key="button.Cancel"/>
-                                        </span>
-                                        </button>
-                                    </div>
-                                    <div class="action-right">
-                                        <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
-                                            <i class="icon icon-cloud-upload"></i>
-                                            <span class="text">
-                                                <bean:message key="button.Upload"/>
-                                            </span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <table class="table table-bordered table-striped">
-                                    <thead>
-                                    <tr>
-                                        <th class="squeeze-column"><bean:message key="mailing.Preview"/></th>
-                                        <th><bean:message key="Description"/></th>
-                                    </tr>
-                                    </thead>
-                                    <tbody data-upload-add-template="upload-template-add"></tbody>
-                                </table>
-                                <div class="actions">
-                                    <div class="action-left">
-                                        <button type="button" class="btn btn-regular" data-upload-reset="">
-                                            <i class="icon icon-times"></i>
-                                        <span class="text">
-                                            <bean:message key="button.Cancel"/>
-                                        </span>
-                                        </button>
-                                    </div>
-                                    <div class="action-right">
-                                        <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
-                                            <i class="icon icon-cloud-upload"></i>
-                                            <span class="text">
-                                                <bean:message key="button.Upload"/>
-                                            </span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="hidden" data-upload-progress="">
-                                <div class="actions actions-top actions-bottom">
-                                    <div class="action-right">
-                                        <button type="button" class="btn btn-regular" data-form-abort="">
-                                            <i class="icon icon-times"></i>
-                                            <span class="text">
-                                                <bean:message key="button.Cancel"/>
-                                            </span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="progress-wrapper" data-upload-progress-template="upload-template-progress"></div>
-                                <div class="actions actions-top">
-                                    <div class="action-right">
-                                        <button type="button" class="btn btn-regular" data-form-abort="">
-                                            <i class="icon icon-times"></i>
-                                            <span class="text">
-                                                <bean:message key="button.Cancel"/>
-                                            </span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </agn:agnForm>
-                </div>
-
-                <agn:agnForm action="/formcomponents" enctype="multipart/form-data" class="form-vertical" data-form="resource">
-                    <agn:agnHidden property="formID"/>
-                    <agn:agnHidden property="method" value="uploadArchive"/>
-
-                    <div id="tab-imageUploadZipFolder" class="hidden tile-content-forms">
-                        <div id="componentsHolder" class="row">
-                            <div class="col-sm-12">
-                                <div class="form-group">
-                                    <label for="new_component_upload" class="control-label"><bean:message key="mailing.Graphics_Component.archive.upload"/>:</label>
-                                    <html:file property="archiveFile" styleClass="form-control"/>
-                                </div>
-                            </div>
-
-                            <div class="col-sm-12">
-                                <div class="form-group">
-                                    <label for="overwriteExisting"><bean:message key="OverwriteExistingData"/></label>
-                                    <html:checkbox property="overwriteExisting" value="true"/>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
-                                <i class="icon icon-cloud-upload"></i>
-                                <span class="text">
-                                    <bean:message key="button.Upload"/>
-                                </span>
-                            </button>
-                        </div>
-                    </div>
-                </agn:agnForm>
-            </emm:ShowByPermission>
-        </div>
-    </div>
-
-    <agn:agnForm action="/formcomponents" enctype="multipart/form-data" class="form-vertical" data-form="search">
-        <html:hidden property="formID"/>
-        <html:hidden property="method" value="downloadArchive"/>
-        <html:hidden property="filename"/>
+    <%-- LIST FROM --%>
+    <mvc:form servletRelativeAction="/webform/${formId}/components/list.action"
+              cssClass="form-vertical"
+              id="userform-components-from"
+              modelAttribute="form">
 
         <!-- Tile BEGIN -->
         <div class="tile">
@@ -178,60 +36,59 @@
             <div class="tile-header">
                 <h2 class="headline">
                     <i class="icon icon-image"></i>
-                    <bean:message key="mailing.Graphics_Components"/>
+                    <mvc:message code="mailing.Graphics_Components"/>
                 </h2>
 
                 <ul class="tile-header-actions">
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                             <i class="icon icon-pencil"></i>
-                            <span class="text"><bean:message key="bulkAction"/></span>
+                            <span class="text"><mvc:message code="bulkAction"/></span>
                             <i class="icon icon-caret-down"></i>
                         </a>
 
                         <ul class="dropdown-menu">
                             <li>
-                                <a href="#" data-prevent-load="" data-form-submit-static="">
-                                    <bean:message key="mailing.Graphics_Component.bulk.download"/>
+                                <c:url var="bulkDownload" value="/webform/${formId}/components/bulkDownload.action"/>
+                                <a href="${bulkDownload}" data-prevent-load="">
+                                    <mvc:message code="mailing.Graphics_Component.bulk.download"/>
                                 </a>
                             </li>
                         </ul>
                     </li>
-
                 </ul>
-
-                <!-- Tile Header Actions END -->
             </div>
-            <!-- Tile Header END -->
 
-            <!-- Tile Content BEGIN -->
+             <!-- Tile Content BEGIN -->
             <div class="tile-content" data-form-content>
-                <!-- Table BEGIN -->
                 <div class="table-wrapper">
-
                     <display:table
                             class="table table-bordered table-striped js-table"
                             id="component"
                             name="components"
-                            pagesize="${mailingComponentsForm.numberOfRows}"
+                            pagesize="${form.numberOfRows}"
                             excludedParams="*">
 
-                        <display:column titleKey="mailing.Graphics_Component" sortable="false">
-                            <a href="<html:rewrite page="${imageData[component.id].nocacheUrl}"/>" data-modal="modal-preview-image"
-                               data-modal-set="src: <html:rewrite page="${imageData[component.id].nocacheUrl}"/>, title: ${component.description}">
-                                <img src="<html:rewrite page="${imageData[component.id].thumbnailUrl}"/>" alt="${component.description}" border="1" style="width: auto; height: auto; max-height: 135px; max-width: 360px;" data-display-dimensions="scope: tr"/>
+                        <c:url var="imageLinkNoCache" value="${fn:replace(imageSrcPatternNoCache, '{name}', component.name)}"/>
+                        <c:url var="thumbnailLink" value="${fn:replace(imageThumbnailPattern, '{name}', component.name)}"/>
+                        <display:column titleKey="mailing.Graphics_Component" class="align-center" sortable="false">
+                            <a href="${imageLinkNoCache}" class="inline-block" data-modal="modal-preview-image"
+                                data-modal-set="src: '${imageLinkNoCache}', fileName: '${component.name}', title: '${component.description}'">
+                                <img class="l-cp-image" src="${thumbnailLink}" alt="${component.name}" boredr="1" data-display-dimensions="scope: tr">
                             </a>
                         </display:column>
 
-                        <display:column titleKey="mailing.Graphics_Component" sortable="true" sortProperty="name" headerClass="js-table-sort" property="name"/>
+                        <display:column property="name" titleKey="mailing.Graphics_Component" headerClass="js-table-sort"
+                                        sortable="true" sortProperty="name" />
 
-                        <display:column titleKey="Description" sortable="true" sortProperty="description" headerClass="js-table-sort" property="description"/>
+                        <display:column property="description" titleKey="Description" headerClass="js-table-sort"
+                                        sortable="true" sortProperty="description" />
 
-                        <display:column titleKey="htmled.link" sortable="false">
-                            ${imageData[component.id].standardRdirUrl}
-                        </display:column>
+                        <c:url var="imageLink" value="${fn:replace(imageSrcPattern, '{name}', component.name)}"/>
+                        <display:column titleKey="htmled.link" sortable="false">${imageLink}</display:column>
 
-                        <display:column titleKey="mailing.Graphics_Component.AddDate" sortable="true" sortProperty="creationDate" headerClass="js-table-sort">
+                        <display:column titleKey="mailing.Graphics_Component.AddDate" headerClass="js-table-sort"
+                                        sortable="true" sortProperty="creationDate" >
                             <i class="icon icon-calendar"></i>
                             <fmt:formatDate value="${component.creationDate}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}"/>
                             &nbsp;
@@ -245,75 +102,46 @@
                         </display:column>
 
                         <display:column titleKey="default.Size" sortable="false">
-                            <c:if test="${imageData[component.id].fileSize ne null}">
-                                ${imageData[component.id].fileSize}
+                            <c:if test="${not empty component.dataSize}">
+                                ${emm:makeUnitSignNumber(component.dataSize, 'B', false, pageContext.request)}
                             </c:if>
                         </display:column>
 
-                        <display:column titleKey="report.data.type" sortable="true" sortProperty="mimeType" headerClass="js-table-sort">
-                            <c:if test="${component.mimeType ne null and fn:startsWith(component.mimeType, 'image')}">
-                                <span class="badge">
-                                    ${fn:toUpperCase(fn:substring(component.mimeType, 6, -1))}
+                        <display:column titleKey="report.data.type" headerClass="js-table-sort"
+                                        sortable="true" sortProperty="mimeType" >
+
+                             <c:if test="${not empty component.mimeType and fn:startsWith(component.mimeType, 'image/')}">
+                                <span class="badge uppercase">
+                                        ${fn:substring(component.mimeType, fn:length('image/'), -1)}
                                 </span>
                             </c:if>
                         </display:column>
 
-                        <display:column class="table-actions" titleKey="Actions" sortable="false">
-                            <c:set var="pictureDeleteMessage" scope="page">
-                                <bean:message key="mailing.Graphics_Component.delete"/>
-                            </c:set>
-                            <agn:agnLink styleClass="btn btn-regular btn-alert js-row-delete" data-tooltip="${pictureDeleteMessage}"
-                                         page="/formcomponents.do?method=delete&formID=${formComponentsForm.formID}&filename=${component.name}">
-                                <i class="icon icon-trash-o"></i>
-                            </agn:agnLink>
+                        <display:column class="table-actions align-center"
+                                        sortable="false">
 
-                            <a href="<html:rewrite page="${imageData[component.id].nocacheUrl}"/>"
-                               data-tooltip="<bean:message key='button.Download'/>" data-prevent-load download="${component.name}"
-                               class="btn btn-regular btn-info">
+                            <c:url var="confirmDeleteLink" value="/webform/${formId}/components/${component.name}/confirmDelete.action"/>
+                            <a href="${confirmDeleteLink}"
+                               class="btn btn-regular btn-alert js-row-delete"
+                               data-tooltip="<mvc:message code="mailing.Graphics_Component.delete"/>">
+                                <i class="icon icon-trash-o"></i>
+                            </a>
+
+                            <a href="${imageLinkNoCache}" class="btn btn-regular btn-info" data-prevent-load="" download="${component.name}"
+                               data-tooltip="<mvc:message code='button.Download'/>">
                                 <i class="icon icon-cloud-download"></i>
                             </a>
                         </display:column>
                     </display:table>
                 </div>
             </div>
-        </div>
-    </agn:agnForm>
 
+        </div>
+    </mvc:form>
 </div>
 
-<script id="modal-preview-image" type="text/x-mustache-template">
-    <div class="modal modal-adaptive">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close-icon close" data-dismiss="modal">
-                        <i aria-hidden="true" class="icon icon-times-circle"></i>
-                    </button>
-                    <h4 class="modal-title">{{= title }}</h4>
-                </div>
-                <div class="modal-body">
-                    <img src="{{= src }}">
-                </div>
-            </div>
-        </div>
-    </div>
-</script>
+<%@ include file="../fragments/modal-preview-image-fragment.jspf" %>
 
-<script id="upload-template-add" type="text/x-mustache-template">
-    <tr>
-        <td>
-            {{ if (preview) { }}
-            <img src="{{= preview }}" style="max-width: 250px; max-height: 250px; width: auto; height: auto; margin: 20px;" border="0"/>
-            {{ } else { }}
-            <img src="<c:url value='/assets/core/images/facelift/no_preview.svg'/>"
-                 style="max-width: 250px; max-height: 250px; width: auto; height: auto; margin: 20px;"
-                 border="0"/>
-            {{ } }}
-        </td>
-        <td>
-            <input type="text" id="descriptionByIndex{{= count }}" name="descriptionByIndex[{{= count }}]" value="" class="form-control">
-        </td>
-    </tr>
-</script>
+<%@include file="upload-images-template-add-fragment.jspf" %>
 
 <%@include file="../fragments/upload-template-progress-fragment.jspf" %>

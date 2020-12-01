@@ -14,7 +14,6 @@ package org.agnitas.emm.core.velocity.checks;
  * Exception indicating errors on runtime checks of Velocity scripts.
  */
 public class VelocityCheckerException extends Exception {
-
 	/** Serial version UID. */
 	private static final long serialVersionUID = 2710246852864510005L;
 
@@ -52,5 +51,4 @@ public class VelocityCheckerException extends Exception {
 	public VelocityCheckerException(String message, Throwable cause) {
 		super(message, cause);
 	}
-
 }

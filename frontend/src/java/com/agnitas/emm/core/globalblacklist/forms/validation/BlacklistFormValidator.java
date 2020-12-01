@@ -10,10 +10,10 @@
 
 package com.agnitas.emm.core.globalblacklist.forms.validation;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.agnitas.emm.core.globalblacklist.forms.BlacklistForm;
 import com.agnitas.web.mvc.Popups;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
 
 public class BlacklistFormValidator {
 
@@ -27,14 +27,16 @@ public class BlacklistFormValidator {
 
 	private boolean validateEmail(final BlacklistForm form, final Popups popups) {
 		final String email = form.getEmail();
+		
 		if (StringUtils.isEmpty(email)) {
 			popups.field("email", "error.email.empty");
 			return false;
 		}
-		if(!AgnUtils.isEmailValid(email)) {
+		if(!BlacklistEmailPatternValidator.validateEmailPattern(email)) {
 			popups.field("email", "error.invalid.email");
 			return false;
 		}
+		
 		return true;
 	}
 

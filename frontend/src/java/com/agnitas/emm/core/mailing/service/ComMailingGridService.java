@@ -14,10 +14,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
 import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
 
 public interface ComMailingGridService {
 
@@ -29,12 +31,12 @@ public interface ComMailingGridService {
     
     void saveMailingGridInfo(int mailingID, int companyID, Map<String, Object> mailingGridInfo);
     
-    List<ComGridTemplate> getReleasedGridTemplates(String sort, String direction, int pageNumber, int rowNumber, @VelocityCheck int companyId);
+    List<ComGridTemplate> getReleasedGridTemplates(final ComAdmin admin, String sort, String direction);
 
     @Transactional
     void saveUndoGridMailing(int mailingId, int gridTemplateId, int adminId);
     
     void deleteUndoDataOverLimit(int mailingId, int gridTemplateId);
     
-    void restoreGridMailingUndo(int undoId, Mailing mailing);
+    void restoreGridMailingUndo(int undoId, Mailing mailing) throws Exception;
 }

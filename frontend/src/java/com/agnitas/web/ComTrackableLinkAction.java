@@ -10,18 +10,51 @@
 
 package com.agnitas.web;
 
+import static org.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
+
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.agnitas.actions.EmmAction;
+import org.agnitas.beans.BaseTrackableLink;
+import org.agnitas.beans.Mailing;
+import org.agnitas.beans.Mediatype;
+import org.agnitas.beans.TrackableLink;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.EmmActionDao;
+import org.agnitas.dao.MailingDao;
+import org.agnitas.dao.TrackableLinkDao;
+import org.agnitas.emm.core.commons.exceptions.InsufficientPermissionException;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.WebStorage;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.web.BaseTrackableLinkForm;
+import org.agnitas.web.StrutsActionBase;
+import org.agnitas.web.TrackableLinkForm;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
@@ -36,34 +69,9 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
 import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
+import com.agnitas.service.ComWebStorage;
 import com.agnitas.service.GridServiceWrapper;
-import org.agnitas.actions.EmmAction;
-import org.agnitas.beans.BaseTrackableLink;
-import org.agnitas.beans.Mailing;
-import org.agnitas.beans.Mediatype;
-import org.agnitas.beans.TrackableLink;
-import org.agnitas.dao.EmmActionDao;
-import org.agnitas.dao.MailingDao;
-import org.agnitas.dao.TrackableLinkDao;
-import org.agnitas.emm.core.commons.exceptions.InsufficientPermissionException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.web.BaseTrackableLinkForm;
-import org.agnitas.web.StrutsActionBase;
-import org.agnitas.web.TrackableLinkForm;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.web.context.support.WebApplicationContextUtils;
-import static org.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Implementation of <strong>Action</strong> that validates a user logon.
@@ -82,7 +90,6 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 	private static final int ACTION_ORG_LAST = ACTION_SAVE_ALL;
 
 	public static final int ACTION_SET_EXTEND_LINKS = ACTION_ORG_LAST + 1;
-	public static final int ACTION_GLOBAL_RELEVANCE = ACTION_ORG_LAST + 2;
 	public static final int ACTION_SAVE_ADMIN_LINKS = ACTION_ORG_LAST + 3;
 	
 	public static final int ACTION_DELETE_GLOBAL_AND_INDIVIDUAL_EXTENSION = ACTION_ORG_LAST + 4;
@@ -102,8 +109,9 @@ public class ComTrackableLinkAction extends StrutsActionBase {
     private ComMailingBaseService mailingBaseService;
     
     private GridServiceWrapper gridService;
-    
-    // --------------------------------------------------------- Public Methods
+    private WebStorage webStorage;
+
+	// --------------------------------------------------------- Public Methods
 
     @Override
     public String subActionMethodName(int subAction) {
@@ -286,7 +294,18 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 	protected void loadTrackableLinks(TrackableLinkForm aForm, HttpServletRequest req) throws Exception {
 		Mailing aMailing = mailingDao.getMailing(aForm.getMailingID(), AgnUtils.getCompanyID(req));
 
-		aForm.setLinks(aMailing.getTrackableLinks().values());
+		Map<String, ComTrackableLink> trackableLinks = aMailing.getTrackableLinks();
+
+		final Comparator<ComTrackableLink> comparator = getComparator(aForm, webStorage);
+
+		List<ComTrackableLink> sortedLinks = trackableLinks.values().stream()
+				.sorted(comparator).collect(Collectors.toList());
+
+		final PaginatedListImpl<ComTrackableLink> paginatedLinks = new PaginatedListImpl<>(
+				sortedLinks, sortedLinks.size(), sortedLinks.size(), 1, aForm.getSort(), aForm.getOrder());
+		req.setAttribute("trackableLinksList", paginatedLinks);
+
+		aForm.setLinks(sortedLinks);
 		aForm.setShortname(aMailing.getShortname());
 		aForm.setDescription(aMailing.getDescription());
 		aForm.setIsTemplate(aMailing.isIsTemplate());
@@ -306,7 +325,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 	protected void loadLink(TrackableLinkForm form, HttpServletRequest req) {
 		final int companyId = AgnUtils.getCompanyID(req);
 		ComTrackableLinkForm aForm = (ComTrackableLinkForm) form;
-		ComTrackableLink aLink = (ComTrackableLink) linkDao.getTrackableLink(aForm.getLinkID(), companyId);
+		ComTrackableLink aLink = linkDao.getTrackableLink(aForm.getLinkID(), companyId);
 
 		if (aLink != null) {
 			final int mailingId = aLink.getMailingID();
@@ -315,7 +334,6 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			aForm.setTrackable(aLink.getUsage());
 			aForm.setLinkUrl(aLink.getFullUrl());
 			aForm.setLinkAction(aLink.getActionID());
-			aForm.setRelevance(aLink.getRelevance());
 			aForm.setDeepTracking(aLink.getDeepTracking());
 			aForm.setAltText(aLink.getAltText());
 			aForm.setAdministrativeLink(aLink.isAdminLink());
@@ -366,7 +384,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
     }
 
     protected void saveAll(ComTrackableLinkForm aForm, HttpServletRequest req, ComAdmin admin) throws Exception{
-        ComMailing aMailing = (ComMailing) mailingDao.getMailing(aForm.getMailingID(), admin.getCompanyID());
+        ComMailing aMailing = mailingDao.getMailing(aForm.getMailingID(), admin.getCompanyID());
         if (aForm.isIntelliAdShown()) {
         	updateIntelliAdSettings(aForm, aMailing);
 		}
@@ -422,9 +440,6 @@ public class ComTrackableLinkAction extends StrutsActionBase {
             }
         }
 
-        // ACTION_GLOBAL_RELEVANCE
-        trackeableLinkService.saveGlobalRelevance(aMailing, bulkLinkIds, aForm.getGlobalRelevance(), aForm.getLinkItemsRelevance());
-
         // ACTION_SAVE_ADMIN_LINKS
         if (aForm.isEveryPositionLink()){
             if (trackeableLinkService.saveEveryPositionLinks(aMailing, WebApplicationContextUtils.getRequiredWebApplicationContext(req.getSession().getServletContext()), bulkLinkIds)) {
@@ -464,7 +479,6 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			// set link actions
 			int linkAction = aForm.getLinkAction();
 			int globalUsage = aForm.getGlobalUsage();
-			int globalRelevance = trackableLinkForm.getGlobalRelevance();
 			final int globalDeepTracking = trackableLinkForm.getDeepTracking();
 			StringBuilder logMessage = new StringBuilder();
 			Set<Integer> bulkIds = aForm.getBulkIDs();
@@ -486,13 +500,6 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 				} else if ((globalUsage != KEEP_UNCHANGED) && bulkIds.contains(id)) {
 					writeTrackableLinkTrackableChange(aLink, globalUsage, logMessage);
 					aLink.setUsage(globalUsage);
-				}
-				int relevance = trackableLinkForm.getLinkItemRelevance(id);
-				if (aLink.getRelevance() != relevance) {
-					//saving will be performed in a service
-					writeTrackableLinkRelevanceChange(aLink, relevance, logMessage);
-				} else if (globalRelevance != KEEP_UNCHANGED && !bulkIds.contains(id)) {
-					writeTrackableLinkRelevanceChange(aLink, globalRelevance, logMessage);
 				}
 				String newName = trackableLinkForm.getLinkItemName(id);
 				if (!newName.equals(aLink.getShortname())) {
@@ -565,7 +572,6 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 
     private void setLinkItems(ComTrackableLinkForm aForm) {
         aForm.clearLinkItemActions();
-        aForm.clearLinkItemRelevance();
         aForm.clearLinkItemDeepTracking();
         aForm.clearLinkItemTrackable();
         aForm.clearLinkItemName();
@@ -573,7 +579,6 @@ public class ComTrackableLinkAction extends StrutsActionBase {
         	TrackableLink trackableLink = (TrackableLink) link;
             int id = trackableLink.getId();
             aForm.setLinkItemAction(id, trackableLink.getActionID());
-            aForm.setLinkItemRelevance(id, trackableLink.getRelevance());
             aForm.setLinkItemDeepTracking(id, trackableLink.getDeepTracking());
             aForm.setLinkItemTrackable(id, trackableLink.getUsage());
             aForm.setLinkItemName(id, trackableLink.getShortname());
@@ -584,7 +589,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 	 * Saves link.
 	 */
 	protected void saveLink(ComTrackableLinkForm aForm, HttpServletRequest req) {
-		ComTrackableLink aLink = (ComTrackableLink) linkDao.getTrackableLink(aForm.getLinkID(), AgnUtils.getCompanyID(req));
+		ComTrackableLink aLink = linkDao.getTrackableLink(aForm.getLinkID(), AgnUtils.getCompanyID(req));
 		if (aLink != null) {
 
 			//User activity logging
@@ -592,14 +597,12 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			writeTrackableLinkDescriptionChange(aLink, aForm.getLinkName(), logMessage);
 			writeTrackableLinkTrackableChange(aLink, aForm.getTrackable(), logMessage);
 			writeTrackableLinkActionChange(aLink, aForm.getLinkAction(), logMessage);
-			writeTrackableLinkRelevanceChange(aLink, aForm.getRelevance(), logMessage);
 			writeTrackableLinkAdministrativeChange(aLink, aForm.isAdministrativeLink(), logMessage);
 			writeTrackableLinkStaticChange(aLink, aForm.isStaticLink(), logMessage);
 
 			aLink.setShortname(aForm.getLinkName());
 			aLink.setUsage(aForm.getTrackable());
 			aLink.setActionID(aForm.getLinkAction());
-			aLink.setRelevance(aForm.getRelevance());
 			aLink.setAdminLink(aForm.isAdministrativeLink());
 			aLink.setStaticValue(aForm.isStaticLink());
 
@@ -647,7 +650,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 	private void updateLinkUrl(ComTrackableLinkForm form, HttpServletRequest request) throws InsufficientPermissionException, TrackableLinkException {
 		if (StringUtils.isNotBlank(form.getLinkUrl())) {
 			ComAdmin admin = AgnUtils.getAdmin(request);
-			ComTrackableLink link = (ComTrackableLink) this.linkDao.getTrackableLink(form.getLinkID(), admin.getCompanyID());
+			ComTrackableLink link = this.linkDao.getTrackableLink(form.getLinkID(), admin.getCompanyID());
 			
 			if (!form.getLinkUrl().equals(link.getFullUrl())) {
 				if (admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_URL_CHANGE)) {
@@ -667,7 +670,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 		int mailingId = aForm.getMailingID();
 		int companyId = AgnUtils.getCompanyID(req);
 
-		ComMailing mailing = (ComMailing)mailingDao.getMailing(mailingId, companyId);
+		ComMailing mailing = mailingDao.getMailing(mailingId, companyId);
 		List<LinkProperty> commonLinkExtensions = mailing.getCommonLinkExtensions();
 		aForm.setIsTemplate(mailing.isIsTemplate());
         aForm.setShortname(mailing.getShortname());
@@ -776,15 +779,6 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 		oldShortname = StringUtils.defaultString(oldShortname);
 		if (!StringUtils.equals(oldShortname, newShortname)) {
 			logMessage.append(String.format(CHANGE_TEMPLATE, "Description", oldShortname, newShortname));
-		}
-	}
-
-	private void writeTrackableLinkRelevanceChange(TrackableLink link, int newRelevance, StringBuilder logMessage) {
-		int oldRelevance = link.getRelevance();
-		if (oldRelevance != newRelevance) {
-			logMessage.append(String.format(CHANGE_TEMPLATE, "Relevance",
-					getRelevanceName(oldRelevance),
-					getRelevanceName(newRelevance)));
 		}
 	}
 
@@ -900,18 +894,33 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 		return action == null ? "" : action.getShortname();
 	}
 
-	private String getRelevanceName(int relevance) {
-		switch(relevance) {
-			case 0:
-				return "for click statistics and total clicks";
-			case 1:
-				return "for click statistics only";
-			case 2:
-				return "not in statistics";
-			default:
-				return "unknown type";
-		}
-	}
+    private Comparator<ComTrackableLink> getComparator(final TrackableLinkForm form, final WebStorage webStorageParam) {
+        syncForm(form, webStorageParam);
+        Comparator<ComTrackableLink> comparator = Comparator.comparing(TrackableLink::getId);
+        if (StringUtils.equalsIgnoreCase("fullUrlWithExtensions", form.getSort())) {
+            comparator = Comparator.comparing(TrackableLink::getFullUrlWithExtensions);
+        } else if (StringUtils.equalsIgnoreCase("description", form.getSort())) {
+            comparator = Comparator.comparing((l) -> StringUtils.trimToEmpty(l.getShortname()));
+        }
+
+        if (!AgnUtils.sortingDirectionToBoolean(form.getOrder(), true)) {
+            comparator = comparator.reversed();
+        }
+
+        return comparator;
+    }
+
+    private void syncForm(final TrackableLinkForm form, final WebStorage webStorageParam) {
+        webStorageParam.access(ComWebStorage.TRACKABLE_LINKS, storage -> {
+            if (StringUtils.isNoneBlank(form.getSort())) {
+                storage.setColumnName(form.getSort());
+                storage.setAscendingOrder(AgnUtils.sortingDirectionToBoolean(form.getOrder()));
+            } else {
+                form.setSort(storage.getColumnName());
+                form.setOrder(storage.isAscendingOrder() ? "ascending" : "descending");
+            }
+        });
+    }
 
 	@Required
 	public void setConfigService(ConfigService configService) {
@@ -942,4 +951,9 @@ public class ComTrackableLinkAction extends StrutsActionBase {
     public void setGridService(GridServiceWrapper gridServiceWrapper) {
         this.gridService = gridServiceWrapper;
     }
+
+	@Required
+	public void setWebStorage(WebStorage webStorage) {
+		this.webStorage = webStorage;
+	}
 }

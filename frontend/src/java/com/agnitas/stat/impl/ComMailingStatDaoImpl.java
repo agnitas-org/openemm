@@ -192,10 +192,9 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 				aEntry.setUrl(trkLink.getFullUrl());
 				aEntry.setShortname(urlShortnames.get(((Number) map.get("urlid")).intValue()));
 
-				if (trkLink.getRelevance() == 0) {
-					aTotalClicks += ((Number) map.get("total")).intValue();
-					aTotalClicksNetto += ((Number) map.get("distotal")).intValue();
-				}
+				aTotalClicks += ((Number) map.get("total")).intValue();
+				aTotalClicksNetto += ((Number) map.get("distotal")).intValue();
+				
 				aktClickStatValues.put(((Number) map.get("urlid")).intValue(), aEntry);
 			}
 
@@ -316,7 +315,7 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 		// CLICK_SUBSCRIBERS
 		String selectTotalSuscribers = "SELECT COUNT(DISTINCT rdir.customer_id)"
 			+ " FROM rdirlog_" + companyID + "_tbl rdir, rdir_url_tbl url"
-			+ " WHERE rdir.mailing_id = ? and rdir.url_id = url.url_id AND url.relevance = 0";
+			+ " WHERE rdir.mailing_id = ? and rdir.url_id = url.url_id";
 
 		try {
 			statValue.setTotalClickSubscribers(selectInt(logger, selectTotalSuscribers, mailingID));
@@ -324,7 +323,7 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 			logger.error("getMailingStatFromDB: " + e);
 		}
 
-		// O P E N E D M A I L S 
+		// O P E N E D M A I L S
 		String selectOpeners = "SELECT COUNT(onepix.customer_id) open_net"
 			+ " FROM onepixellog_" + companyID + "_tbl onepix"
 			+ " WHERE onepix.mailing_id = ? ";
@@ -403,12 +402,7 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 			int urlID = urlStat.getUrlID();
 			TrackableLink trkLink = urls.get(urlID);
 			if (trkLink != null) {
-				if (trkLink.getRelevance() == 0) {
-					clickedUrls.add(urlStat);
-				}
-				if (trkLink.getRelevance() == 2) {
-					notRelevantUrls.add(urlStat);
-				}
+				clickedUrls.add(urlStat);
 			}
 		}
 

@@ -15,7 +15,7 @@ import com.agnitas.beans.ComTarget;
 
 public interface RecipientTargetGroupMatcher {
 
-	public boolean isInTargetGroup(final ComTarget target);
-	public void setRecipientProperty(final String name, final Object value) throws Exception;
+	boolean isInTargetGroup(final ComTarget target);
+	void setRecipientProperty(final String name, final Object value) throws Exception;
 	
 }

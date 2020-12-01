@@ -10,25 +10,40 @@
 
 package org.agnitas.backend;
 
-/** container class for start/end values of found tags in a parsed block
+/**
+ * container class for start/end values of found tags in a parsed block
  */
 public class TagPos {
-	/** its start position */
+	/**
+	 * its start position
+	 */
 	private int start;
-	/** its end position */
+	/**
+	 * its end position
+	 */
 	private int end;
-	/** the name of the tag */
+	/**
+	 * the name of the tag
+	 */
 	private String tagname;
-	/** the tag with stripped of [ .. ] */
+	/**
+	 * the tag with stripped of [ .. ]
+	 */
 	private String tagid;
-	/** if this is a simple tag */
+	/**
+	 * if this is a simple tag
+	 */
 	private boolean simpleTag;
-	/** the content if this is dynamic */
+	/**
+	 * the content if this is dynamic
+	 */
 	private BlockData content;
 
-	/** Constructor
-	 * @param start start position of tag
-	 * @param end end position of tag
+	/**
+	 * Constructor
+	 *
+	 * @param start   start position of tag
+	 * @param end     end position of tag
 	 * @param tagname the full tagname
 	 */
 	public TagPos(int start, int end, String tagname) {
@@ -39,68 +54,75 @@ public class TagPos {
 		simpleTag = false;
 		content = null;
 
-		checkTagname ();
+		checkTagname();
 	}
-	
-	public int getStart () {
+
+	public int getStart() {
 		return start;
 	}
-	
-	public int getEnd () {
+
+	public int getEnd() {
 		return end;
 	}
-	
-	public String getTagid () {
+
+	public String getTagid() {
 		return tagid;
 	}
-	
-	public String getTagname () {
+
+	public String getTagname() {
 		return tagname;
 	}
-	
-	public BlockData getContent () {
+
+	public BlockData getContent() {
 		return content;
 	}
 
-	public void setContent (BlockData bd) {
+	public void setContent(BlockData bd) {
 		content = bd;
 	}
-	
-	public boolean isSimpleTag () {
+
+	public boolean isSimpleTag() {
 		return simpleTag;
 	}
-	
-	/** Modifiy position of tag in content due to external
+
+	/**
+	 * Modifiy position of tag in content due to external
 	 * modification of the content
-	 * 
+	 *
 	 * @param offset the value to modify the position of the tag
 	 */
-	public void relocateBy (int offset) {
+	public void relocateBy(int offset) {
 		start += offset;
 		end += offset;
 	}
-	
-	/** Checks if this is the agnDYN tag
+
+	/**
+	 * Checks if this is the agnDYN tag
+	 *
 	 * @return true, it this is the case
 	 */
-	public boolean isDynamic () {
-		return tagid.equals (EMMTag.TAG_INTERNALS[EMMTag.TI_DYN]) || isGridPH ();
-	}
-	private boolean isGridPH () {
-		return tagid.equals (EMMTag.TAG_INTERNALS[EMMTag.TI_GRIDPH]);
+	public boolean isDynamic() {
+		return tagid.equals(EMMTag.TAG_INTERNALS[EMMTag.TI_DYN]) || isGridPH();
 	}
 
-	/** Checks if this is the agnDVALUE tag
+	private boolean isGridPH() {
+		return tagid.equals(EMMTag.TAG_INTERNALS[EMMTag.TI_GRIDPH]);
+	}
+
+	/**
+	 * Checks if this is the agnDVALUE tag
+	 *
 	 * @return true, it this is the case
 	 */
-	public boolean isDynamicValue () {
-		return tagid.equals (EMMTag.TAG_INTERNALS[EMMTag.TI_DYNVALUE]) || (isDynamic () && simpleTag);
+	public boolean isDynamicValue() {
+		return tagid.equals(EMMTag.TAG_INTERNALS[EMMTag.TI_DYNVALUE]) || (isDynamic() && simpleTag);
 	}
 
-	/** extract the tagid from the tagname
+	/**
+	 * extract the tagid from the tagname
 	 */
-	private void checkTagname () {
-		int len = tagname.length ();
+	private void checkTagname() {
+		int len = tagname.length();
 
 		if (tagname.endsWith("/]")) {
 			simpleTag = true;
@@ -114,7 +136,7 @@ public class TagPos {
 				break;
 			}
 		}
-		tagid = tagname.substring (1, n);
+		tagid = tagname.substring(1, n);
 		if (isGridPH()) {
 			// Always standalone.
 			simpleTag = true;

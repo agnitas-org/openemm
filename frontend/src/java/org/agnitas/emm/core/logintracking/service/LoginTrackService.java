@@ -138,12 +138,5 @@ public interface LoginTrackService {
 	 */
 	public List<BlockedAddressData> listBlockedIpAddresses();
 
-	// -------------------------------------------------------------------------------------------------------------------------------------------- Deprecated methods
-	
-	
-	
-
-	@Deprecated // TODO Remove from service. PaginatedListImpl is part of the presentation layer.
 	public PaginatedListImpl<BlockedAddressData> getBlockedIPListAfterSuccessfulLogin(final LoginTrackSortCriterion criterion, final SortDirection order, int pageNumber, int pageSize);
-
 }

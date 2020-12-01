@@ -10,13 +10,13 @@
 
 package org.agnitas.emm.core.mailing.beans;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.ComMailing;
 
 public class LightweightMailingWithMailingList extends LightweightMailing {
 
     private final int mailingListId;
 
-    public LightweightMailingWithMailingList(Mailing mailing, int mailingListId) {
+    public LightweightMailingWithMailingList(ComMailing mailing, int mailingListId) {
         super(mailing);
         this.mailingListId = mailingListId;
     }

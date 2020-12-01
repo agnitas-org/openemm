@@ -10,28 +10,31 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.DeleteMailingRequest;
 import org.agnitas.emm.springws.jaxb.DeleteMailingResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 
-public class DeleteMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class DeleteMailingEndpoint extends BaseEndpoint {
 
-	@Resource
 	private MailingService mailingService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		DeleteMailingRequest request = (DeleteMailingRequest) arg0;
-		DeleteMailingResponse response = objectFactory.createDeleteMailingResponse();
+	public DeleteMailingEndpoint(@Qualifier("MailingService") MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteMailingRequest")
+	public @ResponsePayload DeleteMailingResponse deleteMailing(@RequestPayload DeleteMailingRequest request) {
+		DeleteMailingResponse response = new DeleteMailingResponse();
 		MailingModel model = new MailingModel();
 		model.setCompanyId(Utils.getUserCompany());
 		model.setMailingId(request.getMailingID());
@@ -39,5 +42,4 @@ public class DeleteMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
 		mailingService.deleteMailing(model);
 		return response;
 	}
-
 }

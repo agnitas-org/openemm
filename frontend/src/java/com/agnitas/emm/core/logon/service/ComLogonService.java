@@ -25,6 +25,10 @@ import com.agnitas.service.SimpleServiceResult;
  * Interface for logon process.
  */
 public interface ComLogonService {
+	public static final String DEFAULT_HELP_LANGUAGE = "en";
+	public static final int TOKEN_EXPIRATION_MINUTES = 30;
+	public static final int TOKEN_EXPIRATION_DAYS = 3;
+	
 	/**
 	 * Returns {@link ComAdmin} for given user name and password. A {@link LogonFailedException}
 	 * is thrown when logon failed for some reason (invalid combination of user name and
@@ -63,4 +67,14 @@ public interface ComLogonService {
 	SimpleServiceResult requestPasswordReset(String username, String email, String clientIp, String linkPattern);
 
     ServiceResult<ComAdmin> resetPassword(String username, String token, String password, String clientIp);
+    
+    String getPasswordResetLink(String linkPattern, String username, String token);
+    
+    SimpleServiceResult sendWelcomeMail(ComAdmin admin, String clientIp, String linkPattern);
+
+	boolean existsPasswordResetTokenHash(String username, String token);
+
+	boolean isValidPasswordResetTokenHash(String username, String token);
+
+	void riseErrorCount(String username);
 }

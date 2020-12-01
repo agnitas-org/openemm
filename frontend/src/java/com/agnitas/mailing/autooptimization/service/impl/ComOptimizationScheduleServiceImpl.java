@@ -127,7 +127,18 @@ public class ComOptimizationScheduleServiceImpl implements ComOptimizationSchedu
 			testMailing.setSplitID(splitPart.getId());
 
 			MediatypeEmail  emailParam = testMailing.getEmailParam();
-			emailParam.setDoublechecking(optimization.isDoubleCheckingActivated());
+
+			if (optimization.getWorkflowId() > 0 && properties != null) {
+				//workflow driven auto optimization doesn't have such settings and is always false
+				//so don't update such parameter from optimization fields
+				MailingSendingProperties mailingSendingProperties = properties.get(testMailing.getId());
+				if (mailingSendingProperties != null) {
+					emailParam.setDoublechecking(mailingSendingProperties.isDoubleCheck());
+					emailParam.setSkipempty(mailingSendingProperties.isSkipEmptyBlocks());
+				}
+			} else {
+				emailParam.setDoublechecking(optimization.isDoubleCheckingActivated());
+			}
 
 			if (mailingDao.saveMailing(testMailing, false) <= 0) {
 				result = false;

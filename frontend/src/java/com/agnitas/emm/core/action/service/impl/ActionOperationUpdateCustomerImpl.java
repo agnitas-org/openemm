@@ -20,6 +20,7 @@ import com.agnitas.beans.ComTrackpointDef;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
@@ -72,7 +73,12 @@ public class ActionOperationUpdateCustomerImpl implements EmmActionOperation {
 		}
 	}
 
-	/**
+    @Override
+    public ActionOperationType processedType() {
+        return ActionOperationType.UPDATE_CUSTOMER;
+    }
+
+    /**
 	 * Replace parameter references in updatestatements with the given values.
 	 * If the value holds ##foo## it is replaced by the value of the
 	 * requestparameter foo.

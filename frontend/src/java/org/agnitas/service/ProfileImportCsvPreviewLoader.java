@@ -51,6 +51,9 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.json.Json5Reader;
+import com.agnitas.json.JsonObject;
+import com.agnitas.json.JsonReader.JsonToken;
 
 public class ProfileImportCsvPreviewLoader {
     @SuppressWarnings("unused")
@@ -87,42 +90,73 @@ public class ProfileImportCsvPreviewLoader {
 			} else if (mappingList.isEmpty() && !importProfile.isAutoMapping()) {
 				throw new ImportWizardContentParseException("error.import.no_columns_maped");
 			}
-			
-			char separator = Separator.getSeparatorById(importProfile.getSeparator()).getValueChar();
-			Character stringQuote = TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getValueCharacter();
-			
-			try (CsvReader csvReader = new CsvReader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName(), separator, stringQuote)) {
-				csvReader.setAlwaysTrim(true);
-			
-				List<String> fileHeaders;
-				if (!importProfile.isNoHeaders()) {
-					fileHeaders = csvReader.readNextCsvLine();
-					
-		            // Check for duplicate csv file columns
-		            Set<String> csvFileColumnsForDuplicateCheck = new CaseInsensitiveSet();
-		            for (String csvColumns : fileHeaders) {
-		            	if (StringUtils.isBlank(csvColumns)) {
-		            		throw new ImportWizardContentParseException("error.import.column.name.empty");
-		            	} else if (csvFileColumnsForDuplicateCheck.contains(csvColumns)) {
-		            		throw new ImportWizardContentParseException("error.import.column.csv.duplicate");
-		            	}
-		            	csvFileColumnsForDuplicateCheck.add(csvColumns);
-		            }
-				} else {
-					fileHeaders = new ArrayList<>();
-					int i = 1;
-					for (ColumnMapping columnMapping : mappingList) {
-						if (!columnMapping.getDatabaseColumn().equals(ColumnMapping.DO_NOT_IMPORT)) {
-							fileHeaders.add("column_" + i);
+			if ("CSV".equalsIgnoreCase(importProfile.getDatatype())) {
+				char separator = Separator.getSeparatorById(importProfile.getSeparator()).getValueChar();
+				Character stringQuote = TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getValueCharacter();
+				
+				try (CsvReader csvReader = new CsvReader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName(), separator, stringQuote)) {
+					csvReader.setAlwaysTrim(true);
+				
+					List<String> fileHeaders;
+					if (!importProfile.isNoHeaders()) {
+						fileHeaders = csvReader.readNextCsvLine();
+						
+			            // Check for duplicate csv file columns
+			            Set<String> csvFileColumnsForDuplicateCheck = new CaseInsensitiveSet();
+			            for (String csvColumns : fileHeaders) {
+			            	if (StringUtils.isBlank(csvColumns)) {
+			            		throw new ImportWizardContentParseException("error.import.column.name.empty");
+			            	} else if (csvFileColumnsForDuplicateCheck.contains(csvColumns)) {
+			            		throw new ImportWizardContentParseException("error.import.column.csv.duplicate");
+			            	}
+			            	csvFileColumnsForDuplicateCheck.add(csvColumns);
+			            }
+					} else {
+						fileHeaders = new ArrayList<>();
+						int i = 1;
+						for (ColumnMapping columnMapping : mappingList) {
+							if (!columnMapping.getDatabaseColumn().equals(ColumnMapping.DO_NOT_IMPORT)) {
+								fileHeaders.add("column_" + i);
+							}
+							i++;
 						}
-						i++;
+					}
+						
+					for (ColumnMapping columnMapping : mappingList) {
+						if (!columnMapping.getDatabaseColumn().equals(ColumnMapping.DO_NOT_IMPORT) && StringUtils.isNotEmpty(columnMapping.getFileColumn()) && !fileHeaders.contains(columnMapping.getFileColumn())) {
+							throw new ImportWizardContentParseException("error.import.no_keycolumn_mapping_found_in_file", columnMapping.getFileColumn());
+						}
 					}
 				}
-					
-				for (ColumnMapping columnMapping : mappingList) {
-					if (!columnMapping.getDatabaseColumn().equals(ColumnMapping.DO_NOT_IMPORT) && StringUtils.isNotEmpty(columnMapping.getFileColumn()) && !fileHeaders.contains(columnMapping.getFileColumn())) {
-						throw new ImportWizardContentParseException("error.import.no_keycolumn_mapping_found_in_file", columnMapping.getFileColumn());
-						// if current column doesn't present in csv file;
+			} else if ("JSON".equalsIgnoreCase(importProfile.getDatatype())) {
+				try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
+					jsonReader.readNextToken();
+					if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+						throw new Exception("Json data does not contain expected JsonArray");
+					}
+
+					// Check for duplicate json property keys
+					while (jsonReader.readNextJsonNode()) {
+			            Set<String> jsonFilePropertiesForDuplicateCheck = new CaseInsensitiveSet();
+						Object currentObject = jsonReader.getCurrentObject();
+						if (!(currentObject instanceof JsonObject)) {
+							throw new Exception("Json data does not contain expected JsonArray of JsonObjects");
+						}
+						JsonObject currentJsonObject = (JsonObject) currentObject;
+					    for (String jsonPropertyKey : currentJsonObject.keySet()) {
+			            	if (StringUtils.isBlank(jsonPropertyKey)) {
+			            		throw new ImportWizardContentParseException("error.import.column.name.empty");
+			            	} else if (jsonFilePropertiesForDuplicateCheck.contains(jsonPropertyKey)) {
+			            		throw new ImportWizardContentParseException("error.import.column.csv.duplicate");
+			            	}
+			            	jsonFilePropertiesForDuplicateCheck.add(jsonPropertyKey);
+					    }
+						
+						for (ColumnMapping columnMapping : mappingList) {
+							if (!columnMapping.getDatabaseColumn().equals(ColumnMapping.DO_NOT_IMPORT) && StringUtils.isNotEmpty(columnMapping.getFileColumn()) && !currentJsonObject.keySet().contains(columnMapping.getFileColumn())) {
+								throw new ImportWizardContentParseException("error.import.no_keycolumn_mapping_found_in_file", columnMapping.getFileColumn());
+							}
+						}
 					}
 				}
 			}
@@ -157,8 +191,8 @@ public class ProfileImportCsvPreviewLoader {
 					ZipUtilities.decompressFromEncryptedZipFile(importFile, unzipPath, importProfile.getZipPassword());
 					
 					// Check if there was only one file within the zip file and use it for import
-					String[] filesToImport = unzipPath.list();
-					if (filesToImport.length != 1) {
+					String[] filesToImport = unzipPath.list(); // Returns null if no files found
+					if (filesToImport == null || filesToImport.length != 1) {
 						throw new Exception("Invalid number of files included in zip file");
 					}
 					InputStream dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
@@ -175,110 +209,189 @@ public class ProfileImportCsvPreviewLoader {
 	}
 
 	/**
-	 * Read the first 20 lines of the import CSV file
+	 * Read the first 20 items of the import data file
 	 */
-	public LinkedList<LinkedList<String>> getPreviewParsedContent(ActionMessages errors) throws Exception {
+	public List<List<String>> getPreviewParsedContent(ActionMessages errors) throws Exception {
 		int lineNumber = 0;
-		LinkedList<LinkedList<String>> previewParsedContent = new LinkedList<>();
+		List<List<String>> previewParsedContent = new LinkedList<>();
 		try {
-			char separator = Separator.getSeparatorById(importProfile.getSeparator()).getValueChar();
-			Character stringQuote = TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getValueCharacter();
-			
-			try (CsvReader csvReader = new CsvReader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName(), separator, stringQuote)) {
-				csvReader.setAlwaysTrim(true);
+			if ("CSV".equalsIgnoreCase(importProfile.getDatatype())) {
+				char separator = Separator.getSeparatorById(importProfile.getSeparator()).getValueChar();
+				Character stringQuote = TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getValueCharacter();
 				
-				columns = null;
-				while (lineNumber <= 20) {
-					List<String> csvLineData = csvReader.readNextCsvLine();
-	
-					if (csvLineData == null) {
-						break;
-					}
+				try (CsvReader csvReader = new CsvReader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName(), separator, stringQuote)) {
+					csvReader.setAlwaysTrim(true);
 					
-					lineNumber++;
-					// If we haven't been sent the header data yet then we store
-					// them (but don't process them)
-					if (columns == null) {
-						if (!importProfile.isNoHeaders()) {
-							columns = new CSVColumnState[csvLineData.size()];
-							if (importProfile.isAutoMapping()) {
-								CaseInsensitiveMap<String, DbColumnType> customerDbFields = importRecipientsDao.getCustomerDbFields(importProfile.getCompanyId());
-								for (int i = 0; i < csvLineData.size(); i++) {
-									String headerName = csvLineData.get(i);
-									if (StringUtils.isBlank(headerName)) {
-										throw new Exception("Invalid empty csvfile header for import automapping");
-									} else if (customerDbFields.containsKey(headerName)) {
-										columns[i] = new CSVColumnState();
-										columns[i].setColName(headerName.toLowerCase());
-										columns[i].setImportedColumn(true);
-									} else {
-										columns[i] = new CSVColumnState();
-										columns[i].setColName(headerName);
-										columns[i].setImportedColumn(false);
+					columns = null;
+					while (lineNumber <= 20) {
+						List<String> csvLineData = csvReader.readNextCsvLine();
+		
+						if (csvLineData == null) {
+							break;
+						}
+						
+						lineNumber++;
+						// If we haven't been sent the header data yet then we store
+						// them (but don't process them)
+						if (columns == null) {
+							if (!importProfile.isNoHeaders()) {
+								columns = new CSVColumnState[csvLineData.size()];
+								if (importProfile.isAutoMapping()) {
+									CaseInsensitiveMap<String, DbColumnType> customerDbFields = importRecipientsDao.getCustomerDbFields(importProfile.getCompanyId());
+									for (int i = 0; i < csvLineData.size(); i++) {
+										String headerName = csvLineData.get(i);
+										if (StringUtils.isBlank(headerName)) {
+											throw new Exception("Invalid empty csvfile header for import automapping");
+										} else if (customerDbFields.containsKey(headerName)) {
+											columns[i] = new CSVColumnState();
+											columns[i].setColName(headerName.toLowerCase());
+											columns[i].setImportedColumn(true);
+										} else {
+											columns[i] = new CSVColumnState();
+											columns[i].setColName(headerName);
+											columns[i].setImportedColumn(false);
+										}
+									}
+								} else {
+									for (int i = 0; i < csvLineData.size(); i++) {
+										String headerName = csvLineData.get(i);
+										final String columnNameByCvsFileName = fieldsFactory.getDBColumnNameByCsvFileName(headerName, importProfile);
+										if (columnNameByCvsFileName != null) {
+											columns[i] = new CSVColumnState();
+											columns[i].setColName(columnNameByCvsFileName);
+											columns[i].setImportedColumn(true);
+										} else {
+											columns[i] = new CSVColumnState();
+											columns[i].setColName(headerName);
+											columns[i].setImportedColumn(false);
+										}
 									}
 								}
 							} else {
-								for (int i = 0; i < csvLineData.size(); i++) {
-									String headerName = csvLineData.get(i);
-									final String columnNameByCvsFileName = fieldsFactory.getDBColumnNameByCsvFileName(headerName, importProfile);
-									if (columnNameByCvsFileName != null) {
-										columns[i] = new CSVColumnState();
-										columns[i].setColName(columnNameByCvsFileName);
+								int csvColumnsExpected = 0;
+								for (ColumnMapping columnMapping : importProfile.getColumnMapping()) {
+									if (StringUtils.isNotBlank(columnMapping.getFileColumn())) {
+										csvColumnsExpected++;
+									}
+								}
+								
+								if (csvLineData.size() != csvColumnsExpected) {
+									throw new CsvDataException("Number of import file columns does not fit mapped columns", csvReader.getReadCsvLines());
+								}
+								columns = new CSVColumnState[Math.min(csvLineData.size(), importProfile.getColumnMapping().size())];
+								
+								for (int i = 0; i < columns.length; i++) {
+									final String columnName = importProfile.getColumnMapping().get(i).getDatabaseColumn();
+									columns[i] = new CSVColumnState();
+									columns[i].setColName("column_" + (i + 1));
+									if (columnName != null && !columnName.equals(ColumnMapping.DO_NOT_IMPORT)) {
 										columns[i].setImportedColumn(true);
 									} else {
-										columns[i] = new CSVColumnState();
-										columns[i].setColName(headerName);
 										columns[i].setImportedColumn(false);
 									}
 								}
-							}
-						} else {
-							int csvColumnsExpected = 0;
-							for (ColumnMapping columnMapping : importProfile.getColumnMapping()) {
-								if (StringUtils.isNotBlank(columnMapping.getFileColumn())) {
-									csvColumnsExpected++;
+								
+								// Add dummy column names to preview data
+								final LinkedList<String> columnsList = new LinkedList<>();
+								for (int idx = 0; (idx < columns.length) && (idx < csvLineData.size()); idx++) {
+									if (!columns[idx].getImportedColumn()) {
+										continue;
+									}
+									columnsList.add(columns[idx].getColName());
 								}
+								previewParsedContent.add(columnsList);
 							}
-							
-							if (csvLineData.size() != csvColumnsExpected) {
-								throw new CsvDataException("Number of import file columns does not fit mapped columns", csvReader.getReadCsvLines());
-							}
-							columns = new CSVColumnState[Math.min(csvLineData.size(), importProfile.getColumnMapping().size())];
-							
-							for (int i = 0; i < columns.length; i++) {
-								final String columnName = importProfile.getColumnMapping().get(i).getDatabaseColumn();
-								columns[i] = new CSVColumnState();
-								columns[i].setColName("column_" + (i + 1));
-								if (columnName != null && !columnName.equals(ColumnMapping.DO_NOT_IMPORT)) {
-									columns[i].setImportedColumn(true);
-								} else {
-									columns[i].setImportedColumn(false);
-								}
-							}
-							
-							// Add dummy column names to preview data
-							final LinkedList<String> columnsList = new LinkedList<>();
-							for (int idx = 0; (idx < columns.length) && (idx < csvLineData.size()); idx++) {
-								if (!columns[idx].getImportedColumn()) {
-									continue;
-								}
-								columnsList.add(columns[idx].getColName());
-							}
-							previewParsedContent.add(columnsList);
+							initColumnsNullableCheck(columns);
 						}
-						initColumnsNullableCheck(columns);
-					}
-
-					final LinkedList<String> linelinkedList = new LinkedList<>();
-					for (int idx = 0; (idx < columns.length) && (idx < csvLineData.size()); idx++) {
-						if (!columns[idx].getImportedColumn()) {
-							continue;
-						}
-						String value = csvLineData.get(idx);
 	
-						linelinkedList.add(value);
+						final LinkedList<String> linelinkedList = new LinkedList<>();
+						for (int idx = 0; (idx < columns.length) && (idx < csvLineData.size()); idx++) {
+							if (!columns[idx].getImportedColumn()) {
+								continue;
+							}
+							String value = csvLineData.get(idx);
+		
+							linelinkedList.add(value);
+						}
+						previewParsedContent.add(linelinkedList);
 					}
-					previewParsedContent.add(linelinkedList);
+				}
+			} else if ("JSON".equalsIgnoreCase(importProfile.getDatatype())) {
+				try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
+					jsonReader.readNextToken();
+					if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+						throw new Exception("Json data does not contain expected JsonArray");
+					}
+					
+					columns = null;
+					List<CSVColumnState> columnsList = new ArrayList<>();
+
+					while (jsonReader.readNextJsonNode() && lineNumber <= 20) {
+						lineNumber++;
+						Object currentObject = jsonReader.getCurrentObject();
+						if (!(currentObject instanceof JsonObject)) {
+							throw new Exception("Json data does not contain expected JsonArray of JsonObjects");
+						}
+						JsonObject currentJsonObject = (JsonObject) currentObject;
+						
+						// Check if this jsonObject contains a new property
+						for (String propertyKey : currentJsonObject.keySet()) {
+							if (StringUtils.isBlank(propertyKey)) {
+								throw new Exception("Invalid empty jsonfile property key");
+							}
+								
+							CSVColumnState propertyKeyAlreadyListed = null;
+							for (CSVColumnState column : columnsList) {
+								if (column.getColName().equals(propertyKey)) {
+									propertyKeyAlreadyListed = column;
+									break;
+								}
+							}
+							if (propertyKeyAlreadyListed == null) {
+								if (importProfile.isAutoMapping()) {
+									CaseInsensitiveMap<String, DbColumnType> customerDbFields = importRecipientsDao.getCustomerDbFields(importProfile.getCompanyId());
+									if (customerDbFields.containsKey(propertyKey)) {
+										columnsList.add(new CSVColumnState(propertyKey, true, -1));
+									} else {
+										columnsList.add(new CSVColumnState(propertyKey, false, -1));
+									}
+								} else {
+									if (fieldsFactory.getDBColumnNameByCsvFileName(propertyKey, importProfile) != null) {
+										columnsList.add(new CSVColumnState(propertyKey, true, -1));
+									} else {
+										columnsList.add(new CSVColumnState(propertyKey, false, -1));
+									}
+								}
+								
+								// Fill all other items, which do not contain a value for this new property, with an empty value for it
+								for (List<String> previewParsedContentItem : previewParsedContent) {
+									previewParsedContentItem.add("");
+								}
+							}
+						}
+						
+						// Collect the property values of this jsonObject
+						final List<String> contentListItem = new LinkedList<>();
+						for (CSVColumnState column : columnsList) {
+							if (column.getImportedColumn()) {
+								if (currentJsonObject.containsPropertyKey(column.getColName())) {
+									contentListItem.add(currentJsonObject.get(column.getColName()).toString());
+								} else {
+									contentListItem.add("");
+								}
+							}
+						}
+						previewParsedContent.add(contentListItem);
+					}
+					
+					// Add headers
+					final LinkedList<String> headersList = new LinkedList<>();
+					for (CSVColumnState column : columnsList) {
+						headersList.add(column.getColName());
+					}
+					previewParsedContent.add(0, headersList);
+					
+					columns = columnsList.toArray(new CSVColumnState[0]);
 				}
 			}
 		} catch (CsvDataInvalidItemCountException e) {

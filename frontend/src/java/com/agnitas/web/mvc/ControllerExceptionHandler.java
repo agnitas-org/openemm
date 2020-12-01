@@ -37,7 +37,7 @@ public class ControllerExceptionHandler {
     public String onBindException(final BindException e, final Popups popups) {
         final FieldError fieldError = e.getFieldError();
         if (fieldError != null && fieldError.getRejectedValue() != null) {
-            popups.alert("GWUA.error.invalidInputValue", e.getFieldError().getRejectedValue());
+            popups.alert("error.input.invalid", e.getFieldError().getRejectedValue());
         } else {
             popups.alert("Error");
         }

@@ -27,11 +27,11 @@ public class BounceFilterFormValidator {
 
 	private boolean validateShortName(final BounceFilterForm form, final Popups popups) {
 		final String shortName = form.getShortName();
-		if(StringUtils.isBlank(shortName)) {
+		if (StringUtils.isBlank(shortName)) {
 			popups.field("shortName", "error.name.is.empty");
 			return false;
 		}
-		if(StringUtils.length(shortName) < 3) {
+		if (StringUtils.length(shortName) < 3) {
 			popups.field("shortName", "error.name.too.short");
 			return false;
 		}
@@ -40,10 +40,10 @@ public class BounceFilterFormValidator {
 
 	private boolean validateFilterEmail(final BounceFilterForm form, final Popups popups) {
 		final String filterEmail = form.getFilterEmail();
-		if(StringUtils.isEmpty(filterEmail)) {
+		if (StringUtils.isEmpty(filterEmail)) {
 			return true;
 		}
-		if(!AgnUtils.isValidBounceFilterAddress(filterEmail)) {
+		if (!AgnUtils.isValidBounceFilterAddress(filterEmail)) {
 			popups.field("filterEmail", "error.invalidFilterEmail");
 			return false;
 		}
@@ -52,14 +52,13 @@ public class BounceFilterFormValidator {
 
 	private boolean validateForwardEmail(final BounceFilterForm form, final Popups popups) {
 		final String forwardEmail = form.getForwardEmail();
-		if(StringUtils.isEmpty(forwardEmail)) {
+		if (StringUtils.isEmpty(forwardEmail)) {
 			return true;
 		}
-		if(!AgnUtils.isEmailValid(forwardEmail)) {
+		if (!AgnUtils.isValidEmailAddresses(forwardEmail)) {
 			popups.field("forwardEmail", "error.invalidForwardEmail");
 			return false;
 		}
 		return true;
 	}
-
 }

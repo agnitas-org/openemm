@@ -10,14 +10,23 @@
 
 package com.agnitas.emm.core.logon.forms;
 
-public class LogonHostAuthenticationForm {
+public final class LogonHostAuthenticationForm {
     private String authenticationCode;
+    private boolean trustedDevice;
 
-    public String getAuthenticationCode() {
+    public final String getAuthenticationCode() {
         return authenticationCode;
     }
 
-    public void setAuthenticationCode(String authenticationCode) {
+    public final void setAuthenticationCode(String authenticationCode) {
         this.authenticationCode = authenticationCode;
+    }
+    
+    public final void setTrustedDevice(final boolean trusted) {
+    	this.trustedDevice = trusted;
+    }
+    
+    public final boolean isTrustedDevice() {
+    	return this.trustedDevice;
     }
 }

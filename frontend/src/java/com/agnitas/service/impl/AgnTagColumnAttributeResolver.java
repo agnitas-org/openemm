@@ -14,7 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.beans.ProfileField;
+import org.agnitas.beans.LightProfileField;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.AgnTagAttributeDto;
@@ -34,10 +34,10 @@ public class AgnTagColumnAttributeResolver implements AgnTagAttributeResolver {
     @Override
 	public AgnTagAttributeDto resolve(ComAdmin admin, String tag, String attribute) throws Exception {
         if (attribute.equals("column")) {
-            List<ProfileField> fields = profileFieldDao.getProfileFields(admin.getCompanyID());
+            List<LightProfileField> fields = profileFieldDao.getLightProfileFields(admin.getCompanyID());
             Map<String, String> options = new LinkedHashMap<>(fields.size());
 
-            for (ProfileField field : fields) {
+            for (LightProfileField field : fields) {
                 options.put(field.getShortname(), field.getColumn());
             }
 

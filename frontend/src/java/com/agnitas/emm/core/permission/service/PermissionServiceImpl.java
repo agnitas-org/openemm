@@ -10,12 +10,8 @@
 
 package com.agnitas.emm.core.permission.service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -26,18 +22,11 @@ public class PermissionServiceImpl implements PermissionService {
 	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(PermissionServiceImpl.class);
 
-	private static Map<Permission, String> CATEGORY_BY_SYSTEM_PERMISSIONS_NEW = null;
-
 	protected PermissionDao permissionDao;
 
 	@Required
 	public void setPermissionDao(PermissionDao permissionDao) {
 		this.permissionDao = permissionDao;
-	}
-
-	@Override
-	public List<Permission> getPermissionsByCategory(String category) {
-		return permissionDao.getPermissionsByCategory(category);
 	}
 	
 	@Override
@@ -45,29 +34,8 @@ public class PermissionServiceImpl implements PermissionService {
 		return permissionDao.getAllPermissions();
 	}
 	
-	/**
-	 * Feature toggle
-	 */
 	@Override
-	public Map<Permission, String> getAllPermissionsAndCategories(int companyID) {
-		if ("new".equalsIgnoreCase(ConfigService.getInstance().getValue(ConfigValue.PermissionSystem, companyID))) {
-			return getAllPermissionsAndCategoriesNew();
-		} else {
-			return Permission.getAllPermissionsAndCategories();
-		}
-	}
-	
-	private Map<Permission, String> getAllPermissionsAndCategoriesNew() {
-		if (CATEGORY_BY_SYSTEM_PERMISSIONS_NEW == null) {
-			List<Permission> permissions = getAllPermissions();
-			Map<Permission, String> categoryBySystemPermissions = new HashMap<>();
-			
-			for (Permission permission : permissions) {
-				categoryBySystemPermissions.put(permission, permission.getCategory());
-			}
-	
-			CATEGORY_BY_SYSTEM_PERMISSIONS_NEW = categoryBySystemPermissions;
-		}
-		return CATEGORY_BY_SYSTEM_PERMISSIONS_NEW;
+	public List<String> getAllCategoriesOrdered() {
+		return permissionDao.getAllCategoriesOrdered();
 	}
 }

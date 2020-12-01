@@ -39,8 +39,8 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
     public DeliveryStat getDeliveryStats(int companyID, int mailingID, int mailingType) {
         DeliveryStat deliveryStatistic = new DeliveryStat();
         deliveryStatistic.setTotalMails(deliveryStatDao.getTotalMails(mailingID));
-        deliveryStatistic.setCancelable(mailingStopService.canStopRegularMailing(companyID, mailingID));
-        deliveryStatistic.setResumable(mailingStopService.canResumeRegularMailing(companyID, mailingID));
+        deliveryStatistic.setCancelable(mailingStopService.canStopMailing(companyID, mailingID));
+        deliveryStatistic.setResumable(mailingStopService.canResumeMailing(companyID, mailingID));
 
         int statusID = 0;
         // -------------------------------------- last thing backend did for this mailing:
@@ -176,6 +176,10 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
                 logger.error("Error in getDeliveryStatsForMailingType(" + companyID + ", " + mailingID + ", " + mailingType + "): " + e.getMessage(), e);
                 return deliveryStatistic;
             }
+        }
+        
+        if(mailingStopService.isStopped(mailingID)) {
+        	deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_CANCELLED);
         }
 
         return deliveryStatistic;

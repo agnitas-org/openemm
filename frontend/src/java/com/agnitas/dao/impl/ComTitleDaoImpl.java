@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.agnitas.beans.SalutationEntry;
 import org.agnitas.beans.Title;
@@ -23,8 +24,10 @@ import org.agnitas.beans.impl.SalutationEntryImpl;
 import org.agnitas.beans.impl.TitleImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.dao.ComTitleDao;
@@ -58,9 +61,9 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 		if (StringUtils.isBlank(sortColumn)) {
 			sortColumn = "title_id";
 		}
-		
-		boolean sortDirectionAscending = !"desc".equalsIgnoreCase(sortDirection) && !"descending".equalsIgnoreCase(sortDirection);
-		
+
+		boolean sortDirectionAscending = AgnUtils.sortingDirectionToBoolean(sortDirection);
+
 		return selectPaginatedList(logger, "SELECT company_id, title_id, description FROM title_tbl WHERE company_id IN (0, ?)", "title_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new SalutationEntry_RowMapper(), companyID);
 	}
 
@@ -69,7 +72,7 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 	 */
 	@Override
 	public List<Title> getTitles(@VelocityCheck int companyID) {
-		return select(logger, "SELECT company_id, title_id, description FROM title_tbl WHERE company_id IN (0, ?) ORDER BY description", new TitleLight_RowMapper(), companyID);
+		return select(logger, "SELECT company_id, title_id, description FROM title_tbl WHERE company_id IN (0, ?) ORDER BY LOWER(description)", new TitleLight_RowMapper(), companyID);
 	}
 
 	@Override
@@ -108,21 +111,23 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 			}
 		} else {
 			// Update existing Title
-			update(logger, "UPDATE title_tbl SET description = ? WHERE company_id = ? AND title_id = ?", title.getDescription(), title.getCompanyID(), title.getId());
-			
-			// Only delete gender mapping if the item has some new mapping
-			if (title.getTitleGender() != null) {
-				// Delete old gender mapping
-				update(logger, "DELETE FROM title_gender_tbl WHERE title_id = ?", title.getId());
+			int touchedRows = update(logger, "UPDATE title_tbl SET description = ? WHERE company_id = ? AND title_id = ?", title.getDescription(), title.getCompanyID(), title.getId());
 
-				// Save new gender mapping
-				for (final Map.Entry<Integer,String> entry : title.getTitleGender().entrySet()) {
-					update(logger, "INSERT INTO title_gender_tbl (title_id, gender, title) VALUES (?, ?, ?)", title.getId(), entry.getKey(), entry.getValue());
+			if (touchedRows == 1) {
+				// Only delete gender mapping if the item has some new mapping
+				if (title.getTitleGender() != null) {
+					// Delete old gender mapping
+					update(logger, "DELETE FROM title_gender_tbl WHERE title_id = ?", title.getId());
+
+					// Save new gender mapping
+					for (final Map.Entry<Integer, String> entry : title.getTitleGender().entrySet()) {
+						update(logger, "INSERT INTO title_gender_tbl (title_id, gender, title) VALUES (?, ?, ?)", title.getId(), entry.getKey(), entry.getValue());
+					}
 				}
 			}
 		}
 	}
-	
+
     protected class Title_RowMapper implements RowMapper<Title> {
 		@Override
 		public Title mapRow(ResultSet resultSet, int row) throws SQLException {
@@ -131,20 +136,27 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 			title.setCompanyID(resultSet.getInt("company_id"));
 			title.setDescription(resultSet.getString("description"));
 
-			List<Map<String, Object>> genderList = select(logger, "SELECT gender, title FROM title_gender_tbl WHERE title_id = ?", title.getId());
-			Map<Integer, String> titleList = new HashMap<>();
-			for (Map<String, Object> map : genderList) {
-				Integer gender = new Integer(((Number) map.get("gender")).intValue());
-				String label = (String) map.get("title");
+			Map<Integer, String> genderMap = new HashMap<>();
+			query(logger, "SELECT gender, title FROM title_gender_tbl WHERE title_id = ?", new GenderMapCallback(genderMap), title.getId());
+			title.setTitleGender(genderMap);
 
-				titleList.put(gender, label);
-			}
-			title.setTitleGender(titleList);
-			
 			return title;
 		}
 	}
-	
+
+	protected static class GenderMapCallback implements RowCallbackHandler {
+		private Map<Integer, String> genderMap;
+
+		public GenderMapCallback(Map<Integer, String> genderMap) {
+			this.genderMap = Objects.requireNonNull(genderMap);
+		}
+
+		@Override
+		public void processRow(ResultSet rs) throws SQLException {
+			genderMap.put(rs.getInt("gender"), rs.getString("title"));
+		}
+	}
+
     protected static class TitleLight_RowMapper implements RowMapper<Title> {
 		@Override
 		public Title mapRow(ResultSet resultSet, int row) throws SQLException {

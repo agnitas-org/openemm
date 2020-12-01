@@ -13,6 +13,25 @@ package org.agnitas.emm.core.dyncontent.service;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class ContentModel {
+	public interface DeleteGroup {
+    	// do nothing
+    }
+	
+	public interface GetGroup {
+    	// do nothing
+    }
+	
+	public interface AddGroup {
+    	// do nothing
+    }
+	
+	public interface UpdateGroup {
+    	// do nothing
+    }
+	
+	public interface ListContentBlocksOrNamesGroup {
+    	// do nothing
+    }
 
 	private int companyId;
 	private int contentId;

@@ -14,11 +14,10 @@ import org.apache.commons.lang3.StringUtils;
 
 public class DbColumnType {
 	public static final String GENERIC_TYPE_INTEGER = "INTEGER";
-	public static final String GENERIC_TYPE_DOUBLE = "DOUBLE";
-	public static final String GENERIC_TYPE_CHAR = "CHAR";
+	public static final String GENERIC_TYPE_FLOAT = "FLOAT";
 	public static final String GENERIC_TYPE_VARCHAR = "VARCHAR";
-	public static final String GENERIC_TYPE_VARCHAR2 = "VARCHAR2";
 	public static final String GENERIC_TYPE_DATE = "DATE";
+	public static final String GENERIC_TYPE_DATETIME = "DATETIME";
 
 	private String typeName;
 	private int characterLength; // only for VARCHAR and VARCHAR2 types
@@ -29,7 +28,9 @@ public class DbColumnType {
 	public enum SimpleDataType {
 		Characters("settings.fieldType.Characters"),
 		Numeric("settings.fieldType.Numeric"),
+		Float("settings.fieldType.FLOAT"),
 		Date("settings.fieldType.DATE"),
+		DateTime("settings.fieldType.DATETIME"),
 		Blob("settings.fieldType.Blob");
 
 		private String messageKey;
@@ -81,16 +82,20 @@ public class DbColumnType {
 	}
 	
 	public SimpleDataType getSimpleDataType() {
-		return getSimpleDataType(typeName);
+		return getSimpleDataType(typeName, numericScale);
 	}
 	
-	public static SimpleDataType getSimpleDataType(String typeName) {
+	public static SimpleDataType getSimpleDataType(String typeName, int scale) {
 		if (typeName.toUpperCase().startsWith("VARCHAR") || typeName.toUpperCase().startsWith("CHAR") || typeName.equalsIgnoreCase("CLOB") || typeName.toUpperCase().contains("TEXT")) {
 			return SimpleDataType.Characters;
-		} else if (typeName.toUpperCase().contains("DATE") || typeName.toUpperCase().contains("TIME")) {
+		} else if (typeName.toUpperCase().contains("TIME")) {
+			return SimpleDataType.DateTime;
+		} else if (typeName.toUpperCase().contains("DATE")) {
 			return SimpleDataType.Date;
-		} else if (typeName.toLowerCase().equals("blob") || typeName.toLowerCase().equals("bytea")) {
+		} else if (typeName.equalsIgnoreCase("blob") || typeName.equalsIgnoreCase("bytea")) {
 			return SimpleDataType.Blob;
+		} else if (typeName.equalsIgnoreCase("FLOAT") || typeName.equalsIgnoreCase("DOUBLE") || (typeName.equalsIgnoreCase("NUMBER") && scale != 0)) {
+			return SimpleDataType.Float;
 		} else {
 			return SimpleDataType.Numeric;
 		}
@@ -101,32 +106,34 @@ public class DbColumnType {
 	 * @param typeName
 	 * @return
 	 */
-	public static String dbType2String(String typeName) {
+	public static String dbType2String(String typeName, int scale) {
 		if (StringUtils.isBlank(typeName)) {
 			return null;
 		} else if (typeName.equalsIgnoreCase("BIGINT")
 				|| typeName.equalsIgnoreCase("INT")
 				|| typeName.equalsIgnoreCase("INTEGER")
-				|| typeName.equalsIgnoreCase("NUMBER")
-				|| typeName.equalsIgnoreCase("SMALLINT")) {
+				|| typeName.equalsIgnoreCase("SMALLINT")
+				|| (typeName.equalsIgnoreCase("NUMBER") && scale == 0)) {
 			return GENERIC_TYPE_INTEGER;
 		} else if (typeName.equalsIgnoreCase("DECIMAL")
+				|| (typeName.equalsIgnoreCase("NUMBER") && scale != 0)
 				|| typeName.equalsIgnoreCase("DOUBLE")
 				|| typeName.equalsIgnoreCase("FLOAT")
 				|| typeName.equalsIgnoreCase("NUMERIC")
 				|| typeName.equalsIgnoreCase("REAL")) {
-			return GENERIC_TYPE_DOUBLE;
-		} else if (typeName.equalsIgnoreCase("CHAR")) {
-			return GENERIC_TYPE_CHAR;
-		} else if (typeName.equalsIgnoreCase("VARCHAR")
+			return GENERIC_TYPE_FLOAT;
+		} else if (typeName.equalsIgnoreCase("CHAR")
+				|| typeName.equalsIgnoreCase("VARCHAR")
 				|| typeName.equalsIgnoreCase("VARCHAR2")
 				|| typeName.equalsIgnoreCase("LONGVARCHAR")
 				|| typeName.equalsIgnoreCase("CLOB")) {
 			return GENERIC_TYPE_VARCHAR;
-		} else if (typeName.equalsIgnoreCase("DATE")
+		} else if (typeName.equalsIgnoreCase("DATE")) {
+			return GENERIC_TYPE_DATE;
+		} else if (typeName.equalsIgnoreCase("DATETIME")
 				|| typeName.equalsIgnoreCase("TIMESTAMP")
 				|| typeName.equalsIgnoreCase("TIME")) {
-			return GENERIC_TYPE_DATE;
+			return GENERIC_TYPE_DATETIME;
 		} else {
 			return "UNKNOWN(" + typeName + ")";
 		}
@@ -145,17 +152,15 @@ public class DbColumnType {
 		beanTypeString = beanTypeString.toUpperCase();
 			
 		switch (beanTypeString) {
-			case "INTEGER":
+			case GENERIC_TYPE_INTEGER:
 				return "NUMBER";
-			case "DOUBLE":
+			case GENERIC_TYPE_FLOAT:
 				return "DOUBLE";
-			case "CHAR":
-				return "CHAR";
-			case "VARCHAR":
+			case GENERIC_TYPE_VARCHAR:
 				return "VARCHAR";
-			case "STRING":
-				return "VARCHAR";
-			case "DATE":
+			case GENERIC_TYPE_DATE:
+				return "DATE";
+			case GENERIC_TYPE_DATETIME:
 				return "TIMESTAMP";
 			default:
 				throw new Exception("Invalid dbtype");

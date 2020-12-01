@@ -18,6 +18,7 @@ import javax.sql.DataSource;
 
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.logintracking.bean.LoginTrackSettings;
+import org.agnitas.util.DbUtilities;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -49,44 +50,54 @@ public final class LoginTrackSettingsMigrationStartupJob implements StartupJob {
 	@Override
 	public final void runStartupJob(final JobContext context) throws StartupJobException {
 		// Check if a company ID is defined
-		if(context.getCompanyId() <= 0) {
+		if (context.getCompanyId() <= 0) {
 			final String msg = String.format("Startup job %d requires a company ID", context.getJobId());
 			LOGGER.error(msg);
 			throw new StartupJobException(msg);
 		}
 		
-		// Load settings from company_tbl
-		final LoginTrackSettings settings = loadSettingsFromCompanyTable(context.getDataSource(), context.getCompanyId());
-
-		// Check that configures company ID exists
-		if(settings == null) {
-			final String msg = String.format("Startup job %d is configured for company ID %d, which is unknown", context.getJobId(), context.getCompanyId());
-			LOGGER.error(msg);
-			throw new StartupJobException(msg);
+		if(requiredColumnsExist(context.getDataSource())) {
+			// Load settings from company_tbl
+			final LoginTrackSettings settings = loadSettingsFromCompanyTable(context.getDataSource(), context.getCompanyId());
+	
+			// Check that configures company ID exists
+			if (settings == null) {
+				final String msg = String.format("Startup job %d is configured for company ID %d, which is unknown", context.getJobId(), context.getCompanyId());
+				LOGGER.error(msg);
+				throw new StartupJobException(msg);
+			}
+			
+			if (settings.getMaxFailedLogins() != NEW_MAX_FAILS_DEFAULT || settings.getLockTimeSeconds() != NEW_BLOCK_TIME) {
+				// At least one setting differes from new default -> keep both values (write entry, even value is equals to new default value)
+				context.getConfigService().writeValue(
+						ConfigValue.LoginTracking.WebuiMaxFailedAttempts, 
+						context.getCompanyId(),
+						Integer.toString(settings.getMaxFailedLogins()));
+				
+				context.getConfigService().writeValue(
+						ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, 
+						context.getCompanyId(),
+						Integer.toString(settings.getLockTimeSeconds()));
+			} else {
+				// Both values are set to new default values (remove entry, if value is equals to new default value)
+				context.getConfigService().writeOrDeleteIfDefaultValue(
+						ConfigValue.LoginTracking.WebuiMaxFailedAttempts, 
+						context.getCompanyId(),
+						Integer.toString(settings.getMaxFailedLogins()), null);
+				
+				context.getConfigService().writeOrDeleteIfDefaultValue(
+						ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, 
+						context.getCompanyId(),
+						Integer.toString(settings.getLockTimeSeconds()), null);
+			}
 		}
-		
-		if(settings.getMaxFailedLogins() != NEW_MAX_FAILS_DEFAULT || settings.getLockTimeSeconds() != NEW_BLOCK_TIME) {
-			// At least one setting differes from new default -> keep both values (write entry, even value is equals to new default value)
-			context.getConfigService().writeValue(
-					ConfigValue.LoginTracking.WebuiMaxFailedAttempts, 
-					context.getCompanyId(),
-					Integer.toString(settings.getMaxFailedLogins()));
-			
-			context.getConfigService().writeValue(
-					ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, 
-					context.getCompanyId(),
-					Integer.toString(settings.getLockTimeSeconds()));
-		} else {
-			// Both values are set to new default values (remove entry, if value is equals to new default value)
-			context.getConfigService().writeOrDeleteIfDefaultValue(
-					ConfigValue.LoginTracking.WebuiMaxFailedAttempts, 
-					context.getCompanyId(),
-					Integer.toString(settings.getMaxFailedLogins()));
-			
-			context.getConfigService().writeOrDeleteIfDefaultValue(
-					ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, 
-					context.getCompanyId(),
-					Integer.toString(settings.getLockTimeSeconds()));
+	}
+	
+	private final boolean requiredColumnsExist(final DataSource dataSource) throws StartupJobException {
+		try {
+			return DbUtilities.checkTableAndColumnsExist(dataSource, "company_tbl", "max_login_fails", "login_block_time");
+		} catch (final Exception e) {
+			throw new StartupJobException(e);
 		}
 	}
 	
@@ -95,7 +106,7 @@ public final class LoginTrackSettingsMigrationStartupJob implements StartupJob {
 		
 		final List<LoginTrackSettings> result = new JdbcTemplate(dataSource).query(sql, new _RowMapper(), companyID);
 		
-		if(result.isEmpty()) {
+		if (result.isEmpty()) {
 			return null;
 		} else {
 			return result.get(0);

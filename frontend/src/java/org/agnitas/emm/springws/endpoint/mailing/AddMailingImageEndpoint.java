@@ -10,8 +10,6 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
-import javax.annotation.Resource;
-
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.TrackableLink;
@@ -22,59 +20,64 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.component.service.ComponentMaximumSizeExceededException;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddMailingImageRequest;
 import org.agnitas.emm.springws.jaxb.AddMailingImageResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.util.Base64Utils;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.emm.core.components.service.ComComponentService;
 import com.agnitas.service.MimeTypeService;
 
-public class AddMailingImageEndpoint extends AbstractMarshallingPayloadEndpoint {
-    @Resource
+@Endpoint
+public class AddMailingImageEndpoint extends BaseEndpoint {
     private ComComponentService componentService;
 
-    @Resource
     private TrackableLinkDao trackableLinkDao;
 
-    @Resource
     private MailingDao mailingDao;
 
-    @Resource
-    private ObjectFactory objectFactory;
-
-    @Resource
     private  MimeTypeService mimeTypeService;
 
-    @Resource
     private ConfigService configService;
 
-    @Override
-    protected Object invokeInternal(Object o) throws Exception {
-        AddMailingImageRequest req = (AddMailingImageRequest) o;
-        AddMailingImageResponse res = objectFactory.createAddMailingImageResponse();
+    public AddMailingImageEndpoint(@Qualifier("componentService") ComComponentService componentService, TrackableLinkDao trackableLinkDao, MailingDao mailingDao, MimeTypeService mimeTypeService, ConfigService configService) {
+        this.componentService = componentService;
+        this.trackableLinkDao = trackableLinkDao;
+        this.mailingDao = mailingDao;
+        this.mimeTypeService = mimeTypeService;
+        this.configService = configService;
+    }
 
-        validateParameters(req);
+    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddMailingImageRequest")
+    public @ResponsePayload AddMailingImageResponse addMailingImage(@RequestPayload AddMailingImageRequest request) throws Exception {
+        AddMailingImageResponse res = new AddMailingImageResponse();
+
+        validateParameters(request);
 
         MailingComponent component = new MailingComponentImpl();
-        component.setMailingID(req.getMailingID());
+        component.setMailingID(request.getMailingID());
         component.setCompanyID(Utils.getUserCompany());
         component.setType(MailingComponent.TYPE_HOSTED_IMAGE);
-        component.setDescription(req.getDescription());
+        component.setDescription(request.getDescription());
         
-        byte[] fileData = Base64Utils.decodeFromString(req.getContent());
+        byte[] fileData = Base64Utils.decodeFromString(request.getContent());
 		if (fileData.length > configService.getIntegerValue(ConfigValue.MaximumUploadImageSize)) {
 			throw new ComponentMaximumSizeExceededException();
 		}
 
-        component.setComponentName(req.getFileName());
-        component.setBinaryBlock(fileData, mimeTypeService.getMimetypeForFile(req.getFileName()));
+        component.setComponentName(request.getFileName());
+        component.setBinaryBlock(fileData, mimeTypeService.getMimetypeForFile(request.getFileName()));
 
-        int urlId = saveTrackableLink(req);
+        int urlId = saveTrackableLink(request);
         component.setUrlID(urlId);
 
         int imageComponentId = componentService.addMailingComponent(component);
@@ -87,7 +90,7 @@ public class AddMailingImageEndpoint extends AbstractMarshallingPayloadEndpoint 
         String imageUrl = req.getURL();
         int urlId = 0;
         if (StringUtils.isNotBlank(imageUrl)) {
-            TrackableLink trackableLink = new ComTrackableLinkImpl();
+            ComTrackableLink trackableLink = new ComTrackableLinkImpl();
             trackableLink.setCompanyID(Utils.getUserCompany());
             trackableLink.setMailingID(req.getMailingID());
             trackableLink.setFullUrl(imageUrl);

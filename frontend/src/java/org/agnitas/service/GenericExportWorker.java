@@ -335,7 +335,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 				    			} else if (selectParameters.get(i) instanceof Integer) {
 					    			preparedStatement.setInt(i + 1, (Integer) selectParameters.get(i));
 				    			} else if (selectParameters.get(i) instanceof Date) {
-					    			preparedStatement.setDate(i + 1, new java.sql.Date(((Date) selectParameters.get(i)).getTime()));
+					    			preparedStatement.setTimestamp(i + 1, new java.sql.Timestamp(((Date) selectParameters.get(i)).getTime()));
 				    			} else {
 					    			preparedStatement.setObject(i + 1, selectParameters.get(i));
 				    			}
@@ -366,7 +366,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 				    			} else if (selectParameters.get(i) instanceof Integer) {
 					    			preparedStatement.setInt(i + 1, (Integer) selectParameters.get(i));
 				    			} else if (selectParameters.get(i) instanceof Date) {
-					    			preparedStatement.setDate(i + 1, new java.sql.Date(((Date) selectParameters.get(i)).getTime()));
+					    			preparedStatement.setTimestamp(i + 1, new java.sql.Timestamp(((Date) selectParameters.get(i)).getTime()));
 				    			} else {
 					    			preparedStatement.setObject(i + 1, selectParameters.get(i));
 				    			}

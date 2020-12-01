@@ -306,6 +306,13 @@ public class ComHostAuthenticationDaoImpl extends BaseDaoImpl implements ComHost
 		}
 	}
 
+	@Override
+	public void removeAuthentictedHost(final String hostId) {
+		final String sql= "DELETE FROM authenticated_hosts_tbl WHERE host_id=?";
+		
+		update(logger, sql, hostId);
+	}
+
 
 	@Override
 	public final void removeExpiredPendingsAuthentications(final int maxPendingHostAuthenticationsAgeMinutes) {
@@ -323,7 +330,7 @@ public class ComHostAuthenticationDaoImpl extends BaseDaoImpl implements ComHost
 			logger.info("Removed " + count + " expired pending host authentications.");
 		}
 	}
-
+	
 	/**
 	 * Computes expire date.
 	 * 
@@ -348,4 +355,5 @@ public class ComHostAuthenticationDaoImpl extends BaseDaoImpl implements ComHost
 			return resultSet.getString("security_code");
 		}
 	}
+
 }

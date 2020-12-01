@@ -10,23 +10,23 @@
 
 package com.agnitas.emm.core.userform.service;
 
+import java.io.File;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.userform.dto.UserFormDto;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.userforms.UserformService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.commons.ActivenessStatus;
+import com.agnitas.emm.core.userform.dto.UserFormDto;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.userform.bean.UserForm;
 
-
 public interface ComUserformService extends UserformService {
-
-    void bulkDelete(Set<Integer> userformIds, @VelocityCheck int companyId);
 
     String getUserFormName(int formId, @VelocityCheck int companyId);
 
@@ -35,7 +35,23 @@ public interface ComUserformService extends UserformService {
     UserAction setActiveness(@VelocityCheck int companyId, Map<Integer, Boolean> activeness);
     
 	PaginatedListImpl<UserFormDto> getUserFormsWithActionData(ComAdmin admin, String sort, String order, int page,
-			int numberOfRows, UserFormFilter filter);
+			int numberOfRows, ActivenessStatus filter);
 	
-	UserFormDto getUserForm(@VelocityCheck int companyId, int formId) throws Exception;
+	UserFormDto getUserForm(@VelocityCheck int companyId, int formId);
+
+	boolean isFormNameUnique(String formName, int formId, int companyId);
+
+	ServiceResult<Integer> saveUserForm(ComAdmin admin, UserFormDto userFormDto) throws Exception;
+
+	List<UserFormDto> bulkDeleteUserForm(List<Integer> bulkIds, @VelocityCheck int companyId);
+
+	boolean deleteUserForm(int formId, @VelocityCheck int companyId);
+
+	String getCloneUserFormName(String name, @VelocityCheck int companyId, Locale locale);
+
+	ServiceResult<Integer> cloneUserForm(ComAdmin admin, int userFormId);
+
+	File exportUserForm(ComAdmin admin, int userFormId, String userFormName);
+
+	String getUserFormUrlPattern(ComAdmin admin, boolean resolveUID);
 }

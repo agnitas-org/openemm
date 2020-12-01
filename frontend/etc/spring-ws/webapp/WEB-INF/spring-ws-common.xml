@@ -1,36 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:context="http://www.springframework.org/schema/context"
-	xmlns:aop="http://www.springframework.org/schema/aop"
-    xmlns:tx="http://www.springframework.org/schema/tx"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:sws="http://www.springframework.org/schema/web-services"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 						http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
-						http://www.springframework.org/schema/tx 
+						http://www.springframework.org/schema/tx
        http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
-       http://www.springframework.org/schema/aop 
-       http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+       http://www.springframework.org/schema/aop
+       http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+       http://www.springframework.org/schema/web-services http://www.springframework.org/schema/web-services/web-services-2.0.xsd">
 
 	<context:annotation-config/>
 
     <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="locations">
             <list>
-                <value>classpath:emm-ws.properties</value>
                 <value>classpath:emm.properties</value>
             </list>
         </property>
     </bean>
-	
+
 	<bean id="throttlingService" class="com.agnitas.emm.springws.throttling.impl.SimpleSlidingAverageThrottlingServiceImpl" >
         <property name="webserviceUserService" ref="WebserviceUserService"/>
     </bean>
-	
+
 	<bean id="throttlingInterceptor" class="com.agnitas.emm.springws.throttling.ThrottlingInterceptor" >
         <property name="throttlingService" ref="throttlingService"/>
     </bean>
-	
-	<!-- EMM-4686: When enabled IP lock, remove this interceptor and enable new LoginTrackingXwsSecurityInterceptor. 
+
+	<!-- EMM-4686: When enabled IP lock, remove this interceptor and enable new LoginTrackingXwsSecurityInterceptor.
 	<bean id="wsSecurityInterceptor"
         class="org.springframework.ws.soap.security.xwss.XwsSecurityInterceptor">
         <property name="policyConfiguration" value="classpath:server-securityPolicy.xml"/>
@@ -39,34 +40,32 @@
         </property>
     </bean>
     -->
-    
+
     <!-- EMM-4686: Replacement for old XwsSecurityInterceptor from above. Remove old interceptor and enable this one here. -->
 	<bean id="wsSecurityInterceptor" class="org.agnitas.emm.springws.security.LoginTrackingXwsSecurityInterceptor">
         <property name="policyConfiguration" value="classpath:server-securityPolicy.xml"/>
-        <property name="callbackHandlers">
-            <ref bean="springSecurityHandler"/>
-        </property>
+        <property name="callbackHandlers" ref="springSecurityHandler"/>
         <property name="loginTrackService" ref="WsLoginTrackService" />
     </bean>
-    
-    
-    
+
+
+
     <bean id="permissionInterceptor" class="com.agnitas.emm.springws.permissions.PermissionCheckingEndpointInterceptor" />
- 
+
 	<bean id="springSecurityHandler" class="org.agnitas.emm.springws.security.SpringDigestPasswordValidationCallbackHandler">
         <property name="userDetailsService" ref="userDetailsService"/>
     </bean>
-     
+
     <bean id="userDetailsService" class="com.agnitas.emm.springws.WebserviceUserDetailService">
 		<property name="dataSource" ref="dataSource" />
 		<property name="webservicePasswordEncryptor" ref="WebservicePasswordEncryptor" />
         <property name="javaMailService" ref="JavaMailService"/>
         <property name="configService" ref="ConfigService" />
 	</bean>
-	   
+
 	<bean id="WsLoginTrackService" class="org.agnitas.emm.core.logintracking.service.impl.LoginTrackServiceImpl">
 		<property name="loginTrackDao" ref="WsLoginTrackDao" />
-        
+
         <property name="loginTrackSettingsDao">
         	<bean class="com.agnitas.emm.springws.logintrack.WebserviceLoginTrackSettingsDaoImpl">
 	        	<property name="configService" ref="ConfigService" />
@@ -74,8 +73,6 @@
         </property>
     </bean>
 
-	
-    
 
 
     <aop:config>
@@ -84,9 +81,6 @@
 	</aop:config>
 
     <bean id="objectFactory" class="org.agnitas.emm.springws.jaxb.ObjectFactory" />
-    
-    <bean id="abstractEndpoint" abstract="true">
-		<property name="marshaller" ref="marshaller"></property>
-		<property name="unmarshaller" ref="marshaller"></property>
-    </bean>
+    <bean id="comObjectFactory" class="com.agnitas.emm.springws.jaxb.ObjectFactory" />
+
 </beans>

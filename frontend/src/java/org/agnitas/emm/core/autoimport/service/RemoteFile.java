@@ -25,7 +25,11 @@ public class RemoteFile {
 	
 	public String getRemoteFilePath() {
 		// FormFile seems to escape double-quotes
-		return data.remoteFilePath.replace("\\\"", "\"");
+		if (data == null || data.remoteFilePath == null) {
+			return null;
+		} else {
+			return data.remoteFilePath.replace("\\\"", "\"");
+		}
 	}
 	
 	public File getLocalFile() {

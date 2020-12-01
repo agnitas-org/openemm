@@ -11,19 +11,15 @@
 package com.agnitas.beans.factory.impl;
 
 import org.agnitas.target.TargetFactory;
-import org.agnitas.target.TargetRepresentationFactory;
 
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.impl.ComTargetImpl;
 
 public class ComTargetFactoryImpl implements TargetFactory {
 
-    protected TargetRepresentationFactory targetRepresentationFactory;
-
 	@Override
 	public ComTarget newTarget() {
         ComTargetImpl target = new ComTargetImpl();
-        target.setTargetStructure(targetRepresentationFactory.newTargetRepresentation());
         return target;
 	}
 	
@@ -35,7 +31,4 @@ public class ComTargetFactoryImpl implements TargetFactory {
 		return target;
 	}
 
-    public void setTargetRepresentationFactory(TargetRepresentationFactory targetRepresentationFactory) {
-        this.targetRepresentationFactory = targetRepresentationFactory;
-    }
 }

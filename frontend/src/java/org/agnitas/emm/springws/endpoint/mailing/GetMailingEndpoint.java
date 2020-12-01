@@ -10,34 +10,36 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
-import javax.annotation.Resource;
+import javax.xml.bind.JAXBElement;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.GetMailingRequest;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.agnitas.emm.springws.jaxb.Mailing;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 
-public class GetMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class GetMailingEndpoint extends BaseEndpoint {
 
-	@Resource
 	private MailingService mailingService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		GetMailingRequest request = (GetMailingRequest) arg0;
+	public GetMailingEndpoint(@Qualifier("MailingService") MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
 
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetMailingRequest")
+	public @ResponsePayload JAXBElement<Mailing> getMailing(@RequestPayload GetMailingRequest request) {
 		MailingModel model = new MailingModel();
 		model.setCompanyId(Utils.getUserCompany());
 		model.setMailingId(request.getMailingID());
 
-		Mailing mailing = mailingService.getMailing(model);
-		return objectFactory.createGetMailingResponse(new ResponseBuilder(objectFactory).createResponse(mailing));
+		return objectFactory.createGetMailingResponse(new MailingResponseBuilder().createResponse(mailingService.getMailing(model)));
 	}
-
 }

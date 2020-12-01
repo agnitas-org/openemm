@@ -44,7 +44,7 @@ public class BounceFilterServiceImpl implements BounceFilterService {
     }
 
     @Override
-    public int saveBounceFilter(ComAdmin admin, BounceFilterDto bounceFilter) throws Exception {
+    public int saveBounceFilter(ComAdmin admin, BounceFilterDto bounceFilter, boolean isNew) throws Exception {
         bounceFilter.setChangeDate(DateUtilities.midnight(AgnUtils.getTimeZone(admin)));
         if(StringUtils.isEmpty(bounceFilter.getSecurityToken())) {
             bounceFilter.setSecurityToken(SecurityTokenGenerator.generateSecurityToken());
@@ -53,8 +53,13 @@ public class BounceFilterServiceImpl implements BounceFilterService {
         int companyId = admin.getCompanyID();
         mailloop.setCompanyID(companyId);
         
-        if (StringUtils.isNotEmpty(mailloop.getFilterEmail()) && blacklistService.blacklistCheck(mailloop.getFilterEmail(), companyId)) {
-            throw new BlacklistedFilterEmailException();
+        if (StringUtils.isNotEmpty(mailloop.getFilterEmail())) {
+        	if (blacklistService.blacklistCheck(mailloop.getFilterEmail(), companyId)) {
+        		throw new BlacklistedFilterEmailException();
+        	}
+        	if (mailloopDao.isAddressInUse(mailloop.getFilterEmail(), isNew)) {
+        		throw new EmailInUseException();
+        	}
         }
         
         if (StringUtils.isNotEmpty(mailloop.getForwardEmail()) && blacklistService.blacklistCheck(mailloop.getForwardEmail(), companyId)) {
@@ -98,19 +103,19 @@ public class BounceFilterServiceImpl implements BounceFilterService {
     }
     
 	@Override
-	public boolean isMailingUsedInBounceFilter(@VelocityCheck int companyId, int mailingId) {
+	public boolean isMailingUsedInBounceFilterWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId) {
 		if (companyId > 0 && mailingId > 0) {
-			return mailloopDao.isMailingUsedInBounceFilter(companyId, mailingId);
+			return mailloopDao.isMailingUsedInBounceFilterWithActiveAutoResponder(companyId, mailingId);
 		}
 		return false;
 	}
     
     @Override
-    public List<BounceFilterDto> getDependentBounceFiltersByMailing(@VelocityCheck int companyId, int mailingId) {
+    public List<BounceFilterDto> getDependentBounceFiltersWithActiveAutoResponderByMailing(@VelocityCheck int companyId, int mailingId) {
         if (companyId <= 0 || mailingId <= 0) {
             return Collections.emptyList();
         }
-        List<MailloopEntry> filters = mailloopDao.getDependentBounceFilters(companyId, mailingId);
+        List<MailloopEntry> filters = mailloopDao.getDependentBounceFiltersWithActiveAutoResponder(companyId, mailingId);
         return conversionService.convert(filters, MailloopEntry.class, BounceFilterDto.class);
     }
 }

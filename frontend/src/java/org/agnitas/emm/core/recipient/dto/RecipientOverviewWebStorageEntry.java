@@ -10,6 +10,10 @@
 
 package org.agnitas.emm.core.recipient.dto;
 
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,11 +22,8 @@ import java.util.List;
 import org.agnitas.beans.RowsCountWebStorageEntry;
 import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.codehaus.jackson.annotate.JsonProperty;
 
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class RecipientOverviewWebStorageEntry extends RowsCountWebStorageEntry {
     private static final int MAX_FIELDS_COUNT = RecipientUtils.MAX_SELECTED_FIELDS_COUNT;

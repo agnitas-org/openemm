@@ -23,8 +23,26 @@ public class ServerCommand{
         WS,
         STATISTICS,
         JOBQUEUE,
+        BACKEND_CONSOLE,
+        BACKEND_MAILER,
+        BACKEND_MAILLOOP,
+        BACKEND_MERGER,
+        BACKEND_RDIR,
+        RUNTIME,
         OTHER,
-        ALL
+        ALL;
+        
+        public static Server getServerByName(String serverString) {
+        	if (serverString != null) {
+	        	for (Server serverItem : Server.values()) {
+	    			if (serverItem.name().replace("-", "").equalsIgnoreCase(serverString.replace("-", ""))) {
+	    				return serverItem;
+	    			}
+	    		}
+	    		
+	    	}
+    		return null;
+        }
     }
 
     /**

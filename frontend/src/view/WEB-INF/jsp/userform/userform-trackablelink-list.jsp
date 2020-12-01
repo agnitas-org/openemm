@@ -1,311 +1,247 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.ComTrackableLinkAction" %>
-<%@ page import="org.agnitas.beans.BaseTrackableLink" %>
-<%@ page import="org.agnitas.web.BaseTrackableLinkForm" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ page import="com.agnitas.util.LinkUtils" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-<c:set var="PROPERTY_NAME_PREFIX" value="<%= BaseTrackableLinkForm.PROPERTY_NAME_PREFIX %>"/>
-<c:set var="PROPERTY_VALUE_PREFIX" value="<%= BaseTrackableLinkForm.PROPERTY_VALUE_PREFIX%>"/>
-<c:set var="KEEP_UNCHANGED" value="<%= BaseTrackableLink.KEEP_UNCHANGED %>"/>
-<c:set var="TRACKABLE_NO" value="<%= BaseTrackableLink.TRACKABLE_NO %>"/>
-<c:set var="TRACKABLE_YES" value="<%= BaseTrackableLink.TRACKABLE_YES %>"/>
-<c:set var="ACTION_SET_EXTEND_LINKS" value="<%= ComTrackableLinkAction.ACTION_SET_EXTEND_LINKS %>"/>
+<c:set var="KEEP_UNCHANGED" value="<%= LinkUtils.KEEP_UNCHANGED %>"/>
+<c:set var="TRACKABLE_NO" value="<%= LinkUtils.TRACKABLE_NO %>"/>
+<c:set var="TRACKABLE_YES" value="<%= LinkUtils.TRACKABLE_YES %>"/>
 
-<%--@elvariable id="defaultExtensions" type="java.lang.String"--%>
-<%--@elvariable id="trackableUserFormLinkForm" type="com.agnitas.userform.trackablelinks.web.ComTrackableUserFormLinkForm"--%>
+<%--@elvariable id="userFormId" type="java.lang.Integer"--%>
+<%--@elvariable id="form" type="com.agnitas.emm.core.trackablelinks.form.FormTrackableLinksForm"--%>
+<%--@elvariable id="hasCompanyDefaultExtensions" type="java.lang.Boolean"--%>
+<%--@elvariable id="defaultExtensions" type="java.util.List"--%>
 
-<script type="text/javascript">
-    AGN.Opt.DefaultExtensions = ${empty defaultExtensions ? '{}' : defaultExtensions};
-</script>
+<c:set var="isExtensionsPermitted" value="false"/>
+<emm:ShowByPermission token="mailing.extend_trackable_links">
+    <c:set var="isExtensionsPermitted" value="true"/>
+</emm:ShowByPermission>
 
 <div class="row">
 
-    <div class="col-xs-12 row-1-1" data-view-block="col-xs-12 row-1-1" data-view-split="col-md-6"
-         data-view-hidden="col-xs-12 row-1-1" data-controller="trackable-link-list">
+    <div class="col-xs-12 row-1-1"
+         data-view-block="col-xs-12 row-1-1"
+         data-view-split="col-md-6"
+         data-view-hidden="col-xs-12 row-1-1">
 
-        <agn:agnForm id="trackableUserFormLinkForm" action="/trackuserformlink" data-form="resource">
-        <html:hidden property="formID"/>
-        <div class="tile">
-            <div class="tile-header">
-                <a href="#" class="headline" data-toggle-tile="#tile-trackableLinkEditOne">
-                    <i class="tile-toggle icon icon-angle-up"></i>
-                    <bean:message key="TrackableLink.edit.one"/>
-                </a>
-            </div>
-            <div id="tile-trackableLinkEditOne" class="tile-content">
-                <div class="table-responsive">
+        <mvc:form servletRelativeAction="/webform/${userFormId}/trackablelink/bulkSave.action"
+                  data-form="resource"
+                  id="userFormTrackableLinksForm"
+                  method="post" modelAttribute="form"
+                  data-controller="form-trackable-link"
+                  data-action="bulk-save">
 
-                    <table class="table table-bordered table-striped js-table table-form table-hover">
-                        <thead>
-                        <th><bean:message key="URL"/></th>
-                        <th><bean:message key="Description"/></th>
-                        <th><bean:message key="LinkTracking"/></th>
-                        <th><bean:message key="Relevance"/></th>
+            <div class="tile">
+                <div class="tile-header">
+                    <a href="#" class="headline" data-toggle-tile="#form-trackable-links">
+                        <i class="tile-toggle icon icon-angle-up"></i>
+                        <mvc:message code="TrackableLink.edit.one"/>
+                    </a>
+                </div>
 
-                        <emm:ShowByPermission token="mailing.extend_trackable_links">
-                            <th><bean:message key="mailing.extend_trackable_link"/></th>
-                            <c:set var="EXTEND_LINK_ACTION" value="${ACTION_SET_EXTEND_LINKS}" scope="page"/>
-                        </emm:ShowByPermission>
+                <div id="form-trackable-links" class="tile-content">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped js-table table-form table-hover">
+                            <thead>
+                            <th><mvc:message code="URL"/></th>
+                            <th><mvc:message code="Description"/></th>
+                            <th><mvc:message code="LinkTracking"/></th>
 
-                        <th></th>
-                        </thead>
-                        <tbody>
-                        <logic:iterate id="link" name="trackableUserFormLinkForm" property="links" indexId="index">
-                            <c:set var="linkExtensionCount" value="0"/>
-                            <c:set var="fullUrlWithExtensions" value="0"/>
+                            <emm:ShowByPermission token="mailing.extend_trackable_links">
+                                <th><mvc:message code="mailing.extend_trackable_link"/></th>
+                            </emm:ShowByPermission>
+                            <th></th>
+                            </thead>
 
-                            <c:if test="${not empty link}">
-                                <c:set var="linkExtensionCount" value="${link.linkExtensionCount}"/>
-                                <c:set var="fullUrlWithExtensions" value="${link.fullUrlWithExtensions}"/>
-                            </c:if>
+                            <tbody>
+                            <%--@elvariable id="link" type="com.agnitas.emm.core.trackablelinks.dto.FormTrackableLinkDto"--%>
+                            <c:forEach items="${form.links}" var="link" varStatus="loopStatus">
+                                <c:set var="fullLinkURL" value="${emm:getFullUrlWithExtensions(link.url, link.properties)}"/>
+                                <tr>
+                                    <mvc:hidden path="links[${loopStatus.index}].id"/>
+                                    <td>
+                                        <span class="multiline-sm-400">${fullLinkURL}</span>
+                                    </td>
+                                    <td class="align-top">
+                                        <mvc:text path="links[${loopStatus.index}].shortname" cssClass="form-control"/>
+                                    </td>
 
-                            <input type="hidden" name="bulkID[${link.id}]" value="on"/>
-                            <tr>
-                                <td>
-                                    <span class="multiline-sm-400">
-                                        ${fullUrlWithExtensions}
-                                    </span>
-                                </td>
+                                    <td class="align-top">
+                                        <mvc:select path="links[${loopStatus.index}].trackable" cssClass="form-control">
+                                            <mvc:option value="0"><mvc:message code="NotTrackedLink"/></mvc:option>
+                                            <mvc:option value="1"><mvc:message code="TrackedLink"/></mvc:option>
+                                        </mvc:select>
+                                    </td>
 
-                                <td class="align-top">
-                                    <agn:agnText property="linkItemName[${link.id}]" styleClass="form-control"/>
-                                </td>
-
-                                <td class="align-top">
-                                    <agn:agnSelect property="linkItemUsage[${link.id}]" styleClass="form-control">
-                                        <agn:agnOption value="0"><bean:message key="NotTrackedLink"/></agn:agnOption>
-                                        <agn:agnOption value="1"><bean:message key="TrackedLink"/></agn:agnOption>
-                                    </agn:agnSelect>
-                                </td>
-
-                                <td class="align-top">
-                                    <agn:agnSelect property="linkItemRelevance[${link.id}]" styleClass="form-control">
-                                        <agn:agnOption value="0"><bean:message key="Relevance_0"/></agn:agnOption>
-                                        <agn:agnOption value="1"><bean:message key="Relevance_1"/></agn:agnOption>
-                                        <agn:agnOption value="2"><bean:message key="Relevance_2"/></agn:agnOption>
-                                    </agn:agnSelect>
-                                </td>
-
-                                <emm:ShowByPermission token="mailing.extend_trackable_links">
+                                    <c:if test="${isExtensionsPermitted}">
+                                    <c:set var="extensionCount" value="${emm:countExtensions(link.properties)}"/>
                                     <td class="align-top">
                                         <c:choose>
-                                            <c:when test="${linkExtensionCount gt 0}">
-                                                <span class="badge badge-success">
-                                                    <bean:message key="default.Yes" /> (${linkExtensionCount})
-                                                </span>
+                                            <c:when test="${extensionCount gt 0}">
+                                                    <span class="badge badge-success">
+                                                        <mvc:message code="default.Yes" /> (${extensionCount})
+                                                    </span>
                                             </c:when>
                                             <c:otherwise>
-                                                <span class="badge">
-                                                    <bean:message key="No" />
-                                                </span>
+                                                    <span class="badge">
+                                                        <mvc:message code="No" />
+                                                    </span>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
-                                </emm:ShowByPermission>
+                                    </c:if>
 
-                                <td class="table-actions">
-                                    <html:link titleKey="template.edit" styleClass="hidden js-row-show"
-                                               page="/trackuserformlink.do?method=view&linkID=${link.id}&formID=${trackableUserFormLinkForm.formID}"/>
+                                    <td class="table-actions">
+                                        <c:url var="viewLink" value="/webform/${userFormId}/trackablelink/${link.id}/view.action"/>
+                                        <a href="${viewLink}" class="hidden js-row-show"><mvc:message code="template.edit"/></a>
 
-                                    <a href="${fullUrlWithExtensions}"
-                                       class="btn btn-regular" target="_blank">
-                                        <i class="icon icon-share-square-o"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                        </logic:iterate>
-                        </tbody>
-                    </table>
+                                        <a href="${fullLinkURL}"
+                                           class="btn btn-regular" target="_blank">
+                                            <i class="icon icon-share-square-o"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                            </tbody>
+                        </table>
 
-                </div>
-                <!-- Table Responsive END -->
-
-            </div>
-            <!-- Tile Content END -->
-
-        </div>
-        <!-- Tile END -->
-
-        <div class="tile">
-            <div class="tile-header">
-                <a href="#" class="headline" data-toggle-tile="#tile-trackableLinkEditAll">
-                    <i class="tile-toggle icon icon-angle-up"></i>
-                    <bean:message key="TrackableLink.edit.all"/>
-                </a>
-            </div>
-
-            <div id="tile-trackableLinkEditAll" class="tile-content tile-content-forms" data-action="elem-edited">
-                <emm:ShowByPermission token="mailing.extend_trackable_links">
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label for="linkExtension" class="control-label">
-                            <bean:message key="TrackableLink.extendLinks"/>
-                        </label>
                     </div>
-                    <div class="col-sm-8">
-                        <div class="input-group">
-                            <div class="input-group-controls">
-                                <html:text property="linkExtension" maxlength="500" styleId="linkExtension"
-                                           styleClass="form-control"/>
+                </div>
+            </div>
+
+            <div class="tile">
+                <div class="tile-header">
+                    <a href="#" class="headline" data-toggle-tile="form-trackable-links-bulk-edit">
+                        <i class="tile-toggle icon icon-angle-up"></i>
+                        <mvc:message code="TrackableLink.edit.all"/>
+                    </a>
+                </div>
+
+                <div id="form-trackable-links-bulk-edit" class="tile-content tile-content-forms">
+                    <c:if test="${isExtensionsPermitted}">
+                        <div class="form-group">
+                            <div class="col-sm-4">
+                                <label for="linkExtension" class="control-label">
+                                    <mvc:message code="TrackableLink.extendLinks"/>
+                                </label>
                             </div>
-                            <div class="input-group-btn">
-                                <a href="#" class="btn btn-regular" data-form-set="method: addExtensions"
-                                   data-form-action="" data-tooltip="<bean:message key="AddProperties" />">
-                                    <i class="icon icon-plus"></i>
-                                </a>
+
+                            <div class="col-sm-8">
+                                <div class="input-group">
+                                    <div class="input-group-controls">
+                                        <input type="text" id="linkExtension" name="linkExtension" value="${form.commonExtensionsString}" class="form-control" maxlength="500"/>
+                                    </div>
+                                    <div class="input-group-btn">
+                                        <c:url var="saveCommonExtensionText" value="/webform/${userFormId}/trackablelink/saveCommonExtensionText.action"/>
+                                        <a href="#" class="btn btn-regular" data-form-url="${saveCommonExtensionText}" data-form-submit=""
+                                           data-tooltip="<mvc:message code="AddProperties"/>">
+                                            <i class="icon icon-plus"></i>
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label">
-                            <bean:message key="LinkExtensions"/>
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <div id="link_extension_changes" class="table-responsive">
-                            <table class="table table-bordered table-striped" id="linkPropertyTable">
-                                <thead>
-                                <th><bean:message key="Name"/></th>
-                                <th><bean:message key="Value"/></th>
-                                <th></th>
-                                </thead>
-                                <tbody>
-                                <c:set var="properties" value="${trackableUserFormLinkForm.commonLinkExtensions}"/>
-                                <c:if test="${not empty properties}">
-                                    <c:forEach var="property" items="${properties}" varStatus="loopStatus">
-                                        <c:set var="propertyIndex" value="${loopStatus.index + 1}"/>
-                                        <c:set var="propertyNameId" value="${PROPERTY_NAME_PREFIX}${propertyIndex}"/>
-                                        <c:set var="propertyValueId" value="${PROPERTY_VALUE_PREFIX}${propertyIndex}"/>
+                        <div class="form-group" data-initializer="trackable-link-extensions">
 
-                                        <tr id="linkProperty_${propertyIndex}">
-                                            <td>
-                                                <input class="form-control" type="text" id="${propertyNameId}"
-                                                       name="${propertyNameId}" value="${property.propertyName}"/>
-                                            </td>
-                                            <td>
-                                                <input class="form-control" type="text" id="${propertyValueId}"
-                                                       name="${propertyValueId}"
-                                                       value="${property.propertyValue ne null ? property.propertyValue : ""}"/>
-                                            </td>
-                                            <td class="table-actions">
-                                                <a href="#" class="btn btn-regular btn-alert"
-                                                   data-tooltip="<bean:message key="button.Delete" />"
-                                                   data-action="delete-link" data-link-id="${propertyIndex}">
-                                                    <i class="icon icon-trash-o"></i>
+                            <script id="config:trackable-link-extensions" type="application/json">
+                            {
+                                "extensions": ${emm:toJson(form.commonExtensions)},
+                                "defaultExtensions": ${emm:toJson(defaultExtensions)}
+                            }
+                            </script>
+                            <div class="col-sm-4">
+                                <label class="control-label">
+                                    <mvc:message code="LinkExtensions"/>
+                                </label>
+                            </div>
+                            <div class="col-sm-8">
+                                <div id="link-common-extensions" class="table-responsive">
+                                    <table class="table table-bordered table-striped" id="extensions-table">
+                                        <thead>
+                                        <th><mvc:message code="Name"/></th>
+                                        <th><mvc:message code="Value"/></th>
+                                        <th></th>
+                                        </thead>
+                                        <tbody>
+                                        <%-- this block load by JS--%>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-sm-8 col-sm-push-4">
+                                <div class="btn-group">
+                                    <div class="row">
+                                        <c:if test="${not empty defaultExtensions}">
+                                            <div class="col-sm-12 col-md-4">
+                                                <a href="#"
+                                                   data-action="add-default-extensions"
+                                                   class="btn btn-regular btn-block">
+                                                    <i class="icon icon-plus"></i>
+                                                    <span class="text"><mvc:message code="AddDefaultProperties"/></span>
                                                 </a>
-                                            </td>
-                                        </tr>
-                                    </c:forEach>
-                                </c:if>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                                            </div>
+                                        </c:if>
 
-                <div class="form-group">
-                    <div class="col-sm-8 col-sm-push-4">
-                        <div class="btn-group">
-                            <div class="row">
-                            <c:if test="${trackableUserFormLinkForm.companyHasDefaultLinkExtension}">
-                                <div class="col-sm-12 col-md-4">
-                                    <a href="#" onclick="return false" data-action="add-default-extensions"
-                                       class="btn btn-regular btn-block">
-                                        <i class="icon icon-plus"></i>
-                                        <span class="text"><bean:message key="AddDefaultProperties"/></span>
-                                    </a>
-                                </div>
-                            </c:if>
-
-                                <div class="col-sm-12 col-md-4">
-                                    <a href="#" onclick="return false" class="btn btn-regular btn-block btn-primary"
-                                       data-action="add-extension">
-                                        <i class="icon icon-plus"></i>
-                                        <span class="text"><bean:message key="AddProperty"/></span>
-                                    </a>
-                                </div>
+                                        <div class="col-sm-12 col-md-4">
+                                            <a href="#"
+                                               class="btn btn-regular btn-block btn-primary"
+                                               data-action="add-extension">
+                                                <i class="icon icon-plus"></i>
+                                                <span class="text"><mvc:message code="AddProperty"/></span>
+                                            </a>
+                                        </div>
 
 
-                                <div class="col-sm-12 col-md-4">
-                                    <a href="#" onclick="return false" class="btn btn-regular btn-block btn-alert"
-                                       data-action="delete-all-links">
-                                        <i class="icon icon-trash-o"></i>
-                                        <span class="text"><bean:message
-                                                key="mailing.trackablelinks.clearPropertiesTable"/></span>
-                                    </a>
+                                        <div class="col-sm-12 col-md-4">
+                                            <a href="#"
+                                               class="btn btn-regular btn-block btn-alert"
+                                               data-action="delete-all-extensions">
+                                                <i class="icon icon-trash-o"></i>
+                                                <span class="text"><mvc:message code="mailing.trackablelinks.clearPropertiesTable"/></span>
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="vspace-bottom-20"></div>
-                </emm:ShowByPermission>
+                        <div class="vspace-bottom-20"></div>
+                    </c:if>
 
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label for="trackable" class="control-label">
-                            <bean:message key="DefaultLinkTracking"/>
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <div class="input-group">
-                            <div class="input-group-controls">
-                                <html:select property="trackable" styleId="trackable" styleClass="form-control"  value="${KEEP_UNCHANGED}">
-                                    <html:option value="${KEEP_UNCHANGED}">
-                                        <bean:message key="KeepUnchanged" />
-                                    </html:option>
-                                    <html:option value="${TRACKABLE_NO}">
-                                        <bean:message key="NotTrackedLink"/>
-                                    </html:option>
-                                    <html:option
-                                            value="${TRACKABLE_YES}">
-                                        <bean:message key="TrackedLink"/>
-                                    </html:option>
-                                </html:select>
-                            </div>
-                            <div class="input-group-btn">
-                                <a href="#" class="btn btn-regular" data-form-set="method: setStandardUsage"
-                                   data-form-action="" data-tooltip="<bean:message key="button.Save" />">
-                                    <i class="icon icon-save"></i>
-                                </a>
+                    <div class="form-group">
+                        <div class="col-sm-4">
+                            <label for="trackable" class="control-label">
+                                <mvc:message code="DefaultLinkTracking"/>
+                            </label>
+                        </div>
+                        <div class="col-sm-8">
+                            <div class="input-group">
+                                <div class="input-group-controls">
+                                    <select name="trackable" id="trackable" class="form-control">
+                                        <option value="${KEEP_UNCHANGED}" selected="selected"><mvc:message code="KeepUnchanged" /></option>
+                                        <option value="${TRACKABLE_NO}"><mvc:message code="NotTrackedLink"/></option>
+                                        <option value="${TRACKABLE_YES}"><mvc:message code="TrackedLink"/></option>
+                                    </select>
+                                </div>
+                                <div class="input-group-btn">
+                                    <c:url var="bulkSaveUsage" value="/webform/${userFormId}/trackablelink/bulkSaveUsage.action"/>
+                                    <a href="#" class="btn btn-regular" data-form-url="${bulkSaveUsage}" data-form-submit=""
+                                                data-tooltip="<mvc:message code="button.Save" />">
+                                        <i class="icon icon-save"></i>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            </agn:agnForm>
-
-        </div>
-
+        </mvc:form>
     </div>
-    <!-- Col END -->
-
 </div>
 
-<script id="link-table-row" type="text/x-mustache-template">
-    <tr id="linkProperty_{{= count }}" data-link-name="{{= linkName }}" data-link-id="{{= count }}">
-        <td>
-            <input class="form-control" type="text" id="${PROPERTY_NAME_PREFIX}{{= count }}"
-                   name="${PROPERTY_NAME_PREFIX}{{= count }}" value="{{= linkName }}"/>
-        </td>
-        <td>
-            <input class="form-control" type="text" id="${PROPERTY_VALUE_PREFIX}{{= count }}"
-                   name="${PROPERTY_VALUE_PREFIX}{{= count }}" value="{{= linkValue }}"/>
-        </td>
-        <td class="table-actions">
-            <a href="#" class="btn btn-regular btn-alert" data-tooltip="<bean:message key="button.Delete" />"
-               data-action="delete-link" data-link-id="{{= count }}">
-                <i class="icon icon-trash-o"></i>
-            </a>
-        </td>
-    </tr>
-</script>
+<%@ include file="extension-row-template.jspf" %>

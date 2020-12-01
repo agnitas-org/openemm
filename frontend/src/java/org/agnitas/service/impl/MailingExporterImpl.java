@@ -78,7 +78,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 
 	@Override
 	public void exportMailingToJson(int companyID, int mailingID, OutputStream output, boolean exportUnusedImages) throws Exception {
-		ComMailing mailing = (ComMailing) mailingDao.getMailing(mailingID, companyID);
+		ComMailing mailing = mailingDao.getMailing(mailingID, companyID);
 		Set<Integer> targetIDs = new HashSet<>();
 		Set<Integer> actionIDs = new HashSet<>();
 		
@@ -165,6 +165,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "from_fullname", mediatypeEmail.getFromFullname());
 				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "reply_address", mediatypeEmail.getReplyEmail());
 				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "reply_fullname", mediatypeEmail.getReplyFullname());
+				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "envelope", mediatypeEmail.getEnvelopeEmail());
 				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "charset", mediatypeEmail.getCharset());
 				writeJsonObjectAttribute(writer, "mailformat", MailType.getFromInt(mediatypeEmail.getMailFormat()).name());
 				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "followup_for", mediatypeEmail.getFollowupFor());
@@ -312,12 +313,12 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 					writeJsonObjectAttribute(writer, "deep_tracking", trackableLink.getDeepTracking());
 				}
 				
-				if (trackableLink.getRelevance() > 0) {
-					writeJsonObjectAttribute(writer, "relevance", trackableLink.getRelevance());
-				}
-				
 				if (trackableLink.getUsage() > 0) {
 					writeJsonObjectAttribute(writer, "usage", trackableLink.getUsage());
+				}
+				
+				if (trackableLink.isAdminLink()) {
+					writeJsonObjectAttribute(writer, "administrative", trackableLink.isAdminLink());
 				}
 				
 				List<LinkProperty> linkProperties = ((ComTrackableLink) trackableLink).getProperties();

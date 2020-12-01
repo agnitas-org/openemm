@@ -10,32 +10,33 @@
 
 package org.agnitas.emm.springws.endpoint.blacklist;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.blacklist.service.BlacklistModel;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.CheckBlacklistRequest;
 import org.agnitas.emm.springws.jaxb.CheckBlacklistResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class CheckBlacklistEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class CheckBlacklistEndpoint extends BaseEndpoint {
 
-	@Resource
 	private BlacklistService blacklistService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		CheckBlacklistRequest request = (CheckBlacklistRequest) arg0;
-		CheckBlacklistResponse response = objectFactory.createCheckBlacklistResponse();
+	public CheckBlacklistEndpoint(BlacklistService blacklistService) {
+		this.blacklistService = blacklistService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "CheckBlacklistRequest")
+	public @ResponsePayload CheckBlacklistResponse checkBlacklist(@RequestPayload CheckBlacklistRequest request) {
+		CheckBlacklistResponse response = new CheckBlacklistResponse();
 		BlacklistModel model = new BlacklistModel();
 		model.setCompanyId(Utils.getUserCompany());
 		model.setEmail(request.getEmail());
 		response.setValue(blacklistService.checkBlacklist(model));
 		return response;
 	}
-
 }

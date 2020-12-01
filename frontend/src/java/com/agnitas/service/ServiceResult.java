@@ -14,6 +14,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.agnitas.util.GuiConstants;
+import org.apache.struts.action.ActionMessages;
+
 import com.agnitas.messages.Message;
 
 public class ServiceResult<T> {
@@ -114,4 +117,17 @@ public class ServiceResult<T> {
         return success;
     }
 
+    public void extractMessagesTo(ActionMessages messages, ActionMessages errors) {
+        for (Message msg : successMessages) {
+            messages.add(ActionMessages.GLOBAL_MESSAGE, msg.toStrutsMessage());
+        }
+
+        for (Message msg : warningMessages) {
+            messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, msg.toStrutsMessage());
+        }
+
+        for (Message msg : errorMessages) {
+            errors.add(ActionMessages.GLOBAL_MESSAGE, msg.toStrutsMessage());
+        }
+    }
 }

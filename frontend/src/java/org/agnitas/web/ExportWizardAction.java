@@ -57,10 +57,10 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.service.ExportPredefService;
 import com.agnitas.util.FutureHolderMap;
 
@@ -82,7 +82,7 @@ public class ExportWizardAction extends StrutsActionBase {
 	public static final int ACTION_PROCEED = ACTION_LAST + 8;
 
     private ExportPredefService exportPredefService;
-    protected ComTargetDao targetDao;
+    protected ComTargetService targetService;
     private ComMailinglistService mailinglistService;
     protected DataSource dataSource;
 	protected ConfigService configService;
@@ -232,11 +232,11 @@ public class ExportWizardAction extends StrutsActionBase {
 
                 case ACTION_VIEW:
                 	// Show the selected export profile or start a new export profile
-                    if (aForm.getExportPredefID() != 0 && !aForm.isBackButtonPressed()) {
+                    if (aForm.getExportPredefID() != 0) {
                         loadPredefExportFromDB(aForm, req);
                     }
 
-                    aForm.setTargetGroups(targetDao.getTargetLights(companyID, false));
+                    aForm.setTargetGroups(targetService.getTargetLights(admin));
                     aForm.setMailinglistObjects(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
 
                     aForm.setAction(ACTION_SAVE);
@@ -280,15 +280,13 @@ public class ExportWizardAction extends StrutsActionBase {
 						errors.add("shortname", new ActionMessage("error.name.too.short"));
 	                    destination = mapping.findForward("view");
 					} else {
-						if (aForm.getExportPredefID() != 0) {
-							saveExport(aForm, req);
-						} else {
-							insertExport(aForm, req);
-						}
+
+						createOrUpdateExport(aForm, req);
+
 						messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
 						destination = mapping.findForward("view");
 					}
-                    aForm.setTargetGroups(targetDao.getTargetLights(companyID, false));
+                    aForm.setTargetGroups(targetService.getTargetLights(admin));
                     aForm.setMailinglistObjects(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
 
                     aForm.setAction(ACTION_SAVE);
@@ -475,7 +473,7 @@ public class ExportWizardAction extends StrutsActionBase {
      * Loads chosen predefined export data from database into form.
      *
      * @param aForm ExportWizardForm object
-     * @param req HTTP request
+     * @param request HTTP request
      * @return true==success
      *         false==error
      */
@@ -560,56 +558,27 @@ public class ExportWizardAction extends StrutsActionBase {
 	}
 
     /**
-     * Creates new predefined export definition database entry
-     *
-     * @param aForm ExportWizardForm object
-     * @param req HTTP request
-     * @return true==success
-     *         false==error
-     */
-    protected boolean insertExport(ExportWizardForm aForm, HttpServletRequest req) {
-        ExportPredef exportPredef = exportPredefService.create(AgnUtils.getCompanyID(req));
-
-        // perform insert:
-        exportPredef.setShortname(aForm.getShortname());
-        exportPredef.setDescription(aForm.getDescription());
-        exportPredef.setCharset(aForm.getCharset());
-        exportPredef.setColumns(StringUtils.join(aForm.getColumns(), ";"));
-        exportPredef.setMailinglists(StringUtils.join(aForm.getMailinglists(), ";"));
-        exportPredef.setMailinglistID(aForm.getMailinglistID());
-        exportPredef.setDelimiter(aForm.getDelimiter());
-        exportPredef.setAlwaysQuote(aForm.getAlwaysQuote() > 0);
-        String separator = aForm.getSeparator();
-        separator = "\t".equals( separator ) ? "t" : separator;
-		exportPredef.setSeparator(separator);
-        exportPredef.setTargetID(aForm.getTargetID());
-        exportPredef.setUserStatus(aForm.getUserStatus());
-        exportPredef.setUserType(aForm.getUserType());
-        try {
-            loadDateParametersFromFormToBean(aForm, req, exportPredef);
-        } catch (ParseException e) {
-        	logger.error(e.getMessage(), e);
-        }
-		exportPredefService.save(exportPredef);
-
-        writeSaveExportDefinitionLog(exportPredef, true, req);
-
-        return true;
-    }
-
-    /**
      * Updates predefined export definition database entry
      *
      * @param aForm ExportWizardForm object
-     * @param req HTTP request
+     * @param request HTTP request
      * @return true==success
      *         false==error
      */
-    protected boolean saveExport(ExportWizardForm aForm, HttpServletRequest req) {
-		int companyId = AgnUtils.getCompanyID(req);
+    protected boolean createOrUpdateExport(ExportWizardForm aForm, HttpServletRequest request) {
+    	boolean isNew = aForm.getExportPredefID() <= 0;
+    	int companyId = AgnUtils.getCompanyID(request);
+		ComAdmin admin = AgnUtils.getAdmin(request);
+		assert admin != null;
 
-		ExportPredef oldExport = exportPredefService.get(aForm.getExportPredefID(), companyId);
-        ExportPredef exportPredef = exportPredefService.get(aForm.getExportPredefID(), companyId);
+		ExportPredef exportPredef;
+    	ExportPredef oldExport = null;
+    	if (isNew) {
+			exportPredef = exportPredefService.create(companyId);
+		} else {
+    		oldExport = exportPredefService.get(aForm.getExportPredefID(), companyId);
+			exportPredef = exportPredefService.get(aForm.getExportPredefID(), companyId);
+		}
 
         // perform update in db:
         exportPredef.setShortname(aForm.getShortname());
@@ -621,25 +590,30 @@ public class ExportWizardAction extends StrutsActionBase {
         exportPredef.setDelimiter(aForm.getDelimiter());
         exportPredef.setAlwaysQuote(aForm.getAlwaysQuote() > 0);
         String separator = aForm.getSeparator();
-        separator = "\t".equals( separator ) ? "t" : separator;
-		exportPredef.setSeparator(separator);
+		exportPredef.setSeparator("\t".equals(separator) ? "t" : separator);
         exportPredef.setTargetID(aForm.getTargetID());
         exportPredef.setUserStatus(aForm.getUserStatus());
         exportPredef.setUserType(aForm.getUserType());
         try {
-            loadDateParametersFromFormToBean(aForm, req, exportPredef);
+            loadDateParametersFromFormToBean(aForm, request, exportPredef);
         } catch (ParseException e) {
         	logger.error(e.getMessage(), e);
         }
 		exportPredefService.save(exportPredef);
 
-		writeExportChangeLog(oldExport, exportPredef, AgnUtils.getAdmin(req));
+        if (isNew || oldExport == null) {
+        	writeUserActivityLog(admin,  "create export definition", getExportDescription(exportPredef));
+		} else {
+        	writeExportChangeLog(oldExport, exportPredef, admin);
+		}
+
+        aForm.setExportPredefID(exportPredef.getId());
 
         return true;
     }
 
 	private void writeExportChangeLog(ExportPredef oldExport, ExportPredef newExport, ComAdmin admin) {
-		DateFormat dateFormat = SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, admin.getLocale());
+		DateFormat dateFormat = admin.getDateTimeFormatWithSeconds();
 
 		StringBuilder descriptionSb = new StringBuilder();
 		descriptionSb.append(addChangedFieldLog("shortname", newExport.getShortname(), oldExport.getShortname()))
@@ -737,7 +711,7 @@ public class ExportWizardAction extends StrutsActionBase {
 		}
 	}
 
-    private static ExportPredef getExportProfileFromForm(ExportWizardForm form, HttpServletRequest request, int companyID) {
+    protected ExportPredef getExportProfileFromForm(ExportWizardForm form, HttpServletRequest request, int companyID) {
 		SimpleDateFormat format = AgnUtils.getAdmin(request).getDateFormat();
 		
 		ExportPredef exportProfile = new ExportPredefImpl();
@@ -814,16 +788,6 @@ public class ExportWizardAction extends StrutsActionBase {
     }
 
     /**
-     * Write to log an entry about creation/alteration of an export definition.
-     * @param exportPredef export definition representation object
-     * @param isNewEntry creation (true) or alteration (false)
-     * @param req http request object
-     */
-    private void writeSaveExportDefinitionLog(ExportPredef exportPredef, boolean isNewEntry, HttpServletRequest req) {
-        writeUserActivityLog(AgnUtils.getAdmin(req), (isNewEntry ? "create" : "edit") + " export definition", getExportDescription(exportPredef));
-    }
-
-    /**
      *  Get a text representation of export parameter "Recipient type"
      *
      * @param letter recipient type letter
@@ -884,7 +848,7 @@ public class ExportWizardAction extends StrutsActionBase {
        if (targetId == 0) {
            return "All";
        } else {
-           return targetDao.getTarget(targetId, companyId).getTargetName();
+           return targetService.getTargetName(targetId, companyId, true);
        }
     }
 
@@ -935,23 +899,9 @@ public class ExportWizardAction extends StrutsActionBase {
 		return definition.getShortname() + " (" + definition.getId() + ")";
 	}
 
-    /**
-     * Returns DAO accessing target groups.
-     * 
-     * @return DAO accessing target groups
-     */
-    public ComTargetDao getTargetDao() {
-        return targetDao;
-    }
-
-    /**
-     * Set DAO accessing target groups.
-     * 
-     * @param targetDao DAO accessing target groups
-     */
     @Required
-    public void setTargetDao(ComTargetDao targetDao) {
-        this.targetDao = targetDao;
+    public void setTargetService(ComTargetService targetService) {
+        this.targetService = targetService;
     }
 
     public DataSource getDataSource() {

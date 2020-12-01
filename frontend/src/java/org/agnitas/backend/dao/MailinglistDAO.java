@@ -10,22 +10,23 @@
 
 package org.agnitas.backend.dao;
 
-import	java.sql.SQLException;
-import	java.util.Map;
+import java.sql.SQLException;
+import java.util.Map;
 
-import	org.agnitas.backend.DBase;
+import org.agnitas.backend.DBase;
 
 /**
  * Accesses all mailinglist relevant information from the database
  * from the table mailinglist_tbl
  */
 public class MailinglistDAO {
-	private long		mailinglistID;
-	private String		shortName;
-	private String		rdirDomain;
-	private boolean		frequencyCounterEnabled;
-	public MailinglistDAO  (DBase dbase, long forMailinglistID) throws SQLException {
-		Map <String, Object>		row;
+	private long mailinglistID;
+	private String shortName;
+	private String rdirDomain;
+	private boolean frequencyCounterEnabled;
+
+	public MailinglistDAO(DBase dbase, long forMailinglistID) throws SQLException {
+		Map<String, Object> row;
 
 		try (DBase.With with = dbase.with ()) {
 			row = dbase.querys (with.jdbc (),
@@ -45,16 +46,20 @@ public class MailinglistDAO {
 			}
 		}
 	}
-	public long mailinglistID () {
+
+	public long mailinglistID() {
 		return mailinglistID;
 	}
-	public String shortName () {
+
+	public String shortName() {
 		return shortName;
 	}
-	public String rdirDomain () {
+
+	public String rdirDomain() {
 		return rdirDomain;
 	}
-	public boolean frequencyCounterEnabled () {
+
+	public boolean frequencyCounterEnabled() {
 		return frequencyCounterEnabled;
 	}
 }

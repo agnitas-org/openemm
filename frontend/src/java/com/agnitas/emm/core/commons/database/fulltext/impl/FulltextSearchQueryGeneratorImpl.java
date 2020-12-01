@@ -85,7 +85,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
             return false;
         }
 
-        Pattern compile = Pattern.compile("[\"?*)(]");
+        Pattern compile = Pattern.compile("[\"?*)(+]");
         return compile.matcher(searchQuery).find();
     }
 

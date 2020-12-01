@@ -16,7 +16,8 @@ import java.util.List;
 
 import org.agnitas.beans.RowsCountWebStorageEntry;
 import org.apache.commons.collections4.CollectionUtils;
-import org.codehaus.jackson.annotate.JsonProperty;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class FilterTypesAndRowsCountWebStorageEntry extends RowsCountWebStorageEntry {
     @JsonProperty("types")

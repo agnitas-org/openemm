@@ -8,8 +8,8 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <mvc:form servletRelativeAction="/mailinglist/confirmRecipientsDelete.action" modelAttribute="deleteForm" data-form-focus="shortname">
-                <mvc:hidden path="mailinglistId"/>
-                <mvc:hidden path="mailinglistShortname"/>
+                <mvc:hidden path="id"/>
+                <mvc:hidden path="shortname"/>
 
                 <div class="modal-header">
                     <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal">
@@ -17,7 +17,7 @@
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
                     <h4 class="modal-title">
-                        <mvc:message code="mailinglist.delete.recipientsOf" />${deleteForm.mailinglistShortname}
+                        <mvc:message code="mailinglist.delete.recipientsOf" />${deleteForm.shortname}
                     </h4>
                 </div>
 

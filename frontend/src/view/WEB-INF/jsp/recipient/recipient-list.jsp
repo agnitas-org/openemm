@@ -6,7 +6,6 @@
 <%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
 <%@ taglib prefix="logic" uri="http://struts.apache.org/tags-logic" %>
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
-<%@ taglib prefix="ajax" uri="http://ajaxtags.org/tags/ajax" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -26,6 +25,7 @@
 
 <c:set var="ACTION_LIST" value="<%= ComRecipientAction.ACTION_LIST %>"/>
 <c:set var="ACTION_VIEW" value="<%= ComRecipientAction.ACTION_VIEW %>"/>
+<c:set var="ACTION_CHECK_LIMITACCESS" value="<%= ComRecipientAction.ACTION_CHECK_LIMITACCESS %>"/>
 <c:set var="ACTION_CONFIRM_DELETE" value="<%= ComRecipientAction.ACTION_CONFIRM_DELETE %>"/>
 
 <emm:instantiate var="DEFAULT_FIELDS" type="java.util.LinkedHashMap">
@@ -58,7 +58,18 @@
             }
         </script>
 
-        <div class="tile" data-initializer="recipient-list">
+        <div class="tile" data-initializer="recipient-list" data-config="">
+
+            <c:url var="limitAccessUrl" value="/recipient.do?action=${ACTION_CHECK_LIMITACCESS}" />
+            <c:url var="viewUrl" value="/recipient.do?action=${ACTION_VIEW}" />
+
+            <script id="config:recipient-list" type="application/json">
+                {
+                "CHECK_LIMITACCESS_URL": "${limitAccessUrl}&recipientID={RECIPIENT_ID}",
+                "VIEW_URL": "${viewUrl}&recipientID={RECIPIENT_ID}"
+                }
+            </script>
+
             <div class="tile-header">
                 <h2 class="headline">
                     <bean:message key="default.search"/>
@@ -205,25 +216,30 @@
                                 <%@include file="/WEB-INF/jsp/recipient/additional-fields.jspf"%>
 
                                 <display:column headerClass="js-table-sort" property="email"
-                                                titleKey="mailing.MediaType.0" sortable="true" paramId="recipientID"
-                                                paramProperty="customer_id" url="/recipient.do?action=${ACTION_VIEW}"/>
+                                                titleKey="mailing.MediaType.0" sortable="true"/>
 
-                                <display:column class="table-actions">
+                                <c:set var="allowedDeletion" value="false"/>
+                                <emm:ShowByPermission token="recipient.delete">
+                                    <c:set var="allowedDeletion" value="true"/>
+                                </emm:ShowByPermission>
+
+                                <display:column class="table-actions" headerClass="${allowedDeletion ? '' : 'hidden'}" sortable="false">
+                                    <span class="hidden" data-recipient-id="${customer_id}"></span>
                                     <emm:ShowByPermission token="recipient.show">
-                                        <html:link styleClass="js-row-show hidden" titleKey="recipient.RecipientEdit"
+                                        <html:link styleClass="js-row-show" titleKey="recipient.RecipientEdit"
                                                    page="/recipient.do?action=${ACTION_VIEW}&recipientID=${customer_id}"/>
                                     </emm:ShowByPermission>
-                                    <emm:ShowByPermission token="recipient.delete">
+
+                                    <c:if test="${allowedDeletion}">
                                         <c:set var="recipientDeleteMessage" scope="page">
                                             <bean:message key="recipient.RecipientDelete"/>
                                         </c:set>
-                                        <agn:agnLink class="btn btn-regular btn-alert js-row-delete"
+                                        <agn:agnLink styleClass="btn btn-regular btn-alert js-row-delete"
                                                      data-tooltip="${recipientDeleteMessage}"
                                                      page="/recipient.do?action=${ACTION_CONFIRM_DELETE}&recipientID=${customer_id}&fromListPage=true">
                                             <i class="icon icon-trash-o"></i>
                                         </agn:agnLink>
-
-                                    </emm:ShowByPermission>
+                                    </c:if>
                                 </display:column>
                             </c:if>
                         </display:table>
@@ -232,9 +248,10 @@
 
             </div>
         </div>
-
     </div>
 
     <%@include file="/WEB-INF/jsp/recipient/recipient-list-target-group-save-template.jspf" %>
 
+
 </agn:agnForm>
+

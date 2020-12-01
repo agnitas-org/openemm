@@ -68,9 +68,7 @@ public class MailingComparisonStatisticController {
     @RequestMapping("/list.action")
     public String list(ComAdmin admin, Model model, @ModelAttribute("form") BulkMailingComparisonForm form, Popups popups) {
         try {
-            int companyId = admin.getCompanyID();
-            
-            List<TargetLight> targetGroupList = targetService.getTargetLights(companyId);
+            List<TargetLight> targetGroupList = targetService.getTargetLights(admin);
             List<MailingBase> mailings = mailingBaseService.getMailingsForComparison(admin);
     
             model.addAttribute("targetGroupList", targetGroupList);
@@ -102,7 +100,7 @@ public class MailingComparisonStatisticController {
             String birtReportUrl = birtStatisticsService.getMailingComparisonStatisticUrl(admin, sessionId, comparisonDto);
             
             int companyId = admin.getCompanyID();
-            List<TargetLight> targetGroupList = targetService.getTargetLights(companyId);
+            List<TargetLight> targetGroupList = targetService.getTargetLights(admin);
             List<String> mailingNames = new ArrayList<>(mailingBaseService.getMailingNames(form.getBulkIds(), companyId).values());
     
             model.addAttribute("targetGroupList", targetGroupList);

@@ -17,11 +17,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
 import org.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
 import org.agnitas.emm.springws.security.authorities.CompanyAuthority;
 import org.agnitas.emm.springws.security.authorities.EndpointAuthority;
@@ -54,7 +55,7 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
     
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException, DataAccessException {
-        final String usersByUsernameQuery = "SELECT w.password_encrypted, w.company_id FROM webservice_user_tbl w, company_tbl c WHERE w.username = ? AND w.active = 1 AND w.company_id=c.company_id and c.status='active'";
+        final String usersByUsernameQuery = "SELECT w.password_encrypted, w.company_id FROM webservice_user_tbl w, company_tbl c WHERE w.username = ? AND w.active = 1 AND w.company_id = c.company_id and c.status = '" + CompanyStatus.ACTIVE.getDbValue() + "'";
         
         final List<Map<String, Object>> result = select(logger, usersByUsernameQuery, username);
         if (result.size() == 0) {
@@ -76,7 +77,7 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
     public final Optional<Integer> findCompanyIDForUsername(final String username) {
         final String sql = "SELECT company_id FROM webservice_user_tbl WHERE username=?";
 
-        final List<Integer> result = select(logger, sql,  new IntegerRowMapper(), username); 
+        final List<Integer> result = select(logger, sql,  new IntegerRowMapper(), username);
         
         return result.isEmpty()
         		? Optional.empty()
@@ -92,20 +93,20 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
     }
     
     private final boolean areWebservicePermissionsEnabled(final int companyID) {
-    	return this.configService.getBooleanValue(ConfigValue.WebserviceEnablePermissions, companyID);
+    	return this.configService.getBooleanValue(Webservices.WebserviceEnablePermissions, companyID);
     }
     
     private final List<GrantedAuthority> loadGrantedAuthorities(final int companyID, final String username) {
         final List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
         
         if(areWebservicePermissionsEnabled(companyID)) {
-        	final String sql = 
-        			"SELECT DISTINCT endpoint " + 
-        			"FROM (" + 
-        			"SELECT endpoint FROM webservice_permission_tbl WHERE username=? " + 
-        			"UNION " + 
-        			"SELECT endpoint FROM webservice_perm_group_perm_tbl perms, webservice_user_group_tbl groups " + 
-        			"WHERE groups.username=? AND perms.group_ref=groups.group_ref  " + 
+        	final String sql =
+        			"SELECT DISTINCT endpoint " +
+        			"FROM (" +
+        			"SELECT endpoint FROM webservice_permission_tbl WHERE username=? " +
+        			"UNION " +
+        			"SELECT endpoint FROM webservice_perm_group_perm_tbl perms, webservice_user_group_tbl groups " +
+        			"WHERE groups.username=? AND perms.group_ref=groups.group_ref  " +
         			") endpoints";
         	
         	final List<String> permissions = select(logger, sql, new StringRowMapper(), username, username);

@@ -21,7 +21,6 @@ public class TitleImpl implements Title, Serializable {
     private static final long serialVersionUID = 2291851535887967372L;
 	protected int companyID=-1;
     protected int Id;
-    protected String shortname;
     protected String description;
     protected Map<Integer, String> titleGender=new HashMap<>();
    
@@ -40,11 +39,6 @@ public class TitleImpl implements Title, Serializable {
     @Override
 	public void setId(int title) {
         this.Id=title;
-    }
-    
-    @Override
-	public void setShortname(String shortname) {
-        this.shortname = shortname;
     }
     
     @Override
@@ -68,11 +62,6 @@ public class TitleImpl implements Title, Serializable {
     @Override
 	public int getId() {
         return this.Id;
-    }
-    
-    @Override
-	public String getShortname() {
-        return this.shortname;
     }
 
     @Override

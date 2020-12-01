@@ -25,4 +25,9 @@ public class TAGCheckFactoryImpl implements TAGCheckFactory {
 	public TAGCheck createTAGCheck(@VelocityCheck int companyId, int mailinglistId) throws Exception {
 		return new TAGCheckImpl(companyId, mailinglistId);
 	}
+
+	@Override
+	public TAGCheck createTAGCheck(@VelocityCheck int companyId, int mailingId, int mailinglistId) throws Exception {
+		return new TAGCheckImpl(companyId, mailingId, mailinglistId);
+	}
 }

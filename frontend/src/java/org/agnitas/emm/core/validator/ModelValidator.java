@@ -10,178 +10,120 @@
 
 package org.agnitas.emm.core.validator;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 
 import org.agnitas.emm.core.validator.annotation.Validate;
-import org.apache.commons.validator.Arg;
-import org.apache.commons.validator.Field;
-import org.apache.commons.validator.Validator;
-import org.apache.commons.validator.ValidatorAction;
-import org.apache.commons.validator.ValidatorException;
-import org.apache.commons.validator.ValidatorResources;
-import org.apache.commons.validator.ValidatorResult;
-import org.apache.commons.validator.ValidatorResults;
+import org.apache.bval.jsr.ApacheValidationProvider;
+import org.apache.bval.jsr.ApacheValidatorConfiguration;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
-import org.xml.sax.SAXException;
 
 @Aspect
 public class ModelValidator {
-	
-	private final static Logger log = Logger.getLogger(ModelValidator.class);
+	private final static Logger logger = Logger.getLogger(ModelValidator.class);
 	
     private ResourceBundle messagesBundle;
-    private ValidatorResources resources;
 
-    public ModelValidator(String validationFile, String propertiesFile) throws IOException, SAXException {
-    	if(log.isDebugEnabled()) {
-    		log.debug("Created ModelValidator (validation file: " + validationFile + ", properties file: " + propertiesFile + ")");
+    private final Validator validator;
+
+    public ModelValidator(String validationFile, String propertiesFile) {
+    	if (logger.isDebugEnabled()) {
+    		logger.debug("Created ModelValidator (validation file: " + validationFile + ", properties file: " + propertiesFile + ")");
     	}
-    	
-    	try(InputStream in = this.getClass().getClassLoader().getResourceAsStream(validationFile)) {
-	    	resources = new ValidatorResources(in);
-	
-	    	messagesBundle = ResourceBundle.getBundle(propertiesFile);
-    	}
+
+	    messagesBundle = ResourceBundle.getBundle(propertiesFile);
+
+        try (ValidatorFactory validatorFactory = Validation.byProvider(ApacheValidationProvider.class)
+				.configure()
+				.addProperty(ApacheValidatorConfiguration.Properties.VALIDATION_XML_PATH, validationFile)
+				.buildValidatorFactory()) {
+        	validator = validatorFactory.getValidator();
+        }
     }
-
+    
     @Before(value = "@annotation(annotation) && args(model, ..)")
-    public void validate(Validate annotation, Object model) throws ValidatorException {
-    	if(log.isDebugEnabled()) {
-    		log.debug("formName:"+annotation.value()+", model:"+model.getClass().getName());
+    public void validate(Validate annotation, Object model) {
+    	if(logger.isDebugEnabled()) {
+    		logger.debug("formGroups:" + Arrays.toString(annotation.groups()) + ", model:"+model.getClass().getName());
     	}
 
-    	validateInternal(annotation, model);
+    	validate(model, annotation.groups());
 	}
 
 	@Before(value="@annotation(annotation) && args(model, username)", argNames="annotation, model, username")
-	public void validate(Validate annotation, Object model, String username) throws ValidatorException {
-    	if(log.isDebugEnabled()) {
-    		log.debug("formName:"+annotation.value()+", model:"+model.getClass().getName() + ", username: " + username);
+	public void validate(Validate annotation, Object model, String username) {
+    	if(logger.isDebugEnabled()) {
+    		logger.debug("formGroups:" + Arrays.toString(annotation.groups()) + ", model:"+model.getClass().getName() + ", username: " + username);
     	}
 
-    	validateInternal(annotation, model);
+		validate(model, annotation.groups());
 	}
 
 	@Before(value = "@annotation(annotation) && args(model, username, companyId, ..)")
-	public void validate(Validate annotation, Object model, String username, int companyId) throws ValidatorException {
-    	if(log.isDebugEnabled()) {
-    		log.debug("formName:"+annotation.value()+", model:"+model.getClass().getName() + ", username: " + username);
+	public void validate(Validate annotation, Object model, String username, int companyId) {
+    	if(logger.isDebugEnabled()) {
+    		logger.debug("formGroups:" + Arrays.toString(annotation.groups()) + ", model:"+model.getClass().getName() + ", username: " + username);
     	}
 
-    	validateInternal(annotation, model);
+		validate(model, annotation.groups());
 	}
 
-	@Before(value = "@annotation(annotation) && args(companyId, modelId)")
-	public void validate(Validate annotation, int companyId, int modelId) throws ValidatorException {
-		if(log.isDebugEnabled()) {
-			log.debug("formName: " + annotation.value() + ", companyId: " + companyId);
-		}
-
-		Validator validator = new Validator(resources, annotation.value());
-		validator.setParameter(Validator.BEAN_PARAM, companyId);
-		validator.setParameter(Validator.BEAN_PARAM, modelId);
-
-		validateInternal(validator);
+	public void validate(final Object model, final Class<?>... groups) {
+    	final Set<ConstraintViolation<Object>> violations = validator.validate(model, groups);
+    	checkResults(violations);
 	}
 
-	private void validateInternal(Validate annotation, Object model) throws ValidatorException {
-        Validator validator = new Validator(resources, annotation.value());
-        validator.setParameter(Validator.BEAN_PARAM, model);
-        validateInternal(validator);
-	}
-
-	private void validateInternal(Validator validator) throws ValidatorException {
-		checkResults(validator.validate());
-	}
-
-	@Before(value = "@annotation(annotation) && args(companyId, customerID, custParameters)", argNames = "annotation,companyId,customerID,custParameters")
-	public void validate(Validate annotation, int companyId, int customerID, Map<?, ?> custParameters) throws ValidatorException {
-    	if(log.isDebugEnabled()) {
-    		log.debug("formName:"+annotation.value());
-    	}
-
-        Validator validator = new Validator(resources, annotation.value());
-        validator.setParameter(Validator.BEAN_PARAM, custParameters);
-        validateInternal(validator);
-
-	}
-    
-	public void validate(String annotation, Object model) throws ValidatorException {
-    	if(log.isDebugEnabled()) {
-    		log.debug("formName:"+annotation+", model:"+model.getClass().getName());
-    	}
-		
-        Validator validator = new Validator(resources, annotation);
-        validator.setParameter(Validator.BEAN_PARAM, model);
-        ValidatorResults results = validator.validate();
-
-        checkResults(results);
-	}
-
-    private void checkResults(ValidatorResults results) throws IllegalArgumentException {
-        for (String fieldNames : results.getPropertyNames()) {
-            ValidatorResult result = results.getValidatorResult(fieldNames);
-            List<String> actions = result.getField().getDependencyList();
-            for (int i = 0; i < actions.size(); ++ i) {
-                if (!result.isValid(actions.get(i))) {
-                    ValidatorAction action = resources.getValidatorAction(actions.get(i));
-                    Field field = result.getField();
-                    throw new IllegalArgumentException(getErrorMessage(field, action));
-                }
-            }
-        }
-    }
-
-
-    private String getErrorMessage(Field field, ValidatorAction action) {
-        // TODO: add processing of an alternative message
-        // that can be associated with a Field and configured with a <msg> xml element.
-        // See Resources.getActionMessage(validator, request, va, field)) for references.
-		String args[] = getArgs(action.getName(), messagesBundle, field);
-
-		String msg = field.getMsg(action.getName()) != null ? field.getMsg(action.getName()) : action.getMsg();
-
-		return MessageFormat.format(getMessage(messagesBundle, msg), (Object[]) args);
-	}    
-    
-	public static String[] getArgs(String actionName, ResourceBundle messages, Field field) {
-
-		String[] argMessages = new String[4];
-
-		Arg[] args = new Arg[] { 
-				field.getArg(actionName, 0), 
-				field.getArg(actionName, 1), 
-				field.getArg(actionName, 2),
-				field.getArg(actionName, 3) };
-
-		for (int i = 0; i < args.length; i++) {
-			if (args[i] == null) {
-				continue;
+	private void checkResults(Set<ConstraintViolation<Object>> violations) throws IllegalArgumentException {
+    	final Pattern pattern = Pattern.compile("([.|\\w]+)(\\{.+})*");
+    	for (ConstraintViolation<Object> violation : violations) {
+    		final String messageTemplate = violation.getMessageTemplate();
+			final Matcher matcher = pattern.matcher(messageTemplate);
+			if(matcher.find()) {
+				final String mainMessageKey = matcher.group(1);
+				final String argsKeys = matcher.group(2);
+				throw new IllegalArgumentException(getMessage(mainMessageKey, argsKeys));
 			}
-
-			if (args[i].isResource()) {
-				argMessages[i] = getMessage(messages, args[i].getKey());
-			} else {
-				argMessages[i] = args[i].getKey();
-			}
-
 		}
-
-		return argMessages;
 	}
-	
-	public static String getMessage(ResourceBundle messages, String key) {
+
+	private String getMessage(final String mainKey, final String argsKeys) {
+		return MessageFormat.format(getMessage(messagesBundle, mainKey), getArgs(argsKeys));
+	}
+
+	private Object[] getArgs(final String argsKeys) {
+    	final List<String> args = new ArrayList<>();
+    	for(String argKey : argsKeys.split("[{}]")){
+    		if(StringUtils.isNotBlank(argKey)) {
+    			args.add(getMessage(messagesBundle, argKey));
+			}
+		}
+		return args.toArray();
+	}
+
+	private static String getMessage(ResourceBundle messages, String key) {
 		String message = null;
 
 		if (messages != null) {
-			message = messages.getString(key);
+			try {
+				message = messages.getString(key);
+			} catch (MissingResourceException e) {
+				message = key;
+			}
 		}
 
 		return (message == null) ? "" : message;

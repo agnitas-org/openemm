@@ -89,12 +89,13 @@ public interface MaildropStatusDao {
 	/**
 	 * Saves given maildrop entry. If entry ID is 0 or no entry with given ID exists, a new entry is created.
 	 * Otherwise, existing entry is updated.
-	 *  
+	 * 
 	 * @param entry entry to save
 	 * 
 	 * @return ID of maildrop entry
+	 * @throws Exception
 	 */
-	int saveMaildropEntry(final MaildropEntry entry);
+	int saveMaildropEntry(final MaildropEntry entry) throws Exception;
 
 	List<MaildropEntry> getMaildropStatusEntriesForMailing(int companyID, int mailingID);
 

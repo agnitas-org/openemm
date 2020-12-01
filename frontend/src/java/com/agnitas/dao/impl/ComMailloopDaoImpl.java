@@ -188,7 +188,7 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 			readMailloop.setFilterEmail(resultSet.getString("filter_address"));
 			readMailloop.setDoForward(resultSet.getInt("forward_enable") > 0);
 			readMailloop.setDoAutoresponder(resultSet.getInt("ar_enable") > 0);
-			readMailloop.setChangedate(resultSet.getDate("timestamp"));
+			readMailloop.setChangedate(resultSet.getTimestamp("timestamp"));
 			readMailloop.setDoSubscribe(resultSet.getInt("subscribe_enable") > 0);
 			readMailloop.setMailinglistID(resultSet.getInt("mailinglist_id"));
 			readMailloop.setUserformID(resultSet.getInt("form_id"));
@@ -200,16 +200,26 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 	}
 	   
     @Override
-    public boolean isMailingUsedInBounceFilter(@VelocityCheck int companyId, int mailingId) {
+    public boolean isMailingUsedInBounceFilterWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId) {
 		return selectInt(logger,
-				"SELECT COUNT(*) FROM mailloop_tbl WHERE company_id = ? AND autoresponder_mailing_id = ?",
+				"SELECT COUNT(*) FROM mailloop_tbl WHERE company_id = ? AND ar_enable=1 AND autoresponder_mailing_id = ?",
 				companyId, mailingId)
 				> 0;
     }
     
     @Override
-    public List<MailloopEntry> getDependentBounceFilters(@VelocityCheck int companyId, int mailingId) {
-		String query = "SELECT rid, description, shortname, filter_address FROM mailloop_tbl WHERE company_id = ? AND autoresponder_mailing_id = ?";
+    public List<MailloopEntry> getDependentBounceFiltersWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId) {
+		String query = "SELECT rid, description, shortname, filter_address FROM mailloop_tbl WHERE company_id = ? AND ar_enable=1 AND autoresponder_mailing_id = ?";
 		return select(logger, query, new MailloopEntry_RowMapper(), companyId, mailingId);
 	}
+    
+    @Override
+    public boolean isAddressInUse(String filterAddress, boolean isNew) {
+    	String query = "SELECT COUNT(*) FROM mailloop_tbl WHERE filter_address = ?";
+    	if (isNew) {
+    		return selectInt(logger, query, filterAddress) > 0;
+    	} else {
+    		return selectInt(logger, query, filterAddress) > 1;
+    	}
+    }
 }

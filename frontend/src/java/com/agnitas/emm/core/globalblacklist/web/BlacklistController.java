@@ -15,24 +15,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+
 import javax.servlet.http.HttpSession;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.PollingUid;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
-import com.agnitas.emm.core.globalblacklist.forms.BlacklistDeleteForm;
-import com.agnitas.emm.core.globalblacklist.forms.BlacklistForm;
-import com.agnitas.emm.core.globalblacklist.forms.BlacklistListForm;
-import com.agnitas.emm.core.globalblacklist.forms.validation.BlacklistDeleteFormValidator;
-import com.agnitas.emm.core.globalblacklist.forms.validation.BlacklistFormValidator;
-import com.agnitas.emm.core.report.generator.TableGenerator;
-import com.agnitas.service.ComWebStorage;
-import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.NotAllowedActionException;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.service.UserActivityLogService;
@@ -55,6 +40,23 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.PollingUid;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
+import com.agnitas.emm.core.globalblacklist.forms.BlacklistDeleteForm;
+import com.agnitas.emm.core.globalblacklist.forms.BlacklistForm;
+import com.agnitas.emm.core.globalblacklist.forms.BlacklistListForm;
+import com.agnitas.emm.core.globalblacklist.forms.validation.BlacklistDeleteFormValidator;
+import com.agnitas.emm.core.globalblacklist.forms.validation.BlacklistFormValidator;
+import com.agnitas.emm.core.report.generator.TableGenerator;
+import com.agnitas.service.ComWebStorage;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.NotAllowedActionException;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping("/recipients/blacklist")
@@ -145,7 +147,7 @@ public class BlacklistController {
             }
 		} catch (Exception e) {
 			popups.alert("Error");
-			logger.error(e.getMessage());
+			logger.error("Error adding mail address to blacklist", e);
 		}
 
         return new BooleanResponseDto(popups, false);

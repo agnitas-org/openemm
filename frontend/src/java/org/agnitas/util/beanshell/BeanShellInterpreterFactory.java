@@ -16,15 +16,25 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.sql.DataSource;
 
+import org.agnitas.util.DbColumnType;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.ProfileField;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.util.NumericUtil;
+
 import bsh.Interpreter;
 import bsh.NameSpace;
+import bsh.UtilEvalError;
 
 /**
  * Factory for BeanShell interpreters.
@@ -48,28 +58,37 @@ public final class BeanShellInterpreterFactory {
 	 * @throws Exception on errors preparing interpreter
 	 */
 	public final Interpreter createBeanShellInterpreter(final int companyID, final int customerID) throws Exception {
+		return createBeanShellInterpreter(companyID, nameSpace -> populateProfileFields(nameSpace, companyID, customerID));
+	}
+
+	public final Interpreter createBeanShellInterpreter(final int companyID, final Map<String, Object> recipientData,
+			final Map<String, ProfileField> profileFieldsInfo) throws Exception {
+		return createBeanShellInterpreter(companyID, nameSpace -> populateProfileFields(nameSpace, recipientData, profileFieldsInfo));
+	}
+
+	private Interpreter createBeanShellInterpreter(final int companyID, final PopulateFieldsConsumer populateFieldsConsumer) throws Exception {
 		final Interpreter interpreter = new Interpreter();
 		final NameSpace beanShellNameSpace = interpreter.getNameSpace();
 
 		if (companyID <= 0) {
 			throw new IllegalArgumentException("Company ID <= 0");
 		}
-		
+
 		try {
-			populateProfileFields(beanShellNameSpace, companyID, customerID);
+			populateFieldsConsumer.accept(beanShellNameSpace);
 
 			// Register additional components
 			beanShellNameSpace.importClass("org.agnitas.util.AgnUtils");
 			beanShellNameSpace.importClass(BeanShellRuntimeUtils.class.getCanonicalName());
 			beanShellNameSpace.importClass(Date.class.getCanonicalName());
-			
+
 			// add virtual column "sysdate"
 			beanShellNameSpace.setTypedVariable("CURRENT_TIMESTAMP", Date.class, new Date(), null);
 
 			return interpreter;
 		} catch (final Exception e) {
 			logger.error("Error in getBshInterpreter(): " + e.getMessage(), e);
-		
+
 			throw e;
 		}
 	}
@@ -144,6 +163,86 @@ public final class BeanShellInterpreterFactory {
 			}
 		}
 	}
+
+	private void populateProfileFields(final NameSpace nameSpace, final Map<String, Object> recipientData, final Map<String, ProfileField> profileFieldsInfo) throws Exception {
+
+		for (Map.Entry<String, Object> field : recipientData.entrySet()) {
+			final String columnName = field.getKey().toLowerCase();
+			final Object value = field.getValue();
+			final ProfileField profileFieldInfo = profileFieldsInfo.get(columnName);
+			if (profileFieldInfo == null) {
+				continue;
+			}
+
+			switch (profileFieldInfo.getDataType()) {
+			case DbColumnType.GENERIC_TYPE_INTEGER:
+				if(StringUtils.isBlank(value.toString())) {
+					nameSpace.setTypedVariable(columnName, Integer.class, null, null);
+				} else {
+					nameSpace.setTypedVariable(columnName, Integer.class, NumberUtils.toInt(value.toString()), null);
+				}
+				break;
+
+			case DbColumnType.GENERIC_TYPE_FLOAT:
+				if(StringUtils.isBlank(value.toString())) {
+					nameSpace.setTypedVariable(columnName, Double.class, null, null);
+				} else {
+					nameSpace.setTypedVariable(columnName, Double.class, NumericUtil.tryParseDouble(value.toString(), 0.0), null);
+				}
+				break;
+
+			case DbColumnType.GENERIC_TYPE_VARCHAR:
+				nameSpace.setTypedVariable(columnName, String.class, value, null);
+				break;
+
+			case DbColumnType.GENERIC_TYPE_DATE:
+			case DbColumnType.GENERIC_TYPE_DATETIME:
+				populateDateField(nameSpace, recipientData, columnName);
+				break;
+			default:
+				logger.error("Ignoring: " + columnName);
+			}
+		}
+	}
+
+	private void populateDateField(final NameSpace nameSpace, final Map<String, Object> recipientData, final String fieldName)
+			throws UtilEvalError {
+		if (hasTripleDateParameter(recipientData, fieldName)) {
+			nameSpace.setTypedVariable(fieldName, Date.class,  buildDate(recipientData, fieldName), null);
+		} else {
+			nameSpace.setTypedVariable(fieldName, Date.class, null, null);
+		}
+	}
+
+	private Date buildDate(final Map<String, Object> recipientData, String fieldName) {
+		final int day = Integer.parseInt(recipientData.get(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY).toString()),
+				month = Integer.parseInt(recipientData.get(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH).toString()),
+				year = Integer.parseInt(recipientData.get(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR).toString());
+		Object hourObj = recipientData.get(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR);
+		if(hourObj == null) {
+			hourObj = "0";
+		}
+		Object minuteObj = recipientData.get(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE);
+		if(minuteObj == null) {
+			minuteObj = "0";
+		}
+		Object secondObj = recipientData.get(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND);
+		if (secondObj == null) {
+			secondObj = "0";
+		}
+
+		return new GregorianCalendar(year, month, day, NumberUtils.toInt(hourObj.toString()), NumberUtils.toInt(minuteObj.toString()), NumberUtils.toInt(secondObj.toString())).getTime();
+	}
+
+	private static boolean hasTripleDateParameter(final Map<String, Object> recipientData, final String fieldName) {
+		final Object day = recipientData.get(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY),
+				month = recipientData.get(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH),
+				year = recipientData.get(fieldName + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR);
+		return  day != null
+				&& StringUtils.isNotEmpty(day.toString())
+				&&  month != null
+				&&  year != null;
+	}
 	
 	/**
 	 * Sets JDBC DataSource.
@@ -154,4 +253,10 @@ public final class BeanShellInterpreterFactory {
 	public final void setDataSource(final DataSource dataSource) {
 		this.dataSource = Objects.requireNonNull(dataSource, "DataSource is null");
 	}
+
+	@FunctionalInterface
+	public interface PopulateFieldsConsumer {
+		void accept(NameSpace nameSpace) throws Exception;
+	}
+
 }

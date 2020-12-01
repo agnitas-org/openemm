@@ -185,9 +185,9 @@
                         
                         <li class="list-group-item">
                             <span class="badge"><bean:write name="importWizardForm" property="status.csvLines" scope="session"/></span>
-                            <bean:message key="import.result.csvlines"/>
+                            <bean:message key="import.result.filedataitems"/>
                         </li>
-                        <% csvfile += "\n" + SafeString.getLocaleString("import.result.csvlines", (Locale) session.getAttribute(org.apache.struts.Globals.LOCALE_KEY)) + ":;" + aForm.getStatus().getCsvLines(); %>
+                        <% csvfile += "\n" + SafeString.getLocaleString("import.result.filedataitems", (Locale) session.getAttribute(org.apache.struts.Globals.LOCALE_KEY)) + ":;" + aForm.getStatus().getCsvLines(); %>
                         
                         <li class="list-group-item">
                             <span class="badge"><bean:write name="importWizardForm" property="status.alreadyInDb" scope="session"/></span>

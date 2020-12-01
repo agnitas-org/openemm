@@ -60,11 +60,12 @@ public class UserAgentDao extends BaseDaoImpl {
 			}
 		}
 	}
+	
 	@DaoUpdateReturnValueCheck
-	public void traceAgentForClient(String userAgent) {
+	public void traceAgentForClient(String userAgent, int amount) {
 		if (userAgent != null) {
 			// Try to update an existing useragent entry. This is the standard case which should update 1 entry only
-			int touchedLines = update(logger, "UPDATE user_agent_for_client_tbl SET change_date = CURRENT_TIMESTAMP, req_counter = req_counter + 1 WHERE user_agent = ?", userAgent);
+			int touchedLines = update(logger, "UPDATE user_agent_for_client_tbl SET change_date = CURRENT_TIMESTAMP, req_counter = req_counter + ? WHERE user_agent = ?", amount, userAgent);
 			
 			if (touchedLines == 0) {
 				// If nothing was updated, try to insert this new useragent, what can go wrong, if meanwhile the useragent was inserted by another process.
@@ -81,7 +82,7 @@ public class UserAgentDao extends BaseDaoImpl {
 				}
 				
 				// Update the existing useragent entry, which must exist because this process or another process created by now
-				touchedLines = update(logger, "UPDATE user_agent_for_client_tbl SET change_date = CURRENT_TIMESTAMP, req_counter = req_counter + 1 WHERE user_agent = ?", userAgent);
+				touchedLines = update(logger, "UPDATE user_agent_for_client_tbl SET change_date = CURRENT_TIMESTAMP, req_counter = req_counter + ? WHERE user_agent = ?", amount, userAgent);
 				if (touchedLines > 1) {
 					// Too many rows so remove duplicates. This may only happen if there is no unique key on user_agent
 					if (isOracleDB()) {

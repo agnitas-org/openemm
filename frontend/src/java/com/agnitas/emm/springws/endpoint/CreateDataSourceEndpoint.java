@@ -11,41 +11,46 @@
 package com.agnitas.emm.springws.endpoint;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.springws.jaxb.CreateDataSourceRequest;
 import com.agnitas.emm.springws.jaxb.CreateDataSourceResponse;
-import com.agnitas.emm.springws.jaxb.ObjectFactory;
 import com.agnitas.service.DataSourceService;
 import com.agnitas.service.FailedCreateDataSourceException;
 
-public class CreateDataSourceEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class CreateDataSourceEndpoint extends BaseEndpoint {
 	private static final Logger classLogger = Logger.getLogger(CreateDataSourceEndpoint.class);
 
-	private ObjectFactory comObjectFactory;
 	private DataSourceService dataSourceService;
 	private ConfigService configService;
-	
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Entered CreateDataSourceEndpoint.invokeInternal()");
+
+	public CreateDataSourceEndpoint(DataSourceService dataSourceService, ConfigService configService) {
+		this.dataSourceService = dataSourceService;
+		this.configService = configService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "CreateDataSourceRequest")
+	public @ResponsePayload CreateDataSourceResponse createDataSource(@RequestPayload CreateDataSourceRequest request) throws Exception {
+		if (classLogger.isInfoEnabled()) {
+			classLogger.info( "Entered CreateDataSourceEndpoint.createDataSource()");
 		}
-		
-		CreateDataSourceRequest request = (CreateDataSourceRequest) arg0;
-		
+
 		validateDescriptor(request);
 		
-		CreateDataSourceResponse response = comObjectFactory.createCreateDataSourceResponse();
+		CreateDataSourceResponse response = new CreateDataSourceResponse();
 		
 		int dsGroup;
 		try {
-			dsGroup = configService.getIntegerValue(ConfigValue.WebserviceDatasourceGroupId);
+			dsGroup = configService.getIntegerValue(Webservices.WebserviceDatasourceGroupId);
 		} catch (Exception e) {
 			// Use default value
 			dsGroup = 1;
@@ -56,8 +61,8 @@ public class CreateDataSourceEndpoint extends AbstractMarshallingPayloadEndpoint
 		
 		response.setId(rs);
 		
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Leaving GetMailingContentEndpoint.invokeInternal()");
+		if (classLogger.isInfoEnabled()) {
+			classLogger.info( "Leaving GetMailingContentEndpoint.createDataSource()");
 		}
 		
 		return response;
@@ -72,17 +77,4 @@ public class CreateDataSourceEndpoint extends AbstractMarshallingPayloadEndpoint
 		    throw new FailedCreateDataSourceException("The URL of the datasource is empty.");
 		}
     }
-
-	public void setComObjectFactory(ObjectFactory comObjectFactory) {
-		this.comObjectFactory = comObjectFactory;
-	}
-
-	public void setDataSourceService(DataSourceService dataSourceService) {
-		this.dataSourceService = dataSourceService;
-	}
-	
-	@Required
-	public void setConfigService(final ConfigService configService) {
-		this.configService = configService;
-	}
 }

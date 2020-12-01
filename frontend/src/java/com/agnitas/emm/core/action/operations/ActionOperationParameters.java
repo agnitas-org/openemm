@@ -10,15 +10,6 @@
 
 package com.agnitas.emm.core.action.operations;
 
-public abstract class ActionOperationParameters {
-    // No additional methods here
-	
-	/*
-	 * TODO Improve type hierarchy
-	 * 
-	 *  This class seems to be used to implement org.agnitas.web._TestActionOperationParameters
-	 *  easily. 
-	 *  
-	 *  Remove this class or move down methods from AbstractActionOperationParameters
-	 */
+public interface ActionOperationParameters {
+	// Empty by intention
 }

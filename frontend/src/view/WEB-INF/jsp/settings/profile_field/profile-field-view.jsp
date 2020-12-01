@@ -83,11 +83,17 @@
 								<mvc:option value="INTEGER" data-field-vis-hide="#fieldLengthDiv" data-field-vis-show="#interestDiv">
 									<bean:message key="settings.fieldType.INTEGER"/>
 								</mvc:option>
+								<mvc:option value="FLOAT" data-field-vis-hide="#fieldLengthDiv" data-field-vis-show="#interestDiv">
+									<bean:message key="settings.fieldType.Float"/>
+								</mvc:option>
 								<mvc:option value="VARCHAR" data-field-vis-show="#fieldLengthDiv" data-field-vis-hide="#interestDiv">
 									<bean:message key="settings.fieldType.VARCHAR"/>
 								</mvc:option>
 								<mvc:option value="DATE" data-field-vis-hide="#fieldLengthDiv, #interestDiv">
 									<bean:message key="settings.fieldType.DATE"/>
+								</mvc:option>
+								<mvc:option value="DATETIME" data-field-vis-hide="#fieldLengthDiv, #interestDiv">
+									<bean:message key="settings.fieldType.DATETIME"/>
 								</mvc:option>
 							</mvc:select>
 						</c:if>
@@ -131,10 +137,10 @@
 
 				<div class="form-group">
 					<div class="col-sm-4">
-						<label class="control-label" for="fieldDefault"><bean:message key="Default_Value"/></label>
+						<label class="control-label" for="fieldDefault"><bean:message key="settings.Default_Value"/></label>
 					</div>
 					<div class="col-sm-8">
-						<mvc:text path="fieldDefault" id="fieldDefault" cssClass="form-control" size="32"/>
+						<mvc:text path="fieldDefault" id="fieldDefault" cssClass="form-control" size="32"  maxlength="199"/>
 					</div>
 				</div>
 

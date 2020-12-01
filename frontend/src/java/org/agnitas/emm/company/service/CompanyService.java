@@ -26,10 +26,10 @@ public interface CompanyService {
 	boolean isCompanyExisting(@VelocityCheck int companyId);
 
 	//get all active companies
-	List<CompanyEntry> getActiveCompanyEntries();
+	List<CompanyEntry> getActiveCompanyEntries(boolean allowTransitionStatus);
 	
 	//get only own company and companies created by own company + status = active
-	List<CompanyEntry> getActiveOwnCompanyEntries(@VelocityCheck int companyId);
+	List<CompanyEntry> getActiveOwnCompanyEntries(@VelocityCheck int companyId, boolean allowTransitionStatus);
 
 	List<ComCompany> getCreatedCompanies(@VelocityCheck int companyId);
 	

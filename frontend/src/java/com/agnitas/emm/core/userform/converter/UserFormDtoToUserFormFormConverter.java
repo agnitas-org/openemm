@@ -30,7 +30,6 @@ public class UserFormDtoToUserFormFormConverter implements Converter<UserFormDto
 		form.setSuccessSettings(dto.getSuccessSettings());
 		form.setErrorSettings(dto.getErrorSettings());
 		
-		//TODO: GWUA-4279 implement converter
 		return form;
 	}
 }

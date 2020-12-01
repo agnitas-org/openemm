@@ -49,7 +49,10 @@ window.I18n = {
         isBlacklisted: '<agn:agnMessage key="error.email.blacklisted"/>',
         grid: {
             noCategorySelected: '<agn:agnMessage key="grid.mediapool.image.no.category"/>'
-        }
+        },
+        recipient: {
+            restricted: '<agn:agnMessage key="error.access.limit.targetgroup" />'
+        },
     },
     date: {
         firstDayOfWeek: 1,
@@ -127,8 +130,7 @@ window.I18n = {
             errors: {
                 notMatching: '<agn:agnMessage key="error.password.mismatch"/>',
                 unsafe: '<agn:agnMessage key="insecure" />'
-            },
-            lessThen: '<agn:agnMessage key="error.password.short" arg0="%s" />'
+            }
         },
         required: {
             errors: {
@@ -434,10 +436,29 @@ window.I18n = {
     },
     userform: {
         error: {
-            velocity_not_allowed: '<agn:agnMessage key="userform.velocityNotAllowed" />'
+            velocity_not_allowed: '<agn:agnMessage key="userform.velocityNotAllowed" />',
+            invalid_name: '<agn:agnMessage key="error.form.invalid_name" />',
+            illegal_directive: '<agn:agnMessage key="error.form.illegal_directive" arg0="%s" />',
+            invalid_link: '<agn:agnMessage key="error.invalid_link" arg0="%s" arg1="%s" />'
         }
     },
 
+    triggerManager: {
+        operation: {
+            ActivateDoubleOptIn: '<agn:agnMessage key="action.op.ActivateDoubleOptIn" />',
+            ContentView: '<agn:agnMessage key="action.op.ContentView" />',
+            ExecuteScript: '<agn:agnMessage key="action.op.ExecuteScript" />',
+            GetArchiveList: '<agn:agnMessage key="action.op.GetArchiveList" />',
+            GetArchiveMailing: '<agn:agnMessage key="action.op.GetArchiveMailing" />',
+            GetCustomer: '<agn:agnMessage key="action.op.GetCustomer" />',
+            IdentifyCustomer: '<agn:agnMessage key="action.op.IdentifyCustomer" />',
+            SendMailing: '<agn:agnMessage key="action.op.SendMailing" />',
+            ServiceMail: '<agn:agnMessage key="action.op.ServiceMail" />',
+            SubscribeCustomer: '<agn:agnMessage key="action.op.SubscribeCustomer" />',
+            UnsubscribeCustomer: '<agn:agnMessage key="action.op.UnsubscribeCustomer" />',
+            UpdateCustomer: '<agn:agnMessage key="action.op.UpdateCustomer" />'
+        }
+    },
     forms: '<agn:agnMessage key="workflow.panel.forms"/>',
     report: '<agn:agnMessage key="Report"/>',
     auto_export: '<agn:agnMessage key="autoExport.autoExport"/>',
@@ -507,6 +528,16 @@ window.I18n = {
     facebook : {
     	leadAds: {
     		renewedPageAccessTokens : '<agn:agnMessage key="facebook.leadAds.renewedPageAccessTokens" arg0="%s"/>'
+    	}
+    },
+    password : {
+    	error : {
+	    	too_short 					: '<agn:agnMessage key="error.password.tooShort" />',
+	    	no_digits 					: '<agn:agnMessage key="error.password_no_digits" />',
+	    	no_lower_case 				: '<agn:agnMessage key="error.password_no_lowercase_letters" />',
+	    	no_upper_case 				: '<agn:agnMessage key="error.password_no_uppercase_letters" />',
+	    	no_special 					: '<agn:agnMessage key="error.password_no_special_chars" />',
+	    	generic_error				: '<agn:agnMessage key="error.password.general" />'
     	}
     }
 };

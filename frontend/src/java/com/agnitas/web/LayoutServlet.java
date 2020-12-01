@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import com.agnitas.dao.ComEmmLayoutBaseDao;
 import com.agnitas.dao.LayoutDao;
 
 /**
@@ -40,7 +41,11 @@ public class LayoutServlet extends HttpServlet {
 
 	protected LayoutDao layoutDao;
 	
+	protected ComEmmLayoutBaseDao emmLayoutBaseDao;
+	
 	private Map<String, Map<Integer, byte[]>> layoutData = null;
+	
+	private Map<String, Integer> mappendDomains = null;
 
 	public void setLayoutDao(LayoutDao layoutDao) {
 		this.layoutDao = layoutDao;
@@ -51,6 +56,10 @@ public class LayoutServlet extends HttpServlet {
         try {
             if (layoutData == null) {
             	layoutData = getLayoutDao().getLayoutData();
+            }
+            
+            if (mappendDomains == null) {
+            	mappendDomains = getEmmLayoutBaseDao().getMappedDomains();
             }
             
             String companyIdString;
@@ -83,8 +92,10 @@ public class LayoutServlet extends HttpServlet {
 			byte[] sendData = null;
 			if (layoutData.containsKey(itemName)) {
 				Map<Integer, byte[]> itemData = layoutData.get(itemName);
-				if (itemData.containsKey(companyID)) {
+				if (companyID != 0 && itemData.containsKey(companyID)) {
 					sendData = itemData.get(companyID);
+				} else if (mappendDomains.containsKey(request.getServerName()) && itemData.containsKey(mappendDomains.get(request.getServerName()))) {
+					sendData = itemData.get(mappendDomains.get(request.getServerName()));
 				} else if (itemData.containsKey(0)) {
 					sendData = itemData.get(0);
 				}
@@ -123,5 +134,12 @@ public class LayoutServlet extends HttpServlet {
 			layoutDao = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("LayoutDao", LayoutDao.class);
 		}
 		return layoutDao;
+	}
+
+    private ComEmmLayoutBaseDao getEmmLayoutBaseDao() {
+		if (emmLayoutBaseDao == null) {
+			emmLayoutBaseDao = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("EmmLayoutBaseDao", ComEmmLayoutBaseDao.class);
+		}
+		return emmLayoutBaseDao;
 	}
 }

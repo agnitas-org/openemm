@@ -11,13 +11,15 @@
 package com.agnitas.util;
 
 import java.util.Collection;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 
-import com.agnitas.beans.ComAdmin;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
 import org.apache.commons.lang3.StringUtils;
+
+import com.agnitas.beans.ComAdmin;
 
 public class JspUtilities {
     public static final String JS_TABLE_COLUMN_TYPE_COMMON = "";
@@ -41,9 +43,11 @@ public class JspUtilities {
 
         switch (type.getSimpleDataType()) {
             case Date:
+            case DateTime:
                 return JS_TABLE_COLUMN_TYPE_DATE;
 
             case Numeric:
+            case Float:
                 return JS_TABLE_COLUMN_TYPE_NUMBER;
 
             case Blob:  // Fall-through

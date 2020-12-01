@@ -15,7 +15,7 @@
 </emm:ShowByPermission>
 
 <c:if test="${not mailingBaseForm.isMailingGrid}">
-    <div class="tile">
+    <div class="tile" data-action="scroll-to">
         <div class="tile-header">
             <a href="#" class="headline" data-toggle-tile="#tile-mediaTypes">
                 <i class="tile-toggle icon icon-angle-up"></i>

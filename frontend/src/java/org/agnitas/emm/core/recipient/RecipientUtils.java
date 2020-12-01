@@ -10,17 +10,22 @@
 
 package org.agnitas.emm.core.recipient;
 
+import static java.util.Map.Entry.comparingByKey;
+
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import com.agnitas.util.MapUtils;
-import org.agnitas.beans.ProfileField;
 import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
+
+import com.agnitas.beans.ProfileField;
+import com.agnitas.util.MapUtils;
 
 public class RecipientUtils {
     
@@ -161,23 +166,16 @@ public class RecipientUtils {
     public static Map<String, String> sortDuplicateAnalysisFields(CaseInsensitiveMap<String, ProfileField> columnMap) {
 		final LinkedHashMap<String, String> fieldsMap = new LinkedHashMap<>();
 		
-		// we need predefined order for default columns: gender, firstname, lastname.
-		fieldsMap.put(COLUMN_GENDER, columnMap.get(COLUMN_GENDER).getShortname());
-		fieldsMap.put(COLUMN_FIRSTNAME, columnMap.get(COLUMN_FIRSTNAME).getShortname());
-		fieldsMap.put(COLUMN_LASTNAME, columnMap.get(COLUMN_LASTNAME).getShortname());
-		fieldsMap.put(COLUMN_TIMESTAMP, columnMap.get(COLUMN_TIMESTAMP).getShortname());
-		fieldsMap.put(COLUMN_CUSTOMER_ID, columnMap.get(COLUMN_CUSTOMER_ID).getShortname());
-		
-		columnMap.remove(COLUMN_GENDER);
-		columnMap.remove(COLUMN_FIRSTNAME);
-		columnMap.remove(COLUMN_LASTNAME);
-		columnMap.remove(COLUMN_TIMESTAMP);
-		columnMap.remove(COLUMN_CUSTOMER_ID);
-		
 		columnMap.forEach((key, value) -> fieldsMap.put(key, value.getShortname()));
 		
 		MapUtils.reorderLinkedHashMap(fieldsMap, RecipientUtils.getFieldOrderComparator(true));
 		
 		return fieldsMap;
+    }
+
+    public static Map<String, String> getFieldsForDuplicateAnalysis(Map<String, String> columnMap) {
+        return columnMap.entrySet().stream()
+                .sorted(comparingByKey())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2, HashMap::new));
     }
 }

@@ -14,36 +14,38 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.recipient.service.RecipientsModel;
 import org.agnitas.emm.core.recipient.service.impl.RecipientWrongRequestException;
 import org.agnitas.emm.core.recipient.service.impl.RecipientsSizeLimitExceededExeption;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.Criteria;
 import org.agnitas.emm.springws.jaxb.Equals;
 import org.agnitas.emm.springws.jaxb.ListSubscribersRequest;
 import org.agnitas.emm.springws.jaxb.ListSubscribersResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 
-public class ListSubscribersEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class ListSubscribersEndpoint extends BaseEndpoint {
 
-	@Resource
 	private RecipientService recipientService;
-	@Resource
-	private ObjectFactory objectFactory;
-	@Resource
 	private WebserviceUserService webserviceUserService;
-	
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		ListSubscribersRequest request = (ListSubscribersRequest) arg0;
-		ListSubscribersResponse response = objectFactory.createListSubscribersResponse();
+
+	public ListSubscribersEndpoint(RecipientService recipientService, WebserviceUserService webserviceUserService) {
+		this.recipientService = recipientService;
+		this.webserviceUserService = webserviceUserService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListSubscribersRequest")
+	public @ResponsePayload ListSubscribersResponse listSubscribers(@RequestPayload ListSubscribersRequest request) {
+		ListSubscribersResponse response = new ListSubscribersResponse();
 
 		RecipientsModel model = parseModel(request);
 		
@@ -52,7 +54,7 @@ public class ListSubscribersEndpoint extends AbstractMarshallingPayloadEndpoint 
         checkResultListSize(username, size);
 	        
 		List<Integer> recipientResultList = recipientService.getSubscribers(model);
-		populateResponse(request, response, recipientResultList, objectFactory);
+		populateResponse(response, recipientResultList);
 		return response;
 	}
 	
@@ -81,14 +83,14 @@ public class ListSubscribersEndpoint extends AbstractMarshallingPayloadEndpoint 
 		return model;
 	}
 
-	static void populateResponse(ListSubscribersRequest request, ListSubscribersResponse response, List<Integer> recipientResultList, ObjectFactory objectFactory) {
+	static void populateResponse(ListSubscribersResponse response, List<Integer> recipientResultList) {
 		if (recipientResultList != null && recipientResultList.size() > 0) {
 		    List<Integer> customerIDs = response.getCustomerID();
 		    customerIDs.addAll(recipientResultList);
 		}
 	}
 
-	private final void checkResultListSize(final String username, final int listSize) throws RecipientsSizeLimitExceededExeption {
+	private void checkResultListSize(final String username, final int listSize) throws RecipientsSizeLimitExceededExeption {
 		final OptionalInt resultListSizeOpt = readMaxResultListSize(username);
 		
         if(resultListSizeOpt.isPresent() && resultListSizeOpt.getAsInt() > 0 && resultListSizeOpt.getAsInt() < listSize) {
@@ -96,7 +98,7 @@ public class ListSubscribersEndpoint extends AbstractMarshallingPayloadEndpoint 
         }
 	}
 	
-	private final OptionalInt readMaxResultListSize(final String username) {
+	private OptionalInt readMaxResultListSize(final String username) {
 		try {
 			final WebserviceUserSettings settings = webserviceUserService.findSettingsForWebserviceUser(username);
 			return settings.getMaxResultListSize();

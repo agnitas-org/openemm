@@ -41,6 +41,11 @@
   font-weight: $fw-bold;
 }
 
+body.dark-theme .calendar-sidebar-header {
+  color: $c-dt-primary-text;
+  border-color: $c-dt-dark-border;
+}
+
 .calendar-controls {
   padding: 10px;
 
@@ -141,6 +146,28 @@
 
 }
 
+body.dark-theme .calendar-table {
+  background-color: $c-dt-calendar-td-background;
+  border-color: $c-dt-dark-border;
+
+  th {
+    background-color: $c-dt-calendar-header-background;
+    border-color: $c-dt-dark-border;
+    color: $c-dt-primary-text;
+  }
+
+  td {
+    border-color: $c-dt-dark-border;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: lighten($c-dt-calendar-td-background, 5%);
+    }
+  }
+
+}
+
 .calendar-week-number-cell {}
 
 
@@ -149,6 +176,10 @@
   font-size: $fs-small;
   line-height: 1;
   color: $c-gray-55;
+}
+
+body.dark-theme .calendar-day-label {
+  color: $c-dt-primary-text;
 }
 
 .calendar-current-day {
@@ -164,12 +195,33 @@
    }
 }
 
+body.dark-theme .calendar-current-day {
+  background-color: $c-dt-calendar-current-day;
+
+  &:hover,
+  &:focus {
+    background-color: lighten($c-dt-calendar-current-day, 5%) !important;
+  }
+
+  .calendar-day-label {
+    color: $c-dt-primary-text;
+  }
+}
+
 
 .calendar-another-month-day {
   background-color: $c-gray-02;
 
   .calendar-day-label {
     color: $c-gray-33;
+  }
+}
+
+body.dark-theme .calendar-another-month-day {
+  background-color: darken($c-dt-calendar-td-background, 10%);
+
+  .calendar-day-label {
+    color: $c-dt-primary-text;
   }
 }
 
@@ -271,6 +323,17 @@
   }
 }
 
+body.dark-theme .calendar-mail-popup {
+  background-color: $c-dt-tile-background;
+
+  &.top > .arrow,
+  &.top > .arrow:after,
+  &.bottom > .arrow,
+  &.bottom > .arrow:after {
+    border-top-color: $c-dt-tile-background;
+  }
+}
+
 .calendar-mail-popup-header {
   padding: 10px;
   color: $c-black-85;
@@ -286,6 +349,11 @@
 
 }
 
+body.dark-theme .calendar-mail-popup-header {
+  background-color: $c-dt-tile-header;
+  color: $c-dt-tile-text;
+}
+
 .calendar-mail-popup-preview {
   padding: 10px;
   background-color: $c-gray-11;
@@ -298,6 +366,10 @@
 
     @include shadow-variant(soft);
   }
+}
+
+body.dark-theme .calendar-mail-popup-preview {
+  background-color: $c-dt-tile-background;
 }
 
 .calendar-mail-popup-preview-missing {
@@ -339,8 +411,8 @@
 }
 
 .calendar-table td.calendar-week-number-cell:hover {
-  background-color: #e2e3e3;
-}
+   background-color: #e2e3e3;
+ }
 
 .ui-draggable {
   cursor: pointer;
@@ -350,6 +422,11 @@
   background-color: #e2e3e3;
   border-right: 1px solid #cccdcd;
   border-bottom: 1px solid #cccdcd;
+}
+
+
+body.dark-theme .calendar-table td.calendar-week-number-cell {
+  background-color: $c-dt-calendar-header-background;
 }
 
 .calendar-table td.calendar-week-number-cell:hover {

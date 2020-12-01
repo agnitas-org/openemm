@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:oxm="http://www.springframework.org/schema/oxm"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-					http://www.springframework.org/schema/oxm http://www.springframework.org/schema/oxm/spring-oxm.xsd">
+		  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		  xmlns:context="http://www.springframework.org/schema/context"
+		  xmlns:oxm="http://www.springframework.org/schema/oxm"
+		  xmlns:sws="http://www.springframework.org/schema/web-services"
+		  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		  http://www.springframework.org/schema/web-services http://www.springframework.org/schema/web-services/web-services-2.0.xsd
+		  http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		  http://www.springframework.org/schema/oxm http://www.springframework.org/schema/oxm/spring-oxm.xsd">
 
 	<import resource="spring-ws-common.xml" />
-	
+
+	<context:component-scan base-package="com.agnitas"/>
+	<context:component-scan base-package="org.agnitas"/>
+
+	<sws:annotation-driven />
+
 	<!-- Service Request/Response Marshalling -->
 	<bean id="marshaller" class="org.springframework.oxm.jaxb.Jaxb2Marshaller">
 		<property name="contextPaths">
@@ -15,15 +24,15 @@
 				<value>com.agnitas.emm.springws.jaxb</value>
 			</list>
 		</property>
-		
+
 		<property name="validationEventHandler" ref="validationHandler" />
 	</bean>
 
 	<bean id="validationHandler" class="org.agnitas.emm.springws.handlers.ValidationHandler"/>
 
 	<bean id="emmservices" class="org.agnitas.emm.springws.WsDefinitionWrapper">
-		<constructor-arg ref="ConfigService" />
-		
+		<constructor-arg name="configService" ref="ConfigService" />
+
 		<property name="schemaCollection">
 			<bean class="org.springframework.xml.xsd.commons.CommonsXsdSchemaCollection">
 				<property name="xsds">
@@ -34,26 +43,101 @@
 				</property>
 			</bean>
 		</property>
-		<property name="portTypeName" value="emm" />
-		<property name="targetNamespace" value="http://agnitas.com/ws/definitions" />
+		<property name="portTypeName" value="emm"/>
+		<property name="targetNamespace" value="http://agnitas.com/ws/definitions"/>
 	</bean>
-	
+
+	<bean id="configurableCommonExceptionResolver" class="org.springframework.ws.soap.server.endpoint.SoapFaultMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<map>
+				<entry key="com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException" value=""/>
+                <entry key="org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException" value="Unknown target group ID"/>
+                <entry key="com.agnitas.emm.core.target.exception.EqlFormatException" value="Invalid EQL."/>
+				<entry key="org.agnitas.emm.core.mailing.exception.UnknownMailingIdException" value="Unknown mailing id."/>
+			</map>
+		</property>
+        <property name="mappedEndpoints">
+            <set>
+                <ref bean="updateTargetGroupEndpoint"/>
+                <ref bean="copyMailingEndpoint"/>
+				<ref bean="addTargetGroupEndpoint"/>
+				<ref bean="getFullviewUrlEndpoint" />
+            </set>
+        </property>
+		<property name="order" value="1"/>
+	</bean>
+
+		<!-- Common resolver -->
+	<bean id="defaultExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.DefaultExceptionResolver">
+		<property name="mappedEndpoints">
+			<set>
+                <ref bean="addMailinglistEndpoint"/>
+                <ref bean="updateMailinglistEndpoint" />
+				<ref bean="getMailinglistEndpoint" />
+				<ref bean="deleteContentBlockEndpoint" />
+				<ref bean="deleteBlacklistEndpoint" />
+				<ref bean="checkBlacklistEndpoint" />
+				<ref bean="addMailingEndpoint" />
+				<ref bean="listContentBlocksEndpoint" />
+				<ref bean="listContentBlockNamesEndpoint" />
+				<ref bean="getContentBlockEndpoint" />
+				<ref bean="addContentBlockEndpoint" />
+				<ref bean="updateContentBlockEndpoint" />
+				<ref bean="addMailingEndpoint" />
+				<ref bean="addTemplateEndpoint" />
+				<ref bean="addMailingFromTemplateEndpoint" />
+				<ref bean="getMailingEndpoint" />
+				<ref bean="getMailingStatusEndpoint" />
+				<ref bean="getTemplateEndpoint" />
+				<ref bean="updateMailingEndpoint" />
+				<ref bean="updateTemplateEndpoint" />
+				<ref bean="deleteMailingEndpoint" />
+				<ref bean="listMailinglistsEndpoint" />
+				<ref bean="listMailingsEndpoint" />
+				<ref bean="getSubscriberBindingEndpoint" />
+				<ref bean="deleteSubscriberBindingEndpoint" />
+				<ref bean="deleteTemplateEndpoint" />
+				<ref bean="listTemplatesEndpoint" />
+				<ref bean="listSubscriberBindingEndpoint" />
+				<ref bean="listMailingsInMailinglistEndpoint" />
+				<ref bean="listAttachmentsEndpoint" />
+				<ref bean="sendMailingEndpoint" />
+				<ref bean="addSubscriberEndpoint" />
+				<ref bean="deleteSubscriberEndpoint" />
+				<ref bean="findSubscriberEndpoint" />
+				<ref bean="getSubscriberEndpoint" />
+				<ref bean="listSubscribersEndpoint" />
+				<ref bean="updateSubscriberEndpoint" />
+				<ref bean="listTrackableLinksEndpoint"/>
+				<ref bean="getTrackableLinkSettingsEndpoint"/>
+				<ref bean="updateTrackableLinkSettingsEndpoint"/>
+				<ref bean="listTargetgroupsEndpoint"/>
+				<ref bean="addMailingImageEndpoint"/>
+				
+			</set>
+		</property>
+		<property name="order" value="3"/>
+	</bean>
+
 	<import resource="spring-ws-mapping-openemm.xml" />
 	<import resource="spring-ws-mapping-emm.xml" />
-	
-	<bean id="payloadMapping"
-		class="org.springframework.ws.server.endpoint.mapping.PayloadRootQNameEndpointMapping">
-		<property name="endpointMap" ref="comEndpointMap" />
-		<property name="interceptors">
-			<list>
-				<bean class="org.springframework.ws.server.endpoint.interceptor.PayloadLoggingInterceptor"/>
-				
-				
-				<ref bean="wsSecurityInterceptor"/>
-				<ref bean="permissionInterceptor" />
-				<ref bean="throttlingInterceptor"/>
-				
-			</list>
-		</property>
+
+	<sws:interceptors>
+		<bean class="org.springframework.ws.server.endpoint.interceptor.PayloadLoggingInterceptor"/>
+
+		<ref bean="wsSecurityInterceptor"/>
+		<ref bean="permissionInterceptor" />
+		<ref bean="throttlingInterceptor"/>
+		<ref bean="usageInterceptor" />
+	</sws:interceptors>
+
+	<bean id="marshallingPayloadMethodProcessor" class="org.springframework.ws.server.endpoint.adapter.method.MarshallingPayloadMethodProcessor">
+	  <constructor-arg ref="marshaller"/>
+	  <constructor-arg ref="marshaller"/>
+	</bean>
+
+	<bean id="defaultMethodEndpointAdapter" class="org.springframework.ws.server.endpoint.adapter.DefaultMethodEndpointAdapter">
+		<property name="methodArgumentResolvers" ref="marshallingPayloadMethodProcessor"/>
+		<property name="methodReturnValueHandlers" ref="marshallingPayloadMethodProcessor"/>
 	</bean>
 </beans>

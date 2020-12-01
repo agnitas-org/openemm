@@ -6096,7 +6096,7 @@ function beforeGeneration( chart, icsc )
 {
 	reportContext = icsc.getExternalContext().getObject();
 	
-	chart.getTitle().getLabel().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;statistic.TotalClickSubscribers.short&quot;, reportContext.getLocale()));
+	chart.getTitle().getLabel().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;statistic.clicker&quot;, reportContext.getLocale()));
 }
 </Script>
   <Units>Points</Units>
@@ -10841,7 +10841,7 @@ function beforeGeneration( chart, icsc )
 {
 	reportContext = icsc.getExternalContext().getObject();
 	
-	chart.getTitle().getLabel().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;birt.report.linkClickStatistics&quot;, reportContext.getLocale()));
+	chart.getTitle().getLabel().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;statistic.KlickStats&quot;, reportContext.getLocale()));
 }
 
 

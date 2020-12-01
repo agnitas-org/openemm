@@ -16,6 +16,6 @@ import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorImplementationExcept
 
 public interface BeanShellCodeGeneratorCallback extends CodeGeneratorCallback {
 
-	public String getBeanShellCode() throws CodeGeneratorImplementationException;
+	String getBeanShellCode() throws CodeGeneratorImplementationException;
 
 }

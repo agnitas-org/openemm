@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Anzahl Wiederholversuche]]></title>
+	<content><![CDATA[Konnte ein Export nicht ausgef&uuml;hrt werden, weil z.B. der Zielserver nicht erreichbar oder kein Speicherplatz frei war, k&ouml;nnen Sie festlegen, wie oft der EMM versuchen soll, den Export erneut zu starten. Standardm&auml;&szlig;ig wird nach 15 Minuten ein Wiederholversuch ausgef&uuml;hrt. Alle weiteren Versuche werden ebenfalls im Abstand von je 15 Minuten vorgenommen.]]></content>
+</HelpBalloon>

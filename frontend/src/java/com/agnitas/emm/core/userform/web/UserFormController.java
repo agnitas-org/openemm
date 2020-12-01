@@ -10,30 +10,37 @@
 
 package com.agnitas.emm.core.userform.web;
 
+import java.io.File;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.action.service.ComEmmActionService;
-import com.agnitas.emm.core.userform.dto.UserFormDto;
-import com.agnitas.emm.core.userform.form.UserFormForm;
-import com.agnitas.emm.core.userform.form.UserFormsForm;
-import com.agnitas.emm.core.userform.service.ComUserformService;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.core.velocity.scriptvalidator.IllegalVelocityDirectiveException;
+import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
+import org.agnitas.emm.core.velocity.scriptvalidator.VelocityDirectiveScriptValidator;
+import org.agnitas.service.FormImportResult;
 import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.UserFormImporter;
 import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.web.forms.BulkActionFrom;
+import org.agnitas.util.HttpUtils;
+import org.agnitas.web.forms.BulkActionForm;
 import org.agnitas.web.forms.FormUtils;
+import org.agnitas.web.forms.SimpleActionForm;
 import org.agnitas.web.forms.WorkflowParameters;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,11 +48,28 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.LinkService;
+import com.agnitas.emm.core.action.service.ComEmmActionService;
+import com.agnitas.emm.core.userform.dto.ResultSettings;
+import com.agnitas.emm.core.userform.dto.UserFormDto;
+import com.agnitas.emm.core.userform.form.UserFormForm;
+import com.agnitas.emm.core.userform.form.UserFormsForm;
+import com.agnitas.emm.core.userform.service.ComUserformService;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping("/webform")
-@PermissionMapping("userformNew")
-@SuppressWarnings("all")
+@PermissionMapping("userform")
 public class UserFormController {
 	
 	private static final Logger logger = Logger.getLogger(UserFormController.class);
@@ -56,18 +80,22 @@ public class UserFormController {
 	private ConfigService configService;
 	private UserActivityLogService userActivityLogService;
 	private ExtendedConversionService conversionService;
-	
-	public UserFormController(WebStorage webStorage, ComUserformService userformService,
-			ComEmmActionService emmActionService, ConfigService configService,
-			UserActivityLogService userActivityLogService, ExtendedConversionService conversionService) {
+    private LinkService linkService;
+	private VelocityDirectiveScriptValidator velocityValidator;
+	private UserFormImporter userFormImporter;
+
+	public UserFormController(WebStorage webStorage, ComUserformService userformService, ComEmmActionService emmActionService, ConfigService configService, UserActivityLogService userActivityLogService, ExtendedConversionService conversionService, LinkService linkService, VelocityDirectiveScriptValidator velocityValidator, UserFormImporter userFormImporter) {
 		this.webStorage = webStorage;
 		this.userformService = userformService;
 		this.emmActionService = emmActionService;
 		this.configService = configService;
 		this.userActivityLogService = userActivityLogService;
 		this.conversionService = conversionService;
+		this.linkService = linkService;
+		this.velocityValidator = velocityValidator;
+		this.userFormImporter = userFormImporter;
 	}
-	
+
 	@RequestMapping("/list.action")
 	public String list(ComAdmin admin, @ModelAttribute("form") UserFormsForm form, Model model, Popups popups) {
 		try {
@@ -77,21 +105,26 @@ public class UserFormController {
 			PaginatedListImpl<UserFormDto> userFormList = userformService
 					.getUserFormsWithActionData(admin, form.getSort(), form.getOrder(), form.getPage(), form.getNumberOfRows(), form.getFilter());
 			model.addAttribute("userFormList", userFormList);
-			
-			model.addAttribute("userFormURLPattern", AgnUtils.getUserFormUrlPattern(admin));
+
+			loadUserFormUrlPatterns(admin, model);
 		} catch (Exception e) {
 			logger.error("Getting user form list failed!", e);
 			popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
 		}
 		
-		return "userform_list_new";
+		return "userform_list";
 	}
-	
+
+	private void loadUserFormUrlPatterns(ComAdmin admin, Model model) {
+		model.addAttribute("userFormURLPattern", userformService.getUserFormUrlPattern(admin, false));
+		model.addAttribute("userFormFullURLPattern", userformService.getUserFormUrlPattern(admin, true));
+	}
+
 	@PostMapping("/saveActiveness.action")
 	public String saveActiveness(ComAdmin admin, @ModelAttribute("form") UserFormsForm form, Popups popups) {
 		UserAction userAction = userformService.setActiveness(admin.getCompanyID(), form.getActiveness());
 		if (Objects.nonNull(userAction)) {
-			writeUserActivityLog(admin, userAction, logger);
+			writeUserActivityLog(admin, userAction);
 			popups.success("default.changes_saved");
 		}
 		
@@ -100,69 +133,257 @@ public class UserFormController {
 	
 	@GetMapping(value = {"/new.action", "/0/view.action"})
 	public String create(ComAdmin admin, @ModelAttribute("form") UserFormForm form, Model model, WorkflowParameters workflowParams) {
-		logger.error("Create new form");
-		
-		model.addAttribute("userFormURLPattern", AgnUtils.getUserFormUrlPattern(admin));
+		int forwardedId = workflowParams.getTargetItemId();
+        if(forwardedId > 0) {
+            return "redirect:/webform/" + forwardedId + "/view.action";
+        }
+
+		loadUserFormUrlPatterns(admin, model);
 		List<EmmAction> emmActions = emmActionService.getEmmNotLinkActions(admin.getCompanyID(), false);
 		model.addAttribute("emmActions", emmActions);
 		
-		return "userform_view_new";
+		return "userform_view";
 	}
 	
 	@GetMapping("/{id:\\d+}/view.action")
 	public String view(ComAdmin admin, @PathVariable int id,
 			@ModelAttribute("form") UserFormForm form, Model model, Popups popups, WorkflowParameters workflowParams) {
 		try {
+			if (id == 0 && workflowParams.getTargetItemId() > 0) {
+         	   id = workflowParams.getTargetItemId();
+        	}
+
 			UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), id);
 			model.addAttribute("form", conversionService.convert(userForm, UserFormForm.class));
 
-			model.addAttribute("userFormURLPattern", AgnUtils.getUserFormUrlPattern(admin));
-			
+			loadUserFormUrlPatterns(admin, model);
+
 			List<EmmAction> emmActions = emmActionService.getEmmNotLinkActions(admin.getCompanyID(), false);
 			model.addAttribute("emmActions", emmActions);
 			
-			writeUserActivityLog(admin, "view user form", String.format("%s (ID:%d)", userForm.getName(), userForm.getId()), logger);
+			writeUserActivityLog(admin, "view user form", String.format("%s (ID:%d)", userForm.getName(), userForm.getId()));
 		} catch (Exception e) {
 			popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
 		}
-		return "userform_view_new";
+		return "userform_view";
+	}
+	
+	@PostMapping("/save.action")
+	public String save(ComAdmin admin, @ModelAttribute("form") UserFormForm form, Model model, Popups popups, WorkflowParameters workflowParams) {
+		try {
+			if (validate(admin, form, popups)) {
+				boolean update = form.getFormId() > 0;
+				UserFormDto userFormDto = conversionService.convert(form, UserFormDto.class);
+				ServiceResult<Integer> result = userformService.saveUserForm(admin, userFormDto);
+
+				int formId = result.getResult();
+
+				if (result.isSuccess()) {
+					popups.success("default.changes_saved");
+				}
+
+				if (CollectionUtils.isNotEmpty(result.getErrorMessages())) {
+					result.getErrorMessages().forEach(popups::alert);
+				}
+
+				if (formId > 0) {
+					writeUserActivityLog(admin, (update ? "edit user form" : "create user form"),
+							String.format("%s (%d)", userFormDto.getName(), formId));
+
+					return String.format("redirect:/webform/%d/view.action", formId);
+				}
+			}
+		} catch (Exception e) {
+			popups.alert("Error");
+		}
+		return "messages";
+	}
+
+	private List<Message> validateSettings(ResultSettings settings) throws ScriptValidationException {
+        String type = settings.isSuccess() ? "SUCCESS" : "ERROR";
+        List<Message> errors = new ArrayList<>();
+        try {
+			velocityValidator.validateScript(settings.getTemplate());
+		} catch (IllegalVelocityDirectiveException e) {
+            errors.add(new Message("error.form.illegal_directive", new Object[]{e.getDirective()}));
+            return errors;
+		}
+
+        int invalidLineNumber = linkService.getLineNumberOfFirstInvalidLink(settings.getTemplate());
+        if (invalidLineNumber != -1) {
+            errors.add(new Message("error.invalid_link", new Object[]{type, invalidLineNumber}));
+        }
+
+        return errors;
+    }
+	
+	private boolean validate(ComAdmin admin, UserFormForm form, Popups popups) throws Exception {
+		if (!userformService.isValidFormName(form.getFormName())) {
+			popups.alert("error.form.invalid_name");
+		} else if (!userformService.isFormNameUnique(form.getFormName(), form.getFormId(), admin.getCompanyID())) {
+			popups.alert("error.form.name_in_use");
+		}
+
+		List<Message> errors = validateSettings(form.getSuccessSettings());
+        errors.addAll(validateSettings(form.getErrorSettings()));
+
+		return !popups.hasAlertPopups();
 	}
 	
 	@GetMapping("/import.action")
-	public String importForm(ComAdmin admin) {
-		logger.error("Import form");
-		return "";
+	@PermissionMapping("import")
+	public String importFormView(ComAdmin admin, @RequestParam(value = "importTemplate", required = false) boolean templateOverview) {
+		return templateOverview ? "import_view" : "userform_import";
 	}
-	
-	@GetMapping("/{id:\\d+}/export.action")
-	public String exportForm(ComAdmin admin, @PathVariable int id) {
-		logger.error("Import form");
-		return "";
+
+
+	@PostMapping("/importUserForm.action")
+	@PermissionMapping("import")
+	public String importForm(ComAdmin admin, @RequestParam(value = "importTemplate") boolean templateOverview,
+							 @RequestParam(value = "uploadFile") MultipartFile uploadFile, Popups popups) {
+		if (uploadFile.isEmpty()) {
+        	popups.alert("error.file.missingOrEmpty");
+			return "messages";
+		}
+
+        FormImportResult result;
+        try (InputStream input = uploadFile.getInputStream()) {
+            // Import userform data from upload file
+            result = userFormImporter.importUserForm(admin, input);
+
+            if (result.isSuccess()) {
+            	popups.success("userform.imported");
+				for (Map.Entry<String, Object[]> warningEntry : result.getWarnings().entrySet()) {
+					popups.warning(warningEntry.getKey(), warningEntry.getValue());
+				}
+
+            	writeUserActivityLog(admin, "import userform", String.format("%s (%d)", result.getUserFormName(), result.getUserFormID()));
+				return String.format("redirect:/webform/%d/view.action", result.getUserFormID());
+			} else {
+            	for (Map.Entry<String, Object[]> errorEntry : result.getErrors().entrySet()) {
+					popups.alert(errorEntry.getKey(), errorEntry.getValue());
+				}
+			}
+        } catch (Exception e) {
+            logger.error("Mailing import failed", e);
+            popups.alert("error.userform.import");
+        }
+
+		return "messages";
+	}
+
+	@GetMapping(value = "/{id:\\d+}/export.action")
+	@PermissionMapping("export")
+	public Object exportForm(ComAdmin admin, @PathVariable int id, Popups popups) {
+		int companyId = admin.getCompanyID();
+
+		String userFormName = userformService.getUserFormName(id, companyId);
+        File exportedFile = userformService.exportUserForm(admin, id, userFormName);
+
+        if (exportedFile == null) {
+            popups.alert("error.userform.export");
+			return String.format("redirect:/webform/%d/view.action", id);
+        }
+
+        String downloadFileName = String.format("UserForm_%s_%d_%d.json",
+				StringUtils.replace(userFormName, "/", "_"), companyId, id);
+
+        writeUserActivityLog(admin, new UserAction("export user form", String.format("%s (%d)", userFormName, id)));
+        return ResponseEntity.ok()
+                .contentLength(exportedFile.length())
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionHeaderContent(downloadFileName))
+                .body(new DeleteFileAfterSuccessReadResource(exportedFile));
 	}
 	
 	@GetMapping("/{id:\\d+}/clone.action")
-	public String clone(ComAdmin admin, @PathVariable int id) {
-		logger.error("Clone form");
-		return "";
+	public String clone(ComAdmin admin, @PathVariable int id, Popups popups) {
+		try {
+			ServiceResult<Integer> result = userformService.cloneUserForm(admin, id);
+			if (CollectionUtils.isNotEmpty(result.getErrorMessages())) {
+				result.getErrorMessages().forEach(popups::alert);
+			}
+
+			int cloneId = result.getResult();
+			if (cloneId > 0) {
+				String formName = userformService.getUserFormName(id, admin.getCompanyID());
+				writeUserActivityLog(admin, "cloned user form", String.format("%s (%d)", formName, id));
+
+				return String.format("redirect:/webform/%d/view.action", cloneId);
+			} else {
+				logger.error("Result clone ID is wrong");
+			}
+		} catch (Exception e) {
+			logger.error("Could not clone web form ID:" + id, e);
+		}
+
+		popups.alert("Error");
+		return "messages";
 	}
 	
 	@PostMapping("/confirmBulkDelete.action")
-	public String confirmBulkDelete(ComAdmin admin, BulkActionFrom form) {
-		logger.error("Bulk confirm delete");
-		return "";
+	public String confirmBulkDelete(@ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
+		if (CollectionUtils.isEmpty(form.getBulkIds())) {
+			popups.alert("bulkAction.nothing.userform");
+			return "messages";
+		}
+		return "userform_bulk_delete_ajax";
 	}
+
+	@RequestMapping(value = "/bulkDelete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    public String bulkDelete(ComAdmin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
+        if(form.getBulkIds().isEmpty()) {
+            popups.alert("bulkAction.nothing.userform");
+            return "messages";
+        }
+
+        List<UserFormDto> deletedUserForms = userformService.bulkDeleteUserForm(form.getBulkIds(), admin.getCompanyID());
+
+        if (CollectionUtils.isNotEmpty(deletedUserForms)) {
+			for (UserFormDto userForm : deletedUserForms) {
+				writeUserActivityLog(admin, "delete user form",
+						String.format("%s(%d)", userForm.getName(), userForm.getId()));
+			}
+
+			popups.success("default.selection.deleted");
+			return "redirect:/webform/list.action";
+		}
+
+        popups.alert("Error");
+        return "messages";
+    }
 	
 	@GetMapping("/{id:\\d+}/confirmDelete.action")
-	public String confirmDelete(ComAdmin admin, @PathVariable int id) {
-		logger.error("Confirm delete userform with ID: " + id);
-		return "";
+	public String confirmDelete(ComAdmin admin, @PathVariable int id, @ModelAttribute("simpleActionForm") SimpleActionForm form, Popups popups) {
+		UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), id);
+		if (userForm != null) {
+			form.setId(userForm.getId());
+			form.setShortname(userForm.getName());
+
+			return "userform_delete_ajax_new";
+		}
+
+		popups.alert("Error");
+		return "messages";
+	}
+
+    @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    public String delete(ComAdmin admin, SimpleActionForm form, Popups popups) {
+        if (userformService.deleteUserForm(form.getId(), admin.getCompanyID())) {
+			writeUserActivityLog(admin, "delete user form", String.format("ID: %d", form.getId()));
+			popups.success("default.selection.deleted");
+			return "redirect:/webform/list.action";
+		}
+
+        popups.alert("Error");
+        return "messages";
+    }
+	
+	private void writeUserActivityLog(ComAdmin admin, String action, String description) {
+		writeUserActivityLog(admin, new UserAction(action, description));
 	}
 	
-	private void writeUserActivityLog(ComAdmin admin, String action, String description, Logger logger) {
-		writeUserActivityLog(admin, new UserAction(action, description), logger);
-	}
-	
-	private void writeUserActivityLog(ComAdmin admin, UserAction userAction, Logger logger) {
+	private void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
 		if (userActivityLogService != null) {
 			userActivityLogService.writeUserActivityLog(admin, userAction, logger);
 		} else {

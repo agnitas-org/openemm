@@ -11,7 +11,7 @@
 package com.agnitas.emm.core.admin.service.impl;
 
 import java.sql.Timestamp;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.Company;
 import org.agnitas.beans.EmmLayoutBase;
 import org.agnitas.beans.impl.AdminEntryImpl;
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -159,7 +159,7 @@ public class AdminServiceImpl implements AdminService {
 	@Override
 	public Optional<ComAdmin> getAdminByName(final String username) {
 		try {
-			final ComAdmin admin = this.adminDao.getAdmin(username);
+			final ComAdmin admin = adminDao.getAdmin(username);
 			
 			return Optional.of(admin);
 		} catch(final Exception e) {
@@ -314,8 +314,8 @@ public class AdminServiceImpl implements AdminService {
 			return ServiceResult.error();
 		}
 		final ComCompany company = (ComCompany) admin.getCompany();
-		if(company != null && company.getStatAdmin() == adminId && Company.STATUS_ACTIVE.equals(company.getStatus())) {
-			return new ServiceResult<>(admin, false, Message.of("GWUA.error.admin.executive", company.getShortname()));
+		if(company != null && company.getStatAdmin() == adminId && CompanyStatus.ACTIVE == company.getStatus()) {
+			return new ServiceResult<>(admin, false, Message.of("error.admin.delete.executive", company.getShortname()));
 		}
 
 		return ServiceResult.success(admin);
@@ -363,7 +363,6 @@ public class AdminServiceImpl implements AdminService {
 	public AdminSavingResult saveAdmin(AdminForm form, ComAdmin editorAdmin) {
 		int savingAdminID = form.getAdminID();
 		int savingCompanyID = form.getCompanyID();
-		int savingGroupID = form.getGroupID();
 		int editorCompanyID = editorAdmin.getCompanyID();
 
 		if (savingCompanyID != editorCompanyID) {
@@ -403,8 +402,12 @@ public class AdminServiceImpl implements AdminService {
 			logger.info("Username: " + form.getUsername() + " PasswordLength: " + form.getPassword().length());
 		}
 
-		AdminGroup group = adminGroupDao.getAdminGroup(savingGroupID, savingCompanyID);
-		savingAdmin.setGroup(group);
+		List<AdminGroup> adminGroups = new ArrayList<>();
+		for (int groupId : form.getGroupIDs()) {
+			AdminGroup group = adminGroupDao.getAdminGroup(groupId, savingCompanyID);
+			adminGroups.add(group);
+		}
+		savingAdmin.setGroups(adminGroups);
 		map(savingAdmin, form, editorAdmin);
 
 		final AdminPreferences formAdminPreferences = form.getAdminPreferences();
@@ -444,24 +447,21 @@ public class AdminServiceImpl implements AdminService {
 		ComAdmin savingAdmin = adminDao.getAdmin(savingAdminID, companyID);
 
 		Map<String, Boolean> permissionChangeable = new HashMap<>();
-
-		List<String> standardCategories = Arrays.asList(Permission.ORDERED_STANDARD_RIGHT_CATEGORIES);
 		
 		Set<Permission> companyPermissions = companyDao.getCompanyPermissions(savingAdmin.getCompanyID());
 
-		for (Map.Entry<Permission, String> permissionEntry : permissionService.getAllPermissionsAndCategories(savingAdmin.getCompanyID()).entrySet()) {
-			String categoryName = permissionEntry.getValue();
-			Permission permission = permissionEntry.getKey();
+		for (Permission permission : permissionService.getAllPermissions()) {
 			String permissionName = permission.toString();
 			boolean isChangeable;
-			if (savingAdmin.getGroup().permissionAllowed(companyID, permission)) {
+			
+			if (savingAdmin.permissionAllowedByGroups(permission)) {
 				isChangeable = false;
-			} else if (standardCategories.contains(categoryName)) {
-				isChangeable = true;
 			} else if (permission.isPremium()) {
 				isChangeable = companyPermissions.contains(permission);
-			} else {
+			} else if (Permission.CATEGORY_KEY_SYSTEM.equals(permission.getCategory())) {
 				isChangeable = editorAdmin.permissionAllowed(permission) || editorAdmin.permissionAllowed(Permission.MASTER_SHOW) || editorAdmin.getAdminID() == 1;
+			} else {
+				isChangeable = true;
 			}
 			permissionChangeable.put(permissionName, isChangeable);
 		}
@@ -476,10 +476,10 @@ public class AdminServiceImpl implements AdminService {
 			if (!permissionChangeable.getOrDefault(permissionToken, false)) {
 				Permission permission = Permission.getPermissionByToken(permissionToken);
 				String category = permission.getCategory();
-				if (Permission.CATEGORY_KEY_SYSTEM.equals(category) || Permission.CATEGORY_KEY_OTHERS.equals(category)) {
+				if (Permission.CATEGORY_KEY_SYSTEM.equals(category)) {
 					// User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
 					removedPermissions.remove(permissionToken);
-				} else if (savingAdmin.getGroup().permissionAllowed(companyID, permission)) {
+				} else if (savingAdmin.permissionAllowedByGroups(permission)) {
 					// Group permissions must be changed via group GUI, so they are visible but not disabled in admin GUI, so keep it unchanged
 					removedPermissions.remove(permissionToken);
 				} else if (permission.isPremium() && !companyPermissions.contains(permission)) {
@@ -499,7 +499,7 @@ public class AdminServiceImpl implements AdminService {
 			if (!permissionChangeable.getOrDefault(permissionToken, false)) {
 				Permission permission = Permission.getPermissionByToken(permissionToken);
 				String category = permission.getCategory();
-				if (Permission.CATEGORY_KEY_SYSTEM.equals(category) || Permission.CATEGORY_KEY_OTHERS.equals(category)) {
+				if (Permission.CATEGORY_KEY_SYSTEM.equals(category)) {
 					// User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
 					addedPermissions.remove(permissionToken);
 				} else {
@@ -577,8 +577,8 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public List<AdminGroup> getAdminGroups(@VelocityCheck int companyID) {
-		return adminGroupDao.getAdminGroupsByCompanyIdAndDefault(companyID);
+	public List<AdminGroup> getAdminGroups(@VelocityCheck int companyID, ComAdmin admin) {
+		return adminGroupDao.getAdminGroupsByCompanyIdAndDefault(companyID, admin.getGroupIds());
 	}
 	
 	@Override
@@ -689,12 +689,10 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(ComAdmin admin, ComAdmin adminToEdit) {
 		PermissionsOverviewData.Builder builder = PermissionsOverviewData.builder();
-	
 		builder.setAdmin(admin);
 		builder.setAdminToEdit(adminToEdit);
 		builder.setVisiblePermissions(permissionFilter.getAllVisiblePermissions());
 		builder.setCompanyPermissions(companyDao.getCompanyPermissions(adminToEdit.getCompanyID()));
-		builder.setNewPermissionManagement("new".equalsIgnoreCase(ConfigService.getInstance().getValue(ConfigValue.PermissionSystem, admin.getCompanyID())));
 		
 		return builder.build().getPermissionsCategories();
     }
@@ -707,6 +705,12 @@ public class AdminServiceImpl implements AdminService {
 	@Override
 	public List<EmmLayoutBase> getEmmLayoutsBase(@VelocityCheck final int companyID) {
 		return emmLayoutBaseDao.getEmmLayoutsBase(companyID);
+	}
+
+	@Override
+	public boolean isDarkmodeEnabled(final ComAdmin admin) {
+		final EmmLayoutBase layout = emmLayoutBaseDao.getEmmLayoutBase(admin.getCompanyID(), admin.getLayoutBaseID());
+		return layout.getThemeType() == EmmLayoutBase.ThemeType.DARK_MODE;
 	}
 
 	@Override
@@ -771,5 +775,10 @@ public class AdminServiceImpl implements AdminService {
 		target.setAdminPhone(sourceForm.getAdminPhone());
 
 		mapExtendedFields(target, sourceForm, editorAdmin);
+	}
+
+	@Override
+	public int getAccessLimitTargetId(ComAdmin admin) {
+		return 0;
 	}
 }

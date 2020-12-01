@@ -17,10 +17,10 @@ import java.util.Vector;
 import org.agnitas.beans.Mailloop;
 import org.agnitas.dao.MailloopDao;
 import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComMailing;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
@@ -34,7 +34,6 @@ import com.agnitas.emm.core.mailloop.service.MailloopService;
 /**
  * Implementation of {@link MailloopService}.
  */
-@Deprecated
 public class MailloopServiceImpl implements MailloopService {
 
 	/** The logger. */
@@ -100,7 +99,7 @@ public class MailloopServiceImpl implements MailloopService {
 
 		assert(autoresponderMailingId > 0);		// Satisfied due to previous checks
 
-		final ComMailing mailing = (ComMailing) this.mailingDao.getMailing(autoresponderMailingId, mailloop.getCompanyID());
+		final LightweightMailing mailing = mailingDao.getLightweightMailing(mailloop.getCompanyID(), autoresponderMailingId);
 
 		final List<Integer> allowedUserStatusList = createUserStatusList();
 		final Map<String, String> overwriteMailgunOptions = null;				// Currently no mailgun option is overwritten
@@ -110,7 +109,8 @@ public class MailloopServiceImpl implements MailloopService {
 			mailgunOptions.withForceSending(true);
 			mailgunOptions.withAllowedUserStatus(allowedUserStatusList);
 			mailgunOptions.withProfileFieldValues(overwriteMailgunOptions);
-			sendActionbasedMailingService.sendActionbasedMailing(mailing.getCompanyID(), mailing.getId(), customerID, 0, mailgunOptions);
+			mailgunOptions.withForceSending(true);
+			sendActionbasedMailingService.sendActionbasedMailing(mailing.getCompanyID(), mailing.getMailingID(), customerID, 0, mailgunOptions);
 		} catch(final SendActionbasedMailingException e) {
 			logger.error("Error sending auto-responder", e);
 			throw new UnableToSendAutoresponderMailingException(autoresponderMailingId, customerID, mailloop.getId(), e);

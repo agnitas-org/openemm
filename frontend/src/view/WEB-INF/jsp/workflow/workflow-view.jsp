@@ -7,8 +7,9 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.impl.WorkflowDeadlineImpl" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus" %>
 <%@ page import="org.agnitas.beans.Recipient" %>
-<%@ page import="org.agnitas.target.TargetNode" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
+<%@ page import="org.agnitas.target.ConditionalOperator" %>
+<%@ page import="org.agnitas.target.ChainOperator" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
@@ -33,9 +34,9 @@
 <c:set var="STATUS_TESTED" value="<%= WorkflowStatus.STATUS_TESTED %>" scope="page"/>
 <c:set var="quote" value="'" />
 <c:set var="quoteReplace" value="\\'" />
-<c:set var="CHAIN_OPERATOR_AND" value="<%= TargetNode.CHAIN_OPERATOR_AND %>"/>
-<c:set var="CHAIN_OPERATOR_OR" value="<%= TargetNode.CHAIN_OPERATOR_OR %>"/>
-<c:set var="OPERATOR_IS" value="<%= TargetNode.OPERATOR_IS.getOperatorCode() %>"/>
+<c:set var="CHAIN_OPERATOR_AND" value="<%= ChainOperator.AND.getOperatorCode() %>"/>
+<c:set var="CHAIN_OPERATOR_OR" value="<%= ChainOperator.OR.getOperatorCode() %>"/>
+<c:set var="OPERATOR_IS" value="<%= ConditionalOperator.IS.getOperatorCode() %>"/>
 
 <c:set var="FORWARD_TARGETGROUP_CREATE" value="<%= WorkflowController.FORWARD_TARGETGROUP_CREATE_QB%>"/>
 <c:set var="FORWARD_TARGETGROUP_EDIT" value="<%= WorkflowController.FORWARD_TARGETGROUP_EDIT_QB%>"/>
@@ -158,15 +159,15 @@
                 "<%= Recipient.GENDER_UNKNOWN %>": "Unknown"
             },
             "chainOperatorOptions": {
-                "<%= TargetNode.CHAIN_OPERATOR_AND %>": "<bean:message key="default.and"/>",
-                "<%= TargetNode.CHAIN_OPERATOR_OR %>": "<bean:message key="default.or"/>"
+                "<%= ChainOperator.AND.getOperatorCode() %>": "<bean:message key="default.and"/>",
+                "<%= ChainOperator.OR.getOperatorCode() %>": "<bean:message key="default.or"/>"
             },
             "operators": [
                  <c:forEach items="${operators}"  var="operator" varStatus="index">
                     <c:set var="types" value="${operatorsTypeSupportMap[operator]}"/>
                 {
                     "id": "${operator.operatorCode}",
-                    "text": "${operator.operatorSymbol}",
+                    "text": "${operator.eqlSymbol}",
                     "data": {
                         "types": "${empty types ? '' : types}"
                     }
@@ -175,7 +176,7 @@
             ],
             "operatorsMap": {
                 <c:forEach items="${operators}"  var="operator" varStatus="index">
-                  "${operator.operatorCode}": "${operator.operatorSymbol}"${!index.last ? ',':''}
+                  "${operator.operatorCode}": "${operator.eqlSymbol}"${!index.last ? ',':''}
                 </c:forEach>
             },
             "mailingThumbnailURL" : "<c:url value='/workflow/getMailingThumbnail.action'/>",
@@ -212,7 +213,8 @@
             "allUserForms":${emm:toJson(allForms)},
             "allAutoExports" :${emm:toJson(autoExports)},
             "allAutoImports" :${emm:toJson(allImports)},
-            "allCampaigns":${emm:toJson(allCampaigns)}
+            "allCampaigns":${emm:toJson(allCampaigns)},
+            "mailingThumbnailURL" : "<c:url value='/workflow/getMailingThumbnail.action'/>"
         }
     </script>
 
@@ -388,7 +390,6 @@
     </div>
 
     <mvc:form servletRelativeAction="/workflow/save.action" cssClass="form-vertical" id="workflowForm"  modelAttribute="workflowForm" data-form="resource">
-    <%--<input type="hidden" name="method" value="save" id="action_method"/>--%>
     <input type="hidden" name="workflowId" value="${workflowForm.workflowId}"/>
     <input type="hidden" name="schema" id="schema" value=""/>
     <input type="hidden" name="editorPositionTop" id="editorPositionTop" value=""/>
@@ -599,7 +600,7 @@
                             </div>
                         </div>
 
-                        <emm:ShowByPermission token="workflow.edit">
+                        <emm:ShowByPermission token="workflow.change">
                             <div class="actionPanelTool">
                                 <div class="actionPanelTitle"><bean:message key="button.Delete"/></div>
                                 <div id="deleteButton" class="toolbarButton"></div>
@@ -647,7 +648,7 @@
                                     </button>
                                 </li>
 
-                                <emm:ShowByPermission token="workflow.edit">
+                                <emm:ShowByPermission token="workflow.change">
                                     <li>
                                             <%-- Disabled by default — initially no icon is selected --%>
                                         <button type="button" id="deleteItem" disabled="disabled">

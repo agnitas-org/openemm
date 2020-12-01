@@ -11,5 +11,15 @@
 package com.agnitas.dao;
 
 public interface AnonymizeStatisticsDao {
-	void anonymizeStatistics(int companyID) throws Exception;
+
+	/**
+	 * Anonymizes statistics for all recipients. If <code>anonymizeAll</code> is <code>true</code>, statistics of
+	 * all recipients (independently from SYS_TRACKING_VETO value) will be anonymized.
+	 * 
+	 * @param companyID ID of company
+	 * @param anonymizeAll if <code>true</code> statistics of all recipients will be anonymized
+	 * 
+	 * @throws Exception on errors during processing
+	 */
+	void anonymizeStatistics(int companyID, final boolean anonymizeAll) throws Exception;
 }

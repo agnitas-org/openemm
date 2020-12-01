@@ -29,6 +29,7 @@ import com.agnitas.beans.ComCompany;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationIdentifyCustomerParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
@@ -116,7 +117,12 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
         return true;
 	}
 
-	@Required
+    @Override
+    public ActionOperationType processedType() {
+        return ActionOperationType.IDENTIFY_CUSTOMER;
+    }
+
+    @Required
 	public final void setCompanyDao(final ComCompanyDao dao) {
 		this.companyDao = Objects.requireNonNull(dao, "Company DAO cannot be null");
 	}

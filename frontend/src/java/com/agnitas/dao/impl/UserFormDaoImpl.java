@@ -15,13 +15,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.userform.service.UserFormFilter;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -30,12 +25,14 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.UserFormDao;
+import com.agnitas.emm.core.commons.ActivenessStatus;
+import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.bean.impl.UserFormImpl;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
@@ -46,7 +43,9 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(UserFormDaoImpl.class);
 
-    @Override
+	private FormTrackableLinkDao trackableLinkDao;
+
+	@Override
     public List<UserForm> getUserForms(@VelocityCheck int companyID) {
     	List<UserForm> comList = select(logger,
 				"SELECT form_id, company_id, formname, description, creation_date, change_date, active  " +
@@ -57,28 +56,27 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 
     @Override
 	public List<Tuple<Integer, String>> getUserFormNamesByActionID(int companyID, int actionID) {
-		return select(logger, "SELECT form_id, formname FROM userform_tbl WHERE company_id = ? AND (startaction_id = ? OR endaction_id = ?) ORDER BY  LOWER(formname)",
+		return select(logger, "SELECT form_id, formname FROM userform_tbl WHERE company_id = ? AND (startaction_id = ? OR endaction_id = ?) ORDER BY LOWER(formname)",
 				(resultSet, i) -> new Tuple<>(resultSet.getInt("form_id"), resultSet.getString("formname")),
 				companyID, actionID, actionID);
 	}
-    
+
+    @Override
+	public List<Tuple<Integer, String>> getImportNamesByActionID(int companyID, int actionID) {
+		return select(logger, "SELECT id, shortname FROM import_profile_tbl WHERE company_id = ? AND action_for_new_recipients = ? ORDER BY LOWER(shortname)",
+				(resultSet, i) -> new Tuple<>(resultSet.getInt("id"), resultSet.getString("shortname")),
+				companyID, actionID);
+	}
+
 	@Override
-	public UserForm getUserForm(int formID, @VelocityCheck int companyID) throws Exception {
-		if (formID == 0 || companyID == 0) {
+	public UserForm getUserForm(int formID, @VelocityCheck int companyID) {
+		String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active "
+				+ " FROM userform_tbl WHERE form_id = ? AND company_id = ?";
+		try {
+			return selectObject(logger, sql, new UserForm_RowMapper(), formID, companyID);
+		} catch (EmptyResultDataAccessException e) {
+            logger.error("User form not found", e);
 			return null;
-		} else {
-			String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active "
-					+ " FROM userform_tbl WHERE form_id = ? AND company_id = ?";
-			List<UserForm> userFormList = select(logger, sql, new UserForm_RowMapper(), formID, companyID);
-			if (userFormList == null || userFormList.size() < 1) {
-				return null;
-			} else if (userFormList.size() > 1) {
-				throw new Exception("Invalid number of UserForm items found by id " + formID);
-			} else {
-				UserForm form = userFormList.get(0);
-				form.setTrackableLinks(getUserFormTrackableLinks(formID, companyID));
-				return form;
-			}
 		}
 	}
 
@@ -96,7 +94,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 				throw new Exception("Invalid number of UserForm items found by name " + name);
 			} else {
 				UserForm form = userFormList.get(0);
-				form.setTrackableLinks(getUserFormTrackableLinks(form.getId(), companyID));
+				form.setTrackableLinks(trackableLinkDao.getUserFormTrackableLinks(form.getId(), companyID));
 				return form;
 			}
 		}
@@ -113,39 +111,6 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	}
 
 	@Override
-	public Map<String, ComTrackableUserFormLink> getUserFormTrackableLinks(int formID, @VelocityCheck int companyID) {
-		String usage = isOracleDB() ? "usage" : "`usage`";
-		String sql = "SELECT company_id, form_id, url_id, action_id, " + usage + ", full_url, shortname, relevance, deep_tracking FROM rdir_url_userform_tbl WHERE form_id = ? AND company_id = ? AND LOWER(full_url) != 'form'";
-
-		List<ComTrackableUserFormLink> list = select(logger, sql, new ComTrackableUserFormLink_RowMapper(), formID, companyID);
-
-		HashMap<String, ComTrackableUserFormLink> listTrackableUserFormLink = new HashMap<>();
-		for (ComTrackableUserFormLink trackableUserFormLink : list) {
-			List<LinkProperty> linkProperties = getUserFormTrackableLinkProperties(trackableUserFormLink);
-			trackableUserFormLink.setProperties(linkProperties);
-			
-			listTrackableUserFormLink.put(trackableUserFormLink.getFullUrl(), trackableUserFormLink);
-		}
-		return listTrackableUserFormLink;
-	}
-
-	@Override
-	public ComTrackableUserFormLink getDummyUserFormTrackableLinkForStatisticCount(@VelocityCheck int companyID, int formID) throws Exception {
-		String usage = isOracleDB() ? "usage" : "`usage`";
-		String sql = "SELECT company_id, form_id, url_id, action_id, " + usage + ", full_url, shortname, relevance, deep_tracking FROM rdir_url_userform_tbl WHERE company_id = ? AND form_id = ? AND LOWER(full_url) = 'form'";
-
-		List<ComTrackableUserFormLink> list = select(logger, sql, new ComTrackableUserFormLink_RowMapper(), companyID, formID);
-
-		if  (list == null || list.size() > 1) {
-			throw new Exception("Unexpected result in getDummyUserFormTrackableLinkForStatisticCount");
-		} else if (list.size() == 0) {
-			return null;
-		} else {
-			return list.get(0);
-		}
-	}
-
-	@Override
 	@DaoUpdateReturnValueCheck
 	public int storeUserForm(UserForm userForm) throws Exception {
 		if (getUserForm(userForm.getId(), userForm.getCompanyID()) != null) {
@@ -155,7 +120,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 			if (userForm.getTrackableLinks() != null) {
 				for (ComTrackableUserFormLink link : userForm.getTrackableLinks().values()) {
 					link.setFormID(userForm.getId());
-					storeUserFormTrackableLink(link);
+					trackableLinkDao.saveUserFormTrackableLink(link.getFormID(), link.getCompanyID(), link);
 				}
 			}
 		} else {
@@ -190,22 +155,104 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 			if (userForm.getTrackableLinks() != null) {
 				for (ComTrackableUserFormLink link : userForm.getTrackableLinks().values()) {
 					link.setFormID(userForm.getId());
-					storeUserFormTrackableLink(link);
+					trackableLinkDao.saveUserFormTrackableLink(link.getFormID(), link.getCompanyID(), link);
 				}
 			}
 		}
 		
-		ComTrackableUserFormLink userFormStaticsticCountDummyLink = getDummyUserFormTrackableLinkForStatisticCount(userForm.getCompanyID(), userForm.getId());
-		if (userFormStaticsticCountDummyLink == null) {
-			userFormStaticsticCountDummyLink = new ComTrackableUserFormLinkImpl();
-			userFormStaticsticCountDummyLink.setCompanyID(userForm.getCompanyID());
-			userFormStaticsticCountDummyLink.setFormID(userForm.getId());
-			userFormStaticsticCountDummyLink.setFullUrl("Form");
-			storeUserFormTrackableLink(userFormStaticsticCountDummyLink);
+		ComTrackableUserFormLink dummyLink =
+				trackableLinkDao.getDummyUserFormTrackableLinkForStatisticCount(userForm.getCompanyID(), userForm.getId());
+		if (dummyLink == null) {
+			dummyLink = new ComTrackableUserFormLinkImpl();
+			dummyLink.setCompanyID(userForm.getCompanyID());
+			dummyLink.setFormID(userForm.getId());
+			dummyLink.setFullUrl("Form");
+			trackableLinkDao.saveUserFormTrackableLink(dummyLink.getFormID(), dummyLink.getCompanyID(), dummyLink);
 		}
 		return userForm.getId();
 	}
-
+	
+	@Override
+	public int createUserForm(@VelocityCheck int companyId, UserForm userForm) {
+    	int userFormId;
+		if (isOracleDB()) {
+			userFormId = selectInt(logger, "SELECT userform_tbl_seq.NEXTVAL FROM DUAL");
+			String sql = "INSERT INTO userform_tbl ("
+					+ "form_id, "
+					+ "company_id, "
+					+ "formname, "
+					+ "description, "
+					+ "success_template, error_template, "
+					+ "success_mimetype, error_mimetype, "
+					+ "startaction_id, endaction_id, "
+					+ "success_url, error_url, "
+					+ "success_use_url, "
+					+ "error_use_url, "
+					+ "active) "
+					+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			update(logger, sql,
+					userFormId,
+					companyId,
+					userForm.getFormName(),
+					userForm.getDescription(),
+					userForm.getSuccessTemplate(), userForm.getErrorTemplate(),
+					userForm.getSuccessMimetype(), userForm.getErrorMimetype(),
+					userForm.getStartActionID(), userForm.getEndActionID(),
+					userForm.getSuccessUrl(), userForm.getErrorUrl(),
+					BooleanUtils.toInteger(userForm.isSuccessUseUrl()),
+					BooleanUtils.toInteger(userForm.isErrorUseUrl()),
+					BooleanUtils.toInteger(userForm.isActive())
+			);
+		} else {
+			userFormId = insertIntoAutoincrementMysqlTable(logger, "form_id",
+					"INSERT INTO userform_tbl ("
+							+ "company_id, "
+							+ "formname, "
+							+ "description, "
+							+ "success_template, error_template, "
+							+ "success_mimetype, error_mimetype, "
+							+ "startaction_id, endaction_id, "
+							+ "success_url, error_url, "
+							+ "success_use_url, "
+							+ "error_use_url, "
+							+ "active) "
+							+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				companyId,
+				userForm.getFormName(),
+				userForm.getDescription(),
+				userForm.getSuccessTemplate(), userForm.getErrorTemplate(),
+				userForm.getSuccessMimetype(), userForm.getErrorMimetype(),
+				userForm.getStartActionID(), userForm.getEndActionID(),
+				userForm.getSuccessUrl(), userForm.getErrorUrl(),
+				BooleanUtils.toInteger(userForm.isSuccessUseUrl()),
+				BooleanUtils.toInteger(userForm.isErrorUseUrl()),
+				BooleanUtils.toInteger(userForm.isActive())
+			);
+		}
+		return userFormId;
+	}
+	
+	@Override
+	public void updateUserForm(@VelocityCheck int companyId, UserForm userForm) {
+		String sql = "UPDATE userform_tbl SET formname = ?, description = ?, "
+				+ "success_template = ?, error_template = ?, "
+				+ "success_mimetype = ?, error_mimetype = ?, "
+				+ "startaction_id = ?, endaction_id = ?, "
+				+ "success_url = ?, error_url = ?, "
+				+ "success_use_url = ?, error_use_url = ?, "
+				+ "active = ?, "
+				+ "change_date = CURRENT_TIMESTAMP WHERE form_id = ? AND company_id = ?";
+		update(logger, sql, userForm.getFormName(), userForm.getDescription(),
+					userForm.getSuccessTemplate(), userForm.getErrorTemplate(),
+					userForm.getSuccessMimetype(), userForm.getErrorMimetype(),
+					userForm.getStartActionID(), userForm.getEndActionID(),
+					userForm.getSuccessUrl(), userForm.getErrorUrl(),
+					BooleanUtils.toInteger(userForm.isSuccessUseUrl()),
+					BooleanUtils.toInteger(userForm.isErrorUseUrl()),
+					BooleanUtils.toInteger(userForm.isActive()),
+					userForm.getId(), companyId);
+	}
+	
 	@Override
 	public int updateActiveness(@VelocityCheck int companyId, Collection<Integer> formIds, boolean isActive) {
 		if (CollectionUtils.isEmpty(formIds) || companyId <= 0) {
@@ -233,94 +280,6 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public int storeUserFormTrackableLink(ComTrackableUserFormLink link) {
-		if (link == null || link.getCompanyID() == 0) {
-			return 0;
-		} else {
-			String usage = isOracleDB() ? "usage" : "`usage`";
-			String sql = "SELECT url_id, form_id, action_id, " + usage + ", full_url, shortname, relevance, deep_tracking, company_id FROM rdir_url_userform_tbl WHERE form_id = ? AND company_id = ? AND full_url = ?";
-			List<ComTrackableUserFormLink> existingLinks = select(logger, sql, new ComTrackableUserFormLink_RowMapper(), link.getFormID(), link.getCompanyID(), link.getFullUrl());
-			if (existingLinks.size() > 0) {
-				sql = "UPDATE rdir_url_userform_tbl SET action_id = ?, " + usage + " = ?, shortname = ?, relevance = ?, deep_tracking = ? WHERE form_id = ? AND company_id = ? AND full_url = ?";
-				update(logger, sql, link.getActionID(), link.getUsage(), link.getShortname(), link.getRelevance(), link.getDeepTracking(), link.getFormID(), link.getCompanyID(), link.getFullUrl());
-
-				if (existingLinks.size() == 1) {
-					existingLinks.get(0).setProperties(link.getProperties());
-					storeUserFormTrackableLinkProperties(existingLinks.get(0));
-					
-					return existingLinks.get(0).getId();
-				} else {
-					// TODO: This case should not occure so better throw an Exception
-					for (ComTrackableUserFormLink existingLink : existingLinks) {
-						existingLink.setProperties(link.getProperties());
-						storeUserFormTrackableLinkProperties(existingLink);
-					}
-					
-					return 0;
-				}
-			} else {
-				if (isOracleDB()) {
-					link.setId(selectInt(logger, "SELECT rdir_url_userform_tbl_seq.NEXTVAL FROM DUAL"));
-					sql = "INSERT INTO rdir_url_userform_tbl (url_id, company_id, form_id, action_id, usage, full_url, shortname, relevance, deep_tracking) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-					update(logger, sql, link.getId(), link.getCompanyID(), link.getFormID(), link.getActionID(), link.getUsage(), link.getFullUrl(), link.getShortname(), link.getRelevance(), link.getDeepTracking());
-				} else {
-					String insertStatement = "INSERT INTO rdir_url_userform_tbl (company_id, form_id, action_id, `usage`, full_url, shortname, relevance, deep_tracking) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-
-					Object[] paramsWithNext = new Object[8];
-					paramsWithNext[0] = link.getCompanyID();
-					paramsWithNext[1] = link.getFormID();
-					paramsWithNext[2] = link.getActionID();
-					paramsWithNext[3] = link.getUsage();
-					paramsWithNext[4] = link.getFullUrl();
-					paramsWithNext[5] = link.getShortname();
-					paramsWithNext[6] = link.getRelevance();
-					paramsWithNext[7] = link.getDeepTracking();
-		
-					int targetID = insertIntoAutoincrementMysqlTable(logger, "url_id", insertStatement, paramsWithNext);
-					link.setId(targetID);
-				}
-				
-				storeUserFormTrackableLinkProperties(link);
-				
-				return link.getId();
-			}
-		}
-	}
-
-	@Override
-	public ComTrackableUserFormLink getUserFormTrackableLink(int linkID) throws Exception {
-		if (logger.isDebugEnabled()) {
-			logger.debug("getUserFormTrackableLink started - link id: " + linkID);
-		}
-
-		ComTrackableUserFormLink trackableUserFormLink;
-		if (linkID > 0) {
-			String usage = isOracleDB() ? "usage" : "`usage`";
-			String sql = "SELECT url_id, form_id, action_id, " + usage + ", full_url, shortname, relevance, deep_tracking, company_id FROM rdir_url_userform_tbl WHERE url_id = ?";
-
-			List<ComTrackableUserFormLink> existingLinks = select(logger, sql, new ComTrackableUserFormLink_RowMapper(), linkID);
-			if (existingLinks == null || existingLinks.size() == 0) {
-				trackableUserFormLink =  null;
-			} else if (existingLinks.size() == 1) {
-				trackableUserFormLink = existingLinks.get(0);
-				List<LinkProperty> linkProperties = getUserFormTrackableLinkProperties(existingLinks.get(0));
-				existingLinks.get(0).setProperties(linkProperties);
-			} else {
-				throw new Exception("Invalid number of userformlinks found");
-			}
-		} else {
-			trackableUserFormLink = null;
-		}
-
-		if (logger.isDebugEnabled()) {
-			logger.debug("getUserFormTrackableLink finished - link id: " + linkID);
-		}
-
-		return trackableUserFormLink;
-	}
-
-	@Override
-	@DaoUpdateReturnValueCheck
 	public boolean deleteUserForm(int formID, @VelocityCheck int companyID) {
 		if (formID == 0 || companyID == 0) {
 			return false;
@@ -335,7 +294,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 			}
 		}
 	}
-	
+
 	@Override
 	public boolean deleteUserFormByCompany(@VelocityCheck int companyID) {
 		if (companyID == 0) {
@@ -348,105 +307,6 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 				return true;
 			} catch (Exception e) {
 				return false;
-			}
-		}
-	}
-	
-	@Override
-	@DaoUpdateReturnValueCheck
-	public boolean deleteUserFormTrackableLink(int linkID, @VelocityCheck int companyID) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("deleteUserFormTrackableLink started - link id: " + linkID + " company id: " + companyID);
-		}
-
-		try {
-			update(logger, "DELETE FROM rdir_url_userform_param_tbl WHERE url_id IN (SELECT url_id FROM rdir_url_userform_tbl WHERE company_id = ? AND url_id = ?)", companyID, linkID);
-
-			int deletedEntries = update(logger, "DELETE FROM rdir_url_userform_tbl WHERE url_id = ? AND company_id = ?", linkID, companyID);
-			if (logger.isDebugEnabled()) {
-				logger.debug("deleteUserFormTrackableLink finished - link id: " + linkID + " company id: " + companyID);
-			}
-			
-			return deletedEntries == 1;
-		} catch (Exception e) {
-			logger.error("deleteUserFormTrackableLink finished with error - link id: " + linkID + " company id: " + companyID, e);
-			
-			return false;
-		}
-	}
-	
-	/**
-	 * Logs a click for trackable link in rdir_log_userform_tbl
-	 * 
-	 * @param link
-	 *            the link which was clicked.
-	 * @param customerID
-	 *            the id of the recipient who clicked the link.
-	 * @param remoteAddr
-	 *            the ip address of the recipient.
-	 * @return True on success.
-	 */
-	@Override
-	@DaoUpdateReturnValueCheck
-	public boolean logUserFormTrackableLinkClickInDB(ComTrackableUserFormLink link, Integer customerID, Integer mailingID, String remoteAddr, DeviceClass device_class, int device_id, int clientID) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("logUserFormTrackableLinkClickInDB started - link id: " + link.getId() + " customer id: " + customerID + " remote address: " + remoteAddr);
-		}
-	
-		String sql = "INSERT INTO rdirlog_userform_" + link.getCompanyID() + "_tbl (form_id, customer_id, url_id, company_id, ip_adr, mailing_id, device_class_id, device_id, client_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-		try {
-			update(logger, sql, link.getFormID(), customerID, link.getId(), link.getCompanyID(), remoteAddr, mailingID, device_class.getId(), device_id, clientID);
-			
-			if (logger.isDebugEnabled()) {
-				logger.debug("logUserFormTrackableLinkClickInDB finished - link id: " + link.getId() + " customer id: " + customerID + " remote address: " + remoteAddr);
-			}
-			
-			return true;
-		} catch (Exception e) {
-			logger.error("logUserFormTrackableLinkClickInDB finished with error - link id: " + link.getId() + " customer id: " + customerID + " remote address: " + remoteAddr, e);
-			
-			return false;
-		}
-	}
-	
-	@Override
-	@DaoUpdateReturnValueCheck
-	public boolean logUserFormCallInDB(@VelocityCheck int companyID, int formID, int linkID, Integer mailingID, Integer customerID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID) {
-		try {
-			int result = update(logger,
-				"INSERT INTO rdirlog_userform_" + companyID + "_tbl (company_id, form_id, url_id, mailing_id, customer_id, ip_adr, device_class_id, device_id, client_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-				companyID, formID, linkID, mailingID, customerID, remoteAddr, deviceClass.getId(), deviceID, clientID);
-			
-			return result == 1;
-		} catch (Exception e) {
-			logger.error("logUserFormCallInDB finished with error - companyID: " + companyID + " formID: " + formID + " linkID: " + linkID + " customerID: " + customerID + " remoteAddr: " + remoteAddr, e);
-			
-			return false;
-		}
-	}
-
-	@Override
-	public List<LinkProperty> getUserFormTrackableLinkProperties(ComTrackableUserFormLink trackableUserFormLink) {
-		String sql = "SELECT param_type, param_key, param_value FROM rdir_url_userform_param_tbl WHERE url_id = ? ORDER BY param_type, param_key, param_value";
-		List<LinkProperty> linkProperties = select(logger, sql, new ComTrackableUserFormLinkProperty_RowMapper(), trackableUserFormLink.getId());
-		return linkProperties;
-	}
-
-	@Override
-	@DaoUpdateReturnValueCheck
-	public void deleteUserFormTrackableLinkProperties(int linkID) {
-		update(logger, "DELETE FROM rdir_url_userform_param_tbl WHERE url_id = ?", linkID);
-	}
-
-	@Override
-	@DaoUpdateReturnValueCheck
-	public void storeUserFormTrackableLinkProperties(ComTrackableUserFormLink link) {
-		update(logger, "DELETE FROM rdir_url_userform_param_tbl WHERE url_id = ?", link.getId());
-		if (link.getProperties() != null) {
-			String insertSql = "INSERT INTO rdir_url_userform_param_tbl (url_id, param_type, param_key, param_value) VALUES(?, ?, ?, ?)";
-			for (LinkProperty property : link.getProperties()) {
-				update(logger, insertSql, link.getId(), property.getPropertyType().toString(), property.getPropertyName(), property.getPropertyValue());
 			}
 		}
 	}
@@ -499,37 +359,6 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 		}
 	}
 
-	private class ComTrackableUserFormLink_RowMapper implements RowMapper<ComTrackableUserFormLink> {
-		@Override
-		public ComTrackableUserFormLink mapRow(ResultSet resultSet, int row) throws SQLException {
-			ComTrackableUserFormLink trackableUserFormLink = new ComTrackableUserFormLinkImpl();
-			trackableUserFormLink.setId(resultSet.getInt("url_id"));
-			trackableUserFormLink.setCompanyID(resultSet.getInt("company_id"));
-			trackableUserFormLink.setFormID(resultSet.getInt("form_id"));
-			trackableUserFormLink.setActionID(resultSet.getInt("action_id"));
-			trackableUserFormLink.setUsage(resultSet.getInt("usage"));
-			trackableUserFormLink.setFullUrl(resultSet.getString("full_url"));
-			trackableUserFormLink.setShortname(resultSet.getString("shortname"));
-			trackableUserFormLink.setRelevance(resultSet.getInt("relevance"));
-			trackableUserFormLink.setDeepTracking(resultSet.getInt("deep_tracking"));
-			return trackableUserFormLink;
-		}
-	}
-
-	private class ComTrackableUserFormLinkProperty_RowMapper implements RowMapper<LinkProperty> {
-		@Override
-		public LinkProperty mapRow(ResultSet resultSet, int row) throws SQLException {
-			PropertyType type;
-			try {
-				type = PropertyType.parseString(resultSet.getString("param_type"));
-			} catch (Exception e) {
-				throw new SQLException("Error when reading properties param_type", e);
-			}
-			LinkProperty readProperty = new LinkProperty(type, resultSet.getString("param_key"), resultSet.getString("param_value"));
-			return readProperty;
-		}
-	}
-
 	@Override
 	public boolean isFormNameInUse(String formName, int formId, int companyId) {
 		String query = "SELECT count(*) FROM userform_tbl WHERE company_id = ? AND formname = ? AND form_id != ?";
@@ -539,8 +368,8 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	}
 
 	@Override
-	public PaginatedListImpl<UserForm> getUserFormsWithActionIDs(String sortColumn, String sortDirection, int pageNumber,
-																 int pageSize, Boolean activenessFilter, @VelocityCheck int companyID) {
+	public PaginatedListImpl<UserForm> getUserFormsWithActionIdsNew(String sortColumn, String sortDirection,
+																	int pageNumber, int pageSize, ActivenessStatus filter, @VelocityCheck int companyID) {
 
 		String sortClause;
 		if (StringUtils.isBlank(sortColumn)) {
@@ -561,9 +390,9 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 		String query = "SELECT form_id, company_id, formname, description, creation_date, change_date, startaction_id, endaction_id, active " +
 				"FROM userform_tbl WHERE company_id = ?";
 
-		if (Objects.nonNull(activenessFilter)){
+		if (filter != ActivenessStatus.NONE){
 			query += " AND active = ?";
-			params.add(BooleanUtils.toInteger(activenessFilter));
+			params.add(BooleanUtils.toInteger(ActivenessStatus.ACTIVE == filter));
 		}
 
 		return selectPaginatedListWithSortClause(logger, query, sortClause, sortColumn, sortDirectionAscending,
@@ -571,34 +400,12 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	}
 	
 	@Override
-	public PaginatedListImpl<UserForm> getUserFormsWithActionIdsNew(String sortColumn, String sortDirection,
-			int pageNumber, int pageSize, UserFormFilter filter, @VelocityCheck int companyID) {
+	public boolean existsUserForm(int copmanyId, int userFormId) {
+		return selectInt(logger, "SELECT COUNT(*) FROM userform_tbl WHERE company_id = ? AND form_id = ?", copmanyId, userFormId) > 0;
+	}
 
-		String sortClause;
-		if (StringUtils.isBlank(sortColumn)) {
-			sortClause = "ORDER BY LOWER(formname)";
-		} else if ("changedate".equalsIgnoreCase(sortColumn)) {
-			sortClause = "ORDER BY change_date";
-		} else if ("creationdate".equalsIgnoreCase(sortColumn)) {
-			sortClause = "ORDER BY creation_date";
-		} else {
-			sortClause = "ORDER BY " + sortColumn;
-		}
-		boolean sortDirectionAscending = !"desc".equalsIgnoreCase(sortDirection) && !"descending".equalsIgnoreCase(sortDirection);
-		sortClause += (sortDirectionAscending ? " ASC" : " DESC");
-
-		List<Object> params = new ArrayList<>();
-		params.add(companyID);
-
-		String query = "SELECT form_id, company_id, formname, description, creation_date, change_date, startaction_id, endaction_id, active " +
-				"FROM userform_tbl WHERE company_id = ?";
-
-		if (filter != UserFormFilter.NONE){
-			query += " AND active = ?";
-			params.add(BooleanUtils.toInteger(UserFormFilter.ACTIVE == filter));
-		}
-
-		return selectPaginatedListWithSortClause(logger, query, sortClause, sortColumn, sortDirectionAscending,
-				pageNumber, pageSize, new UserForm_LightWithActionIDs_RowMapper(), params.toArray());
+	@Required
+	public void setTrackableLinkDao(FormTrackableLinkDao trackableLinkDao) {
+		this.trackableLinkDao = trackableLinkDao;
 	}
 }

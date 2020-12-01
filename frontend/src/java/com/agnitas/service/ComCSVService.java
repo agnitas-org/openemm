@@ -16,5 +16,5 @@ import java.util.List;
 import org.agnitas.beans.AdminEntry;
 
 public interface ComCSVService {
-    String getUserCSV(List<AdminEntry> users);
+    byte[] getUserCSV(List<AdminEntry> users) throws Exception;
 }

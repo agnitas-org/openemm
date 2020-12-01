@@ -196,6 +196,45 @@
     margin-right: 10px;
   }
 }
+body.dark-theme .l-company-insights {
+
+  .l-chart {
+
+    .l-chart-header {
+      .headline {
+        color: $c-chart-text;
+      }
+
+      .l-chart-actions .dropdown-toggle {
+        color: $c-chart-text;
+        &:hover,
+        &:focus,
+        &:active {
+          color: $c-chart-text;
+        }
+      }
+    }
+
+    .c3-text {
+      fill: $c-chart-text;
+    }
+  }
+
+  #l-impression-statistic {
+    background-color: darken($c-chart-background, 5%);
+  }
+
+  .l-stat-horizontal-separator,
+  .l-stat-vertical-separator {
+    border-color: $c-chart-border;
+  }
+
+  .l-stat-sign,
+  .l-stat-grey,
+  .l-stat-val {
+    color: $c-chart-text;
+  }
+}
 
 #notificationGlobalStatusStat .c3-text {
   fill: #000000 !important;
@@ -447,6 +486,26 @@
   }
 }
 
+body.dark-theme .l-recipient-insights {
+  .l-chart {
+    .l-chart-header {
+      .headline {
+        color: $c-chart-text;
+      }
+      .l-chart-actions {
+        .dropdown-toggle {
+          color: $c-chart-text;
+          &:hover,
+          &:focus,
+          &:active {
+            color: $c-chart-text;
+          }
+        }
+      }
+    }
+  }
+}
+
 #reaction-weekday-chart {
   .c3-axis-x {
     .domain, .tick > line {
@@ -466,6 +525,16 @@
       fill: $c-gray-33 !important;
       @include translateY(-5px);
     }
+  }
+}
+
+body.dark-theme #reaction-weekday-chart {
+  .c3-axis-x .tick > text {
+    fill: $c-chart-text;
+  }
+
+  .c3-texts .c3-text{
+    fill: $c-chart-text !important;
   }
 }
 
@@ -570,6 +639,34 @@
   }
 }
 
+body.dark-theme #mailings-revenue-rating-table {
+  tr {
+
+    th {
+      color: $c-chart-text;
+      span:hover {
+        color: $c-gray-27;
+      }
+    }
+  }
+  tbody {
+    tr {
+      border-color: $c-chart-border;
+
+      &:hover {
+        background-color: lighten($c-chart-background, 5%);
+      }
+    }
+  }
+
+  td {
+    &.l-revenue-value,
+    &.l-revenue-unavailable {
+      color: $c-chart-text;
+    }
+  }
+}
+
 #reaction-progress-chart {
   .c3-axis-x {
     .tick > text {
@@ -578,4 +675,8 @@
       font-weight: bold;
     }
   }
+}
+
+body.dark-theme #reaction-progress-chart .c3-axis-x .tick > text {
+  fill: $c-chart-text;
 }

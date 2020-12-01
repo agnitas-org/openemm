@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.ProfileField;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.emm.core.recipient.service.RecipientBulkService;
@@ -32,6 +31,7 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.validator.ModelValidator;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbColumnType;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -39,6 +39,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComRecipientDao;
 
 public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<RecipientModel> implements RecipientBulkService {
@@ -51,12 +52,12 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 	private ModelValidator validator;
 	private RecipientFactory recipientFactory;
 
-	private int validateModels(String annotation, final List<RecipientModel> models, boolean ignoreErrors, Object dummyResult, List<Object> results) {
+	private int validateModels(Class<?> group, final List<RecipientModel> models, boolean ignoreErrors, Object dummyResult, List<Object> results) {
 		int invalidCnt = 0;
 		results.clear();
 		for (RecipientModel recipientModel : models) {
 			try {
-				validator.validate(annotation, recipientModel);
+				validator.validate(recipientModel, group);
 				results.add(dummyResult);
 			} catch (Exception e) {
 				results.add(e);
@@ -69,12 +70,12 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 		return invalidCnt;
 	}
 	
-	private List<Object> validatedOperation(final List<RecipientModel> models, final boolean ignoreErrors, 
-			String annotation, Object dummyResult, ProcessRecipientModels todo) {
+	private List<Object> validatedOperation(final List<RecipientModel> models, final boolean ignoreErrors,
+			Class<?> group, Object dummyResult, ProcessRecipientModels todo) {
 		
 		List<Object> results = new ArrayList<>();
 		// Validate each model in list with required 'annotation' rule
-		int invalids = validateModels(annotation, models, ignoreErrors, dummyResult, results);
+		int invalids = validateModels(group, models, ignoreErrors, dummyResult, results);
 		if (!ignoreErrors && invalids > 0) {
 			return results;
 		}
@@ -90,7 +91,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 		// Run required operation for valid models only
 		List<Object> validResults = todo.exec(validModels);
 		
-		// Merge validation and operation results 
+		// Merge validation and operation results
 		int k = 0;
 		for (int i = 0; i < results.size(); i++) {
 			if (k >= validResults.size()) {
@@ -106,7 +107,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 	@Override
 	public List<Object> addSubscriber(final List<RecipientModel> models, final boolean ignoreErrors, String username, final int companyID, List<UserAction> userActions) {
 		int defaultDataSourceID = recipientDao.getDefaultDatasourceID(Utils.getUserName(), Utils.getUserCompany());
-		return validatedOperation(models, ignoreErrors, "addSubscriber", 0 /*RecipientBulkNotAppliedException()*/, validModels -> {
+		return validatedOperation(models, ignoreErrors, RecipientModel.AddGroup.class, 0 /*RecipientBulkNotAppliedException()*/, validModels -> {
 			if (ignoreErrors) {
 				return addCustomersIgnoreErrors(validModels, defaultDataSourceID, username, companyID, userActions);
 			} else {
@@ -121,7 +122,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 		});
 	}
 	
-	private List<Object> processCustomersIgnoreErrors(List<RecipientModel> models, boolean lock, 
+	private List<Object> processCustomersIgnoreErrors(List<RecipientModel> models, boolean lock,
 			final ProcessRecipientModels todo, ProcessRecipientModels todoSafe) {
 		
 		final int PACK_SIZE = 200;
@@ -208,7 +209,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 				String name = entry.getKey();
 				String value = (String) entry.getValue();
 
-				if ("DATE".equalsIgnoreCase(customerFieldTypes.get(name))) {
+				if (DbColumnType.GENERIC_TYPE_DATE.equalsIgnoreCase(customerFieldTypes.get(name)) || DbColumnType.GENERIC_TYPE_DATETIME.equalsIgnoreCase(customerFieldTypes.get(name))) {
 					try {
 						Date newValue = DateUtilities.parseIso8601DateTimeString(value);
 						if (newValue != null) {
@@ -321,7 +322,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 				String name = entry.getKey();
 				String value = (String) entry.getValue();
 
-				if ("DATE".equalsIgnoreCase(customerFieldTypes.get(name))) {
+				if (DbColumnType.GENERIC_TYPE_DATE.equalsIgnoreCase(customerFieldTypes.get(name)) || DbColumnType.GENERIC_TYPE_DATETIME.equalsIgnoreCase(customerFieldTypes.get(name))) {
 					try {
 						Date newValue = DateUtilities.parseIso8601DateTimeString(value);
 						if (newValue != null) {
@@ -379,9 +380,9 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 	}
 
 	/**
-	 * For bulk update of recipients. 
+	 * For bulk update of recipients.
 	 * isDoubleCheck & isOverwrite don't matter.
-	 * If recipients' CompanyId differs for any recipients, or companyID == 0 - it's assumed as error. 
+	 * If recipients' CompanyId differs for any recipients, or companyID == 0 - it's assumed as error.
 	 * 
 	 * @param models CompanyId should be the same for all models in list.
 	 * @return successful updated flags list
@@ -427,7 +428,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 				String name = entry.getKey();
 				String value = (String) entry.getValue();
 
-				if ("DATE".equalsIgnoreCase(customerFieldTypes.get(name))) {
+				if (DbColumnType.GENERIC_TYPE_DATE.equalsIgnoreCase(customerFieldTypes.get(name)) || DbColumnType.GENERIC_TYPE_DATETIME.equalsIgnoreCase(customerFieldTypes.get(name))) {
 					try {
 						Date newValue = DateUtilities.parseIso8601DateTimeString(value);
 						if (newValue != null) {
@@ -469,7 +470,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 
 	@Override
 	public List<Object> updateSubscriber(final List<RecipientModel> models, final boolean ignoreErrors, String username, List<UserAction> userActions) {
-		return validatedOperation(models, ignoreErrors, "updateSubscriber",
+		return validatedOperation(models, ignoreErrors, RecipientModel.UpdateGroup.class,
 			Boolean.FALSE, validModels -> {
 				if (ignoreErrors) {
 					return updateCustomersIgnoreErrors(validModels, username, userActions);
@@ -509,7 +510,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 //	}
 	@Override
 	public List<Object> deleteSubscriber(final List<RecipientModel> models, boolean ignoreErrors) {
-		return validatedOperation(models, ignoreErrors, "deleteSubscriber", null, validModels -> transaction(status -> processCustomers(models, subList -> {
+		return validatedOperation(models, ignoreErrors, RecipientModel.DeleteGroup.class, null, validModels -> transaction(status -> processCustomers(models, subList -> {
 			if (subList.isEmpty()) {
 				return Collections.emptyList();
 			}
@@ -521,7 +522,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 
 	@Override
 	public List<Object> getSubscriber(final List<RecipientModel> models) {
-		return validatedOperation(models, true, "deleteSubscriber", null, validModels -> transaction(status -> processCustomers(models, this::getCustomers)));
+		return validatedOperation(models, true, RecipientModel.DeleteGroup.class, null, validModels -> transaction(status -> processCustomers(models, this::getCustomers)));
 	}
 	
 	private List<Object> getCustomers(List<RecipientModel> models) {

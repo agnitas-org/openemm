@@ -250,7 +250,7 @@ public class ComCampaignDaoImpl extends BaseDaoImpl implements ComCampaignDao {
 	private ComCampaignStats loadClicks(ComCampaignStats stats, ComCampaign campaign, String uniqueStr, String mailingSelection) {
 		String totalClicksQuery = "SELECT rdir.mailing_id AS mailing_id, COUNT(" + uniqueStr + " rdir.customer_id) AS amount"
 			+ " FROM rdirlog_" + campaign.getCompanyID() + "_tbl rdir, rdir_url_tbl url"
-			+ " WHERE rdir.mailing_id IN (" + mailingSelection + ") AND rdir.url_id = url.url_id AND url.relevance = 0"
+			+ " WHERE rdir.mailing_id IN (" + mailingSelection + ") AND rdir.url_id = url.url_id"
 			+ " GROUP BY rdir.mailing_id";
 
 		List<Map<String, Object>> list = select(logger, totalClicksQuery);

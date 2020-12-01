@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.operations.ActionOperationUnsubscribeCustomerParameters;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
@@ -109,4 +110,9 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
 			return false;
 		}
 	}
+
+    @Override
+    public ActionOperationType processedType() {
+        return ActionOperationType.UNSUBSCRIBE_CUSTOMER;
+    }
 }

@@ -13,38 +13,38 @@ package org.agnitas.emm.springws.endpoint.mailing;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.emm.springws.jaxb.SendMailingRequest;
-import org.agnitas.service.UserActivityLogService;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.agnitas.emm.springws.jaxb.SendMailingResponse;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 
-public class SendMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class SendMailingEndpoint extends BaseEndpoint {
 
-	@Resource
 	private MailingService mailingService;
-	@Resource
 	private ConfigService configService;
-	@Resource
-	private ObjectFactory objectFactory;
-	@Resource
-	private UserActivityLogService userActivityLogService;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
+	public SendMailingEndpoint(@Qualifier("MailingService") MailingService mailingService, ConfigService configService) {
+		this.mailingService = mailingService;
+		this.configService = configService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "SendMailingRequest")
+	public @ResponsePayload SendMailingResponse sendMailing(@RequestPayload SendMailingRequest request) throws Exception {
 		if (Utils.getUserCompany() == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
     		throw new Exception("error.company.mailings.sent.forbidden");
     	} else {
-			SendMailingRequest request = (SendMailingRequest) arg0;
-	
 			MailingModel model = new MailingModel();
 			model.setCompanyId(Utils.getUserCompany());
 			model.setMailingId(request.getMailingID());
@@ -57,8 +57,7 @@ public class SendMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
 			mailingService.sendMailing(model, userActions);
 			Utils.writeLog(userActivityLogService, userActions);
 	
-			return objectFactory.createSendMailingResponse();
+			return new SendMailingResponse();
     	}
 	}
-
 }

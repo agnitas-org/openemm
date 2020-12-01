@@ -26,20 +26,19 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
  * used icons for this mailing
  */
 public class SWYN {
-	private static Pattern	hostPattern = Pattern.compile ("https?://([^:/]+)");
+	private static Pattern hostPattern = Pattern.compile("https?://([^:/]+)");
 
-	static class Network implements Comparable <Network> {
-		String	name;
-		String	source;
-		String	charset;
-		int	order;
-		String	image;
-		byte[]	icon;
-		String	target;
-		String	code;
-		
-		protected Network (String nName, String nSource, String nCharset, int nOrder,
-				   String nImage, byte[] nIcon, String nTarget, String nCode) {
+	static class Network implements Comparable<Network> {
+		String name;
+		String source;
+		String charset;
+		int order;
+		String image;
+		byte[] icon;
+		String target;
+		String code;
+
+		protected Network(String nName, String nSource, String nCharset, int nOrder, String nImage, byte[] nIcon, String nTarget, String nCode) {
 			name = nName;
 			source = nSource;
 			charset = nCharset;
@@ -49,52 +48,52 @@ public class SWYN {
 			target = nTarget;
 			code = nCode;
 		}
-		
+
 		@Override
-		public int compareTo (Network other) {
+		public int compareTo(Network other) {
 			return order - other.order;
 		}
 	}
-	
+
 	static class Size {
-	 	Map <String, Network>	networks;
-		Network[]		sorted;
-		
-		protected Size () {
-			networks = new HashMap <> ();
+		Map<String, Network> networks;
+		Network[] sorted;
+
+		protected Size() {
+			networks = new HashMap<>();
 			sorted = null;
 		}
-		
-		protected void add (Network nw) {
-			networks.put (nw.name.toLowerCase (), nw);
+
+		protected void add(Network nw) {
+			networks.put(nw.name.toLowerCase(), nw);
 		}
-		
-		protected void sort () {
-			sorted = new Network[networks.size ()];
-		
-			int	n = 0;
-			for (Network nw : networks.values ()) {
+
+		protected void sort() {
+			sorted = new Network[networks.size()];
+
+			int n = 0;
+			for (Network nw : networks.values()) {
 				sorted[n++] = nw;
 			}
-			Arrays.sort (sorted);
+			Arrays.sort(sorted);
 		}
 	}
-		
-	private Data				data;
-	private String				prefix, infix, postfix;
-	private Map <String, Size>		sizes;
+
+	private Data data;
+	private String prefix, infix, postfix;
+	private Map<String, Size> sizes;
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param nData the global configuration
 	 */
-	public SWYN (Data nData) {
+	public SWYN(Data nData) {
 		data = nData;
 		prefix = null;
 		infix = null;
 		postfix = null;
-		sizes = new HashMap <> ();
+		sizes = new HashMap<>();
 	}
 
 	/**
@@ -102,98 +101,94 @@ public class SWYN {
 	 * and collects them in a sorted list (by swyn_tbl.ordering) for the
 	 * sequence to use them
 	 */
-	public void setup () {
-		NamedParameterJdbcTemplate	jdbc;
-		List <Map <String, Object>>	rq;
-		Map <String, Object>		row;
-		String				query = "SELECT name, source, isize, charset, ordering, image, icon, target, code " +
-							"FROM swyn_tbl " +
-							"WHERE company_id IN (0, :companyID) " +
-							"ORDER BY company_id";
+	public void setup() {
+		NamedParameterJdbcTemplate jdbc;
+		List<Map<String, Object>> rq;
+		Map<String, Object> row;
+		String query = "SELECT name, source, isize, charset, ordering, image, icon, target, code " + "FROM swyn_tbl " + "WHERE company_id IN (0, :companyID) " + "ORDER BY company_id";
 
 		jdbc = null;
 		try {
-			jdbc = data.dbase.request (query);
-			rq = data.dbase.query (jdbc, query, "companyID", data.company.id ());
-			for (int n = 0; n < rq.size (); ++n) {
-				row = rq.get (n);
+			jdbc = data.dbase.request(query);
+			rq = data.dbase.query(jdbc, query, "companyID", data.company.id());
+			for (int n = 0; n < rq.size(); ++n) {
+				row = rq.get(n);
 
-				String	name = data.dbase.asString (row.get ("name"));
-				String	source = data.dbase.asString (row.get ("source"));
-				String	size = data.dbase.asString (row.get ("isize"));
-				String	charset = data.dbase.asString (row.get ("charset"));
-				int	order = data.dbase.asInt (row.get ("ordering"));
-				String	image = data.dbase.asString (row.get ("image"));
-				byte[]	icon = data.dbase.asBlob (row.get ("icon"));
-				String	target = data.dbase.asString (row.get ("target"));
-				String	code = data.dbase.asString (row.get ("code"));
+				String name = data.dbase.asString(row.get("name"));
+				String source = data.dbase.asString(row.get("source"));
+				String size = data.dbase.asString(row.get("isize"));
+				String charset = data.dbase.asString(row.get("charset"));
+				int order = data.dbase.asInt(row.get("ordering"));
+				String image = data.dbase.asString(row.get("image"));
+				byte[] icon = data.dbase.asBlob(row.get("icon"));
+				String target = data.dbase.asString(row.get("target"));
+				String code = data.dbase.asString(row.get("code"));
 
 				if ((name != null) && (code != null))
-					if (name.startsWith ("_")) {
-						if (name.equals ("__prefix__")) {
+					if (name.startsWith("_")) {
+						if (name.equals("__prefix__")) {
 							prefix = code;
-						} else if (name.equals ("__infix__")) {
+						} else if (name.equals("__infix__")) {
 							infix = code;
-						} else if (name.equals ("__postfix__")) {
+						} else if (name.equals("__postfix__")) {
 							postfix = code;
 						} else {
-							data.logging (Log.WARNING, "swyn", "Found unknown control entry " + name);
+							data.logging(Log.WARNING, "swyn", "Found unknown control entry " + name);
 						}
 					} else {
-						Network	nw = new Network (name, source, charset, order, image, icon, target, code);
-						Size	sz;
-						
+						Network nw = new Network(name, source, charset, order, image, icon, target, code);
+						Size sz;
+
 						if (size == null) {
 							size = "default";
 						}
-						sz = sizes.get (size);
+						sz = sizes.get(size);
 						if (sz == null) {
-							sz = new Size ();
-							sizes.put (size, sz);
+							sz = new Size();
+							sizes.put(size, sz);
 						}
-						sz.add (nw);
-						data.logging (Log.DEBUG, "swyn", "Found entry for " + name);
+						sz.add(nw);
+						data.logging(Log.DEBUG, "swyn", "Found entry for " + name);
 					}
 			}
 		} catch (Exception e) {
-			data.logging (Log.WARNING, "swyn", "Failed to read swyn_tbl: " + e.toString (), e);
+			data.logging(Log.WARNING, "swyn", "Failed to read swyn_tbl: " + e.toString(), e);
 		} finally {
-			data.dbase.release (jdbc, query);
+			data.dbase.release(jdbc, query);
 		}
-		for (Size sz : sizes.values ()) {
-			sz.sort ();
+		for (Size sz : sizes.values()) {
+			sz.sort();
 		}
 	}
-	
+
 	/**
 	 * Build the HTML fragment for all networks to be used in this
 	 * case. As there can be more than one reference to these
 	 * networks (agnSWYN), these are constructed on-the-fly.
-	 * 
+	 *
 	 * @param bare          if true, do not add extra HTML code (e.g. for building a table) to the output. Useful if the output is embedded in own layout
 	 * @param size          the icon size to be used as found in swyn_tbl.isize
 	 * @param networksToUse an optional list of network names to be used. If this is null, all available networks are used
 	 * @param title         the title to be displayed on the social network, if supported
 	 * @param selector      a wildcard pattern to limit the resulting view of the mail to the text blocks which names matching this pattern
 	 */
-	public String build (boolean bare, String size, List <String> networksToUse, String title, String link, String selector) {
-		StringBuffer	rc = new StringBuffer (512);
-		Size		sz = sizes.get (size);
-		Network[]	use = null;
-		int		count = 0;
-		Map <String, String>
-				extra = new HashMap<>();
-	
+	public String build(boolean bare, String size, List<String> networksToUse, String title, String link, String selector) {
+		StringBuffer rc = new StringBuffer(512);
+		Size sz = sizes.get(size);
+		Network[] use = null;
+		int count = 0;
+		Map<String, String> extra = new HashMap<>();
+
 		if (sz != null) {
 			if (networksToUse != null) {
-				use = new Network[networksToUse.size ()];
+				use = new Network[networksToUse.size()];
 				count = 0;
-				for (int n = 0; n < networksToUse.size (); ++n) {
-					String	name = networksToUse.get (n).toLowerCase ();
-				
+				for (int n = 0; n < networksToUse.size(); ++n) {
+					String name = networksToUse.get(n).toLowerCase();
+
 					if (name != null) {
-						Network	nw = sz.networks.get (name);
-					
+						Network nw = sz.networks.get(name);
+
 						if (nw != null)
 							use[count++] = nw;
 					}
@@ -203,50 +198,50 @@ public class SWYN {
 				count = sz.sorted.length;
 			}
 		}
-		if ((count > 0) && (! bare) && (prefix != null)) {
-			rc.append (prefix);
+		if ((count > 0) && (!bare) && (prefix != null)) {
+			rc.append(prefix);
 		}
 		if (use != null) {
 			for (int n = 0; n < count; ++n) {
-				Network		nw = use[n];
-				String		tmpLink;
-				String		tmpTarget;
-				StringBuffer	name = new StringBuffer ("SWYN");
-	
-				extra.clear ();
+				Network nw = use[n];
+				String tmpLink;
+				String tmpTarget;
+				StringBuffer name = new StringBuffer("SWYN");
+
+				extra.clear();
 				if (nw.name != null) {
-					name.append (": ");
-					name.append (nw.name);
+					name.append(": ");
+					name.append(nw.name);
 				} else if (nw.source != null) {
-					name.append (": ");
-					name.append (nw.source);
+					name.append(": ");
+					name.append(nw.source);
 				}
-				name.append ("/");
-				name.append (size);
+				name.append("/");
+				name.append(size);
 				if (link != null) {
-					name.append (" (");
-					name.append (link);
-					name.append (")");
+					name.append(" (");
+					name.append(link);
+					name.append(")");
 				} else if (selector != null) {
-					name.append (" [");
-					name.append (selector);
-					name.append ("]");
+					name.append(" [");
+					name.append(selector);
+					name.append("]");
 				}
-				if ((! bare) && (n != 0) && (infix != null))
-					rc.append (infix);
+				if ((!bare) && (n != 0) && (infix != null))
+					rc.append(infix);
 				if (title != null) {
-					extra.put ("title", title);
-					extra.put ("urltitle", encode (title, nw.charset));
+					extra.put("title", title);
+					extra.put("urltitle", encode(title, nw.charset));
 				}
 				if (link != null) {
-					extra.put ("link", link);
-					extra.put ("urllink", encode (link, "UTF8"));
+					extra.put("link", link);
+					extra.put("urllink", encode(link, "UTF8"));
 					tmpLink = link;
 				} else {
-					String	urlLink, append;
-					
+					String urlLink, append;
+
 					tmpLink = data.anonURL + "uid=";
-					urlLink = encode (tmpLink, nw.charset);
+					urlLink = encode(tmpLink, nw.charset);
 					append = "##PUBID";
 					if ((nw.source != null) || (selector != null)) {
 						append += ":" + (nw.source != null ? nw.source : "");
@@ -254,52 +249,52 @@ public class SWYN {
 							append += ":" + selector;
 					}
 					append += "##";
-					extra.put ("link", tmpLink + append);
-					extra.put ("urllink", urlLink + append);
+					extra.put("link", tmpLink + append);
+					extra.put("urllink", urlLink + append);
 				}
 				if (tmpLink != null) {
-					Matcher	m = hostPattern.matcher (tmpLink);
-				
-					if (m.lookingAt ()) {
-						String	host = m.group (1);
-						
-						extra.put ("host", host);
-						extra.put ("urlhost", encode (host, nw.charset));
+					Matcher m = hostPattern.matcher(tmpLink);
+
+					if (m.lookingAt()) {
+						String host = m.group(1);
+
+						extra.put("host", host);
+						extra.put("urlhost", encode(host, nw.charset));
 					}
 				}
-				if (data.company.name () != null) {
-					extra.put ("urlcompany-name", encode (data.company.name (), nw.charset));
+				if (data.company.name() != null) {
+					extra.put("urlcompany-name", encode(data.company.name(), nw.charset));
 				}
 				if (nw.target != null) {
-					tmpTarget = data.substituteString (nw.target, extra);
+					tmpTarget = data.substituteString(nw.target, extra);
 				} else {
 					tmpTarget = tmpLink;
 				}
-				data.requestURL (tmpTarget, name.toString (), false);
-				extra.put ("target", tmpTarget);
+				data.requestURL(tmpTarget, name.toString(), false);
+				extra.put("target", tmpTarget);
 				if (nw.image != null) {
-					extra.put ("image", nw.image);
-					extra.put ("urlimage", encode (nw.image, nw.charset));
+					extra.put("image", nw.image);
+					extra.put("urlimage", encode(nw.image, nw.charset));
 					if (nw.icon != null) {
-						data.requestImage (nw.image, nw.icon);
+						data.requestImage(nw.image, nw.icon);
 					}
-					extra.put ("imagelink", data.defaultImageLink (nw.image, Imagepool.MAILING, true));
+					extra.put("imagelink", data.defaultImageLink(nw.image, Imagepool.MAILING, true));
 				}
-				rc.append (data.substituteString (nw.code, extra));
+				rc.append(data.substituteString(nw.code, extra));
 			}
 		}
-		if ((count > 0) && (! bare) && (postfix != null)) {
-			rc.append (postfix);
+		if ((count > 0) && (!bare) && (postfix != null)) {
+			rc.append(postfix);
 		}
-		return rc.toString ();
+		return rc.toString();
 	}
 
-	private String encode (String s, String charset) {
-		String	rc;
-		
+	private String encode(String s, String charset) {
+		String rc;
+
 		if (charset != null) {
 			try {
-				rc = URLEncoder.encode (s, charset);
+				rc = URLEncoder.encode(s, charset);
 			} catch (java.io.UnsupportedEncodingException e) {
 				rc = s;
 			}

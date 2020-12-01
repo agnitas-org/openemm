@@ -10,24 +10,6 @@
     <uri>https://emm.agnitas.de/jsp/jsp/common</uri>
 
     <tag>
-        <name>message</name>
-        <tag-class>org.agnitas.emm.extension.taglib.ExtensionI18NTag</tag-class>
-        <body-content>empty</body-content>
-        <attribute>
-            <name>plugin</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-        <attribute>
-            <name>key</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-    </tag>
-
-    <tag>
         <description>
             Sets the result of a class instantiation in a 'scope'
         </description>
@@ -103,18 +85,6 @@
             <rtexprvalue>true</rtexprvalue>
             <type>java.lang.String</type>
         </attribute>
-        <attribute>
-            <name>plugin</name>
-            <required>false</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-        <attribute>
-            <name>extension</name>
-            <required>false</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
     </tag>
 
     <tag>
@@ -170,25 +140,7 @@
             <type>int</type>
         </attribute>
     </tag>
-
-    <tag>
-        <name>JspExtensionPoint</name>
-        <tag-class>org.agnitas.emm.extension.taglib.JspExtensionPointTag</tag-class>
-        <body-content>empty</body-content>
-        <attribute>
-            <name>plugin</name>
-            <required>true</required>
-            <rtexprvalue>false</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-        <attribute>
-            <name>point</name>
-            <required>true</required>
-            <rtexprvalue>false</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-    </tag>
-
+ 
     <tag>
         <name>ShowColumnInfo</name>
         <tag-class>com.agnitas.taglib.ComShowColumnInfoTag</tag-class>
@@ -777,6 +729,46 @@
         <function-signature>java.lang.String absUrlPrefix(java.lang.String)</function-signature>
         <example>
             &lt;c:url var=&quot;editionLogoSrc&quot; value=&quot;${emm:absUrlPrefix(emmLayout.cssUrl)}/images/facelift/edition_logo.png&quot;/&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Make a number with unit sign human readable
+        </description>
+        <name>makeUnitSignNumber</name>
+        <function-class>org.agnitas.util.AgnUtils</function-class>
+        <function-signature>java.lang.String getHumanReadableNumber(java.lang.Number, java.lang.String, boolean, javax.servlet.http.HttpServletRequest)</function-signature>
+        <example>
+            ${emm:makeUnitSignNumber(0, 'B', false, pageContext.request)}
+        </example>
+    </function>
+
+    <function>
+        <description>
+             This method extends the full url of this link with its link extensions for display purposes.
+            User or mailing data is not used, so hash-tags will be left empty.
+            For usage of user and mailing data in correct replacements of hash-tags use
+        </description>
+        <name>getFullUrlWithExtensions</name>
+        <function-class>com.agnitas.util.LinkUtils</function-class>
+        <function-signature>java.lang.String getFullUrlWithExtensions(java.lang.String, java.util.List))</function-signature>
+        <example>
+            ${emm:getFullUrlWithExtensions("", link.properties)}
+        </example>
+    </function>
+
+    <function>
+        <description>
+             This method extends the full url of this link with its link extensions for display purposes.
+            User or mailing data is not used, so hash-tags will be left empty.
+            For usage of user and mailing data in correct replacements of hash-tags use
+        </description>
+        <name>countExtensions</name>
+        <function-class>com.agnitas.util.LinkUtils</function-class>
+        <function-signature>int countLinkExtensions(java.util.List)</function-signature>
+        <example>
+            ${emm:countLinkExtensions(link.properties)}
         </example>
     </function>
 

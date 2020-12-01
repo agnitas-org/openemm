@@ -20,10 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.impl.DynamicTagImpl;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.DynamicTagDao;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -31,19 +27,13 @@ import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.impl.DynamicTagImpl;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.DynamicTagDao;
+
 public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 	private static final transient Logger logger = Logger.getLogger(DynamicTagDaoImpl.class);
-
-	@Override
-	public int getIdForName(int mailingID, String name) {
-		try {
-			return selectInt(logger, "SELECT dyn_name_id FROM dyn_name_tbl WHERE mailing_id = ? AND dyn_name = ?", mailingID, name);
-		} catch (Exception e) {
-			logger.error("Error getting ID for tag: " + name, e);
-
-			return 0;
-		}
-	}
 	
 	@Override
 	public List<DynamicTag> getNameList(@VelocityCheck int companyId, int mailingId) {
@@ -119,7 +109,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 		try {
 			update(logger, "DELETE FROM dyn_content_tbl WHERE company_id = ?", companyID);
 			update(logger, "DELETE FROM dyn_name_tbl WHERE company_id = ?", companyID);
-			return true; 
+			return true;
 		} catch (Exception e) {
 			logger.error("Error deleting content data (company ID: " + companyID + ")", e);
 			return false;
@@ -143,7 +133,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 		if (isOracleDB()) {
 			sqlGetDynName += " AND ROWNUM = 1";
 		} else {
-			sqlGetDynName += " AND LIMIT 1";
+			sqlGetDynName += " LIMIT 1";
 		}
 		
 		List<String> nameResults = select(logger, sqlGetDynName, new StringRowMapper(), companyId, mailingId, dynTagId);

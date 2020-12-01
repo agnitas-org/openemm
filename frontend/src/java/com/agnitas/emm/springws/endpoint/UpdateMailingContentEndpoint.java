@@ -12,28 +12,32 @@ package com.agnitas.emm.springws.endpoint;
 
 import java.nio.charset.StandardCharsets;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.component.service.ComponentModel;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.util.StringUtils;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.components.service.ComComponentService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.springws.jaxb.ObjectFactory;
 import com.agnitas.emm.springws.jaxb.UpdateMailingContentRequest;
+import com.agnitas.emm.springws.jaxb.UpdateMailingContentResponse;
 
-public class UpdateMailingContentEndpoint extends AbstractMarshallingPayloadEndpoint {
-    @Resource
+@Endpoint
+public class UpdateMailingContentEndpoint extends BaseEndpoint {
+
     private ComComponentService componentService;
-    @Resource
-    private ObjectFactory comObjectFactory;
 
-    @Override
-    protected Object invokeInternal(Object arg0) throws Exception {
-        UpdateMailingContentRequest request = (UpdateMailingContentRequest) arg0;
+    public UpdateMailingContentEndpoint(@Qualifier("componentService") ComComponentService componentService) {
+        this.componentService = componentService;
+    }
 
+    @PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "UpdateMailingContentRequest")
+    public @ResponsePayload UpdateMailingContentResponse updateMailingContent(@RequestPayload UpdateMailingContentRequest request) throws Exception {
         if (request.getMailingID() <= 0) {
             throw new IllegalArgumentException("Invalid mailing ID");
         }
@@ -43,7 +47,7 @@ public class UpdateMailingContentEndpoint extends AbstractMarshallingPayloadEndp
         }
 
         componentService.updateMailingContent(parseModel(request));
-        return comObjectFactory.createUpdateMailingContentResponse();
+        return new UpdateMailingContentResponse();
     }
 
     private ComponentModel parseModel(UpdateMailingContentRequest request) {

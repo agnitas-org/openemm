@@ -10,27 +10,29 @@
 
 package org.agnitas.emm.springws.endpoint.blacklist;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.blacklist.service.BlacklistModel;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.DeleteBlacklistRequest;
 import org.agnitas.emm.springws.jaxb.DeleteBlacklistResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-public class DeleteBlacklistEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class DeleteBlacklistEndpoint extends BaseEndpoint {
 
-	@Resource
 	private BlacklistService blacklistService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		DeleteBlacklistRequest request = (DeleteBlacklistRequest) arg0;
-		DeleteBlacklistResponse response = objectFactory.createDeleteBlacklistResponse();
+	public DeleteBlacklistEndpoint(BlacklistService blacklistService) {
+		this.blacklistService = blacklistService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteBlacklistRequest")
+	public @ResponsePayload DeleteBlacklistResponse deleteBlacklist(@RequestPayload DeleteBlacklistRequest request) {
+		DeleteBlacklistResponse response = new DeleteBlacklistResponse();
 		
 		BlacklistModel model = new BlacklistModel();
 		model.setCompanyId(Utils.getUserCompany());
@@ -38,5 +40,4 @@ public class DeleteBlacklistEndpoint extends AbstractMarshallingPayloadEndpoint 
 		response.setValue(blacklistService.deleteBlacklist(model));
 		return response;
 	}
-
 }

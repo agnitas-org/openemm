@@ -14,24 +14,23 @@ import java.util.Objects;
 
 import org.agnitas.web.RecipientForm;
 
-public class RecipientSqlOptions {
+public class RecipientSqlOptions implements RecipientOptions {
     
     private boolean checkParenthesisBalance;
     private String sort;
     private String dir;
     private int listId;
     private int targetId;
+    private int accessLimitTargetId;
+    private String targetEQL;
     private String userType;
     private String searchFirstName;
     private String searchLastName;
     private String searchEmail;
     private int userStatus;
-    private boolean userTypeEmpty;
     private boolean useAdvancedSearch;
     private RecipientForm form;
-    private boolean duplicateList;
-    private boolean singleMode;
-    
+
     public static Builder builder() {
         return new Builder();
     }
@@ -48,15 +47,27 @@ public class RecipientSqlOptions {
         return dir;
     }
     
-    public int getListId() {
+    @Override
+	public int getListId() {
         return listId;
     }
     
-    public int getTargetId() {
+    @Override
+	public int getTargetId() {
         return targetId;
     }
-    
-    public String getUserType() {
+
+    @Override
+    public int getAltgId() {
+        return accessLimitTargetId;
+    }
+
+    public String getTargetEQL() {
+        return targetEQL;
+    }
+
+    @Override
+	public String getUserType() {
         return userType;
     }
     
@@ -72,7 +83,8 @@ public class RecipientSqlOptions {
         return searchEmail;
     }
     
-    public int getUserStatus() {
+    @Override
+	public int getUserStatus() {
         return userStatus;
     }
     
@@ -84,16 +96,9 @@ public class RecipientSqlOptions {
         return form;
     }
     
-    public boolean isDuplicateList() {
-        return duplicateList;
-    }
-    
-    public boolean isUserTypeEmpty() {
-        return userTypeEmpty;
-    }
-    
-    public boolean isSingleMode() {
-        return singleMode;
+    @Override
+	public boolean isUserTypeEmpty() {
+        return false;
     }
     
     public static class Builder {
@@ -105,11 +110,13 @@ public class RecipientSqlOptions {
             return result;
         }
     
-        public void setUseAdvancedSearch(boolean userAdvancedSearch, RecipientForm form) {
+        public Builder setUseAdvancedSearch(boolean userAdvancedSearch, RecipientForm form) {
             if (userAdvancedSearch) {
                 options.form = Objects.requireNonNull(form);
             }
             options.useAdvancedSearch = userAdvancedSearch;
+            
+            return this;
         }
     
         public Builder setListId(int listId) {
@@ -161,19 +168,14 @@ public class RecipientSqlOptions {
             options.checkParenthesisBalance = checkParenthesisBalance;
             return this;
         }
-        
-        public Builder setDuplicateList(boolean isDuplicateList) {
-            options.duplicateList = isDuplicateList;
+
+        public Builder setLimitAccessTargetId(int accessLimitTargetId) {
+            options.accessLimitTargetId = accessLimitTargetId;
             return this;
         }
-        
-        public Builder setUserTypeEmpty(boolean userTypeEmpty) {
-            options.userTypeEmpty = userTypeEmpty;
-            return this;
-        }
-        
-        public Builder setSingleMode(boolean singleMode) {
-            options.singleMode = singleMode;
+
+        public Builder setTargetEQL(String targetEQL) {
+            options.targetEQL = targetEQL;
             return this;
         }
     }

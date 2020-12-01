@@ -24,7 +24,7 @@ public class ImageCache {
 		this.configService = configService;
 	}
 
-	public TimeoutLRUMap<String, DeliverableImage> getImageCache() {
+	private TimeoutLRUMap<String, DeliverableImage> getImageCache() {
 		if (imageCache == null) {
 			imageCache = new TimeoutLRUMap<>(configService.getIntegerValue(ConfigValue.HostedImageMaxCache), configService.getLongValue(ConfigValue.HostedImageMaxCacheTimeMillis));
 		}

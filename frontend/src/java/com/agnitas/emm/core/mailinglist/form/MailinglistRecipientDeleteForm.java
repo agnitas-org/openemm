@@ -10,30 +10,32 @@
 
 package com.agnitas.emm.core.mailinglist.form;
 
-public class MailinglistRecipientDeleteForm {
-    
-    private int mailinglistId;
-    
-    private String mailinglistShortname;
+import org.agnitas.web.forms.SimpleActionForm;
+
+public class MailinglistRecipientDeleteForm extends SimpleActionForm {
     
     private boolean onlyActiveUsers;
     
     private boolean noAdminAndTestUsers;
-    
+
+    @Deprecated
     public int getMailinglistId() {
-        return mailinglistId;
+        return getId();
     }
-    
+
+    @Deprecated
     public void setMailinglistId(int mailinglistId) {
-        this.mailinglistId = mailinglistId;
+        setId(mailinglistId);
     }
-    
+
+    @Deprecated
     public String getMailinglistShortname() {
-        return mailinglistShortname;
+        return getShortname();
     }
-    
+
+    @Deprecated
     public void setMailinglistShortname(String mailinglistShortname) {
-        this.mailinglistShortname = mailinglistShortname;
+        setShortname(mailinglistShortname);
     }
     
     public boolean isOnlyActiveUsers() {

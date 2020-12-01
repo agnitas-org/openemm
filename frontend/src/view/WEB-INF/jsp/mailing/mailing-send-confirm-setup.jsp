@@ -26,6 +26,9 @@
 <logic:equal name="mailingSendForm" property="isTemplate" value="false">
 <!-- mailing navigation: -->
     <c:choose>
+        <c:when test="${isPostMailing}">
+            <c:set var="agnNavigationKey" value="mailingView_post" scope="request" />
+        </c:when>
         <c:when test="${limitedRecipientOverview}">
             <c:set var="agnNavigationKey" 		value="mailingView_DisabledMailinglist"     scope="request" />
         </c:when>

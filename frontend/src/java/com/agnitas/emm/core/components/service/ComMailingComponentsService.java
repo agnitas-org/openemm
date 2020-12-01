@@ -10,21 +10,22 @@
 
 package com.agnitas.emm.core.components.service;
 
-import java.io.IOException;
 import java.text.DateFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.struts.upload.FormFile;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.components.dto.NewFileDto;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.util.ImageUtils;
 
 public interface ComMailingComponentsService {
-	interface UploadStatistics {
+	interface ImportStatistics {
 		/**
 		 * Get an overall count of found (see {@link ImageUtils#isValidImageFileExtension(String)}) image files
 		 *
@@ -41,29 +42,6 @@ public interface ComMailingComponentsService {
 	}
 
 	MailingComponent getMailingTextTemplate(int mailingId, int companyID);
-	
-	/**
-	 * Upload all valid images files from given ZIP stream. This method does not close the ZIP stream.
-	 * <b>Mailing is neither saved (if successful) nor restored (in cases of errors).</b>
-	 *
-	 * @param mailing mailing to add the new components
-	 * @param zipFile ZIP stream to read
-	 * @return an instance of {@link UploadStatistics} filled with stats.
-	 * @throws IOException on errors reading data
-	 */
-	UploadStatistics uploadZipArchive(Mailing mailing, FormFile zipFile) throws Exception;
-
-	/**
-	 * Upload valid image files (if matches {@code sftpFilePath}) from requested SFTP server.
-	 *
-	 * @param mailing mailing to add the new components
-	 * @param fileServerAndAuthConfigString URL of the server (credentials required, base dir is optional)
-	 * @param fileServerPrivateKeyString private key for SSH protocol
-	 * @param sftpFilePath a remote directory and file mask (wildcards are supported)
-	 * @return an instance of {@link UploadStatistics} filled with stats
-	 * @throws Exception if something went wrong (unable to establish connection, network error, invalid file path requested)
-	 */
-	UploadStatistics uploadSFTP(Mailing mailing, String fileServerAndAuthConfigString, String fileServerPrivateKeyString, String sftpFilePath) throws Exception;
 
 	Map<Integer, String> getImageSizes(@VelocityCheck int companyId, int mailingId);
 
@@ -77,17 +55,44 @@ public interface ComMailingComponentsService {
 	 * Gets the mailing components by ids
 	 *
 	 * @param companyID the company id
-	 * @param componentIds the mailing compnent id list
+	 * @param componentIds the mailing component id list
 	 * @return the mailing components
 	 */
 	List<MailingComponent> getComponents(@VelocityCheck int companyID, int mailingId, Set<Integer> componentIds);
+
+	List<MailingComponent> getComponents(@VelocityCheck int companyId, int mailingId, boolean includeContent);
 
 	List<MailingComponent> getComponentsByType(@VelocityCheck int companyID, int mailingId, List<Integer> types);
 	
 	void deleteComponent(MailingComponent component);
 
-	void deleteComponents(@VelocityCheck int companyID, int mailingID, Set<Integer> bulkIds);
-	
-	void updateHostImage(int mailingID, @VelocityCheck int companyID, int componentID, byte[] imageBytes);
+	boolean deleteHostedImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds);
 
+	ServiceResult<Boolean> reloadImage(ComAdmin admin, int mailingId, int componentId);
+
+	boolean updateHostImage(int mailingID, @VelocityCheck int companyID, int componentID, byte[] imageBytes);
+
+	/**
+	 * Import valid image files (also from and ZIP-archives) to mailing components.
+	 *
+	 * @param admin current user.
+	 * @param mailingId an identifier of a mailing to import images to.
+	 * @param newFiles a list of files to be imported (may contain image files and ZIP-archives).
+	 * @param userActions a list of user actions to store one if succeeded (for UAL).
+	 * @return an instance of {@link ServiceResult}.
+	 */
+	ServiceResult<ImportStatistics> importImagesBulk(ComAdmin admin, int mailingId, List<NewFileDto> newFiles, List<UserAction> userActions);
+
+	/**
+	 * Import valid image files (if matches {@code sftpFilePath}) from requested SFTP server to mailing components.
+	 *
+	 * @param admin current user.
+	 * @param mailingId an identifier of a mailing to import images to.
+	 * @param sftpServerAndAuthConfigString URL of the server (credentials required, base dir is optional).
+	 * @param sftpPrivateKeyString private key for SSH protocol.
+	 * @param sftpFilePath a remote directory and file mask (wildcards are supported).
+	 * @param userActions a list of user actions to store one if succeeded (for UAL).
+	 * @return an instance of {@link ServiceResult}.
+	 */
+	ServiceResult<ImportStatistics> importImagesFromSftp(ComAdmin admin, int mailingId, String sftpServerAndAuthConfigString, String sftpPrivateKeyString, String sftpFilePath, List<UserAction> userActions);
 }

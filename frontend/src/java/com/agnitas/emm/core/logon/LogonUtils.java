@@ -46,4 +46,4 @@ public class LogonUtils {
 
         return bundle.getAdmin();
     }
-}
+ }

@@ -29,8 +29,6 @@ public class TrackableLinkModel {
     private Integer deepTracking;
     private String deepTrackingUID;
     private String deepTrackingSession;
-    @SuppressWarnings("unused")
-	private Integer relevance;
     private String altText;
 
     private List<LinkProperty> linkProperties;
@@ -153,16 +151,6 @@ public class TrackableLinkModel {
 
     public void setDeepTrackingSession(String deepTrackingSession) {
         this.deepTrackingSession = deepTrackingSession;
-    }
-
-    @Deprecated
-    public Integer getRelevance() {
-        return 0;
-    }
-
-    @Deprecated
-    public void setRelevance(Integer relevance) {
-        this.relevance = 0;
     }
 
     public String getAltText() {

@@ -59,7 +59,7 @@
                     <div class="form-group">
                         <div class="col-md-12">
                             <label class="control-label-left" for="search_action">
-                                <bean:message key="Actions"/>
+                                <bean:message key="action.Action"/>
                             </label>
                         </div>
                         <div class="col-md-12">
@@ -207,7 +207,7 @@
                     <display:setProperty name="basic.empty.showtable" value="false"/>
                     <display:setProperty name="basic.msg.empty_list_row" value=" "/>
 
-                    <display:column titleKey="settings.fieldType.DATE"
+                    <display:column titleKey="Date"
                                     sortProperty="logtime"
                                     sortable="true">
                         <span><emm:formatDate value="${useractivitylog.date}" format="${localeTableFormat}"/></span>

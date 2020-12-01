@@ -11,23 +11,25 @@
 package com.agnitas.emm.core.admin.service.impl;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComAdminPreferences;
-import com.agnitas.dao.ComAdminGroupDao;
-import com.agnitas.emm.core.admin.form.AdminForm;
-import com.agnitas.emm.core.admin.form.AdminPreferences;
-import com.agnitas.emm.core.admin.service.AdminChangesLogService;
-import com.agnitas.emm.core.admin.service.AdminService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComAdminPreferences;
+import com.agnitas.emm.core.admin.form.AdminForm;
+import com.agnitas.emm.core.admin.form.AdminPreferences;
+import com.agnitas.emm.core.admin.service.AdminChangesLogService;
+import com.agnitas.emm.core.admin.service.AdminService;
 
 public class AdminChangesLogServiceImpl implements AdminChangesLogService {
 
@@ -36,9 +38,6 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
 
     /** Service handling admins. */
     private AdminService adminService;
-
-    /** DAO accessing admin groups. */
-    private ComAdminGroupDao adminGroupDao;
 
     @Override
     public List<UserAction> getChangesAsUserActions(AdminForm newAdminData, ComAdmin oldAdmin, ComAdminPreferences oldAdminPreferences) {
@@ -82,13 +81,17 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
                 userActions.add(new UserAction("edit user",
                         "Username: " + userName + ". Timezone changed from " + oldAdmin.getAdminTimezone() + " to " + newAdminData.getAdminTimezone()));
             }
+            
+            Set<Integer> currentGroupIds = new HashSet<>(oldAdmin.getGroupIds());
+            Set<Integer> newGroupIds = new HashSet<>();
+            if (newAdminData.getGroupIDs() != null) {
+            	newGroupIds.addAll(newAdminData.getGroupIDs());
+            }
+            if (!currentGroupIds.equals(newGroupIds)) {
+                String oldGroupIdsList = StringUtils.join(currentGroupIds, ",");
+                String newGroupIdsList = StringUtils.join(newGroupIds, ",");
 
-            if (oldAdmin.getGroup().getGroupID() != newAdminData.getGroupID()) {
-                String oldGroupName = oldAdmin.getGroup().getGroupID() == 0 ? "None" : oldAdmin.getGroup().getShortname();
-                String newGroupName = newAdminData.getGroupID() == 0 ? "None" : adminGroupDao.getAdminGroup(newAdminData.getGroupID(), newAdminData.getCompanyID()).getShortname();
-
-                userActions.add(new UserAction("edit user",
-                        "Username: " + userName + ". User Group changed from " + oldGroupName + " to " + newGroupName));
+                userActions.add(new UserAction("edit user", "Username: " + userName + ". User Group changed from " + oldGroupIdsList + " to " + newGroupIdsList));
             }
 
             if (logger.isInfoEnabled()) {
@@ -240,10 +243,5 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
     @Required
     public void setAdminService(AdminService service) {
         this.adminService = Objects.requireNonNull(service, "Admin service is null");
-    }
-
-    @Required
-    public void setAdminGroupDao(ComAdminGroupDao adminGroupDao) {
-        this.adminGroupDao = adminGroupDao;
     }
 }

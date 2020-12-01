@@ -22,10 +22,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
 import com.agnitas.reporting.birt.external.dataset.MailingSummaryDataSet;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DashboardInfo extends HttpServlet {
 	private static final long serialVersionUID = 3250441017268983412L;

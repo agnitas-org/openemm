@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
     <property name="units">in</property>
+    <method name="initialize"><![CDATA[reportContext.setGlobalVariable("isDarkmode", params["darkmode"]);]]></method>
     <method name="beforeRender"><![CDATA[if(reportContext.getOutputFormat()!="pdf") {
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("reportParameters").drop();
 }
@@ -150,6 +151,35 @@ if(reportContext.getOutputFormat()=="csv") {
             <structure name="format">
                 <property name="category">Unformatted</property>
             </structure>
+        </scalar-parameter>
+        <scalar-parameter name="hiddenTargetId" id="547">
+            <property name="hidden">false</property>
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="darkmode" id="548">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">boolean</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">False</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">check-box</property>
+            <structure name="format"/>
         </scalar-parameter>
     </parameters>
     <data-sources>
@@ -320,7 +350,9 @@ if (params["mailinglistID"].value != null &amp;&amp; params["mailinglistID"].val
 	mailinglistID = params["mailinglistID"];
 }
 
-valueList = recipientDetailDataSet.getRecipientDetails(params["companyID"], targetID, mailinglistID, params["mediaType"], params["startDate"], params["stopDate"], params["hourScale"]);
+valueList = recipientDetailDataSet.getRecipientDetails(params["companyID"], targetID, mailinglistID,
+            params["mediaType"], params["startDate"], params["stopDate"], params["hourScale"], params["hiddenTargetId"]);
+
 currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if( currentrow < valueList.size() ) {
 	row["MYDATE"] = valueList.get(currentrow).getMydate();
@@ -874,7 +906,7 @@ m;</expression>
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -985,6 +1017,27 @@ function beforeDrawAxisTitle( axis, label, icsc ) {
 			xAxisTitle = Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;settings.fieldType.DATE&quot;, reportContext.getLocale());
 		}
 		label.getCaption().setValue(xAxisTitle);
+	}
+}
+
+function beforeDrawDataPointLabel(dph, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawAxisLabel( axis, label, icsc ) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawSeries(series, isr, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		series.getLabel().getCaption().getColor().set(255, 255, 255);
 	}
 }</Script>
   <Units>Points</Units>

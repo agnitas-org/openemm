@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.Company;
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
@@ -201,15 +202,14 @@ public class ComOnePixelCount extends HttpServlet {
 				try {
 					uid = uidService.parse(agnUidString);
 				} catch (UIDParseException e) {
-					logger.warn("OnepixelLog: Error parsing UID: " + agnUidString + " (" + e.getMessage() + ")");
-					logger.debug(e);
+					logger.info("OnepixelLog: Error parsing UID: " + agnUidString, e);
 				}
 	
 				if (uid != null && uid.getCompanyID() > 0) {
 					Company company = companyDaoCache.getItem(uid.getCompanyID());
 					if (company == null) {
 						logger.error("OnepixelLog error: Company with ID: " + uid.getCompanyID() + " not found");
-					} else if (Company.STATUS_ACTIVE.equals(company.getStatus())) {
+					} else if (CompanyStatus.ACTIVE == company.getStatus()) {
 						// noCount examples: ...&nocount ...&nocount= ...&nocount=true ...&nocount=jhg
 			            String noCountString = request.getParameter("nocount");
 			            boolean noCount = noCountString != null && !"false".equalsIgnoreCase(noCountString);

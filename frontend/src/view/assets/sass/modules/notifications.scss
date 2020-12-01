@@ -120,6 +120,25 @@ Please note that depending on the state, the state icon in the headline has to b
   @include shadow-variant(regular);
 }
 
+.notification-simple {
+  position: relative;
+
+  border-radius: 2px;
+  overflow: hidden;
+
+  font-size: $fs-regular;
+
+  background-color: $c-white;
+  padding: 15px 30px;
+  margin-bottom: 10px;
+  @include box-shadow(0 0 3px 0 rgba(0, 23, 39, 0.4));
+}
+
+body.dark-theme .notification {
+  background-color: $c-notification-background;
+  @include shadow-variant(dark);
+}
+
 .notification + .notification {
   margin-top: 10px;
 }
@@ -157,6 +176,10 @@ Please note that depending on the state, the state icon in the headline has to b
   }
 }
 
+body.dark-theme .notification-content {
+  color: $c-notification-text;
+}
+
 // contextual variants
 @each $conf in $states {
   $state: nth($conf, 1);
@@ -173,6 +196,10 @@ Please note that depending on the state, the state icon in the headline has to b
   .notification {
     @include shadow-variant(hardest);
   }
+}
+
+body.dark-theme #notifications-container .notification{
+  @include shadow-variant(dark);
 }
 
 .notification-top-left {

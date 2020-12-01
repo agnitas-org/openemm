@@ -10,17 +10,12 @@
 
 package com.agnitas.emm.core.mailinglist.form;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-
 import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
 
 public class MailinglistForm {
 	
 	private int id;
 	
-	@NotNull(message = "error.name.is.empty")
-	@Size(min = 3, message = "error.name.too.short")
 	private String shortname;
 	
 	private String description;

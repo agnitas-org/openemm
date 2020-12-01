@@ -13,6 +13,8 @@ package org.agnitas.emm.core.velocity;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.TimeoutLRUMap;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
@@ -20,6 +22,9 @@ import org.springframework.beans.factory.annotation.Required;
  * for companies.
  */
 public class VelocityWrapperFactoryImpl implements VelocityWrapperFactory {
+	/** The logger. */
+	private static final transient Logger logger = Logger.getLogger(VelocityWrapperFactoryImpl.class);
+	
 	private ConfigService configService;
 	
 	@Required
@@ -29,14 +34,18 @@ public class VelocityWrapperFactoryImpl implements VelocityWrapperFactory {
 
 	@Override
 	public VelocityWrapper getWrapper(int companyId) throws Exception {
-		VelocityWrapper wrapper = cache.get( companyId);
-		
-		if( wrapper == null) {
-			wrapper = createVelocityWrapper( companyId, configService.getValue(ConfigValue.VelocityLogDir));
-			
-			cache.put( companyId, wrapper);
+		VelocityWrapper wrapper = cache.get(companyId);
+
+		if (wrapper == null) {
+			String velocityLogDir = configService.getValue(ConfigValue.VelocityLogDir);
+			if (StringUtils.isBlank(velocityLogDir)) {
+				logger.error("VelocityLogDir configuration value is empty");
+			}
+			wrapper = createVelocityWrapper(companyId, velocityLogDir);
+
+			cache.put(companyId, wrapper);
 		}
-		
+
 		return wrapper;
 	}
 
@@ -74,15 +83,15 @@ public class VelocityWrapperFactoryImpl implements VelocityWrapperFactory {
 
 	/**
 	 * Sets the LRU map for caching.
-	 *  
+	 * 
 	 * @param cache LRU map
 	 */
 	public void setVelocityWrapperCache( TimeoutLRUMap<Integer, VelocityWrapper> cache) {
 		this.cache = cache;
 	}
 
-	/** 
-	 * Set factory for Uberspect delegate targets. 
+	/**
+	 * Set factory for Uberspect delegate targets.
 	 * 
 	 * @param factory factory for Uberspect delegate targets
 	 */

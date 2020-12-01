@@ -10,39 +10,44 @@
 
 package com.agnitas.emm.springws.endpoint;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.binding.service.BindingModel;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.binding.service.ComBindingService;
-import com.agnitas.emm.springws.jaxb.ObjectFactory;
 import com.agnitas.emm.springws.jaxb.SetSubscriberBindingWithActionRequest;
 import com.agnitas.emm.springws.jaxb.SetSubscriberBindingWithActionResponse;
 
-// not tested, leaved as an example of extension webservice
-public class SetSubscriberBindingWithActionEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class SetSubscriberBindingWithActionEndpoint extends BaseEndpoint {
 	/** The logger. */
-	private static final Logger classLogger = Logger.getLogger(SetSubscriberBindingWithActionEndpoint.class);
+	private static final Logger logger = Logger.getLogger(SetSubscriberBindingWithActionEndpoint.class);
 
-	@Resource
 	private ComBindingService bindingService;
-	@Resource
-	private ObjectFactory comObjectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Entered SetSubscriberBindingWithActionEndpoint.invokeInternal()");
+	@Autowired
+	public SetSubscriberBindingWithActionEndpoint(@Qualifier("BindingService") ComBindingService bindingService) {
+		this.bindingService = bindingService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "SetSubscriberBindingWithActionRequest")
+	public @ResponsePayload SetSubscriberBindingWithActionResponse setSubscriberBindingWithAction(@RequestPayload SetSubscriberBindingWithActionRequest request) throws Exception {
+		if (logger.isInfoEnabled()) {
+			logger.info( "Entered SetSubscriberBindingWithActionEndpoint.setSubscriberBindingWithAction()");
 		}
 		
-		SetSubscriberBindingWithActionRequest request = (SetSubscriberBindingWithActionRequest) arg0;
-		SetSubscriberBindingWithActionResponse response = comObjectFactory.createSetSubscriberBindingWithActionResponse();
+		SetSubscriberBindingWithActionResponse response = new SetSubscriberBindingWithActionResponse();
 		
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Parsing binding model");
+		if (logger.isInfoEnabled()) {
+			logger.info( "Parsing binding model");
 		}
 		BindingModel model = new BindingModel();
 		model.setCustomerId(request.getCustomerID());
@@ -55,18 +60,17 @@ public class SetSubscriberBindingWithActionEndpoint extends AbstractMarshallingP
 		model.setExitMailingId(request.getExitMailingID());
 		model.setActionId(request.getActionID());
 		
-		final boolean runActionAsynchronous = request.isRunActionAsynchronous() == null ? false : request.isRunActionAsynchronous();
-		
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Calling binding service layer");
+		boolean runActionAsynchronous = BooleanUtils.toBooleanDefaultIfNull(request.isRunActionAsynchronous(), false);
+
+		if (logger.isInfoEnabled()) {
+			logger.info( "Calling binding service layer");
 		}
-		response.setValue( bindingService.setBindingWithActionId(model, runActionAsynchronous));
+		response.setValue(bindingService.setBindingWithActionId(model, runActionAsynchronous));
 		
-		if( classLogger.isInfoEnabled()) {
-			classLogger.info( "Leaving SetSubscriberBindingWithActionEndpoint.invokeInternal()");
+		if (logger.isInfoEnabled()) {
+			logger.info( "Leaving SetSubscriberBindingWithActionEndpoint.setSubscriberBindingWithAction()");
 		}
 		
 		return response;
 	}
-
 }

@@ -10,6 +10,8 @@
 
 package com.agnitas.beans.impl;
 
+import java.util.Date;
+
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.MaildropEntry;
@@ -19,10 +21,10 @@ public class MaildropEntryImpl implements MaildropEntry {
 	private int id;
 	private int mailingID;
 	private char status;
-	protected java.util.Date sendDate;
-	protected java.util.Date genDate;
+	protected Date sendDate;
+	protected Date genDate;
 	protected int genStatus;
-	protected java.util.Date genChangeDate;
+	protected Date genChangeDate;
 	protected int stepping;
 	protected int blocksize;
 	private int maxRecipients;
@@ -139,7 +141,7 @@ public class MaildropEntryImpl implements MaildropEntry {
 	 * @return Value of property senddate.
 	 */
 	@Override
-	public java.util.Date getSendDate() {
+	public Date getSendDate() {
 		return sendDate;
 	}
 
@@ -149,7 +151,7 @@ public class MaildropEntryImpl implements MaildropEntry {
 	 * @param sendDate
 	 */
 	@Override
-	public void setSendDate(java.util.Date sendDate) {
+	public void setSendDate(Date sendDate) {
 		this.sendDate = sendDate;
 	}
 
@@ -159,7 +161,7 @@ public class MaildropEntryImpl implements MaildropEntry {
 	 * @return Value of property genDate.
 	 */
 	@Override
-	public java.util.Date getGenDate() {
+	public Date getGenDate() {
 		return genDate;
 	}
 
@@ -170,7 +172,7 @@ public class MaildropEntryImpl implements MaildropEntry {
 	 *            New value of property genDate.
 	 */
 	@Override
-	public void setGenDate(java.util.Date genDate) {
+	public void setGenDate(Date genDate) {
 		this.genDate = genDate;
 	}
 
@@ -180,7 +182,7 @@ public class MaildropEntryImpl implements MaildropEntry {
 	 * @return Value of property genChangeDate.
 	 */
 	@Override
-	public java.util.Date getGenChangeDate() {
+	public Date getGenChangeDate() {
 		return genChangeDate;
 	}
 
@@ -191,7 +193,7 @@ public class MaildropEntryImpl implements MaildropEntry {
 	 *            New value of property genChangeDate.
 	 */
 	@Override
-	public void setGenChangeDate(java.util.Date genChangeDate) {
+	public void setGenChangeDate(Date genChangeDate) {
 		this.genChangeDate = genChangeDate;
 	}
 

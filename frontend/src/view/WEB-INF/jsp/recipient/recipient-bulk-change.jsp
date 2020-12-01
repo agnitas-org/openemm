@@ -13,6 +13,7 @@
 <%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
 
 <c:set var="SIMPLE_DATE_TYPE" value="<%= DbColumnType.SimpleDataType.Date %>"/>
+<c:set var="DATETIME_TYPE" value="<%= DbColumnType.SimpleDataType.DateTime %>"/>
 <c:set var="localeDateHint" value="(${localeDatePattern})"/>
 
 <mvc:form servletRelativeAction="/recipient/bulkView.action"
@@ -105,7 +106,7 @@
                                     sortable="false">
 						<c:set var="columnDataType" value="${column.simpleDataType}"/>
 						<%--@elvariable id="columnDataType" type="org.agnitas.util.DbColumnType.SimpleDataType"--%>
-                    	<mvc:message code="${columnDataType.messageKey}"/> ${columnDataType == SIMPLE_DATE_TYPE ? localeDateHint : ''}
+                    	<mvc:message code="${columnDataType.messageKey}"/> ${columnDataType == SIMPLE_DATE_TYPE || columnDataType == DATETIME_TYPE ? localeDateHint : ''}
                     </display:column>
 
 					<display:column headerClass="js-table-sort" class="js-checkable field_newValue"

@@ -55,6 +55,9 @@ public class ImportMode {
 	/** Reactivate recipients from suspended to active**/
 	public static final ImportMode REACTIVATE_SUSPENDED = new ImportMode(10, "import.mode.reactivateSuspended", "ImportModeReactivateSuspendedHandler");
 
+	/** Mark existing recipients as blacklisted. Mark all blacklisted recipients as admin_out, which are not included in import data **/
+	public static final ImportMode BLACKLIST_EXCLUSIVE = new ImportMode(12, "import.mode.blacklist_exclusive", "ImportModeBlacklistExclusiveHandler");
+
 	/**
 	 * int value for db storage
 	 */

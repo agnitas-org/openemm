@@ -14,8 +14,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.actions.EmmAction;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.action.dto.EmmActionDto;
+import com.agnitas.emm.core.commons.ActivenessStatus;
 
 public interface EmmActionService {
 	/**
@@ -34,6 +40,9 @@ public interface EmmActionService {
 
 	int saveEmmAction(EmmAction action);
 
+	@Transactional
+	int saveEmmAction(ComAdmin admin, EmmAction action, List<UserAction> userActions);
+
 	int saveEmmAction(EmmAction action, List<UserAction> userActions);
 
 	EmmAction getEmmAction(int actionID, int companyID);
@@ -49,4 +58,9 @@ public interface EmmActionService {
 	 * @return List of emm actions
 	 */
 	List<EmmAction> getActionListBySendMailingId(int companyId, int mailingId);
+
+	PaginatedListImpl<EmmActionDto> getEmmActions(ComAdmin admin, String sort, String order, int page, int numberOfRows, ActivenessStatus filter);
+
+    EmmActionDto getCopyOfAction(ComAdmin admin, int originId);
+
 }

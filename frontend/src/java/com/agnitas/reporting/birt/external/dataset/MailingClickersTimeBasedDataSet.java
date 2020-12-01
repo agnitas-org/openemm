@@ -10,177 +10,257 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.util.DateUtilities;
+import org.apache.log4j.Logger;
+import org.springframework.dao.DataAccessException;
+import org.springframework.util.StringUtils;
+
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
-import org.agnitas.beans.BindingEntry.UserType;
-import org.apache.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.util.StringUtils;
 
 public class MailingClickersTimeBasedDataSet extends TimeBasedDataSet {
 	private static final transient Logger logger = Logger.getLogger(MailingClickersTimeBasedDataSet.class);
+	
+	public List<TimeBasedClickStatRow> getData(int tempTableID) throws Exception {
+        List<TimeBasedClickStatRow> returnList = new ArrayList<>();
+        List<Map<String, Object>> result = selectEmbedded(logger, "SELECT * FROM " + getTempTableName(tempTableID) + " ORDER BY statistic_date, device_class");
+        for (Map<String, Object> row : result) {
+			TimeBasedClickStatRow readItem = new TimeBasedClickStatRow();
+			
+			readItem.setClicks_net(((Number) row.get("net")).intValue());
+			readItem.setClicks_gross(((Number) row.get("gross")).intValue());
+			readItem.setClicks_anonymous(((Number) row.get("anonymous")).intValue());
+			readItem.setClickTime((Date) row.get("statistic_date"));
+			readItem.setDeviceClass(DeviceClass.fromId(((Number) row.get("device_class")).intValue()));
+			readItem.setTargetgroup((String) row.get("target_group"));
+			readItem.setColumn_index(((Number) row.get("target_group_index")).intValue());
+			
+			returnList.add(readItem);
+        }
+    	
+        return returnList;
+	}
+	
+	@Override
+	public void dropTempTable(int tempTableID) throws Exception {
+		// Do not drop this table.
+		// It is dropped automatically on next call of getCachedTempTable, if it is outdated
+	}
+	
+	private static String getTempTableName(int tempTableID) {
+		return "tmp_click_prog_" + tempTableID + "_tbl";
+	}
+	
+	private int createTempTable() throws DataAccessException, Exception {
+		int tempTableID = getNextTmpID();
+		executeEmbedded(logger,
+			"CREATE TABLE " + getTempTableName(tempTableID) + " ("
+				+ "net INTEGER,"
+				+ " gross INTEGER,"
+				+ " anonymous INTEGER,"
+				+ " statistic_date TIMESTAMP,"
+				+ " device_class INTEGER,"
+				+ " target_group VARCHAR(200),"
+				+ " target_group_index INTEGER"
+			+ ")");
+		
+		return tempTableID;
+	}
 
-	public List<TimeBasedClickStatRow> getData(String keyColumn, Integer id, Integer companyID, String selectedTargets, String startDateString, String endDateString, Boolean hourly, String recipientType) throws Exception {
+	public int prepareData(String keyColumn, Integer id, Integer companyID, String selectedTargets, String startDateString, String endDateString, Boolean hourly, String recipientType) throws Exception {
 		try {
+			String parameterString = keyColumn + "," + id + "," + companyID + ",[" + selectedTargets + "]," + startDateString + "," + endDateString + "," + hourly + "," + recipientType;
+			int tempTableID = getCachedTempTable(logger, getClass().getSimpleName(), parameterString);
+			if (tempTableID > 0) {
+				return tempTableID;
+			}
+			
+			tempTableID = createTempTable();
+			
+			createBlockEntryInTempTableCache(logger, getClass().getSimpleName(), parameterString);
+			
 			Date startDate = parseTimeBasedDate(startDateString, true);
 			Date endDate = parseTimeBasedDate(endDateString, false);
-	        
-	        SimpleDateFormat clickTimeFormat =
-					new SimpleDateFormat(hourly ? DATE_PARAMETER_FORMAT_WITH_BLANK_HOUR : DATE_PARAMETER_FORMAT);
 			
 	        List<LightTarget> lightTargets = getTargets(selectedTargets, companyID);
 	        Map<Integer, LightTarget> targetGroups = new HashMap<>();
 	        Map<Integer, Integer> targetGroupIndexes = new HashMap<>();
 	        targetGroups.put(0, null);
-	        targetGroupIndexes.put(0, CommonKeys.ALL_SUBSCRIBERS_INDEX);
-			int targetgroupIndex = 2;
+			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
+			targetGroupIndexes.put(0, CommonKeys.ALL_SUBSCRIBERS_INDEX);
 			for (LightTarget target : lightTargets) {
+				targetGroupIndex++;
 				targetGroups.put(target.getId(), target);
-				targetGroupIndexes.put(target.getId(), targetgroupIndex);
-				targetgroupIndex++;
-			}
-			
-			List<TimeBasedClickStatRow> returnList = new ArrayList<>();
-			List<DeviceClass> deviceClassesForDisplay = getDeviceClassesToShow();
-			TimeBasedClickStatRow_RowMapper rowMapper = new TimeBasedClickStatRow_RowMapper(clickTimeFormat);
-
-			for (Entry<Integer, LightTarget> targetEntry : targetGroups.entrySet()) {
-				int targetId = targetEntry.getKey();
-				LightTarget target = getDefaultTarget(targetEntry.getValue());
-				
-				rowMapper.setTargetgroupName(target.getName());
-				rowMapper.setTargetgroupIndex(targetId);
-				
-				for (DeviceClass deviceClass : deviceClassesForDisplay) {
-					rowMapper.setDeviceClass(deviceClass);
-			        List<TimeBasedClickStatRow> results = select(logger,
-				    	getStatisticSqlStatement(companyID, hourly, recipientType, deviceClass, target.getTargetSQL(), keyColumn),
-		        		rowMapper, id, startDate, endDate);
-			        returnList.addAll(results);
-	        	}
+				targetGroupIndexes.put(target.getId(), targetGroupIndex);
 			}
 
-	        // Check if all time periods have at least a 0 entry
-        	deviceClassesForDisplay.add(null); // Added for mixed
-        	GregorianCalendar nextPeriodDate = new GregorianCalendar();
-        	nextPeriodDate.setTime(startDate);
-        	GregorianCalendar endPeriodDate = new GregorianCalendar();
-        	endPeriodDate.setTime(endDate);
-    		
-        	returnList.addAll(
-        			getTimeBasedClickStat(deviceClassesForDisplay, targetGroups, targetGroupIndexes, nextPeriodDate, endPeriodDate, hourly));
-        	
-        	// Sort result entries by clickdate, deviceclass and targetgroup
-        	sortTimeBasedClickStatResult(returnList);
+			boolean mustJoinCustomerData;
+	        String recipientTypeSqlPart;
+	        if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientType)) {
+	        	recipientTypeSqlPart = " AND cust.customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl ml WHERE ml." + keyColumn + " = rlog." + keyColumn + ")) cust";
+	        	mustJoinCustomerData = true;
+	        } else if (CommonKeys.TYPE_WORLDMAILING.equals(recipientType)) {
+	        	recipientTypeSqlPart = " AND cust.customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl ml WHERE ml." + keyColumn + " = rlog." + keyColumn + ")) cust";
+	        	mustJoinCustomerData = true;
+	        } else {
+	        	recipientTypeSqlPart = "";
+	        	mustJoinCustomerData = false;
+	        }
 	        
-	        return returnList;
+	        for (Entry<Integer, LightTarget> targetEntry : targetGroups.entrySet()) {
+				int currentTargetGroupIndex = targetGroupIndexes.get(targetEntry.getKey());
+				LightTarget targetGroup = targetEntry.getValue();
+				String currentTargetGroupName;
+				String targetGroupSql;
+				if (targetGroup != null) {
+					currentTargetGroupName = targetGroup.getName();
+					targetGroupSql = targetGroup.getTargetSQL();
+				} else {
+					currentTargetGroupName = CommonKeys.ALL_SUBSCRIBERS;
+					targetGroupSql = "";
+				}
+
+				Date currentStartDate = startDate;
+				while (currentStartDate.before(endDate)) {
+					Date currentEndDate;
+					if (hourly) {
+						currentEndDate = DateUtilities.addMinutesToDate(currentStartDate, 60);
+					} else {
+						currentEndDate = DateUtilities.addDaysToDate(currentStartDate, 1);
+					}
+					
+					for (DeviceClass deviceClass : DeviceClass.getOnlyKnownDeviceClasses()) {
+						String sql = "SELECT"
+							+ " COUNT(DISTINCT rlog.customer_id) AS net,"
+							+ " COUNT(*) AS gross"
+						+ " FROM rdirlog_" + companyID + "_tbl rlog"
+						+ (StringUtils.isEmpty(targetGroupSql) && !mustJoinCustomerData ? "" : " LEFT JOIN " + getCustomerTableName(companyID) + " cust ON (rlog.customer_id = cust.customer_id)")
+						+ " WHERE rlog." + keyColumn + " = ?"
+						+ " AND rlog.customer_id != 0"
+						+ " AND EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rlog2"
+						    + " WHERE ? <= rlog2.timestamp"
+						    + " AND rlog2.timestamp < ?"
+						    + " AND rlog." + keyColumn + " = rlog2." + keyColumn + ""
+						    + " AND rlog.customer_id = rlog2.customer_id"
+						    + " AND rlog2.device_class_id = ?)"
+						+ " AND NOT EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rlog3"
+						    + " WHERE ? <= rlog3.timestamp"
+						    + " AND rlog3.timestamp < ?"
+						    + " AND rlog." + keyColumn + " = rlog3." + keyColumn + ""
+						    + " AND rlog.customer_id = rlog3.customer_id"
+						    + " AND rlog3.device_class_id != ?)"
+						+ " AND ? <= rlog.timestamp"
+						+ " AND rlog.timestamp < ?"
+						+ (StringUtils.isEmpty(targetGroupSql) ? "" : " AND " + targetGroupSql)
+						+ recipientTypeSqlPart;
+						    
+						Map<String, Object> row = selectSingleRow(logger, sql, id, currentStartDate, currentEndDate, deviceClass.getId(), currentStartDate, currentEndDate, deviceClass.getId(), currentStartDate, currentEndDate);
+						int netValue = ((Number) row.get("net")).intValue();
+						int grossValue = ((Number) row.get("gross")).intValue();
+
+						String sqlAnonymous = "SELECT"
+							+ " COUNT(*) AS value"
+						+ " FROM rdirlog_" + companyID + "_tbl rlog"
+						+ (StringUtils.isEmpty(targetGroupSql) && !mustJoinCustomerData ? "" : " LEFT JOIN " + getCustomerTableName(companyID) + " cust ON (rlog.customer_id = cust.customer_id)")
+						+ " WHERE rlog." + keyColumn + " = ?"
+						+ " AND rlog.customer_id = 0"
+						+ " AND EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rlog2"
+						    + " WHERE ? <= rlog2.timestamp"
+						    + " AND rlog2.timestamp < ?"
+						    + " AND rlog." + keyColumn + " = rlog2." + keyColumn + ""
+						    + " AND rlog.customer_id = rlog2.customer_id"
+						    + " AND rlog2.device_class_id = ?)"
+						+ " AND NOT EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rlog3"
+						    + " WHERE ? <= rlog3.timestamp"
+						    + " AND rlog3.timestamp < ?"
+						    + " AND rlog." + keyColumn + " = rlog3." + keyColumn + ""
+						    + " AND rlog.customer_id = rlog3.customer_id"
+						    + " AND rlog3.device_class_id != ?)"
+						+ " AND ? <= rlog.timestamp"
+						+ " AND rlog.timestamp < ?"
+						+ (StringUtils.isEmpty(targetGroupSql) ? "" : " AND " + targetGroupSql)
+						+ recipientTypeSqlPart;
+						
+						Map<String, Object> rowAnonymous = selectSingleRow(logger, sqlAnonymous, id, currentStartDate, currentEndDate, deviceClass.getId(), currentStartDate, currentEndDate, deviceClass.getId(), currentStartDate, currentEndDate);
+						int anonymousValue = ((Number) rowAnonymous.get("value")).intValue();
+						
+						updateEmbedded(logger, "INSERT INTO " + getTempTableName(tempTableID) + " (net, gross, anonymous, statistic_date, device_class, target_group, target_group_index) VALUES (?, ?, ?, ?, ?, ?, ?)",
+							netValue,
+							grossValue + anonymousValue,
+							anonymousValue,
+							currentStartDate,
+							deviceClass.getId(),
+							currentTargetGroupName,
+							currentTargetGroupIndex);
+					}
+					
+					// Mixed deviceClass
+					String sql = "SELECT"
+						+ " COUNT(DISTINCT rlog.customer_id) AS net,"
+						+ " COUNT(*) AS gross"
+					+ " FROM rdirlog_" + companyID + "_tbl rlog"
+					+ (StringUtils.isEmpty(targetGroupSql) && !mustJoinCustomerData ? "" : " LEFT JOIN " + getCustomerTableName(companyID) + " cust ON (rlog.customer_id = cust.customer_id)")
+					+ " WHERE rlog." + keyColumn + " = ?"
+					+ " AND rlog.customer_id != 0"
+		        	+ " AND (SELECT COUNT(DISTINCT device_class_id) FROM rdirlog_" + companyID + "_tbl rlog2"
+		        		+ " WHERE ? <= rlog2.timestamp"
+					    + " AND rlog2.timestamp < ?"
+					    + " AND rlog." + keyColumn + " = rlog2." + keyColumn + ""
+					    + " AND rlog.customer_id = rlog2.customer_id) > 1"
+					+ " AND ? <= rlog.timestamp"
+					+ " AND rlog.timestamp < ?"
+					+ (StringUtils.isEmpty(targetGroupSql) ? "" : " AND " + targetGroupSql)
+					+ recipientTypeSqlPart;
+					    
+					Map<String, Object> row = selectSingleRow(logger, sql, id, currentStartDate, currentEndDate, currentStartDate, currentEndDate);
+					int netValue = ((Number) row.get("net")).intValue();
+					int grossValue = ((Number) row.get("gross")).intValue();
+
+					String sqlAnonymous = "SELECT"
+						+ " COUNT(*) AS value"
+					+ " FROM rdirlog_" + companyID + "_tbl rlog"
+					+ (StringUtils.isEmpty(targetGroupSql) && !mustJoinCustomerData ? "" : " LEFT JOIN " + getCustomerTableName(companyID) + " cust ON (rlog.customer_id = cust.customer_id)")
+					+ " WHERE rlog." + keyColumn + " = ?"
+					+ " AND rlog.customer_id = 0"
+			        + " AND (SELECT COUNT(DISTINCT device_class_id) FROM rdirlog_" + companyID + "_tbl rlog2"
+		        		+ " WHERE ? <= rlog2.timestamp"
+					    + " AND rlog2.timestamp < ?"
+					    + " AND rlog." + keyColumn + " = rlog2." + keyColumn + ""
+					    + " AND rlog.customer_id = rlog2.customer_id) > 1"
+					+ " AND ? <= rlog.timestamp"
+					+ " AND rlog.timestamp < ?"
+					+ (StringUtils.isEmpty(targetGroupSql) ? "" : " AND " + targetGroupSql)
+					+ recipientTypeSqlPart;
+					
+					Map<String, Object> rowAnonymous = selectSingleRow(logger, sqlAnonymous, id, currentStartDate, currentEndDate, currentStartDate, currentEndDate);
+					int anonymousValue = ((Number) rowAnonymous.get("value")).intValue();
+					
+					updateEmbedded(logger, "INSERT INTO " + getTempTableName(tempTableID) + " (net, gross, anonymous, statistic_date, device_class, target_group, target_group_index) VALUES (?, ?, ?, ?, ?, ?, ?)",
+						netValue,
+						grossValue + anonymousValue,
+						anonymousValue,
+						currentStartDate,
+						0,
+						currentTargetGroupName,
+						currentTargetGroupIndex);
+					
+					currentStartDate = currentEndDate;
+				}
+			}
+	        
+	        storeTempTableInCache(logger, getClass().getSimpleName(), parameterString, tempTableID, getTempTableName(tempTableID));
+	        
+	        return tempTableID;
 		} catch (Exception e) {
 			throw new Exception("Cannot query for MailingClickersTimeBasedDataSet: " + e.getMessage(), e);
-		}
-	}
-	
-	private String getStatisticSqlStatement(Integer companyID, boolean hourly, String recipientType, DeviceClass deviceClass, String targetSql, String keyColumn) {
-        String clickTimeSqlPart;
-        if (isOracleDB()) {
-        	clickTimeSqlPart = "TO_CHAR(rlog.timestamp, 'yyyy-mm-dd" + (hourly ? " hh24" : "") + "')";
-        } else {
-        	clickTimeSqlPart = "DATE_FORMAT(rlog.timestamp , '%Y-%m-%d" + (hourly ? " %H" : "") + "')";
-        }
-		
-        String clickTime2SqlPart;
-        if (isOracleDB()) {
-        	clickTime2SqlPart = "TO_CHAR(rlog2.timestamp, 'yyyy-mm-dd" + (hourly ? " hh24" : "") + "')";
-        } else {
-        	clickTime2SqlPart = "DATE_FORMAT(rlog2.timestamp , '%Y-%m-%d" + (hourly ? " %H" : "") + "')";
-        }
-        
-        String positiveDeviceClassPart;
-		String negativeDeviceClassPart = "";
-        if (deviceClass == null) {
-        	// Mixed deviceClass
-        	positiveDeviceClassPart = " AND (SELECT COUNT(DISTINCT device_class_id) FROM rdirlog_" + companyID + "_tbl rlog2 WHERE " + clickTimeSqlPart + " = " + clickTime2SqlPart + " AND rlog." + keyColumn + " = rlog2." + keyColumn + " AND rlog.customer_id = rlog2.customer_id) > 1";
-        } else {
-        	positiveDeviceClassPart = " AND EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rlog2 WHERE " + clickTimeSqlPart + " = " + clickTime2SqlPart + " AND rlog." + keyColumn + " = rlog2." + keyColumn + " AND rlog.customer_id = rlog2.customer_id AND device_class_id = " + deviceClass.getId() + ")";
-			negativeDeviceClassPart = " AND NOT EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rlog2 WHERE " + clickTimeSqlPart + " = " + clickTime2SqlPart + " AND rlog." + keyColumn + " = rlog2." + keyColumn + " AND rlog.customer_id = rlog2.customer_id AND device_class_id != " + deviceClass.getId() + ")";
-        }
-        
-        String recipientTypeSqlPart = "";
-        if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientType)) {
-        	recipientTypeSqlPart = " AND cust.customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl ml WHERE ml.mailing_id = rlog.mailing_id)) cust";
-        } else if (CommonKeys.TYPE_WORLDMAILING.equals(recipientType)) {
-        	recipientTypeSqlPart = " AND cust.customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl ml WHERE ml.mailing_id = rlog.mailing_id)) cust";
-        }
-		
-		return "SELECT "+
-				" COUNT(DISTINCT rlog.customer_id) AS net, " +
-				" COUNT(*) AS gross, " +
-				" COUNT(CASE WHEN rlog.customer_id = 0 then 1 end) AS anonymous, " +
-				clickTimeSqlPart + " AS click_time " +
-				" FROM " + getRdirLogTableName(companyID) + " rlog " +
-				" LEFT JOIN " + getCustomerTableName(companyID) + " cust ON (rlog.customer_id = cust.customer_id) " +
-				" WHERE rlog." + keyColumn + " = ? " +
-				positiveDeviceClassPart +
-				negativeDeviceClassPart +
-				" AND ? <= rlog.timestamp AND rlog.timestamp <= ? " +
-				recipientTypeSqlPart +
-				(StringUtils.isEmpty(targetSql) ? "" : " AND " + targetSql) +
-				" GROUP BY " + clickTimeSqlPart +
-				" ORDER BY " + clickTimeSqlPart + " ASC";
-	}
-	
-	private class TimeBasedClickStatRow_RowMapper implements RowMapper<TimeBasedClickStatRow> {
-    	private SimpleDateFormat clickTimeFormat;
-    	private String targetgroupName;
-    	private int targetgroupIndex;
-    	private DeviceClass deviceClass;
-    	
-		public TimeBasedClickStatRow_RowMapper(SimpleDateFormat clickTimeFormat) {
-			this.clickTimeFormat = clickTimeFormat;
-			this.targetgroupName = CommonKeys.ALL_SUBSCRIBERS;
-			this.targetgroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
-			this.deviceClass = null;
-		}
-		
-		public void setTargetgroupName(String targetgroupName) {
-			this.targetgroupName = targetgroupName;
-		}
-		
-		public void setTargetgroupIndex(int targetgroupIndex) {
-			this.targetgroupIndex = targetgroupIndex;
-		}
-		
-		public void setDeviceClass(DeviceClass deviceClass) {
-			this.deviceClass = deviceClass;
-		}
-		
-		@Override
-		public TimeBasedClickStatRow mapRow(ResultSet resultSet, int row) throws SQLException {
-			try {
-				TimeBasedClickStatRow readItem = new TimeBasedClickStatRow();
-				
-				readItem.setClicks_net(resultSet.getBigDecimal("net").intValue());
-				readItem.setClicks_gross(resultSet.getBigDecimal("gross").intValue());
-				readItem.setClicks_anonymous(resultSet.getBigDecimal("anonymous").intValue());
-				readItem.setClickTime(clickTimeFormat.parse(resultSet.getString("click_time")));
-				readItem.setDeviceClass(deviceClass);
-				readItem.setTargetgroup(targetgroupName);
-				readItem.setColumn_index(targetgroupIndex);
-					
-				return readItem;
-			} catch (Exception e) {
-				throw new SQLException("Cannot read TimeBasedClickStatRow: " + e.getMessage(), e);
-			}
 		}
 	}
 }

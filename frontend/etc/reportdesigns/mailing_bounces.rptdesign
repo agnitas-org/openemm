@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
@@ -38,6 +38,10 @@ reportContext.setPersistentGlobalVariable("successTableActivated", new Boolean(s
         <structure>
             <property name="useExternalCss">true</property>
             <property name="externalCssURI">/birt/webcontent/birt/styles/redesign_style.css</property>
+        </structure>
+        <structure>
+            <property name="fileName">styles.css</property>
+            <property name="useExternalCss">false</property>
         </structure>
         <structure>
             <property name="fileName">styles.css</property>
@@ -1130,7 +1134,7 @@ function addColor( colorArray, styleName ) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -1185,6 +1189,10 @@ function beforeDrawDataPointLabel( dph, label, icsc )
 	//if (dph.getOrthogonalValue() &lt; 5){
 	//	label.setVisible(false);
 	//}
+	var reportContext =  icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true) {
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -1734,9 +1742,9 @@ function beforeDrawDataPointLabel( dph, label, icsc )
           <Thickness>1</Thickness>
           <Color>
             <Transparency>255</Transparency>
-            <Red>45</Red>
-            <Green>45</Green>
-            <Blue>47</Blue>
+            <Red>136</Red>
+            <Green>136</Green>
+            <Blue>136</Blue>
           </Color>
           <Visible>true</Visible>
         </LeaderLineAttributes>
@@ -2410,7 +2418,7 @@ function addColor( colorArray, styleName ) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -2466,6 +2474,10 @@ function beforeDrawDataPointLabel( dph, label, icsc )
 	//if (dph.getOrthogonalValue() &lt; 5){
 	//	label.setVisible(false);
 	//}
+	var reportContext =  icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true) {
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -3015,9 +3027,9 @@ function beforeDrawDataPointLabel( dph, label, icsc )
           <Thickness>1</Thickness>
           <Color>
             <Transparency>255</Transparency>
-            <Red>45</Red>
-            <Green>45</Green>
-            <Blue>47</Blue>
+            <Red>136</Red>
+            <Green>136</Green>
+            <Blue>136</Blue>
           </Color>
           <Visible>true</Visible>
         </LeaderLineAttributes>

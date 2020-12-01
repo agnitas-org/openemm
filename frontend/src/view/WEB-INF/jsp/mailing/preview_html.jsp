@@ -39,4 +39,4 @@
     </style>
 </logic:notEmpty>
 
-<bean:write name="mailingSendForm" property="preview" filter="false"/>
+<bean:write name="mailingSendForm" property="previewForm.previewContent" filter="false"/>

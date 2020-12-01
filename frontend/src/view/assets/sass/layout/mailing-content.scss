@@ -169,6 +169,11 @@
   }
 }
 
+body.dark-theme .modal-fixed-content {
+  border-color: $c-dt-modal-border;
+  background-color: $c-dt-modal-background;
+}
+
 .mailing-content {
   $selector-prefix : 'mailing-content';
 
@@ -211,7 +216,8 @@
           margin: 10px auto;
           cursor: pointer;
           color: $c-blue-27;
-          &:hover {
+          &:hover,
+          &:focus {
             color: darken($c-blue-27, 10%);
           }
           &:active {
@@ -235,6 +241,29 @@
 
     .control-label{
       padding: 0;
+    }
+  }
+}
+
+body.dark-theme .mailing-content {
+  $selector-prefix : 'mailing-content';
+
+  color: $c-dt-modal-text;
+
+  .#{$selector-prefix}-body {
+    background-color: $c-dt-modal-background;
+
+    .droppable-area .plus-button-holder .plus-button {
+      color: $c-dt-btn-primary;
+
+      &:hover,
+      &:focus {
+        color: darken($c-dt-btn-primary, 10%);
+      }
+
+      &:active {
+        color: darken($c-dt-btn-primary, 15%);
+      }
     }
   }
 }
@@ -307,6 +336,19 @@
   .l-badge {
     display: none;
     float: right;
+  }
+}
+
+body.dark-theme .l-mailing-content-entry {
+
+  color: $c-dt-modal-text;
+  background-color: $c-dt-modal-background;
+
+  &:hover,
+  &:focus,
+  &.selected {
+    background-color: $c-dt-btn-primary;
+    transition: background-color 1000ms linear;
   }
 }
 

@@ -320,3 +320,49 @@
   }
 
 }
+
+body.dark-theme .ui-dialog {
+  background-color: $c-dt-tile-background;
+  color: $c-dt-tile-text;
+  @include shadow-variant(shadow-hardest);
+
+  &.ui-widget-content {
+    border-color: $c-dt-tile-border;
+  }
+
+  .ui-dialog-content {
+    color: $c-dt-tile-text;
+  }
+
+  hr {
+    border-color: $c-dt-tile-border;
+  }
+
+  .ui-dialog-titlebar {
+    background-color: $c-dt-tile-background;
+    color: $c-dt-tile-text;
+    border-color: $c-dt-tile-border;
+  }
+
+  .ui-dialog-title {
+    color: $c-dt-tile-text;
+  }
+
+  .ui-dialog-titlebar-close .ui-icon {
+    &:before {
+      color: $c-dt-tile-text;
+    }
+
+    &:hover,
+    &:focus {
+      &:before {
+        color: darken($c-dt-tile-text, 15%);
+      }
+    }
+  }
+
+  .ui-dialog-buttonpane {
+    background-color: $c-dt-tile-background;
+    border-color: $c-dt-tile-border;
+  }
+}

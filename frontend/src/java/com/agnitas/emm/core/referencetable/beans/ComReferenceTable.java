@@ -88,4 +88,10 @@ public interface ComReferenceTable {
 	boolean isVoucherRenew();
 
 	void setVoucherRenew(boolean voucherRenew);
+
+	long getDbTableSize();
+
+	void setDbTableSize(long dbTableSize);
+
+	String getTableSizeHumanReadable();
 }

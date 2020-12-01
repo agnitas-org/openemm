@@ -15,16 +15,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.target.beans.RawTargetGroup;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
+import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.phloc.commons.collections.pair.Pair;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.target.TargetRepresentation;
 
 public interface ComTargetDao {
     /**
@@ -194,16 +195,10 @@ public interface ComTargetDao {
     
 	List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
 
-	List<TargetLight> getLimitingTarget(@VelocityCheck int companyId);
-
-	List<TargetLight> getTargetLightsBySearchParameters(@VelocityCheck int companyId, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery,
-			boolean content, boolean isSearchName, boolean isSearchDescription, String searchQueryText);
-
-    List<TargetLight> getTargetLightsBySearchParameters(@VelocityCheck int companyId, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery,
-            boolean content, boolean isSearchName, boolean isSearchDescription, String searchQueryText, boolean isAltg);
-
 	List<TargetLight> getTargetLights(int companyID, Collection<Integer> targetIds, boolean includeDeleted);
-	
+
+	List<TargetLight> getTargetLightsBySearchParameters(TargetLightsOptions options);
+
 	List<TargetLight> getUnchoosenTargetLights(@VelocityCheck int companyID, Collection<Integer> targetIds);
 	
 	List<TargetLight> getChoosenTargetLights(String targetExpression, final int companyID);
@@ -218,64 +213,19 @@ public interface ComTargetDao {
 	
 	void deleteWorkflowTargetConditions(@VelocityCheck int companyId);
 	
-    boolean updateTargetGroupEQL(Map<Integer, String> targetEQLForUpdate);
-    
     // -------------------------------------------------------------------------------------- Deprecated API
-
-    /**
-     * Loads all target groups for company id. Target groups marked as "deleted" are ignored.
-     * @param companyID
-     *          The companyID for the target groups.
-     * @return List of Targets or empty list.
-     * 
-     * @see #getTargetLights(int)
-     */
-    @Deprecated
-    List<ComTarget> getTargets( @VelocityCheck int companyID);
-
-    /**
-     * Loads all target groups for company id.
-     *
-     * @param companyID
-     *          The companyID for the target groups.
-     * @param includeDeleted
-     *          If true - target groups marked as "deleted" will be loaded as well.
-     *
-     * @return List of Targets or empty list.
-     * 
-     * @see #getTargetLights(int, boolean)
-     */
-    @Deprecated
-    List<ComTarget> getTargets( @VelocityCheck int companyID, boolean includeDeleted);
-	
-	/**
-	 * Load list of Target groups by IDs.
-     *
-	 * @param companyID
-     *          The company ID for target groups.
-	 * @param targetIds
-     *          The IDs of target groups to load.
-     * @param includeDeleted if true, deleted target groups are included
-	 * @return List of Targets or empty list.
-	 * 
-	 * @see #getTargetLights(int, Collection, boolean)
-	 */
-	@Deprecated
-    List<ComTarget> getTargetGroup( @VelocityCheck int companyID, Collection<Integer> targetIds, boolean includeDeleted);
 
 	Map<Integer, TargetLight> getAllowedTargetLights(int companyID);
 	
 	boolean isOracle();
 
 	/**
-	 * Lists all (non-deleted) of a company with ID, name, EQL and/or {@link TargetRepresentation}.
+	 * Lists all (non-deleted) of a company with ID, name and EQL.
 	 * @param companyId company ID
 	 * @return list of target groups
 	 */
 	List<RawTargetGroup> listRawTargetGroups(@VelocityCheck int companyId, String ...eqlRawFragments);
 	
-	List<RawTargetGroup> getTargetsCreatedByWorkflow(@VelocityCheck int companyId, boolean onlyEmptyEQL);
-    
 	List<ComTarget> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery);
 
     PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(@VelocityCheck int companyId, int targetId, Set<TargetGroupDependentType> allowedTypes, int pageNumber, int pageSize, String sortColumn, String order);

@@ -14,11 +14,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComProfileField;
-import com.agnitas.beans.impl.ComProfileFieldImpl;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.impl.ProfileFieldImpl;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.ClickedInMailingRuleConverter;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.ContainsRuleConverter;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.DateRuleConverter;
@@ -39,7 +40,7 @@ import com.agnitas.emm.core.target.eql.emm.resolver.EmmProfileFieldResolverFacto
 
 public class QueryBuilderConfiguration {
 
-    private List<ComProfileField> independentFields = new ArrayList<>();
+    private List<ProfileField> independentFields = new ArrayList<>();
 
     protected Map<String, RuleConverter> filterConvertersByName = new HashMap<>();
 
@@ -75,12 +76,22 @@ public class QueryBuilderConfiguration {
 		defaultRuleConverter = new DefaultRuleConverter();
     }
 
-    public List<ComProfileField> getIndependentFields() {
+    public List<ProfileField> getIndependentFields() {
         return independentFields;
     }
 
+    public List<ProfileField> getIndependentFields(final boolean mailTrackingAvailable) {
+    	final List<ProfileField> fields = getIndependentFields();
+
+    	if(mailTrackingAvailable) {
+    		return new ArrayList<>(fields);
+		}
+
+    	return fields.stream().filter(pf -> !"Received mailing".equals(pf.getShortname())).collect(Collectors.toList());
+    }
+
 	protected void addIndependentField(String shortname, String dataType, String label) {
-		ComProfileFieldImpl field = new ComProfileFieldImpl();
+		ProfileFieldImpl field = new ProfileFieldImpl();
     	field.setShortname(shortname);
     	field.setDataType(dataType);
     	field.setLabel(label);

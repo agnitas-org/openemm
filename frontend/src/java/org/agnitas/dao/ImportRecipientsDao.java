@@ -23,70 +23,32 @@ import org.agnitas.util.DbColumnType;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.json.JsonObject;
 
 public interface ImportRecipientsDao {
-    String VALIDATOR_RESULT_RESERVED = "VALIDATOR_RESULT_RESERVED";
-    String ERROR_EDIT_RECIPIENT_EDIT_RESERVED = "ERROR_EDIT_RECIPIENT_EDIT_RESERVED";
-    String ERROR_EDIT_REASON_KEY_RESERVED = "ERROR_EDIT_REASON_KEY_RESERVED";
-    String TYPE = "type";
-        
-    /**
-     * Get information about database columns.
-     * The information will be gathered from the DatabaseMetaData of the table
-     * and the infoTable. The give infoTable should be the name of a table
-     * which holds the following fields:
-     * <dl>
-     * <dt>col_name
-     * <dd>Primary key to identify the column
-     * <dt>shortname
-     * <dd>Textfield for a short descriptive name of the column
-     * <dt>default_value
-     * <dd>the value which should be used for the column, when no other is given.
-     * </dl>
-     * The resulting list contains one row for each found column.
-     * Each row is a Map consists of:
-     * <dl>
-     * <dt>column
-     * <dd>the name of the column in Database
-     * <dt>type
-     * <dd>the typename as in java.sql.Types
-     * (eg. VARCHAR for a java.sql.Types.VARCHAR
-     * <dt>length
-     * <dd>the size of the column as in DatabaseMetaData.getColumns()
-     * <dt>nullable
-     * <dd>inidcates whather the column can contain NULL values (1) or not (0).
-     * <dt>shortname (optional)
-     * <dd>a descriptive name for the column
-     * <dt>default (optional)
-     * <dd>value that should be used, when no value is given.
-     * <dt>description (optional)
-     * <dd>descriptive text for the column
-     * </ul>
-     *
-     * @param companyId company id
-     * @param column    The description of all columns from csv file which are imported
-     * @return TreeMap containing column informations
-     */
-    Map<String, Map<String, Object>> getColumnInfoByColumnName( @VelocityCheck int companyId, String column);
+	String VALIDATOR_RESULT_RESERVED = "VALIDATOR_RESULT_RESERVED";
+	String ERROR_EDIT_RECIPIENT_EDIT_RESERVED = "ERROR_EDIT_RECIPIENT_EDIT_RESERVED";
+	String ERROR_EDIT_REASON_KEY_RESERVED = "ERROR_EDIT_REASON_KEY_RESERVED";
+	String TYPE = "type";
 
-    /**
+	/**
 	 * get list of table names whuch are still doesn't remove
 	 *
 	 * @param sessionId
 	 * @return list of tables name
 	 */
-    List<String> getTemporaryTableNamesBySessionId(String sessionId);
+	List<String> getTemporaryTableNamesBySessionId(String sessionId);
 
 	/**
 	 * Method checks if key column is indexed in database
 	 *
-	 * @param companyId    company id
-	 * @param keyColumn    key column name
+	 * @param companyId	company id
+	 * @param keyColumn	key column name
 	 * @return is key column indexed
 	 */
-    boolean isKeyColumnIndexed( @VelocityCheck int companyId, List<String> keyColumns);
-    
+	boolean isKeyColumnIndexed( @VelocityCheck int companyId, List<String> keyColumns);
+		
 	String createTemporaryCustomerImportTable(int companyID, String destinationTableName, int adminID, int datasourceID, List<String> keyColumns, String sessionId, String description) throws Exception;
 
 	String addIndexedIntegerColumn(String tableName, String baseColumnName, String indexName) throws Exception;
@@ -109,11 +71,11 @@ public interface ImportRecipientsDao {
 
 	int getNumberOfEntriesForInsert(String temporaryImportTableName, String duplicateIndexColumn);
 
-	int assignNewCustomerToMailingList(int companyId, int datasourceId, int mailingListId, UserStatus status);
+	int assignNewCustomerToMailingList(int companyId, int datasourceId, int mailingListId, MediaTypes mediatype, UserStatus status);
 
-	int assignExistingCustomerWithoutBindingToMailingList(String temporaryImportTableName, int companyId, int mailingListId, UserStatus status);
+	int assignExistingCustomerWithoutBindingToMailingList(String temporaryImportTableName, int companyId, int mailingListId, MediaTypes mediatype, UserStatus status);
 
-	int changeStatusInMailingList(String temporaryImportTableName, List<String> keyColumns, int companyId, int  mailingListId, int currentStatus, int updateStatus, String remark) throws Exception;
+	int changeStatusInMailingList(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, MediaTypes mediatype, int currentStatus, int updateStatus, String remark) throws Exception;
 	
 	int importInBlackList(String temporaryImportTableName, int companyId);
 
@@ -152,4 +114,8 @@ public interface ImportRecipientsDao {
 	boolean checkUnboundCustomersExist(int companyID);
 
 	int getAllRecipientsCount(int companyId);
+
+	int changeStatusInMailingListNotIncludedInTempData(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, MediaTypes mediatype, int currentStatus, int updateStatus, String remark) throws Exception;
+
+	void removeFromBlackListNotIncludedInTempData(String temporaryImportTableName, int companyId);
 }

@@ -145,4 +145,6 @@ public interface ComHostAuthenticationDao {
 	 * @param maxPendingHostAuthenticationsAgeMinutes maximum age of a pending host authentication in minutes
 	 */
 	public void removeExpiredPendingsAuthentications(final int maxPendingHostAuthenticationsAgeMinutes);
+
+	public void removeAuthentictedHost(final String hostId);
 }

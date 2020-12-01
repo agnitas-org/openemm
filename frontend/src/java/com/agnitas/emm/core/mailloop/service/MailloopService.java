@@ -15,7 +15,6 @@ import com.agnitas.emm.core.mailloop.MailloopException;
 /**
  * Service interface for mailloop.
  */
-@Deprecated
 public interface MailloopService {
 
 	/**

@@ -68,10 +68,7 @@ import com.agnitas.service.SimpleServiceResult;
 public class ComLogonServiceImpl implements ComLogonService {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger( ComLogonServiceImpl.class);
-
-	private static final transient String DEFAULT_HELP_LANGUAGE = "en";
-	private static final int TOKEN_EXPIRATION_MINUTES = 30;
+	private static final transient Logger logger = Logger.getLogger(ComLogonServiceImpl.class);
 
 	private DataSource dataSource;
 	
@@ -344,7 +341,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 
 		return new SimpleServiceResult(true);
 	}
-
+	
 	@Override
 	public ServiceResult<ComAdmin> resetPassword(String username, String token, String password, String clientIp) {
 		final Optional<ComAdmin> adminOptional = adminService.getAdminByName(username);
@@ -362,13 +359,17 @@ public class ComLogonServiceImpl implements ComLogonService {
 		final ComAdmin admin = adminOptional.get();
 
 		if (passwordResetDao.existsPasswordResetTokenHash(username, getTokenHash(token))) {
-			SimpleServiceResult result = setPassword(admin, password);
-
-			if (result.isSuccess()) {
-				passwordResetDao.remove(admin.getAdminID());
-				return new ServiceResult<>(admin, true);
+			if (passwordResetDao.isValidPasswordResetTokenHash(username, getTokenHash(token))) {
+				SimpleServiceResult result = setPassword(admin, password);
+	
+				if (result.isSuccess()) {
+					passwordResetDao.remove(admin.getAdminID());
+					return new ServiceResult<>(admin, true);
+				} else {
+					return new ServiceResult<>(null, false, result.getSuccessMessages(), result.getWarningMessages(), result.getErrorMessages());
+				}
 			} else {
-				return new ServiceResult<>(null, false, result.getSuccessMessages(), result.getWarningMessages(), result.getErrorMessages());
+				return new ServiceResult<>(null, false, Message.of("error.passwordReset.expired", TOKEN_EXPIRATION_MINUTES, configService.getValue(ConfigValue.SystemUrl) + "/logon/reset-password.action"));
 			}
 		} else {
 			// If a password reset token is there increment errors count (to prevent brute force attack).
@@ -378,7 +379,8 @@ public class ComLogonServiceImpl implements ComLogonService {
 		}
 	}
 
-	private String getPasswordResetLink(String linkPattern, String username, String token) {
+	@Override
+	public String getPasswordResetLink(String linkPattern, String username, String token) {
 		try {
 			String baseUrl = configService.getValue(ConfigValue.SystemUrl);
 			String link = linkPattern.replace("{token}", URLEncoder.encode(token, "UTF-8"))
@@ -413,10 +415,18 @@ public class ComLogonServiceImpl implements ComLogonService {
 			return null;
 		}
 	}
-
+	
 	private String generatePasswordResetToken(ComAdmin admin, String clientIp) {
 		String token = SecurityTokenGenerator.generateSecurityToken();
 		Date expirationDate = DateUtils.addMinutes(new Date(), TOKEN_EXPIRATION_MINUTES);
+
+		passwordResetDao.save(admin.getAdminID(), getTokenHash(token), expirationDate, clientIp);
+
+		return token;
+	}
+	
+	private String generatePasswordSetToken(ComAdmin admin, String clientIp, Date expirationDate) {
+		String token = SecurityTokenGenerator.generateSecurityToken();
 
 		passwordResetDao.save(admin.getAdminID(), getTokenHash(token), expirationDate, clientIp);
 
@@ -441,7 +451,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 
 		javaMailService.sendEmail(admin.getEmail(), subject, textVersion, htmlVersion);
 	}
-
+	
 	private void checkLicense() {
 		// Read license id to check limits
 		configService.getValue(ConfigValue.System_Licence);
@@ -540,5 +550,39 @@ public class ComLogonServiceImpl implements ComLogonService {
 	@Required
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
+	}
+	
+	@Override
+	public SimpleServiceResult sendWelcomeMail(ComAdmin admin, String clientIp, String linkPattern) {
+		Date expirationDate = DateUtils.addDays(new Date(), TOKEN_EXPIRATION_DAYS);
+		String token = generatePasswordSetToken(admin, clientIp, expirationDate);
+		String passwordResetLink = getPasswordResetLink(linkPattern, admin.getUsername(), token);
+		Locale locale = admin.getLocale();
+		
+		String subject = I18nString.getLocaleString("user.welcome.mail.subject", locale);
+		String textVersion = I18nString.getLocaleString("user.welcome.mail.body.text", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
+		String htmlVersion = I18nString.getLocaleString("user.welcome.mail.body.html", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
+		
+		javaMailService.sendEmail(admin.getEmail(), subject, textVersion, htmlVersion);
+		return new SimpleServiceResult(true);
+	}
+	
+	@Override
+	public boolean existsPasswordResetTokenHash(String username, String token) {
+		return passwordResetDao.existsPasswordResetTokenHash(username, getTokenHash(token));
+	}
+	
+	@Override
+	public boolean isValidPasswordResetTokenHash(String username, String token) {
+		return passwordResetDao.isValidPasswordResetTokenHash(username, getTokenHash(token));
+	}
+
+	@Override
+	public void riseErrorCount(String username) {
+		final Optional<ComAdmin> adminOptional = adminService.getAdminByName(username);
+		
+		if (adminOptional.isPresent()) {
+			passwordResetDao.riseErrorCount(adminOptional.get().getAdminID());
+		}
 	}
 }

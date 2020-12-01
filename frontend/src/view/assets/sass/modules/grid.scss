@@ -301,14 +301,14 @@ ag-grid-aurelia {
     max-height: 100vh;
 }
 
-// for when auto height is used but there is no row data
-.ag-layout-auto-height.ag-body-container {
+// for when there is no row data
+.ag-body-container {
     min-height: 50px;
 }
 
-// for when auto height is used but there is no row data
-.ag-layout-auto-height.ag-overlay-no-rows-wrapper {
-    padding-top: 30px;
+// for when there is no row data
+.ag-overlay-no-rows-wrapper {
+    padding-top: 41px; //because headerHeight: 41 in table.js
 }
 
 

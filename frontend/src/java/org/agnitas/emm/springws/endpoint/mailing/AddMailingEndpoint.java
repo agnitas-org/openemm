@@ -10,28 +10,32 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddMailingRequest;
 import org.agnitas.emm.springws.jaxb.AddMailingRequest.TargetIDList;
 import org.agnitas.emm.springws.jaxb.AddMailingResponse;
-import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 
-public class AddMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
+@Endpoint
+public class AddMailingEndpoint extends BaseEndpoint {
 
-	@Resource
 	private MailingService mailingService;
-	@Resource
-	private ObjectFactory objectFactory;
 
-	@Override
-	protected Object invokeInternal(Object arg0) throws Exception {
-		AddMailingRequest request = (AddMailingRequest) arg0;
+	public AddMailingEndpoint(@Qualifier("MailingService") MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
+
+	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddMailingRequest")
+	public @ResponsePayload AddMailingResponse addMailing(@RequestPayload AddMailingRequest request) throws Exception {
+		AddMailingResponse response = new AddMailingResponse();
 
 		MailingModel model = new MailingModel();
 		model.setCompanyId(Utils.getUserCompany());
@@ -55,9 +59,7 @@ public class AddMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
 		model.setOnePixelString(request.getOnePixel());
 //		model.setAutoUpdate(request.isAutoUpdate());
 
-		AddMailingResponse response = objectFactory.createAddMailingResponse();
 		response.setMailingID(mailingService.addMailing(model));
 		return response;
 	}
-
 }

@@ -19,70 +19,71 @@ import java.util.regex.Pattern;
  * from dyn_target_tbl
  */
 public class Target {
-	private long	id;
-	private String	sql;
-	private boolean	databaseOnly;
+	private long id;
+	private String sql;
+	private boolean databaseOnly;
 	private boolean needEvaluation;
-	private boolean	isEvaluated;
-	private boolean	evaluatedValue;
+	private boolean isEvaluated;
+	private boolean evaluatedValue;
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param nId  the dyn_target_tbl.target_id value
 	 * @param nSql the dyn_target_tbl.target_sql value
 	 */
-	public Target (long nId, String nSql, boolean nDatabaseOnly) {
+	public Target(long nId, String nSql, boolean nDatabaseOnly) {
 		id = nId;
 		sql = nSql;
 		databaseOnly = nDatabaseOnly;
 	}
-	
+
 	public long getID() {
 		return id;
 	}
-	
-	public String getSQL (boolean forDatabaseAccess) {
-		return forDatabaseAccess || (! databaseOnly) ? sql : null;
+
+	public String getSQL(boolean forDatabaseAccess) {
+		return forDatabaseAccess || (!databaseOnly) ? sql : null;
 	}
-	
-	public boolean databaseOnly () {
+
+	public boolean databaseOnly() {
 		return databaseOnly;
 	}
 
 	/**
 	 * Checks if this target expression is valid (very simple check,
 	 * it is only checked, if the SQL is not empty)
-	 * 
+	 *
 	 * @return true, if the sql is considered as valid, false otherwise
 	 */
-	public boolean valid () {
-		return sql != null && sql.length () > 0;
+	public boolean valid() {
+		return sql != null && sql.length() > 0;
 	}
 
-	static private Pattern	cleaner = Pattern.compile ("'[^']*'");
-	static private Pattern	checker = Pattern.compile ("[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*", Pattern.CASE_INSENSITIVE);
+	static private Pattern cleaner = Pattern.compile("'[^']*'");
+	static private Pattern checker = Pattern.compile("[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*", Pattern.CASE_INSENSITIVE);
+
 	/**
 	 * Scan the SQL expression for referenced profile or reference columns
 	 * to retrieve them from the database so the xmlback has access to them
 	 * to validate the sql expression off database
-	 * 
+	 *
 	 * @param use the set to add all found columns to
 	 */
-	public void requestFields (Set <String> use) {
-		if ((sql != null) && (! databaseOnly)) {
-			String[]	parts = cleaner.split (sql);
-			
-			for (int n = 0; n <parts.length; ++n) {
-				Matcher	m = checker.matcher (parts[n]);
-		
-				while (m.find ()) {
-					String	c = m.group ().toLowerCase ();
-				
-					if (c.startsWith ("cust.")) {
-						c = c.substring (5);
+	public void requestFields(Set<String> use) {
+		if ((sql != null) && (!databaseOnly)) {
+			String[] parts = cleaner.split(sql);
+
+			for (int n = 0; n < parts.length; ++n) {
+				Matcher m = checker.matcher(parts[n]);
+
+				while (m.find()) {
+					String c = m.group().toLowerCase();
+
+					if (c.startsWith("cust.")) {
+						c = c.substring(5);
 					}
-					use.add (c);
+					use.add(c);
 				}
 			}
 		}
@@ -92,50 +93,50 @@ public class Target {
 	 * If the target is used in xmlback, this must be called to mark it for
 	 * pre evaluation
 	 */
-	public void setNeedEvaluation () {
+	public void setNeedEvaluation() {
 		needEvaluation = true;
 	}
-	
+
 	/**
 	 * Returns if the target is marked for pre evaluation
 	 */
-	public boolean needEvaluation () {
+	public boolean needEvaluation() {
 		return needEvaluation;
 	}
 
 	/**
 	 * returns true, if an evaluation of this target group already has taken
 	 * place
-	 * 
+	 *
 	 * @return true, if evaluated, false otherwise
 	 */
-	public boolean hasEvaluatedValue () {
+	public boolean hasEvaluatedValue() {
 		return isEvaluated;
 	}
-	
+
 	/**
 	 * return the evaluated value of this target group
-	 * 
+	 *
 	 * @return true, if target group matches, false otherwise
 	 */
-	public boolean evaluatedValue () {
+	public boolean evaluatedValue() {
 		return evaluatedValue;
 	}
 
 	/**
 	 * Set the pre evalutated value for this target group
-	 * 
+	 *
 	 * @param value true, if this target group matches, false otherwise
 	 */
-	public void setEvaluateValue (boolean value) {
+	public void setEvaluateValue(boolean value) {
 		isEvaluated = true;
 		evaluatedValue = value;
 	}
-	
+
 	/**
 	 * Clear the state of being already evaluated
 	 */
-	public void clearEvaluateValue () {
+	public void clearEvaluateValue() {
 		isEvaluated = false;
 		evaluatedValue = false;
 	}

@@ -58,13 +58,14 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComProfileField;
 import com.agnitas.beans.ImportProcessAction;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ImportProcessActionDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ComColumnInfoService;
 
@@ -277,10 +278,11 @@ public class ImportProfileAction extends StrutsActionBase {
                     if (importProcessActionDao != null) {
                     	aForm.setImportProcessActions(importProcessActionDao.getAvailableImportProcessActions(companyId));
                     }
+                    request.setAttribute("mediatypes", MediaTypes.valuesSortedByCode());
                     loadImportProfile(aForm);
                     setAvailableImportModes(aForm, request);
                     if (emmActionDao != null) {
-                    	aForm.setActionsForNewRecipients(emmActionDao.getEmmActionsByOperationType(companyId, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING));
+                    	aForm.setActionsForNewRecipients(emmActionDao.getEmmActionsByOperationType(companyId, false, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING));
                     }
                     aForm.setAction(ImportProfileAction.ACTION_SAVE);
                     destination = mapping.findForward("view");
@@ -343,8 +345,9 @@ public class ImportProfileAction extends StrutsActionBase {
                 		}
                 	}
                 	if (emmActionDao != null) {
-                		aForm.setActionsForNewRecipients(emmActionDao.getEmmActionsByOperationType(companyId, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING));
+                		aForm.setActionsForNewRecipients(emmActionDao.getEmmActionsByOperationType(companyId, false, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING));
                 	}
+                    request.setAttribute("mediatypes", MediaTypes.valuesSortedByCode());
                     aForm.setAction(ImportProfileAction.ACTION_SAVE);
                     destination = mapping.findForward("view");
                     break;
@@ -354,6 +357,10 @@ public class ImportProfileAction extends StrutsActionBase {
                     aForm.setAction(ImportProfileAction.ACTION_SAVE);
                     createEmptyProfile(aForm, request);
                     setAvailableImportModes(aForm, request);
+                    if (importProcessActionDao != null) {
+                    	aForm.setImportProcessActions(importProcessActionDao.getAvailableImportProcessActions(companyId));
+                    }
+                    request.setAttribute("mediatypes", MediaTypes.valuesSortedByCode());
                     destination = mapping.findForward("view");
                     break;
 
@@ -583,20 +590,25 @@ public class ImportProfileAction extends StrutsActionBase {
      * @param aForm a form
      * @throws Exception
      */
-    private void saveImportProfile(ImportProfileForm aForm, HttpServletRequest req) throws Exception {
+    private void saveImportProfile(ImportProfileForm aForm, HttpServletRequest request) throws Exception {
+    	ComAdmin admin = AgnUtils.getAdmin(request);
+    	
         ImportProfile importProfile = aForm.getProfile();
-        importProfile.setCompanyId(AgnUtils.getCompanyID(req));
+        importProfile.setCompanyId(AgnUtils.getCompanyID(request));
         importProfile.setMailinglists(new ArrayList<>(aForm.getMailinglists()));
+        if (importProfile.getMediatype() != MediaTypes.EMAIL && !admin.permissionAllowed(Permission.IMPORT_MEDIATYPE)) {
+        	importProfile.setMediatype(MediaTypes.EMAIL);
+        }
         if (aForm.getProfileId() != 0) {
             ImportProfile oldImportProfile = importProfileService.getImportProfileById(aForm.getProfileId());
             importProfileService.saveImportProfileWithoutColumnMappings(importProfile);
 
-            writeImportChangeLog(oldImportProfile, importProfile, aForm, AgnUtils.getAdmin(req));
+            writeImportChangeLog(oldImportProfile, importProfile, aForm, admin);
         } else {
             importProfileService.saveImportProfile(importProfile);
             aForm.setProfileId(aForm.getProfile().getId());
 
-            writeUserActivityLog(AgnUtils.getAdmin(req), "create import profile", getImportProfileDescription(importProfile));
+            writeUserActivityLog(admin, "create import profile", getImportProfileDescription(importProfile));
         }
     }
 
@@ -667,8 +679,8 @@ public class ImportProfileAction extends StrutsActionBase {
             //Should never happen
         }
         logDescription.append(addChangedFieldLog("Pre import action",
-                getImportActionName(newImport.getImportProcessActionID(), form),
-                getImportActionName(oldImport.getImportProcessActionID(), form)));
+                getImportProcessActionName(newImport.getImportProcessActionID(), form),
+                getImportProcessActionName(oldImport.getImportProcessActionID(), form)));
         logDescription.append(addChangedFieldLog("Action for new recipients",
                 getActionForNewRecipientsName(newImport.getActionForNewRecipients(), form),
                 getActionForNewRecipientsName(oldImport.getActionForNewRecipients(),form)));
@@ -714,7 +726,7 @@ public class ImportProfileAction extends StrutsActionBase {
         return value ? "update all recipients" : "update only one recipient";
     }
 
-    private String getImportActionName(int actionId, ImportProfileForm form) {
+    private String getImportProcessActionName(int actionId, ImportProfileForm form) {
         if (actionId != 0) {
             ImportProcessAction importAction = form.getImportProcessActions().stream()
                     .filter(action -> action.getImportactionID() == actionId)
@@ -758,8 +770,8 @@ public class ImportProfileAction extends StrutsActionBase {
 		}
 	}
 
-	private List<ComProfileField> getAvailableImportProfileFields(ComAdmin admin) throws Exception {
-		List<ComProfileField> dbColumnsAvailable = columnInfoService.getComColumnInfos(admin.getCompanyID(), admin.getAdminID(), true);
+	private List<ProfileField> getAvailableImportProfileFields(ComAdmin admin) throws Exception {
+		List<ProfileField> dbColumnsAvailable = columnInfoService.getComColumnInfos(admin.getCompanyID(), admin.getAdminID(), true);
         for (String hiddenColumn : ImportUtils.getHiddenColumns(admin)) {
         	for (int i = 0; i < dbColumnsAvailable.size(); i++) {
         		if (dbColumnsAvailable.get(i).getColumn().equalsIgnoreCase(hiddenColumn)) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
@@ -36,6 +36,8 @@ reportContext.setPersistentGlobalVariable('tempTableID', new Integer(tempTableID
 if (hideSentStats &amp;&amp; isHtmlFormat) {
 	designHandle.findElement('graphicalReport1').drop();
 }
+
+reportContext.setGlobalVariable("isDarkmode", params["darkmode"]);
 ]]></method>
     <property name="iconFile">/templates/blank_report.gif</property>
     <property name="layoutPreference">auto layout</property>
@@ -135,6 +137,19 @@ if (hideSentStats &amp;&amp; isHtmlFormat) {
         <scalar-parameter name="hideSentStats" id="939">
             <property name="valueType">static</property>
             <property name="isRequired">true</property>
+            <property name="dataType">boolean</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">False</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">check-box</property>
+            <structure name="format"/>
+        </scalar-parameter>
+        <scalar-parameter name="darkmode" id="966">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
             <property name="dataType">boolean</property>
             <property name="distinct">true</property>
             <simple-property-list name="defaultValue">
@@ -886,7 +901,7 @@ return true;
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -941,7 +956,7 @@ function beforeGeneration(chart, icsc)
 {
 	reportContext = icsc.getExternalContext().getObject();
 	
-	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString("birt.noDataAvailable", reportContext.getLocale()));
+	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;birt.noDataAvailable&quot;, reportContext.getLocale()));
 
 	var paletteEntries = chart.getAxes()
 		.get(0)
@@ -980,7 +995,20 @@ function afterDataSetFilled(series, dataSet, icsc) {
 	var valuesCount = dataSet.getValues().length;
 	icsc.getChartInstance().getBlock().getBounds().setHeight(16.55 + 26.2148725709 * valuesCount);
 }
-</Script>
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawDataPointLabel(dph, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}</Script>
   <Units>Points</Units>
   <SeriesThickness>10.0</SeriesThickness>
   <ExtendedProperties>
@@ -2426,7 +2454,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -2481,7 +2509,7 @@ function beforeGeneration(chart, icsc)
 {
 	reportContext = icsc.getExternalContext().getObject();
 	
-	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString("birt.noDataAvailable", reportContext.getLocale()));
+	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;birt.noDataAvailable&quot;, reportContext.getLocale()));
 
 	var paletteEntries = chart.getAxes()
 		.get(0)
@@ -2519,6 +2547,20 @@ function beforeDataSetFilled(series, idsp, icsc) {
 function afterDataSetFilled(series, dataSet, icsc) {
 	var valuesCount = dataSet.getValues().length;
 	icsc.getChartInstance().getBlock().getBounds().setHeight(16.55 + 26.2148725709 * valuesCount);
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawDataPointLabel(dph, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -3979,7 +4021,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -4034,7 +4076,7 @@ function beforeGeneration(chart, icsc)
 {
 	reportContext = icsc.getExternalContext().getObject();
 	
-	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString("birt.noDataAvailable", reportContext.getLocale()));
+	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;birt.noDataAvailable&quot;, reportContext.getLocale()));
 
 	var paletteEntries = chart.getAxes()
 		.get(0)
@@ -4072,6 +4114,20 @@ function beforeDataSetFilled(series, idsp, icsc) {
 function afterDataSetFilled(series, dataSet, icsc) {
 	var valuesCount = dataSet.getValues().length;
 	icsc.getChartInstance().getBlock().getBounds().setHeight(16.55 + 26.2148725709 * valuesCount);
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawDataPointLabel(dph, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -5532,7 +5588,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -5625,6 +5681,20 @@ function beforeDataSetFilled(series, idsp, icsc) {
 function afterDataSetFilled(series, dataSet, icsc) {
 	var valuesCount = dataSet.getValues().length;
 	icsc.getChartInstance().getBlock().getBounds().setHeight(16.55 + 26.2148725709 * valuesCount);
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawDataPointLabel(dph, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -7064,7 +7134,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
       <Visible>false</Visible>
     </Outline>
     <Background xsi:type="attribute:ColorDefinition">
-      <Transparency>255</Transparency>
+      <Transparency>0</Transparency>
       <Red>255</Red>
       <Green>255</Green>
       <Blue>255</Blue>
@@ -7119,7 +7189,7 @@ function beforeGeneration(chart, icsc)
 {
 	reportContext = icsc.getExternalContext().getObject();
 	
-	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString("birt.noDataAvailable", reportContext.getLocale()));
+	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;birt.noDataAvailable&quot;, reportContext.getLocale()));
 
 	var paletteEntries = chart.getAxes()
 		.get(0)
@@ -7157,6 +7227,20 @@ function beforeDataSetFilled(series, idsp, icsc) {
 function afterDataSetFilled(series, dataSet, icsc) {
 	var valuesCount = dataSet.getValues().length;
 	icsc.getChartInstance().getBlock().getBounds().setHeight(16.55 + 26.2148725709 * valuesCount);
+}
+
+function beforeDrawAxisLabel(axis, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
+}
+
+function beforeDrawDataPointLabel(dph, label, icsc) {
+	var reportContext = icsc.getExternalContext().getObject();
+	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+		label.getCaption().getColor().set(255, 255, 255);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -8472,7 +8556,7 @@ function afterDataSetFilled(series, dataSet, icsc) {
                 <row id="906">
                     <cell id="907">
                         <text-data id="929">
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Category", reportContext.getLocale())</expression>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("grid.mediapool.category", reportContext.getLocale())</expression>
                         </text-data>
                     </cell>
                     <cell id="908">

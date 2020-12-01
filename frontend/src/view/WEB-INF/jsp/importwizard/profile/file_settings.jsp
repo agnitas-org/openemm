@@ -5,8 +5,8 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common" prefix="emm" %>
 
   <div class="tile">
       <div class="tile-header">
@@ -15,8 +15,9 @@
               <bean:message key="import.profile.file.settings"/>
           </a>
       </div>
-      <div id="recipient-import-format" class="tile-content tile-content-forms">
-          <div class="form-group">
+      <div id="recipient-import-format" class="tile-content tile-content-forms" data-field="toggle-vis">
+			<%@ include file="import_profile_datatype_setting.jspf" %>
+          <div class="form-group" id="separator-input-group">
               <div class="col-sm-4">
                   <label class="control-label">
                       <label for="recipient-import-format-separator"><bean:message key="import.Separator"/></label>
@@ -50,7 +51,7 @@
               </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" id="text-recognition-input-group">
               <div class="col-sm-4">
                   <label class="control-label">
                       <label for="recipient-import-format-delimiter"><bean:message key="import.Delimiter"/></label>

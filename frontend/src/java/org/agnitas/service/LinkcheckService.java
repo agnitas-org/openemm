@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.agnitas.beans.ComTrackableLink;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -39,10 +40,10 @@ public class LinkcheckService {
 	 * Checks all links but returns all links, that have not been found. (not reachable or timed out).
 	 * 
 	 * @param linkList list of {@link TrackableLink}s to check
-	 * 
+	 *
 	 * @return list of check results of invalid links
 	 */
-	public List<LinkReachability> checkLinkReachability(Collection<TrackableLink> linkList) {
+	public List<LinkReachability> checkLinkReachability(Collection<ComTrackableLink> linkList) {
 		// Check all links...
 		Collection<LinkReachability> checkResults = checkReachability(linkList);
 		
@@ -57,10 +58,10 @@ public class LinkcheckService {
 	 * This method checks the availability of given list of {@link TrackableLink}s.
 	 * 
 	 * @param linkList of {@link TrackableLink}s to check
-	 * 
+	 *
 	 * @return list of check results
 	 */
-	public Collection<LinkReachability> checkReachability(Collection<TrackableLink> linkList) {
+	public Collection<LinkReachability> checkReachability(Collection<ComTrackableLink> linkList) {
 		// create usual <String> List
 		List<String> checkList = new Vector<>();
 

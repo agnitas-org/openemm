@@ -10,13 +10,40 @@
 
 package com.agnitas.emm.core.components.service;
 
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.FormComponent;
+import com.agnitas.emm.core.components.dto.FormComponentDto;
+import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
+import com.agnitas.messages.Message;
+import com.agnitas.service.SimpleServiceResult;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ComComponentService extends ComponentService {
     
     void updateMailingContent(ComponentModel model) throws Exception;
 
     int addMailingComponent(MailingComponent mailingComponent) throws Exception;
+
+	List<FormComponentDto> getFormImageComponents(@VelocityCheck int companyID, int formId);
+
+	Map<String, byte[]> getImageComponentsData(int companyId, int formId);
+
+	File getComponentArchive(String zipName, Map<String, byte[]> formComponentsData);
+
+	SimpleServiceResult saveFormComponents(ComAdmin admin, int formId, List<FormComponent> components, List<UserAction> userActions);
+
+	SimpleServiceResult saveFormComponents(ComAdmin admin, int formId, List<FormComponent> components, List<UserAction> userActions, boolean overwriteExisting);
+
+	SimpleServiceResult saveComponentsFromZipFile(ComAdmin admin, int formId, MultipartFile zipFile, List<UserAction> userActions, boolean overwriteExisting);
+
+	List<Message> validateComponents(List<FormUploadComponentDto> components, boolean checkDuplicate);
 }

@@ -10,13 +10,14 @@
 
 package com.agnitas.emm.core.birtreport.bean.impl;
 
-import java.util.Map;
-
-import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
-import org.apache.log4j.Logger;
-
 import static com.agnitas.emm.core.birtstatistics.service.impl.BirtStatisticsServiceImpl.IS_TOP_LEVEL_DOMAIN;
 import static com.agnitas.emm.core.birtstatistics.service.impl.BirtStatisticsServiceImpl.MAX_DOMAINS;
+
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+
+import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 
 public class ComBirtReportTopDomainsSettings extends ComBirtReportDateRangedSettings {
     @SuppressWarnings("unused")
@@ -29,7 +30,6 @@ public class ComBirtReportTopDomainsSettings extends ComBirtReportDateRangedSett
 
     @Override
     public String getReportName(String reportFormat) {
-        //todo: GWUA-4360  report name for top domains
         return "top_domains_report.rptdesign";
     }
     

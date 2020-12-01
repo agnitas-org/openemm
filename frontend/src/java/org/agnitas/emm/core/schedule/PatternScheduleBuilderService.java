@@ -11,7 +11,6 @@
 package org.agnitas.emm.core.schedule;
 
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,24 +28,10 @@ import com.agnitas.emm.core.autoimport.web.beans.ScheduledInterval;
 import com.agnitas.emm.core.autoimport.web.beans.ScheduledTime;
 import com.agnitas.emm.core.autoimport.web.beans.TimeScheduledEntry;
 
-public class PatternScheduleBuilderService implements ScheduleBuilderService<String, List<TimeScheduledEntry>> {
+public class PatternScheduleBuilderService extends AbstractPatternScheduleBuilderService<TimeScheduledEntry> {
 
-    public static final int ONE_HOUR_IN_SECONDS = 3600;
-    public static final int EVERY_DAY = 0;
-    private static final String COLON = ":";
-
-    private static final String SEMICOLON = ";";
-
-    private Map<Integer, String> weekDays;
-    private Map<String, Integer> reverseWeekDays;
-    private DateTimeFormatter fromFormat;
-    private DateTimeFormatter toFormat;
-
-    public PatternScheduleBuilderService(Map<Integer, String> weekDays, String fromFormat, String toFormat) {
-        this.weekDays = weekDays;
-        this.fromFormat = DateTimeFormatter.ofPattern(fromFormat);
-        this.toFormat = DateTimeFormatter.ofPattern(toFormat);
-        this.reverseWeekDays = reverseWeekDays(weekDays);
+    public PatternScheduleBuilderService(PatternScheduleConfig config) {
+        super(config);
     }
 
     @Override
@@ -70,15 +55,15 @@ public class PatternScheduleBuilderService implements ScheduleBuilderService<Str
             String[] dayTime = value.split(COLON);
             if (dayTime.length == 2) {
                 day = dayTime[0];
-                scheduledTime = formatTime(dayTime[1], toFormat, fromFormat);
+                scheduledTime = formatTime(dayTime[1], config.getToFormat(), config.getFromFormat());
             } else {
                 day = StringUtils.EMPTY;
-                scheduledTime = formatTime(dayTime[0], toFormat, fromFormat);
+                scheduledTime = formatTime(dayTime[0], config.getToFormat(), config.getFromFormat());
             }
 
             TimeScheduledEntry entry = entries.get(day);
             if (entry == null) {
-                entry = toTimeScheduledEntry(reverseWeekDays.get(day), scheduledTime);
+                entry = toTimeScheduledEntry(config.getReverseWeekDays().get(day), scheduledTime);
                 entries.put(day, entry);
             } else {
                 List<ScheduledTime> times = entry.getScheduledTime();
@@ -185,11 +170,12 @@ public class PatternScheduleBuilderService implements ScheduleBuilderService<Str
         return entry;
     }
 
-    private String processScheduledEntry(TimeScheduledEntry entry) {
-        String weekDay = weekDays.get(entry.getWeekDay());
+    @Override
+    public String processScheduledEntry(TimeScheduledEntry entry) {
+        String weekDay = config.getWeekDays().get(entry.getWeekDay());
         String weekDayToAppend = StringUtils.isBlank(weekDay) ? StringUtils.EMPTY : weekDay + COLON;
 
-        if (entry.getScheduledInterval().isActive()) {
+        if (entry.getScheduledInterval() != null && entry.getScheduledInterval().isActive()) {
             return processScheduledInterval(entry.getScheduledInterval(), weekDayToAppend);
         } else {
             return processScheduledTime(entry.getScheduledTime(), weekDayToAppend);
@@ -201,28 +187,9 @@ public class PatternScheduleBuilderService implements ScheduleBuilderService<Str
 
         int integerInterval = interval.getInterval();
         for (int hours = 0; hours < 24; hours = hours + integerInterval) {
-            patterns.add(weekDay + toFormat.format(LocalTime.of(hours, 0)));
+            patterns.add(weekDay + config.getToFormat().format(LocalTime.of(hours, 0)));
         }
 
         return StringUtils.join(patterns, SEMICOLON);
-    }
-
-    private String processScheduledTime(List<ScheduledTime> scheduledTimes, String weekDay) {
-        List<String> patterns = new ArrayList<>();
-        for (ScheduledTime time : scheduledTimes) {
-            if (time.isActive() && StringUtils.isNotBlank(time.getTime())) {
-                patterns.add(weekDay + formatTime(time.getTime(), fromFormat, toFormat));
-            }
-        }
-        return StringUtils.join(patterns, SEMICOLON);
-    }
-
-    private String formatTime(String time, DateTimeFormatter fromFormatToUse, DateTimeFormatter toFormatToUse) {
-        LocalTime localTime = LocalTime.parse(time, fromFormatToUse);
-        return toFormatToUse.format(localTime);
-    }
-
-    private Map<String, Integer> reverseWeekDays(Map<Integer, String> weekDaysToReverse) {
-        return weekDaysToReverse.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
     }
 }

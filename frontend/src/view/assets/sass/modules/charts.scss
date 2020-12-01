@@ -9,6 +9,10 @@
   font-weight: $fw-bold;
 }
 
+body.dark-theme .pie-chart-header {
+  color: $c-chart-text;
+}
+
 .chart-controls {
   padding: 10px;
 
@@ -20,10 +24,20 @@
 .c3 svg {
   font: 10px sans-serif;
 }
+
+body.dark-theme .c3 svg .tick{
+  fill: $c-chart-text;
+}
+
 .c3 path, .c3 line {
   fill: none;
   stroke: #000;
 }
+
+body.dark-theme .c3 path, .c3 line {
+  stroke: $c-chart-text;
+}
+
 .c3 text {
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -90,6 +104,10 @@
   font-size: 2em;
 }
 
+.c3-text.c3-empty {
+  fill: $c-chart-text;
+}
+
 /*-- Line --*/
 
 .c3-line {
@@ -120,6 +138,10 @@
 .c3-chart-arcs-title {
   dominant-baseline: middle;
   font-size: 1.3em;
+}
+
+body.dark-theme text.c3-chart-arcs-title {
+fill: $c-chart-text;
 }
 
 /*-- Focus --*/
@@ -158,6 +180,11 @@
 .c3-legend-item {
   font-size: 12px;
 }
+
+body.dark-theme .c3-legend-item text {
+  fill: $c-chart-text;
+}
+
 .c3-legend-item-hidden {
   opacity: 0.15;
 }
@@ -184,6 +211,11 @@
   box-shadow: 7px 7px 12px -9px rgb(119,119,119);
   opacity: 0.9;
 }
+
+body.dark-theme .c3-tooltip {
+  color: $c-chart-tooltip-text;
+}
+
 .c3-tooltip tr {
   border:1px solid #CCC;
 }
@@ -223,14 +255,30 @@
   fill: #000;
   font-size: 16px;
 }
+
+body.dark-theme .c3-chart-arcs .c3-chart-arcs-gauge-unit {
+  fill: $c-chart-text;
+}
 .c3-chart-arcs .c3-chart-arcs-gauge-max {
   fill: #777;
+}
+
+body.dark-theme .c3-chart-arcs .c3-chart-arcs-gauge-max {
+  fill: $c-chart-text;
 }
 .c3-chart-arcs .c3-chart-arcs-gauge-min {
   fill: #777;
 }
 
+body.dark-theme .c3-chart-arcs .c3-chart-arcs-gauge-min {
+  fill: $c-chart-text;
+}
+
 .c3-chart-arc .c3-gauge-value {
   fill: #000;
   /*  font-size: 28px !important;*/
+}
+
+body.dark-theme .c3-chart-arc .c3-gauge-value {
+  fill: $c-chart-text;
 }

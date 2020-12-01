@@ -15,12 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.beans.BeanLookupFactory;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationServiceMailParameters;
-import com.agnitas.emm.core.action.service.EmmActionOperation;
-import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import org.agnitas.beans.Recipient;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.velocity.VelocityResult;
@@ -30,6 +24,14 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+
+import com.agnitas.beans.BeanLookupFactory;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationServiceMailParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
+import com.agnitas.emm.core.action.service.EmmActionOperation;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 
 public class ActionOperationServiceMailImpl implements EmmActionOperation {
 	/** The logger */
@@ -206,7 +208,12 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
+    @Override
+    public ActionOperationType processedType() {
+        return ActionOperationType.SERVICE_MAIL;
+    }
+
+    @SuppressWarnings("unchecked")
 	private String getRequestParameter(Map<String, Object> params, String parameterName) {
 		Object returnValue = null;
 		if (params.containsKey(parameterName)) {
