@@ -8,44 +8,72 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-# ifndef	__XMLBACK_PLUGIN_H
-# define	__XMLBACK_PLUGIN_H		1
-# include	"plugin.h"
+# include	<stdio.h>
+# include	<stdlib.h>
+# include	<string.h>
+# include	<unistd.h>
 
-typedef struct { /*{{{*/
-	log_t		*lg;		/* logging interface		*/
-	plugin_t	*plugins;	/* the plugins themselves	*/
-	/* all method callbacks						*/
-	invoke_t	*prepare;	/* prepare after initial setup	*/
-	invoke_t	*cleanup;	/* cleanup before exiting	*/
-	invoke_t	*section_start;	/* start of XML section		*/
-	invoke_t	*section_end;	/* end of XML section		*/
-	invoke_t	*create_output_start;	/* start of output creation	*/
-	invoke_t	*create_output_mail;	/* each stage of mail creation	*/
-	invoke_t	*create_output_end;	/* end of output creation	*/
-	invoke_t	*tag_replace;	/* each replaced tag		*/
-	/*}}}*/
-}	xbp_t;
-
-extern xbp_t	*xbp_create (log_t *lg);
-extern xbp_t	*xbp_alloc (log_t *lg);
-extern xbp_t	*xbp_free (xbp_t *xbp);
-extern prc_t	xbp_prepare (xbp_t *xbp, blockmail_t *blockmail);
-extern prc_t	xbp_cleanup (xbp_t *xbp, blockmail_t *blockmail);
-extern prc_t	xbp_section_start (xbp_t *xbp, blockmail_t *blockmail, const xmlChar *name);
-extern prc_t	xbp_section_end (xbp_t *xbp, blockmail_t *blockmail, const xmlChar *name, bool_t status);
-extern prc_t	xbp_create_output_start (xbp_t *xbp, blockmail_t *blockmail, receiver_t *rec);
-extern prc_t	xbp_create_output_mail (xbp_t *xbp, blockmail_t *blockmail, receiver_t *rec, const char *stage, block_t *block);
-extern prc_t	xbp_create_output_end (xbp_t *xbp, blockmail_t *blockmail, receiver_t *rec, bool_t status);
-extern prc_t	xbp_tag_replace (xbp_t *xbp, blockmail_t *blockmail, receiver_t *rec, tag_t *tag, const xmlChar *cont, int clen);
-
-/* Prototypes for the plugin itself					*/
-extern prc_t	p_prepare (void *priv, blockmail_t *blockmail);
-extern prc_t	p_cleanup (void *priv, blockmail_t *blockmail);
-extern prc_t	p_section_start (void *priv, blockmail_t *blockmail, const xmlChar *name);
-extern prc_t	p_section_end (void *priv, blockmail_t *blockmail, const xmlChar *name, bool_t status);
-extern prc_t	p_create_output_start (void *priv, blockmail_t *blockmail, receiver_t *rec);
-extern prc_t	p_create_output_mail (void *priv, blockmail_t *blockmail, receiver_t *rec, const char *stage, block_t *block);
-extern prc_t	p_create_output_end (void *priv, blockmail_t *blockmail, receiver_t *rec, bool_t status);
-extern prc_t	p_tag_replace (void *priv, blockmail_t *blockmail, receiver_t *rec, tag_t *tag, const xmlChar *cont, int clen);
-# endif		/* __XMLBACK_PLUGIN_H */
+static void
+usage (const char *pgm) /*{{{*/
+{
+	fprintf (stderr, "Usage: %s <path-expression>\n", pgm);
+}/*}}}*/
+int
+main (int argc, char **argv) /*{{{*/
+{
+	int	n;
+	int	rc;
+	char	*orig, *target;
+	
+	while ((n = getopt (argc, argv, "?h")) != -1)
+		switch (n) {
+		case '?':
+		case 'h':
+		default:
+			return usage (argv[0]), (n != '?') && (n != 'h');
+		}
+	if (optind + 1 != argc)
+		return usage (argv[0]), 1;
+	rc = 1;
+	if ((orig = strdup (argv[optind])) && (target = malloc (strlen (orig) + 1))) {
+		char	*ptr;
+		int	count;
+		char	**elements;
+		
+		for (ptr = orig, count = 0; ptr; ++count)
+			if (ptr = strchr (ptr, ':'))
+				++ptr;
+		if (elements = (char **) malloc (sizeof (char *) * count)) {
+			int	m;
+			
+			for (ptr = orig, n = 0; ptr; ++n) {
+				elements[n] = ptr;
+				if (ptr = strchr (ptr, ':'))
+					*ptr++ = '\0';
+			}
+			for (n = count - 1; n > 0; --n) {
+				for (m = n - 1; m >= 0; --m)
+					if (! strcmp (elements[n], elements[m]))
+						break;
+				if (m >= 0) {
+					for (m = n; m < count - 1; ++m)
+						elements[m] = elements[m + 1];
+					--count;
+				}
+			}
+			for (ptr = target, n = 0; n < count; ++n) {
+				if (ptr != target)
+					*ptr++ = ':';
+				strcpy (ptr, elements[n]);
+				while (*ptr)
+					++ptr;
+			}
+			write (1, target, strlen (target));
+			rc = 0;
+			free (elements);
+		}
+		free (target);
+		free (orig);
+	}
+	return rc;
+}/*}}}*/

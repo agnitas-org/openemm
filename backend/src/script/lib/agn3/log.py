@@ -20,7 +20,7 @@ from	typing import List, TextIO, Type
 from	.definitions import base, host, program
 from	.exceptions import error
 #
-__all__ = ['LogID', 'log', 'mark']
+__all__ = ['LogID', 'log', 'mark', 'interactive']
 #
 class LogID:
 	__slots__ = ['ref', 'new_id', 'saved_id', 'saved', 'id_stack']
@@ -64,7 +64,7 @@ class LogID:
 			self.set_id ()
 		
 class _Log:
-	__slots__ = ['loglevel', 'outlevel', 'outstream', 'verbosity', 'host', 'name', 'path', 'last', 'custom_id']
+	__slots__ = ['loglevel', 'outlevel', 'outstream', 'verbosity', 'host', 'name', 'path', 'intercept', 'last', 'custom_id']
 	def __init__ (self) -> None:
 		self.loglevel = logging.WARNING
 		self.outlevel = logging.WARNING
@@ -73,6 +73,7 @@ class _Log:
 		self.host = host
 		self.name = program
 		self.path = os.environ.get ('LOG_HOME', os.path.join (base, 'var', 'log'))
+		self.intercept: Optional[Callable[[logging.LogRecord], None]] = None
 		#
 		self.last = 0
 		self.custom_id: Optional[str] = None
@@ -119,7 +120,10 @@ directory and is created using a timestamp
 as timestamp the current time is used, but may be either set using an
 own version in ts or by setting the epoch (seconds since 1.1.1970)
 """
-		return self.__make_filename (ts, epoch, '%s-%s' % (self.host, name if name is not None else self.name))
+		return self.__make_filename (ts, epoch, '{host}-{name}'.format (
+			host = self.host,
+			name = name if name is not None else self.name
+		))
 
 	def data_filename (self, name: str, epoch: Union[None, int, float] = None, ts: Optional[datetime] = None) -> str:
 		"""Build a logfile for storing data.
@@ -137,9 +141,9 @@ passed object."""
 		fname = self.filename ()
 		try:
 			with open (fname, 'a') as fd:
-				if type (s) is str:
+				if isinstance (s, str):
 					fd.write (s)
-				elif type (s) in (list, tuple):
+				elif isinstance (s, list) or isinstance (s, tuple):
 					for l in s:
 						fd.write (l)
 				else:
@@ -147,14 +151,24 @@ passed object."""
 				fd.close ()
 				self.last = int (time.time ())
 		except Exception as e:
-			sys.stderr.write ('LOGFILE write failed[%r, %s, %s]: %r' % (type (e), e, fname, s))
+			sys.stderr.write ('LOGFILE write failed[{typ!r}, {e}, {fname}]: {s!r}'.format (
+				typ = type (e),
+				e = e,
+				fname = fname,
+				s = s
+			))
 
 	def add (self, record: logging.LogRecord) -> None:
 		"""add an entry to the logfile
 	
 main logfile writing method. Dependig on set global loglevel and
-output methods, write logfile to file or defined output stream."""
-		if record.levelno >= self.loglevel or (record.levelno >= self.outlevel and self.outstream is not None):
+output methods, write logfile to file or defined output stream.
+
+If ``self.intercept'' is not None, this method is called instead. This
+can be used to avoid writing logfiles for interactive applications."""
+		if self.intercept is not None:
+			self.intercept (record)
+		elif record.levelno >= self.loglevel or (record.levelno >= self.outlevel and self.outstream is not None):
 			now = datetime.now ()
 			lid = self.custom_id if self.custom_id else record.module
 			if self.verbosity > 1:
@@ -204,7 +218,7 @@ _rootLogger.addHandler (_rootHandler)
 
 log = _rootHandler.log
 mark = _rootHandler.mark
-	
+
 def log_filter (predicate: Callable[[logging.LogRecord], bool]) -> None:
 	class Filter (logging.Filter):
 		def filter (self, record: logging.LogRecord) -> bool:
@@ -214,4 +228,13 @@ def log_filter (predicate: Callable[[logging.LogRecord], bool]) -> None:
 def _except (type_: Type[BaseException], value: BaseException, traceback: TracebackType) -> None:
 	logging.critical (f'CAUGHT EXCEPTION: {value}', exc_info = value)
 	
+_original_excepthook = sys.excepthook
 sys.excepthook = _except
+
+def interactive (on: bool = True) -> None:
+	def interceptor (record: logging.LogRecord) -> None:
+		sys.stderr.write ('{message}\n'.format (message = record.getMessage ()))
+		sys.stderr.flush ()
+	log.intercept = interceptor if on else None
+	sys.excepthook = _original_excepthook if on else _except
+

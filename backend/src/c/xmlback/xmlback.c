@@ -39,7 +39,6 @@ static output_t	output_table[] = { /*{{{*/
 		"\t\taction=<cmd>       command to execute after mail generation\n"
 		"\t\tqueue-flush=<n>    number of domains to start a queue flusher for\n"
 		"\t\tqueue-flush-command=<path>  path to command to flush queue\n"
-		"\t\tlog-mfrom=<path>   path to database to log original envelope from\n"
 		,true,
 		generate_oinit,	generate_odeinit, generate_owrite
 	}, {	"count",
@@ -170,9 +169,9 @@ main (int argc, char **argv) /*{{{*/
 	while ((n = getopt (argc, argv, "VpqE:lru:as:egd:t:o:L:h")) != -1)
 		switch (n) {
 		case 'V':
-# ifdef		VERSION			
-			printf ("Build version: %s\n", VERSION);
-# endif		/* VERSION */
+# ifdef		EMM_VERSION			
+			printf ("Build version: %s\n", EMM_VERSION);
+# endif		/* EMM_VERSION */
 			return 0;
 		case 'p':
 			xmlPedanticParserDefault (1);

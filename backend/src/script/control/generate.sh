@@ -19,7 +19,7 @@ start)
 	active generate
 	shift
 	if py3available ; then
-		starter $command -b  "$@"
+		starter $command -b "$@"
 	else
 		starter $command "$@"
 	fi

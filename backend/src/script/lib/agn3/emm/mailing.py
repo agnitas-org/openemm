@@ -24,9 +24,10 @@ __all__ = ['Mailing']
 logger = logging.getLogger (__name__)
 #
 class TriggerProxy (Protocol):
-	def isActive (self) -> bool: ...
-	def startOnDemandMailing (self, mailing_id: int) -> Tuple[bool, Optional[str]]: ...
-	def startMailing (self, status_id: int) -> Tuple[bool, Optional[str]]: ...
+	def is_active (self) -> bool: ...
+	def is_onhold (self, mailing_id: int) -> bool: ...
+	def start_on_demand_mailing (self, mailing_id: int) -> Tuple[bool, Optional[str]]: ...
+	def start_mailing (self, status_id: int) -> Tuple[bool, Optional[str]]: ...
 
 class Mailing:
 	"""Start mailing generation
@@ -59,7 +60,7 @@ starting a mailing if a failure occurs."""
 	def active (self) -> bool:
 		"""Checks if the merger itself is ready and active"""
 		def cbActive () -> bool:
-			return self.rpc.isActive ()
+			return self.rpc.is_active ()
 		return self.__rpc (cbActive, limit_retries = 1)
 
 	def fire (self, status_id: int, cursor: Optional[Cursor] = None) -> bool:
@@ -89,12 +90,12 @@ starting a mailing if a failure occurs."""
 			)
 			rq = cursor.querys (query, {'status_id': status_id})
 			if rq is None:
-				raise error ('no entry for status_id %d found' % status_id)
+				raise error (f'no entry for status_id {status_id} found')
 			mailing_id = rq.mailing_id
 		if is_on_demand_mailing and mailing_id is None:
 			raise error (f'no mailing_id for status_id {status_id} found (required to start on demand mailing)')
 		#
-		mailing_name = ('#%d' % mailing_id) if mailing_id is not None else ('#(status_id)%d' % status_id)
+		mailing_name = f'#{mailing_id}' if mailing_id is not None else f'#(status_id){status_id}'
 		if cursor is not None and mailing_id is not None:
 			query = (
 				'SELECT m.shortname AS mailing_name, m.company_id, c.shortname AS company_name '
@@ -103,7 +104,7 @@ starting a mailing if a failure occurs."""
 			)
 			rq = cursor.querys (query, {'mailing_id': mailing_id})
 			if rq is not None:
-				mailing_name = '%s (ID %d, status_id %d for %s, ID %d)' % (rq.mailing_name, mailing_id, status_id, rq.company_name, rq.company_id)
+				mailing_name = f'{rq.mailing_name} (ID: {mailing_id}, status_id {status_id} for {rq.company_name}, ID {rq.company_id}'
 		#
 		genchange = None
 		gcQuery = 'SELECT genstatus, genchange FROM maildrop_status_tbl WHERE status_id = :status_id'
@@ -111,16 +112,16 @@ starting a mailing if a failure occurs."""
 		if cursor is not None:
 			rq = cursor.querys (gcQuery, gcData)
 			if rq is None:
-				logger.warning ('%s: failed to retrieve activty status from maildrop_status_tbl for status_id %d' % (mailing_name, status_id))
+				logger.warning (f'{mailing_name}: failed to retrieve activty status from maildrop_status_tbl for status_id {status_id}')
 			elif rq.genchange is None:
-				logger.warning ('%s: no genchange for status_id %d found' % (mailing_name, status_id))
+				logger.warning (f'{mailing_name}: no genchange for status_id {status_id} found')
 			else:
 				genchange = rq.genchange
 				if rq.genstatus not in (1, 3):
-					logger.error ('%s: unexpected genstatus=%r during startup, aborting' % (mailing_name, rq.genstatus))
+					logger.error (f'{mailing_name}: unexpected genstatus={rq.genstatus} during startup, aborting')
 					return False
 				else:
-					logger.debug ('%s: found genstatus=%r and genchange=%s' % (mailing_name, rq.genstatus, genchange))
+					logger.debug (f'{mailing_name}: found genstatus={rq.genstatus} and genchange={genchange}')
 				time.sleep (1)
 		retries = self.retries
 		if genchange is None and retries > 1:
@@ -128,11 +129,13 @@ starting a mailing if a failure occurs."""
 		#
 		def cbStart () -> bool:
 			if is_on_demand_mailing:
-				rc = self.rpc.startOnDemandMailing (cast (int, mailing_id))
+				rc = self.rpc.start_on_demand_mailing (cast (int, mailing_id))
 			else:
-				rc = self.rpc.startMailing (status_id)
+				rc = self.rpc.start_mailing (status_id)
 			if not rc[0]:
-				logger.error ('%s: failed to start mailing: %s' % (mailing_name, rc[1]))
+				logger.error (f'{mailing_name}: failed to start mailing: {rc[1]}')
+			else:
+				logger.info (f'{mailing_name}: mailing started: {rc[1]}')
 			return rc[0]
 		def cbRetry (retries: int) -> Tuple[bool, int]:
 			rc = False
@@ -141,12 +144,12 @@ starting a mailing if a failure occurs."""
 				if genchange is not None:
 					rq = cursor.querys (gcQuery, gcData)
 					if rq is None or rq.genchange is None:
-						logger.error ('%s: no genchange found, no retry takes place' % mailing_name)
+						logger.error (f'{mailing_name}: no genchange found, no retry takes place')
 					elif rq.genchange != genchange:
-						logger.warning ('%s: genchange changed from %s to %s, assume successful mail triggering' % (mailing_name, genchange, rq.genchange))
+						logger.warning (f'{mailing_name}: genchange changed from {genchange} to {rq.genchange}, assume successful mail triggering')
 						rc = True
 					else:
-						logger.info ('%s: genchange not changed, retry starting mailing after a second' % mailing_name)
+						logger.info (f'{mailing_name}: genchange not changed, retry starting mailing after a second')
 			return (rc, retries)
 		rc = self.__rpc (cbStart, retry = cbRetry)
 		#
@@ -156,13 +159,13 @@ starting a mailing if a failure occurs."""
 				startup -= 1
 				rq = cursor.querys (gcQuery, gcData)
 				if rq is None:
-					logger.error ('%s: entry for status_id %d vanished' % (mailing_name, status_id))
+					logger.error (f'{mailing_name}: entry for status_id {status_id} vanished')
 					break
 				elif rq.genstatus == 2:
-					logger.debug ('%s: mailing in process' % mailing_name)
+					logger.debug (f'{mailing_name}: mailing in process')
 					break
 				elif rq.genchange != genchange:
-					logger.debug ('%s: mailing already finished' % mailing_name)
+					logger.debug (f'{mailing_name}: mailing already finished')
 					break
 				elif startup > 0:
 					time.sleep (1)
@@ -184,11 +187,14 @@ starting a mailing if a failure occurs."""
 				if self.timeout > 0:
 					socket.setdefaulttimeout (self.timeout)
 				rc = callback ()
-				(logger.info if rc else logger.warning) ('Call to merger %s results in %s' % (self.merger, str (rc).lower ()))
+				(logger.info if rc else logger.warning) ('Call to merger {merger} results in {result}'.format (
+					merger = self.merger,
+					result = str (rc).lower ()
+				))
 			except XMLRPCError as e:
-				logger.error ('Failed to communicate with merger %s: %s' % (self.merger, str (e)))
+				logger.error (f'Failed to communicate with merger {self.merger}: {e}')
 			except socket.error as e:
-				logger.error ('Failed to call merger %s: %s' % (self.merger, str (e)))
+				logger.error (f'Failed to call merger {self.merger}: {e}')
 			finally:
 				if self.timeout > 0:
 					socket.setdefaulttimeout (otimeout)

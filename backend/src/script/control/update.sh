@@ -17,14 +17,22 @@ start)
 	active update
 	shift
 
-	starter $command "$@" account mailtrack bounce deliver
+	if py3available; then
+		starter $command -bw "$@" account mailtrack bounce deliver release
+	else
+		starter $command "$@" account mailtrack bounce deliver
+	fi
 	;;
 stop)
 	softterm $commands
 	;;
 status)
 
-	patternstatus 4 $command
+	if py3available; then
+		patternstatus 5 $command
+	else
+		patternstatus 4 $command
+	fi
 	;;
 *)
 	echo "Usage: $0 [ start | stop | status ]"

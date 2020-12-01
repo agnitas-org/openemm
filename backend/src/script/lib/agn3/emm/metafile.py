@@ -10,9 +10,9 @@
 ####################################################################################################################################################################################################################################################################
 #
 import	re, time, os
+from	datetime import datetime
 from	typing import Union
 from	typing import List
-from	typing import cast
 from	..definitions import licence
 from	..ignore import Ignore
 #
@@ -54,7 +54,7 @@ filename."""
 					self.licence = int (parts[0][n + 1:])
 				except ValueError:
 					self.licence = -1
-					self.__error ('Unparsable licence ID in "%s" found' % parts[0])
+					self.__error (f'Unparsable licence ID in "{parts[0]}" found')
 			else:
 				self.licence = licence
 			cinfo = parts[2].split ('-')
@@ -62,20 +62,20 @@ filename."""
 				self.company = int (cinfo[0])
 			except ValueError:
 				self.company = -1
-				self.__error ('Unparseable company ID in "%s" found' % parts[2])
+				self.__error (f'Unparseable company ID in "{parts[2]}" found')
 			self.timestamp = self.__parse_timestamp (parts[1])
 			self.mailid = parts[3]
 			mparts = [_m for _m in self.splitter.split (self.mailid) if _m]
 			if len (mparts) == 0:
-				self.__error ('Unparseable mailing ID in "%s" found' % parts[3])
+				self.__error (f'Unparseable mailing ID in "{parts[3]}" found')
 			else:
 				try:
 					self.mailing = int (mparts[-1])
 				except ValueError:
-					self.__error ('Unparseable mailing ID in mailid "%s" found' % self.mailid)
+					self.__error (f'Unparseable mailing ID in mailid "{self.mailid}" found')
 			try:
 				self.blocknr = int (parts[4])
-				self.blockid = '%d' % self.blocknr
+				self.blockid = str (self.blocknr)
 				self.single = False
 			except ValueError:
 				self.blocknr = 0
@@ -83,8 +83,8 @@ filename."""
 				self.single = True
 
 	def __make_timestamp (self, epoch: Union[int, float]) -> str:
-		tt = time.localtime (epoch)
-		return '%04d%02d%02d%02d%02d%02d' % (tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
+		tt = datetime.fromtimestamp (epoch)
+		return f'{tt.year:04d}{tt.month:02d}{tt.day:02d}{tt.hour:02d}{tt.minute:02d}{tt.second:02d}'
 
 	def __parse_timestamp (self, ts: str) -> str:
 		if ts[0] == 'D' and len (ts) == 15:
@@ -104,12 +104,10 @@ according to the coded timestamp of the filename, this method checks,
 if the file is ready for sending."""
 		if epoch is None:
 			ts = self.__make_timestamp (time.time ())
-		elif type (epoch) is str:
-			ts = cast (str, epoch)
-		elif type (epoch) in (int, float):
-			ts = self.__make_timestamp (cast (float, epoch))
+		elif isinstance (epoch, str):
+			ts = epoch
 		else:
-			raise TypeError ('Expecting either None, string or numeric, got %r' % type (epoch))
+			ts = self.__make_timestamp (float (epoch))
 		return self.valid and self.timestamp <= ts
 
 	def get_error (self) -> str:

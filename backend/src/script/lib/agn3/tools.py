@@ -14,7 +14,6 @@ import	os, re, subprocess, errno, logging
 from	enum import Enum
 from	typing import Any, Callable, Optional
 from	typing import Dict, Generator, List, Set
-from	typing import cast
 from	.exceptions import error
 from	.stream import Stream
 from	.template import Template
@@ -24,7 +23,8 @@ logger = logging.getLogger (__name__)
 __all__ = [
 	'atoi', 'atob', 'calc_hash', 'sizefmt',
 	'call', 'silent_call', 'match', 
-	'listsplit', 'listjoin',
+	'listsplit', 'listjoin', 
+	'Escape', 'escape', 'unescape',
 	'Range', 'Config', 'Plugin',
 	'Progress'
 ]
@@ -35,9 +35,9 @@ def atoi (s: Any, ibase: int = 10, default: int = 0) -> int:
 parses input parameter as numeric value, use default if it is not
 parsable.
 """
-	if type (s) is int:
-		return cast (int, s)
-	elif type (s) is float:
+	if isinstance (s, int):
+		return s
+	if isinstance (s, float):
 		return int (s)
 	try:
 		return int (s, ibase)
@@ -46,12 +46,14 @@ parsable.
 
 def atob (s: Any) -> bool:
 	"""Interprets a value as a boolean"""
-	if type (s) is bool:
-		return cast (bool, s)
-	elif type (s) in (int, float):
+	if s is None:
+		return False
+	if isinstance (s, bool):
+		return s
+	if isinstance (s, int) or isinstance (s, float):
 		return bool (s)
-	elif type (s) is str and s and s[0] in [ '1', 'T', 't', 'Y', 'y', '+' ]:
-		return True
+	if isinstance (s, str):
+		return bool (s) and s[0] in ['1', 'T', 't', 'Y', 'y', '+']
 	return False
 
 def calc_hash (s: str) -> int:
@@ -77,8 +79,8 @@ sizefmt (8999, 1) --> '8.79 kByte'
 	]
 	for (size, unit) in sizetab:
 		if size * flip <= n:
-			return '%.2f %s' % (float (n) / size, unit)
-	return '%d Byte' % n
+			return '{value:.2f} {unit}'.format (value = float (n) / size, unit = unit)
+	return f'{n} Byte'
 
 def call (*args: Any, **kwargs: Any) -> int:
 	"""Replacement for signal safe subprocess.call
@@ -112,10 +114,10 @@ def match (enum: Enum, **kwargs: Callable[[], Any]) -> Any:
 		raise error ('match {cases}'.format (cases = ', '.join (cases)))
 	return kwargs[enum.name] ()
 
-_pattern = re.compile (',?[ \t\r\n]+')
+_pattern_listsplit = re.compile (',|,?[ \t\r\n]+')
 def listsplit (s: Optional[str], maxsplit: int = 0, remove_empty: bool = True) -> Generator[str, None, None]:
 	if s:
-		for element in (_s.strip () for _s in _pattern.split (s, maxsplit = maxsplit)):
+		for element in (_s.strip () for _s in _pattern_listsplit.split (s, maxsplit = maxsplit)):
 			if not remove_empty or element:
 				yield element
 
@@ -123,6 +125,25 @@ def listjoin (elements: Optional[List[str]], remove_empty: bool = True) -> str:
 	if elements is not None:
 		return ', '.join ([_e for _e in elements if _e])
 	return ''
+
+class Escape:
+	__slots__ = ['escape_pattern', 'escape_replace', 'unescape_pattern', 'unescape_replace']
+	def __init__ (self, escape_char: str, to_escape_chars: str) -> None:
+		to_escape = f'{escape_char}{to_escape_chars}' if escape_char not in to_escape_chars else to_escape_chars
+		self.escape_pattern = re.compile (f'[{to_escape}]')
+		self.escape_replace: Dict[str, str] = Stream (to_escape).map (lambda ch: (ch, '{esc}{code:02X}'.format (esc = escape_char, code = ord (ch)))).dict ()
+		self.unescape_pattern = re.compile (f'{escape_char}[0-9A-Z]{{2}}')
+		self.unescape_replace = Stream (self.escape_replace.items ()).map (lambda kv: (kv[1], kv[0])).dict ()
+	
+	def escape (self, s: str) -> str:
+		return self.escape_pattern.sub (lambda m: self.escape_replace[m.group ()], s)
+	
+	def unescape (self, s: str) -> str:
+		return self.unescape_pattern.sub (lambda m: self.unescape_replace.get (m.group (), m.group ()), s)
+
+_escape = Escape ('%', ',')
+escape = _escape.escape
+unescape = _escape.unescape
 
 class Range:
 	"""Create an interpreter for a positive numierc range expression
@@ -150,9 +171,15 @@ exclamation mark to exclude these values.
 				s = str (self.start)
 			else:
 				def infinite (sign: str, value: Optional[int]) -> str:
-					return str (value) if value is not None else '%soo' % sign
-				s = '%s-%s' % (infinite ('-', self.start), infinite ('', self.end))
-			return '%s%s' % ('!' if self.inverse else '', s)
+					return str (value) if value is not None else f'{sign}oo'
+				s = '{start}-{end}'.format (
+					start = infinite ('-', self.start),
+					end = infinite ('', self.end)
+				)
+			return '{inverse}{s}'.format (
+				inverse = '!' if self.inverse else '',
+				s = s
+			)
 	
 	def __init__ (self, expr: Optional[str], low: Optional[int] = None, high: Optional[int] = None, default: bool = False) -> None:
 		"""setup interpreter for range
@@ -183,7 +210,7 @@ no single expression matched.
 						start = int (parts[0]) if parts[0] else low
 						end = int (parts[1]) if parts[1] else high
 						if start is not None and end is not None and start > end:
-							raise error ('%s: start value (%d) higher than end value (%d) in %s' % (expr, start, end, e))
+							raise error (f'{expr}: start value ({start}) higher than end value ({end}) in {e}')
 					elif e == '*':
 						start = low
 						end = high
@@ -193,7 +220,7 @@ no single expression matched.
 					slice = self.Slice (inverse, start, end)
 					self.slices.append (slice)
 				except ValueError:
-					raise error ('%s: invalid expression at: %s' % (expr, e))
+					raise error (f'{expr}: invalid expression at: {e}')
 			if self.only_inverse and low is not None and high is not None:
 				self.slices.insert (0, self.Slice (False, low, high))
 
@@ -208,7 +235,7 @@ no single expression matched.
 		return len (self.slices)
 
 	def __repr__ (self) -> str:
-		return '%s (%s)' % (self.__class__.__name__, str (self))
+		return f'{self.__class__.__name__} ({self})'
 		
 	def __str__ (self) -> str:
 		return (Stream.of (self.slices)

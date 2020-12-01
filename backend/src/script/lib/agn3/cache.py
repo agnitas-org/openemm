@@ -10,13 +10,17 @@
 ####################################################################################################################################################################################################################################################################
 #
 import	time, collections
-from	typing import Any, Optional
+from	typing import Generic, Optional, TypeVar
 from	typing import Deque, Dict
 from	.parser import Unit
 #
 __all__ = ['Cache']
 #
-class Cache:
+K = TypeVar ('K')
+V = TypeVar ('V')
+E = TypeVar ('E')
+#
+class Cache (Generic[K, V]):
 	"""Generic caching
 
 this class provides a generic caching implementation with limitiation
@@ -24,10 +28,10 @@ of stored entries (LRU cache) and optional time based expiration of
 entries."""
 	__slots__ = ['limit', 'timeout', 'active', 'count', 'cache', 'cacheline']
 	unit = Unit ()
-	class Entry:
+	class Entry (Generic[E]):
 		"""Represents a single caching entry"""
 		__slots__ = ['created', 'value']
-		def __init__ (self, value: Any, active: bool) -> None:
+		def __init__ (self, value: E, active: bool) -> None:
 			if active:
 				self.created = time.time ()
 			self.value = value
@@ -49,19 +53,19 @@ hours, "d" for days and "w" for weeks, e.g.:
 		self.timeout = self.unit.parse (timeout, -1)
 		self.active = self.timeout >= 0
 		self.count = 0
-		self.cache: Dict[Any, Any] = {}
-		self.cacheline: Deque[Any] = collections.deque ()
+		self.cache: Dict[K, Cache.Entry[V]] = {}
+		self.cacheline: Deque[K] = collections.deque ()
 
-	def __getitem__ (self, key: Any) -> Any:
+	def __getitem__ (self, key: K) -> V:
 		e = self.cache[key]
 		if self.active and not e.valid (time.time (), self.timeout):
 			self.remove (key)
-			raise KeyError ('%r: expired' % (key, ))
+			raise KeyError (f'{key!r}: expired')
 		self.cacheline.remove (key)
 		self.cacheline.append (key)
 		return e.value
 
-	def __setitem__ (self, key: Any, value: Any) -> None:
+	def __setitem__ (self, key: K, value: V) -> None:
 		if key in self.cache:
 			self.cacheline.remove (key)
 		else:
@@ -73,7 +77,7 @@ hours, "d" for days and "w" for weeks, e.g.:
 		self.cache[key] = self.Entry (value, self.active)
 		self.cacheline.append (key)
 
-	def __delitem__ (self, key: Any) -> None:
+	def __delitem__ (self, key: K) -> None:
 		del self.cache[key]
 		self.cacheline.remove (key)
 		self.count -= 1
@@ -81,7 +85,7 @@ hours, "d" for days and "w" for weeks, e.g.:
 	def __len__ (self) -> int:
 		return len (self.cache)
 
-	def __contains__ (self, key: Any) -> bool:
+	def __contains__ (self, key: K) -> bool:
 		return key in self.cache
 
 	def reset (self) -> None:
@@ -90,7 +94,7 @@ hours, "d" for days and "w" for weeks, e.g.:
 		self.cache = {}
 		self.cacheline = collections.deque ()
 
-	def remove (self, key: Any) -> None:
+	def remove (self, key: K) -> None:
 		"""remove ``key'' from cache, if ``key'' is in cache"""
 		if key in self.cache:
 			del self[key]

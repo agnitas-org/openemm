@@ -516,7 +516,6 @@ parse_media_parameter (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base, m
 	xmlNodePtr	node, child;
 	char		*name;
 	parm_t		*tmp, *prv;
-	pval_t		*vtmp, *vprv;
 	xmlBufferPtr	buf;
 			
 	st = true;
@@ -532,20 +531,12 @@ parse_media_parameter (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base, m
 					else
 						media -> parm = tmp;
 					prv = tmp;
-					vprv = NULL;
 					for (child = node -> children; st && child; child = child -> next)
 						if ((child -> type == XML_ELEMENT_NODE) && (! xmlstrcmp (child -> name, "value"))) {
 							buf = NULL;
 							if (extract_content (& buf, doc, child)) {
-								if (vtmp = pval_alloc ()) {
-									vtmp -> v = buf;
-									if (vprv)
-										vprv -> next = vtmp;
-									else
-										tmp -> value = vtmp;
-									vprv = vtmp;
-								} else
-									xmlBufferFree (buf);
+								tmp -> value = buf;
+								break;
 							}
 						}
 				} else
@@ -1425,9 +1416,6 @@ parse_receivers (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 							xmlFree (temp);
 						} else
 							receiver_make_message_id (rec, blockmail);
-						if (rec -> uuid)
-							free (rec -> uuid);
-						rec -> uuid = xmlGetProp (node, char2xml ("uuid"));
 						if (ptr = extract_property (blockmail, node, "bcc")) {
 							char	*i;
 							int	count;
@@ -1461,19 +1449,17 @@ parse_receivers (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 							rec -> mediatypes = extract_property (blockmail, node, "mediatypes");
 							if (parse_details (blockmail, doc, node -> children, rec)) {
 								st = true;
-								xbp_create_output_start (blockmail -> xbp, blockmail, rec);
 								log_idpush (blockmail -> lg, "create", "->");
 								st = create_output (blockmail, rec);
 								if (blockmail -> eval)
 									eval_done_match (blockmail -> eval);
 								log_idpop (blockmail -> lg);
-								xbp_create_output_end (blockmail -> xbp, blockmail, rec, st);
 								if (st) {
 									log_idpush (blockmail -> lg, "write", "->");
-									if (! blockmail_insync (blockmail, rec -> customer_id, rec -> mid, rec -> mailtype, bcccount)) {
+									if (! blockmail_insync (blockmail, rec -> customer_id, rec -> mid, rec -> mailtype, rec -> chunks, bcccount)) {
 										st = (*blockmail -> output -> owrite) (blockmail -> outputdata, blockmail, rec);
 										if (st)
-											st = blockmail_tosync (blockmail, rec -> customer_id, rec -> mid, rec -> mailtype, bcccount);
+											st = blockmail_tosync (blockmail, rec -> customer_id, rec -> mid, rec -> mailtype, rec -> chunks, rec -> size, bcccount);
 									}
 									log_idpop (blockmail -> lg);
 									if (! st)
@@ -1513,7 +1499,6 @@ parse_blockmail (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 	log_idpush (blockmail -> lg, "blockmail", "->");
 	for (node = base; node && st; node = node -> next)
 		if (node -> type == XML_ELEMENT_NODE) {
-			xbp_section_start (blockmail -> xbp, blockmail, node -> name);
 			if (! xmlstrcmp (node -> name, "description"))
 				st = parse_description (blockmail, doc, node -> children);
 			else if (! xmlstrcmp (node -> name, "general"))
@@ -1601,7 +1586,6 @@ parse_blockmail (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 				unknown (blockmail, node);
 			if (! st)
 				invalid (blockmail, node);
-			xbp_section_end (blockmail -> xbp, blockmail, node -> name, st);
 		}
 	log_idpop (blockmail -> lg);
 	return st;

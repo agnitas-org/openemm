@@ -29,6 +29,9 @@ class Key (NamedTuple):
 	option: str
 	def encode (self) -> bytes:
 		return f'{self.section}:{self.option}'.encode ('UTF-8')
+	@staticmethod
+	def parse (coded_key: bytes) -> Key:
+		return Key (*coded_key.decode ('UTF-8').split (':', 1))
 	
 class Tracker:
 	__slots__ = ['filename', 'db', 'decode', 'encode']
@@ -52,8 +55,7 @@ class Tracker:
 		db = self.open ()
 		for dbkey in db:
 			with Ignore (ValueError):
-				(section, option) = dbkey.decode ('UTF-8').split (':', 1)
-				yield Key (section, option)
+				yield Key.parse (dbkey)
 	
 	def __contains__ (self, key: Key) -> bool:
 		return key.encode () in self.open ()
@@ -129,8 +131,7 @@ class Tracker:
 				collect: Dict[Key, bool] = {}
 				for dbkey in db:
 					with Ignore (ValueError):
-						(section, option) = dbkey.decode ('UTF-8').split (':', 1)
-						key = Key (section, option)
+						key = Key.parse (dbkey)
 						value = self.get (key)
 						if value:
 							for (expiration, timestamp_key) in [
@@ -141,14 +142,14 @@ class Tracker:
 									try:
 										if value[timestamp_key] + expiration < now:
 											collect[key] = True
-											stats[section] += 1
+											stats[key.section] += 1
 											break
 									except KeyError:
 										collect[key] = False
 							if len (collect) >= max_count:
 								break
 				if collect:
-					logger.info ('Process %d tracking entries' % len (collect))
+					logger.info ('Process {count} tracking entries'.format (count = len (collect)))
 					for (key, to_delete) in collect.items ():
 						if to_delete:
 							del self[key]
@@ -156,7 +157,11 @@ class Tracker:
 							self[key] = self[key] 	# create missing timestamps
 				else:
 					break
-			logger.info ('Expiration finished (%s), reorganize database' % (Stream (stats.items ()).map (lambda kv: '%s: %d' % kv).join (', ') if stats else '-', ))
+			logger.info ('Expiration finished ({status}), reorganize database'.format (
+				status = Stream (stats.items ())
+					.map (lambda kv: '{key}: {value}'.format (key = kv[0], value = kv[1]))
+					.join (', ') if stats else '-', )
+			)
 			db.reorganize ()
 			logger.info ('Reorganization finished')
 			self.close ()

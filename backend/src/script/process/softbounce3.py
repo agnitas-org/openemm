@@ -12,11 +12,11 @@
 #
 from	__future__ import annotations
 import	os, logging, time
-from	collections import deque, namedtuple
+from	collections import defaultdict, deque, namedtuple
 from	datetime import datetime
 from	dataclasses import dataclass
 from	typing import Any, Callable, Final, Optional
-from	typing import Dict, Deque, List, Tuple
+from	typing import DefaultDict, Dict, Deque, List, NamedTuple, Tuple
 from	agn3.db import DB
 from	agn3.dbm import DBM
 from	agn3.emm.companyconfig import CompanyConfig
@@ -70,8 +70,13 @@ class Cache:
 		return default
 
 class Softbounce (Runtime):
+	__slots__ = ['db', 'timestamp', 'config', 'companies']
 	timestamp_name: Final[str] = 'bounce-conversion'
 	conversion_name: Final[str] = 'bounce-conversion-parameter'
+	class Company (NamedTuple):
+		active: bool = False
+		mailtracking: bool = False
+		
 	def supports (self, option: str) -> bool:
 		return option not in ('dryrun', 'background', 'watchdog')
 	
@@ -80,6 +85,7 @@ class Softbounce (Runtime):
 		with DB () as self.db:
 			self.timestamp = Timestamp (self.timestamp_name)
 			self.config: Dict[int, Parameter] = {}
+			self.companies: DefaultDict[int, Softbounce.Company] = defaultdict (Softbounce.Company)
 			try:
 				with log ('parameter'):
 					self.setup_parameter ()
@@ -121,6 +127,8 @@ class Softbounce (Runtime):
 					logger.exception ('Failed to parse parameter %r for company_id %d' % (parameter, company_id))
 					raise error (f'failed to parse parameter {parameter} for {company_id}')
 		logger.info ('%d parameter read' % len (self.config))
+		for row in self.db.query ('SELECT company_id, status, mailtracking FROM company_tbl'):
+			self.companies[row.company_id] = Softbounce.Company (active = row.status == 'active', mailtracking = row.mailtracking == 1)
 	#}}}
 	def __do (self,
 		query: str,
@@ -276,24 +284,6 @@ class Softbounce (Runtime):
 		for record in self.db.query (query):
 			if record.company_id is not None and record.company_id > 0:
 				company_ids.append (record.company_id)
-		logger.info ('Remove active receivers from being watched for %d companies' % len (company_ids))
-		all_count = 0
-		for company_id in company_ids:
-			table = 'success_%d_tbl' % company_id
-			if self.db.exists (table):
-				data = {'company_id': company_id}
-				query = self.db.qselect (
-					oracle = 'DELETE FROM bounce_collect_tbl mail WHERE EXISTS (SELECT 1 FROM %s su WHERE ' % table + \
-						 'mail.customer_id = su.customer_id AND mail.company_id = :company_id AND %s)' % self.timestamp.make_between_clause ('timestamp', data),
-					mysql = 'DELETE mail.* FROM bounce_collect_tbl mail, %s su WHERE ' % table + \
-						'mail.customer_id = su.customer_id AND mail.company_id = :company_id AND %s' % self.timestamp.make_between_clause ('su.timestamp', data)
-				)
-				count = self.db.update (query, data, commit = True)
-				logger.info (f'Removed {count:,d} active receiver for company_id {company_id}')
-				all_count += count
-			else:
-				logger.info ('Skip removing active receivers for company_id %d due to missing table %s' % (company_id, table))
-		logger.info (f'Finished removing {all_count:,d} receiver')
 	#}}}
 	def finalize_timestamp (self, success: bool) -> None: #{{{
 		logger.info ('Finalizing timestamp')
@@ -323,12 +313,12 @@ class Softbounce (Runtime):
 				'DELETE FROM bounce_collect_tbl '
 				'WHERE company_id = :company_id'
 			)
-			for company_id in self.db.stream (
-				'SELECT distinct company_id '
-				'FROM bounce_collect_tbl '
-				'WHERE company_id IN (SELECT company_id FROM company_tbl WHERE status = :status)',
-				{'status': 'active'}
-			).map (lambda r: r.company_id).sorted ().list ():
+			for company_id in (self.db.stream ('SELECT distinct company_id FROM bounce_collect_tbl')
+				.filter (lambda r: self.companies[r.company_id].active)
+				.map (lambda r: r.company_id)
+				.sorted ()
+				.list ()
+			):
 				logger.info ('Working on %d' % company_id)
 				query = (
 					'SELECT mt.customer_id, mt.mailing_id, cust.email '
@@ -355,8 +345,44 @@ class Softbounce (Runtime):
 				}
 				dcurs.update (dquery, parm, cleanup = True)
 				self.db.sync ()
-		#
 		logger.info ('Merging of new bounces done')
+		#
+		logger.info ('Remove active receivers from being watched')
+		all_count = 0
+		for company_id in (self.db.stream ('SELECT distinct company_id FROM softbounce_email_tbl')
+			.filter (lambda r: self.companies[r.company_id].active)
+			.map (lambda r: r.company_id)
+			.sorted ()
+			.list ()
+		):
+			table = 'success_%d_tbl' % company_id
+			if self.companies[company_id].mailtracking and self.db.exists (table):
+				query = self.db.qselect (
+					oracle = (
+						'DELETE FROM softbounce_email_tbl sb '
+						f'WHERE company_id = {company_id} AND EXISTS '
+						f'      (SELECT 1 FROM success_{company_id}_tbl su '
+						'        WHERE su.customer_id IN '
+						f'             (SELECT customer_id FROM customer_{company_id}_tbl cust WHERE cust.email = sb.email) '
+						'              AND su.timestamp > sb.timestamp)'
+					), mysql = (
+						'DELETE sb.* '
+						f'FROM softbounce_email_tbl sb INNER JOIN success_{company_id}_tbl su '
+						f'WHERE sb.company_id = {company_id} AND su.customer_id IN '
+						f'      (SELECT customer_id FROM customer_{company_id}_tbl cust WHERE cust.email = sb.email) '
+						'       AND su.timestamp > sb.timestamp'
+					)
+				)
+				count = self.db.update (query, commit = True)
+				logger.info (f'Removed {count:,d} active receiver for company_id {company_id}')
+				all_count += count
+			else:
+				if self.companies[company_id].mailtracking:
+					logger.info (f'Skip removing active receivers for company_id {company_id} due to missing table {table}')
+				else:
+					logger.info (f'Skip removing active receivers for company_id {company_id} due to disabled mailtracking')
+		logger.info (f'Finished removing {all_count:,d} receiver')
+		#
 		logger.info ('Fade out addresses')
 		coll = self.__ccoll ('SELECT distinct company_id FROM softbounce_email_tbl', None, ('fade-out', ), (14, ))
 		def query_data (key: Tuple[int, ...]) -> Optional[str]:
@@ -374,12 +400,12 @@ class Softbounce (Runtime):
 	def convert_to_hardbounce (self) -> None: #{{{
 		logger.info ('Start converting softbounces to hardbounce')
 		stats = []
-		for company_id in self.db.stream (
-			'SELECT distinct company_id '
-			'FROM softbounce_email_tbl '
-			'WHERE company_id IN (SELECT company_id FROM company_tbl WHERE status = :status)',
-			{'status': 'active'}
-		).map (lambda r: r.company_id).sorted ().list ():
+		for company_id in (self.db.stream ('SELECT distinct company_id FROM softbounce_email_tbl')
+			.filter (lambda r: self.companies[r.company_id].active)
+			.map (lambda r: r.company_id)
+			.sorted ()
+			.list ()
+		):
 			with self.db.request () as dcurs, self.db.request () as ucurs, self.db.request () as scurs:
 				cstat = [company_id, 0, 0]
 				stats.append (cstat)

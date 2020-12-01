@@ -242,6 +242,9 @@ class Sending (Task): #{{{
 						if self.ref.islocked (entry.companyID) and entry.statusField != 'T':
 							logger.debug ('%s: company %d is locked' % (entry.name, entry.companyID))
 							continue
+						if not self.start_entry (entry):
+							logger.debug ('%s: start denied' % entry.name)
+							continue
 						self.remove_from_queue (entry)
 						if self.ready_to_send (now, entry):
 							if mailing.fire (status_id = entry.statusID, cursor = self.db.cursor):
@@ -263,6 +266,8 @@ class Sending (Task): #{{{
 		pass
 	def ready_to_send (self, now: datetime, entry: Entry) -> bool:
 		return False
+	def start_entry (self, entry: Entry) -> bool:
+		return True
 	def resume_entry (self, entry: Entry) -> bool:
 		return False
 #}}}
@@ -313,7 +318,8 @@ class Rulebased (Sending): #{{{
 						{
 							'now': now,
 							'statusID': entry.statusID
-						}
+						},
+						commit = True
 					)
 				else:
 					break
@@ -337,8 +343,12 @@ class Rulebased (Sending): #{{{
 				logger.error ('%s: failed to query current genchange' % entry.name)
 		else:
 			logger.warning ('%s: unexpected this mailing had been generated this day' % entry.name)
+		self.db.sync ()
 		return ready
 
+	def start_entry (self, entry: Entry) -> bool:
+		return Stream (self.in_progress.values ()).filter (lambda e: bool (e.companyID == entry.companyID)).count () == 0
+			
 	def resume_entry (self, entry: Entry) -> bool:
 		return True
 
@@ -432,7 +442,7 @@ class Worldmailing (Sending): #{{{
 
 	def resume_entry (self, entry: Entry) -> bool:
 		if not self.change_genstatus (entry.statusID, old_status = 1, new_status = 0):
-			logger.fatal ('%s: failed to revert status id from 1 to 0' % entry.name)
+			logger.critical ('%s: failed to revert status id from 1 to 0' % entry.name)
 			return False
 		else:
 			logger.info ('%s: resumed setting genstatus from 1 to 0' % entry.name)
@@ -510,7 +520,7 @@ class ScheduleGenerate (Schedule): #{{{
 		kwargs: Dict[str, Any]
 		pid: Optional[int]
 	class Control (NamedTuple):
-		control: Daemonic
+		subprocess: Daemonic
 		queued: Dict[int, List[ScheduleGenerate.Pending]]
 		running: List[ScheduleGenerate.Pending]
 	class Deferred (NamedTuple):
@@ -634,7 +644,7 @@ class ScheduleGenerate (Schedule): #{{{
 			self.title ('in termination')
 			(Stream.of (self.control.running)
 				.peek (lambda p: logger.info ('Sending terminal signal to %s' % p.description))
-				.each (lambda p: self.control.control.term (p.pid))
+				.each (lambda p: self.control.subprocess.term (p.pid))
 			)
 			while self.control.running:
 				logger.info ('Waiting for %d remaining child processes' % len (self.control.running))
@@ -646,7 +656,7 @@ class ScheduleGenerate (Schedule): #{{{
 	def wait (self, block: bool = False) -> Optional[ScheduleGenerate.Pending]:
 		w: Optional[ScheduleGenerate.Pending] = None
 		while self.control.running and w is None:
-			rc = self.control.control.join (block = block)
+			rc = self.control.subprocess.join (timeout = None if block else 0)
 			if not rc.pid:
 				break
 			#
@@ -710,7 +720,7 @@ class ScheduleGenerate (Schedule): #{{{
 				rc = w.method (*w.args, **w.kwargs)
 				self.processtitle ()
 				return rc
-			w.pid = self.control.control.spawn (starter)
+			w.pid = self.control.subprocess.spawn (starter)
 			self.control.running.append (w)
 			logger.debug ('%s: launched' % w.description)
 		return bool (self.control.running or self.control.queued)
@@ -775,7 +785,7 @@ class JobqueueGenerate (Jobqueue): #{{{
 		self.status = schedule.status
 		schedule.processtitle ('watchdog')
 
-	def setup_handler (self, master: bool) -> None:
+	def setup_handler (self, master: bool = False) -> None:
 		super ().setup_handler (master)
 		if not master:
 			self.setsignal (signal.SIGHUP, self.reload)
@@ -805,13 +815,13 @@ class Generate (Runtime):
 		self.modules = args.parameter
 	
 	def executor (self) -> bool:
-		activator = Activator ()
-		modules = (Stream.of (globals ().values ())
-			.filter (lambda module: type (module) is type and issubclass (module, Task) and hasattr (module, 'interval'))
-			.filter (lambda module: activator.check (['%s-%s' % (program, module.name)]))
-			.map (lambda module: (module.name, module))
-			.dict ()
-		)
+		with Activator () as activator:
+			modules = (Stream.of (globals ().values ())
+				.filter (lambda module: type (module) is type and issubclass (module, Task) and hasattr (module, 'interval'))
+				.filter (lambda module: activator.check (['%s-%s' % (program, module.name)]))
+				.map (lambda module: (module.name, module))
+				.dict ()
+			)
 		logger.info ('Active modules: %s' % ', '.join (sorted (modules.keys ())))
 		schedule = ScheduleGenerate (modules, self.oldest, self.processes)
 		if self.modules:
@@ -844,7 +854,7 @@ class Generate (Runtime):
 							logger.info ('^C, terminate all running processes')
 							for p in schedule.control.running[:]:
 								if p.pid is not None:
-									schedule.control.control.term (p.pid)
+									schedule.control.subprocess.term (p.pid)
 									schedule.wait ()
 								else:
 									schedule.control.running.remove (p)
@@ -852,7 +862,7 @@ class Generate (Runtime):
 							time.sleep (2)
 							for p in schedule.control.running[:]:
 								if p.pid is not None:
-									schedule.control.control.term (p.pid, signal.SIGKILL)
+									schedule.control.subprocess.term (p.pid, signal.SIGKILL)
 								else:
 									schedule.control.running.remove (p)
 							logger.info ('Waiting for killed processes to terminate')

@@ -45,9 +45,9 @@ def relink (source: str, target: str, pattern: Optional[List[Pattern[str]]] = No
 	real_source = make_real (source)
 	real_target = make_real (target)
 	if not os.path.isdir (real_source):
-		raise error ('%s: source not a directory' % source)
+		raise error (f'{source}: source not a directory')
 	if not os.path.isdir (real_target):
-		raise error ('%s: target not a directory' % target)
+		raise error (f'{target}: target not a directory')
 	#
 	def match (filename: str) -> bool:
 		return pattern is None or sum (1 for _p in pattern if _p.match (filename)) > 0
@@ -119,7 +119,7 @@ def create_path (path: str, mode: int = 0o777) -> None:
 		except OSError as e:
 			if e.args[0] != errno.EEXIST:
 				if e.args[0] != errno.ENOENT:
-					raise error ('Failed to create %s: %s' % (path, e.args[1]))
+					raise error (f'Failed to create {path}: {e}')
 				elements = path.split (os.path.sep)
 				target = ''
 				for element in elements:
@@ -128,7 +128,7 @@ def create_path (path: str, mode: int = 0o777) -> None:
 						try:
 							os.mkdir (target, mode)
 						except OSError as e:
-							raise error ('Failed to create %s at %s: %s' % (path, target, e.args[1]))
+							raise error (f'Failed to create {path} at {target}: {e}')
 					target += os.path.sep
 
 class ArchiveDirectory:
@@ -142,20 +142,20 @@ if missing, creates a path to a directory with the given path as base
 directory followed a directory based on the current day (YYYYMMDD) to
 be used to archive files on a daily base."""
 		tt = time.localtime (time.time ())
-		ts = '%04d%02d%02d' % (tt[0], tt[1], tt[2])
+		ts = f'{tt.tm_year:04d}{tt.tm_mon:02d}{tt.tm_mday:02d}'
 		arch = os.path.join (path, ts)
 		if arch not in cls.track:
 			try:
 				st = os.stat (arch)
 				if not stat.S_ISDIR (st[stat.ST_MODE]):
-					raise error ('%s is not a directory' % arch)
+					raise error (f'{arch} is not a directory')
 			except OSError as e:
 				if e.args[0] != errno.ENOENT:
-					raise error ('Unable to stat %s: %s' % (arch, e.args[1]))
+					raise error (f'Unable to stat {arch}: {e}')
 				try:
-					os.mkdir (arch, mode)
+					create_path (arch, mode)
 				except OSError as e:
-					raise error ('Unable to create %s: %s' % (arch, e.args[1]))
+					raise error (f'Unable to create {arch}: {e}')
 			cls.track.add (arch)
 		return arch
 
@@ -189,7 +189,9 @@ beginning of the new file.
 		try:
 			return os.stat (self.fname) if stat_file else os.fstat (fd.fileno ())
 		except (OSError, IOError):
-			logger.exception ('Failed to stat file %s' % (self.fname if stat_file else ('open file #%d' % fd.fileno ()), ))
+			logger.exception ('Failed to stat file {f}'.format (
+				f = self.fname if stat_file else 'open file #{fno}'.format (fno = fd.fileno ())
+			))
 		return None
 
 	def __open (self) -> None:
@@ -201,15 +203,18 @@ beginning of the new file.
 						parts = fd.readline ().strip ().split (':')
 						if len (parts) == 3:
 							(self.inode, self.ctime, pos) = (int (_p) for _p in parts)
-							logger.debug ('Read file information from %s: inode=%d, ctime=%d, pos=%d' % (self.info, self.inode, self.ctime, pos))
+							logger.debug (f'Read file information from {self.info}: inode={self.inode}, ctime={self.ctime}, pos={pos}')
 						else:
 							fd.seek (0)
-							logger.error ('Corrupted info file %s, try to remove it, content of file is: %s' % (self.info, fd.read (4096)))
+							logger.error ('Corrupted info file {path}, try to remove it, content of file is: {content}'.format (
+								path = self.info,
+								content = fd.read (4096)
+							))
 							with Ignore (OSError):
 								os.unlink (self.info)
 				except (IOError, ValueError) as e:
-					logger.exception ('Failed to access %s' % self.info)
-					raise error ('Unable to read info file %s: %s' % (self.info, e))
+					logger.exception (f'Failed to access {self.info}')
+					raise error (f'Unable to read info file {self.info}: {e}')
 			try:
 				self.fd = open (self.fname, errors = 'backslashreplace')
 				st = self.__stat (False)
@@ -220,18 +225,18 @@ beginning of the new file.
 						if st.st_size >= pos:
 							if pos > 0:
 								self.fd.seek (pos)
-								logger.debug ('Seek to last position %d of %d of current size' % (pos, st.st_size))
+								logger.debug (f'Seek to last position {pos} of {st.st_size} of current size')
 						else:
-							logger.error ('Old position %d is larger than current file size %d, file had been truncated?' % (pos, st.st_size))
+							logger.error (f'Old position {pos} is larger than current file size {st.st_size}, file had been truncated?')
 					else:
-						logger.info ('File inode has changed from %d to %d, start reading from beginning' % (self.inode, ninode))
+						logger.info (f'File inode has changed from {self.inode} to {ninode}, start reading from beginning')
 					self.inode = ninode
 					self.ctime = nctime
 				else:
-					raise error ('Failed to stat %s' % self.fname)
+					raise error (f'Failed to stat {self.fname}')
 			except IOError as e:
-				logger.exception ('Failed to access %s' % self.fname)
-				raise error ('Unable to open %s: %s' % (self.fname, e))
+				logger.exception (f'Failed to access {self.fname}: {e}')
+				raise error (f'Unable to open {self.fname}: {e}')
 		except Exception:
 			if self.fd:
 				self.fd.close ()
@@ -243,10 +248,14 @@ beginning of the new file.
 		for state in 0, 1:
 			try:
 				with open (self.info, 'w') as fd:
-					fd.write ('%d:%d:%d\n' % (self.inode, self.ctime, cast (TextIO, self.fd).tell ()))
+					fd.write ('{inode}:{ctime}:{pos}\n'.format (
+						inode = self.inode,
+						ctime = self.ctime,
+						pos = cast (TextIO, self.fd).tell ()
+					))
 				break
 			except IOError as e:
-				logger.exception ('Failed to write %s' % self.info, e)
+				logger.exception (f'Failed to write {self.info}: {e}', e)
 				if state == 0:
 					with Ignore (OSError):
 						os.unlink (self.info)
@@ -332,30 +341,30 @@ permissions) while trying to determinate the access to the file."""
 	try:
 		st = os.stat (path)
 	except OSError as e:
-		raise error ('failed to stat "%s": %r' % (path, e.args))
+		raise error (f'failed to stat "{path}": {e}')
 	device = st[stat.ST_DEV]
 	inode = st[stat.ST_INO]
 	rc: List[str] = []
 	fail: List[List[Any]] = []
 	seen: Dict[str, bool] = {}
 	for pid in [_p for _p in os.listdir ('/proc') if isnum (_p)]:
-		bpath = '/proc/%s' % pid
-		checks = ['%s/%s' % (bpath, _c) for _c in ('cwd', 'exe', 'root')]
+		bpath = f'/proc/{pid}'
+		checks = [f'{bpath}/{_c}' for _c in ('cwd', 'exe', 'root')]
 		try:
-			fdp = '%s/fd' % bpath
+			fdp = f'{bpath}/fd'
 			for fds in os.listdir (fdp):
-				checks.append ('%s/%s' % (fdp, fds))
+				checks.append (f'{fdp}/{fds}')
 		except OSError as e:
-			fail.append ([e.args[0], '%s/fd: %s' % (bpath, e.args[1])])
+			fail.append ([e, f'{bpath}/fd: {e}'])
 		try:
-			fd = open ('%s/maps' % bpath, 'r')
+			fd = open (f'{bpath}/maps', 'r')
 			for line in fd:
 				parts = line.split ()
 				if len (parts) == 6 and parts[5].startswith ('/'):
 					checks.append (parts[5].strip ())
 			fd.close ()
 		except IOError as e:
-			fail.append ([e.args[0], '%s/maps: %s' % (bpath, e.args[1])])
+			fail.append ([e, f'{bpath}/maps: {e}'])
 		for check in checks:
 			try:
 				if seen[check]:
@@ -377,7 +386,7 @@ permissions) while trying to determinate the access to the file."""
 						rc.append (pid)
 						seen[check] = True
 				except OSError as e:
-					fail.append ([e.args[0], '%s: %s' % (cpath, e.args[1])])
+					fail.append ([e, f'{cpath}: {e}'])
 	return (rc, fail)
 
 def force_text (mode: str) -> str:
@@ -483,7 +492,7 @@ _csvregister = [
 	('agn-space-full', _CSVSpace2)
 ]
 CSVDialects = []
-for( _csvname, _csvclass) in _csvregister:
+for (_csvname, _csvclass) in _csvregister:
 	csv.register_dialect (_csvname, _csvclass)
 	CSVDialects.append (_csvname)
 CSVDefault = CSVDialects[0]
@@ -557,28 +566,32 @@ the corrosponding name of the found BOM.
 In writing mode and if ``bom_charset'' is not None and a BOM is found
 for this name, the BOM is written to the beginning of a file (in
 append mode it is only written, if the file had zero length on open)."""
-		if type (stream) is str:
-			self.fd = copen (cast (str, stream), mode)
+		if isinstance (stream, str):
+			self.fd = copen (stream, mode)
 			self.foreign = False
 		else:
-			self.fd = cast (IO[Any], stream)
+			self.fd = stream
 			self.foreign = True
 		self.bom = None
 		self.charset = None
 		if mode is None or 'r' in mode:
 			with Ignore (AttributeError):
 				self.fd.seek
-				raw = open (self.fd.fileno (), 'rb', closefd = False)
-				pos = raw.tell ()
-				start = raw.read (self.maxBomLength)
+				pos = 0
+				start: bytes
+				if isinstance (stream, str):
+					with copen (stream, 'rb') as raw:
+						start = raw.read (self.maxBomLength)
+				else:
+					with open (self.fd.fileno (), 'rb', closefd = False) as raw:
+						pos = raw.tell ()
+						start = raw.read (self.maxBomLength)
 				for bom in self.boms:
 					if start.startswith (bom.bom):
 						pos += len (bom.bom)
 						self.bom = bom.name
 						self.charset = self.bom2charset.get (bom.bom)
-						break
-				raw.close ()
-				self.fd.seek (pos)
+						self.fd.seek (pos)
 		elif 'w' in mode or 'a' in mode:
 			bom_seq: Optional[bytes] = None
 			if bom_charset is not None:
@@ -590,7 +603,7 @@ append mode it is only written, if the file had zero length on open)."""
 							self.bom = bom.name
 							break
 				except (AttributeError, KeyError) as e:
-					raise error ('%s: BOM not found: %s' % (bom_charset, e))
+					raise error (f'{bom_charset}: BOM not found: {e}')
 			if self.fd.tell () == 0:
 				if bom_seq is not None and len (bom_seq) > 0:
 					raw = open (self.fd.fileno (), 'wb', closefd = False)
@@ -686,7 +699,7 @@ class _CSVReader (CSVIO):
 	def __init__ (self, stream: Union[str, IO[Any]]) -> None:
 		super ().__init__ ()
 		self.reader: Any = None
-		self.open (stream, 'rU')
+		self.open (stream, 'r')
 
 	def __iter__ (self) -> Iterator[Tuple[Any, ...]]:
 		return iter (self.reader)
@@ -814,7 +827,7 @@ class CSVAuto:
 		head = fd.readline ()
 		datas = []
 		if head == '':
-			err = 'Empty input file "%s"' % self.fname
+			err = f'Empty input file "{self.fname}"'
 		else:
 			n = 0
 			while n < self.linecount:

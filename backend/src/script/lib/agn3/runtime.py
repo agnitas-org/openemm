@@ -9,7 +9,7 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
-import	sys, os, logging, argparse, time
+import	sys, os, logging, argparse, time, signal
 from	collections import namedtuple
 from	dataclasses import dataclass
 from	typing import Any, Callable, Optional
@@ -159,7 +159,8 @@ def cleanup (self):
 							[Watchdog.Job (name = _n, method = _e, args =_a, heartbeat = self.ctx.heartbeat) for (_n, _e, _a) in jobs],
 							self.ctx.restart_delay,
 							self.ctx.termination_delay,
-							self.ctx.max_incarnations)
+							self.ctx.max_incarnations
+						)
 						ok = self.ctx.exit_code == self.EC_EXIT
 					else:
 						if executors is not None:
@@ -184,7 +185,7 @@ def cleanup (self):
 				except Exception as e:
 					logger.exception (f'Execute failed due to: {e}')
 					ok = False
-				logger.info ('Going down (%s)' % ('success' if ok else 'fail', ))
+				logger.info ('Going down ({status})'.format (status = 'success' if ok else 'fail'))
 			else:
 				logger.info ('Lock exists')
 		with log ('cleanup'):
@@ -213,6 +214,9 @@ def cleanup (self):
 	def restart (self) -> None:
 		if self.ctx.job is not None:
 			self.ctx.job.restart ()
+	
+	def title (self, title: str) -> Processtitle.ProcesstitleContext:
+		return self.ctx.processtitle.title (title)
 			
 	def __argument_parsing (self) -> None:
 		Option = namedtuple ('Option', ['option', 'value'])
@@ -309,7 +313,7 @@ class CLI (Daemonic):
 		#
 		self.setup ()
 		self.__argument_parsing ()
-		self.setup_handler (True)
+		self.setsignal (signal.SIGPIPE, signal.SIG_IGN)
 		self.prepare ()
 		try:
 			ok = self.executor ()

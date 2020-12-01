@@ -16,7 +16,6 @@ from	signal import Signals
 from	types import FrameType, TracebackType
 from	typing import Any, Callable, Optional, Union
 from	typing import Iterator, List, TextIO, Tuple, Type
-from	typing import cast
 from	.daemon import Watchdog
 from	.definitions import base
 from	.exceptions import error
@@ -63,6 +62,13 @@ This class provides a frame work for batch processing using a file"""
 			if not self.fail:
 				self.remove ()
 
+		def __len__ (self) -> int:
+			if self.fd is not None:
+				return os.fstat (self.fd.fileno ()).st_size
+			if self.path is not None:
+				return os.stat (self.path).st_size
+			return 0
+
 		def __enter__ (self) -> Batch.Temp:
 			if not self.open () and self.path is not None and os.path.isfile (self.path):
 				raise error (f'{self.orig}: failed to open')
@@ -82,7 +88,7 @@ This class provides a frame work for batch processing using a file"""
 					self.path = None
 				except OSError as e:
 					if e.args[0] != errno.ENOENT:
-						logger.error ('Failed to remove temp.file "%s": %s' % (self.path, e))
+						logger.error (f'Failed to remove temp.file "{self.path}": {e}')
 						self.fail = True
 					else:
 						self.path = None
@@ -99,12 +105,12 @@ This class provides a frame work for batch processing using a file"""
 					n = 0
 					while n < 128 and os.path.isfile (dpath):
 						n += 1
-						dpath = '%s-%d' % (destination, n)
+						dpath = f'{destination}-{n}'
 				try:
 					shutil.move (self.path, dpath)
 					self.path = None
 				except OSError as e:
-					logger.exception ('Failed to move "%s" to "%s": %s' % (self.path, dpath, e))
+					logger.exception (f'Failed to move "{self.path}" to "{dpath}": {e}')
 					self.fail = True
 		
 		def save (self, name: str, line: str) -> None:
@@ -141,17 +147,17 @@ This class provides a frame work for batch processing using a file"""
 			if self.fd is not None:
 				for line in self.fd:
 					yield line.strip ()
-			self.close ()
+				self.close ()
 
 		def __save (self, what: str, s: str) -> None:
 			now = time.localtime ()
-			target = os.path.join (base, 'var', 'log', '%04d%02d%02d-%s.log' % (now.tm_year, now.tm_mon, now.tm_mday, self.base_target))
-			output = '[%02d.%02d.%04d %02d:%02d:%02d] %s: %s\n' % (now.tm_mday, now.tm_mon, now.tm_year, now.tm_hour, now.tm_min, now.tm_sec, what, s)
+			target = os.path.join (base, 'var', 'log', f'{now.tm_year:04d}{now.tm_mon:02d}{now.tm_mday:02d}-{self.base_target}.log')
+			output = f'[{now.tm_mday:02d}.{now.tm_mon:02d}.{now.tm_year:04d} {now.tm_hour:02d}:{now.tm_min:02d}:{now.tm_sec:02d}] {what}: {s}\n'
 			try:
 				with open (target, 'a') as fd:
 					fd.write (output)
 			except IOError as e:
-				logger.exception ('Failed to write to "%s": %s' % (target, e))
+				logger.exception (f'Failed to write to "{target}": {e}')
 				self.fail = True
 		
 		def success (self, s: str) -> None:
@@ -172,15 +178,26 @@ further handling of the processed file:
 	- success(s): writes the string ``s'' to agnitas style data logfile for successful processed lines
 	- failure(s): writes the string ``s'' to agnitas style data logfile for failed processed lines
 """
-		rc = Batch.Temp (self.path, self.filename)
+		rc = Batch.Temp (self.path, self.filename.split ('.')[0])
 		if os.path.isfile (self.path):
-			self.instance_unique[1] += 1
-			temp = os.path.join (self.directory, '.%s.%d.%d.%d.%.3f.temp' % (self.filename, os.getpid (), self.instance_unique[0], self.instance_unique[1], time.time ()))
-			try:
-				os.rename (self.path, temp)
-			except OSError as e:
-				logger.exception ('Failed to rename "%s" to "%s": %s' % (self.path, temp, e))
-			else:
+			temp: Optional[str] = None
+			while temp is None:
+				self.instance_unique[1] += 1
+				temp = os.path.join (self.directory, '.{filename}.{pid}.{unique0}.{unique1}.{now:.3f}.temp'.format (
+					filename = self.filename,
+					pid = os.getpid (),
+					unique0 = self.instance_unique[0],
+					unique1 = self.instance_unique[1],
+					now = time.time ()
+				))
+				try:
+					os.rename (self.path, temp)
+				except OSError as e:
+					logger.exception (f'Failed to rename "{self.path}" to "{temp}": {e}')
+					temp = None
+					if e.errno != errno.ENOENT:
+						break
+			if temp is not None:
 				fail = False
 				if delay > 0:
 					time.sleep (delay)
@@ -189,7 +206,7 @@ further handling of the processed file:
 						time.sleep (1)
 						retry -= 1
 					if retry == 0:
-						logger.error ('File "%s" still in usage' % temp)
+						logger.error (f'File "{temp}" still in usage')
 						fail = True
 				if not fail:
 					rc.path = temp
@@ -210,13 +227,11 @@ rollback methods assigned to the already executed methods are called."""
 	def __mkargs (self, args: Any) -> Tuple[Any, ...]:
 		if args is None:
 			return ()
-		if type (args) is tuple:
-			return cast (Tuple[Any], args)
-		if type (args) is list:
+		if isinstance (args, tuple):
+			return args
+		if isinstance (args, list):
 			return tuple (args)
-		if type (args) is not tuple:
-			return (args, )
-		raise error (f'invalid arguments: {args!r}')
+		return (args, )
 
 	def add (self,
 		name: str,
@@ -256,7 +271,7 @@ arguments, the current name of the method and a state."""
 					self.back.append ((name, rollback, rollback_arguments))
 			except Exception as e:
 				if callback: callback (name, 'fail')
-				logger.error ('Execution failed, transaction aborted due to %s' % e)
+				logger.error (f'Execution failed, transaction aborted due to {e}')
 				error = e
 				break
 		if error is not None:
@@ -278,7 +293,7 @@ method and a state."""
 					if callback: callback (name, 'done')
 				except Exception as e:
 					if callback: callback (name, 'fail')
-					logger.error ('Rollback failed due to %s' % e)
+					logger.error (f'Rollback failed due to {e}')
 	
 	def reset (self) -> None:
 		"""clears the rollback stack"""
@@ -313,28 +328,32 @@ otherwise the execute() method can be overwritten to implement the
 job."""
 			self.name = name
 			self.repeat = repeat
-			self.delay = self.unit.parse (delay) if type (delay) is str else cast (int, delay)
+			self.delay = self.unit.parse (delay) if isinstance (delay, str) else delay
 			self.priority = priority
 			self.method = method
 			self.arguments = arguments
 		
 		def __str__ (self) -> str:
-			return '%s <name = %s, repeast = %s, delay = %s, priority = %s>' % (self.__class__.__name__, self.name, self.repeat, self.delay, self.priority)
+			return f'{self.__class__.__name__} <name = {self.name}, repeat = {self.repeat}, delay = {self.delay}, priority = {self.priority}>'
 			
 		def __call__ (self, schedule: Schedule) -> None:
-			schedule.log ('job', '%s started' % self.name)
+			schedule.log ('job', f'{self.name} started')
 			start = time.time ()
 			rc = self.execute ()
 			end = time.time ()
-			schedule.log ('job', '%s terminated %s after %.2f seconds' % (self.name, ('successful (%r)' % rc) if type (rc) is bool else ('with error (%r)' % (rc, )), end - start))
+			schedule.log ('job', '{name} terminated {how} after {duration:.2f} seconds'.format (
+				name = self.name,
+				how = f'successful ({rc!r})' if type (rc) is bool else f'with error ({rc!r})',
+				duration =  end - start
+			))
 			if self.repeat:
 				if rc:
-					schedule.log ('job', '%s reactivate' % self.name)
+					schedule.log ('job', f'{self.name} reactivate')
 					schedule._add (self)
 				else:
-					schedule.log ('job', '%s not reactivated' % self.name)
+					schedule.log ('job', f'{self.name} not reactivated')
 			else:
-				schedule.log ('job', '%s not reactivated due to single run' % self.name)
+				schedule.log ('job', f'{self.name} not reactivated due to single run')
 			
 		def execute (self) -> Any:
 			"""Entry point for execution, must return boolean value, False for error, otherwise True"""
@@ -351,7 +370,7 @@ job."""
 		return time.time ()
 		
 	def _delayer (self, amount: float) -> None:
-		self.log ('delay', 'for %.2f seconds' % amount)
+		self.log ('delay', f'for {amount:.2f} seconds')
 		while self._running and amount > 0.0:
 			if amount >= 1.0:
 				delay = 1.0
@@ -362,7 +381,7 @@ job."""
 			self.intercept ()
 			if self._running:
 				time.sleep (delay)
-		self.log ('delay', 'done' if amount == 0.0 else f'terminated with {amount} seconds left')
+		self.log ('delay', 'done' if amount == 0.0 else f'terminated with {amount:.2f} seconds left')
 		
 	def _offset (self, job: Schedule.Job, immediately: bool) -> int:
 		if not immediately and job.repeat and job.delay is not None and job.delay > 0:
@@ -377,10 +396,10 @@ job."""
 	def _add (self, job: Schedule.Job, immediately: bool = False) -> Schedule.Job:
 		if self._active:
 			offset = self._offset (job, immediately)
-			self.log ('add', 'job %s with offset in %d seconds with priority %d' % (job.name, offset, job.priority))
+			self.log ('add', f'job {job.name} with offset in {offset} seconds with priority {job.priority}')
 			self._schedule.enter (offset, job.priority, job, (self, ))
 		else:
-			self.log ('add', 'not add job %s due inactive scheduler' % job.name)
+			self.log ('add', f'not add job {job.name} due inactive scheduler')
 		return job
 			
 	def every (self,
@@ -420,7 +439,7 @@ after ``delay'' seconds using ``priority''. Call ``method'' with
 		self.log ('stop', 'request')
 		self._active = False
 		while not self._schedule.empty ():
-			self.log ('stop', 'cancel %s' % self._schedule.queue[0].action)
+			self.log ('stop', 'cancel {name}'.format (name = self._schedule.queue[0].action))
 			self._schedule.cancel (self._schedule.queue[0])
 		self.log ('stop', 'finished')
 		

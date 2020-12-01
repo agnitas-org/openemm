@@ -1,5 +1,5 @@
 -- require: name;
--- link: ![admin]%(rdir-domain)/form.do?agnCI=%(company-id)&agnFN=%(name)&agnUID=##AGNUID## Formular %(name);
+-- link: ![admin]%(rdir-domain)/form.action?agnCI=%(company-id)&agnFN=%(name)&agnUID=##AGNUID## Formular %(name);
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                                                                                                                                                                                                  --
 --                                                                                                                                                                                                                                                                  --
@@ -24,7 +24,7 @@ function form (ctx, parm, cust)
 		local	map = {}
 		
 		map['param.name'] = parm.name
-		ctx._result[parm] = agn.strmap ('%(rdir_domain)/form.do?agnCI=%(company_id)&agnFN=%(param.name)&agnUID=##AGNUID##', map)
+		ctx._result[parm] = agn.strmap ('%(rdir_domain)/form.action?agnCI=%(company_id)&agnFN=%(param.name)&agnUID=##AGNUID##', map)
 	end
 	return ctx._result[parm]
 end

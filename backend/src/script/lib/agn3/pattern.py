@@ -32,7 +32,7 @@ def SQL_wildcard_transform (s: str) -> str:
 	for ch in s:
 		needFinal = True
 		if ch in '$^*?()+[{]}|\\.':
-			r += '\\%s' % ch
+			r += f'\\{ch}'
 		elif ch == '%':
 			r += '.*'
 			needFinal = False

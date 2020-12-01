@@ -9,7 +9,6 @@
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
 # include	<openssl/sha.h>
-# include	<openssl/md5.h>
 # include	"xmlback.h"
 
 # define	OPTION(flag,value)		((flag) ? (value) : 0)
@@ -98,7 +97,6 @@ create_xuid (blockmail_t *blockmail, const char *prefix, receiver_t *rec, long u
 {
 	const char	*rc;
 	enum {
-		V0 = 0,
 		V2 = 2,
 		V3 = 3
 	}		uid_version,
@@ -126,7 +124,6 @@ create_xuid (blockmail_t *blockmail, const char *prefix, receiver_t *rec, long u
 	}
 	
 	switch (uid_version) {
-	case V0:
 	case V2:
 		for (n = 0; n < 5; ++n) {
 			switch (n) {
@@ -199,17 +196,6 @@ create_xuid (blockmail_t *blockmail, const char *prefix, receiver_t *rec, long u
 	}
 	buffer_stiff (blockmail -> secret_sig, xmlBufferContent (blockmail -> secret_key), xmlBufferLength (blockmail -> secret_key));
 	switch (uid_version) {
-	case V0:
-		{
-			MD5_CTX		hash;
-			unsigned char	digest[MD5_DIGEST_LENGTH];
-			
-			MD5_Init (& hash);
-			MD5_Update (& hash, buffer_content (blockmail -> secret_sig), buffer_length (blockmail -> secret_sig));
-			MD5_Final (digest, & hash);
-			len = encode (scratch, sizeof (scratch), digest, sizeof (digest));
-		}
-		break;
 	case V2:
 	case V3:
 		{

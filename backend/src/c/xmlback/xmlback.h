@@ -137,14 +137,9 @@ typedef enum { /*{{{*/
 	MS_Active = 2
 	/*}}}*/
 }	mstat_t;
-typedef struct pval { /*{{{*/
-	xmlBufferPtr	v;	/* the value itself			*/
-	struct pval	*next;
-	/*}}}*/
-}	pval_t;
 typedef struct parm { /*{{{*/
 	char		*name;	/* variable name			*/
-	pval_t		*value;	/* list of variable values		*/
+	xmlBufferPtr	value;	/* list of variable values		*/
 	struct parm	*next;
 	/*}}}*/
 }	parm_t;
@@ -350,6 +345,7 @@ typedef struct counter { /*{{{*/
 	int		subtype;	/* subtype, e.g. the mailtype	*/
 	long		unitcount;	/* # of units deliviered	*/
 	long		unitskip;	/* # of skiped units		*/
+	long		chunkcount;	/* # of chunks delivered	*/
 	long long	bytecount;	/* # of bytes delivered		*/
 	long		bccunitcount;	/* dito for bcc addresses	*/
 	long long	bccbytecount;	/* - " -			*/
@@ -509,9 +505,6 @@ struct blockmail { /*{{{*/
 	bool_t		force_ecs_uid;
 	/* which version for uid to use */
 	long		uid_version;
-	
-	/* XmlBackPlugin hook						*/
-	void		*xbp;
 	/*}}}*/
 };
 
@@ -565,7 +558,6 @@ typedef struct media_target { /*{{{*/
 }	media_target_t;
 struct receiver { /*{{{*/
 	int		customer_id;	/* customer id, as in the dbase	*/
-	xmlChar		*uuid;		/* unique user ID		*/
 	char		**bcc;		/* optional Bcc addresses	*/
 	char		user_type;	/* user type for mailing	*/
 	bool_t		tracking_veto;	/* tracking-veto is enabled?	*/
@@ -584,6 +576,8 @@ struct receiver { /*{{{*/
 	block_t		*base_block;	/* on which block we are	*/
 	map_t		*smap;		/* for simple mappings		*/
 	gnode_t		**slist;	/* list of nodes		*/
+	int		chunks;		/* # of chunks of message	*/
+	long		size;		/* raw message size		*/
 	/*}}}*/
 };
 
@@ -640,9 +634,6 @@ extern columns_t	*columns_parse (xmlBufferPtr s);
 extern columns_t	*columns_update (columns_t *cur, xmlBufferPtr s);
 extern columns_t	*columns_alloc (void);
 extern columns_t	*columns_free (columns_t *c);
-extern pval_t		*pval_alloc (void);
-extern pval_t		*pval_free (pval_t *p);
-extern pval_t		*pval_free_all (pval_t *p);
 extern parm_t		*parm_alloc (void);
 extern parm_t		*parm_free (parm_t *p);
 extern parm_t		*parm_free_all (parm_t *p);
@@ -656,6 +647,7 @@ extern parm_t		*media_find_parameter (media_t *m, const char *name);
 extern void		media_postparse (media_t *m, blockmail_t *blockmail);
 extern bool_t		media_parse_type (const char *str, mediatype_t *type);
 extern const char	*media_typeid (mediatype_t type);
+
 extern fix_t		*fix_alloc (void);
 extern fix_t		*fix_free (fix_t *f);
 extern void		fix_scan_for_dynamic_content (fix_t *f);
@@ -685,11 +677,11 @@ extern mailtrack_t	*mailtrack_free (mailtrack_t *m);
 extern void		mailtrack_add (mailtrack_t *m, int customer_id);
 extern blockmail_t	*blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg);
 extern blockmail_t	*blockmail_free (blockmail_t *b);
-extern bool_t		blockmail_count (blockmail_t *b, const char *mediatype, int subtype, long bytes, int bcccount);
+extern bool_t		blockmail_count (blockmail_t *b, const char *mediatype, int subtype, int chunks, long bytes, int bcccount);
 extern void		blockmail_count_sort (blockmail_t *b);
 extern void		blockmail_unsync (blockmail_t *b);
-extern bool_t		blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, int bcccount);
-extern bool_t		blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, int bcccount);
+extern bool_t		blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, int chunks, int bcccount);
+extern bool_t		blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, int chunks, long size, int bcccount);
 extern bool_t		blockmail_extract_mediatypes (blockmail_t *b);
 extern void		blockmail_setup_senddate (blockmail_t *b, const char *date);
 extern void		blockmail_setup_company_configuration (blockmail_t *b);
@@ -881,6 +873,4 @@ extern bool_t		count_owrite (void *data, blockmail_t *blockmail, receiver_t *rec
 extern void		*preview_oinit (blockmail_t *blockmail, var_t *opts);
 extern bool_t		preview_odeinit (void *data, blockmail_t *blockmail, bool_t success);
 extern bool_t		preview_owrite (void *data, blockmail_t *blockmail, receiver_t *rec);
-
-# include	"xmlback-plugin.h"
 #endif		/* __XMLBACK_H */

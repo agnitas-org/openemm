@@ -59,7 +59,6 @@ receiver_alloc (blockmail_t *blockmail, int data_blocks) /*{{{*/
 	
 	if (r = (receiver_t *) malloc (sizeof (receiver_t))) {
 		r -> customer_id = -1;
-		r -> uuid = NULL;
 		r -> bcc = NULL;
 		r -> user_type = '\0';
 		r -> tracking_veto = false;
@@ -78,6 +77,8 @@ receiver_alloc (blockmail_t *blockmail, int data_blocks) /*{{{*/
 		r -> base_block = NULL;
 		r -> smap = NULL;
 		r -> slist = NULL;
+		r -> chunks = 1;
+		r -> size = 0;
 		if ((! r -> message_id) || (! r -> rvdata) ||
 		    (! r -> encrypt)) {
 			r = receiver_free (r);
@@ -126,10 +127,6 @@ receiver_clear (receiver_t *r) /*{{{*/
 		free (r -> bcc);
 		r -> bcc = NULL;
 	}
-	if (r -> uuid) {
-		free (r -> uuid);
-		r -> uuid = NULL;
-	}
 	r -> tracking_veto = false;
 	r -> disable_link_extension = false;
 	r -> media_target = media_target_free_all (r -> media_target);
@@ -146,6 +143,8 @@ receiver_clear (receiver_t *r) /*{{{*/
 	dataset_clear (r -> rvdata);
 	r -> cache = dcache_free_all (r -> cache);
 	r -> base_block = NULL;
+	r -> chunks = 1;
+	r -> size = 0;
 }/*}}}*/
 void
 receiver_set_data_l (receiver_t *rec, const char *key, long data) /*{{{*/

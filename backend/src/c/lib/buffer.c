@@ -14,6 +14,7 @@
  * allocation, resizing etc. is handled here.
  */
 # include	<stdlib.h>
+# include	<ctype.h>
 # include	"agn.h"
 
 # ifdef		__OPTIMIZE__
@@ -635,6 +636,38 @@ buffer_indexs (const buffer_t *b, const char *s) /*{{{*/
 	return buffer_index (b, (const byte_t *) s, strlen (s));
 }/*}}}*/
 
+/** remove leading/trailing whitespaces
+ */
+void
+buffer_ltrim (buffer_t *b) /*{{{*/
+{
+	if (b -> length > 0) {
+		int	ws;
+		
+		for (ws = 0; (ws < b -> length) && isspace (b -> buffer[ws]); ++ws)
+			;
+		if (ws > 0) {
+			if (ws == b -> length) {
+				buffer_clear (b);
+			} else {
+				memmove (b -> buffer, b -> buffer + ws, b -> length - ws);
+				b -> length -= ws;
+			}
+		}
+	}
+}/*}}}*/
+void
+buffer_rtrim (buffer_t *b) /*{{{*/
+{
+	while ((b -> length > 0) && isspace (b -> buffer[b -> length - 1]))
+		b -> length--;
+}/*}}}*/
+void
+buffer_trim (buffer_t *b) /*{{{*/
+{
+	buffer_rtrim (b);
+	buffer_ltrim (b);
+}/*}}}*/
 struct pool { /*{{{*/
 	buffer_t	*root;
 	/*}}}*/

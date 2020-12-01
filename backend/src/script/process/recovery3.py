@@ -119,18 +119,19 @@ class Recovery (CLI): #{{{
 	class MailingInfo:
 		company_id: int
 		name: str
+		exists: bool
 		deleted: bool
 
 	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
 		parser.add_argument ('-n', '--dryrun', action = 'store_true', help = 'just show')
-		parser.add_argument ('-A', '--age', action = "store", default = '1d', help = 'set maximum age for a mailing to be recovered in seconds or an offset like expression (e.g. "1d" for one day)')
+		parser.add_argument ('-A', '--age', action = "store", type = int, default = 1, help = 'set maximum age for a mailing to be recovered in days')
 		parser.add_argument ('-D', '--startup-delay', action = "store", default = "1m", help = 'set delay to wait for startup of backend in seconds or an offset (e.g. "1m")', dest = 'startup_delay')
 		parser.add_argument ('parameter', nargs = '*', help = 'optional list of mailing_ids to restrict recovery to')
 
 	def use_arguments (self, args: argparse.Namespace) -> None:
 		unit = Unit ()
 		self.dryrun = args.dryrun
-		self.max_age = unit.parse (args.age)
+		self.max_age = args.age
 		self.startup_delay = unit.parse (args.startup_delay)
 		self.restrict_to_mailings = set (int (_p) for _p in args.parameter) if args.parameter else None
 
@@ -179,6 +180,7 @@ class Recovery (CLI): #{{{
 		self.mailing_info[mailing_id] = rc = Recovery.MailingInfo (
 			company_id = rq.company_id if rq is not None else 0,
 			name = rq.shortname if rq is not None else f'#{mailing_id} not found',
+			exists = rq is not None,
 			deleted = bool (rq.deleted) if rq is not None else False
 		)
 		return rc
@@ -186,8 +188,14 @@ class Recovery (CLI): #{{{
 	def __mailing_name (self, mailing_id: int) -> str: #{{{
 		return self.__mail (mailing_id).name
 	#}}}
+	def __mailing_exists (self, mailing_id: int) -> bool: #{{{
+		return self.__mail (mailing_id).exists
+	#}}}
 	def __mailing_deleted (self, mailing_id: int) -> bool: #{{{
 		return self.__mail (mailing_id).deleted
+	#}}}
+	def __mailing_valid (self, mailing_id: int) -> bool: #{{{
+		return self.__mailing_exists (mailing_id) and not self.__mailing_deleted (mailing_id)
 	#}}}
 	def collect_mailings (self) -> None: #{{{
 		now = datetime.now ()
@@ -200,7 +208,7 @@ class Recovery (CLI): #{{{
 		)
 		check_query = self.db.qselect (
 			oracle = 'SELECT count(*) FROM rulebased_sent_tbl WHERE mailing_id = :mid AND to_char (lastsent, \'YYYY-MM-DD\') = to_char (sysdate - 1, \'YYYY-MM-DD\')',
-			mysql = 'SELECT count(*) FROM rulebased_sent_tbl WHERE mailing_id = :mid AND date_format (lastsent, \'%%Y-%%m-%%d\') = \'%04d-%02d-%02d\'' % (yesterday.year, yesterday.month, yesterday.day)
+			mysql = 'SELECT count(*) FROM rulebased_sent_tbl WHERE mailing_id = :mid AND date_format(lastsent, \'%%Y-%%m-%%d\') = \'%04d-%02d-%02d\'' % (yesterday.year, yesterday.month, yesterday.day)
 		)
 		update = (
 			'UPDATE maildrop_status_tbl '
@@ -208,7 +216,7 @@ class Recovery (CLI): #{{{
 			'WHERE status_id = :sid'
 		)
 		for (status_id, mailing_id) in self.db.queryc (query, {'expire': expire}):
-			if self.restrict_to_mailings is None or mailing_id in self.restrict_to_mailings:
+			if (self.restrict_to_mailings is None or mailing_id in self.restrict_to_mailings) and self.__mailing_valid (mailing_id):
 				count = self.db.querys (check_query, {'mid': mailing_id})
 				if count is not None and count[0] == 1:
 					logger.info ('Reactivate rule based mailing %d: %s' % (mailing_id, self.__mailing_name (mailing_id)))
@@ -224,11 +232,10 @@ class Recovery (CLI): #{{{
 			 'FROM maildrop_status_tbl '
 			 'WHERE genstatus IN (1, 2) AND genchange > :expire AND genchange < current_timestamp AND status_field = \'W\'')
 		for (status_id, mailing_id, company_id, status_field, senddate) in self.db.queryc (query, {'expire': expire}):
-			if self.restrict_to_mailings is None or mailing_id in self.restrict_to_mailings:
+			if (self.restrict_to_mailings is None or mailing_id in self.restrict_to_mailings) and self.__mailing_valid (mailing_id):
 				check = self.__make_range (senddate, now)
-				if not self.__mailing_deleted (mailing_id) and self.__mailing_name (mailing_id):
-					self.mailings.append (Mailing (status_id, status_field, mailing_id, company_id, check))
-					logger.info ('Mark mailing %d (%s) for recovery' % (mailing_id, self.__mailing_name (mailing_id)))
+				self.mailings.append (Mailing (status_id, status_field, mailing_id, company_id, check))
+				logger.info ('Mark mailing %d (%s) for recovery' % (mailing_id, self.__mailing_name (mailing_id)))
 		self.mailings.sort (key = lambda m: m.status_id)
 		logger.info ('Found %d mailing(s) to recover' % len (self.mailings))
 	#}}}

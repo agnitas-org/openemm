@@ -8,20 +8,3 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#
-LOGLEVEL = DEBUG
-MAILDIR = ${home}/var/spool/ADMIN
-LICENCE_ID = 0
-DEFAULT_ENCODING = quoted-printable
-DEFAULT_CHARSET = UTF-8
-DB_ID = openemm
-BLOCKSIZE = 1000
-METADIR = ${home}/var/spool/META
-XMLBACK = ${home}/bin/xmlback
-DOMAIN = ${fqdn}
-BOUNDARY = OPENEMM
-MAIL_LOG_NUMBER = 400
-EOL = LF
-MAILER = OpenEMM 2019
-ACCOUNT_LOGFILE = ${home}/log/account.log
-BOUNCE_LOGFILE = /${home}/log/extbounce.log

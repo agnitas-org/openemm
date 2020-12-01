@@ -69,7 +69,7 @@ processing.
 		"""``fname'' is the path to the message file, ``lang''
 the language to use, ``fill'' used to mark unknown tokens"""
 		self.messages: Dict[Optional[str], Dict[str, str]] = {None: {}}
-		self.lang: Optional[str] = None
+		self.lang: Optional[str] = lang
 		self.fill = fill
 		if fname is not None:
 			cur = self.messages[None]
@@ -230,7 +230,7 @@ resp. after the auto generated code"""
 			(var, val) = [_e.strip () for _e in expr.split ('=', 1)]
 			if len (val) >= 2 and val[0] in '"\'' and val[-1] == val[0]:
 				quote = val[0]
-				self.properties[var] = val[1:-1].replace ('\\%s' % quote, quote).replace ('\\\\', '\\')
+				self.properties[var] = val[1:-1].replace (f'\\{quote}', quote).replace ('\\\\', '\\')
 			elif val.lower () in ('true', 'on', 'yes'):
 				self.properties[var] = True
 			elif val.lower () in ('false', 'off', 'no'):
@@ -251,7 +251,7 @@ resp. after the auto generated code"""
 
 	def __code (self, code: str) -> None:
 		self.__indent ()
-		self.code += '%s\n' % code
+		self.code += f'{code}\n'
 		if code:
 			if code[-1] == ':':
 				self.empty = True
@@ -266,7 +266,7 @@ resp. after the auto generated code"""
 	def __compileError (self, start: int, errtext: str) -> None:
 		if not self.compile_errors:
 			self.compile_errors = ''
-		self.compile_errors += '** %s: %s ...\n\n\n' % (errtext, self.content[start:start + 60])
+		self.compile_errors += '** {error}: {content} ...\n\n\n'.format (error = errtext, content = self.content[start:start + 60])
 
 	def __replacer (self, mtch: Match[str]) -> str:
 		rc = []
@@ -274,24 +274,24 @@ resp. after the auto generated code"""
 			try:
 				rc.append (self.rplcMap[ch])
 			except KeyError:
-				rc.append ('\\x%02x' % ord (ch))
+				rc.append ('\\x{ch:02x}'.format (ch = ord (ch)))
 		return ''.join (rc)
 
 	def __escaper (self, s: str) -> str:
 		return s.replace ('\'', '\\\'')
 
 	def __compileString (self, s: str) -> None:
-		self.__code ('__result.append (\'%s\')' % re.sub (self.rplc, self.__replacer, s))
+		self.__code ('__result.append (\'{escape}\')'.format (escape = re.sub (self.rplc, self.__replacer, s)))
 
 	def __compileExpr (self, s: str) -> None:
-		self.__code ('__result.append (str (%s))' % s)
+		self.__code (f'__result.append (str ({s}))')
 
 	def __compileCode (self, token: Optional[str], arg: Optional[str]) -> None:
 		if token is not None:
 			if arg:
-				self.__code ('%s %s:' % (token, arg))
+				self.__code (f'{token} {arg}:')
 			else:
-				self.__code ('%s:' % token)
+				self.__code (f'{token}:')
 		elif arg:
 			self.__code (arg)
 
@@ -379,7 +379,7 @@ resp. after the auto generated code"""
 								self.content = self.content[:pos] + included + self.content[pos:]
 								clen += len (included)
 						except error as e:
-							self.__compileError (tstart, 'Failed to include "%s": %s' % (arg, e))
+							self.__compileError (tstart, f'Failed to include "{arg}": {e}')
 					elif token in ('if', 'else', 'elif', 'for', 'while', 'try', 'except', 'finally', 'with'):
 						if token in ('else', 'elif', 'except', 'finally'):
 							if self.indent > 0:
@@ -389,20 +389,20 @@ resp. after the auto generated code"""
 						if (arg and token in ('if', 'elif', 'for', 'while', 'except', 'with')) or (not arg and token in ('else', 'try', 'finally')):
 							self.__compileCode (token, arg)
 						elif arg:
-							self.__compileError (tstart, 'Extra arguments for #%s detected' % token)
+							self.__compileError (tstart, f'Extra arguments for #{token} detected')
 						else:
-							self.__compileError (tstart, 'Missing statement for #%s' % token)
+							self.__compileError (tstart, f'Missing statement for #{token}')
 						self.indent += 1
 					elif token in ('pass', 'break', 'continue'):
 						if arg:
-							self.__compileError (tstart, 'Extra arguments for #%s detected' % token)
+							self.__compileError (tstart, f'Extra arguments for #{token} detected')
 						else:
 							self.__compileCode (None, token)
 					elif token in ('do', ):
 						if arg:
 							self.__compileCode (None, arg)
 						else:
-							self.__compileError (tstart, 'Missing code for #%s' % token)
+							self.__compileError (tstart, f'Missing code for #{token}')
 					elif token in ('end', ):
 						if arg:
 							self.__compileError (tstart, 'Extra arguments for #end detected')
@@ -423,13 +423,13 @@ resp. after the auto generated code"""
 				elif not groups[5] is None:
 					expr = groups[5]
 					if expr[0] == '[':
-						self.__compileExpr ('_[\'%s\']' % self.__escaper (expr[1:-1]))
+						self.__compileExpr ('_[\'{escape}\']'.format (escape =self.__escaper (expr[1:-1])))
 					elif expr[0] == '{':
-						self.__compileExpr ('_ (\'%s\')' % self.__escaper (expr[1:-1]))
+						self.__compileExpr ('_ (\'{escape}\')'.format (escape = self.__escaper (expr[1:-1])))
 				elif not groups[0] is None:
 					self.__compileString (groups[0])
 		if self.indent > 0:
-			self.__compileError (0, 'Missing %d closing #end statement(s)' % self.indent)
+			self.__compileError (0, f'Missing {self.indent} closing #end statement(s)')
 		if self.compile_errors is None:
 			if self.postcode:
 				if self.code and self.code[-1] != '\n':
@@ -439,7 +439,7 @@ resp. after the auto generated code"""
 
 	def include (self, arg: Any) -> Optional[str]:
 		"""method to overwrite to implement the #include statement"""
-		raise error ('Subclass responsible for implementing "include (%r)"' % arg)
+		raise error (f'Subclass responsible for implementing "include ({arg!r})"')
 
 	def property (self, var: str, default: Any = None) -> Any:
 		"""returns a property from the template if found, else ``default''"""
@@ -454,9 +454,13 @@ resp. after the auto generated code"""
 			try:
 				self.__compileContent ()
 				if self.compiled is None:
-					raise error ('Compilation failed: %s' % self.compile_errors)
+					raise error (f'Compilation failed: {self.compile_errors}')
 			except Exception as e:
-				raise error ('Failed to compile [%r] %r:\n%s\n' % (type (e), e.args, self.code))
+				raise error ('Failed to compile [{typ}] {e}:\n{code}\n'.format (
+					typ = type (e),
+					e = e,
+					code = self.code
+				))
 
 	def fill (self, namespace: Optional[Dict[str, Any]], lang: Optional[str] = None, mc: Optional[MessageCatalog] = None) -> str:
 		"""uses the template to fill it using the parameter
@@ -481,7 +485,7 @@ from ``namespace'' for language ``lang'' by using the message catalog
 			else:
 				raise error ('code failed to compile')
 		except Exception as e:
-			raise error ('Execution failed [%s]: %s' % (e.__class__.__name__, str (e)))
+			raise error (f'Execution failed: {e}')
 		result = ''.join (self.namespace['__result'])
 		if not lang is None:
 			nresult = []

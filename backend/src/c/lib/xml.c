@@ -125,6 +125,20 @@ xstrlen (const xchar_t *s) /*{{{*/
 	return len;
 }/*}}}*/
 int
+xstrnlen (const xchar_t *s, int slen) /*{{{*/
+{
+	int	len, clen;
+	
+	for (len = 0; slen > 0; ++len) {
+		clen = xchar_length (*s);
+		slen -= clen;
+		if (slen >= 0)
+			while (clen-- > 0)
+				++s;
+	}
+	return len;
+}/*}}}*/
+int
 xstrcmp (const xchar_t *s1, const char *s2) /*{{{*/
 {
 	return strcmp (xchar_to_char (s1), s2);

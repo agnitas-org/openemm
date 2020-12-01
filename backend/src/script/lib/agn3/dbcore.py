@@ -16,7 +16,7 @@ from	collections import namedtuple
 from	itertools import zip_longest
 from	enum import Enum
 from	types import TracebackType
-from	typing import Any, Callable, Optional, Protocol, Union
+from	typing import Any, Callable, Optional, Protocol, TypeVar, Union
 from	typing import Dict, Iterator, List, NamedTuple, Set, Tuple, Type
 from	typing import cast
 from	.dbapi import DBAPI
@@ -25,6 +25,8 @@ from	.ignore import Ignore
 from	.stream import Stream
 #
 __all__ = ['Row', 'Cursor', 'DBType', 'Core']
+#
+T = TypeVar ('T')
 #
 class Row (Protocol):
 	def __getattr__ (self, attr: str) -> Any: ...
@@ -40,9 +42,7 @@ inherit this class. This class should not be instantiated by an
 application, use ``Core.cursor()'' instead."""
 	__slots__ = [
 		'db', 'autocommit', 'need_reformat', 'id', 'curs',
-		'rowtype',
-		'cache_reformat', 'cache_variables',
-		'log'
+		'rowtype', 'log'
 	]
 	def __init__ (self, db: Core, autocommit: bool, need_reformat: bool = False) -> None:
 		"""``db'' is the database specific subclass of Core.
@@ -56,8 +56,6 @@ set to True, if the database does not support named placeholder."""
 		self.id: Optional[str] = None
 		self.curs: Optional[DBAPI.Cursor] = None
 		self.rowtype: Optional[Type[Row]] = None
-		self.cache_reformat: Dict[str, Tuple[str, List[Any]]] = {}
-		self.cache_variables: Dict[str, Set[str]] = {}
 		self.log = db.log
 
 	def __enter__ (self) -> Cursor:
@@ -74,7 +72,7 @@ set to True, if the database does not support named placeholder."""
 	def mode (self, mode: str) -> None:
 		raise KeyError (mode)
 		
-	def qselect (self, **args: str) -> str:
+	def qselect (self, **args: T) -> T:
 		"""See agn3.db.Core.qselect"""
 		return self.db.qselect (**args)
 
@@ -103,7 +101,7 @@ set to True, if the database does not support named placeholder."""
 			if self.log: self.log ('Cursor closed')
 		except self.db.driver.Error as e:
 			self.db.lasterr = e
-			if self.log: self.log ('Cursor closing failed: %s' % self.last_error ())
+			if self.log: self.log ('Cursor closing failed: {error}'.format (error = self.last_error ()))
 		self.curs = None
 
 	def open (self) -> bool:
@@ -118,7 +116,7 @@ set to True, if the database does not support named placeholder."""
 					if self.log: self.log ('Cursor open failed')
 			except self.db.driver.Error as e:
 				self.error (e)
-				if self.log: self.log ('Cursor opening failed: %s' % self.last_error ())
+				if self.log: self.log ('Cursor opening failed: {error}'.format (error = self.last_error ()))
 		else:
 			if self.log: self.log ('Cursor opeing failed: no database available')
 		return self.curs is not None
@@ -150,71 +148,16 @@ portable across different databases."""
 			] if normalize else self.curs.description
 		raise error ('no active query')
 
-	__variable_pattern = re.compile ('\'[^\']*\'|:[a-z0-9_]+', re.IGNORECASE)
-	def variables_in_query (self, query: str) -> Set[str]:
-		"""Internally used method to find all variables in a query"""
-		try:
-			varlist = self.cache_variables[query]
-		except KeyError:
-			varlist = (Stream (self.__variable_pattern.findall (query))
-				.filter (lambda p: cast (str, p).startswith (':'))
-				.map (lambda p: p[1:])
-				.set ()
-			)
-			self.cache_variables[query] = varlist
-		return varlist
-		
-	def reformat (self, statement: str, parameter: Dict[str, Any]) -> Tuple[str, List[Any]]:
-		"""internally used method to reformat a query with named placeholder for databases not supporting them."""
-		varlist: List[str]
-		try:
-			(new_statement, varlist) = self.cache_reformat[statement]
-		except KeyError:
-			def reformater (query: str, varlist: List[str]) -> Iterator[str]:
-				for (plain, match) in zip_longest (self.__variable_pattern.split (statement), self.__variable_pattern.findall (statement)):
-					yield plain.replace ('%', '%%')
-					if match is not None:
-						if match.startswith (':'):
-							varlist.append (match[1:])
-							yield '%s'
-						else:
-							yield match.replace ('%', '%%')
-			varlist = []
-			new_statement = ''.join (reformater (statement, varlist))
-			self.cache_reformat[statement] = (new_statement, varlist)
-		#
-		return (new_statement, [parameter[_k] for _k in varlist])
-
-	def cleanup (self, statement: str, parameter: Dict[str, Any]) -> Dict[str, Any]:
-		"""internally used method to cleanup query parameter that are not used in the query itself."""
-		return dict ((_k, _v) for (_k, _v) in parameter.items () if _k in self.variables_in_query (statement))
-
-	def qvalidate (self, statement: str, parameter: Dict[str, Any]) -> Tuple[bool, List[str], List[str]]:
-		"""validates a query against its query parameter
-
-this is a useful tool for a complex query and mismatched query
-parameter. This returns a tuple with three elements, the first is a
-bool which is True if the query and its parameter are looking okay (in
-this case the remaining two elements are empty lists) or False if not.
-In this case the second element of the tuple contains the parameter
-which are used in the query but are not found in the query parameter,
-the third element contains the keys of the query parameter which are
-not used in the query."""
-		var = self.variables_in_query (statement)
-		missing = [_v for _v in var if _v not in parameter]
-		keys = [_k for _k in parameter if _k not in var]
-		return (not missing and not keys, missing, keys)
-	
 	def __valid (self) -> None:
 		if self.curs is None:
 			if not self.open ():
-				raise error ('Unable to setup cursor: ' + self.last_error ())
+				raise error ('Unable to setup cursor: {error}'.format (error = self.last_error ()))
 
 	__valid_name = re.compile ('^[a-z][a-z0-9_]*$', re.IGNORECASE)
 	def __make_row (self, data: List[Any]) -> Row:
 		if self.rowtype is None:
 			d = self.description ()
-			rowspec = ['_%d' % (_n + 1) for _n in range (len (data))] if d is None else [_d[0].lower () for _d in d]
+			rowspec = ['_{n}'.format (n = _n + 1) for _n in range (len (data))] if d is None else [_d[0].lower () for _d in d]
 			#
 			seen: Set[str] = set ()
 			def norm (n: int, c: str) -> str:
@@ -248,11 +191,14 @@ not used in the query."""
 		self.__valid ()
 
 	__ph = re.compile (':([a-z0-9_]+)', re.IGNORECASE)
-	def __parameter_format (self, statement: str, parameter: Dict[str, Any]) -> str:
+	def __parameter_format (self, statement: str, parameter: Union[List[Any], Dict[str, Any]]) -> str:
 		try:
-			return Stream.of (self.__ph.findall (statement)).map (lambda ph: '%s=%r' % (ph, parameter[ph])).join (', ')
+			if isinstance (parameter, dict):
+				return Stream.of (self.__ph.findall (statement)).map (lambda ph: '{name}={value!r}'.format (name = ph, value = parameter[ph])).join (', ')
+			else:
+				return Stream (parameter).map (lambda v: f'{v!r}').join (', ')
 		except Exception as e:
-			return '%r (%s)' % (parameter, e)
+			return f'{parameter!r} ({e})'
 	
 	def __execute (self, what: str, statement: str, parameter: Union[None, List[Any], Dict[str, Any]], cleanup: bool) -> int:
 		self.__valid ()
@@ -261,14 +207,14 @@ not used in the query."""
 				if self.log: self.log (f'{what}: {statement}')
 				return self.executor (statement)
 			else:
-				if type (parameter) is dict:
+				if isinstance (parameter, dict):
 					if self.need_reformat:
-						(statement, parameter_list) = self.reformat (statement, cast (Dict[str, Any], parameter))
+						(statement, parameter_list) = self.db.reformat (statement, parameter)
 						if self.log: self.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = ', '.join (['{_p:r}' for _p in parameter_list])))
 						return self.executor (statement, parameter_list)
 					elif cleanup:
-						parameter = self.cleanup (statement, cast (Dict[str, Any], parameter))
-				if self.log: self.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = self.__parameter_format (statement, cast (Dict[str, Any], parameter))))
+						parameter = self.db.cleanup (statement, parameter)
+				if self.log: self.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = self.__parameter_format (statement, parameter)))
 				return self.executor (statement, parameter)
 		except self.db.driver.Error as e:
 			self.error (e)
@@ -277,7 +223,12 @@ not used in the query."""
 					self.log ('{what} {statement} failed: {error}'.format (what = what, statement = statement, error = self.last_error ()))
 				else:
 					self.log ('{what} {statement} using {parameter:r} failed: {error}'.format (what = what, statement = statement, parameter = parameter, error = self.last_error ()))
-			raise error ('{what} start failed: {error}'.format (what = what.lower (), error = self.last_error ()))
+			raise error ('{what} using statement {statement} {parameter!r} start failed: {error}'.format (
+				what = what.lower (),
+				statement = statement,
+				parameter = parameter,
+				error = self.last_error ()
+			))
 	
 	def query (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Cursor:
 		"""Query the database
@@ -303,16 +254,16 @@ This method return an iterable realizied by itself."""
 				self.error (e)
 				if self.log:
 					if parameter is None:
-						self.log ('Queryc %s fetch failed: %s' % (statement, self.last_error ()))
+						self.log ('Queryc {statement} fetch failed: {error}'.format (statement = statement, error = self.last_error ()))
 					else:
-						self.log ('Queryc %s using %r fetch failed: %s' % (statement, parameter, self.last_error ()))
-				raise error ('query all failed: ' + self.last_error ())
+						self.log ('Queryc {statement} using {parameter!r} fetch failed: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
+				raise error ('query all failed: {error}'.format (error = self.last_error ()))
 		if self.log:
 			if parameter is None:
-				self.log ('Queryc %s failed: %s' % (statement, self.last_error ()))
+				self.log ('Queryc {statement} failed: {error}'.format (statement = statement, error = self.last_error ()))
 			else:
-				self.log ('Queryc %s using %r failed: %s' % (statement, parameter, self.last_error ()))
-		raise error ('unable to setup query: ' + self.last_error ())
+				self.log ('Queryc {statement} using {parameter} failed: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
+		raise error ('unable to setup query: {error}'.format (error = self.last_error ()))
 
 	def querys (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Optional[Row]:
 		"""See query, but returns only one (the first) row or None, if no row is found at all."""
@@ -351,18 +302,38 @@ This method return an iterable realizied by itself."""
 			if self.log: self.log ('Sync failed: database not available')
 		return rc
 
-	def update (self, statement: str, parameter: Union[Any, List[Any], Dict[str, Any]] = None, commit: bool = False, cleanup: bool = False) -> int:
+	def update (self,
+		statement: str,
+		parameter: Union[Any, List[Any], Dict[str, Any]] = None,
+		commit: bool = False,
+		cleanup: bool = False,
+		sync_and_retry: bool = False
+	) -> int:
 		"""Performs non query database calls. For parameter see query. Returns number of changed rows, if applicated."""
-		self.__execute ('Update', statement, parameter, cleanup)
+		if sync_and_retry:
+			for state in range (2):
+				try:
+					self.__execute ('Update', statement, parameter, cleanup)
+				except Exception as e:
+					if state == 0:
+						self.sync ()
+						if self.log: self.log (f'Failed to update due to {e}, sync and retry')
+					else:
+						if self.log: self.log (f'Failed to update even after sync and retry due to {e}')
+						raise
+				else:
+					break
+		else:
+			self.__execute ('Update', statement, parameter, cleanup)
 		rows = cast (DBAPI.Cursor, self.curs).rowcount
 		if rows > 0 and (commit or self.autocommit):
 			if not self.sync ():
 				if self.log:
 					if parameter is None:
-						self.log ('Commit after execute failed for %s: %s' % (statement, self.last_error ()))
+						self.log ('Commit after execute failed for {statement}: {error}'.format (statement = statement, error = self.last_error ()))
 					else:
-						self.log ('Commit after execute failed for %s using %r: %s' % (statement, parameter, self.last_error ()))
-				raise error ('commit failed: ' + self.last_error ())
+						self.log ('Commit after execute failed for {statement} using {parameter!r}: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
+				raise error ('commit failed: {error}'.format (error = self.last_error ()))
 		return rows
 	
 	def execute (self, statement: str) -> int:
@@ -384,7 +355,7 @@ class Core:
 
 this is the base class for all database specific drivers and should
 inherit this class. """
-	__slots__ = ['dbms', 'driver', 'cursor_class', 'db', 'lasterr', 'log', 'cursors', 'types']
+	__slots__ = ['dbms', 'driver', 'cursor_class', 'db', 'lasterr', 'log', 'cursors', 'types', 'cache_reformat', 'cache_variables']
 	def __init__ (self, dbms: str, driver: DBAPI.Vendor, cursor_class: Type[Cursor]) -> None:
 		"""``dbms'' is the symbolic name, ``driver'' the real driver class and ``cursor_class'' based on Cursor
 
@@ -400,6 +371,8 @@ but can produce lots of output in prdocutive use."""
 		self.log: Optional[Callable[[str], None]] = None
 		self.cursors: List[Cursor] = []
 		self.types: Dict[Any, DBType] = {None: DBType.STRING}
+		self.cache_reformat: Dict[str, Tuple[str, List[Any]]] = {}
+		self.cache_variables: Dict[str, Set[str]] = {}
 		names: List[str]
 		for (id, names) in [
 			(DBType.BINARY, ['BINARY', 'BLOB', 'LOB']),
@@ -446,7 +419,7 @@ this will store the message in lasterr and retrieved using the method
 		self.lasterr = errmsg
 		self.close ()
 
-	def qselect (self, **args: str) -> str:
+	def qselect (self, **args: T) -> T:
 		"""Selects a database sepcific query variant
 
 it is not always possible to write database neutral code. So if you
@@ -472,6 +445,62 @@ And to get the query to select the newly created ID:
 """
 		return args[self.dbms]
 
+	__variable_pattern = re.compile ('\'[^\']*\'|:[a-z0-9_]+', re.IGNORECASE)
+	def reformat (self, statement: str, parameter: Dict[str, Any]) -> Tuple[str, List[Any]]:
+		"""internally used method to reformat a query with named placeholder for databases not supporting them."""
+		varlist: List[str]
+		try:
+			(new_statement, varlist) = self.cache_reformat[statement]
+		except KeyError:
+			def reformater (query: str, varlist: List[str]) -> Iterator[str]:
+				for (plain, match) in zip_longest (self.__variable_pattern.split (statement), self.__variable_pattern.findall (statement)):
+					yield plain.replace ('%', '%%')
+					if match is not None:
+						if match.startswith (':'):
+							varlist.append (match[1:])
+							yield '%s'
+						else:
+							yield match.replace ('%', '%%')
+			varlist = []
+			new_statement = ''.join (reformater (statement, varlist))
+			self.cache_reformat[statement] = (new_statement, varlist)
+		#
+		return (new_statement, [parameter[_k] for _k in varlist])
+
+	def variables_in_query (self, query: str) -> Set[str]:
+		"""Internally used method to find all variables in a query"""
+		try:
+			varlist = self.cache_variables[query]
+		except KeyError:
+			varlist = (Stream (self.__variable_pattern.findall (query))
+				.filter (lambda p: cast (str, p).startswith (':'))
+				.map (lambda p: p[1:])
+				.set ()
+			)
+			self.cache_variables[query] = varlist
+		return varlist
+		
+	def cleanup (self, statement: str, parameter: Dict[str, Any]) -> Dict[str, Any]:
+		"""internally used method to cleanup query parameter that are not used in the query itself."""
+		var = self.variables_in_query (statement)
+		return dict ((_k, _v) for (_k, _v) in parameter.items () if _k in var)
+
+	def qvalidate (self, statement: str, parameter: Dict[str, Any]) -> Tuple[bool, List[str], List[str]]:
+		"""validates a query against its query parameter
+
+this is a useful tool for a complex query and mismatched query
+parameter. This returns a tuple with three elements, the first is a
+bool which is True if the query and its parameter are looking okay (in
+this case the remaining two elements are empty lists) or False if not.
+In this case the second element of the tuple contains the parameter
+which are used in the query but are not found in the query parameter,
+the third element contains the keys of the query parameter which are
+not used in the query."""
+		var = self.variables_in_query (statement)
+		missing = [_v for _v in var if _v not in parameter]
+		keys = [_k for _k in parameter if _k not in var]
+		return (not missing and not keys, missing, keys)
+	
 	def repr_last_error (self) -> str:
 		"""returns string representation of last occured error"""
 		return str (self.lasterr) if self.lasterr is not None else 'success'
@@ -507,7 +536,7 @@ without transaction support this may be a NO-OP."""
 		if self.db is not None:
 			for c in self.cursors[:]:
 				if self.log is not None and c.id is not None:
-					self.log ('Closing pending cursor %s' % c.id)
+					self.log (f'Closing pending cursor {c.id}')
 				with Ignore (self.driver.Error):
 					c.close ()
 			try:
@@ -589,7 +618,7 @@ closed and removed from the internal tracking."""
 				cursor.curs.close ()
 				cursor.curs = None
 		elif self.log is not None and cursor.id is not None:
-			self.log ('Try to release a not managed cursor %s' % cursor.id)
+			self.log (f'Try to release a not managed cursor {cursor.id}')
 
 	def stream (self, *args: Any, **kwargs: Any) -> Stream:
 		"""creates a stream using a dedicated cursor and using ``*args'' and ``**kwargs'' for Cursor.query()"""

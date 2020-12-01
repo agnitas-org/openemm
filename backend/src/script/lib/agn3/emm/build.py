@@ -9,28 +9,52 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
+from	__future__ import annotations
+import	os, re
+from	datetime import datetime
+from	typing import Final, Optional
+from	typing import Tuple
+from	..definitions import base, fqdn, user, version
+from	..exceptions import error
+from	..ignore import Ignore
+from	..parser import ParseTimestamp, Field, Lineparser
+from	..stream import Stream
+#
+__all__ = ['spec', 'require']
+#
+class Spec:
+	__slots__ = ['spec']
+	build_spec_path: Final[str] = os.path.join (base, 'scripts', 'build.spec')
+	timestamp_parser = ParseTimestamp ()
+	parser = Lineparser (
+		lambda a: a.split (';', 3),
+		'version',
+		Field ('timestamp', lambda t: Spec.timestamp_parser (t)),
+		'host',
+		'user'
+	)
+	def __init__ (self, build_spec_path: Optional[str] = None) -> None:
+		self.spec = Spec.parser.target_class (version, datetime.now (), fqdn, user)
+		path = build_spec_path if build_spec_path is not None else Spec.build_spec_path
+		if os.path.isfile (path):
+			with open (path, 'r', errors = 'backslashreplace') as fd:
+				build_spec = fd.read ().strip ()
+				with Ignore (error):
+					self.spec = Spec.parser (build_spec)
 
-CFLAGS	= -I.
-LDFLAGS	= -L.
-LIBS	:= -lagn -lparson
-SRCS	= buffer.c var.c log.c node.c map.c csig.c \
-	  tzdiff.c atob.c str.c net.c hash.c path.c \
-	  set.c skip.c lock.c xml.c daemon.c cache.c \
-	  unhex.c which.c timeout.c url.c systemconfig.c \
-	  fsdb.c \
-	  parson.c
-OBJS	= $(SRCS:%.c=%.o)
-LIB	= libagn.a
+spec = Spec ().spec
 
-all:	parson.h $(LIB)
+def require (version: str) -> None:
+	reduce_to_num_pattern = re.compile ('[0-9]+')
+	def reduce_to_num (v: str) -> Tuple[int, ...]:
+		return (Stream (v.split ('.'))
+			.map (lambda e: reduce_to_num_pattern.search (e))
+			.filter (lambda m: m is not None)
+			.map (lambda m: int (m.group ()))
+			.tuple ()
+		)
+	required_version = reduce_to_num (version)
+	current_version = reduce_to_num (spec.version)
+	if required_version > current_version:
+		raise error (f'required version {version} is not satisfied by available version {spec.version}')
 
-clean:
-	rm -f $(LIB) $(OBJS) parson.c parson.h
-	
-$(LIB):	$(OBJS)
-	rm -f $@
-	ar rc $@ $(OBJS)
-
-parson.c parson.h:	parson-0.0.0.tar.gz
-	tar xaf $< && ( cd parson-0.0.0; mv parson.c parson.h ..; cd ..; rm -rf parson-0.0.0 )
-	touch -c parson.c parson.h

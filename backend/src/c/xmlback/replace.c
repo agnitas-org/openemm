@@ -289,8 +289,6 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 					xmlBufferAdd (block -> in, cont, n);
 				}
 			}
-			if (tag)
-				xbp_tag_replace (blockmail -> xbp, blockmail, rec, tag, cont, n);
 		} else
 			cur = next;
 	}

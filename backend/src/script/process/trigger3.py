@@ -49,58 +49,58 @@ class Trigger:
 		self.merger = cast (MergerProxy, XMLRPCClient (self.cfg, 'merger'))
 		self.timeout = self.cfg.iget ('merger.timeout', 5)
 
-	def fire (self, statusID: int) -> Tuple[int, str]:
+	def fire (self, status_id: int) -> Tuple[int, str]:
 		(rc, report) = (-1, '')
 		if self.execlock.acquire ():
 			otimeout = socket.getdefaulttimeout ()
 			socket.setdefaulttimeout (self.timeout)
 			try:
-				report = self.merger.Merger.remote_control ('fire', str (statusID))
-				logger.debug ('statusID %d fired: %r' % (statusID, report))
+				report = self.merger.Merger.remote_control ('fire', str (status_id))
+				logger.debug ('status_id %d fired: %r' % (status_id, report))
 				rc = 0
 			except Exception as e:
-				logger.warning ('Failed to trigger statusID %d: %s' % (statusID, str (e)))
+				logger.warning ('Failed to trigger status_id %d: %s' % (status_id, str (e)))
 				report = 'Failed to start merger: %s' % str (e)
 			finally:
 				socket.setdefaulttimeout (otimeout)
 				self.execlock.release ()
 		else:
-			logger.error ('Failed to get exclusive lock to trigger statusID %d' % statusID)
+			logger.error ('Failed to get exclusive lock to trigger status_id %d' % status_id)
 			report += 'Failed to get exclusive access\n'
 		return (rc, report)
 	
-	def demand (self, mailingID: int) -> Tuple[int, str]:
+	def demand (self, mailing_id: int) -> Tuple[int, str]:
 		(rc, report) = (-1, '')
-		statusID: Optional[int] = None
+		status_id: Optional[int] = None
 		with DBAccess () as dba:
-			genStatus: Optional[int] = None
-			for r in dba.queryc ('SELECT status_id, genstatus FROM maildrop_status_tbl WHERE mailing_id = :mid AND status_field = \'D\'', {'mid': mailingID}):
-				if r[0] and (statusID is None or statusID < r[0]):
-					if statusID is None or r[1] in (1, 3):
-						statusID = r[0]
-						genStatus = r[1]
-			if statusID is None:
-				logger.warning ('No entry in maildrop_status_tbl for mailing_id %r found' % mailingID)
-				report += 'Mailing %r is not an on demand mailing\n' % mailingID
-			elif genStatus is not None:
-				if genStatus not in (1, 3):
-					logger.warning ('Mailing %d has genstatus %d, unable to restart at the moment' % (mailingID, genStatus))
-					report += 'Mailing %r has genstatus %r and can not be restarted at this point\n' % (mailingID, genStatus)
+			genstatus: Optional[int] = None
+			for r in dba.queryc ('SELECT status_id, genstatus FROM maildrop_status_tbl WHERE mailing_id = :mid AND status_field = \'D\'', {'mid': mailing_id}):
+				if r[0] and (status_id is None or status_id < r[0]):
+					if status_id is None or r[1] in (1, 3):
+						status_id = r[0]
+						genstatus = r[1]
+			if status_id is None:
+				logger.warning ('No entry in maildrop_status_tbl for mailing_id %r found' % mailing_id)
+				report += 'Mailing %r is not an on demand mailing\n' % mailing_id
+			elif genstatus is not None:
+				if genstatus not in (1, 3):
+					logger.warning ('Mailing %d has genstatus %d, unable to restart at the moment' % (mailing_id, genstatus))
+					report += 'Mailing %r has genstatus %r and can not be restarted at this point\n' % (mailing_id, genstatus)
 				else:
-					if genStatus == 3:
+					if genstatus == 3:
 						logger.debug ('Reset mailing')
-						rows = dba.update ('UPDATE maildrop_status_tbl SET genstatus = 1 WHERE status_id = :statusID AND genstatus = 3', {'statusID': statusID})
+						rows = dba.update ('UPDATE maildrop_status_tbl SET genstatus = 1 WHERE status_id = :status_id AND genstatus = 3', {'status_id': status_id})
 						dba.sync (rows == 1)
 					else:
-						logger.debug ('Found mailing %r with statusID %d and genstatus %d' % (mailingID, statusID, genStatus))
-		if statusID is not None:
-			(rc, report) = self.fire (statusID)
+						logger.debug ('Found mailing %r with status_id %d and genstatus %d' % (mailing_id, status_id, genstatus))
+		if status_id is not None:
+			(rc, report) = self.fire (status_id)
 		return (rc, report)
 	
-	def reset (self, statusID: int) -> Tuple[int, str]:
+	def reset (self, status_id: int) -> Tuple[int, str]:
 		(rc, report) = (-1, '')
 		with DBAccess () as dba:
-			rows = dba.update ('UPDATE maildrop_status_tbl SET genstatus = 1, genchange = sysdate WHERE status_id = :sid', {'sid': statusID})
+			rows = dba.update ('UPDATE maildrop_status_tbl SET genstatus = 1, genchange = sysdate WHERE status_id = :sid', {'sid': status_id})
 			if rows == 1:
 				rc = 0
 			else:
@@ -117,35 +117,35 @@ class Trigger:
 			content = '-ERR: %s\n' % s
 		return XMLRPC.Answer (code = 200, mime = 'text/plain', headers = [], content = content)
 
-	def doPing (self, path: str, param: Optional[str], parsed_param: Optional[Dict[str, List[str]]]) -> XMLRPC.Answer:
+	def do_ping (self, path: str, param: Optional[str], parsed_param: Optional[Dict[str, List[str]]]) -> XMLRPC.Answer:
 		logger.debug ('PING')
 		return self.__answer (True, 'pong')
 	
-	def doDemand (self, path: str, param: Optional[str], parsed_param: Optional[Dict[str, List[str]]]) -> XMLRPC.Answer:
-		mailingID = atoi (param)
-		if not mailingID:
-			logger.debug ('DEMAND without mailingID')
-			return self.__answer (False, 'Invalid parameter %r, mailingID expected' % param)
-		logger.debug ('DEMAND %r' % (mailingID, ))
-		(rc, report) = self.demand (mailingID)
+	def do_demand (self, path: str, param: Optional[str], parsed_param: Optional[Dict[str, List[str]]]) -> XMLRPC.Answer:
+		mailing_id = atoi (param)
+		if not mailing_id:
+			logger.debug ('DEMAND without mailing_id')
+			return self.__answer (False, 'Invalid parameter %r, mailing_id expected' % param)
+		logger.debug ('DEMAND %r' % (mailing_id, ))
+		(rc, report) = self.demand (mailing_id)
 		return self.__answer (rc == 0, report)
 	
-	def doFire (self, path: str, param: Optional[str], parsed_param: Optional[Dict[str, List[str]]]) -> XMLRPC.Answer:
-		statusID = atoi (param)
-		if not statusID:
-			logger.debug ('FIRE without statusID')
-			return self.__answer (False, 'Invalid parameter %r, statusID expected' % param)
-		logger.debug ('FIRE %r' % (statusID, ))
-		(rc, report) = self.fire (statusID)
+	def do_fire (self, path: str, param: Optional[str], parsed_param: Optional[Dict[str, List[str]]]) -> XMLRPC.Answer:
+		status_id = atoi (param)
+		if not status_id:
+			logger.debug ('FIRE without status_id')
+			return self.__answer (False, 'Invalid parameter %r, status_id expected' % param)
+		logger.debug ('FIRE %r' % (status_id, ))
+		(rc, report) = self.fire (status_id)
 		return self.__answer (rc == 0, report)
 
-	def doReset (self, path: str, param: Optional[str], parsed_param: Optional[Dict[str, List[str]]]) -> XMLRPC.Answer:
-		statusID = atoi (param)
-		if not statusID:
-			logger.debug ('RESET without statusID')
-			return self.__answer (False, 'Invalid parameter %r, statusID expected' % param)
-		logger.debug ('RESET %r' % (statusID, ))
-		(rc, report) = self.reset (statusID)
+	def do_reset (self, path: str, param: Optional[str], parsed_param: Optional[Dict[str, List[str]]]) -> XMLRPC.Answer:
+		status_id = atoi (param)
+		if not status_id:
+			logger.debug ('RESET without status_id')
+			return self.__answer (False, 'Invalid parameter %r, status_id expected' % param)
+		logger.debug ('RESET %r' % (status_id, ))
+		(rc, report) = self.reset (status_id)
 		return self.__answer (rc == 0, report)
 
 class Callback (XMLRPC.RObject):
@@ -156,15 +156,17 @@ class Callback (XMLRPC.RObject):
 	def __response (self, rc: Tuple[int, str]) -> Tuple[bool, str]:
 		return (rc[0] == 0, rc[1])
 
-	def startMailing (self, statusID: int) -> Tuple[bool, str]:
-		logger.debug ('startMailing %r' % (statusID, ))
-		return self.__response (self.trigger.fire (statusID))
+	def start_mailing (self, status_id: int) -> Tuple[bool, str]:
+		logger.debug ('start_mailing %r' % (status_id, ))
+		return self.__response (self.trigger.fire (status_id))
+	startMailing = start_mailing
 
-	def startOnDemandMailing (self, mailingID: int) -> Tuple[bool, str]:
-		logger.debug ('startOnDemandMailing %r' % (mailingID, ))
-		return self.__response (self.trigger.demand (mailingID))
+	def start_on_demand_mailing (self, mailing_id: int) -> Tuple[bool, str]:
+		logger.debug ('start_on_demand_mailing %r' % (mailing_id, ))
+		return self.__response (self.trigger.demand (mailing_id))
+	startOnDemandMailing = start_on_demand_mailing
 	
-	def __stateCheck (self, t: Processentry) -> Optional[str]:
+	def __state_check (self, t: Processentry) -> Optional[str]:
 		err: Optional[str] = 'Unspecified'
 		path = '/proc/%d/status' % t.stats.pid
 		try:
@@ -188,14 +190,14 @@ class Callback (XMLRPC.RObject):
 			err = 'Failed to read rocess path %s: %s' % (path, str (e))
 		return err
 		
-	def isActive (self) -> bool:
-		logger.debug ('isActive')
+	def is_active (self) -> bool:
+		logger.debug ('is_active')
 		rc = False
 		reason = []
 		proc = Processtable ()
 		be = proc.select (user = user, comm = 'java', rcmd = 'org.agnitas.backend.MailoutServerXMLRPC')
 		if len (be) == 1:
-			err = self.__stateCheck (be[0])
+			err = self.__state_check (be[0])
 			if err is None:
 				rc = True
 			else:
@@ -209,24 +211,26 @@ class Callback (XMLRPC.RObject):
 		elif reason:
 			logger.info ('Backend is active: %s' % ', '.join (reason))
 		return rc
+	isActive = is_active
 
-	def isOnhold (self, mailingID: int) -> bool:
-		logger.debug ('isOnhold')
+	def is_onhold (self, mailing_id: int) -> bool:
+		logger.debug ('is_onhold')
 		with DBAccess () as dba:
 			companyID = None
-			for rq in dba.queryc ('SELECT company_id, deleted FROM mailing_tbl WHERE mailing_id = :mailingID', {'mailingID': mailingID}):
+			for rq in dba.queryc ('SELECT company_id, deleted FROM mailing_tbl WHERE mailing_id = :mailing_id', {'mailing_id': mailing_id}):
 				companyID = rq.company_id
 				if bool (rq.deleted):
 					return True
 			#
 			if companyID is not None:
-				for rq in dba.queryc ('SELECT company_id, mailing_id, priority FROM serverprio_tbl WHERE company_id = :companyID OR mailing_id = :mailingID',{'companyID': companyID, 'mailingID': mailingID}):
+				for rq in dba.queryc ('SELECT company_id, mailing_id, priority FROM serverprio_tbl WHERE company_id = :companyID OR mailing_id = :mailing_id',{'companyID': companyID, 'mailing_id': mailing_id}):
 					if rq.company_id:
-						if rq.company_id == companyID and (not rq.mailing_id or rq.mailing_id == mailingID):
+						if rq.company_id == companyID and (not rq.mailing_id or rq.mailing_id == mailing_id):
 							return True
-					elif rq.mailing_id and rq.mailing_id == mailingID:
+					elif rq.mailing_id and rq.mailing_id == mailing_id:
 						return True
 		return False
+	isOnhold = is_onhold
 
 class Main (Runtime):
 	__slots__ = ['port']
@@ -240,22 +244,23 @@ class Main (Runtime):
 		self.port = args.port
 		
 	def executor (self) -> bool:
-		for (option, value) in [
-			('xmlrpc.port', str (self.port)),
-			('xmlrpc.server', 'forking'),
-			('merger.port', '8089')
-		]:
-			if option not in self.cfg:
-				self.cfg[option] = value
-		server = XMLRPC (self.cfg, full = True)
-		trigger = Trigger (self.cfg)
-		server.add_handler ('/ping', trigger.doPing)
-		server.add_handler ('/demand', trigger.doDemand)
-		server.add_handler ('/fire', trigger.doFire)
-		server.add_handler ('/reset', trigger.doReset)
-		cb = Callback (trigger)
-		server.add_instance (cb)
-		server.run ()
+		with self.title (f'trigger3 @ {self.port}'):
+			for (option, value) in [
+				('xmlrpc.port', str (self.port)),
+				('xmlrpc.server', 'forking'),
+				('merger.port', '8089')
+			]:
+				if option not in self.cfg:
+					self.cfg[option] = value
+			server = XMLRPC (self.cfg)
+			trigger = Trigger (self.cfg)
+			server.add_handler ('/ping', trigger.do_ping)
+			server.add_handler ('/demand', trigger.do_demand)
+			server.add_handler ('/fire', trigger.do_fire)
+			server.add_handler ('/reset', trigger.do_reset)
+			cb = Callback (trigger)
+			server.add_instance (cb)
+			server.run ()
 		return True
 
 if __name__ == '__main__':

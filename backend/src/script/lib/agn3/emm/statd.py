@@ -11,7 +11,7 @@
 #
 import	asyncio
 from	typing import Optional, Protocol
-from	typing import List
+from	typing import List, Tuple
 from	typing import cast
 from	..definitions import syscfg
 from	..rpc import XMLRPCProxy, AIO_XMLRPCProxy, AIO_XMLRPCProtocol
@@ -26,6 +26,8 @@ class StatdProxy (Protocol):
 	def list_incoming (self) -> List[str]: ...
 	def list_outgoing (self, licence: int) -> List[str]: ...
 	def stat_file (self, fname: str) -> str: ...
+	# depracted fall back methods
+	def listOutgoing (self, licence: int) -> List[str]: ...
 class AIO_StatdProxy (AIO_XMLRPCProtocol):
 	async def whoami (self) -> str: ...
 	async def get_last_error (self) -> str: ...
@@ -34,12 +36,14 @@ class AIO_StatdProxy (AIO_XMLRPCProtocol):
 	async def list_incoming (self) -> List[str]: ...
 	async def list_outgoing (self, licence: int) -> List[str]: ...
 	async def stat_file (self, fname: str) -> str: ...
-
+	# depracted fall back methods
+	async def countFree (self) -> Tuple[int, int]: ...
+	
 def _target (hostname: str, user: Optional[str]) -> str:
-	port = syscfg.get ('statd-port-%s' % user) if user is not None else None
+	port = syscfg.get (f'statd-port-{user}') if user is not None else None
 	if port is None:
 		port = syscfg.get_str ('statd-port', '8300')
-	parts = hostname.split (':', 2)
+	parts = hostname.split (':', 1)
 	if len (parts) == 2:
 		(hostname, port) = parts
 	return f'http://{hostname}:{port}'

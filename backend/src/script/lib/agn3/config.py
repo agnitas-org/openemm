@@ -126,7 +126,7 @@ the namespace directly using the ``ns'' attribute."""
 		self.ns.update (kwargs)
 	
 	def setup_date (self,
-		offset: Union[None, int, float, str] = None,
+		offset: Union[int, float, str] = 0,
 		name: Optional[str] = None,
 		default: Optional[int] = None
 	) -> None:
@@ -138,10 +138,8 @@ configuration. ``name'' is the name to use for the namespace entry or
 None to use the default "date"."""
 		if name is None:
 			name = 'date'
-		if type (offset) is str:
-			offset = self.iget (cast (str, offset), default if default is not None else 0)
-		elif offset is None:
-			offset = 0
+		if isinstance (offset, str):
+			offset = self.iget (offset, default if default is not None else 0)
 		try:
 			now = self.ns['today']
 		except KeyError:
@@ -254,18 +252,23 @@ None to use the default "date"."""
 	def get (self, var: str, default: Optional[str] = None) -> Optional[str]:
 		"""Retrieve the value for ``var'' as string, use ``default'' as default if ``var'' is not found"""
 		try:
-			val: Optional[str] = self[var]
+			return self[var]
 		except KeyError:
-			val = default
-		return val
+			return default
+	
+	def get_str (self, var: str, default: str) -> str:
+		"""Like get(), but enforces a valid default value"""
+		try:
+			return self[var]
+		except KeyError:
+			return default
 	
 	def iget (self, var: str, default: int = 0) -> int:
 		"""Retrieve the value for ``var'' as integer, use ``default'' as default if ``var'' is not found"""
 		try:
-			val = int (self[var])
+			return int (self[var])
 		except (KeyError, ValueError, TypeError):
-			val = default
-		return val
+			return default
 	
 	def eget (self, var: str, default: int = 0) -> int:
 		"""Retrieve the value for ``var'' as integer where the value is parsed from a unit string, use ``default'' as default if ``var'' is not found"""
@@ -275,18 +278,16 @@ None to use the default "date"."""
 	def fget (self, var: str, default: float = 0.0) -> float:
 		"""Retrieve the value for ``var'' as float, use ``default'' as default if ``var'' is not found"""
 		try:
-			val = float (self[var])
+			return float (self[var])
 		except (KeyError, ValueError, TypeError):
-			val = default
-		return val
+			return default
 	
 	def bget (self, var: str, default: bool = False) -> bool:
 		"""Retrieve the value for ``var'' as boolean, use ``default'' as default if ``var'' is not found"""
 		try:
-			val = atob (self[var])
+			return atob (self[var])
 		except KeyError:
-			val = default
-		return val
+			return default
 	
 	def tget (self, var: str, default: Optional[str] = None, **kwargs: Any) -> Optional[str]:
 		"""Retrieve the value for ``var'' as str where the value is used as a template which is filled using the current namespace, use ``default'' as default if ``var'' is not found"""
@@ -308,24 +309,23 @@ None to use the default "date"."""
 	def __dateparse (self, s: str) -> datetime:
 		rc = self.__date_parser (s)
 		if rc is None:
-			raise ValueError ('unparsable date exprssion %r' % (s, ))
+			raise ValueError (f'unparsable date exprssion {s!r}')
 		return rc
 		
 	def dget (self, var: str, default: Union[None, str, datetime] = None) -> Optional[datetime]:
 		"""Retrieve the value for ``var'' as datetime.datetime, use ``default'' as default if ``var'' is not found"""
 		try:
-			val: Optional[datetime] = self.__dateparse (self[var])
+			return self.__dateparse (self[var])
 		except (KeyError, ValueError):
 			if default is None:
-				val = None
-			elif type (default) is str:
+				return None
+			elif isinstance (default, str):
 				try:
-					val = self.__dateparse (cast (str, default))
+					return self.__dateparse (default)
 				except ValueError:
-					val = None
+					return None
 			else:
-				val = cast (datetime, default)
-		return val
+				return default
 
 	def __listsplit (self,
 		val: Union[None, List[str], Tuple[str], str],
@@ -336,12 +336,12 @@ None to use the default "date"."""
 		not_empty: bool
 	) -> List[Any]:
 		rc: List[Any]
-		if type (val) is list:
-			rc = cast (List[str], val)
-		elif type (val) is tuple:
-			rc = list (cast (Tuple[str], val))
-		elif val and type (val) is str:
-			rc = re.compile (list_separator if list_separator is not None else ', *', re.MULTILINE).split (cast (str, val))
+		if isinstance (val, list):
+			rc = val
+		elif isinstance (val, tuple):
+			rc = list (val)
+		elif val and isinstance (val, str):
+			rc = re.compile (list_separator if list_separator is not None else ', *', re.MULTILINE).split (val)
 			if rc and not_empty:
 				rc = [_v for _v in rc if _v]
 			if rc:
@@ -387,7 +387,7 @@ value is False."""
 		key_separator: Optional[str] = None,
 		key_convert: Optional[Callable[[str], Any]] = None,
 		value_convert: Optional[Callable[[str, str], Any]] = None
-	) -> Dict[str, Any]:
+	) -> Dict[Any, Any]:
 		"""Retrieve the value for ``var'' as dict, use ``default'' as default if ``var'' is not found
 
 ``record_separator''is the regex to separate each key/value pair
@@ -421,7 +421,7 @@ the value before storing them to the dict."""
 		modify_default: Any = None,
 		not_null: bool = False,
 		not_empty: bool = False
-	) -> Dict[str, List[Any]]:
+	) -> Dict[Any, List[Any]]:
 		"""Retrieve the value for ``var'' as dict with list as values, use ``default'' as default if ``var'' is not found
 
 this is a combination of mget and lget which results in a dict where
@@ -554,7 +554,10 @@ instead of using an in memory database. """
 				if db is None:
 					table = var.split ('.')[-1]
 					fields = [_r.split ()[0] for _r in row]
-					create_table = 'CREATE TABLE %s (%s)' % (table, ', '.join (row))
+					create_table = 'CREATE TABLE {table} ({rows})'.format (
+						table = table,
+						rows = ', '.join (row)
+					)
 					convert = [converter.get (_r.split ()[1], lambda a: a) for _r in row]
 					types = [typemap.get (_r.split ()[1], str) for _r in row]
 					db = DBLite (':memory:' if target is None else target)
@@ -562,16 +565,25 @@ instead of using an in memory database. """
 						raise error (f'{table}:{lineno}: failed to open database {target}')
 					db.check_open_cursor ().mode ('fast')
 					db.execute (create_table)
-					insert = 'INSERT INTO %s (%s) VALUES (%s)' % (table, ', '.join (fields), ', '.join (['?'] * len (fields)))
+					insert = 'INSERT INTO {table} ({fields}) VALUES ({placeholders})'.format (
+						table = table,
+						fields = ', '.join (fields),
+						placeholders = ', '.join (['?'] * len (fields))
+					)
 				elif len (row) != len (fields):
-					raise error ('%s:%d: expect %d values, got %d' % (table, lineno, len (fields), len (row)))
+					raise error ('{table}:{lineno}: expect {expect} values, got {got}'.format (
+						table = table,
+						lineno = lineno,
+						expect = len (fields),
+						got = len (row)
+					))
 				else:
 					if null is not None:
 						row = tuple (_r if _r != null else None for _r in row)
 					try:
 						db.update (cast (str, insert), [_c (_r) for (_c, _r) in zip (convert, row)])
 					except Exception as e:
-						raise error ('%s:%d: failed processing row: %s' % (table, lineno, e))
+						raise error (f'{table}:{lineno}: failed processing row: {e}') from e
 			rd.close ()
 			if db is not None:
 				db.sync ()
@@ -580,7 +592,7 @@ instead of using an in memory database. """
 				if output is None:
 					return db
 				#
-				rows = db.stream ('SELECT %s FROM %s ORDER BY rowid' % (', '.join (fields), table)).list ()
+				rows = db.stream ('SELECT {fields} FROM {table} ORDER BY rowid'.format (fields = ', '.join (fields), table = table)).list ()
 				db.close ()
 				if output == 'list':
 					return rows
@@ -603,7 +615,7 @@ instead of using an in memory database. """
 	
 	def keys (self) -> Iterator[str]:
 		return iter (Stream.of (self.sections.items ())
-			.map (lambda kv: (('%s.%s' % (kv[0], _v)) if kv[0] is not None else _v for _v in kv[1]))
+			.map (lambda kv: (('{section}.{name}'.format (section = kv[0], name = _v)) if kv[0] is not None else _v for _v in kv[1]))
 			.chain ()
 		)
 
@@ -651,7 +663,7 @@ instead of using an in memory database. """
 	
 	def filename (self) -> str:
 		"""Returns the default filename for the configuration"""
-		return os.path.join (base, 'scripts', '%s.cfg' % program)
+		return os.path.join (base, 'scripts', f'{program}.cfg')
 		
 	def write (self, fname: str) -> None:
 		"""Write the configuration to ``fname''"""
@@ -661,15 +673,15 @@ instead of using an in memory database. """
 			if section is None:
 				section = '*'
 			if block:
-				fd.write ('[%s]\n' % section)
+				fd.write (f'[{section}]\n')
 				for key in sorted (block):
 					value = block[key]
 					if '\n' in value:
 						if value[-1] == '\n':
 							value = value[:-1]
-						fd.write ('%s = {\n%s\n}\n' % (key, value))
+						fd.write (f'{key} = {{\n{value}\n}}\n')
 					else:
-						fd.write ('%s = "%s"\n' % (key, value))
+						fd.write (f'{key} = "{value}"\n')
 		fd.close ()
 
 	def read (self, stream: Union[None, IO[Any], str] = None) -> None:
@@ -678,10 +690,10 @@ instead of using an in memory database. """
 		block = None
 		if stream is None:
 			fd: Optional[IO[Any]] = open (self.filename (), 'rt')
-		elif type (stream) is str:
-			fd = open (cast (str, stream), 'rt')
+		elif isinstance (stream, str):
+			fd = open (stream, 'rt')
 		else:
-			fd = cast (IO[Any], stream)
+			fd = stream
 		fds: List[IO[Any]] = []
 		while fd is not None:
 			line = fd.readline ()
@@ -699,7 +711,7 @@ instead of using an in memory database. """
 					if line.startswith ('}') and line.strip () == '}':
 						block = None
 					else:
-						cur[block] += '%s\n' % line
+						cur[block] += f'{line}\n'
 				elif line and self.comment_pattern.match (line) is None:
 					mtch = self.section_pattern.match (line)
 					if not mtch is None:
@@ -761,7 +773,7 @@ instead of using an in memory database. """
 										val = val[1:-1]
 									cur[var] = val
 							else:
-								raise error ('Unparsable line: %s' % line)
+								raise error (f'Unparsable line: {line}')
 
 	def write_xml (self, fname: str) -> None:
 		"""Write configuration as xml file"""
@@ -791,7 +803,7 @@ instead of using an in memory database. """
 		self._section = sname
 	
 	def __read_entry (self, path: str, name: str, attrs: Dict[str, str], content: Union[None, bool, str]) -> None:
-		value = cast (str, content) if type (content) is str else ''
+		value = content if isinstance (content, str) else ''
 		try:
 			self.sections[self._section][name] = value
 		except KeyError:

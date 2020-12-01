@@ -13,10 +13,9 @@ from	..ignore import Ignore
 #
 with Ignore (ImportError):
 	import	os, pickle, fcntl, logging
-	from	collections import namedtuple
 	import	sqlite3
 	from	typing import Any, Callable, Optional
-	from	typing import List, Tuple, Type
+	from	typing import Dict, List, NamedTuple, Tuple, Type
 	from	typing import cast
 	from	.types import Driver
 	from	..dbapi import DBAPI
@@ -60,7 +59,10 @@ currently these two modes are implemented, which can also be used in conjunction
 				for op in self.modes[m]:
 					self.execute (op)
 			except KeyError:
-				raise error ('invalid mode: %s (expecting one of %s)' % (m, ', '.join (sorted (self.modes.keys ()))))
+				raise error ('invalid mode: {mode} (expecting one of {modes})'.format (
+					mode = m,
+					modes = ', '.join (sorted (self.modes.keys ()))
+				))
 
 		def validate (self, collect: Optional[List[Any]] = None, quick: bool = False, amount: Optional[int] = None) -> bool:
 			"""performs an integrity check of the database, returns True on okay, otherwise False
@@ -69,13 +71,10 @@ currently these two modes are implemented, which can also be used in conjunction
 stored. ``quick'' can be set to True to just perform a quick check of
 the database. ``amount'' can be numeric value to restrict the check."""
 			rc = False
-			if quick:
-				method = 'quick_check'
-			else:
-				method = 'integrity_check'
+			method = 'quick_check' if quick else 'integrity_check'
 			if amount is not None and amount >= 0:
-				method += '(%d)' % amount
-			for (count, r) in enumerate (self.queryc ('PRAGMA %s' % method), start = 1):
+				method += f'({amount})'
+			for (count, r) in enumerate (self.queryc (f'PRAGMA {method}'), start = 1):
 				if r[0]:
 					if count == 1 and r[0] == 'ok':
 						rc = True
@@ -85,7 +84,9 @@ the database. ``amount'' can be numeric value to restrict the check."""
 						collect.append (r[0])
 			return rc
 
-	Layout = namedtuple ('Layout', ['statement', 'parameter'])
+	class Layout (NamedTuple):
+		statement: str
+		parameter: Optional[Dict[str, Any]] = None
 	class SQLite3 (Core):
 		"""SQLite specific Core implementation"""
 		__slots__ = [
@@ -146,7 +147,7 @@ which transforms the class to a string based representation,
 ``convert'' is for parsing a string into the class and ``datatype'' is
 used to map this new type to a normalized data type. """
 			if not self.extended_types:
-				raise error ('extended types disabled, %s not registered' % name)
+				raise error (f'extended types disabled, {name} not registered')
 			sqlite3.register_adapter (register_class, adapt)
 			sqlite3.register_converter (name, convert)
 			if datatype is not None:
@@ -189,16 +190,16 @@ the class must provide these attributes to be used (see register_type for the me
 				try:
 					fcntl.flock (self.lock_fd, fcntl.LOCK_UN)
 				except IOError as e:
-					logger.warning ('%s: failed to unlock: %s' % (self.filename, e))
+					logger.warning (f'{self.filename}: failed to unlock: {e}')
 				try:
 					os.close (self.lock_fd)
 				except OSError as e:
-					logger.warning ('%s: failed to close: %s' % (self.filename, e))
+					logger.warning (f'{self.filename}: failed to close: {e}')
 				self.lock_fd = None
 			super ().close ()
 			
 		def connect (self) -> None:
-			isNew = not os.path.isfile (self.filename)
+			is_new_file = not os.path.isfile (self.filename)
 			if self.extended_types:
 				self.db = self.driver.connect (self.filename, detect_types = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
 			else:
@@ -209,21 +210,21 @@ the class must provide these attributes to be used (see register_type for the me
 					try:
 						fcntl.flock (self.lock_fd, fcntl.LOCK_EX | (0 if self.wait_for_lock else fcntl.LOCK_NB))
 					except IOError as e:
-						logger.debug ('%s: failed to lock: %s' % (self.filename, e))
+						logger.debug (f'{self.filename}: failed to lock: {e}')
 						with Ignore (OSError):
 							os.close (self.lock_fd)
 						self.lock_fd = None
 				except OSError as e:
-					logger.warning ('%s: failed to open file: %s' % (self.filename, e))
+					logger.warning (f'{self.filename}: failed to open file: {e}')
 				if self.lock_fd is None:
 					self.close ()
-					raise error ('%s: database locked' % self.filename)
+					raise error (f'{self.filename}: database locked')
 			if self.extended_rows:
 				cast (DBAPI.DriverSQLite3, self.db).row_factory = sqlite3.Row
 			if self.db is not None:
 				for (name, args) in self.functions:
 					name (*args)
-				if isNew and self.layout is not None:
+				if is_new_file and self.layout is not None:
 					c = self.cursor ()
 					cast (CursorSQLite3, c).mode ('fast')
 					for entry in self.layout:

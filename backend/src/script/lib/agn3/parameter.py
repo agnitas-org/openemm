@@ -12,7 +12,7 @@
 from	__future__ import annotations
 import	re, json
 from	typing import Any, Callable, Optional
-from	typing import Dict, Iterator, List, NamedTuple
+from	typing import Dict, ItemsView, KeysView, List, NamedTuple, ValuesView
 from	typing import cast
 from	.stream import Stream
 from	.tools import atob
@@ -48,8 +48,8 @@ list with different methods of persistance.
 	def __encode (self, ctx: Dict[str, Any], source: Dict[str, str]) -> str:
 		for value in source.values ():
 			if '"' in value:
-				raise ValueError ('Unable to enocde %s due to "')
-		return ', '.join (['%s="%s"' % (str (_d[0]), str (_d[1])) for _d in source.items ()])
+				raise ValueError (f'Unable to enocde "{value}" due to "')
+		return ', '.join (['{var}="{val}"'.format (var = str (_d[0]), val = str (_d[1])) for _d in source.items ()])
 
 	def __init__ (self, s: Optional[str] = None) -> None:
 		"""String to be parsed"""
@@ -58,7 +58,7 @@ list with different methods of persistance.
 		def jsonDecode (ctx: Dict[str, Any], s: str, target: Dict[str, str]) -> None:
 			d = cast (json.JSONDecoder, ctx['decoder']).decode (s)
 			if type (d) != dict:
-				raise ValueError ('JSON: input %r did not lead into a dictionary' % s)
+				raise ValueError (f'JSON: input {s} did not lead into a dictionary')
 			for (var, val) in d.items ():
 				target[var] = val
 		def jsonEncode (ctx: Dict[str, Any], source: Dict[str, str]) -> str:
@@ -71,27 +71,46 @@ list with different methods of persistance.
 			self.loads (s)
 	
 	def __str__ (self) -> str:
-		return '%s <%s>' % (self.__class__.__name__, Stream (self.data.items ())
-			.map (lambda kv: '%s=%r' % kv)
-			.join (', ')
+		return '{name} <{repr}>'.format (
+			name = self.__class__.__name__,
+			repr = Stream (self.data.items ())
+				.map (lambda kv: '{key}={value}'.format (key = kv[0], value = kv[1]))
+				.join (', ')
 		)
+	
+	def __eq__ (self, other: object) -> bool:
+		if not isinstance (other, Parameter):
+			raise NotImplementedError ()
+		return self.data == other.data
 
 	def __getitem__ (self, var: str) -> str:
 		return self.data[var]
 
 	def __setitem__ (self, var: str, val: str) -> None:
 		self.data[var] = val
+	
+	def __delitem__ (self, var: str) -> None:
+		del self.data[var]
 
 	def __contains__ (self, var: str) -> bool:
 		return var in self.data
 
-	def __iter__ (self) -> Iterator[str]:
-		return iter (self.data)
-
+	def __iter__ (self) -> KeysView[str]:
+		return self.keys ()
+	
 	def __call__ (self, var: str, default: Any = None) -> Any:
 		"""Alias for Parameter.get"""
 		return self.get (var, default)
 	
+	def keys (self) -> KeysView[str]:
+		return self.data.keys ()
+	
+	def values (self) -> ValuesView[str]:
+		return self.data.values ()
+	
+	def items (self) -> ItemsView[str, str]:
+		return self.data.items ()
+
 	def set (self, newdata: Dict[str, str]) -> None:
 		"""Set whole content"""
 		self.data = newdata
@@ -148,14 +167,14 @@ parses the chunk passed in s according to the ``method''. If the
 method is missing, the default method is used """
 		self.data.clear ()
 		if method not in self.methods:
-			raise LookupError ('Unknown decode method: %s' % method)
+			raise LookupError (f'Unknown decode method: {method}')
 		m = self.methods[method]
 		m.decode (m.ctx, s, self.data)
 
 	def dumps (self, method: Optional[str] = None) -> str:
 		"""Build a persistant representation of current state"""
 		if method not in self.methods:
-			raise LookupError ('Unknown encode method: %s' % method)
+			raise LookupError (f'Unknown encode method: {method}')
 		m = self.methods[method]
 		return m.encode (m.ctx, self.data)
 	
@@ -209,9 +228,9 @@ class MailingParameter (Parameter):
 	def __mpEncode (self, ctx: Dict[str, Any], source: Dict[str, str]) -> str:
 		out = []
 		def escape (s: str) -> str:
-			return self.__mpPattern.sub (lambda a: '\\%s' % a.group (0), s)
+			return self.__mpPattern.sub (lambda a: '\\{match}'.format (match = a.group (0)), s)
 		for (variable, value) in source.items ():
-			out.append ('%s="%s"' % (variable, escape (value)))
+			out.append ('{var}="{val}"'.format (var = variable, val = escape (value)))
 		return ', '.join (out)
 
 	def __init__ (self, s: Optional[str] = None) -> None:

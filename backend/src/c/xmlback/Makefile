@@ -10,15 +10,15 @@
 ####################################################################################################################################################################################################################################################################
 #
 
-CFLAGS	= '-DVERSION="OpenEMM 20.04.000.190"' -I. -I../lib -I/usr/include/libxml2
+CFLAGS	= '-DEMM_VERSION="OpenEMM 20.10.000.096"' -I. -I../lib -I/usr/include/libxml2
 LDFLAGS	= -L. -L../lib
-LIBS	= -lagn -lslang -lsqlite3 -llua -lssl -lcrypto -lxml2 -lz -ldl -lm
+LIBS	= -lagn -lslang -llua -lssl -lcrypto -lxml2 -lz -ldl -lm
 SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c convert.c append.c \
 	  blockmail.c block.c tagpos.c tracker.c mailtypedefinition.c links.c blockspec.c fix.c \
 	  postfix.c dcache.c receiver.c tag.c dyn.c media.c columns.c url.c link_resolve.c field.c dataset.c encrypt.c mailtrack.c \
 	  codec.c eval.c counter.c rblock.c misc.c sqllike.c data.c none.c \
 	  generate.c count.c preview.c head.c \
-	  strmap.c uid.c alua.c tfunc.c tflua.c xbp.c \
+	  strmap.c uid.c alua.c tfunc.c tflua.c \
 	  grammar/parse.c grammar/transform.c
 OBJS	= $(SRCS:%.c=%.o)
 LOBJS	= luatc.o $(shell echo $(OBJS) | tr ' ' '\n' | egrep -v 'tflua.o|xmlback.o')

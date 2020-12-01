@@ -12,8 +12,9 @@
 # include	"xmlback.h"
 
 # define	ST_INITIAL		0
-# define	ST_START_FOUND		(-1)
-# define	ST_END_FOUND		(-2)
+# define	ST_PLAIN_START_FOUND	(-1)
+# define	ST_QUOTED_START_FOUND	(-2)
+# define	ST_END_FOUND		(-3)
 # define	SWAP(bbb)		do { xmlBufferPtr __temp = (bbb) -> in; (bbb) -> in = (bbb) -> out; (bbb) -> out = __temp; } while (0)
 
 static bool_t
@@ -238,7 +239,6 @@ modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t 
 	const xmlChar	*cont;
 	int		lstore;
 	int		state;
-	char		initial;
 	char		ch, quote;
 	int		start, end;
 	int		mask;
@@ -254,10 +254,8 @@ modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t 
 	state = ST_INITIAL;
 	quote = '\0';
 	if (ishtml) {
-		initial = '<';
 		mask = 2;
 	} else {
-		initial = 'h';
 		mask = 1;
 	}
 	start = -1;
@@ -279,17 +277,22 @@ modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t 
 				ch = clen == 1 ? (char) cont[n] : '\0';
 				switch (state) {
 				case ST_INITIAL:
-					if (tolower (ch) == initial) {
-						if (! ishtml) {
-							state = 1;
-							start = n;
-						} else {
+					if (ishtml) {
+						if (ch == '<') {
 							state = 100;
 						}
+					} else if (strchr ("hm", tolower (ch))) {
+						if (tolower (ch) == 'h') {
+							state = 1;
+						} else {
+							state = 31;
+						}
+						start = n;
 					}
 					break;
 # define	CHK(ccc)	do { if ((ccc) == ch) ++state; else state = ST_INITIAL; } while (0)
 # define	CCHK(ccc)	do { if ((ccc) == tolower (ch)) ++state; else state = ST_INITIAL; } while (0)
+				/* plain: http:// and https:// */
 				case 1:		CCHK ('t');	break;
 				case 2:		CCHK ('t');	break;
 				case 3:		CCHK ('p');	break;
@@ -302,10 +305,21 @@ modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t 
 				case 6:		CHK ('/');	break;
 				case 7:
 					if (ch == '/')
-						state = ST_START_FOUND;
+						state = ST_PLAIN_START_FOUND;
 					else
 						state = ST_INITIAL;
 					break;
+				/* plain: mailto: */
+				case 31:	CCHK ('a');	break;
+				case 32:	CCHK ('i');	break;
+				case 33:	CCHK ('l');	break;
+				case 34:	CCHK ('t');	break;
+				case 35:	CCHK ('o');	break;
+				case 36:	CHK (':');	break;
+				case 37:
+					state = ST_PLAIN_START_FOUND;
+					break;
+				/* HTML */
 				case 100:	CCHK ('a');	break;
 # define	HCHK(ccc)	do { if ((ccc) == tolower (ch)) ++state; else if ('>' == ch) state = ST_INITIAL; else state = 101; } while (0)
 				case 101:	HCHK ('h');	break;
@@ -315,33 +329,36 @@ modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t 
 # undef		HCHK						
 				case 105:	CHK ('=');	break;
 				case 106:
-					++state;
 					if ((ch == '"') || (ch == '\'')) {
 						quote = ch;
-						break;
-					} else
-						quote = '\0';
-					/* Fall through . . */
-				case 107:
-					if (tolower (ch) == 'h') {
-						state = 1;
+						state = ST_QUOTED_START_FOUND;
+						start = n + 1;
+					} else {
+						state = ST_PLAIN_START_FOUND;
 						start = n;
-					} else
-						state = ST_INITIAL;
+					}
 					break;
-				case ST_START_FOUND:
-					if (isspace ((int) ((unsigned char) ch)) ||
-					    (quote && (ch == quote)) ||
-					    ((! quote) && (ch == '>'))) {
+				case ST_PLAIN_START_FOUND:
+					if (isspace (ch) || (ch == '>')) {
 						end = n;
 						state = ST_END_FOUND;
 					}
+					break;
+				case ST_QUOTED_START_FOUND:
+					if (isspace (ch) || (ch == quote)) {
+						end = n;
+						state = ST_END_FOUND;
+					}
+					break;
+				default:
+					log_out (blockmail -> lg, LV_ERROR, "modify_urls: invalid state %d at position %d", state, n);
+					state = ST_INITIAL;
 					break;
 				}
 # undef		CHK
 # undef		CCHK					
 			} else {
-				if (state == ST_START_FOUND) {
+				if (state == ST_PLAIN_START_FOUND) {
 					end = n;
 					state = ST_END_FOUND;
 				} else
@@ -349,7 +366,7 @@ modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t 
 			}
 			n += clen;
 		} else {
-			if (state == ST_START_FOUND) {
+			if (state == ST_PLAIN_START_FOUND) {
 				end = n;
 				state = ST_END_FOUND;
 			}

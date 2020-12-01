@@ -28,7 +28,7 @@ from	agn3.plugin import Plugin, LoggingManager
 from	agn3.runtime import Runtime
 from	agn3.tools import call, atob
 from	agn3.tracker import Key, Tracker
-from	agn3.uid import UID
+from	agn3.uid import UIDHandler
 #
 logger = logging.getLogger (__name__)
 #
@@ -193,6 +193,7 @@ class Scanner:
 
 	def done (self) -> None:
 		self.mtrack.close ()
+		self.plugin.shutdown ()
 
 	def write_bounce (self,
 		dsn: str,
@@ -201,29 +202,35 @@ class Scanner:
 		customer_id: int,
 		timestamp: datetime,
 		reason: str,
+		queue_id: str,
 		relay: str,
 		recipient: str
 	) -> None:
 		try:
 			info = [
-				'timestamp=%04d-%02d-%02d %02d:%02d:%02d' % (timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute, timestamp.second),
-				'stat=%s' % reason, 
-				'relay=%s' % relay
+				f'timestamp={timestamp.year:04d}-{timestamp.month:02d}-{timestamp.day:02d} {timestamp.hour:02d}:{timestamp.minute:02d}:{timestamp.second:02d}',
+				f'stat={reason}',
+				f'queue_id={queue_id}',
+				f'relay={relay}',
+				f'server={fqdn}'
 			]
 			self.plugin ().add_bounce_info (dsn, licence_id, mailing_id, customer_id, info)
 			with open (self.bounce_log, 'a') as fd:
 				fd.write ('%s;%d;%d;0;%d;%s\n' % (dsn, licence_id, mailing_id, customer_id, '\t'.join (info)))
 			if self.provider_log and dsn and dsn.count ('.') == 2:
-				with open (self.provider_log, 'a') as fd:
-					fd.write ('%d;%s;%s;%s;%s\n' % (
-						time.mktime (timestamp.timetuple ()) if timestamp else time.time (),
-						fqdn,
-						dsn,
-						relay,
-						recipient.strip ('<>').split ('@')[-1]
-					))
+				try:
+					with open (self.provider_log, 'a') as fd:
+						fd.write ('%d;%s;%s;%s;%s\n' % (
+							time.mktime (timestamp.timetuple ()) if timestamp else time.time (),
+							fqdn,
+							dsn,
+							relay,
+							recipient.strip ('<>').split ('@')[-1]
+						))
+				except IOError as e:
+					logger.exception (f'Unable to write {self.provider_log}: {e}')
 		except IOError as e:
-			logger.exception ('Unable to write %s: %s' % (self.bounce_log, str (e)))
+			logger.exception (f'Unable to write {self.bounce_log}: {e}')
 	
 	def write_deliveries (self, record: Dict[str, Any], lines: List[Tuple[datetime, str]]) -> bool:
 		with Ignore (KeyError):
@@ -402,7 +409,7 @@ class ScannerSendmail (Scanner):
 		record.update (update)
 		self.mtrack[key] = record
 		if dsn:
-			self.write_bounce (dsn, licence, mailing, customer, info.timestamp, info.status, info.items.get ('relay', ''), info.items.get ('to', ''))
+			self.write_bounce (dsn, licence, mailing, customer, info.timestamp, info.status, info.queue_id, info.items.get ('relay', ''), info.items.get ('to', ''))
 		else:
 			logger.warning ('Line has no DSN: %s' % line)
 		return True
@@ -415,7 +422,7 @@ class ScannerPostfix (Scanner):
 	
 	def __init__ (self, *args: Any, **kwargs: Any) -> None:
 		super ().__init__ (*args, **kwargs)
-		self.uid = UID ()
+		self.uid = UIDHandler ()
 
 	def process_completed (self) -> None:
 		self.__handle_message_ids ()
@@ -462,7 +469,7 @@ class ScannerPostfix (Scanner):
 			finally:
 				os.unlink (nfname)
 	
-	def __write_bounce (self, record: Dict[str, Any]) -> None:
+	def __write_bounce (self, info: SyslogParser.Info, record: Dict[str, Any]) -> None:
 		try:
 			self.write_bounce (
 				record['dsn'],
@@ -471,6 +478,7 @@ class ScannerPostfix (Scanner):
 				record['customer_id'],
 				record.get ('timestamp', datetime.now ()),
 				record.get ('status', ''),
+				info.queue_id,
 				record.get ('relay', ''),
 				record.get ('to', '')
 			)
@@ -485,41 +493,34 @@ class ScannerPostfix (Scanner):
 		else:
 			logger.info (f'Completed record without message_id found for {key}, remove')
 
-	ignore_ids = set (['statistics', 'NOQUEUE'])
-	ignore_services = set (['postfix/smtpd', 'postfix/master'])
+	ignore_ids = frozenset (('statistics', 'NOQUEUE', 'warning'))
+	ignore_services = frozenset (('postfix/smtpd', 'postfix/master', 'postfix/postfix-script', 'postfix/tlsproxy'))
 	pattern_envelope_from = re.compile ('from=<([^>]*)>')
 	pattern_message_id = re.compile ('message-id=<([^>]*)>')
 	pattern_host_said = re.compile ('host [^ ]+ said: +(.*)$')
 	def parse (self, log_id: LogID, info: SyslogParser.Info, line: str) -> bool:
+		if info.service in self.ignore_services:
+			return True
+		#
 		if not info.queue_id:
-			if info.service == 'postfix/smtpd':
-				if (
-					info.content.startswith ('connect from ') or
-					info.content.startswith ('disconnect from ') or
-					info.content.startswith ('lost connection ') or
-					info.content.startswith ('timeout after ') or
-					info.content == 'initializing the server-side TLS engine' or
-					info.content.startswith ('setting up TLS connection from ') or
-					info.content.startswith ('SSL_accept:') or
-					info.content == 'SSL3 alert read:fatal:certificate unknown' or
-					info.content == 'SSL3 alert write:fatal:handshake failure' or
-					info.content.startswith ('too many errors after RCPT from') or
-					info.content.startswith ('Anonymous TLS connection established from')
-				):
-					return True
-			elif info.service == 'postfix/smtp':
+			if info.service == 'postfix/smtp':
 				if (
 					info.content.startswith ('connect to ') or
 					info.content.startswith ('SSL_connect error to ') or
 					info.content.startswith ('Untrusted TLS connection established to') or
-					info.content.startswith ('Anonymous TLS connection established to')
+					info.content.startswith ('Untrusted TLS connection reused to') or
+					info.content.startswith ('Anonymous TLS connection established to') or
+					info.content.startswith ('Anonymous TLS connection reused to') or
+					info.content.startswith ('Verified TLS connection established to') or
+					info.content.startswith ('Verified TLS connection reused to') or
+					info.content.startswith ('Trusted TLS connection established to') or
+					info.content.startswith ('Trusted TLS connection reused to') or
+					'offers SMTPUTF8 support, but not 8BITMIME' in info.content
 				):
 					return True
-			elif info.service in ('postfix/postfix-script', 'postfix/tlsproxy', 'postfix/master'):
-				return True
 			return False
 		#
-		if info.queue_id in self.ignore_ids or info.service in self.ignore_services:
+		if info.queue_id in self.ignore_ids:
 			return True
 		#
 		log_id.push (info.queue_id)
@@ -543,11 +544,11 @@ class ScannerPostfix (Scanner):
 						rec.update (midinfo)
 					except KeyError:
 						try:
-							self.uid.parse (message_id.split ('@')[0], validate = False)
+							uid= self.uid.parse (message_id.split ('@')[0], validate = False)
 							rec.update ({
-								'licence_id': self.uid.licence_id,
-								'mailing_id': self.uid.mailing_id,
-								'customer_id': self.uid.customer_id
+								'licence_id': uid.licence_id,
+								'mailing_id': uid.mailing_id,
+								'customer_id': uid.customer_id
 							})
 						except error as e:
 							logger.info (f'Failed to parse message_id <{message_id}>: {e}')
@@ -584,7 +585,7 @@ class ScannerPostfix (Scanner):
 				self.mtrack[key] = rec
 				logger.debug ('Update tracking entry: %s' % str (rec))
 				if 'dsn' in update:
-					self.__write_bounce (rec)
+					self.__write_bounce (info, rec)
 		else:
 			logger.info ('Not used: %s' % line)
 		#

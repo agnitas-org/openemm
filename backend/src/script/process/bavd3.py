@@ -14,36 +14,40 @@ from	__future__ import annotations
 import	logging, argparse, errno
 import	urllib.request,	urllib.parse, urllib.error
 import	sys, os, signal, time, re
-import	subprocess
+import	subprocess, multiprocessing
+from	collections import defaultdict
 from	datetime import datetime
-from	email import message_from_string
-from	email.message import Message
+from	email.message import EmailMessage
 from	email.utils import parseaddr
-from	dataclasses import dataclass
+from	dataclasses import dataclass, field
 from	typing import Optional
-from	typing import Dict, List, NamedTuple, Tuple
+from	typing import DefaultDict, Dict, List, NamedTuple, Tuple
 from	typing import cast
 from	agn3.db import DB, Row
 from	agn3.dbm import DBM, dbmerror
-from	agn3.definitions import base, licence, syscfg
-from	agn3.email import ParseEMail
+from	agn3.definitions import base, licence, fqdn, syscfg
+from	agn3.email import EMail, ParseEMail
 from	agn3.emm.datasource import Datasource
 from	agn3.emm.types import UserStatus
 from	agn3.exceptions import error
 from	agn3.ignore import Ignore
 from	agn3.io import which
 from	agn3.log import log
-from	agn3.parser import ParseTimestamp
+from	agn3.parser import ParseTimestamp, Line, Field, Tokenparser
 from	agn3.runtime import Runtime
 from	agn3.spool import Mailspool
-from	agn3.uid import UID
+from	agn3.stream import Stream
+from	agn3.tools import listsplit, unescape
+from	agn3.uid import UID, UIDHandler
 #
 logger = logging.getLogger (__name__)
 #
 class Autoresponder:
+	__slots__ = ['aid', 'sender']
 	whitelist_file = os.path.join (base, 'var', 'lib', 'ar.whitelist')
 	whitelist_pattern = os.path.join (base, 'var', 'lib', 'ar_%s.whitelist')
 	limit_pattern = os.path.join (base, 'var', 'lib', 'ar_%s.limit')
+	lock = multiprocessing.Lock ()
 	def __init__ (self, aid: str, sender: str) -> None:
 		self.aid = aid
 		self.sender = sender
@@ -51,7 +55,7 @@ class Autoresponder:
 	def is_in_whitelist (self) -> bool:
 		for arwlist in [Autoresponder.whitelist_pattern % self.aid, Autoresponder.whitelist_file]:
 			with Ignore (IOError):
-				with open (arwlist) as fd:
+				with open (arwlist, errors = 'backslashreplace') as fd:
 					for line in (l.rstrip ('\r\n') for l in fd if not l[0] in '\n#'):
 						if line == self.sender:
 							logger.debug ('Sender %s is on whitelist file %s' % (self.sender, arwlist))
@@ -63,7 +67,7 @@ class Autoresponder:
 		try:
 			arlimit = Autoresponder.limit_pattern % self.aid
 			now = time.time ()
-			with DBM (arlimit, 'c') as dbf:
+			with Autoresponder.lock, DBM (arlimit, 'c') as dbf:
 				sender_as_key = self.sender.encode ('UTF-8')
 				if sender_as_key not in dbf:
 					logger.debug ('Never sent mail to %s from this autoresponder %s' % (self.sender, self.aid))
@@ -84,24 +88,29 @@ class Autoresponder:
 			may_receive = False
 		return not may_receive
 	
-	def allow (self, parm: Dict[str, str], dryrun: bool) -> bool:
+	def allow (self, parameter: Line, dryrun: bool) -> bool:
 		if self.is_in_whitelist ():
 			return True
 		if self.is_limited (dryrun):
 			return False
 		return True
 
-	def trigger_message (self, cinfo: Optional[ParseEMail.Origin], parm: Dict[str, str], dryrun: bool) -> None:
+	def trigger_message (self, db: DB, cinfo: Optional[ParseEMail.Origin], parameter: Line, dryrun: bool) -> None:
 		try:
-			mailing_id = int (parm['armid'])
-			company_id = int (parm['cid'])
+			if not parameter.autoresponder_mailing_id:
+				raise error ('no autoresponder mailing id set')
+			if not parameter.company_id:
+				raise error ('no company id set')
+			mailing_id = parameter.autoresponder_mailing_id
+			company_id = parameter.company_id
 			if cinfo is None:
 				raise error ('failed to determinate origin of mail')
 			if not cinfo.valid:
 				raise error ('uid from foreign instance %s (expected from %s)' % (cinfo.licence_id, licence))
 			customer_id = cinfo.customer_id
 			rdir_domain = None
-			with DB () as db:
+			#
+			if db.isopen ():
 				rq = db.querys (
 					'SELECT mailinglist_id, company_id, deleted '
 					'FROM mailing_tbl '
@@ -127,7 +136,7 @@ class Autoresponder:
 					}
 				)
 				if rq is None or rq.user_type not in ('A', 'T', 't'):
-					if not self.allow (parm, dryrun):
+					if not self.allow (parameter, dryrun):
 						raise error ('recipient is not allowed to received (again) an autoresponder')
 				else:
 					logger.info ('recipient %d on %d for %d is admin/test recipient and not blocked' % (customer_id, mailinglist_id, mailing_id))
@@ -177,16 +186,17 @@ class Autoresponder:
 		except error as e:
 			logger.info ('Failed to send autoresponder: %s' % str (e))
 		except (KeyError, ValueError, TypeError) as e:
-			logger.error ('Failed to parse %r: %s' % (parm, str (e)))
+			logger.error ('Failed to parse %s: %s' % (parameter, str (e)))
 #
 class Entry:
+	__slots__ = ['eid', 'action', 'inverse', 'pattern', 'regexp']
 	def __init__ (self, line: str) -> None:
 		self.eid = line
-		self.parm: Optional[str] = None
+		self.action: Optional[str] = None
 		if line[0] == '{':
 			n = line.find ('}')
 			if n != -1:
-				self.parm = line[1:n]
+				self.action = line[1:n]
 				line = line[n + 1:]
 		if line.startswith ('!'):
 			line = line[1:]
@@ -196,14 +206,17 @@ class Entry:
 		self.pattern = line
 		self.regexp = re.compile (self.pattern, re.IGNORECASE)
 	
+	def __str__ (self) -> str:
+		return f'< Entry ({self.eid!r}) >'
+	__repr__ = __str__
+	
 	def match (self, line: str) -> bool:
 		return self.regexp.search (line) is not None
 
+@dataclass
 class Section:
-	def __init__ (self, name: str) -> None:
-		self.name = name
-		self.entries: List[Entry] = []
-	
+	name: str
+	entries: List[Entry] = field (default_factory = list)
 	def append (self, line: str) -> None:
 		try:
 			self.entries.append (Entry (line))
@@ -226,6 +239,7 @@ class Scan:
 	minfo: Optional[ParseEMail.Origin] = None
 
 class Rule:
+	__slots__ = ['rid', 'created', 'sections']
 	lifetime = 180
 	rule_pattern = os.path.join (base, 'var', 'lib', 'bav_%s.rule')
 	rule_file = os.path.join (base, 'lib', 'bav.rule')
@@ -241,7 +255,7 @@ class Rule:
 		self.sections: Dict[str, Section] = {}
 		for fname in [Rule.rule_pattern % rid, Rule.rule_file]:
 			try:
-				with open (fname) as fd:
+				with open (fname, errors = 'backslashreplace') as fd:
 					cur = None
 					for line in [l.rstrip ('\r\n') for l in fd if len (l) > 0 and not l[0] in '\n#']:
 						if line[0] == '[' and line[-1] == ']':
@@ -267,19 +281,22 @@ class Rule:
 				return (s, entry)
 		return (None, None)
 	
-	def __check_header (self, msg: Message, sects: List[Section]) -> Optional[Tuple[Section, Entry, str]]:
-		for (key, value) in msg.items ():
-			line = f'{key}: {value}'
-			(sec, ent) = self.__match (line, sects)
-			if sec and ent:
-				reason = '[%s/%s] %s' % (sec.name, ent.eid, line)
-				return (sec, ent, reason)
+	def __check_header (self, msg: EmailMessage, sects: List[Section]) -> Optional[Tuple[Section, Entry, str]]:
+		try:
+			for (key, value) in msg.items ():
+				line = f'{key}: {value}'
+				(sec, ent) = self.__match (line, sects)
+				if sec and ent:
+					reason = '[%s/%s] %s' % (sec.name, ent.eid, line)
+					return (sec, ent, reason)
+		except Exception as e:
+			logger.warning (f'failed to check header due to: {e}')
 		return None
 
-	def match_header (self, msg: Message, use: List[str]) -> Optional[Tuple[Section, Entry, str]]:
+	def match_header (self, msg: EmailMessage, use: List[str]) -> Optional[Tuple[Section, Entry, str]]:
 		return self.__check_header (msg, self.__collect_sections (use))
 
-	def __scan (self, msg: Message, scan: Scan, sects: List[Section], checkheader: bool, level: int) -> None:
+	def __scan (self, msg: EmailMessage, scan: Scan, sects: List[Section], checkheader: bool, level: int) -> None:
 		if checkheader:
 			if not scan.section:
 				rc = self.__check_header (msg, sects)
@@ -306,8 +323,8 @@ class Rule:
 		pl = msg.get_payload (decode = True)
 		if not pl:
 			pl = msg.get_payload ()
-		if type (pl) is str:
-			for line in cast (str, pl).split ('\n'):
+		if isinstance (pl, str):
+			for line in pl.split ('\n'):
 				if not scan.section:
 					(sec, ent) = self.__match (line, sects)
 					if sec and ent:
@@ -329,12 +346,12 @@ class Rule:
 							scan.etext = line
 							logger.debug ('Found DSN %s in body: %s' % (scan.dsn, line))
 		elif type (pl) is list:
-			for p in cast (List[Message], pl):
+			for p in cast (List[EmailMessage], pl):
 				self.__scan (p, scan, sects, True, level + 1)
 				if scan.section and scan.dsn and scan.minfo:
 					break
 	
-	def scan_message (self, cinfo: Optional[ParseEMail.Origin], msg: Message, use: List[str]) -> Scan:
+	def scan_message (self, cinfo: Optional[ParseEMail.Origin], msg: EmailMessage, use: List[str]) -> Scan:
 		rc = Scan ()
 		rc.minfo = cinfo
 		sects = self.__collect_sections (use)
@@ -350,73 +367,154 @@ class Rule:
 				rc.etext = rc.reason
 			else:
 				rc.etext = ''
+		logger.debug (f'Scan results to {rc}')
 		return rc
 #
+class BAVConfig:
+	__slots__ = ['config']
+	config_file = os.path.join (base, 'var', 'lib', 'bav.conf')
+	address_pattern = re.compile ('<([^>]*)>')
+	class Parser (Tokenparser):
+		__slots__: List[str] = []
+		class Subscribe (NamedTuple):
+			mailinglist_id: int
+			form_id: int
+		def __init__ (self) -> None:
+			super ().__init__ (
+				Field ('sender', self.__parse_address, optional = True, source = 'from'),
+				Field ('to', self.__parse_address, optional = True),
+				Field ('rid', lambda a: a, optional = True, default = lambda: 'unknown'),
+				Field ('company_id', int, optional = True, source = 'cid'),
+				Field ('forward', self.__listsplit, optional = True, source = 'fwd'),
+				Field ('spam_email', self.__listsplit, optional = True),
+				Field ('spam_forward', float, optional = True, source = 'spam_fwd'),
+				Field ('spam_required', float, optional = True, source = 'spam_req'),
+				Field ('autoresponder', lambda a: a, optional = True, source = 'ar'),
+				Field ('autoresponder_mailing_id', int, optional = True, source = 'armid'),
+				Field ('subscribe', self.__parse_subscribe, optional = True, source = 'sub')
+			)
+		
+		def parse (self, line: str) -> Dict[str, str]:
+			return (Stream (line.split (','))
+				.map (lambda t: unescape (t).split ('=', 1))
+				.filter (lambda kv: len (kv) == 2)
+				.dict ()
+			)
+		
+		def __parse_address (self, address: str) -> str:
+			match = BAVConfig.address_pattern.search (address)
+			return match.group (1) if match is not None else address
+
+		def __listsplit (self, s: str) -> List[str]:
+			return list (listsplit (s))
+		
+		def __parse_subscribe (self, s: str) -> BAVConfig.Parser.Subscribe:
+			try:
+				(mailinglist_id, form_id) = s.split (':', 1)
+				return BAVConfig.Parser.Subscribe (int (mailinglist_id), int (form_id))
+			except ValueError:
+				return BAVConfig.Parser.Subscribe (0, 0)
+
+	parameter_parser = Parser ()		
+	def __init__ (self) -> None:
+		self.config: DefaultDict[str, List[str]] = defaultdict (list)
+		if os.path.isfile (BAVConfig.config_file):
+			with open (BAVConfig.config_file, errors = 'backslashreplace') as fd:
+				aliases: DefaultDict[str, List[str]] = defaultdict (list)
+				for line in (_l.strip () for _l in fd):
+					with Ignore (ValueError):
+						(domain, control) = line.split ('\t', 1)
+						(action, parameter) = control.split (':', 1)
+						if action == 'accept':
+							self.config[domain].append (parameter)
+						elif action == 'alias':
+							aliases[domain].append (parameter)
+				for (alias, domains) in aliases.items ():
+					for domain in domains:
+						if domain in self.config:
+							self.config[alias] += self.config[domain]
+	
+	def __getitem__ (self, address: str) -> List[str]:
+		try:
+			return self.config[address]
+		except KeyError:
+			try:
+				return self.config['@{domain}'.format (domain = address.split ('@', 1)[-1])]
+			except KeyError:
+				raise KeyError (address)
+	
+	def parse (self, parameter: str) -> Line:
+		return BAVConfig.parameter_parser (parameter)
+
 class BAV:
-	rules: Dict[str, Rule] = {}
+	__slots__ = [
+		'raw', 'msg', 'dryrun', 'uid_handler', 'parsed_email', 'cinfo', 'parameter',
+		'header_from', 'rid', 'sender', 'rule', 'reason'
+	]
 	x_agn = 'X-AGNMailloop'
 	has_spamassassin = which ('spamassassin') is not None
-	config_file = os.path.join (base, 'var', 'lib', 'bav.conf')
 	save_pattern = os.path.join (base, 'var', 'spool', 'filter', '%s-%s')
 	ext_bouncelog = os.path.join (base, 'log', 'extbounce.log')
 	class From (NamedTuple):
 		realname: str
 		address: str
 	
-	def __init__ (self, raw: str, msg: Message, dryrun: bool = False) -> None:
+	def __init__ (self, bavconfig: BAVConfig, raw: str, msg: EmailMessage, dryrun: bool = False) -> None:
 		self.raw = raw
 		self.msg = msg
 		self.dryrun = dryrun
-		self.parsedEMail = ParseEMail (raw)
-		self.cinfo = self.parsedEMail.get_origin ()
-		self.parm: Dict[str, str] = {}
-		if BAV.x_agn not in self.msg:
-			if 'return-path' in self.msg:
-				rp = cast (str, self.msg['return-path']).strip ()
-				if rp[0] == '<' and rp[-1] == '>':
-					addr = rp[1:-1].lower ()
-					try:
-						with open (BAV.config_file) as fd:
-							for line in [l for l in fd if len (l) > 0 and l[0] != '#']:
-								parts = line.split (None, 1)
-								if parts[0].lower () == addr and len (parts) == 2:
-									data = (parts[1]).rstrip ('\r\n')
-									if data.startswith ('accept:'):
-										self.msg[BAV.x_agn] = data.split (':', 1)[-1]
-									break
-					except IOError as e:
-						logger.warning ('Cannot read file %s %s' % (BAV.config_file, e))
-			else:
-				logger.warning ('No %s header, neither Return-Path: found' % BAV.x_agn)
-		if BAV.x_agn in self.msg:
-			for pair in cast (str, self.msg[BAV.x_agn]).split (','):
-				try:
-					(var, val) = pair.split ('=', 1)
-					self.parm[var.strip ()] = val
-				except ValueError:
-					logger.warning ('Hit invalid control line: %r' % self.msg[BAV.x_agn])
-		self.rid = self.parm.get ('rid', 'unknown')
+		self.uid_handler = UIDHandler (enable_cache = True)
+		self.parsed_email = ParseEMail (raw, uid_handler = self.uid_handler)
+		self.cinfo = self.parsed_email.get_origin ()
+		return_path = None
+		with Ignore (KeyError):
+			match = BAVConfig.address_pattern.search (self.msg['return-path'])
+			if match is not None:
+				return_path = match.group (1)
 		try:
-			sender = self.parm['from']
-			if len (sender) > 1 and sender[0] == '<' and sender[-1] == '>':
-				sender = sender[1:-1]
-				if sender == '':
-					sender = 'MAILER-DAEMON'
+			parameter: Optional[str] = self.msg[BAV.x_agn]
 		except KeyError:
-			sender = 'postmaster'
-		self.sender = sender
-		self.header_from: Optional[BAV.From] = BAV.From (*parseaddr (cast (str, self.msg['from']))) if 'from' in self.msg else None
-		try:
-			self.company_id = int (self.parm['cid'])
-		except (KeyError, ValueError):
-			self.company_id = -1
-		if not msg.get_unixfrom ():
-			msg.set_unixfrom (time.strftime ('From ' + sender + '  %c'))
-		now = time.time ()
-		if self.rid not in self.rules or self.rules[self.rid].created + Rule.lifetime < now:
-			self.rule = self.rules[self.rid] = Rule (self.rid, now)
+			parameter = None
+			if return_path is not None:
+				with Ignore (ValueError, KeyError):
+					(local_part, domain_part) = return_path.split ('@', 1)
+					address = '{local_part}@{domain_part}'.format (local_part = local_part, domain_part = domain_part.lower ())
+					parameter = bavconfig[address][0]
+		if parameter is not None:
+			self.parameter = bavconfig.parse (parameter)
+			if (
+				self.cinfo is not None and
+				self.cinfo.valid and
+				self.cinfo.company_id > 0 and
+				self.cinfo.company_id != self.parameter.company_id and
+				self.parameter.to
+			):
+				with Ignore (StopIteration):
+					for address in (
+						self.parameter.to,
+						'@{domain}'.format (domain = self.parameter.to.split ('@', 1)[-1])
+					):
+						with Ignore (KeyError):
+							for parameter in bavconfig[address]:
+								new_parameter = bavconfig.parse (parameter)
+								if new_parameter.company_id == self.cinfo.company_id:
+									self.parameter = new_parameter._replace (sender = self.parameter.sender, to = self.parameter.to)
+									raise StopIteration ()
 		else:
-			self.rule = self.rules[self.rid]
+			self.parameter = bavconfig.parse ('')
+
+		self.header_from: Optional[BAV.From] = BAV.From (*parseaddr (cast (str, self.msg['from']))) if 'from' in self.msg else None
+		self.rid = self.parameter.rid
+		if return_path is not None:
+			self.sender = return_path
+		elif self.parameter.sender:
+			self.sender = self.parameter.sender
+		else:
+			self.sender = 'postmaster'
+		if not msg.get_unixfrom ():
+			msg.set_unixfrom (time.strftime ('From ' + self.sender + '  %c'))
+		now = time.time ()
+		self.rule = Rule (self.rid, now)
 		self.reason = ''
 
 	def save_message (self, mid: str) -> None:
@@ -426,16 +524,17 @@ class BAV:
 		else:
 			try:
 				with open (fname, 'a') as fd:
-					fd.write (self.msg.as_string (True) + '\n')
+					fd.write (EMail.as_string (self.msg, True) + '\n')
+				logger.debug (f'Saved mesage to {fname}')
 			except IOError as e:
 				logger.error ('Unable to save mail copy to %s %s' % (fname, e))
 	
-	def sendmail (self, msg: Message, to: str) -> None:
+	def sendmail (self, msg: EmailMessage, to: List[str]) -> None:
 		if self.dryrun:
-			print ('Would send mail to "%s"' % to)
+			print ('Would send mail to "%s"' % Stream (to).join (', '))
 		else:
 			try:
-				mailtext = msg.as_string (False)
+				mailtext = EMail.as_string (msg, False)
 				cmd = syscfg.sendmail (to)
 				pp = subprocess.Popen (cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, errors = 'backslashreplace')
 				(pout, perr) = pp.communicate (mailtext)
@@ -443,19 +542,21 @@ class BAV:
 					logger.debug ('Sendmail to "%s" outputs this for information:\n%s' % (to, pout))
 				if pp.returncode or perr:
 					logger.warning ('Sendmail to "%s" returns %d:\n%s' % (to, pp.returncode, perr))
+				else:
+					logger.debug (f'Send message to {to}')
 			except Exception as e:
 				logger.exception ('Sending mail to %s failed %s' % (to, e))
 
 	__find_score = re.compile ('score=([0-9]+(\\.[0-9]+)?)')
-	def filter_with_spam_assassin (self, fwd: Optional[str]) -> Optional[str]:
+	def filter_with_spam_assassin (self, fwd: Optional[List[str]]) -> Optional[List[str]]:
 		pp = subprocess.Popen (['spamassassin'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, errors = 'backslashreplace')
-		(pout, perr) = pp.communicate (self.msg.as_string (False))
+		(pout, perr) = pp.communicate (EMail.as_string (self.msg, False))
 		if pp.returncode:
 			logger.warning ('Failed to filter mail through spam assassin, returns %d' % pp.returncode)
 			if perr:
 				logger.warning ('Error message:\n%s' % perr)
 		elif pout:
-			nmsg = message_from_string (pout)
+			nmsg = EMail.from_string (pout)
 			if nmsg is not None:
 				self.msg = nmsg
 				spam_status = nmsg['x-spam-status']
@@ -464,10 +565,10 @@ class BAV:
 						m = self.__find_score.search (cast (str, spam_status))
 						if m is not None:
 							spam_score = float (m.group (1))
-							if 'spam_req' in self.parm and float (self.parm['spam_req']) < spam_score:
+							if self.parameter.spam_required is not None and self.parameter.spam_required < spam_score:
 								fwd = None
-							elif 'spam_fwd' in self.parm and float (self.parm['spam_fwd']) < spam_score:
-								fwd = self.parm.get ('spam_email')
+							elif self.parameter.spam_forward is not None and self.parameter.spam_forward < spam_score:
+								fwd = self.parameter.spam_email
 					except ValueError as e:
 						logger.warning ('Failed to parse spam score/spam parameter: %s' % str (e))
 				else:
@@ -478,8 +579,12 @@ class BAV:
 			logger.warning ('Failed to retrieve filtered mail')
 		return fwd
 	
-	def unsubscribe (self, customer_id: int, mailing_id: int) -> None:
-		with DB () as db:
+	def unsubscribe (self, db: DB, customer_id: int, mailing_id: int) -> None:
+		if self.dryrun:
+			print ('Would unsubscribe %d due to mailing %d' % (customer_id, mailing_id))
+			return
+		#
+		if db.isopen ():
 			rq = db.querys ('SELECT mailinglist_id, company_id FROM mailing_tbl WHERE mailing_id = :mailing_id', {'mailing_id': mailing_id})
 			if rq is not None:
 				mailinglist_id = rq.mailinglist_id
@@ -502,12 +607,15 @@ class BAV:
 				else:
 					logger.warning ('Failed to unsubscribe customer %d for company %d on mailinglist %d due to mailing %d, matching %d rows (expected one row)' % (customer_id, company_id, mailinglist_id, mailing_id, cnt))
 				db.sync ()
+			else:
+				logger.debug (f'No mailing for {mailing_id} found')
 
-	def subscribe (self, address: str, fullname: str, company_id: int, mailinglist_id: int, formular_id: int) -> None:
+	def subscribe (self, db: DB, address: str, fullname: str, company_id: int, mailinglist_id: int, formular_id: int) -> None:
 		if self.dryrun:
 			print ('Would try to subscribe "%s" (%r) on %d/%d sending DOI using %r' % (address, fullname, company_id, mailinglist_id, formular_id))
 			return
-		with DB () as db:
+		#
+		if db.isopen ():
 			logger.info ('Try to subscribe %s (%s) for %d to %d using %d' % (address, fullname, company_id, mailinglist_id, formular_id))
 			customer_id: Optional[int] = None
 			new_binding = True
@@ -529,7 +637,7 @@ class BAV:
 				query += ' AND mailinglist_id = %d AND mediatype = 0' % mailinglist_id
 				use: Optional[Row] = None
 				for rec in db.query (query):
-					logger.info ('Found binding [cid, status] %s' % rec)
+					logger.info (f'Found binding [cid, status] {rec}')
 					if rec.user_status == UserStatus.ACTIVE.value:
 						if use is None or use.user_status != UserStatus.ACTIVE.value or rec.user_status > use.user_status:
 							use = rec
@@ -579,7 +687,7 @@ class BAV:
 						customer_id = rec.customer_id
 				elif db.dbms == 'oracle':
 					for rec in db.query ('SELECT customer_%d_tbl_seq.nextval FROM dual' % company_id):
-						customer_id = rec.customer_id
+						customer_id = rec[0]
 					logger.info ('No customer for email %s found, use new customer_id %s' % (address, customer_id))
 					if customer_id is not None:
 						logger.info ('Got datasource id %s for %s' % (datasource_id, datasource_description))
@@ -636,41 +744,34 @@ class BAV:
 				if send_mail:
 					formname = None
 					rdir = None
-					secret = None
 					for rec in db.query ('SELECT formname FROM userform_tbl WHERE form_id = %d AND company_id = %d' % (formular_id, company_id)):
-						if rec.forname:
-							formname = rec.forname
+						if rec.formname:
+							formname = rec.formname
 					for rec in db.query ('SELECT rdir_domain FROM mailinglist_tbl WHERE mailinglist_id = %d' % mailinglist_id):
 						rdir = rec.rdir_domain
-					for rec in db.query ('SELECT rdir_domain, secret_key FROM company_tbl WHERE company_id = %d' % company_id):
-						if rdir is None:
-							rdir = rec.rdir_domain
-						secret = rec.secret_key
+					if rdir is None:
+						for rec in db.query ('SELECT rdir_domain FROM company_tbl WHERE company_id = %d' % company_id):
+							if rdir is None:
+								rdir = rec.rdir_domain
 					if not formname is None and not rdir is None:
-						uid = None
-						if secret:
-							mailing_id: Optional[int] = None
-							creation_date: Optional[datetime] = None
-							for rec in db.queryc ('SELECT mailing_id, creation_date FROM mailing_tbl WHERE company_id = %d AND (deleted = 0 OR deleted IS NULL)' % company_id):
-								if rec.mailing_id is not None:
-									mailing_id = rec.mailing_id
-									creation_date = rec.creation_date
-									break
-							if mailing_id is not None and creation_date is not None:
-								uid = UID ()
-								uid.company_id = company_id
-								uid.mailing_id = mailing_id
-								uid.customer_id = customer_id
-								uid.secret = secret
-								uid.set_timestamp (creation_date)
-							else:
-								logger.error ('Failed to find active mailing for company %d' % company_id)
-						if uid is not None:
-							url = '%s/form.do?agnCI=%d&agnFN=%s&agnUID=%s' % (rdir, company_id, urllib.parse.quote (formname), uid.create ())
-							logger.info ('Trigger mail using "%s"' % url)
+						mailing_id: Optional[int] = None
+						creation_date: Optional[datetime] = None
+						for rec in db.queryc ('SELECT mailing_id, creation_date FROM mailing_tbl WHERE company_id = %d AND (deleted = 0 OR deleted IS NULL)' % company_id):
+							if rec.mailing_id is not None:
+								mailing_id = rec.mailing_id
+								creation_date = rec.creation_date
+								break
+						if mailing_id is not None and creation_date is not None:
 							try:
+								uid = UID (
+									company_id = company_id,
+									mailing_id = mailing_id,
+									customer_id = customer_id
+								)
+								url = '%s/form.action?agnCI=%d&agnFN=%s&agnUID=%s' % (rdir, company_id, urllib.parse.quote (formname), self.uid_handler.create (uid))
+								logger.info ('Trigger mail using "%s"' % url)
 								uh = urllib.request.urlopen (url)
-								resp = uh.read ()
+								resp = uh.read ().decode ('UTF-8', errors = 'ignore')
 								uh.close ()
 								logger.info ('Subscription request returns "%r"' % resp)
 								if len (resp) < 2 or resp[:2].lower () != 'ok':
@@ -680,7 +781,7 @@ class BAV:
 							except urllib.error.URLError as e:
 								logger.error ('Failed to trigger [prot] forumlar using "%s": %s' % (url, e))
 						else:
-							logger.error ('Failed to create UID')
+							logger.error ('Failed to find active mailing for company %d' % company_id)
 					else:
 						if not formname:
 							logger.error ('No formular with id #%d found' % formular_id)
@@ -688,73 +789,79 @@ class BAV:
 							logger.error ('No rdir domain for company #%d/mailinglist #%d found' % (company_id, mailinglist_id))
 
 	def execute_is_no_systemmail (self) -> bool:
-		if self.parsedEMail.unsubscribe:
+		if self.parsed_email.unsubscribe:
 			return False
 		match = self.rule.match_header (self.msg, ['systemmail'])
 		if match is not None and not match[1].inverse:
 			return False
 		return True
 	
-	def execute_filter_or_forward (self) -> bool:
-		if self.parsedEMail.ignore:
-			parm = 'ignore'
+	def execute_filter_or_forward (self, db: DB) -> bool:
+		if self.parsed_email.ignore:
+			action = 'ignore'
 		else:
 			match = self.rule.match_header (self.msg, ['filter'])
 			if not match is None and not match[1].inverse:
-				if not match[1].parm:
-					parm = 'save'
+				if not match[1].action:
+					action = 'save'
 				else:
-					parm = match[1].parm
+					action = match[1].action
 			else:
-				parm = 'sent'
-		fwd = None
-		if parm == 'sent':
-			if 'fwd' in self.parm:
-				fwd = self.parm['fwd']
-			if self.has_spamassassin:
+				action = 'sent'
+		fwd: Optional[List[str]] = None
+		if action == 'sent':
+			fwd = self.parameter.forward
+			if BAV.has_spamassassin and (self.parameter.spam_forward is not None or self.parameter.spam_required is not None):
 				fwd = self.filter_with_spam_assassin (fwd)
-		self.save_message (parm)
-		if parm == 'sent':
+		self.save_message (action)
+		if action == 'sent':
 			while BAV.x_agn in self.msg:
 				del self.msg[BAV.x_agn]
 			if fwd is not None:
 				self.sendmail (self.msg, fwd)
 
-			if 'ar' in self.parm:
-				ar = self.parm['ar']
-				if 'from' in self.parm and self.header_from is not None and self.header_from.address:
+			if self.parameter.autoresponder:
+				if self.parameter.sender and self.header_from is not None and self.header_from.address:
 					sender = self.header_from.address
-					auto_responder = Autoresponder (ar, sender)
-					if 'armid' in self.parm:
+					auto_responder = Autoresponder (self.parameter.autoresponder, sender)
+					if self.parameter.autoresponder_mailing_id:
 						logger.info ('Trigger autoresponder message for %s' % sender)
-						auto_responder.trigger_message (self.cinfo, self.parm, self.dryrun)
+						auto_responder.trigger_message (db, self.cinfo, self.parameter, self.dryrun)
 					else:
 						logger.warning ('Old autorepsonder without content found')
 				else:
 					logger.info ('No sender in original message found')
-			if 'sub' in self.parm and 'cid' in self.parm and 'from' in self.parm:
-				try:
-					(mlist, form) = self.parm['sub'].split (':', 1)
-					cid = self.parm['cid']
-					if self.header_from is not None and self.header_from.address:
-						self.subscribe (self.header_from.address.lower (), self.header_from.realname, int (cid), int (mlist), int (form))
-				except ValueError as e:
-					logger.exception ('Failed to parse subscribe parameter: %r' % (e.args, ))
+			if (
+				self.parameter.subscribe and
+				self.parameter.subscribe.mailinglist_id and
+				self.parameter.subscribe.form_id and
+				self.parameter.company_id and
+				self.parameter.sender and
+				self.header_from is not None and
+				self.header_from.address
+			):
+				with log ('subscribe'):
+					self.subscribe (
+						db,
+						self.header_from.address.lower (),
+						self.header_from.realname,
+						self.parameter.company_id,
+						self.parameter.subscribe.mailinglist_id,
+						self.parameter.subscribe.form_id
+					)
 		return True
 
-	def execute_scan_and_unsubscribe (self) -> bool:
-		if self.parsedEMail.ignore:
-			parm = 'ignore'
+	def execute_scan_and_unsubscribe (self, db: DB) -> bool:
+		if self.parsed_email.ignore:
+			action = 'ignore'
 		else:
-			parm = 'unsub' if self.parsedEMail.unsubscribe else 'unspec'
+			action = 'unsub' if self.parsed_email.unsubscribe else 'unspec'
 			scan = self.rule.scan_message (self.cinfo, self.msg, ['hard', 'soft'])
 			if scan and scan.minfo:
-				if self.parsedEMail.unsubscribe:
-					parm = 'unsubscribe'
-					if self.dryrun:
-						print ('Would unsubscribe %d due to mailing %d' % (scan.minfo.customer_id, scan.minfo.mailing_id))
-					else:
-						self.unsubscribe (scan.minfo.customer_id, scan.minfo.mailing_id)
+				if self.parsed_email.unsubscribe:
+					action = 'unsubscribe'
+					with log ('unsubscribe'):
+						self.unsubscribe (db, scan.minfo.customer_id, scan.minfo.mailing_id)
 				else:
 					if scan.section:
 						if self.dryrun:
@@ -762,19 +869,19 @@ class BAV:
 						else:
 							try:
 								with open (BAV.ext_bouncelog, 'a') as fd:
-									fd.write ('%s;%s;%s;0;%s;timestamp=%s\tmailloop=%s\n' % (scan.dsn, licence, scan.minfo.mailing_id, scan.minfo.customer_id, ParseTimestamp ().dump (datetime.now ()), scan.etext))
+									fd.write ('%s;%s;%s;0;%s;timestamp=%s\tmailloop=%s\tserver=%s\n' % (scan.dsn, licence, scan.minfo.mailing_id, scan.minfo.customer_id, ParseTimestamp ().dump (datetime.now ()), scan.etext, fqdn))
 							except IOError as e:
 								logger.error ('Unable to write %s %s' % (BAV.ext_bouncelog, e))
-					if scan.entry and scan.entry.parm:
-						parm = scan.entry.parm
-		self.save_message (parm)
+					if scan.entry and scan.entry.action:
+						action = scan.entry.action
+		self.save_message (action)
 		return True
 
 class BAVD (Runtime):
 	def check_procmailrc (self, now: time.struct_time, spool: Mailspool) -> None:
 		prc = os.path.join (base, '.procmailrc')
 		try:
-			with open (prc) as fd:
+			with open (prc, errors = 'backslashreplace') as fd:
 				ocontent = fd.read ()
 		except IOError as e:
 			if e.args[0] != errno.ENOENT:
@@ -798,24 +905,27 @@ class BAVD (Runtime):
 		log.outstream = sys.stderr
 		log.loglevel = logging.FATAL
 		print ('Entering simulation mode')
+		bavconfig = BAVConfig ()
+		db = DB ()
 		for fname in files:
 			print ('Try to interpret: %s' % fname)
 			try:
-				with open (fname) as fd:
+				with open (fname, errors = 'backslashreplace') as fd:
 					content = fd.read ()
-				bav = BAV (content, message_from_string (content), True)
+				bav = BAV (bavconfig, content, EMail.from_string (content), True)
 				if bav.execute_is_no_systemmail ():
 					print ('--> Filter or forward')
-					ok = bav.execute_filter_or_forward ()
+					ok = bav.execute_filter_or_forward (db)
 				else:
 					print ('--> Scan and unsubscribe')
-					ok = bav.execute_scan_and_unsubscribe ()
+					ok = bav.execute_scan_and_unsubscribe (db)
 				if ok:
 					print ('OK')
 				else:
 					print ('Failed')
 			except IOError as e:
 				print ('Failed to open %s: %r' % (fname, e.args))
+		db.close ()
 	
 	def setup (self) -> None:
 		self.max_children = 10
@@ -852,40 +962,45 @@ class BAVD (Runtime):
 			self.active = False
 		
 		def execute (self, size: int) -> None:
-			for path in self.ws:
-				ok = False
-				try:
-					with open (path, errors = 'backslashreplace') as fd:
-						body = fd.read (size)
-					msg = message_from_string (body)
-					bav = BAV (body, msg)
-					if bav.execute_is_no_systemmail ():
-						ok = bav.execute_filter_or_forward ()
+			bavconfig = BAVConfig ()
+			db = DB ()
+			try:
+				for path in self.ws:
+					ok = False
+					try:
+						with open (path, errors = 'backslashreplace') as fd:
+							body = fd.read (size)
+						msg = EMail.from_string (body)
+						bav = BAV (bavconfig, body, msg)
+						if bav.execute_is_no_systemmail ():
+							with log ('filter'):
+								ok = bav.execute_filter_or_forward (db)
+						else:
+							with log ('scan'):
+								ok = bav.execute_scan_and_unsubscribe (db)
+					except IOError as e:
+						logger.error ('Failed to open %s: %r' % (path, e.args))
+					except Exception as e:
+						logger.exception ('Fatal: catched failure: %s' % e)
+					if ok:
+						self.ws.success (bav.sender)
 					else:
-						ok = bav.execute_scan_and_unsubscribe ()
-				except IOError as e:
-					logger.error ('Failed to open %s: %r' % (path, e.args))
-				except Exception as e:
-					logger.exception ('Fatal: catched failure: %s' % e)
-				if ok:
-					self.ws.success (bav.sender)
-				else:
-					self.ws.fail ()
-				if not self.ref.running:
-					break
-			self.ws.done ()
+						self.ws.fail ()
+					if not self.ref.running:
+						break
+				self.ws.done ()
+			finally:
+				db.close ()
 		
 		def start (self, size: int) -> None:
-			self.pid = os.fork ()
-			if self.pid == 0:
-				try:
-					self.ref.setup_handler (master = False)
-					self.execute (size)
-				except Exception as e:
-					logger.exception (f'{self.ws}: failed due to {e}')
-				os._exit (0)
-			else:
-				self.active = self.pid > 0
+			def executor () -> None:
+				with self.ref.title (str (self.ws)):
+					try:
+						self.execute (size)
+					except Exception as e:
+						logger.exception (f'{self.ws}: failed due to {e}')
+			self.pid = self.ref.spawn (executor)
+			self.active = self.pid > 0
 		
 		def signal (self) -> None:
 			if self.active and self.pid is not None:

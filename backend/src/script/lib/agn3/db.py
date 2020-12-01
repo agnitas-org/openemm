@@ -17,7 +17,7 @@ from	typing import Any, Callable, Iterable, Optional, Union
 from	typing import Dict, Iterator, List, Tuple, Type
 from	typing import cast
 from	.dbdriver import DBDriver
-from	.dbcore import Row, Core, Cursor
+from	.dbcore import T, Row, Core, Cursor
 from	.definitions import program
 from	.exceptions import error
 from	.ignore import Ignore
@@ -38,7 +38,7 @@ handling."""
 	__slots__ = [
 		'dbid', 'db', 'cursor', 'dblog',
 		'_last_error', 
-		'_table_cache', '_view_cache', '_index_cache', '_tablespace_cache',
+		'_table_cache', '_view_cache', '_synonym_cache', '_index_cache', '_tablespace_cache',
 		'_scratch_tables', '_scratch_number',
 		'_cache', '_checkpoints'
 	]
@@ -51,6 +51,7 @@ handling."""
 		self._last_error: Optional[str] = None
 		self._table_cache: Dict[str, bool] = {}
 		self._view_cache: Dict[str, bool] = {}
+		self._synonym_cache: Dict[str, bool] = {}
 		self._index_cache: Dict[Tuple[str, str], bool] = {}
 		self._tablespace_cache: Dict[Optional[str], Optional[str]] = {}
 		self._scratch_tables: List[str] = []
@@ -83,8 +84,8 @@ handling."""
 		if self.cursor is not None:
 			while self._scratch_tables:
 				table = self._scratch_tables.pop ()
-				self.cursor.execute ('TRUNCATE TABLE %s' % table)
-				self.cursor.execute ('DROP TABLE %s' % table)
+				self.cursor.execute (f'TRUNCATE TABLE {table}')
+				self.cursor.execute (f'DROP TABLE {table}')
 		if self.db is not None:
 			if self.cursor is not None:
 				self.cursor.sync (commit)
@@ -101,7 +102,12 @@ handling."""
 		
 	def new (self) -> Core:
 		"""Creates a new database driver instance"""
-		db = DBDriver.request (self.dbid)
+		try:
+			db = DBDriver.request (self.dbid)
+		except IOError as e:
+			raise error (f'{self.dbid}: failed to find valid driver: {e}') from e
+		except KeyError as e:
+			raise error (f'{self.dbid}: failed to find proper configuration: {e}') from e
 		with Ignore (AttributeError):
 			if callable (self.dblog):
 				db.log = self.dblog
@@ -152,13 +158,18 @@ handling."""
 		"""Returns last database error message"""
 		if self.db is not None:
 			return self.db.last_error ()
-		return self._last_error if self._last_error else 'No active database interface (%s)' % str (self.dbid)
+		return self._last_error if self._last_error else f'No active database interface ({self.dbid})'
 	
-	def qselect (self, **args: str) -> str:
+	def qselect (self, **args: T) -> T:
 		if self.db is not None:
 			return self.db.qselect (**args)
 		raise error ('database not open: {last_error}'.format (last_error = self.last_error ()))
 	
+	def qvalidate (self, statement: str, parameter: Dict[str, Any]) -> Tuple[bool, List[str], List[str]]:
+		if self.db is not None:
+			return self.db.qvalidate (statement, parameter)
+		raise error ('database not open: {last_error}'.format (last_error = self.last_error ()))
+
 	def description (self, normalize: bool = False) -> List[Any]:
 		if self.cursor is not None:
 			return self.cursor.description (normalize)
@@ -168,7 +179,6 @@ handling."""
 		with self.request () as cursor:
 			cursor.querys (f'SELECT * FROM {table} WHERE 1 = 0')
 			return cursor.description (normalize)
-		raise error ('database not open: {last_error}'.format (last_error = self.last_error ()))
 
 	@property
 	def dbms (self) -> Optional[str]:
@@ -249,9 +259,15 @@ queryc() and a querys() method is also available using the cache."""
 		#
 		return self.check_open_cursor ().querys (statement, parameter, cleanup)
 			
-	def update (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, commit: bool = False, cleanup: bool = False) -> int:
+	def update (self,
+		statement: str,
+		parameter: Union[None, List[Any], Dict[str, Any]] = None,
+		commit: bool = False,
+		cleanup: bool = False,
+		sync_and_retry: bool = False
+	) -> int:
 		"""Update database content, a convinient method to complete the minimal cursor interface"""
-		return self.check_open_cursor ().update (statement, parameter, commit, cleanup)
+		return self.check_open_cursor ().update (statement, parameter, commit, cleanup, sync_and_retry)
 	
 	def execute (self, statement: str) -> int:
 		"""Excecute a statement on the database"""
@@ -304,8 +320,27 @@ queryc() and a querys() method is also available using the cache."""
 				self._view_cache[cache_view_name] = rc
 		return rc
 	
+	def exists_synonym (self, synonym_name: str, cachable: bool = False) -> bool:
+		"""Check database if ``synonym_name'' exists as synonym, if ``cachable'' is True, cache the result for faster future access"""
+		if self.dbms == 'oracle':
+			if cachable:
+				cache_synonym_name = synonym_name.lower ()
+				if cache_synonym_name in self._synonym_cache:
+					return self._synonym_cache[cache_synonym_name]
+			#
+			rc = False
+			cursor = self.check_open_cursor ()
+			query = 'SELECT count(*) FROM user_synonyms WHERE lower(synonym_name) = lower(:synonym_name)'
+			rq = cursor.querys (query, {'synonym_name': synonym_name})
+			if rq is not None:
+				rc = rq[0] > 0
+				if cachable:
+					self._synonym_cache[cache_synonym_name] = rc
+			return rc
+		return False
+	
 	def exists (self, table_name: str, cachable: bool = False) -> bool:
-		return self.exists_table (table_name, cachable) or self.exists_view (table_name, cachable)
+		return self.exists_table (table_name, cachable) or self.exists_view (table_name, cachable) or self.exists_synonym (table_name, cachable)
 
 	def exists_index (self, table_name: str, index_name: str, cachable: bool = False) -> bool:
 		"""Check database if ``index_name' index exists for ``table_name'', if ``cachable'' is True, cache the result for faster future access"""
@@ -381,30 +416,30 @@ one."""
 		cursor = self.check_open_cursor ()
 		while True:
 			self._scratch_number += 1
-			table = 'TMP_SCRATCH_%s_%d_TBL' % (name, self._scratch_number)
+			table = f'TMP_SCRATCH_{name}_{self._scratch_number}_TBL'
 			exists = self.exists (table)
 			if exists and reuse:
-				cursor.execute ('TRUNCATE TABLE %s' % table)
-				cursor.execute ('DROP TABLE %s' % table)
+				cursor.execute (f'TRUNCATE TABLE {table}')
+				cursor.execute (f'DROP TABLE {table}')
 				exists = self.exists (table)
 			if not exists:
 				if layout or select:
-					query = 'CREATE TABLE %s' % table
+					query = f'CREATE TABLE {table}'
 					if layout:
-						query += ' (%s)' % layout
+						query += f' ({layout})'
 					if self.dbms == 'oracle':
 						tablespace = self.find_tablespace (tablespace)
 						if tablespace:
-							query += ' TABLESPACE %s' % tablespace
+							query += f' TABLESPACE {tablespace}'
 					if select:
-						query += ' AS SELECT %s' % select
+						query += f' AS SELECT {select}'
 					cursor.execute (query)
 					if indexes is not None:
 						for (index_number, index) in enumerate (indexes, start = 1):
-							iname = 'TS$%s$%d$%d$IDX' % (name, self._scratch_number, index_number)
-							query = 'CREATE INDEX %s ON %s (%s)' % (iname, table, index)
+							iname = 'TS${name}${self._scratch_number}${index_number}$IDX'
+							query = f'CREATE INDEX {iname} ON {table} ({index})'
 							if self.dbms == 'oracle' and tablespace:
-								query += ' TABLESPACE %s' % tablespace
+								query += f' TABLESPACE {tablespace}'
 							cursor.execute (query)
 				self._scratch_tables.append (table)
 				break
@@ -417,8 +452,8 @@ one."""
 		while table in self._scratch_tables:
 			if not rc:
 				if self.exists (table):
-					cursor.execute ('TRUNCATE TABLE %s' % table)
-					cursor.execute ('DROP TABLE %s' % table)
+					cursor.execute (f'TRUNCATE TABLE {table}')
+					cursor.execute (f'DROP TABLE {table}')
 				rc = True
 			self._scratch_tables.remove (table)
 		return rc
@@ -497,7 +532,10 @@ files to limit the size of each file."""
 								converter.append (cmap[h[1]])
 							except KeyError:
 								converter.append (cmap[None])
-								msg.append ('No converter for type %r for %s found' % (h[1], h[0]))
+								msg.append ('No converter for type {typ!r} for {column} found'.format (
+									typ = h[1],
+									column = h[0]
+								))
 				if validator is not None and not validator (row):
 					continue
 				if modifier is not None:
@@ -554,7 +592,7 @@ files to limit the size of each file."""
 			return None
 
 		def setup (self) -> None:
-			query = 'SELECT checkpoint, persist FROM %s WHERE name = :name' % self.table
+			query = f'SELECT checkpoint, persist FROM {self.table} WHERE name = :name'
 			rq = self.cursor.querys (query, {'name': self.name})
 			if rq is not None and rq.checkpoint is not None:
 				self.start = rq.checkpoint
@@ -566,7 +604,7 @@ files to limit the size of each file."""
 				if commit:
 					insert = False
 					if self.start < self.end:
-						query = 'UPDATE %s SET checkpoint = :checkpoint, persist = :persist WHERE name = :name' % self.table
+						query = f'UPDATE {self.table} SET checkpoint = :checkpoint, persist = :persist WHERE name = :name'
 						data = {
 							'name': self.name,
 							'checkpoint': self.end,
@@ -580,18 +618,18 @@ files to limit the size of each file."""
 						data = {
 							'name': self.name
 						}
-						query = 'SELECT count(*) FROM %s WHERE name = :name' % self.table
+						query = f'SELECT count(*) FROM {self.table} WHERE name = :name'
 						rq = self.cursor.querys (query, data)
 						if rq is not None and rq[0] == 0:
 							data['checkpoint'] = self.start
 							data['persist'] = self.persist
 							insert = True
 					if insert:
-						query = 'INSERT INTO %s (name, checkpoint, persist) VALUES (:name, :checkpoint, :persist)' % self.table
+						query = f'INSERT INTO {self.table} (name, checkpoint, persist) VALUES (:name, :checkpoint, :persist)'
 						if self.db.dbms == 'oracle':
 							self.cursor.set_input_sizes (persist = cast (Core, self.db.db).driver.CLOB)
 						if self.cursor.update (query, data) == 0:
-							raise error ('failed to create new entry for %s in %s' % (self.name, self.table))
+							raise error (f'failed to create new entry for {self.name} in {self.table}')
 					self.cursor.sync (True)
 				self.db.release (self.cursor)
 				self.db.uncheckpoint (self)
@@ -629,42 +667,39 @@ if it had not existed."""
 		if not self.exists (table):
 			tablespace = self.find_tablespace (tablespace)
 			if tablespace:
-				tablespace_expression = ' TABLESPACE %s' % tablespace
+				tablespace_expression = f' TABLESPACE {tablespace}'
 			else:
 				tablespace_expression = ''
 			layout = cursor.qselect (
 				oracle = (
-					'CREATE TABLE %s (\n'
+					f'CREATE TABLE {table} (\n'
 					'	name		varchar2(100)	PRIMARY KEY NOT NULL,\n'
 					'	checkpoint	date		NOT NULL,\n'
 					'       persist         clob\n'
-					')%s'
-					% (table, tablespace_expression)
+					f'){tablespace_expression}'
 				), mysql = (
-					'CREATE TABLE %s (\n'
+					f'CREATE TABLE {table} (\n'
 					'	name		varchar(100)	PRIMARY KEY NOT NULL,\n'
 					'	checkpoint	timestamp	NOT NULL,\n'
 					'       persist         longtext\n'
 					')'
-					% table
 				), sqlite = (
-					'CREATE TABLE %s (\n'
+					f'CREATE TABLE {table} (\n'
 					'	name		text		PRIMARY KEY NOT NULL,\n'
 					'	checkpoint	timestamp	NOT NULL,\n'
 					'       persist         text\n'
 					')'
-					% table
 				)
 			)
 			cursor.execute (layout)
 		else:
-			cursor.querys ('SELECT * FROM %s WHERE 1 = 0' % table)
+			cursor.querys (f'SELECT * FROM {table} WHERE 1 = 0')
 			desc = cursor.description (normalize = True)
 			if desc is not None and 'persist' not in [_d[0] for _d in desc]:
 				cursor.execute (cursor.qselect (
-					oracle = 'ALTER TABLE %s ADD persist clob' % table,
-					mysql = 'ALTER TABLE %s ADD persist longtext' % table,
-					sqlite = 'ALTER TABLE %s ADD persist text' % table
+					oracle = f'ALTER TABLE {table} ADD persist clob',
+					mysql = f'ALTER TABLE {table} ADD persist longtext',
+					sqlite = f'ALTER TABLE {table} ADD persist text'
 				))
 		if self.exists (table) and name is not None:
 			timestamp_parser = ParseTimestamp ()
@@ -677,17 +712,20 @@ if it had not existed."""
 				end = datetime (now.year, now.month, now.day, now.hour, now.minute, now.second)
 				if endoffset is not None:
 					offset: int
-					if type (endoffset) is str:
+					if isinstance (endoffset, str):
 						parsed = Unit ().parse (endoffset, -1)
 						if parsed == -1:
-							raise error ('%s: invalid offset expression' % endoffset)
+							raise error (f'{endoffset}: invalid offset expression')
 						offset = parsed
-					elif type (endoffset) is float:
+					elif isinstance (endoffset, float):
 						offset = int (endoffset)
-					elif type (endoffset) is int:
-						offset = cast (int, endoffset)
+					elif isinstance (endoffset, int):
+						offset = endoffset
 					else:
-						raise error ('%r: invalid offset type %s' % (endoffset, type (endoffset)))
+						raise error ('{endoffset!r}: invalid offset type {typ}'.format (
+							endoffset = endoffset,
+							typ = type (endoffset)
+						))
 					if offset != 0:
 						end -= timedelta (seconds = offset)
 			rc = self.Checkpoint (self, name, table, cursor, start, end)

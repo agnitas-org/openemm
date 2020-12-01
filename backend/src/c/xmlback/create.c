@@ -173,7 +173,6 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 			}
 		}
 		if (block -> inuse) {
-			xbp_create_output_mail (blockmail -> xbp, blockmail, rec, "init", block);
 			rec -> base_block = block;
 			if (block -> attachment)
 				attcount++;
@@ -188,8 +187,6 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 					log_idpop (blockmail -> lg);
 					if (! st)
 						log_out (blockmail -> lg, LV_ERROR, "Unable to replace tags in block %d for %d", block -> nr, rec -> customer_id);
-					else
-						xbp_create_output_mail (blockmail -> xbp, blockmail, rec, "tags", block);
 				}
 				if (st) {
 					log_idpush (blockmail -> lg, "modify_output", "->");
@@ -197,8 +194,6 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 					log_idpop (blockmail -> lg);
 					if (! st)
 						log_out (blockmail -> lg, LV_ERROR, "Unable to modify output in block %d for %d", block -> nr, rec -> customer_id);
-					else
-						xbp_create_output_mail (blockmail -> xbp, blockmail, rec, "modify", block);
 				}
 				if (st) {
 					if ((! blockmail -> raw) && (! block -> precoded)) {
@@ -207,8 +202,6 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 						log_idpop (blockmail -> lg);
 						if (! st)
 							log_out (blockmail -> lg, LV_ERROR, "Unable to convert chararcter set in block %d for %d", block -> nr, rec -> customer_id);
-						else
-							xbp_create_output_mail (blockmail -> xbp, blockmail, rec, "charset", block);
 					} else {
 						xmlBufferPtr	temp;
 						
@@ -218,7 +211,6 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 					}
 				}
 			}
-			xbp_create_output_mail (blockmail -> xbp, blockmail, rec, block -> inuse ? "finish" : "abort", block);
 		}
 		if (changed && rec -> rvdata -> cur)
 			eval_change_data (blockmail -> eval, rec -> rvdata -> cur -> data[blockmail -> mailtype_index], rec -> rvdata -> cur -> isnull[blockmail -> mailtype_index], blockmail -> mailtype_index);
@@ -358,7 +350,9 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	cleanup_header (blockmail);
 	if (rbhead)
 		rblock_retrieve_content (rbhead, blockmail -> head);
-
+	if (st) {
+		rec -> size = buffer_length (blockmail -> head) + 2 + buffer_length (blockmail -> body);
+	}
 	return st;
 }/*}}}*/
 bool_t
@@ -420,6 +414,8 @@ create_output (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 		docreate = create_mail;
 	if (st) {
 		rec -> media = m;
+		rec -> chunks = 1;
+		rec -> size = 0;
 		strcpy (rec -> mid, media_typeid (m ? m -> type : Mediatype_EMail));
 		if (blockmail -> active && docreate)
 			st = (*docreate) (blockmail, rec);

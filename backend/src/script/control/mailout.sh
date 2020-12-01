@@ -26,7 +26,6 @@ start)
 
 	$HOME/bin/jsync.sh
 	base=${HOME}/JAVA
-	inifile=-Dorg.agnitas.backend.ini_filename=${base}/Mailout.ini
 	xmlrpc=org.agnitas.backend.MailoutServerXMLRPC
 	logfile=${base}/org/agnitas/backend/BACKEND_`date +%Y%m%d`.LOG
 	if [ ! -f $logfile ]; then
@@ -36,7 +35,7 @@ start)
 	#
 	#	2.) Start backend
 	echo -n "Starting backend .. "
-	$wd -- $java $inifile $xmlrpc '*'
+	$wd -- $java $xmlrpc '*'
 	echo "done."
 	slogfile=${HOME}/log/backend.log
 	rm -f $slogfile

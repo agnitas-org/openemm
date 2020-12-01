@@ -19,7 +19,6 @@
 # include	<limits.h>
 # include	<dirent.h>
 # include	<sys/wait.h>
-# include	<sqlite3.h>
 # include	<sysexits.h>
 # include	"xmlback.h"
 
@@ -345,6 +344,32 @@ spool_unique (spool_t *s) /*{{{*/
 					*(mod + 1) = '\0';
 				}
 				*mod = *u;
+			}
+		}
+		if (fd == -1)
+			return false;
+		close (fd);
+	}
+	return true;
+}/*}}}*/
+static bool_t
+spool_unique_by_number (spool_t *s) /*{{{*/
+{
+	if (! s -> devnull) {
+		unsigned int	nr;
+		int		fd;
+		char		*mod;
+
+		for (nr = 1, fd = -1, mod= NULL; (nr != 0) && (fd == -1); ++nr) {
+			fd = open (s -> buf, O_CREAT | O_EXCL, 0644);
+			if (fd == -1) {
+				if (errno != EEXIST)
+					break;
+				if (! mod) {
+					for (mod = s -> ptr; *mod; ++mod)
+						;
+				}
+				sprintf (mod, "%u", nr);
 			}
 		}
 		if (fd == -1)
@@ -683,122 +708,6 @@ qflush_flush (qflush_t *q, log_t *lg, const char *destdir) /*{{{*/
 	}
 	return rc;
 }/*}}}*/
-static void
-error_log (blockmail_t *blockmail, sqlite3 *db, const char *where) /*{{{*/
-{
-	const char	*dberr;
-	
-	dberr = db ? sqlite3_errmsg (db) : "database not available";
-	log_out (blockmail -> lg, LV_ERROR, "SQLITE3 access failed in %s: %s", where, (dberr ? dberr : "undefined"));
-}/*}}}*/
-static void
-mfrom_store (blockmail_t *blockmail, const char *path) /*{{{*/
-{
-	static char	dblayout[] =
-		"CREATE TABLE Envelope (\n"
-		"	licenceID  integer,\n"
-		"	companyID  integer,\n"
-		"	mailingID  integer,\n"
-		"	envelope   text,\n"
-		"	ctime      integer,\n"
-		"	mtime      integer\n"
-		")",
-			dbfind[] =
-		"SELECT envelope FROM Envelope WHERE licenceID = :licence AND companyID = :company AND mailingID = :mailing",
-			dbupdate[] =
-		"UPDATE Envelope SET envelope = :envelope, mtime = :mtime WHERE licenceID = :licence AND companyID = :company AND mailingID = :mailing",
-			dbinsert[] =
-		"INSERT INTO Envelope (licenceID, companyID, mailingID, envelope, ctime, mtime) VALUES (:licence, :company, :mailing, :envelope, :ctime, :mtime)";
-	sqlite3		*db;
-	
-	db = NULL;
-	if (sqlite3_open (path, & db) == SQLITE_OK) {
-		int		ec;
-		const unsigned char
-				*envp;
-		char		*envelope;
-		sqlite3_stmt	*stmt;
-		int		timestamp;
-		
-		envelope = NULL;
-		stmt = NULL;
-		if (((ec = sqlite3_prepare_v2 (db, dbfind, sizeof (dbfind), & stmt, NULL)) == SQLITE_OK) &&
-		    (sqlite3_bind_int (stmt, 1, blockmail -> licence_id) == SQLITE_OK) &&
-		    (sqlite3_bind_int (stmt, 2, blockmail -> company_id) == SQLITE_OK) &&
-		    (sqlite3_bind_int (stmt, 3, blockmail -> mailing_id) == SQLITE_OK)) {
-			int	tout;
-			
-			tout = 10;
-			while ((! envelope) && (((ec = sqlite3_step (stmt)) == SQLITE_BUSY) || (ec == SQLITE_ROW))) {
-				if (ec == SQLITE_BUSY) {
-					if (--tout > 0)
-						sleep (1);
-					else
-						break;
-				} else if (envp = sqlite3_column_text (stmt, 0))
-					envelope = strdup ((const char *) envp);
-			}
-		} else if (ec != SQLITE_ERROR)
-			error_log (blockmail, db, "querying mailing");
-		if (stmt)
-			sqlite3_finalize (stmt);
-		timestamp = (int) time (NULL);
-		if (! envelope) {
-			if (ec == SQLITE_ERROR) {
-				stmt = NULL;
-				if ((ec = sqlite3_prepare_v2 (db, dblayout, sizeof (dblayout), & stmt, NULL)) == SQLITE_OK) {
-					ec = sqlite3_step (stmt);
-				}
-				if ((ec != SQLITE_OK) && (ec != SQLITE_ROW) && (ec != SQLITE_DONE))
-					error_log (blockmail, db, "create table");
-				if (stmt)
-					sqlite3_finalize (stmt);
-			}
-			if ((ec == SQLITE_OK) || (ec == SQLITE_ROW) || (ec == SQLITE_DONE)) {
-				stmt = NULL;
-				if ((sqlite3_prepare_v2 (db, dbinsert, sizeof (dbinsert), & stmt, NULL) == SQLITE_OK) &&
-				    (sqlite3_bind_int (stmt, 1, blockmail -> licence_id) == SQLITE_OK) &&
-				    (sqlite3_bind_int (stmt, 2, blockmail -> company_id) == SQLITE_OK) &&
-				    (sqlite3_bind_int (stmt, 3, blockmail -> mailing_id) == SQLITE_OK) &&
-				    (sqlite3_bind_text (stmt, 4, blockmail -> mfrom, -1, SQLITE_STATIC) == SQLITE_OK) &&
-				    (sqlite3_bind_int (stmt, 5, timestamp) == SQLITE_OK) &&
-				    (sqlite3_bind_int (stmt, 6, timestamp) == SQLITE_OK)) {
-					int	tout;
-					
-					tout = 10;
-					while ((sqlite3_step (stmt) == SQLITE_BUSY) && (tout-- > 0))
-						sleep (1);
-				} else
-					error_log (blockmail, db, "insert new record");
-				if (stmt)
-					sqlite3_finalize (stmt);
-			}
-		} else {
-			if (strcmp (envelope, blockmail -> mfrom)) {
-				stmt = NULL;
-				if ((sqlite3_prepare_v2 (db, dbupdate, sizeof (dbupdate), & stmt, NULL) == SQLITE_OK) &&
-				    (sqlite3_bind_text (stmt, 1, blockmail -> mfrom, -1, SQLITE_STATIC) == SQLITE_OK) &&
-				    (sqlite3_bind_int (stmt, 2, timestamp) == SQLITE_OK) &&
-				    (sqlite3_bind_int (stmt, 3, blockmail -> licence_id) == SQLITE_OK) &&
-				    (sqlite3_bind_int (stmt, 4, blockmail -> company_id) == SQLITE_OK) &&
-				    (sqlite3_bind_int (stmt, 5, blockmail -> mailing_id) == SQLITE_OK)) {
-					int	tout;
-					
-					tout = 10;
-					while ((sqlite3_step (stmt) == SQLITE_BUSY) && (tout-- > 0))
-						sleep (1);
-				} else
-					error_log (blockmail, db, "update existing record");
-				if (stmt)
-					sqlite3_finalize (stmt);
-			}
-			free (envelope);
-		}
-	} else
-		error_log (blockmail, db, "open database");
-	if (db)
-		sqlite3_close (db);
-}/*}}}*/
 
 typedef struct bad { /*{{{*/
 	spool_t	*spool;			/* spool for bad domains	*/
@@ -923,7 +832,6 @@ struct sendmail { /*{{{*/
 			ipos_recipient;	/* .. and recipient		*/
 	action_t	*act;		/* optional actions to start	*/
 	qflush_t	*flush;		/* optional queue flushing	*/
-	char	*	mfrom;		/* optional log envelope	*/
 	bad_t	*	bad;		/* optional bad domain list	*/
 	/*}}}*/
 };
@@ -941,7 +849,6 @@ sendmail_alloc (void) /*{{{*/
 		s -> ipos_recipient = -1;
 		s -> act = NULL;
 		s -> flush = NULL;
-		s -> mfrom = NULL;
 		s -> bad = NULL;
 	}
 	return s;
@@ -963,8 +870,6 @@ sendmail_free (sendmail_t *s) /*{{{*/
 			action_free_all (s -> act);
 		if (s -> flush)
 			qflush_free (s -> flush);
-		if (s -> mfrom)
-			free (s -> mfrom);
 		if (s -> bad)
 			bad_free (s -> bad);
 		free (s);
@@ -1098,8 +1003,6 @@ sendmail_oinit (sendmail_t *s, blockmail_t *blockmail, var_t *opt) /*{{{*/
 			st = qflush_set_command (s -> flush, opt -> val);
 		else
 			st = false;
-	} else if (var_partial_imatch (opt, "log-mfrom")) {
-		st = struse (& s -> mfrom, opt -> val);
 	} else if (var_partial_imatch (opt, "bad-path")) {
 		if (s -> bad)
 			bad_free (s -> bad);
@@ -1108,7 +1011,7 @@ sendmail_oinit (sendmail_t *s, blockmail_t *blockmail, var_t *opt) /*{{{*/
 		if (s -> bad)
 			bad_readfile (s -> bad, opt -> val);
 	} else
-		st = false;
+		log_out (blockmail -> lg, LV_WARNING, "Unknown option \"%s\" using \"%s\"", opt -> var, opt -> val);
 	return st;
 }/*}}}*/
 static bool_t
@@ -1448,8 +1351,6 @@ sendmail_owrite (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receiver_t *re
 				log_out (blockmail -> lg, LV_ERROR, "Failed to put \"%s\" to \"%s\"", blockmail -> mfrom, key);
 			fsdb_free (fsdb);
 		}		
-		if (s -> mfrom)
-			mfrom_store (blockmail, s -> mfrom);
 	}
 	if (s -> spool)
 		return sendmail_owrite_spool (s, g, blockmail, rec, nl, nllen);
@@ -1552,13 +1453,14 @@ generate_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 				if ((! crun -> unitcount) && (! crun -> unitskip))
 					continue;
 
-# define	FORMAT(s1,s2)	s1 "%d;%d;%d;%d;%d;%c;%d;%s;%d;%ld;%ld;%lld;%ld;%lld" s2,	\
+# define	FORMAT(s1,s2)	s1 "%d;%d;%d;%d;%d;%c;%d;%s;%d;%ld;%ld;%ld;%lld;%ld;%lld" s2,	\
 				blockmail -> licence_id,					\
 				blockmail -> company_id, blockmail -> mailinglist_id,		\
 				blockmail -> mailing_id, blockmail -> maildrop_status_id,	\
 				blockmail -> status_field, blockmail -> blocknr, 		\
 				crun -> mediatype, crun -> subtype, 				\
-				crun -> unitcount, crun -> unitskip, crun -> bytecount,		\
+				crun -> unitcount, crun -> unitskip, crun -> chunkcount,		\
+				crun -> bytecount,						\
 				crun -> bccunitcount, crun -> bccbytecount
 # define	WHAT		FORMAT ("mail creation: ", "")
 
@@ -1578,6 +1480,7 @@ generate_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 							"subtype=%d\t"
 							"count=%ld\t"
 							"skip=%ld\t"
+							"chunks=%ld\t"
 							"bytes=%lld\t"
 							"bcc-count=%ld\t"
 							"bcc-bytes=%lld\t"
@@ -1588,7 +1491,8 @@ generate_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 							blockmail -> mailing_id, blockmail -> maildrop_status_id,
 							blockmail -> status_field, blockmail -> blocknr,
 							crun -> mediatype, crun -> subtype,
-							crun -> unitcount, crun -> unitskip, crun -> bytecount,
+							crun -> unitcount, crun -> unitskip, crun -> chunkcount,
+							crun -> bytecount,
 							crun -> bccunitcount, crun -> bccbytecount,
 							blockmail -> nodename, ts);
 					if ((fd = open (g -> acclog, O_WRONLY | O_APPEND | O_CREAT, 0644)) == -1) {
@@ -1645,7 +1549,7 @@ generate_owrite (void *data, blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 
 	if (g -> midlog && rec -> message_id) {
 		FILE		*fp;
-		int		midlen =xmlBufferLength (rec -> message_id);
+		int		midlen = xmlBufferLength (rec -> message_id);
 		const xmlChar	*mid = xmlBufferContent (rec -> message_id);
 		
 		if (fp = fopen (g -> midlog, "a")) {

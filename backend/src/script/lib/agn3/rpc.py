@@ -10,7 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	signal, socket, logging
+import	socket, logging
 import	socketserver, urllib.parse, base64
 import	xmlrpc.server, xmlrpc.client
 import	aiohttp_xmlrpc.client
@@ -21,6 +21,7 @@ from	typing import Any, Callable, Optional, Protocol, Union
 from	typing import Dict, List, NamedTuple, Tuple, Type
 from	typing import cast
 from	.config import Config
+from	.daemon import Signal
 from	.exceptions import error
 from	.ignore import Ignore
 #
@@ -59,7 +60,6 @@ cfg['xmlrpc.port'] = 8080
 cfg['xmlrpc.allow_none'] = False	# set to True to allow None values as part of communication (this is a non standard xml-rpc extension!)
 cfg['xmlrpc.server'] = None		# can be either 'forking' or 'threading', leaving it out means a single, non threading server
 server = XMLRPC (cfg)			# this class takes serveral keyword arguments (even cfg is optional):
-					# - full (bool), default False: if True, then a full server enviroment with signal handling is set up
 					# - prefix (str), default 'xmlrpc': use this as the configuration section for accessing configuration values from cfg
 					# - timeout (float), default None: if set, use this as a communcation timeout
 
@@ -140,7 +140,7 @@ server.run ()
 			if path not in cls.get_handler:
 				cls.get_handler[path] = handler
 			else:
-				raise error ('path "%s" already handled' % path)
+				raise error (f'path "{path}" already handled')
 		
 		base_authorization: List[Tuple[str, str]] = []
 		@classmethod
@@ -188,12 +188,12 @@ server.run ()
 		def __answer (self, answer: XMLRPC.Answer) -> None:
 			if answer.content is None:
 				content = b''
-			elif type (answer.content) is str:
-				content = cast (str, answer.content).encode ('UTF-8')
+			elif isinstance (answer.content, str):
+				content = answer.content.encode ('UTF-8')
 			else:
-				content = cast (bytes, answer.content)
+				content = answer.content
 			self.__header (answer.code, [
-				('Content-Type', '%s; charset=UTF-8' % answer.mime),
+				('Content-Type', f'{answer.mime}; charset=UTF-8'),
 				('Content-Length', str (len (content)))
 			] + (answer.headers if answer.headers is not None else []))
 			self.wfile.write (content)
@@ -217,66 +217,87 @@ server.run ()
 				try:
 					handlers_answer = handler (path, param, parsed_param)
 				except Exception as e:
-					self.log_error ('Failed to handle "%s": %r' % (self.path, e))
+					self.log_error (f'Failed to handle "{self.path}": {e}')
 					self.__error (500, [], b'Failed to process request\n')
 				else:
-					if type (handlers_answer) is str:
-						answer = XMLRPC.Answer (200, 'text/html', [], cast (str, handlers_answer))
+					if isinstance (handlers_answer, str):
+						answer = XMLRPC.Answer (200, 'text/html', [], handlers_answer)
 					else:
-						answer = cast (XMLRPC.Answer, handlers_answer)
+						answer = handlers_answer
 					self.__answer (answer)
 			else:
 				self.__error (404, [], b'Page not found\n')
 
 	class XMLRPCServer (xmlrpc.server.SimpleXMLRPCServer):
-		__slots__ = ['timeout']
+		__slots__ = ['timeout', 'action_callback']
 		allow_reuse_address = True
-		def __init__ (self, port: int, host: str = '', timeout: Optional[float] = None, allow_none: bool = False) -> None:
+		def __init__ (self,
+			port: int,
+			host: str,
+			timeout: Optional[float] = None,
+			allow_none: bool = False,
+			action_callback: Optional[Callable[[], None]] = None
+		) -> None:
 			super ().__init__ ((host, port), XMLRPC.XMLRPCRequest, allow_none = allow_none)
 			if timeout is not None:
 				self.timeout = timeout
+			self.action_callback = action_callback
 	
 		def handle_error (self, request: Any, client_address: Tuple[str, int]) -> None:
-			logger.exception ('Request failed for %s: %r' % (client_address[0], request))
+			logger.exception ('Request failed for {client}: {request!r}'.format (
+				client = client_address[0],
+				request = request
+			))
+		
+		def _dispatch (self, method: str, params: Tuple[Any, ...]) -> Any:
+			try:
+				rc = super ()._dispatch (method, params)
+				logger.debug (f'INVOKE {method} {params!r} = {rc!r}')
+			except Exception as e:
+				logger.error (f'INVOKE {method} {params!r} raises {e}')
+				raise
+			return rc
+		
+		def service_actions (self) -> None:
+			super ().service_actions ()
+			if self.action_callback is not None:
+				self.action_callback ()
 
 	class XMLRPCServerForking (socketserver.ForkingMixIn, XMLRPCServer):
 		__slots__: List[str] = []
 	class XMLRPCServerThreading (socketserver.ThreadingMixIn, XMLRPCServer):
 		__slots__: List[str] = []
+		daemon_threads = True
 
-	
-	def __handler (self, sig: Signals, stack: FrameType) -> None:
-		if sig in (signal.SIGINT, signal.SIGTERM):
-			Thread (target = lambda: self.server.shutdown (), daemon = True).start ()
 
-	def __setup_signals (self) -> None:
-		signal.signal (signal.SIGTERM, self.__handler)
-		signal.signal (signal.SIGINT, self.__handler)
-		signal.signal (signal.SIGHUP, signal.SIG_IGN)
-		signal.signal (signal.SIGPIPE, signal.SIG_IGN)
-
-	def __init__ (self, cfg: Optional[Configable] = None, full: bool = False, prefix: str = 'xmlrpc', timeout: Optional[float] = None) -> None:
+	def __init__ (self,
+		cfg: Optional[Configable] = None,
+		prefix: str = 'xmlrpc',
+		timeout: Optional[float] = None,
+		action_callback: Optional[Callable[[], None]] = None
+	) -> None:
 		host = ''
 		port = 8080
 		allow_none = False
 		server_class = XMLRPC.XMLRPCServer
 		if cfg is not None:
-			host = cast (str, cfg.get ('%s.host' % prefix, host))
-			port = cfg.iget ('%s.port' % prefix, port)
-			allow_none = cfg.bget ('%s.allow_none' % prefix, allow_none)
-			server = cfg.get ('%s.server' % prefix, None)
+			host = cast (str, cfg.get (f'{prefix}.host', host))
+			port = cfg.iget (f'{prefix}.port', port)
+			allow_none = cfg.bget (f'{prefix}.allow_none', allow_none)
+			server = cfg.get (f'{prefix}.server', None)
 			if server is not None:
 				if server == 'forking':
 					server_class = XMLRPC.XMLRPCServerForking
 				elif server == 'threading':
 					server_class = XMLRPC.XMLRPCServerThreading
 				else:
-					logger.warning ('Requested unknown server type %s, fallback to simple server' % server)
-		if full:
-			self.__setup_signals ()
-		self.server = server_class (port, host, timeout, allow_none)
+					logger.warning (f'Requested unknown server type {server}, fallback to simple server')
+		self.server = server_class (port, host, timeout, allow_none, action_callback)
 		self.server.register_introspection_functions ()
 		self.server.register_multicall_functions ()
+	
+	def shutdown (self) -> None:
+		Thread (target = lambda: self.server.shutdown (), daemon = True).start ()
 	
 	def add_method (self, m: Callable[..., Any], name: Optional[str] = None) -> None:
 		"""add method ``m'', use optional ``name'' as name of the method"""
@@ -292,7 +313,16 @@ server.run ()
 	
 	def run (self) -> None:
 		"""start the server"""
-		self.server.serve_forever ()
+		def handler (sig: Signals, stack: FrameType) -> None:
+			logger.info (f'signal {sig} recieved, initiating shutdown')
+			self.shutdown ()
+		with Signal (
+			term = handler,
+			int = handler,
+			hup = 'ign',
+			pipe = 'ign'
+		):
+			self.server.serve_forever (poll_interval = 1.0)
 
 class XMLRPCClient (xmlrpc.client.ServerProxy):
 	"""XML-RPC Client Framework
@@ -330,24 +360,24 @@ client.some_remote_method ()
 		allow_none = False
 		use_datetime = False
 		if cfg is not None:
-			host = cast (str, cfg.get ('%s.host' % prefix, host))
-			port = cfg.iget ('%s.port' % prefix, port)
-			secure = cfg.bget ('%s.secure' % prefix, secure)
-			path = cast (str, cfg.get ('%s.path' % prefix, path))
-			user = cfg.get ('%s.user' % prefix, user)
-			passwd = cfg.get ('%s.passwd' % prefix, passwd)
-			allow_none = cfg.bget ('%s.allow_none' % prefix, allow_none)
-			use_datetime = cfg.bget ('%s.use_datetime' % prefix, use_datetime)
+			host = cast (str, cfg.get (f'{prefix}.host', host))
+			port = cfg.iget (f'{prefix}.port', port)
+			secure = cfg.bget (f'{prefix}.secure', secure)
+			path = cast (str, cfg.get (f'{prefix}.path', path))
+			user = cfg.get (f'{prefix}.user', user)
+			passwd = cfg.get (f'{prefix}.passwd', passwd)
+			allow_none = cfg.bget (f'{prefix}.allow_none', allow_none)
+			use_datetime = cfg.bget (f'{prefix}.use_datetime', use_datetime)
 		if secure:
 			proto = 'https'
 		else:
 			proto = 'http'
 		auth = ''
 		if user and passwd:
-			auth = '%s:%s@' % (user, passwd)
+			auth = f'{user}:{passwd}@'
 		if path and not path.startswith ('/'):
-			path = '/%s' % path
-		uri = '%s://%s%s:%d%s' % (proto, auth, host, port, path)
+			path = f'/{path}'
+		uri = f'{proto}://{auth}{host}:{port}{path}'
 		super ().__init__ (uri, allow_none = allow_none, use_datetime = use_datetime)
 
 class XMLRPCCall:
@@ -396,16 +426,16 @@ with XMLRPCCall () as client:
 	) -> None:
 		prefix = 'xmlrpc-call'
 		cfg = Config ()
-		cfg['%s.host' % prefix] = server
-		cfg['%s.port' % prefix] = str (port)
-		cfg['%s.secure' % prefix] = str (secure)
+		cfg[f'{prefix}.host'] = server
+		cfg[f'{prefix}.port'] = str (port)
+		cfg[f'{prefix}.secure'] = str (secure)
 		if path:
-			cfg['%s.path' % prefix] = path
+			cfg[f'{prefix}.path'] = path
 		if user and passwd:
-			cfg['%s.user' % prefix] = user
-			cfg['%s.passwd' % prefix] = passwd
-		cfg['%s.allow_none' % prefix] = str (allow_none)
-		cfg['%s.use_datetime' % prefix] = str (use_datetime)
+			cfg[f'{prefix}.user'] = user
+			cfg[f'{prefix}.passwd'] = passwd
+		cfg[f'{prefix}.allow_none'] = str (allow_none)
+		cfg[f'{prefix}.use_datetime'] = str (use_datetime)
 		self.remote = XMLRPCClient (cfg, prefix)
 		self.timeout = timeout
 		self.otimeout: Optional[float] = None

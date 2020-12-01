@@ -22,32 +22,32 @@ if [ ! "$BASE" ] ; then
 fi
 export BASE
 #
-
 export	SYSTEM_CONFIG='{
-
-	"trigger-port": 8450,
-	"direct-path-incoming": "/home/openemm/var/spool/DIRECT",
-	"direct-path-archive": "/home/openemm/var/spool/ARCHIVE",
-	"direct-path-recover": "/home/openemm/var/spool/RECOVER",
-	"direct-path-queues": "/home/openemm/var/spool/QUEUE",
-	"licence": 0
-	,
-	"dbid": "openemm",
-	"merger-address": "127.0.0.1"
-	,
-	"filter-name": "localhost"
-	
+  "trigger-port": 8450,
+  "direct-path-incoming": "/home/openemm/var/spool/DIRECT",
+  "direct-path-archive": "/home/openemm/var/spool/ARCHIVE",
+  "direct-path-recover": "/home/openemm/var/spool/RECOVER",
+  "direct-path-queues": "/home/openemm/var/spool/QUEUE",
+  "licence": 0,
+  "dbid": "openemm",
+  "merger-address": "127.0.0.1",
+  "filter-name": "localhost",
+  "mailout-server": "localhost"
 }'
-
 export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
 verbose=1
 quiet=0
+version="20.10.000.096"
 licence="`$BASE/bin/config-query licence`"
 system="`uname -s`"
 host="`uname -n | cut -d. -f1`"
 optbase="$BASE/opt"
 softwarebase="$optbase"
+pathstrip="$BASE/bin/pathstrip"
+if [ ! -x "$pathstrip" ]; then
+	pathstrip="echo"
+fi
 # .. and for java ..
 LC_ALL=C
 NLS_LANG=american_america.UTF8
@@ -56,7 +56,7 @@ if [ ! "$JBASE" ] ; then
 	JBASE="$BASE/JAVA"
 fi
 if [ ! "$JAVAHOME" ] ; then
-	for java in "$softwarebase/java"; do
+	for java in "$softwarebase/java" "/usr/java" "/opt/java"; do
 		if [ -d $java ] ; then
 			for sdk in $java/*sdk* ; do
 				if [ -d $sdk ] ; then
@@ -86,45 +86,6 @@ if [ "$JBASE" ] && [ -d $JBASE ] ; then
 		CLASSPATH="$CLASSPATH:$cp"
 	else
 		CLASSPATH="$cp"
-	fi
-fi
-# .. and for oracle ..
-if [ ! "$ORACLE_HOME" ] || [ ! -d "$ORACLE_HOME" ]; then
-	for path in "/usr/lib/oracle/11.2/client64" \
-		    "$softwarebase/oracle/product/11.2.0/client_1" \
-		    "$softwarebase/oracle/product/10.2.0/client" \
-		    "$softwarebase/oracle/software" \
-		    "$softwarebase/oracle" \
-		    "$softwarebase/oracle-instantclient"
-	do
-		if [ -d $path ]; then
-			ORACLE_HOME=$path
-			export ORACLE_HOME
-			for lpath in . lib network/lib; do
-				if [ "$lpath" = "." ]; then
-					ldpath=$path
-				else
-					ldpath=$path/$lpath
-				fi
-				if [ -d $ldpath ] && [ ! "`echo $ldpath/*`" = "$ldpath/*" ]; then
-					if [ "$LD_LIBRARY_PATH" ] ; then
-						LD_LIBRARY_PATH="$ldpath:$LD_LIBRARY_PATH"
-					else
-						LD_LIBRARY_PATH="$ldpath"
-					fi
-				fi
-			done
-			if [ -d $path/bin ]; then
-				PATH="$path/bin:$PATH"
-			fi
-			break
-		fi
-	done
-fi
-if [ "$ORACLE_HOME" ] && [ ! "$TNS_ADMIN" ]; then
-	path="$optbase/etc/tnsnames.ora"
-	if [ -f "$path" ]; then
-		export TNS_ADMIN="`dirname $path`"
 	fi
 fi
 # .. and for others ..
@@ -327,22 +288,6 @@ call() {
 		rm $__tmp
 	fi
 	return $__rc
-}
-#
-pathstrip() {
-	if [ $# -ne 1 ] ; then
-		error "Usage: $0 <path>"
-	else
-		python -c "
-def pathstrip (s):
-	rc = []
-	for e in reversed (s.split (':')):
-		if not e in rc:
-			rc.append (e)
-	return ':'.join (reversed (rc))
-print (pathstrip (\"$1\"))
-"
-	fi
 }
 #
 setupVirtualEnviron() {
@@ -607,16 +552,13 @@ active() {
 	quiet=$__quiet
 }
 #
-
-py3required
-#
 if [ "$LD_LIBRARY_PATH" ] ; then
 	LD_LIBRARY_PATH="$BASE/lib:$LD_LIBRARY_PATH"
 else
 	LD_LIBRARY_PATH="$BASE/lib"
 fi
 export LD_LIBRARY_PATH
-LD_LIBRARY_PATH="`pathstrip \"$LD_LIBRARY_PATH\"`"
+LD_LIBRARY_PATH="`$pathstrip \"$LD_LIBRARY_PATH\"`"
 export LD_LIBRARY_PATH
 #
 if [ "$PATH" ] ; then
@@ -630,11 +572,11 @@ fi
 if [ -d "$BASE/lbin" ]; then
 	PATH="$BASE/lbin:$PATH"
 fi
-PATH="`pathstrip \"$PATH\"`"
+PATH="`$pathstrip \"$PATH\"`"
 export PATH
 #
 if [ "$CLASSPATH" ] ; then
-	CLASSPATH="`pathstrip \"$CLASSPATH\"`"
+	CLASSPATH="`$pathstrip \"$CLASSPATH\"`"
 	export CLASSPATH
 fi
 #
@@ -647,8 +589,8 @@ if [ -d "$BASE/plugins" ]; then
 	PYTHONPATH="$BASE/plugins:$PYTHONPATH"
 fi
 PYTHONPATH="$BASE/scripts:$PYTHONPATH"
-PYTHONPATH="`pathstrip \"$PYTHONPATH\"`"
+PYTHONPATH="`$pathstrip \"$PYTHONPATH\"`"
 export PYTHONPATH
 #
-LICENCE=$licence
-export LICENCE
+export VERSION="$version"
+export LICENCE="$licence"

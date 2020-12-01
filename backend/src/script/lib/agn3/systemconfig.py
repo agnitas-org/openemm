@@ -53,10 +53,12 @@ file, if it is available. """
 		self.parse ()
 	
 	def __str__ (self) -> str:
-		return '%s:\n\t%s' % (self.__class__.__name__, Stream (self.cfg.items ())
-			.switch (lambda kv: kv[1] is None, lambda kv: str (kv[0]), lambda kv: '%s=%r' % kv)
-			.sorted ()
-			.join ('\n\t')
+		return '{name}:\n\t{content}'.format (
+			name = self.__class__.__name__,
+			content = Stream (self.cfg.items ())
+				.switch (lambda kv: kv[1] is None, lambda kv: str (kv[0]), lambda kv: '{var}={val!r}'.format (var = kv[0], val = kv[1]))
+				.sorted ()
+				.join ('\n\t')
 		)
 	
 	def parse (self) -> None:
@@ -65,7 +67,7 @@ file, if it is available. """
 			try:
 				self.cfg = json.loads (self.content)
 				if type (self.cfg) != dict:
-					raise ValueError ('expect json object, not %s' % type (self.cfg))
+					raise ValueError ('expect json object, not {typ}'.format (typ = type (self.cfg)))
 			except ValueError:
 				cont = None
 				cur: Optional[List[str]] = None
@@ -185,7 +187,7 @@ file, if it is available. """
 	def dump (self) -> None:
 		"""Display current configuration content"""
 		for (var, val) in self.cfg.items ():
-			print ('%s=%s' % (var, val))
+			print (f'{var}={val}')
 
 	def sendmail (self, recipients: Union[str, List[str]]) -> List[str]:
 		"""Returns sendmail command based on configuration"""
@@ -193,8 +195,8 @@ file, if it is available. """
 		if not self.bget ('enable-sendmail-dsn', False):
 			cmd.append ('-NNEVER')
 		cmd.append ('--')
-		if type (recipients) is str:
-			cmd.append (cast (str, recipients))
+		if isinstance (recipients, str):
+			cmd.append (recipients)
 		else:
 			cmd += recipients
 		return cmd

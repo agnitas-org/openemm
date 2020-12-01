@@ -14,7 +14,6 @@ from	collections import defaultdict
 from	types import TracebackType
 from	typing import Any, Callable, Iterable, Optional, Union
 from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Tuple, Type
-from	typing import cast
 from	..config import Config
 from	..db import DB
 from	..definitions import host, fqdn, user
@@ -79,6 +78,18 @@ refreshed from the database.
 	def __reread (self, now: Union[int, float]) -> None:
 		self.company_info.clear ()
 		self.config.clear ()
+		def asnull (s: Optional[str]) -> Optional[str]:
+			if s is not None:
+				s = s.strip ()
+			return None if not s else s.lower ()
+		
+		selections = [f'{user}@{fqdn}', f'{user}@{host}', f'{user}@', fqdn, host, None]
+		def pick (collection: Dict[Optional[str], str]) -> str:
+			for selection in selections:
+				with Ignore (KeyError):
+					return collection[selection]
+			raise KeyError ()
+
 		with CompanyConfig.TempDB (self.db) as db, db.request () as cursor:
 			collect1: DefaultDict[Tuple[int, str], Dict[Optional[str], str]] = defaultdict (dict)
 			for row in cursor.query (
@@ -86,13 +97,10 @@ refreshed from the database.
 				'FROM company_info_tbl'
 			):
 				if row.cname is not None:
-					if row.hostname is None or row.hostname in (fqdn, host):
-						collect1[(row.company_id, row.cname)][row.hostname] = row.cvalue if row.cvalue is not None else ''
+					collect1[(row.company_id, row.cname)][asnull (row.hostname)] = row.cvalue if row.cvalue is not None else ''
 			for ((company_id, name), value) in collect1.items ():
-				for selection in [f'{user}@{fqdn}', f'{user}@{host}', f'{user}@', fqdn, host, None]:
-					with Ignore (KeyError):
-						self.company_info[company_id][name] = value[selection]
-						break
+				with Ignore (KeyError):
+					self.company_info[company_id][name] = pick (value)
 			#
 			collect2: DefaultDict[Tuple[str, str], Dict[Optional[str], str]] = defaultdict (dict)
 			for row in cursor.query (
@@ -100,13 +108,10 @@ refreshed from the database.
 				'FROM config_tbl'
 			):
 				if row.cls is not None and row.name is not None and row.value is not None:
-					if row.hostname is None or row.hostname in (fqdn, host):
-						collect2[(row.cls, row.name)][row.hostname] = row.value
+					collect2[(row.cls, row.name)][asnull (row.hostname)] = row.value
 			for (key, value) in collect2.items ():
-				for selection in [f'{user}@{fqdn}', f'{user}@{host}', f'{user}@', fqdn, host, None]:
-					with Ignore (KeyError):
-						self.config[key] = value[selection]
-						break
+				with Ignore (KeyError):
+					self.config[key] = pick (value)
 			self.last = now
 	
 	def __check (self, force: bool = False) -> None:
@@ -169,7 +174,7 @@ found value to convert it before returning it."""
 		self.__check ()
 		if index is not None:
 			with Ignore (KeyError):
-				return self.get_company_info ('%s[%s]' % (name, str (index)), company_id = company_id, convert = convert)
+				return self.get_company_info (f'{name}[{index}]', company_id = company_id, convert = convert)
 		#
 		if company_id is None:
 			company_id = self.company_id
@@ -215,7 +220,7 @@ is stored in the section with the company_id as its name."""
 			key = '.'.join ([_k for _k in skey if _k])
 			if key:
 				if section_config is not None:
-					ckey = '%s.%s' % (section_config, key)
+					ckey = f'{section_config}.{key}'
 				else:
 					ckey = key
 				rc[ckey] = ', '.join ([_v if _v is not None else '' for _v in value])
@@ -228,12 +233,11 @@ is stored in the section with the company_id as its name."""
 				rc.pop ()
 		return rc
 
-	def write_config (self, class_name: str, name: str, value: str, hostname: Optional[str] = None) -> bool:
+	def write_config (self, class_name: str, name: str, value: str, description: str, hostname: Optional[str] = None) -> bool:
 		with CompanyConfig.TempDB (self.db) as db, db.request () as cursor:
 			data = {
 				'class': class_name,
-				'name': name,
-				'value': value
+				'name': name
 			}
 			if hostname is not None:
 				data['hostname'] = hostname
@@ -243,30 +247,37 @@ is stored in the section with the company_id as its name."""
 				hostname_clause = 'hostname IS NULL'
 				hostname_value = 'NULL'
 			rq = cursor.querys (
-				'SELECT count(*) '
+				'SELECT value '
 				'FROM config_tbl '
-				f'WHERE class = :class AND name = :name AND value = :value AND {hostname_clause}',
-				data
-			)
-			if (rq is not None and rq[0] == 1) or cursor.update (
-				'UPDATE config_tbl '
-				'SET value = :value '
 				f'WHERE class = :class AND name = :name AND {hostname_clause}',
 				data
-			) == 1 or cursor.update (
-				'INSERT INTO config_tbl '
-				'       (class, name, value, hostname) '
-				'VALUES '
-				f'       (:class, :name, :value, {hostname_value})',
-				data
-			) == 1:
-				db.sync ()
-				self.last = None
-				return True
+			)
+			data['value'] = value
+			if rq is not None:
+				if rq.value != value and cursor.update (
+					'UPDATE config_tbl '
+					'SET value = :value, change_date = current_timestamp '
+					f'WHERE class = :class AND name = :name AND {hostname_clause}',
+					data
+				) != 1:
+					return False
+			else:
+				data['description'] = description
+				if cursor.update (
+					'INSERT INTO config_tbl '
+					'       (class, name, value, description, hostname, creation_date, change_date) '
+					'VALUES '
+					f'       (:class, :name, :value, :description, {hostname_value}, current_timestamp, current_timestamp)',
+					data
+				) != 1:
+					return False
+			db.sync ()
+			self.last = None
+			return True
 		return False
 			
-	def update_config (self, class_name: str, name: str, values: Union[str, List[str]], hostname: Optional[str] = None) -> bool:
-		use_values: List[str] = cast (List[str], [values] if type (values) is str else values)
+	def update_config (self, class_name: str, name: str, values: Union[str, List[str]], description: str, hostname: Optional[str] = None) -> bool:
+		use_values: List[str] = [values] if isinstance (values, str) else values
 		new_values = use_values
 		with CompanyConfig.TempDB (self.db) as db, db.request () as cursor:
 			data = {
@@ -293,5 +304,55 @@ is stored in the section with the company_id as its name."""
 						new_values.append (value)
 				if old_values == new_values:
 					return True
-		return self.write_config (class_name, name, listjoin (new_values), hostname)
+		return self.write_config (class_name, name, listjoin (new_values), description, hostname)
 	
+	def write_company_info (self,
+		company_id: int,
+		name: str,
+		value: str,
+		*,
+		index: Optional[str] = None,
+		description: Optional[str] = None,
+		hostname: Optional[str] = None
+	) -> bool:
+		with CompanyConfig.TempDB (self.db) as db, db.request () as cursor:
+			data = {
+				'company_id': company_id,
+				'cname': f'{name}[{index}]' if index is not None else name
+			}
+			if hostname is not None:
+				data['hostname'] = hostname
+				hostname_clause = 'hostname = :hostname'
+				hostname_value = ':hostname'
+			else:
+				hostname_clause = 'hostname IS NULL'
+				hostname_value = 'NULL'
+			rq = cursor.querys (
+				'SELECT cvalue '
+				'FROM company_info_tbl '
+				f'WHERE company_id = :company_id AND cname = :cname AND {hostname_clause}',
+				data
+			)
+			data['cvalue'] = value
+			data['description'] = description
+			if description is not None:
+				description_assignment = ', description = :description'
+			else:
+				description_assignment = ''
+			if (rq is not None and (rq.cvalue == value or cursor.update (
+				'UPDATE company_info_tbl '
+				f'SET cvalue = :cvalue, timestamp = current_timestamp{description_assignment} '
+				f'WHERE company_id = :company_id AND cname = :cname AND {hostname_clause}',
+				data,
+				cleanup = True
+			) == 1)) or cursor.update (
+				'INSERT INTO company_info_tbl '
+				'       (company_id, cname, cvalue, description, creation_date, timestamp, hostname) '
+				'VALUES '
+				f'       (:company_id, :cname, :cvalue, :description, current_timestamp, current_timestamp, {hostname_value})',
+				data
+			) == 1:
+				db.sync ()
+				self.last = None
+				return True
+		return False

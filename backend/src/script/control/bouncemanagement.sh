@@ -14,3 +14,8 @@
 active bouncemanagement
 #
 $HOME/bin/softbounce.sh "$@"
+for command in $HOME/bin/ahv.sh $HOME/bin/ahv-report.sh; do
+	if [ -x "$command" ]; then
+		"$command" "$@"
+	fi
+done

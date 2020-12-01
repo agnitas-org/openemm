@@ -40,7 +40,7 @@ used MTA."""
 				pp = subprocess.Popen ([cmd], stdout = subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE, text = True, errors = 'backslashreplace')
 				(out, err) = pp.communicate ()
 				if pp.returncode != 0:
-					logger.warning ('Command %s returnd %d' % (cmd, pp.returncode))
+					logger.warning (f'Command {cmd} returnd {pp.returncode}')
 				if out:
 					for line in (_l.strip () for _l in out.split ('\n')):
 						if line:
@@ -48,7 +48,7 @@ used MTA."""
 								(var, val) = [_v.strip () for _v in line.split ('=', 1)]
 								self.conf[var] = val
 							except ValueError:
-								logger.exception ('Unparsable line: "%s"' % line)
+								logger.exception (f'Unparsable line: "{line}"')
 			else:
 				logger.warning ('No command to determinate configuration found')
 
@@ -62,11 +62,11 @@ used MTA."""
 		if cmd is not None:
 			n = call ([cmd, filename])
 			if n == 0:
-				logger.info ('%s written using %s' % (filename, cmd))
+				logger.info (f'{filename} written using {cmd}')
 			else:
-				logger.error ('%s not written using %s: %d' % (filename, cmd, n))
+				logger.error (f'{filename} not written using {cmd}: {n}')
 		else:
-			logger.error ('%s not written due to missing postmap command' % filename)
+			logger.error (f'{filename} not written due to missing postmap command')
 
 	def __getitem__ (self, key: str) -> str:
 		return self.conf[key]
@@ -81,50 +81,49 @@ used MTA."""
 kwargs may contain other parameter required or optional used by specific
 instances of mail creation"""
 		generate = [
-			'account-logfile=%s/log/account.log' % base,
-			'bounce-logfile=%s/log/extbounce.log' % base,
-			'mailtrack-logfile=%s/log/mailtrack.log' % base
+			f'account-logfile={base}/log/account.log',
+			f'bounce-logfile={base}/log/extbounce.log',
+			f'mailtrack-logfile={base}/log/mailtrack.log'
 		]
 		if self.mta == 'postfix':
 			generate += [
-				'messageid-logfile=%s/log/messageid.log' % base
+				f'messageid-logfile={base}/log/messageid.log'
 			]
 		generate += [
-			'media=email',
-			'log-mfrom=%s/var/run/envelope.db' % base
+			'media=email'
 		]
 		if self.mta == 'postfix':
 			generate += [
-				'inject=/usr/sbin/sendmail %s -f %%(sender) -- %%(recipient)' % self.dsnopt
+				f'inject=/usr/sbin/sendmail {self.dsnopt} -f %(sender) -- %(recipient)'
 			]
 		else:
 			generate += [
-				'path=%s' % kwargs['target_directory']
+				'path={target}'.format (target = kwargs['target_directory'])
 			]
 			#
 			fqu = os.path.join (base, 'bin', 'fqu.sh')
 			if os.access (fqu, os.X_OK):
 				generate += [
-					'queue-flush=%s' % kwargs.get ('flush_count', '2'),
-					'queue-flush-command=%s/bin/fqu.sh' % base,
+					'queue-flush={count}'.format (count = kwargs.get ('flush_count', '2')),
+					f'queue-flush-command={base}/bin/fqu.sh'
 				]
 		cmd = [
 			self.xmlback,
 			'-l',
-			'-o', 'generate:%s' % ';'.join (generate),
+			'-o', 'generate:{generate}'.format (generate = ';'.join (generate)),
 			'-L', 'info',
 			path
 		]
-		logger.debug ('%s starting' % ' '.join (cmd))
+		logger.debug (f'{cmd} starting')
 		pp = subprocess.Popen (cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, errors = 'backslashreplace')
 		(out, err) = pp.communicate (None)
 		n = pp.returncode
-		logger.debug ('%s returns %d' % (' '.join (cmd), n))
+		logger.debug (f'{cmd} returns {n}')
 		if n != 0:
-			logger.error ('Failed to unpack %s (%d)' % (path, n))
+			logger.error (f'Failed to unpack {path} ({n})')
 			for (name, content) in [('Output', out), ('Error', err)]:
 				if content:
-					logger.error ('%s:\n%s' % (name, content))
+					logger.error (f'{name}:\n{content}')
 			return False
-		logger.info ('Unpacked %s' % path)
+		logger.info (f'Unpacked {path}')
 		return True

@@ -62,12 +62,12 @@ be used to subclass this class and implmenet some custom cleanup jobs."""
 			try:
 				rc = call (cmd)
 				if rc != 0:
-					logger.error ('Command %r returns %s' % (cmd, rc))
+					logger.error (f'Command {cmd!r} returns {rc}')
 			except OSError as e:
-				logger.error ('Failed to execute %r: %s' % (cmd, e))
+				logger.error (f'Failed to execute {cmd!r}: {e}')
 				rc = -1
 		else:
-			self.show ('CALL: %s' % ' '.join (cmd))
+			self.show (f'CALL: {cmd}')
 			rc = 0
 		return rc == 0
 
@@ -87,10 +87,10 @@ be used as the directory to resolve relative pathnames"""
 		cmd = ['tar']
 		if working_directory is not None:
 			if not os.path.isdir (working_directory):
-				logger.error ('%s: working directory missing/not a directory for %s' % (working_directory, destination))
+				logger.error (f'{working_directory}: working directory missing/not a directory for {destination}')
 				return False
 			cmd += ['-C', working_directory]
-		cmd += ['-c%sf' % cflag, destination] + sources
+		cmd += [f'-c{cflag}f', destination] + sources
 		return self.call (cmd)
 
 	def compress (self, paths: List[str], method: str = 'gzip') -> bool:
@@ -115,10 +115,10 @@ be used as the directory to resolve relative pathnames"""
 			if self.doit:
 				os.rename (src, dst)
 			else:
-				self.show ('MOVE: %s to %s' % (src, dst))
+				self.show (f'MOVE: {src} to {dst}')
 			rc = True
 		except OSError as e:
-			logger.error ('Failed to move %s to %s: %s' % (src, dst, e))
+			logger.error (f'Failed to move {src} to {dst}: {e}')
 			rc = False
 		return rc
 
@@ -131,15 +131,15 @@ be used as the directory to resolve relative pathnames"""
 				if self.doit:
 					os.rmdir (path)
 				else:
-					self.show ('RMDIR: %s' % path)
+					self.show (f'RMDIR: {path}')
 			else:
 				if self.doit:
 					os.unlink (path)
 				else:
-					self.show ('REMOVE: %s' % path)
+					self.show (f'REMOVE: {path}')
 			rc = True
 		except OSError as e:
-			logger.error ('Failed to remove %s: %s' % (path, e))
+			logger.error (f'Failed to remove {path}: {e}')
 			rc = False
 		return rc
 	
@@ -149,24 +149,24 @@ be used as the directory to resolve relative pathnames"""
 		target = None
 		while source >= 0:
 			if source > 0:
-				fnameSource = '%s.%d' % (path, source)
+				fname_source = f'{path}.{source}'
 				if compress:
-					fnameSource += '.gz'
+					fname_source += '.gz'
 			else:
-				fnameSource = path
-			if os.path.isfile (fnameSource):
+				fname_source = path
+			if os.path.isfile (fname_source):
 				if target is None:
-					logger.info ('Removing old %s' % fnameSource)
-					self.remove (fnameSource)
+					logger.info (f'Removing old {fname_source}')
+					self.remove (fname_source)
 				else:
-					fnameTarget = '%s.%d' % (path, target)
+					fname_target = f'{path}.{target}'
 					if source > 0 and compress:
-						fnameTarget += '.gz'
-					logger.info ('Rename %s to %s' % (fnameSource, fnameTarget))
-					self.move (fnameSource, fnameTarget)
+						fname_target += '.gz'
+					logger.info (f'Rename {fname_source} to {fname_target}')
+					self.move (fname_source, fname_target)
 					if source == 0 and compress:
-						logger.info ('Compress %s' % fnameTarget)
-						self.compress (fnameTarget)
+						logger.info (f'Compress {fname_target}')
+						self.compress (fname_target)
 			target = source
 			source -= 1
 
@@ -196,12 +196,12 @@ be used as the directory to resolve relative pathnames"""
 				if os.path.isdir (path) or os.path.isfile (path):
 					required_size += self.__count_size (seen, path)
 			if required_size * multiply < free_size:
-				rc = (True, 'Currently %s available, %s required' % (sizefmt (free_size), sizefmt (required_size)))
+				rc = (True, 'Currently {free} available, {req} required'.format (free = sizefmt (free_size), req = sizefmt (required_size)))
 			else:
-				rc = (False, 'Not enough space available, %s available, %s required' % (sizefmt (free_size), sizefmt (required_size)))
+				rc = (False, 'Not enough space available, {free} available, {req} required'.format (free = sizefmt (free_size), req = sizefmt (required_size)))
 		except OSError as e:
-			logger.error ('Failed to stat %s for %r: %s' % (filesystem, files, e))
-			rc = (False, 'Failed to count required size on %s due to %s' % (filesystem, str (e)))
+			logger.error (f'Failed to stat {filesystem} for {files!r}: {e}')
+			rc = (False, f'Failed to count required size on {filesystem} due to {e}')
 		return rc
 	
 	def free (self, filesystem: str, files: List[str], multiply: float = 2.0) -> bool:
@@ -238,7 +238,7 @@ be used as the directory to resolve relative pathnames"""
 						selected[n] += sselected[n]
 					n += 1
 		except OSError as e:
-			logger.warning ('Directory "%s" not scanable: %s' % (path, e))
+			logger.warning (f'Directory "{path}" not scanable: {e}')
 		return selected
 
 	def cleanup_timestamp_files (self,
@@ -272,12 +272,12 @@ days and remove older files than ``remove_after_days''"""
 							if found:
 								break
 		except OSError as e:
-			logger.error ('Failed to access log directory "%s": %s' % (path, e))
+			logger.error (f'Failed to access log directory "{path}": {e}')
 		report = []
 		if compress_after_days is not None:
-			report.append ('Found %d files to compress' % len (to_compress))
+			report.append ('Found {count} files to compress'.format (count = len (to_compress)))
 		if remove_after_days is not None:
-			report.append ('Found %d files to remove' % len (to_remove))
+			report.append ('Found {count} files to remove'.format (count = len (to_remove)))
 		if report:
 			logger.info (', '.join (report))
 		for fname in to_remove:
@@ -293,9 +293,9 @@ to a valid value for pack() to use compression for packed files."""
 		to_pack: List[str] = []
 		to_remove: List[str] = []
 		if compress is not None:
-			tarExt = '.tar.%s' % compress
+			tar_extension = f'.tar.{compress}'
 		else:
-			tarExt = '.tar'
+			tar_extension = '.tar'
 		for fname in os.listdir (path):
 			cpath = os.path.join (path, fname)
 			if isnum (fname) and os.path.isdir (cpath):
@@ -304,22 +304,22 @@ to a valid value for pack() to use compression for packed files."""
 					to_remove.append (cpath)
 				elif pack_after_days is not None and ts + pack_after_days < self.today:
 					to_pack.append (cpath)
-			elif fname.endswith (tarExt) and os.path.isfile (cpath):
-				ts = self.mktimestamp (fname[:-len (tarExt)])
+			elif fname.endswith (tar_extension) and os.path.isfile (cpath):
+				ts = self.mktimestamp (fname[:-len (tar_extension)])
 				if remove_after_days is not None and ts + remove_after_days < self.today:
 					to_remove.append (cpath)
 		for cpath in to_remove:
-			logger.debug ('Removing "%s"' % cpath)
+			logger.debug (f'Removing "{cpath}"')
 			self.remove (cpath)
 		for cpath in to_pack:
 			if self.free (os.path.dirname (cpath), [cpath]):
-				logger.debug ('Packing "%s"' % cpath)
-				tar = '%s%s' % (cpath, tarExt)
+				logger.debug (f'Packing "{cpath}"')
+				tar = f'{cpath}{tar_extension}'
 				if self.pack (tar, [os.path.basename (cpath)], working_directory = os.path.dirname (cpath)):
-					logger.debug ('Removing "%s"' % cpath)
+					logger.debug (f'Removing "{cpath}"')
 					self.remove (cpath)
 			else:
-				logger.warning ('Skip %s, not enough free disk space available' % cpath)
+				logger.warning (f'Skip {cpath}, not enough free disk space available')
 	
 	def __cleanup_filetime_files (self, path: str, rules: List[Janitor.Rule], recrusive: bool) -> None:
 		to_remove = []
@@ -336,10 +336,10 @@ to a valid value for pack() to use compression for packed files."""
 						if st.st_ctime + rule.offset * 24 * 60 * 60 < self.timestamp:
 							to_remove.append (cpath)
 		for cpath in to_remove:
-			logger.debug ('Removing "%s"' % cpath)
+			logger.debug (f'Removing "{cpath}"')
 			self.remove (cpath)
 		for cpath in descend:
-			logger.debug ('Descending to "%s"' % cpath)
+			logger.debug (f'Descending to "{cpath}"')
 			self.__cleanup_filetime_files (cpath, rules, recrusive)
 
 	def cleanup_filetime_files (self, path: str, rules: List[Janitor.Rule], recrusive: bool = False) -> None:

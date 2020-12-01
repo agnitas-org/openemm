@@ -53,7 +53,10 @@ with Ignore (ImportError):
 
 		def repr_last_error (self) -> str:
 			if self.lasterr is not None:
-				return 'MySQL-%d: %s' % (self.lasterr.args[0], self.lasterr.args[1].strip ())
+				return 'MySQL-{nr}: {msg}'.format (
+					nr = self.lasterr.args[0],
+					msg = self.lasterr.args[1].strip ()
+				)
 			return super ().repr_last_error ()
 
 		def connect (self) -> None:

@@ -24,8 +24,14 @@ reads and stores configuration from a configuration file"""
 	def __init__ (self, path: Optional[str] = None) -> None:
 		self.path = path if path is not None else self.default_config_path
 		self.data: Dict[str, DBConfig.DBRecord] = {}
-		self.default_id = syscfg.get_str ('dbid', 'emm')
 		self.read ()
+		dbid = syscfg.get ('dbid')
+		if dbid is not None:
+			self.default_id = dbid
+		elif len (self.data) == 1:
+			self.default_id = list (self.data.keys ())[0]
+		else:
+			self.default_id = 'emm'
 
 	class DBRecord:
 		"""A Record for one database configuration line"""
@@ -69,19 +75,19 @@ reads and stores configuration from a configuration file"""
 		if not os.path.isfile (self.path):
 			dbcfg = syscfg.get ('dbcfg')
 			if dbcfg is not None:
-				self.data[self.default_id] = DBConfig.DBRecord (self.default_id, dbcfg)
+				self.data[syscfg.get_str ('dbid', 'emm')] = DBConfig.DBRecord (self.default_id, dbcfg)
 				return
 		#
-		fd = open (self.path, 'r')
-		for line in fd:
-			line = line.strip ()
-			if not line or line.startswith ('#'):
-				continue
-			mtch = self.parseLine.match (line)
-			if mtch is None:
-				continue
-			(id, param) = mtch.groups ()
-			self.data[id] = DBConfig.DBRecord (id, param)
+		with open (self.path, 'r') as fd:
+			for line in fd:
+				line = line.strip ()
+				if not line or line.startswith ('#'):
+					continue
+				mtch = self.parseLine.match (line)
+				if mtch is None:
+					continue
+				(id, param) = mtch.groups ()
+				self.data[id] = DBConfig.DBRecord (id, param)
 
 	def __getitem__ (self, id: Optional[str]) -> DBConfig.DBRecord:
 		return self.data[id if id is not None else self.default_id]

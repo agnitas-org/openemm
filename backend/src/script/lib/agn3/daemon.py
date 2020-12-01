@@ -10,29 +10,26 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, stat, errno, signal, queue, select, fcntl
+import	os, stat, errno, signal, fcntl
 import	time, pickle, mmap, subprocess
 import	platform, multiprocessing, logging
 from	abc import abstractmethod
 from	collections import deque
-from	dataclasses import dataclass
-from	queue import Queue
+from	dataclasses import dataclass, field
+from	enum import Enum
 from	signal import Signals, Handlers
 from	types import FrameType, TracebackType
-from	typing import Any, Callable, NoReturn, Optional, Union
+from	typing import Any, Callable, NoReturn, Optional, Sequence, Union
 from	typing import Deque, Dict, List, Set, Tuple, Type
 from	typing import cast
-from	.config import Config
-from	.definitions import base, host
-from	.exceptions import error
+from	.definitions import base
+from	.exceptions import error, Timeout
 from	.ignore import Ignore
 from	.log import log
 from	.parser import Unit
-from	.process import Parallel
-from	.rpc import XMLRPC
 from	.stream import Stream
 #
-__all__ = ['Signal', 'Daemonic', 'Watchdog', 'EWatchdog', 'Daemon', 'Worker']
+__all__ = ['Signal', 'Timer', 'Daemonic', 'Watchdog', 'EWatchdog', 'Daemon']
 #
 logger = logging.getLogger (__name__)
 #
@@ -48,8 +45,8 @@ class Signal:
 		.dict ()
 	)
 	def __init__ (self,
-		*args: Union[Signals, Handler],
-		**kwargs: Handler
+		*args: Union[Signals, Handler, str],
+		**kwargs: Union[Handler, str]
 	) -> None:
 		self.saved: Dict[Signals, Handler] = {}
 		if len (args) % 2 == 1:
@@ -60,8 +57,8 @@ class Signal:
 				signr = cast (Union[Signals, str], siglist.pop (0))
 				handler = siglist.pop (0)
 				self[signr] = handler
-		for (signame, handler) in kwargs.items ():
-			self[signame] = handler
+		for (signame, handler_name) in kwargs.items ():
+			self[signame] = handler_name
 	
 	def __enter__ (self) -> Signal:
 		return self
@@ -98,29 +95,56 @@ class Signal:
 		self.saved.clear ()
 
 	def find_signal (self, sig: Union[Signals, str]) -> Signals:
-		if type (sig) is not str:
-			return cast (Signals, sig)
-		signame = cast (str, sig)
-		try:
-			return Signal.known_signals[signame.upper ()]
-		except KeyError:
+		if isinstance (sig, str):
+			signame = sig.upper ()
 			try:
-				return Signal.known_signals['SIG{name}'.format (name = signame.upper ())]
+				return Signal.known_signals[signame]
 			except KeyError:
-				raise KeyError (signame)
+				try:
+					return Signal.known_signals['SIG{name}'.format (name = signame)]
+				except KeyError:
+					raise KeyError (sig)
+		else:
+			return sig
 	
 	def find_handler (self, handler: Union[Handler, str]) -> Handler:
-		if type (handler) is not str:
-			return cast (Handler, handler)
-		handlername = cast (str, handler)
-		try:
-			return Signal.known_handlers[handlername.upper ()]
-		except KeyError:
+		if isinstance (handler, str):
+			handlername = handler.upper ()
 			try:
-				return Signal.known_handlers['SIG_{name}'.format (name = handlername.upper ())]
+				return Signal.known_handlers[handlername]
 			except KeyError:
-				raise KeyError (handlername)
-			
+				try:
+					return Signal.known_handlers['SIG_{name}'.format (name = handlername)]
+				except KeyError:
+					raise KeyError (handler)
+		else:
+			return handler
+
+class Timer:
+	__slots__ = ['timeout', 'start']
+	def __init__ (self, timeout: Union[None, int, float]) -> None:
+		self.timeout = timeout if timeout is None else float (timeout) 
+		self.start: Optional[float] = None
+		
+	def __enter__ (self) -> Timer:
+		self.start = time.time ()
+		return self
+
+	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+		return None
+	
+	def __call__ (self, delay: Optional[float] = None) -> Optional[float]:
+		if self.start is not None:
+			if delay is not None and delay > 0.0:
+				time.sleep (delay)
+			if self.timeout is not None:
+				remain = self.timeout - (time.time () - self.start)
+				if remain < 0.0:
+					raise Timeout ()
+				return remain
+			return None
+		raise error ('timer not started')
+		
 class Daemonic:
 	"""Base class for daemon processes
 
@@ -136,13 +160,13 @@ should be subclassed and extended for the process to implement."""
 	@classmethod
 	def call (cls, method: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
 		"""Call a method in a subprocess, return process status"""
-		def wrapper (queue: Queue[Any], method: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+		def wrapper (queue: multiprocessing.Queue[Any], method: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
 			try:
 				rc = method (*args, **kwargs)
 			except BaseException as e:
 				rc = e
 			queue.put (rc)
-		queue: Queue[Any] = multiprocessing.Queue ()
+		queue: multiprocessing.Queue[Any] = multiprocessing.Queue ()
 		d = cls ()
 		p = d.join (join_pid = d.spawn (wrapper, queue, method, *args, **kwargs))
 		if p.error is not None:
@@ -170,7 +194,7 @@ should be subclassed and extended for the process to implement."""
 		"""Standard signal handler for graceful termination"""
 		self.running = False
 	
-	def setup_handler (self, master: bool) -> None:
+	def setup_handler (self, master: bool = False) -> None:
 		"""Setup signal handler, ``master'' should be True, if signal handling is not handled elsewhere, too"""
 		self.setsignal (signal.SIGTERM, self.signal_handler)
 		if master:
@@ -207,7 +231,7 @@ should be subclassed and extended for the process to implement."""
 					os.close (nfd)
 					cfd = fcntl.fcntl (fd, fcntl.F_DUPFD)
 					if cfd != nfd:
-						logger.error ('Expect new fd #%d, but got #%d' % (nfd, cfd))
+						logger.error (f'Expect new fd #{nfd}, but got #{cfd}')
 				os.close (fd)
 
 	def spawn (self, method: Callable[..., Any], *args: Any, **kwargs: Any) -> int:
@@ -226,7 +250,7 @@ should be subclassed and extended for the process to implement."""
 				elif type (ec) is not int:
 					ec = 0
 			except Exception as e:
-				logger.exception ('Failed to call %s: %s' % (method, e))
+				logger.exception (f'Failed to call {method}: {e}')
 				raise
 			finally:
 				os._exit (ec)
@@ -244,43 +268,204 @@ should be subclassed and extended for the process to implement."""
 
 	@dataclass
 	class Status:
-		pid: Optional[int] = None
+		pid: int = 0
 		status: Optional[int] = None
 		exitcode: Optional[int] = None
 		signal: Optional[int] = None
 		nochild: bool = False
-		killed: bool = False
-		error: Optional[Exception] = None
-	def join (self, join_pid: int = -1, block: bool = True) -> Daemonic.Status:
-		"""Waits for ``join_pid'' (if -1, then for any child process), ``block'' is True to wait for a child process to terminate"""
-		if block:
-			flags = 0
-		else:
-			flags = os.WNOHANG
-		rc = Daemonic.Status ()
-		try:
-			(pid, status) = os.waitpid (join_pid, flags)
-			rc.pid = pid
-			rc.status = status
-			if os.WIFEXITED (status):
-				rc.exitcode = os.WEXITSTATUS (status)
-			elif os.WIFSIGNALED (status):
-				rc.signal = os.WTERMSIG (status)
-		except OSError as e:
-			rc.error = e
-			rc.nochild = (rc.error.args[0] == errno.ECHILD)
+		error: Optional[OSError] = None
+	def join (self, join_pid: int = -1, timeout: Union[None, int, float] = None) -> Daemonic.Status:
+		"""Waits for ``join_pid'' (if -1, then for any child
+process), ``timeout'' is the time in seconds to max. wait. If this is
+``None'', no timeout is used."""
+		def waitfor (flags: int = 0) -> Daemonic.Status:
+			rc = Daemonic.Status ()
+			try:
+				(rc.pid, rc.status) = os.waitpid (join_pid, flags)
+				if rc.pid > 0:
+					if os.WIFEXITED (rc.status):
+						rc.exitcode = os.WEXITSTATUS (rc.status)
+					elif os.WIFSIGNALED (rc.status):
+						rc.signal = os.WTERMSIG (rc.status)
+			except OSError as e:
+				rc.error = e
+				rc.nochild = (e.errno == errno.ECHILD)
+			return rc
+		#
+		if timeout is None:
+			return waitfor ()
+		#
+		rc = waitfor (os.WNOHANG)
+		if timeout > 0.0:
+			with Ignore (Timeout), Timer (timeout) as timer:
+				while not rc.pid and rc.error is None:
+					timer (0.1)
+					rc = waitfor (os.WNOHANG)
 		return rc
 
-	def term (self, pid: int, provided_sig: Optional[Signals] = None) -> Daemonic.Status:
+	def term (self, pid: int, sig: Optional[Signals] = None) -> bool:
 		"""Terminates a child process ``pid'' with signal ``sig'' (if None, SIGTERM is used)"""
-		sig = provided_sig if provided_sig is not None else signal.SIGTERM
-		rc = Daemonic.Status ()
 		try:
-			os.kill (pid, sig)
-			rc.killed = True
+			os.kill (pid, sig if sig is not None else signal.SIGTERM)
+			return True
 		except OSError as e:
-			rc.error = e
-		return rc
+			return e.errno != errno.ESRCH
+
+	class State (Enum):
+		new = 0
+		scheduled = 1
+		running = 2
+		dying = 3
+		terminated = 4
+		canceled = 5
+	@dataclass
+	class Member:
+		method: Callable[..., Any]
+		args: Sequence[Any]
+		kwargs: Dict[str, Any]
+		context: Any = None
+		channel: multiprocessing.SimpleQueue[Any] = field (default_factory = lambda: multiprocessing.SimpleQueue ())
+		value: Any = None
+		state: Daemonic.State = field (default_factory = lambda: Daemonic.State.new)
+		status: Optional[Daemonic.Status] = None
+		def __getattr__ (self, attribute: str) -> Any:
+			if self.context is not None:
+				return getattr (self.context, attribute)
+			raise AttributeError (attribute)
+	@dataclass
+	class Group:
+		daemon: Daemonic
+		limit: Optional[int] = None
+		scheduled: Deque[Daemonic.Member] = field (default_factory = deque)
+		active: Dict[int, Daemonic.Member] = field (default_factory = dict)
+		status: List[Daemonic.Member] = field (default_factory = list)
+		def __enter__ (self) -> Daemonic.Group:
+			return self
+
+		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+			self.run ()
+			return None
+	
+		def add (self, member: Daemonic.Member) -> Daemonic.Member:
+			member.state = Daemonic.State.scheduled
+			self.scheduled.append (member)
+			return member
+		
+		def remove (self, member: Daemonic.Member) -> Daemonic.Member:
+			with Ignore (ValueError):
+				while True:
+					self.scheduled.remove (member)
+			for pid in Stream (self.active.items ()).filter (lambda kv: kv[1] is member).list ():
+				del self.active[pid]
+			with Ignore (ValueError):
+				while True:
+					self.status.remove (member)
+			return member
+		
+		def start (self) -> int:
+			def starter (member: Daemonic.Member) -> None:
+				member.state = Daemonic.State.running
+				try:
+					rc = member.method (*member.args, **member.kwargs)
+				except Exception as e:
+					logger.exception (f'{member}: failed due to: {e}')
+					rc = e
+				member.channel.put (rc)
+				member.state = Daemonic.State.dying
+			#
+			counter = 0
+			while self.scheduled and (self.limit is None or self.limit > len (self.active)):
+				member = self.scheduled.popleft ()
+				pid = self.daemon.spawn (starter, member)
+				if pid > 0:
+					member.state = Daemonic.State.running
+					self.active[pid] = member
+					self.status.append (member)
+					counter += 1
+				else:
+					self.scheduled.appendleft (member)
+					break
+			return counter
+		
+		def stop (self, member: Daemonic.Member, hard: bool = False) -> Daemonic.Member:
+			if member.state == Daemonic.State.scheduled:
+				with Ignore (ValueError):
+					while True:
+						self.scheduled.remove (member)
+			elif member.state == Daemonic.State.running:
+				with Ignore (ValueError):
+					pid = Stream (self.active.items ()).filter (lambda kv:kv[1] is member).map (lambda kv: kv[0]).first ()
+					if pid > 0:
+						member.state = Daemonic.State.dying
+						self.daemon.term (pid, signal.SIGTERM if not hard else signal.SIGKILL)
+			return member
+
+		def wait (self, timeout: Union[None, int, float] = None) -> int:
+			counter = 0
+			with Ignore (Timeout), Timer (timeout) as timer:
+				while self.scheduled or self.active:
+					self.start ()
+					status = self.daemon.join (timeout = timer ())
+					if status is not None:
+						if status.pid:
+							with Ignore (KeyError):
+								member = self.active.pop (status.pid)
+								if not member.channel.empty ():
+									member.value = member.channel.get ()
+								member.state = Daemonic.State.terminated
+								member.status = status
+								counter += 1
+						elif status.error:
+							break
+			return counter
+
+		def cancel (self) -> None:
+			while self.scheduled:
+				member = self.scheduled.popleft ()
+				member.state = Daemonic.State.canceled
+				self.status.append (member)
+			
+		def term (self, hard_kill_delay: Union[None, int, float] = None) -> None:
+			self.cancel ()
+			signr = signal.SIGTERM if hard_kill_delay and hard_kill_delay > 0.0 else signal.SIGKILL
+			while self.active:
+				for (pid, member) in list (self.active.items ()):
+					member.state = Daemonic.State.dying
+					if not self.daemon.term (pid, signr):
+						logger.warning (f'{pid}: failed to kill no (more) existing process')
+						del self.active[pid]
+				self.wait (hard_kill_delay)
+				signr = signal.SIGKILL
+				hard_kill_delay = None
+
+		def run (self, timeout: Union[None, int, float] = None, hard_kill_delay: Union[None, int, float] = None) -> List[Daemonic.Member]:
+			try:
+				with Timer (timeout) as timer:
+					while self.daemon.running and (self.scheduled or self.active):
+						if self.scheduled:
+							self.start ()
+						if self.active:
+							self.wait (0.1 if self.scheduled else timer ())
+			except Timeout:
+				self.term (hard_kill_delay)
+			return self.status
+
+	def member (self, method: Callable[..., Any], *args: Any, **kwargs: Any) -> Daemonic.Member:
+		"""Create a simple group member to be fed to the
+method ``group'' or an instance of ``Daemonic.Group'' with the method
+``add''"""
+		return Daemonic.Member (method, args, kwargs)
+	
+	def group (self, limit: Optional[int] = None, *members: Daemonic.Member) -> Daemonic.Group:
+		"""Create a process group, i.e. a controller for
+several in parallel executing subprocesses. Optional the parameter
+``limit'' definies the maximum number of parallel started
+subprocesses. Every further positonal argument must be an instance of
+``Daemonic.Member'' and will be added as part of the process group. It
+is possible to add later more processes using the ``add'' method."""
+		group = Daemonic.Group (self, limit = limit)
+		Stream (members).each (lambda m: group.add (m))
+		return group
 
 class Watchdog (Daemonic):
 	"""Watchdog framework
@@ -339,6 +524,10 @@ undefined condition."""
 			self.hb: Optional[Watchdog.Heart.Beat] = None
 			self.killed_by_heartbeat = False
 		
+		def __str__ (self) -> str:
+			return f'Job ({self.name!r}) with PID {self.pid!r}'
+		__repr__ = __str__
+		
 		def __call__ (self) -> int:
 			"""Entry point for Watchdog to start this job"""
 			try:
@@ -346,12 +535,12 @@ undefined condition."""
 					try:
 						self.watchdog.redirect (Daemonic.devnull, self.output)
 					except Exception as e:
-						logger.error ('Failed to establish redirection: %s' % e)
+						logger.error (f'Failed to establish redirection: {e}')
 				rc = self.method (*self.args)
-			except self.Restart:
+			except Watchdog.Job.Restart:
 				return Watchdog.EC_RESTART_REQUEST
 			except Exception as e:
-				logger.exception ('Execution failed: %s' % e)
+				logger.exception (f'Execution failed: {e}')
 				return Watchdog.EC_RESTART_FAILURE
 			return Watchdog.EC_EXIT if rc else Watchdog.EC_STOP
 		
@@ -369,7 +558,7 @@ undefined condition."""
 				last = self.hb.get ()
 				if last is not None:
 					now = int (time.time ())
-					return cast (bool, last + cast (int, self.heartbeat) > now)
+					return bool (last + cast (int, self.heartbeat) > now)
 			return True
 	
 	class Heart:
@@ -396,7 +585,7 @@ undefined condition."""
 					try:
 						return pickle.loads (ser[8:size + 8])
 					except Exception as e:
-						logger.error ('Failed to unpickle input: %s' % e)
+						logger.error (f'Failed to unpickle input: {e}')
 					time.sleep (0.1)
 				return None
 				
@@ -443,10 +632,10 @@ a process until the watchdog gives up."""
 				if hb is None:
 					hb = self.Heart (len (joblist))
 				job.hb = hb.slot ()
-			logger.info ('Added job %s' % job.name)
+			logger.info (f'Added job {job.name}')
 		done = []
 		self.setup_handler (True)
-		logger.info ('Startup with %d job%s' % (len (joblist), '' if len (joblist) == 1 else 's'))
+		logger.info ('Startup with {count} jobs'.format (count = len (joblist)))
 		self.startup (joblist)
 		nolog: Set[Watchdog.Job] = set ()
 		while self.running and joblist:
@@ -470,34 +659,38 @@ a process until the watchdog gives up."""
 						job.pid = self.spawn (wrapper)
 						job.last = now
 						job.incarnation += 1
-						logger.info ('Launching job %s' % job.name)
+						logger.info (f'Launching job {job.name}')
 						active += 1
 						if job in nolog:
 							nolog.remove (job)
 					else:
 						if job not in nolog:
-							logger.info ('Job %s is not ready, will start in %d seconds' % (job.name, job.last + restart_delay - now))
+							logger.info ('Job {name} is not ready, will start in {restart} seconds'.format (
+								name = job.name,
+								restart = job.last + restart_delay - now
+							))
 							nolog.add (job)
 				else:
 					active += 1
 					if not job.beating ():
-						logger.warning ('Job %s (PID %d) heart beat failed, force hard kill' % (job.name, job.pid))
-						self.term (job.pid, signal.SIGKILL)
+						logger.warning (f'Job {job.name} (PID {job.pid}) heart beat failed, force hard kill')
+						if not self.term (job.pid, signal.SIGKILL):
+							logger.error (f'Job {job} is no more existing')
 						job.killed_by_heartbeat = True
 			#
 			if not self.running: continue
 			time.sleep (1)
 			if not self.running or not active: continue
 			#
-			rc = self.join (block = False)
+			rc = self.join (timeout = 0)
 			if rc.pid == 0:
 				continue
 			#
 			if rc.error is not None:
 				if rc.nochild:
-					logger.error ('Even with %d active jobs we cannot wait for one' % active)
-				elif rc.error.args[0] != errno.EINTR:
-					logger.warning ('Waiting for %d jobs is interrupted by %s' % (active, str (rc.error)))
+					logger.error (f'Even with {active} active jobs we cannot wait for one')
+				elif rc.error.errno != errno.EINTR:
+					logger.warning (f'Waiting for {active} jobs is interrupted by {rc.error}')
 				continue
 			#
 			found = None
@@ -506,34 +699,34 @@ a process until the watchdog gives up."""
 					found = job
 					break
 			if found is None:
-				logger.info ('Collected PID %s without matching job' % rc.pid)
+				logger.info (f'Collected PID {rc.pid} without matching job')
 				continue
 			#
 			restart = True
 			if rc.exitcode is not None:
 				if rc.exitcode in (self.EC_EXIT, self.EC_STOP) or (max_incarnations and found.incarnation >= max_incarnations):
 					if rc.exitcode == self.EC_EXIT:
-						logger.info ('Job %s terminated normally, no restart scheduled' % found.name)
+						logger.info (f'Job {found.name} terminated normally, no restart scheduled')
 					elif rc.exitcode == self.EC_STOP:
-						logger.info ('Job %s terminates with error, but enforces no restart' % found.name)
+						logger.info (f'Job {found.name} terminates with error, but enforces no restart')
 					else:
-						logger.info ('Job %s terminates with error, but reached maximum incarnation counter %d' % (found.name, found.incarnation))
+						logger.info (f'Job {found.name} terminates with error, but reached maximum incarnation counter {found.incarnation}')
 					restart = False
 				elif rc.exitcode == self.EC_RESTART_REQUEST:
 					logger.info (f'Job {found.name} terminated for restart requested by application')
 				elif rc.exitcode == self.EC_RESTART_FAILURE:
 					logger.info (f'Job {found.name} terminated for restart due to execution failure')
 				else:
-					logger.info ('Job %s terminated with exit code %d' % (found.name, rc.exitcode))
+					logger.info (f'Job {found.name} terminated with exit code {rc.exitcode}')
 			elif rc.signal is not None:
 				if rc.signal in (signal.SIGKILL, signal.SIGTERM):
 					if rc.signal == signal.SIGKILL and found.killed_by_heartbeat:
-						logger.info ('Job %s had been killed due to missing heart beat, restart scheduled' % found.name)
+						logger.info (f'Job {found.name} had been killed due to missing heart beat, restart scheduled')
 					else:
 						restart = False
-						logger.info ('Job %s died due to signal %d, no restart scheduled assuming forced termination' % (found.name, rc.signal))
+						logger.info (f'Job {found.name} died due to signal {rc.signal}, no restart scheduled assuming forced termination')
 				else:
-					logger.info ('Job %s died due to signal %d' % (found.name, rc.signal))
+					logger.info (f'Job {found.name} died due to signal {rc.signal}')
 			if not restart:
 				joblist.remove (found)
 				done.append (found)
@@ -544,8 +737,8 @@ a process until the watchdog gives up."""
 		logger.info ('Terminating')
 		n = termination_delay
 		while joblist:
-			rc = self.join (block = False)
-			for job in joblist:
+			rc = self.join (timeout = 0)
+			for job in joblist[:]:
 				if job.pid == rc.pid or job.pid is None:
 					joblist.remove (job)
 					done.append (job)
@@ -554,10 +747,18 @@ a process until the watchdog gives up."""
 			#
 			if not joblist: continue
 			#
+			if rc.nochild and joblist:
+				logger.error ('While waiting for {count} jobs ({jobs}), we got the information that no further child is active ({rc}), aberting'.format (
+					count = len (joblist),
+					jobs = Stream (joblist).join (', '),
+					rc = rc
+				))
+				break
+			#
 			if n in (0, termination_delay):
 				for job in joblist:
 					self.term (cast (int, job.pid), signal.SIGKILL if n == 0 else signal.SIGTERM)
-					logger.info ('Signaled job %s to terminate' % job.name)
+					logger.info (f'Signaled job {job.name} to terminate')
 			n -= 1
 			time.sleep (1)
 		self.teardown (done)
@@ -570,7 +771,7 @@ a process until the watchdog gives up."""
 		def starter (*args: Any, **kwargs: Any) -> Any:
 			ec = self.run (*args, **kwargs)
 			if ec == self.EC_RESTART_REQUEST:
-				raise self.Job.Restart ()
+				raise Watchdog.Job.Restart ()
 			return ec == self.EC_EXIT
 		self.mstart (self.Job ('default', starter, ()), *args, **kwargs)
 	#
@@ -656,12 +857,12 @@ the ``run'' method."""
 			try:
 				st = os.stat (cpath)
 				if not stat.S_ISDIR (st.st_mode):
-					raise error ('Required path "%s" is no directory' % cpath)
+					raise error (f'Required path "{cpath}" is no directory')
 				nmode = st.st_mode | mask
 				if nmode != st.st_mode:
 					os.chmod (cpath, stat.S_IMODE (nmode))
 			except OSError as e:
-				if e.args[0] != errno.ENOENT:
+				if e.errno != errno.ENOENT:
 					raise
 				omask = os.umask (0)
 				os.mkdir (cpath, cmode)
@@ -685,7 +886,7 @@ using the content of ``script''."""
 		pp = subprocess.Popen ([path], stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, errors = 'backslashreplace')
 		(pout, perr) = pp.communicate (None)
 		if pp.returncode != 0:
-			logger.warning ('Check script returns %d:\nStdout: %s\nStderr: %s' % (pp.returncode, pout, perr))
+			logger.warning (f'Check script returns {pp.returncode}:\nStdout: {pout}\nStderr: {perr}')
 			return False
 		return True
 	
@@ -707,10 +908,10 @@ using the content of ``script''."""
 		got = True
 		while got and active:
 			got = False
-			st = self.join (block = block)
+			st = self.join (timeout = None if block else 0)
 			if st.error is not None:
 				if st.nochild:
-					logger.warning ('Unable to wait for any child even if %d are looking active' % len (active))
+					logger.warning ('Unable to wait for any child even if {count} are looking active'.format (count = len (active)))
 					for child in list (active.values ()):
 						del active[child.pid]
 			elif st.pid:
@@ -724,19 +925,19 @@ using the content of ``script''."""
 					if st.exitcode is not None:
 						how = 'exited'
 						if st.exitcode > 0:
-							how += ' with status %d' % st.exitcode
+							how += f' with status {st.exitcode}'
 					elif st.signal is not None:
-						how = 'killed by %d' % st.signal
+						how = f'killed by {st.signal}'
 					else:
-						how = 'died with status %d' % child.status
-					logger.info ('Child %s %s' % (child.method.__name__, how))
+						how = f'died with status {child.status}'
+					logger.info (f'Child {child.method.__name__} {how}')
 				except KeyError:
-					logger.warning ('Returned not active PID %d' % st.pid)
+					logger.warning (f'Returned not active PID {st.pid}')
 
 	def __watchdog (self, child_methods: List[Callable[..., Any]], restart_on_error: bool) -> None:
 		children = [Daemon.Child (method = _c) for _c in child_methods]
 		active: Dict[int, Daemon.Child] = {}
-		logger.info ('Watchdog starting with %d child(ren)' % len (children))
+		logger.info ('Watchdog starting with {count} child(ren)'.format (count = len (children)))
 		while self.running:
 			for child in children:
 				if child.pid == -1:
@@ -744,19 +945,18 @@ using the content of ``script''."""
 						child.pid = self.spawn (child.method)
 						child.status = 0
 						active[child.pid] = child
-						logger.info ('Child %s started' % child.method.__name__)
+						logger.info (f'Child {child.method.__name__} started')
 			if not active:
 				self.running = False
 			else:
 				self.__wait (active)
 		if active:
-			logger.info ('Watching waiting for %d active child(ren)' % len (active))
+			logger.info ('Watching waiting for {count} active child(ren)'.format (count = len (active)))
 			signr = None
 			while active:
 				for child in list (active.values ()):
-					st = self.term (child.pid, signr)
-					if st.error is not None and st.error.args[0] == errno.ESRCH:
-						logger.warning ('Unexpected missing child process %s' % child.method.__name__)
+					if not self.term (child.pid, signr):
+						logger.warning (f'Unexpected missing child process {child.method.__name__}')
 						del active[child.pid]
 				if active:
 					for state in True, False:
@@ -778,170 +978,3 @@ using the content of ``script''."""
 		"""Entry point for implemention"""
 		pass
 
-class Worker (Daemon):
-	"""Framework for a XML-RPC daemon with worker process
-
-This provides a two process framework where one serves client requests
-via XML-RPC )controller) while the other performs the operation as a
-worker (executor). Subclass this class and implement the desired
-overwritable methods. 
-
-1.) Controller:
-- controller_config: request a configuration value for a parameter, currently these are available:
-	- xmlrpc-server-timeout (float, 5.0): defines the timeout for the XML-RPC server communication
-- controller_setup: is called once at the beginning to inititalize the controller part of the service
-	This method returns a generic context which is passed to further methods as first parameter
-- controller_teardown: is called once at the end of the controller
-- controller_register: is used to register all XML-RPC methods which should be callable
-- controller_step: is regulary called during server operation
-
-The controller methods can call ``enqueue'' to pass an object to the
-worker part, the executor.
-
-2.) Executor:
-- executor_config: request a configuration value for a parameter, currently these are available:
-	- ignore-duplicate-requests (bool, False): If identical requests are found in the queue, only one is passed for processing, if this is set to True
-	- handle-multiple-requests (bool, False): If False, enqueued objects are passed one by one for processing, otherwise they are passed in chunks
-- executor_setup: is called once at the beginning to inititalize the executor part of the service
-	This method returns a generic context which is passed to further methods as first parameter
-- executor_teardown: is called once at the end of the executor
-- executor_step: is regulary called during server operation
-- executor_request_preparse: preparses a received object from the controller, must return the final object
-- executor_request_next: prepare the next object (or objects as a list, if "handle-multiple-requests" is True); must return the value to finally process
-- executor_request_handle: processes the object (or the list of objects) in a subprocess
-"""
-	__slots__: List[str] = []
-	nameCtrl = 'ctrl'
-	nameExec = 'exec'
-	
-	def controller_config (self, what: str, default: Any) -> Any:
-		"""returns configuration value for ``what'', using ``default'' if no custom value is available"""
-		return default
-	def controller_setup (self) -> Any:
-		"""setup up context to use in further calls"""
-		return None
-	def controller_teardown (self, ctx: Any) -> None:
-		"""cleanup used resources"""
-		pass
-	def controller_register (self, ctx: Any, serv: XMLRPC) -> None:
-		"""register methods to XML-RPC server ``serv''"""
-		pass
-	def controller_step (self, ctx: Any) -> None:
-		"""called periodically"""
-		pass
-		
-	def __controller (self) -> None:
-		logger.debug ('Controller starting')
-		ctx = self.controller_setup ()
-		timeout = self.controller_config ('xmlrpc-server-timeout', 5.0)
-		serv = XMLRPC (self.cfg, timeout = timeout)
-		self.controller_register (ctx, serv)
-		while self.running:
-			self.controller_step (ctx)
-			while self.backlog and not self.queue.full ():
-				self.queue.put (self.backlog.popleft ())
-			with Ignore (select.error):
-				serv.server.handle_request ()
-		self.controller_teardown (ctx)
-		logger.debug ('Controller terminating')
-
-	def executor_config (self, what: str, default: Any) -> Any:
-		"""returns configuration value for ``what'', using ``default'' if no custom value is available"""
-		return default
-	def executor_setup (self) -> Any:
-		"""setup up context to use in further calls"""
-		return None
-	def executor_teardown (self, ctx: Any) -> None:
-		"""cleanup used resources"""
-		pass
-	def executor_step (self, ctx: Any) -> None:
-		"""called periodically"""
-		pass
-	def executor_request_preparse (self, ctx: Any, rq: Any) -> Any:
-		"""preparses request ``rq'' after fetching from queue"""
-		return rq
-	def executor_request_next (self, ctx: Any, rq: Any) -> Any:
-		"""prepare request(s) ``rq'' before being processed"""
-		return rq
-	def executor_request_handle (self, ctx: Any, rq: Any) -> None:
-		"""process request(s) ``rq''"""
-		pass
-		
-	def __executor (self) -> None:
-		logger.debug ('Executor starting')
-		ctx = self.executor_setup ()
-		ignoreDups = self.executor_config ('ignore-duplicate-requests', False)
-		multipleRequests = self.executor_config ('handle-multiple-requests', False)
-		pending: List[Any] = []
-		child = None
-		while self.running:
-			self.executor_step (ctx)
-			with Ignore (IOError, queue.Empty, error):
-				rq = self.queue.get (timeout = 1.0)
-				logger.debug ('Received %r while %d requests pending' % (rq, len (pending)))
-				rq = self.executor_request_preparse (ctx, rq)
-				if not ignoreDups or rq not in pending:
-					pending.append (rq)
-				else:
-					logger.debug ('Ignore request %r as already one is pending' % (rq, ))
-			#
-			while len (pending) > 0:
-				logger.debug ('%d pending requests' % len (pending))
-				if child is not None:
-					child.join (0)
-					if not child.is_alive ():
-						child.close ()
-						child = None
-						logger.debug ('Previous instance had finished')
-				if child is None:
-					if multipleRequests:
-						rq = pending
-						pending = []
-					else:
-						rq = pending.pop (0)
-					try:
-						rq = self.executor_request_next (ctx, rq)
-						child = multiprocessing.Process (target = self.executor_request_handle, args = (ctx, rq))
-						child.start ()
-						logger.debug ('Started instance process')
-					except error as e:
-						logger.error ('Failed to start child: %s' % e)
-				else:
-					logger.debug ('Busy')
-					break
-		if child is not None:
-			child.join ()
-			child.close ()
-		self.executor_teardown (ctx)
-		logger.debug ('Executor terminating')
-	
-	def enqueue (self, obj: Any, oob: bool = False) -> None:
-		"""Put ``obj'' from controller to executor, in front of queue, when ``oob'' is set"""
-		if self.queue.full () or self.backlog:
-			if oob:
-				self.backlog.appendleft (obj)
-			else:
-				self.backlog.append (obj)
-		if not self.queue.full ():
-			if self.backlog:
-				while self.backlog and not self.queue.full ():
-					self.queue.put (self.backlog.popleft ())
-			else:
-				self.queue.put (obj)
-
-	def run (self, *args: Any, **kwargs: Any) -> Any:
-		"""Entry point for starting process"""
-		path = os.path.join (base, 'scripts', '%s.cfg' % (self.name if self.name is not None else host, ))
-		self.cfg = Config ()
-		if os.path.isfile (path):
-			self.cfg.read (path)
-		self.queue: Queue[Any] = multiprocessing.Queue ()
-		self.backlog: Deque[Any] = deque ()
-		self.ctrl = Parallel ()
-		self.ctrl.fork (self.__controller, name = self.nameCtrl, logname = f'{log.name}-{self.nameCtrl}')
-		self.ctrl.fork (self.__executor, name = self.nameExec, logname = f'{log.name}-{self.nameExec}')
-		while self.running:
-			time.sleep (1)
-		self.ctrl.wait (timeout = 2.0)
-		self.ctrl.term ()
-		self.ctrl.done ()

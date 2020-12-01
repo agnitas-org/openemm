@@ -15,15 +15,19 @@ import	argparse, logging
 import	sys, os, time, fcntl
 import	shlex, subprocess, signal
 from	dataclasses import dataclass, field
+from	datetime import datetime
 from	types import FrameType
 from	typing import Any, Callable, Literal, Optional
 from	typing import Dict, List, Set, Tuple
 from	io import StringIO
 from	agn3.config import Config
+from	agn3.db import DB
 from	agn3.daemon import Signal
-from	agn3.definitions import base, user
+from	agn3.definitions import licence, base, fqdn, user
+from	agn3.emm.build import spec
 from	agn3.exceptions import error
 from	agn3.flow import Transaction
+from	agn3.log import log
 from	agn3.runtime import CLI
 from	agn3.tools import Plugin
 from	activator3 import Activator
@@ -109,12 +113,20 @@ class Process:
 			self.do_stop ()
 		
 class Service:
-	__slots__ = ['cfg', 'id', 'ec', 'plugins']
-	def __init__ (self, cfg: Config, id: str) -> None:
+	__slots__ = ['cfg', 'id', 'ec', 'plugins', 'command', 'selective']
+	def __init__ (self, cfg: Config, id: str, parameter: List[str]) -> None:
 		self.cfg = cfg
 		self.id = id
 		self.ec = 0
 		self.plugins: Dict[str, PluginService] = {}
+		if len (parameter) == 0:
+			self.command = Process.known_commands[0]
+			self.selective = None
+		else:
+			self.command = parameter[0]
+			if self.command not in Process.known_commands:
+				raise error ('Command %s unknown, available commands are %s' % (self.command, ', '.join (Process.known_commands)))
+			self.selective = set (parameter[1:])
 	
 	def outn (self, msg: str) -> None:
 		sys.stderr.write (msg)
@@ -162,43 +174,90 @@ class Service:
 
 	def sanity_check (self) -> bool:
 		rc = True
-		check_id = self.cfg.tget ('sanity-id', self.id)
-		try:
-			from	sanity3 import Sanities
+		if self.command in ('start', 'restart'):
+			check_id = self.cfg.tget ('sanity-id', self.id)
+			try:
+				from	sanity3 import Sanities
 		
-			if self.active ('sanity', True):
-				Sanities.checks[check_id] ()
-		except ImportError:
-			logger.debug (f'No sanity3 module for {user} available, no sanity check performed')
-		except KeyError:
-			logger.error (f'{check_id}: no sanity check found')
-		except error as e:
-			logger.error (f'Sanity check failed: {e}')
-			self.fail (str (e))
-			rc = False
+				if self.active ('sanity', True):
+					Sanities.checks[check_id] ()
+			except ImportError:
+				logger.debug (f'No sanity3 module for {user} available, no sanity check performed')
+			except KeyError:
+				logger.error (f'{check_id}: no sanity check found')
+			except error as e:
+				logger.error (f'Sanity check failed: {e}')
+				self.fail (str (e))
+				rc = False
+			except Exception as e:
+				logger.exception (f'Sanity check filed: {e}')
+				self.fail (str (e))
+				raise
 		return rc
+	
+	def log_release (self) -> None:
+		application = 'BACKEND-{id}'.format (id = self.id.upper ())
+		now = datetime.now ()
+		try:
+			with DB () as db:
+				data: Dict[str, Any] = {
+					'host_name': fqdn,
+					'application_name': application
+				}
+
+				rq = db.querys (db.qselect (
+					oracle = (
+						'SELECT version_number '
+						'FROM release_log_tbl '
+						'WHERE host_name = :host_name AND application_name = :application_name '
+						'ORDER BY startup_timestamp DESC'
+					), mysql = (
+						'SELECT version_number '
+						'FROM release_log_tbl '
+						'WHERE host_name = :host_name AND application_name = :application_name '
+						'ORDER BY startup_timestamp DESC '
+						'LIMIT 1'
+					)), data
+				)
+				if rq is None or rq.version_number != spec.version:
+					data.update ({
+						'version_number': spec.version,
+						'startup_timestamp': now,
+						'build_time': spec.timestamp,
+						'build_host': spec.host,
+						'build_user': spec.user
+					})
+					count = db.update (
+						'INSERT INTO release_log_tbl '
+						'       (host_name, application_name, version_number, startup_timestamp, build_time, build_host, build_user) '
+						'VALUES '
+						'       (:host_name, :application_name, :version_number, :startup_timestamp, :build_time, :build_host, :build_user)',
+						data,
+						commit = True
+					)
+					if count != 1:
+						raise error (f'failed to create new record, expected 1 row, inserted {count} rows')
+		except (IOError, error) as e:
+			logger.debug (f'log_release: failed to write to database ({e}), try to spool information')
+			log_path = os.path.join (base, 'log')
+			if os.path.isdir (log_path):
+				with open (os.path.join (log_path, 'release.log'), 'a') as fd:
+					fd.write (f'{licence};{fqdn};{application};{spec.version};{now:%Y-%m-%d %H:%M:%S};{spec.timestamp:%Y-%m-%d %H:%M:%S};{spec.host};{spec.user}\n')
+			else:
+				logger.debug (f'no path {log_path} exists, no information is written')
 
 	@dataclass
 	class Depend:
 		require: Set[str] = field (default_factory = set)
 		resolved: Set[str] = field (default_factory = set)
 		
-	def execute (self, param: List[str]) -> None:
-		if len (param) == 0:
-			command = Process.known_commands[0]
-			selective = None
-		else:
-			command = param[0]
-			if command not in Process.known_commands:
-				self.fail ('Command %s unknown, available commands are %s' % (command, ', '.join (Process.known_commands)))
-				return
-			selective = set (param[1:])
+	def execute (self) -> None:
 		found: Set[str] = set ()
 		#
 		procs: List[Process] = []
 		depends = Service.Depend ()
 		for name in [_n for _n in self.cfg.get_section_sequence () if not _n.startswith ('_')]:
-			if not selective or name in selective or name in depends.require:
+			if not self.selective or name in self.selective or name in depends.require:
 				self.cfg.push (name)
 				self.cfg.ns['service'] = name
 				if self.active (name):
@@ -216,8 +275,8 @@ class Service:
 						self.info (e.token, e.ns)
 				self.cfg.pop ()
 				found.add (name)
-		if selective:
-			diff = selective.difference (found)
+		if self.selective:
+			diff = self.selective.difference (found)
 			if diff:
 				self.fail ('unknown modules %s selected' % ', '.join (list (diff)))
 		if depends.require != depends.resolved:
@@ -225,24 +284,24 @@ class Service:
 		if self.ec != 0:
 			return
 		#
-		if command in ('start', 'stop', 'restart'):
+		if self.command in ('start', 'stop', 'restart'):
 			ta = Transaction ()
-			if command == 'stop':
+			if self.command == 'stop':
 				use = list (reversed (procs))
 			else:
 				use = procs
 			for proc in use:
-				if command == 'start':
+				if self.command == 'start':
 					execute = proc.do_start if proc.can ('start') else None
 					rollback = proc.do_stop if proc.can ('stop') else None
-				elif command == 'stop':
+				elif self.command == 'stop':
 					execute = proc.do_stop if proc.can ('stop') else None
 					rollback = proc.do_start if proc.can ('start') else None
-				elif command == 'restart':
+				elif self.command == 'restart':
 					execute = proc.do_restart if proc.can ('start') else None
 					rollback = proc.do_restore
 				else:
-					logger.error ('Unknown command %s for %s' % (command, proc.name))
+					logger.error ('Unknown command %s for %s' % (self.command, proc.name))
 					continue
 				#
 				ta.add (proc.name, method = execute, rollback = rollback)
@@ -254,7 +313,7 @@ class Service:
 					def callback (name: str, what: str, exc: Optional[Exception] = None) -> None:
 						if what in ('start', 'rollback'):
 							if what == 'start':
-								what = command
+								what = self.command
 							self.outn ('%s %s .. ' % (what, name))
 						else:
 							self.out ('%s%s' % (what, (' (%s)' % str (exc)) if exc else ''))
@@ -267,7 +326,7 @@ class Service:
 										logger.error (f'Failed to get status for {proc.name} before rollback: {e}')
 					ta.execute (rollback_failed = True, callback = callback)
 				except Exception as e:
-					self.fail ('Rollback executed during %s: %s' % (command, str (e)))
+					self.fail ('Rollback executed during %s: %s' % (self.command, str (e)))
 					if isinstance (e, service_error):
 						self.info (e.token, e.ns)
 			time.sleep (2)
@@ -277,6 +336,9 @@ class Service:
 				except service_error as e:
 					self.fail ('%s: unable to query status: %s' % (proc.name, e))
 					self.info (e.token, e.ns)
+			#
+			if self.command == 'start' and spec.version:
+				self.log_release ()
 		#
 		if procs:
 			nlen = max ([len (_p.name) for _p in procs]) + 1
@@ -335,6 +397,9 @@ class Main (CLI):
 		self.parameter = args.parameter
 	
 	def executor (self) -> bool:
+		if self.verbose:
+			log.outlevel = logging.DEBUG
+			log.outstream = sys.stderr
 		try:
 			cwd = os.getcwd ()
 		except OSError:
@@ -355,7 +420,7 @@ class Main (CLI):
 			cfg.read (self.config_filename)
 		for (option, value) in self.options.items ():
 			cfg[option] = value
-		service = Service (cfg, self.id)
+		service = Service (cfg, self.id, self.parameter)
 		if service.sanity_check ():
 			serivce_filedescriptior_name = 'SVCFD'
 			fd: Optional[int] = None
@@ -365,7 +430,7 @@ class Main (CLI):
 					os.environ[serivce_filedescriptior_name] = str (fd)
 				except OSError as e:
 					logger.warning (f'Failed to setup reporting FD: {e}')
-			service.execute (self.parameter)
+			service.execute ()
 			if fd is not None:
 				os.close (fd)
 				del os.environ[serivce_filedescriptior_name]

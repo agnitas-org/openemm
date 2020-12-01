@@ -16,7 +16,7 @@ import	os, time, shutil
 from	dataclasses import dataclass
 from	typing import Any
 from	typing import Dict
-from	agn3.daemon import Worker
+from	agn3.worker import Worker
 from	agn3.definitions import base, syscfg
 from	agn3.exceptions import error
 from	agn3.io import ArchiveDirectory
@@ -34,7 +34,7 @@ class Processor:
 		self.archive = syscfg.get_str ('direct-path-archive', os.path.join (base, 'ARCHIVE'))
 		self.recover = syscfg.get_str ('direct-path-recover', os.path.join (base, 'RECOVER'))
 		self.queues = syscfg.get_list ('direct-path-queues', ',', Stream (os.listdir (base))
-			.filter (lambda f: f.startswith ('QUEUE'))
+			.filter (lambda f: bool (f.startswith ('QUEUE')))
 			.map (lambda f: os.path.join (base, f))
 			.filter (lambda p: os.path.isdir (p) and not os.path.isfile (os.path.join (p, '.ignore')))
 			.list ()

@@ -1,4 +1,4 @@
--- link: ![admin]%(rdir-domain)/form.do?agnCI=%(company-id)&agnFN=profile&agnUID=##AGNUID## agnPROFILE;
+-- link: ![admin]%(rdir-domain)/form.action?agnCI=%(company-id)&agnFN=profile&agnUID=##AGNUID## agnPROFILE;
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                                                                                                                                                                                                  --
 --                                                                                                                                                                                                                                                                  --
@@ -16,7 +16,7 @@ function profile (ctx, parm, cust)
 	end
 	
 	if ctx._result == nil then
-		ctx._result = agn.strmap ('%(rdir_domain)/form.do?agnCI=%(company_id)&agnFN=profile&agnUID=##AGNUID##')
+		ctx._result = agn.strmap ('%(rdir_domain)/form.action?agnCI=%(company_id)&agnFN=profile&agnUID=##AGNUID##')
 	end
 	return ctx._result
 end

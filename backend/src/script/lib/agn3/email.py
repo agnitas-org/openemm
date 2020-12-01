@@ -15,26 +15,25 @@ import	socket, mimetypes
 from	datetime import datetime
 from	dataclasses import dataclass
 import	email
+import	email.policy
 from	email.charset import QP, BASE64, add_charset
-from	email.message import Message
+from	email.message import EmailMessage
 from	email.header import Header
+from	email.policy import EmailPolicy, compat32
 from	email.utils import parseaddr
 from	typing import Any, Callable, Optional, Union
-from	typing import Dict, List, Match, NamedTuple, Pattern, Set, TextIO, Tuple
+from	typing import Dict, Generator, List, Match, Pattern, Set, TextIO, Tuple
 from	typing import cast
-from	.db import DB
 from	.definitions import fqdn, user, program
-from	.emm.companyconfig import CompanyConfig
 from	.exceptions import error
 from	.id import IDs
 from	.io import which, CSVDefault
 from	.log import log
 from	.parser import ParseTimestamp
-from	.pattern import SQL_wildcard_compile
 from	.stream import Stream
-from	.uid import UID, CachingUID
+from	.uid import UID, UIDHandler
 #
-__all__ = ['EMail', 'CSVEMail', 'StatusMail', 'ParseEMail', 'EMailValidator']
+__all__ = ['EMail', 'CSVEMail', 'StatusMail', 'ParseEMail']
 #
 logger = logging.getLogger (__name__)
 #
@@ -48,9 +47,6 @@ class EMail (IDs):
 	TO = 0
 	CC = 1
 	BCC = 2
-	correct_pattern = re.compile ('\n+[^ \t]', re.MULTILINE)
-	name_pattern = re.compile ('^([a-z][a-z0-9_-]*):', re.IGNORECASE)
-	
 	@staticmethod
 	def force_encoding (charset: str, encoding: str) -> None:
 		"""Enforce an ``encoding'' for a definied ``charset'' overwriting system default behaviour"""
@@ -63,7 +59,21 @@ class EMail (IDs):
 			}[encoding.lower ()]
 			add_charset (charset = charset.lower (), header_enc = charset_encoding, body_enc = charset_encoding)
 		except KeyError as e:
-			raise error ('Invalid character set or encoding: %s' % str (e))
+			raise error (f'Invalid character set or encoding: {e}')
+	
+	@staticmethod
+	def from_string (content: str) -> EmailMessage:
+		return cast (EmailMessage, email.message_from_string (content, policy = email.policy.default))
+	nofold_policy = EmailPolicy (refold_source = 'none')
+	@staticmethod
+	def as_string (msg: EmailMessage, unixfrom: bool) -> str:
+		try:
+			return msg.as_string (unixfrom)
+		except Exception:
+			try:
+				return msg.as_string (unixfrom, policy = EMail.nofold_policy)
+			except Exception:
+				return msg.as_string (unixfrom, policy = compat32)
 
 	class Content:
 		"""Stores one part of a multipart message"""
@@ -74,7 +84,7 @@ class EMail (IDs):
 			self.content_type = content_type
 			self.related: List[EMail.Content] = []
 
-		def set_message (self, msg: Message, charset: Optional[str]) -> None:
+		def set_message (self, msg: EmailMessage, charset: Optional[str]) -> None:
 			if self.content_type is not None:
 				msg.set_type (self.content_type)
 			msg.set_payload (self.content, self.charset if self.charset is not None else charset)
@@ -87,12 +97,12 @@ class EMail (IDs):
 			self.raw_content = raw_content
 			self.filename = filename
 
-		def set_message (self, msg: Message, charset: Optional[str]) -> None:
+		def set_message (self, msg: EmailMessage, charset: Optional[str]) -> None:
 			content_type = self.content_type if self.content_type is not None else 'application/octet-stream'
 			if self.filename:
-				content_type += '; name="%s"' % self.filename
+				content_type += f'; name="{self.filename}"'
 			if charset is not None:
-				content_type += '; charset="%s"' % charset
+				content_type += f'; charset="{charset}"'
 			msg['Content-Type'] = content_type
 			if self.charset is not None:
 #				msg['Content-Transfer-Encoding'] = '8bit'
@@ -103,7 +113,7 @@ class EMail (IDs):
 			if self.filename:
 				msg['Content-Description'] = self.filename
 				msg['Content-Location'] = self.filename
-				msg['Content-ID'] = '<%s>' % self.filename
+				msg['Content-ID'] = f'<{self.filename}>'
 			msg.set_payload (content, self.charset)
 
 	def __init__ (self) -> None:
@@ -124,7 +134,7 @@ class EMail (IDs):
 		pw = self.get_user ()
 		self.user = pw.pw_name if pw is not None else user
 		if self.user and self.host:
-			self.mfrom = self.sender = '%s@%s' % (self.user, self.host)
+			self.mfrom = self.sender = f'{self.user}@{self.host}'
 
 	def set_company_id (self, company_id: Optional[int]) -> None:
 		"""Set company_id, used when signing the message"""
@@ -243,21 +253,11 @@ class EMail (IDs):
 		"""Clears all attachments"""
 		self.attachments.clear ()
 	
+	__name_pattern = re.compile ('^([a-z][a-z0-9_-]*):', re.IGNORECASE)
 	def __cleanup_header (self, head: str) -> Tuple[Optional[str], str]:
-		name = None
-		head = head.replace ('\r\n', '\n')
-		while len (head) > 0 and head[-1] == '\n':
-			head = head[:-1]
-		while True:
-			mtch = self.correct_pattern.search (head)
-			if mtch is None:
-				break
-			(start, end) = mtch.span ()
-			head = head[:start] + '\n\t' + head[end - 1:]
-		mtch = self.name_pattern.match (head)
-		if not mtch is None:
-			name = (mtch.groups ()[0]).lower ()
-		return (name, head)
+		head = head.replace ('\r\n', '\n').rstrip ('\n')
+		mtch = self.__name_pattern.match (head)
+		return (mtch.group (1).lower () if mtch else None, head)
 	
 	def __finalize_header (self) -> Tuple[List[str], str]:
 		headers: List[str] = []
@@ -268,14 +268,17 @@ class EMail (IDs):
 				headers.append (header)
 				avail_headers.add (name)
 		if not 'from' in avail_headers and self.sender:
-			headers.append ('From: %s' % self.sender)
+			headers.append (f'From: {self.sender}')
 		for (hid, sid) in [('to', self.TO), ('cc', self.CC)]:
 			if not hid in avail_headers:
 				recvs = [_r[1] for _r in self.receivers if _r[0] == sid]
 				if recvs:
-					headers.append ('%s: %s' % (hid.capitalize (), ', '.join (recvs)))
+					headers.append ('{name}: {receivers}'.format (
+						name = hid.capitalize (),
+						receivers = ', '.join (recvs)
+					))
 		if not 'subject' in avail_headers and self.subject:
-			headers.append ('Subject: %s' % self.subject)
+			headers.append (f'Subject: {self.subject}')
 		charset = self.charset if self.charset is not None else 'UTF-8'
 		nheaders = []
 		for header in headers:
@@ -283,15 +286,18 @@ class EMail (IDs):
 			try:
 				value.encode ('ascii')
 			except UnicodeEncodeError:
-				nheaders.append ('%s: %s' % (name, Header (value.strip (), charset).encode ()))
+				nheaders.append ('{name}: {content}'.format (
+					name = name, 
+					content = Header (value.strip (), charset).encode ().replace ('\n', ' ')
+				))
 			else:
-				nheaders.append (header)
+				nheaders.append (header.replace ('\n', ' '))
 		return (nheaders, charset)
 	
 	def build_mail (self) -> str:
 		"""Build the multipart mail and return it as a string"""
 		(headers, charset) = self.__finalize_header ()
-		root = Message ()
+		root = EmailMessage ()
 		for header in headers:
 			(name, value) = header.split (':', 1)
 			root[name] = value.strip ()
@@ -301,30 +307,30 @@ class EMail (IDs):
 			if not self.attachments:
 				parts.append ((root, self.content[0]))
 			else:
-				msg = Message ()
+				msg = EmailMessage ()
 				msgs.append (msg)
 				root.attach (msg)
 				parts.append ((msg, self.content[0]))
 		else:
 			if self.content:
 				if self.attachments:
-					parent = Message ()
+					parent = EmailMessage ()
 					msgs.append (parent)
 					root.attach (parent)
 				else:
 					parent = root
 				parent.set_type ('multipart/alternative')
 				for content in self.content:
-					msg = Message ()
+					msg = EmailMessage ()
 					msgs.append (msg)
 					parts.append ((msg, content))
 					if content.related:
-						base_message = Message ()
+						base_message = EmailMessage ()
 						msgs.append (base_message)
 						base_message.set_type ('multipart/related')
 						base_message.attach (msg)
 						for related in content.related:
-							r = Message ()
+							r = EmailMessage ()
 							msgs.append (r)
 							parts.append ((r, related))
 							base_message.attach (r)
@@ -336,13 +342,13 @@ class EMail (IDs):
 		if self.attachments:
 			root.set_type ('multipart/related')
 			for attachment in self.attachments:
-				at = Message ()
+				at = EmailMessage ()
 				msgs.append (at)
 				root.attach (at)
 				attachment.set_message (at, None)
 		for msg in msgs:
 			del msg['MIME-Version']
-		return self.sign (root.as_string (False) + '\n')
+		return self.sign (EMail.as_string (root, False) + '\n')
 	
 	def send_mail (self) -> Tuple[bool, int, str, str]:
 		"""Build and send the mail"""
@@ -449,7 +455,16 @@ status."""
 		self.recv = self.recv_ok[:] if status == self.OK else self.recv_fail[:]
 		self.cc: List[str] = []
 		self.sender = sender
-		self.email.set_subject ('[%s] %04d%02d%02d %s (on %s@%s)%s' % (status, now.year, now.month, now.day, name, user, fqdn, f' {assetID}' if assetID is not None else ''))
+		self.email.set_subject ('[{status}] {year:04d}{month:02d}{day:02d} {name} (on {user}@{fqdn}){asset_id}'.format (
+			status = status,
+			year = now.year,
+			month = now.month,
+			day = now.day,
+			name = name,
+			user = user,
+			fqdn = fqdn,
+			asset_id = f' {assetID}' if assetID is not None else ''
+		))
 	
 	def add_cc (self, cc: str) -> None:
 		"""Add ``cc'' for a carbon copy of the mail (which may either be a str or a list)"""
@@ -531,7 +546,7 @@ added."""
 								collected += len (line)
 					content = ''.join (collect)
 		except IOError as e:
-			content = '** Failed to open %s: %r **' % (fname, e.args)
+			content = f'** Failed to open {fname}: {e} **'
 		self.email.add_text_attachment (content, charset = charset, filename = fname)
 	
 	def send_mail (self, print_mail: bool = False, outstream: TextIO = sys.stdout) -> bool:
@@ -561,37 +576,52 @@ customer.
 This class can be subclassed and the method parse() can be
 overwritten to implement further logic for resolving the customer."""
 	__slots__ = [
-		'content', 'invalids', 'message', 'uids', 'nvuids',
-		'ignore', 'unsubscribe', 'status', 'feedback'
+		'content', 'invalids', 'message', 'uid_handler', 'uid_handler_borrow',
+		'uids', 'nvuids', 'unparsed', 'ignore', 'unsubscribe', 'status', 'feedback'
 	]
-	def __init__ (self, content: str, invalids: bool = False) -> None:
+	def __init__ (self, content: str, invalids: bool = False, uid_handler: Optional[UIDHandler] = None) -> None:
 		"""Parses EMail found in ``content''"""
 		self.content = content
 		self.invalids = invalids
-		self.message = email.message_from_string (self.content)
-		self.uids: Optional[List[UID]] = None
-		self.nvuids: Optional[List[UID]] = None
+		self.message = EMail.from_string (self.content)
+		if uid_handler is not None:
+			self.uid_handler = uid_handler
+			self.uid_handler_borrow = True
+		else:
+			self.uid_handler = UIDHandler (enable_cache = True)
+			self.uid_handler_borrow = False
+		self.uids: List[UID] = []
+		self.nvuids: List[UID] = []
+		self.unparsed = True
 		self.ignore = False
 		self.unsubscribe = False
 		self.status: List[Dict[str, Union[str, Header]]] = []
 		self.feedback: List[Dict[str, Union[str, Header]]] = []
-	
+
+	def __del__ (self) -> None:
+		if not self.uid_handler_borrow:
+			self.uid_handler.done ()
+
 	def parsed_uid (self, uid: str, validate: bool = True) -> UID:
-		with (CachingUID if validate else UID) () as u:
-			u.parse (uid, validate = validate)
-			return cast (UID, u)
-	
+		return self.uid_handler.parse (uid, validate = validate)
+
+	def __iter__ (self) -> Generator[Tuple[bool, UID], None, None]:
+		for (valid, uids) in [(False, self.nvuids), (True, self.uids)]:
+			if uids is not None:
+				for uid in uids:
+					yield (valid, uid)
+
 	def __add_uid (self, uid: str) -> None:
 		try:
-			cast (List[UID], self.uids).append (self.parsed_uid (uid))
+			self.uids.append (self.parsed_uid (uid))
 		except error as e1:
 			if self.invalids:
 				try:
-					cast (List[UID], self.nvuids).append (self.parsed_uid (uid, False))
+					self.nvuids.append (self.parsed_uid (uid, False))
 				except error as e2:
-					logger.debug ('Unparsable UID "%s" found: %s/%s' % (uid, e1, e2))
+					logger.debug (f'Unparsable UID "{uid}" found: {e1}/{e2}')
 			else:
-				logger.debug ('Unparsable UID "%s" found: %s' % (uid, e1))
+				logger.debug (f'Unparsable UID "{uid}" found: {e1}')
 	
 	pattern_link = re.compile ('https?://[^/]+/[^?]*\\?.*uid=(3D)?([0-9a-z_-]+(\\.[0-9a-z_-]+){5,7})', re.IGNORECASE)
 	pattern_message_id = re.compile ('<(V[^-]*-)?([0-9]{14}_([0-9]+)(\\.[0-9a-z_-]+){6,7})@[^>]+>', re.IGNORECASE)
@@ -625,39 +655,48 @@ overwritten to implement further logic for resolving the customer."""
 				self.__find_link (elem)
 				self.__find (elem, self.pattern_list_unsubscribe, 1)
 			
-	def __parse_header (self, payload: Message) -> None:
+	def __parse_header (self, payload: EmailMessage) -> None:
 		for header in ['message-id', 'references', 'in-reply-to']:
-			self.__find_message_id (payload[header])
+			try:
+				self.__find_message_id (payload[header])
+			except Exception as e:
+				logger.warning (f'{header}: cannot find header due to: {e}')
 		self.__find_subject (payload['subject'])
 		self.__find_list_unsubscribe (payload['list-unsubscribe'])
 	
-	def __parse_payload (self, payload: Message, level: int) -> None:
+	def __parse_payload (self, payload: EmailMessage, level: int) -> None:
 		self.__parse_header (payload)
-		p = cast (Optional[str], payload.get_payload (decode = True))
+		p = payload.get_payload (decode = True)
 		if self.parse_payload (payload, p, level):
+			ct = payload.get_content_type ()
 			if p is not None:
-				self.__find_link (p)
+				content = payload.get_payload ()
+				if ct == 'text/rfc822-headers':
+					submessage = EMail.from_string (content)
+					self.__parse_payload (submessage, level + 1)
+				else:
+					self.__find_link (content)
 			else:
 				target: Optional[List[Dict[str, Union[str, Header]]]] = None
-				ct = payload.get_content_type ()
 				if ct:
 					ct = ct.lower ()
 					if ct == 'message/feedback-report':
 						target = self.feedback
 					elif ct == 'message/delivery-status':
 						target = self.status
-				for pl in cast (List[Union[str, Message]], payload.get_payload ()):
-					if type (pl) is str:
-						self.__find_link (cast (str, pl))
+				for pl in cast (List[Union[str, EmailMessage]], payload.get_payload ()):
+					if isinstance (pl, str):
+						self.__find_link (pl)
 					elif target is not None:
-						target.append (dict (cast (Message, pl).items ()))
+						target.append (dict (pl.items ()))
 					else:
-						self.__parse_payload (cast (Message, pl), level + 1)
+						self.__parse_payload (pl, level + 1)
 		
 	def parse (self) -> None:
-		self.uids = []
-		self.nvuids = []
+		self.uids.clear ()
+		self.nvuids.clear ()
 		self.__parse_payload (self.message, 1)
+		self.unparsed = False
 
 	@dataclass
 	class Origin:
@@ -669,180 +708,29 @@ overwritten to implement further logic for resolving the customer."""
 		counter: int = 0
 	def get_origins (self) -> List[ParseEMail.Origin]:
 		"""Returns all found customer, sorted by their validity and frequency"""
-		if self.uids is None:
+		if self.unparsed:
 			self.parse ()
-		rc: List[ParseEMail.Origin] = []
-		for (valid, uids) in [(False, self.nvuids), (True, self.uids)]:
-			m: Dict[Tuple[int, int, int, Optional[int]], ParseEMail.Origin] = {}
-			for u in cast (List[UID], uids):
-				key = (u.customer_id, u.mailing_id, u.company_id, u.licence_id)
-				try:
-					m[key].counter += 1
-				except KeyError:
-					temp = ParseEMail.Origin (
-						valid = valid,
-						customer_id = u.customer_id,
-						mailing_id = u.mailing_id,
-						company_id = u.company_id,
-						licence_id = u.licence_id,
-						counter = 1
-					)
-					m[key] = temp
-			rc += list (sorted (m.values (), key = lambda a: a.counter))
-		return rc
+		m: Dict[Tuple[bool, int, int, int, Optional[int]], ParseEMail.Origin] = {}
+		for (valid, uid) in self:
+			key = (valid, uid.customer_id, uid.mailing_id, uid.company_id, uid.licence_id)
+			try:
+				m[key].counter += 1
+			except KeyError:
+				temp = ParseEMail.Origin (
+					valid = valid,
+					customer_id = uid.customer_id,
+					mailing_id = uid.mailing_id,
+					company_id = uid.company_id,
+					licence_id = uid.licence_id,
+					counter = 1
+				)
+				m[key] = temp
+		return sorted (m.values (), key = lambda a: (a.valid, a.counter))
 	
 	def get_origin (self) -> Optional[ParseEMail.Origin]:
 		"""Returns the most probable customer found in the mail"""
 		return cast (Optional[ParseEMail.Origin], Stream (self.get_origins ()).last (no = None))
 
-	def parse_payload (self, message: Message, content: Optional[str], level: int) -> bool:
+	def parse_payload (self, message: EmailMessage, content: Optional[str], level: int) -> bool:
 		"""Hook for custom parsing"""
 		return True
-
-class EMailValidator:
-	"""Validate an EMail address
-
-This class allows some basic checks against an email address. This
-includes syntactical correctness as well as consulting available
-blacklists."""
-	__slots__ = ['bad_domains', 'blacklists']
-	special = '][%s\\()<>,::\'"' % ''.join ([chr (_n) for _n in range (32)])
-	pattern_user = re.compile ('^("[^"]+"|[^%s]+)$' % special, re.IGNORECASE)
-	pattern_domain_part = re.compile ('[a-z0-9][a-z0-9-]*', re.IGNORECASE)
-	class Blacklist (NamedTuple):
-		plain: Set[str]
-		wildcards: List[Tuple[str, Pattern[str]]]
-	class CustomBlacklist:
-		__slots__: List[str] = []
-		name = 'undefinied'
-		def __contains__ (self, email: str) -> bool:
-			return False
-
-	def __init__ (self) -> None:
-		self.bad_domains: Optional[Set[str]] = None
-		self.blacklists: Optional[Dict[int, EMailValidator.Blacklist]] = None
-		self.custom_blacklists: List[EMailValidator.CustomBlacklist] = []
-	
-	def __call__ (self, email: str, company_id: Optional[int] = None) -> None:
-		"""Validate an ``email'' address for ``company_id''"""
-		self.valid (email, company_id)
-
-	def reset (self) -> None:
-		self.bad_domains = None
-		self.blacklists = None
-		self.custom_blacklists.clear ()
-		
-	def setup (self, db: Optional[DB] = None, company_id: Optional[int] = None) -> None:
-		"""Setup processing ``db'' is an instance of agn3.db.DB or None for ``company_id''"""
-		if self.bad_domains is None or self.blacklists is None or (company_id is not None and company_id not in self.blacklists):
-			try:
-				mydb = db if db is not None else DB ()
-				mydb.check_open ()
-				if self.bad_domains is None:
-					self.bad_domains = set ()
-#
-#################################################################
-#	Blocked by https://jira.agnitas.de/browse/PROJ-672	#
-#################################################################
-#
-#					table = 'domain_clean_tbl'
-#					if mydb.exists (table):
-#						cursor = mydb.request ()
-#						for r in cursor.query ('SELECT bdomain FROM %s' % table):
-#							if r[0]:
-#								self.bad_domains.add (r[0].lower ())
-#						mydb.release (cursor)
-				if self.blacklists is None:
-					self.blacklists = {0: self.__read_blacklist (mydb, 0)}
-				if company_id is not None and company_id not in self.blacklists:
-					self.blacklists[company_id] = self.__read_blacklist (mydb, company_id)
-				ccfg = CompanyConfig (mydb)
-				ccfg.read ()
-				if company_id is not None:
-					ccfg.set_company_id (company_id)
-				self.custom_blacklists.clear ()
-			finally:
-				if db is None:
-					mydb.done ()
-
-	def __read_blacklist (self, db: DB, company_id: int) -> EMailValidator.Blacklist:
-		rc = EMailValidator.Blacklist (plain = set (), wildcards = [])
-		table = 'cust_ban_tbl' if company_id == 0 else 'cust%d_ban_tbl' % company_id
-		if db.exists (table):
-			seen: Set[str] = set ()
-			with db.request () as cursor:
-				for r in cursor.query ('SELECT email FROM %s' % table):
-					if r.email:
-						email = r.email.strip ().lower ()
-						if email not in seen:
-							seen.add (email)
-							if '%' in email or '_' in email:
-								pattern = SQL_wildcard_compile (email)
-								if pattern is not None:
-									rc.wildcards.append ((email, pattern))
-							else:
-								rc.plain.add (email)
-		return rc
-	
-	def valid (self, email: str, company_id: Optional[int] = None) -> None:
-		"""Validate an ``email'' address for ``company_id''"""
-		self.setup (company_id = company_id)
-		if not email:
-			raise error ('empty email')
-		email = email.strip ()
-		if not email:
-			raise error ('empty email (just whitespaces)')
-		parts = email.split ('@')
-		if len (parts) != 2:
-			raise error ('expect exactly one "@" sign')
-		(user, domain) = parts
-		self.valid_user (user)
-		self.valid_domain (domain)
-		self.check_blacklist (email, company_id)
-	
-	def valid_user (self, user: str) -> None:
-		"""Validates the local part ``user''"""
-		if not user:
-			raise error ('empty local part')
-		if self.pattern_user.match (user) is None:
-			raise error ('invalid local part')
-	
-	def valid_domain (self, domain: str) -> None:
-		"""Validates the ``domain'' part"""
-		if not domain:
-			raise error ('emtpy domain')
-		parts = domain.split ('.')
-		if len (parts) == 1:
-			raise error ('missing TLD')
-		if parts[-1] == '':
-			raise error ('empty TLD')
-		if len (parts[-1]) < 2:
-			raise error ('too short TLD (minium two character expected)')
-		for p in parts:
-			if p == '':
-				raise error ('domain part is empty')
-			if self.pattern_domain_part.match (p) is None:
-				raise error ('invalid domain part "%s"' % p)
-		if self.bad_domains and domain.lower () in self.bad_domains:
-			raise error ('typically mistyped domain detected')
-
-	def check_blacklist (self, email: str, company_id: Optional[int] = None) -> None:
-		if not self.blacklists:
-			self.setup (company_id = company_id)
-		if self.blacklists:
-			email = email.lower ()
-			company_ids = [0]
-			if company_id is not None and company_id > 0:
-				company_ids.append (company_id)
-			for cid in company_ids:
-				if cid in self.blacklists:
-					where = 'global' if cid == 0 else 'local'
-					blacklist = self.blacklists[cid]
-					if email in blacklist.plain:
-						raise error ('matches plain in %s blacklist' % where)
-					for (wildcard, pattern) in blacklist.wildcards:
-						if pattern.match (email) is not None:
-							raise error ('matches wildcard %s in %s blacklist' % (wildcard, where))
-		for custom_blacklist in self.custom_blacklists:
-			if email in custom_blacklist:
-				raise error ('matches %s blacklist' % custom_blacklist.name)

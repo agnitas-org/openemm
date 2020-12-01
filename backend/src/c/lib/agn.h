@@ -371,6 +371,9 @@ extern int		buffer_iseol (const buffer_t *b, int pos);
 extern int		buffer_index (const buffer_t *b, const byte_t *content, int clen);
 extern int		buffer_indexsn (const buffer_t *b, const char *s, int slen);
 extern int		buffer_indexs (const buffer_t *b, const char *s);
+extern void		buffer_ltrim (buffer_t *b);
+extern void		buffer_rtrim (buffer_t *b);
+extern void		buffer_trim (buffer_t *b);
 
 extern pool_t		*pool_alloc (void);
 extern pool_t		*pool_free (pool_t *p);

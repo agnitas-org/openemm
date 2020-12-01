@@ -118,16 +118,16 @@ only ``errors'' leading to an exit code not equal 0. """
 			self.postproc (r, 'startas', startas, pw)
 			if pw is None or pw.pw_name != startas:
 				if pw is None:
-					myself = '#%d' % os.getuid ()
+					myself = '#{pid}'.format (pid = os.getuid ())
 				else:
 					myself = pw.pw_name
-				raise error ('startas: start as user "%s", not "%s"' % (startas, myself))
+				raise error (f'startas: start as user "{startas}", not "{myself}"')
 		if runas is not None:
 			self.preproc (r, 'runas', runas)
 			pw = self.get_user (runas)
 			self.postproc (r, 'runas', runas, pw)
 			if pw is None:
-				raise error ('runas: failed to find user for %r' % runas)
+				raise error (f'runas: failed to find user for {runas}')
 			try:
 				if os.getgid () != pw.pw_gid:
 					os.setgid (pw.pw_gid)
@@ -137,23 +137,24 @@ only ``errors'' leading to an exit code not equal 0. """
 				os.environ['USER'] = pw.pw_name
 				os.chdir (pw.pw_dir)
 			except OSError as e:
-				raise error ('runas: failed to setup user %r: %r' % (runas, e.args))
+				raise error (f'runas: failed to setup user {runas}: {e}')
 		if umask is not None:
 			try:
 				self.preproc (r, 'umask', umask)
 				omask = os.umask (umask)
 				self.postproc (r, 'umask', umask, omask)
 			except OSError as e:
-				raise error ('umask: failed to set umask to %03o: %r' % (umask, e.args))
+				raise error (f'umask: failed to set umask to {umask:03o}: {e}')
 		if directories is not None:
 			for d in directories:
-				path = os.path.join (base, d)
-				try:
-					self.preproc (r, 'directory', path, d)
-					create_path (path)
-					self.postproc (r, 'directory', path, d)
-				except error as e:
-					r.error.append ('Directory: Failed to access/create %s: %s' % (path, e))
+				if d and d != os.path.curdir:
+					path = os.path.join (base, d)
+					try:
+						self.preproc (r, 'directory', path, d)
+						create_path (path)
+						self.postproc (r, 'directory', path, d)
+					except error as e:
+						r.error.append (f'Directory: Failed to access/create {path}: {e}')
 		if files is not None:
 			for f in files:
 				name = f.name if f.name.startswith (os.path.sep) else os.path.join (base, f.name)
@@ -165,9 +166,9 @@ only ``errors'' leading to an exit code not equal 0. """
 						if f.mode is not None:
 							os.chmod (name, f.mode)
 					except IOError as e:
-						r.error.append ('File: %s failed to create missing file: %s' % (name, e))
+						r.error.append (f'File: {name} failed to create missing file: {e}')
 					except OSError as e:
-						r.error.append ('File: %s failed to modify newly created file: %s' % (name, e))
+						r.error.append (f'File: {name} failed to modify newly created file: {e}')
 				self.postproc (r, 'file', f)
 				try:
 					st = os.stat (name)
@@ -175,17 +176,17 @@ only ``errors'' leading to an exit code not equal 0. """
 						gr = self.get_group (f.gid)
 						if gr is not None:
 							if gr.gr_gid != st.st_gid:
-								r.error.append ('File: %s expected to have group id %d (%r), but has %d' % (name, gr.gr_gid, f.gid, st.st_gid))
+								r.error.append (f'File: {name} expected to have group id {gr.gr_gid} ({f.gid}), but has {st.st_gid}')
 						else:
-							r.error.append ('File: no group "%s" found for %s' % (f.gid, name))
+							r.error.append (f'File: no group "{f.gid}" found for {name}')
 					#
 					if f.uid is not None:
 						ui = self.get_user (f.uid)
 						if ui is not None:
 							if ui.pw_uid != st.st_uid:
-								r.error.append ('File: %s expected to have user id %d (%r) but has %d' % (name, ui.pw_uid, f.uid, st.st_uid))
+								r.error.append (f'File: {name} expected to have user id {ui.pw_uid} ({f.uid}) but has {st.st_uid}')
 						else:
-							r.error.append ('File: no user "%s" found for %s' % (f.uid, name))
+							r.error.append (f'File: no user "{f.uid}" found for {name}')
 					#
 					lst = os.lstat (name)
 					for (flag, value, what) in [
@@ -196,21 +197,36 @@ only ``errors'' leading to an exit code not equal 0. """
 						(f.islink, stat.S_ISLNK (lst.st_mode), 'symbolic link')
 					]:
 						if flag is not None and flag != value:
-							r.error.append ('File: %s is %sa %s, but expected to be %sa %s' % (name, '' if value else 'NOT ', what, '' if flag else 'NOT ', what))
+							r.error.append ('File: {name} is {valid}a {what}, but expected to be {flag}a {what}'.format (
+								name = name,
+								valid = '' if value else 'NOT ',
+								what = what,
+								flag = '' if flag else 'NOT '
+							))
+
 					#
 					if f.mode is not None:
 						if stat.S_IMODE (st.st_mode) != f.mode:
-							r.error.append ('File: %s has mode %o but expected %o' % (name, stat.S_IMODE (st.st_mode), f.mode))
+							r.error.append ('File: {name} has mode {mode:o} but expected {expect:o}'.format (
+								name = name,
+								mode = stat.S_IMODE (st.st_mode),
+								expect = f.mode
+							))
 					#
 					if f.mask is not None:
 						if stat.S_IMODE (st.st_mode) & f.mask != f.mask:
-							r.error.append ('File: %s does not match file mask %o (%o results in %o)' % (name, f.mask, stat.S_IMODE (st.st_mode), stat.S_IMODE (st.st_mode) & f.mask))
+							r.error.append ('File: {name} does not match file mask {mask:o} ({full_mode:o} results in {masked_mode:o})'.format (
+								name = name,
+								mask = f.mask,
+								full_mode = stat.S_IMODE (st.st_mode),
+								masked_mode = stat.S_IMODE (st.st_mode) & f.mask
+							))
 				except OSError as e:
 					if e.args[0] == errno.ENOENT:
 						if f.optional is None or not f.optional:
-							r.error.append ('File: %s does not exist' % name)
+							r.error.append (f'File: {name} does not exist')
 					else:
-						r.error.append ('File: %s raises unexpected error: %s' % (name, e))
+						r.error.append (f'File: {name} raises unexpected error: {e}')
 		if symlinks is not None:
 			for symlink in symlinks:
 				need_create = False
@@ -219,7 +235,7 @@ only ``errors'' leading to an exit code not equal 0. """
 					st = os.lstat (symlink.path)
 					self.postproc (r, 'symlink', 'stat', symlink, st)
 					if not stat.S_ISLNK (st.st_mode):
-						r.error.append ('Symlink: %s is existing, but is no symlink' % symlink.path)
+						r.error.append (f'Symlink: {symlink.path} is existing, but is no symlink')
 					else:
 						old = os.readlink (symlink.path)
 						if old != symlink.target:
@@ -229,7 +245,7 @@ only ``errors'' leading to an exit code not equal 0. """
 					if e.args[0] == errno.ENOENT:
 						need_create = True
 					else:
-						r.error.append ('Symlink: %s failed to determinate current state: %s' % (symlink.path, str (e)))
+						r.error.append (f'Symlink: {symlink.path} failed to determinate current state: {e}')
 				if need_create:
 					try:
 						self.preproc (r, 'symlink', 'create', symlink)
@@ -237,9 +253,9 @@ only ``errors'' leading to an exit code not equal 0. """
 						os.symlink (symlink.target, symlink.path)
 						self.postproc (r, 'symlink', 'create', symlink)
 					except error as e:
-						r.error.append ('Symlink: %s failed to create path to file: %s' % (symlink.path, e))
+						r.error.append (f'Symlink: {symlink.path} failed to create path to file: {e}')
 					except OSError as e:
-						r.error.append ('Symlink: %s failed to create symlink: %s' % (symlink.path, e))
+						r.error.append (f'Symlink: {symlink.path} failed to create symlink: {e}')
 		if executables is not None:
 			try:
 				path = os.environ['PATH']
@@ -254,14 +270,14 @@ only ``errors'' leading to an exit code not equal 0. """
 									if filename not in pmap:
 										pmap[filename] = os.path.join (directory, filename)
 							except OSError as e:
-								r.error.append ('Exec: Failed to read directory %s: %s' % (directory, e))
+								r.error.append (f'Exec: Failed to read directory {directory}: {e}')
 				for executable in executables:
 					try:
 						path = executable if executable.startswith (os.path.sep) else pmap[executable]
 						if not os.access (path, os.X_OK):
-							r.error.append ('Exec: %s is not executable' % executable)
+							r.error.append (f'Exec: {executable} is not executable')
 					except KeyError:
-						r.error.append ('Exec: %s not found in path' % executable)
+						r.error.append (f'Exec: {executable} not found in path')
 			except KeyError:
 				r.error.append ('Exec: No $PATH variable found')
 		if modules is not None:
@@ -271,13 +287,13 @@ only ``errors'' leading to an exit code not equal 0. """
 					__import__ (module)
 					self.postproc (r, 'module', module)
 				except ImportError as e:
-					r.error.append ('Module: %s not importable: %r' % (module, e.args))
+					r.error.append (f'Module: {module} not importable: {e}')
 		if checks is not None:
 			for check in checks:
 				try:
 					check (r)
 				except Exception as e:
-					r.error.append ('Check: %r failed: %r' % (check, e.args))
+					r.error.append (f'Check: {check} failed: {e}')
 		#
 		with log ('sanity'):
 			if r.info:

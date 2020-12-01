@@ -22,6 +22,7 @@ counter_alloc (const char *mediatype, int subtype) /*{{{*/
 		c -> subtype = subtype;
 		c -> unitcount = 0;
 		c -> unitskip = 0;
+		c -> chunkcount = 0;
 		c -> bytecount = 0;
 		c -> bccunitcount = 0;
 		c -> bccbytecount = 0;

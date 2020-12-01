@@ -32,7 +32,7 @@ class Activator:
 	active	integer,
 	created	integer,
 	changed	integer
-)""", None)
+)""")
 	]
 	def __init__ (self) -> None:
 		self.db = DBLite (Activator.db_path, Activator.db_layout)

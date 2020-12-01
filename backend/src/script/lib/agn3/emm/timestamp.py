@@ -73,7 +73,7 @@ the persistance and offers some handy methods."""
 				self.__cleanup ()
 				raise error ('Failed to create new entry in timestamp table')
 		elif count[0] != 1:
-			raise error ('Expect one entry with name "%s", but found %d' % (self.name, count[0]))
+			raise error (f'Expect one entry with name "{self.name}", but found {count[0]}')
 
 	def done (self, commit: bool = True) -> None:
 		"""finalize timestamp
@@ -116,7 +116,7 @@ default database id."""
 
 	def __prepare_name (self, parm: Optional[Dict[str, Any]]) -> str:
 		if parm is None:
-			name = '\'%s\'' % self.name.replace ('\'', '\'\'')
+			name = '\'{name}\''.format (name = self.name.replace ('\'', '\'\''))
 		else:
 			name = ':timestampName'
 			parm[name[1:]] = self.name
@@ -124,11 +124,11 @@ default database id."""
 
 	def make_select_lower_mark (self, parm: Optional[Dict[str, Any]] = None) -> str:
 		"""creates a SQL statement to read the low mark"""
-		return 'SELECT cur FROM timestamp_tbl WHERE name = %s' % self.__prepare_name (parm)
+		return 'SELECT cur FROM timestamp_tbl WHERE name = {name}'.format (name = self.__prepare_name (parm))
 
 	def make_select_upper_mark (self, parm: Optional[Dict[str, Any]] = None) -> str:
 		"""creates a SQL statement to read the high mark"""
-		return 'SELECT temp FROM timestamp_tbl WHERE name = %s' % self.__prepare_name (parm)
+		return 'SELECT temp FROM timestamp_tbl WHERE name = {name}'.format (name = self.__prepare_name (parm))
 
 	def make_between_clause (self, column: str, parm: Optional[Dict[str, Any]] = None) -> str:
 		"""creates a SQL clause to check if a column is in current delta
@@ -138,12 +138,11 @@ of the timestamp is added to the dictionary and the value is handled
 for a prepared statement, otherwise the name is directly written to
 the clause."""
 		name = self.__prepare_name (parm)
-		return '(%(column)s >= (SELECT cur FROM timestamp_tbl WHERE name = %(name)s) AND %(column)s < (SELECT temp FROM timestamp_tbl WHERE name = %(name)s))' % \
-			{'column': column, 'name': name}
+		return f'({column} >= (SELECT cur FROM timestamp_tbl WHERE name = {name}) AND {column} < (SELECT temp FROM timestamp_tbl WHERE name = {name}))'
 
 	def make_interval_clause (self, column: str) -> str:
 		"""create a SQL clause for a delta (using retrieved data)"""
-		return '(%(column)s >= :timestampStart AND %(column)s < :timestampEnd)' % {'column': column}
+		return f'({column} >= :timestampStart AND {column} < :timestampEnd)'
 
 	def make_interval (self) -> Timestamp.Interval:
 		"""create an interval from low to high"""

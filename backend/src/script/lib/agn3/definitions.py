@@ -13,7 +13,7 @@ import	sys, os, platform, pwd
 from	.exceptions import error
 from	.systemconfig import Systemconfig
 #
-__all__ = ['syscfg', 'licence', 'system', 'fqdn', 'host', 'base', 'user', 'program']
+__all__ = ['syscfg', 'licence', 'system', 'fqdn', 'host', 'base', 'user', 'home', 'program', 'version']
 #
 syscfg = Systemconfig ()
 licence = syscfg.get_int ('licence', -1)
@@ -26,9 +26,12 @@ host = fqdn.split ('.', 1)[0]
 #
 base = os.environ.get ('HOME', '.')
 try:
-	user = pwd.getpwuid (os.getuid ()).pw_name
+	pw = pwd.getpwuid (os.getuid ())
+	user = pw.pw_name
+	home = pw.pw_dir
 except KeyError:
-	user = os.environ.get ('USER', '#%d' % os.getuid ())
+	user = os.environ.get ('USER', '#{uid}'.format (uid = os.getuid ()))
+	home = os.environ.get ('HOME', '.')
 syscfg.user = user
 #
 if len (sys.argv) > 0 and sys.argv[0]:
@@ -36,3 +39,5 @@ if len (sys.argv) > 0 and sys.argv[0]:
 	program = _basename if _extension.lower ().startswith ('.py') else _basename + _extension
 else:
 	program = 'unset'
+#
+version = os.environ.get ('VERSION', 'unknown')

@@ -36,6 +36,7 @@ extern const char	*xchar_to_char (const xchar_t *s);
 extern const xchar_t	*char_2_xchar (const char *s);
 extern const char	*byte_to_char (const byte_t *b);
 extern int		xstrlen (const xchar_t *s);
+extern int		xstrnlen (const xchar_t *s, int slen);
 extern int		xstrcmp (const xchar_t *s1, const char *s2);
 extern int		xstrncmp (const xchar_t *s1, const char *s2, size_t n);
 extern xchar_t		*xsubstr (const xchar_t *s, int start, int end);

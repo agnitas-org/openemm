@@ -48,7 +48,7 @@ returns False. If id is None then the logname for the current running
 program is used."""
 		if self.is_locked:
 			return True
-		content = '%10d\n' % os.getpid ()
+		content = '{pid:10d}\n'.format (pid = os.getpid ())
 		for state in 0, 1:
 			try:
 				fd = os.open (self.lockpath, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o444)

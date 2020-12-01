@@ -12,38 +12,6 @@
 # include	<string.h>
 # include	"xmlback.h"
 
-pval_t *
-pval_alloc (void) /*{{{*/
-{
-	pval_t	*p;
-	
-	if (p = (pval_t *) malloc (sizeof (pval_t))) {
-		p -> v = NULL;
-		p -> next = NULL;
-	}
-	return p;
-}/*}}}*/
-pval_t *
-pval_free (pval_t *p) /*{{{*/
-{
-	if (p) {
-		if (p -> v)
-			xmlBufferFree (p -> v);
-		free (p);
-	}
-	return NULL;
-}/*}}}*/
-pval_t *
-pval_free_all (pval_t *p) /*{{{*/
-{
-	pval_t	*tmp;
-	
-	while (tmp = p) {
-		p = p -> next;
-		pval_free (tmp);
-	}
-	return NULL;
-}/*}}}*/
 parm_t *
 parm_alloc (void) /*{{{*/
 {
@@ -63,7 +31,7 @@ parm_free (parm_t *p) /*{{{*/
 		if (p -> name)
 			free (p -> name);
 		if (p -> value)
-			pval_free_all (p -> value);
+			xmlBufferFree (p -> value);
 		free (p);
 	}
 	return NULL;
@@ -78,24 +46,6 @@ parm_free_all (parm_t *p) /*{{{*/
 		parm_free (tmp);
 	}
 	return NULL;
-}/*}}}*/
-xmlBufferPtr
-parm_valuecat (parm_t *p, const char *sep) /*{{{*/
-{
-	xmlBufferPtr	rc;
-	
-	rc = NULL;
-	if (p && p -> value && (rc = xmlBufferCreate ())) {
-		pval_t	*tmp;
-		
-		for (tmp = p -> value; tmp; tmp = tmp -> next) {
-			if (sep && (tmp != p -> value))
-				xmlBufferCCat (rc, sep);
-			if (tmp -> v)
-				xmlBufferAdd (rc, xmlBufferContent (tmp -> v), xmlBufferLength (tmp -> v));
-		}
-	}
-	return rc;
 }/*}}}*/
 media_t *
 media_alloc (void) /*{{{*/
@@ -158,18 +108,11 @@ media_find_parameter (media_t *m, const char *name) /*{{{*/
 static char *
 find_value (media_t *m, const char *pattern) /*{{{*/
 {
-	char	*rc;
 	parm_t	*p;
-	pval_t	*v;
-	
-	rc = NULL;
-	if (p = media_find_parameter (m, pattern)) {
-		for (v = p -> value; v && (! v -> v); v = v -> next)
-			;
-		if (v)
-			rc = xml2string (v -> v);
-	}
-	return rc;
+
+	if ((p = media_find_parameter (m, pattern)) && p -> value)
+		return xml2string (p -> value);
+	return NULL;
 }/*}}}*/
 void
 media_postparse (media_t *m, blockmail_t *blockmail) /*{{{*/
@@ -204,3 +147,4 @@ media_typeid (mediatype_t type) /*{{{*/
 	}
 	return "";
 }/*}}}*/
+

@@ -61,13 +61,13 @@ a default database driver is created for database access."""
 							rq = usedb.querys (
 								'SELECT sourcegroup_id '
 								'FROM sourcegroup_tbl '
-								'WHERE %s = :source' % sourcegroup_field,
+								f'WHERE {sourcegroup_field} = :source',
 								{'source': source_group}
 							)
 							if rq is not None and rq.sourcegroup_id is not None:
 								source_group = int (rq.sourcegroup_id)
 						if type (source_group) is not int:
-							raise error ('Invalid source_group: %r' % (source_group, ))
+							raise error (f'Invalid source_group: {source_group}')
 						#
 						rq = usedb.querys (
 							'SELECT sourcegroup_type, description '
@@ -109,12 +109,12 @@ a default database driver is created for database access."""
 						)
 						logger.info (f'Created new datasource id companyID {company_id} with {name} for {rq.description} ({rq.sourcegroup_type})')
 			else:
-				logger.error ('Failed to open database: %s' % usedb.last_error ())
+				logger.error ('Failed to open database: {error}'.format (error = usedb.last_error ()))
 			if db is None:
 				usedb.close ()
 			self.cache[key] = rc
 			if rc is not None:
-				logger.info ('Found datasource %d for companyID %d with %s' % (rc, company_id, name))
+				logger.info (f'Found datasource {rc} for companyID {company_id} with {name}')
 			else:
-				logger.info ('Did not found datasource for companyID %d with %s' % (company_id, name))
+				logger.info (f'Did not found datasource for companyID {company_id} with {name}')
 		return rc

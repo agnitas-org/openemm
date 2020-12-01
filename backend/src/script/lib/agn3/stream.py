@@ -16,7 +16,7 @@ from	collections import Counter, Iterable, Iterator, deque, defaultdict
 from	itertools import filterfalse, dropwhile, takewhile, islice, chain
 from	types import TracebackType
 from	typing import Any, Optional, Callable, Reversible, Sized, Union
-from	typing import Dict, List, Match, Pattern, Set, Tuple, Type
+from	typing import DefaultDict, Dict, List, Match, Pattern, Set, Tuple, Type
 from	typing import cast
 import	typing
 
@@ -105,7 +105,7 @@ execution at all."""
 	@staticmethod
 	def reloop (pattern: Union[str, Pattern[str]], s: str, flags: int = 0, position: int = 1, finalizer: Optional[Callable[[Any], Any]] = None) -> Any:
 		"""loop to find last occurance of nested regex"""
-		expression: Pattern[str] = re.compile (pattern, flags) if type (pattern) is str else cast (Pattern[str], pattern)
+		expression: Pattern[str] = re.compile (pattern, flags) if isinstance (pattern, str) else pattern
 		while s:
 			m = expression.search (s)
 			if m is None:
@@ -147,10 +147,10 @@ returning the final value"""
 		self.iterator = iter (iterator)
 
 	def __str__ (self) -> str:
-		return '%s <%s>' % (self.__class__.__name__, self.iterator)
+		return f'{self.__class__.__name__} < {self.iterator} >'
 	
 	def __repr__ (self) -> str:
-		return '%s (%r)' % (self.__class__.__name__, self.iterator)
+		return f'{self.__class__.__name__} ({self.iterator!r})'
 
 	def __len__ (self) -> int:
 		return self.count ()
@@ -191,13 +191,14 @@ returning the final value"""
 		pattern: Union[str, Pattern[str]],
 		flags: int = 0,
 		key: Optional[Callable[[Any], Any]] = None,
-		predicate: Optional[Callable[[Pattern[str], Match[str], Any], Any]] = None) -> Stream:
+		predicate: Optional[Callable[[Pattern[str], Match[str], Any], Any]] = None
+	) -> Stream:
 		"""Create a new stream for each element matching
 regular expression ``pattern''. ``flags'' is passed to re.compile. If
 ``predicate'' is not None, this must be a callable which accepts three
 arguments, the compiled regular expression, the regular expression
 matching object and the element itself."""
-		expression = re.compile (pattern, flags) if type (pattern) is str else cast (Pattern[str], pattern)
+		expression = re.compile (pattern, flags) if isinstance (pattern, str) else pattern
 		def regexper () -> Iterator[Any]:
 			for elem in self.iterator:
 				m = expression.match (key (elem) if key is not None else elem)
@@ -234,11 +235,11 @@ matching object and the element itself."""
 If predicate is None or a string, then each object is printed to
 stderr, if predicate is a string, the output is prefixed by this
 string, otherwise with a generic 'Peek'"""
-		if predicate is None or type (predicate) is str:
-			format = '%s: %%r\n' % (predicate if predicate is not None else 'Peek', )
-			predicater: Callable[[Any], Any] = lambda v: sys.stderr.write (format % (v, ))
+		if predicate is None or isinstance (predicate, str):
+			format = '{id}: {{value!r}}\n'.format (id = predicate if predicate is not None else 'Peek')
+			predicater: Callable[[Any], Any] = lambda v: sys.stderr.write (format.format (value = v))
 		else:
-			predicater = cast (Callable[[Any], Any], predicate)
+			predicater = predicate
 		return self.filter (lambda v: predicater (v) or True)
 
 	class Progress:
@@ -248,8 +249,8 @@ string, otherwise with a generic 'Peek'"""
 		def final (self, count: int) -> None:
 			pass
 	
-	def __progress (self, p: Union[str, Progress], checkpoint: Optional[int]) -> Progress:
-		if type (p) is str:
+	def __progress (self, p: Union[str, Stream.Progress], checkpoint: Optional[int]) -> Stream.Progress:
+		if isinstance (p, str):
 			class Progress (Stream.Progress):
 				__slots__ = ['name', 'checkpoint', 'count', 'shown']
 				def __init__ (self, name: str, checkpoint: Optional[int] = None) -> None:
@@ -267,12 +268,12 @@ string, otherwise with a generic 'Peek'"""
 						self.show ()
 				def final (self, count: int) -> None:
 					self.show ()
-			progress = Progress (name = cast (str, p), checkpoint = checkpoint)
+			progress: Stream.Progress = Progress (name = p, checkpoint = checkpoint)
 		else:
-			progress = cast (Progress, p)
+			progress = p
 		return progress
 
-	def progress (self, p: Union[str, Progress], checkpoint: Optional[int] = None) -> Stream:
+	def progress (self, p: Union[str, Stream.Progress], checkpoint: Optional[int] = None) -> Stream:
 		"""Create a new stream which copies the stream calling
 the instance of ``p'' (an instance of agn.Stream.Progress or a string)
 on each iteration. If ``p'' is a string, then ``checkpoint'' is an
@@ -365,11 +366,11 @@ is added unmapped to the new stream."""
 
 	def __checkNo (self, no: Any, where: str) -> Any:
 		if no is self.__sentinel:
-			raise ValueError ('no value available for Stream.%s: empty result set' % where)
+			raise ValueError (f'no value available for Stream.{where}: empty result set')
 		return no
 		
 	def __position (self, finisher:  Optional[Callable[[Any], Any]], no: Any, position: Callable[[Any], int], where: str) -> Any:
-		collect: Dict[Any, int] = defaultdict (int)
+		collect: DefaultDict[Any, int] = defaultdict (int)
 		for elem in self.iterator:
 			collect[elem] += 1
 		if collect:
@@ -492,7 +493,7 @@ each element. """
 	
 	def group (self, predicate: Optional[Callable[[Any], Tuple[Any, Any]]] = None, finisher: Optional[Callable[[Dict[Any, List[Any]]], Any]] = None) -> Any:
 		"""Returns a dict of grouped elements as separated by ``predicate'', optional modify the final dict by ``finisher''."""
-		rc: Dict[Any, List[Any]] = defaultdict (list)
+		rc: DefaultDict[Any, List[Any]] = defaultdict (list)
 		if predicate is None:
 			for (key, value) in self.iterator:
 				rc[key].append (value)

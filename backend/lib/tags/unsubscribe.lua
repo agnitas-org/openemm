@@ -1,4 +1,4 @@
--- link: ![admin]%(rdir-domain)/form.do?agnCI=%(company-id)&agnFN=unsubscribe&agnUID=##AGNUID## agnUNSUBSCRIBE;
+-- link: ![admin]%(rdir-domain)/form.action?agnCI=%(company-id)&agnFN=unsubscribe&agnUID=##AGNUID## agnUNSUBSCRIBE;
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                                                                                                                                                                                                  --
 --                                                                                                                                                                                                                                                                  --
@@ -16,7 +16,7 @@ function unsubscribe (ctx, parm, cust)
 	end
 	
 	if ctx._result == nil then
-		ctx._result = agn.strmap ('%(rdir_domain)/form.do?agnCI=%(company_id)&agnFN=unsubscribe&agnUID=##AGNUID##')
+		ctx._result = agn.strmap ('%(rdir_domain)/form.action?agnCI=%(company_id)&agnFN=unsubscribe&agnUID=##AGNUID##')
 	end
 	return ctx._result
 end

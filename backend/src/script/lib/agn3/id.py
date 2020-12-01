@@ -12,7 +12,6 @@
 import	os, pwd, grp
 from	typing import Any, Callable, Union
 from	typing import List
-from	typing import cast
 from	.ignore import Ignore
 #
 __all__ = ['IDs']
@@ -38,14 +37,14 @@ cannot be found."""
 		if what is None:
 			with Ignore (KeyError):
 				rc = lookup_id (lookup_default ())
-		elif type (what) is str:
+		elif isinstance (what, str):
 			try:
-				rc = lookup_name (cast (str, what))
+				rc = lookup_name (what)
 			except KeyError:
 				if relaxed:
 					with Ignore (KeyError, ValueError, TypeError):
 						rc = lookup_id (int (what))
-		elif type (what) in (int, float):
+		elif isinstance (what, int) or isinstance (what, float):
 			with Ignore (KeyError):
 				rc = lookup_id (int (what))
 		return rc

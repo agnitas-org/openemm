@@ -178,7 +178,6 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> opp_len = 0;
 		b -> force_ecs_uid = false;
 		b -> uid_version = 0;
-		b -> xbp = NULL;
 
 		if ((syncfile && (! open_syncfile (b))) ||
 		    (! (b -> in = xmlBufferCreate ())) ||
@@ -198,8 +197,6 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 			b -> body -> spare = 8192;
 			xmlBufferCCat (b -> mtbuf[0], "0");
 			xmlBufferCCat (b -> mtbuf[1], "1");
-			if (b -> xbp = xbp_create (lg))
-				xbp_prepare (b -> xbp, b);
 		}
 	}
 	return b;
@@ -208,11 +205,6 @@ blockmail_t *
 blockmail_free (blockmail_t *b) /*{{{*/
 {
 	if (b) {
-		if (b -> xbp) {
-			xbp_cleanup (b -> xbp, b);
-			xbp_free (b -> xbp);
-		}
-		
 		if (b -> syfp)
 			fclose (b -> syfp);
 		if (b -> in)
@@ -313,7 +305,7 @@ blockmail_free (blockmail_t *b) /*{{{*/
 	return NULL;
 }/*}}}*/
 bool_t
-blockmail_count (blockmail_t *b, const char *mediatype, int subtype, long bytes, int bcccount) /*{{{*/
+blockmail_count (blockmail_t *b, const char *mediatype, int subtype, int chunks, long bytes, int bcccount) /*{{{*/
 {
 	counter_t	*run, *prv;
 
@@ -333,10 +325,11 @@ blockmail_count (blockmail_t *b, const char *mediatype, int subtype, long bytes,
 		b -> counter = run;
 	}
 	if (run) {
-		if (bytes == 0) {
+		if ((bytes == 0) || (! b -> active)) {
 			run -> unitskip++;
 		} else {
 			run -> unitcount++;
+			run -> chunkcount += chunks;
 			run -> bytecount += bytes;
 			run -> bccunitcount += bcccount;
 			run -> bccbytecount += bytes * bcccount;
@@ -393,7 +386,7 @@ blockmail_unsync (blockmail_t *b) /*{{{*/
 	}
 }/*}}}*/
 bool_t
-blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, int bcccount) /*{{{*/
+blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, int chunks, int bcccount) /*{{{*/
 {
 	bool_t	rc;
 	
@@ -421,12 +414,17 @@ blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, i
 					if (ptr = strchr (ptr, ';')) {
 						*ptr++ = '\0';
 						temp = ptr;
-						if (ptr = strchr (ptr, '\n'))
-							*ptr = '\0';
-						styp = atoi (temp);
-						if (ncid) {
-							bytes = atol (size);
-							blockmail_count (b, mtyp, styp, bytes, bcccount);
+						if (ptr = strchr (ptr, ';')) {
+							*ptr++ = '\0';
+							styp = atoi (temp);
+							temp = ptr;
+							if (ptr = strchr (ptr, '\n'))
+								*ptr = '\0';
+							chunks = atoi (temp);
+							if (ncid) {
+								bytes = atol (size);
+								blockmail_count (b, mtyp, styp, chunks, bytes, bcccount);
+							}
 						}
 					}
 				}
@@ -444,13 +442,11 @@ blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, i
 	return rc;
 }/*}}}*/
 bool_t
-blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, int bcccount) /*{{{*/
+blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, int chunks, long size, int bcccount) /*{{{*/
 {
 	bool_t	rc;
-	long	size;
-	
+
 	rc = true;
-	size = b -> active ? b -> head -> length + 2 + b -> body -> length : 0;
 	if (b -> syfp) {
 		long	pos;
 		
@@ -461,7 +457,7 @@ blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, i
 		} else
 			pos = -1;
 		if (rc) {
-			if ((fprintf (b -> syfp, "%d;%ld;%s;%d\n", cid, size, mediatype, subtype) == -1) ||
+			if ((fprintf (b -> syfp, "%d;%ld;%s;%d;%d\n", cid, size, mediatype, subtype, chunks) == -1) ||
 			    (fflush (b -> syfp) == -1))
 				rc = false;
 			if (rc && (pos != -1) && (fseek (b -> syfp, pos, SEEK_SET) == -1))
@@ -469,7 +465,7 @@ blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, i
 		}
 	}
 	if (rc && cid) {
-		rc = blockmail_count (b, mediatype, subtype, size, bcccount);
+		rc = blockmail_count (b, mediatype, subtype, chunks, size, bcccount);
 		if (b -> active && b -> mailtrack)
 			mailtrack_add (b -> mailtrack, cid);
 	}
@@ -484,14 +480,15 @@ static void
 replace (xmlBufferPtr *buf, media_t *m, const char *mid) /*{{{*/
 {
 	parm_t		*p;
-	xmlBufferPtr	nbuf;
 
-	if (p = media_find_parameter (m, mid))
-		if (nbuf = parm_valuecat (p, ",")) {
-			if (*buf)
-				xmlBufferFree (*buf);
-			*buf = nbuf;
-		}
+	if (p = media_find_parameter (m, mid)) {
+		if (*buf)
+			xmlBufferEmpty (*buf);
+		else
+			*buf = xmlBufferCreate ();
+		if (p -> value)
+			xmlBufferAdd (*buf, xmlBufferContent (p -> value), xmlBufferLength (p -> value));
+	}
 }/*}}}*/
 static inline void
 cat (xmlBufferPtr buf, const char *what, ...) /*{{{*/

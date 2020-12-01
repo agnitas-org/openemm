@@ -13,15 +13,15 @@
 from	__future__ import annotations
 import	logging, argparse
 import	os, time, re, errno
-from	collections import namedtuple, defaultdict
+from	collections import defaultdict
 from	functools import partial
 from	datetime import datetime
 from	dataclasses import dataclass, field
-from	typing import Any, Callable, Final, Optional, Protocol, Union
-from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Pattern, Set, TextIO, Tuple, Type
+from	typing import Any, Callable, Final, Optional, Union
+from	typing import DefaultDict, Dict, Iterator, List, Pattern, Set, TextIO, Tuple, Type
 from	typing import cast
 from	agn3.cache import Cache
-from	agn3.db import DB
+from	agn3.db import DB, Row
 from	agn3.dbm import DBM
 from	agn3.definitions import base, licence, syscfg
 from	agn3.email import EMail
@@ -32,12 +32,12 @@ from	agn3.ignore import Ignore
 from	agn3.io import create_path, cstreamopen
 from	agn3.log import log
 from	agn3.parameter import Parameter
-from	agn3.parser import Unit, ParseTimestamp
+from	agn3.parser import Unit, ParseTimestamp, Line, Field, Lineparser, Tokenparser
 from	agn3.plugin import Plugin, LoggingManager
 from	agn3.runtime import Runtime
 from	agn3.stream import Stream
 from	agn3.template import Template
-from	agn3.tools import atoi, atob
+from	agn3.tools import atob
 from	agn3.tracker import Key, Tracker
 #
 logger = logging.getLogger (__name__)
@@ -47,7 +47,6 @@ class UpdatePlugin (Plugin): #{{{
 #}}}
 class Duplicate: #{{{
 	__slots__ = ['name', 'expiration', 'path', 'dbs']
-	unit = Unit ()
 	def __init__ (self, name: str, expiration: int) -> None:
 		self.name = name
 		self.expiration = expiration
@@ -92,7 +91,7 @@ class Duplicate: #{{{
 			self.dbs.insert (0, DBM (path, 'c'))
 		return bool (self.dbs)
 	
-	def close (self, do_expire: bool = True) -> None:
+	def close (self) -> None:
 		Stream (self.dbs).each (lambda d: d.close ())
 		self.dbs.clear ()
 #}}}
@@ -170,38 +169,15 @@ class Log: #{{{
 					seq = max (seq, sq + 1)
 		return seq
 #}}}
-class Line (Protocol): #{{{
-	def __getattr__ (self, name: str) -> Any: ...
-	def __getitem__ (self, item: int) -> Any: ...
-#}}}
-class Field (NamedTuple): #{{{
-	name: str
-	converter: Callable[[str], Any]
-#}}}
-class Lineparser: #{{{
-	__slots__ = ['splitter', 'target_class', 'column_count', 'converter']
-	def __init__ (self, splitter: Callable[[str], List[str]], *fields: Union[Field, str]) -> None:
-		self.splitter = splitter
-		self.target_class = cast (Type[Line], namedtuple ('Line', tuple (cast (Field, _f).name if type (_f) is Field else cast (str, _f) for _f in fields)))
-		self.column_count = len (fields)
-		self.converter = (Stream (fields)
-			.map (lambda f: f.converter if type (f) is Field else lambda a: a)
-			.list ()
-		)
-	
-	def __call__ (self, line: str) -> Line:
-		elements = self.splitter (line)
-		if len (elements) != self.column_count:
-			raise error ('%s: expected %d elements, got %d elements' % (line, self.column_count, len (elements)))
-		try:
-			return self.target_class (*tuple (_c (_e) for (_c, _e) in zip (self.converter, elements)))
-		except Exception as e:
-			raise error ('%s: failed to parse: %s' % (line, e))
-#}}}
 class Update: #{{{
-	__slots__ = ['basename', 'failpath', 'current', 'pid', 'lineno', 'log', 'plugin', 'check_for_duplicates', 'duplicate', 'tracker', 'tracker_age', 'tracker_expire']
+	__slots__ = [
+		'basename', 'failpath', 'current', 'pid', 'lineno', 'log',
+		'check_for_duplicates', 'duplicate', 'tracker', 'tracker_age', 'tracker_expire',
+		'plugin'
+	]
 	name = 'update'
 	path = '/dev/null'
+	timestamp_parser = ParseTimestamp ()
 	def __init__ (self) -> None:
 		directory = os.path.dirname (self.path)
 		self.basename = os.path.basename (self.path).split ('.')[0]
@@ -210,7 +186,6 @@ class Update: #{{{
 		self.pid = os.getpid ()
 		self.lineno = 0
 		self.log = Log (directory, self.name)
-		self.plugin = UpdatePlugin (manager = LoggingManager)
 		self.check_for_duplicates = True
 		self.duplicate: Optional[Duplicate] = None
 		self.tracker = Tracker (os.path.join (base, 'var', 'run', f'update-{self.name}.track'))
@@ -218,11 +193,13 @@ class Update: #{{{
 		self.tracker_expire = 0
 	
 	def setup (self) -> None:
+		self.plugin = UpdatePlugin (manager = LoggingManager)
 		if self.check_for_duplicates:
 			self.duplicate = Duplicate (name = self.name, expiration = 7)
 
 	def done (self) -> None:
 		self.tracker.close ()
+		self.plugin.shutdown ()
 
 	def step (self) -> None:
 		if self.tracker_age is not None:
@@ -440,7 +417,7 @@ class UpdateBounce (Update): #{{{
  			Detail.HardbounceSystem:	[512, 518]
 		}
 		class Pattern:
-			controlPattern = re.compile ('^/(.*)/([a-z]*)$')
+			control_pattern = re.compile ('^/(.*)/([a-z]*)$')
 			def __init__ (self, data: str, debug: bool) -> None:
 				try:
 					self.data = Parameter (data).data
@@ -480,7 +457,7 @@ class UpdateBounce (Update): #{{{
 							flags = re.IGNORECASE
 						else:
 							flags = 0
-							mtch = self.controlPattern.match (value)
+							mtch = self.control_pattern.match (value)
 							if mtch is not None:
 								(pattern, opts) = mtch.groups ()
 								for opt in opts:
@@ -510,6 +487,8 @@ class UpdateBounce (Update): #{{{
 		
 		@dataclass
 		class Element:
+			rule_id: int
+			dsn: int
 			detail: int
 			pattern: Optional[UpdateBounce.Translate.Pattern]
 
@@ -518,13 +497,13 @@ class UpdateBounce (Update): #{{{
 			self.default_tab: Dict[int, List[UpdateBounce.Translate.Element]] = {}
 			for (key, value) in self.default.items ():
 				for dsn in value:
-					self.default_tab[dsn] = [UpdateBounce.Translate.Element (detail = key, pattern = None)]
+					self.default_tab[dsn] = [UpdateBounce.Translate.Element (rule_id = 0, dsn = dsn, detail = key, pattern = None)]
 			self.tab: DefaultDict[int, Dict[int, List[UpdateBounce.Translate.Element]]] = defaultdict (dict)
 		
 		def clear (self) -> None:
 			self.tab.clear ()
 
-		def add (self, company_id: int, dsn: int, detail: int, pattern_expr: Optional[str] = None) -> None:
+		def add (self, rule_id: int, company_id: int, dsn: int, detail: int, pattern_expr: Optional[str] = None) -> None:
 			tab = self.tab[company_id]
 			if pattern_expr is not None:
 				if self.debug:
@@ -537,7 +516,7 @@ class UpdateBounce (Update): #{{{
 				pattern = None
 			if dsn in tab:
 				if pattern is not None:
-					tab[dsn].insert (0, UpdateBounce.Translate.Element (detail, pattern))
+					tab[dsn].insert (0, UpdateBounce.Translate.Element (rule_id = rule_id, dsn = dsn, detail = detail, pattern = pattern))
 				else:
 					ltab = tab[dsn]
 					for (index, element) in enumerate (ltab):
@@ -545,24 +524,24 @@ class UpdateBounce (Update): #{{{
 							ltab[index].detail = detail
 							break
 					else:
-						ltab.append (UpdateBounce.Translate.Element (detail, pattern))
+						ltab.append (UpdateBounce.Translate.Element (rule_id = rule_id, dsn = dsn, detail = detail, pattern = pattern))
 			else:
-				tab[dsn] = [UpdateBounce.Translate.Element (detail, pattern)]
+				tab[dsn] = [UpdateBounce.Translate.Element (rule_id = rule_id, dsn = dsn, detail = detail, pattern = pattern)]
 
 		def setup (self, db: DB) -> None:
-			for row in db.query ('SELECT company_id, dsn, detail, pattern FROM bounce_translate_tbl'):
-				self.add (row.company_id, row.dsn, row.detail, row.pattern)
+			for row in db.query ('SELECT rule_id, company_id, dsn, detail, pattern FROM bounce_translate_tbl WHERE active = 1'):
+				self.add (row.rule_id, row.company_id, row.dsn, row.detail, row.pattern)
 
-		def trans (self, company: int, dsn: int, infos: UpdateBounce.Info) -> int:
+		def trans (self, company: int, dsn: int, infos: UpdateBounce.Info) -> Tuple[int, int]:
 			for tab in [self.tab[_k] for _k in (company, 0) if _k in self.tab] + [self.default_tab]:
 				nr = dsn
 				while nr > 0:
 					if nr in tab:
 						for element in tab[nr]:
 							if element.pattern is None or element.pattern.match (infos):
-								return element.detail
+								return (element.rule_id, element.detail)
 					nr //= 10
-			return Detail.Ignore
+			return (0, Detail.Ignore)
 	#}}}
 	def __init__ (self) -> None:
 		super ().__init__ ()
@@ -576,17 +555,26 @@ class UpdateBounce (Update): #{{{
 		self.rvcount = 0
 		self.ccount = 0
 		self.translate = UpdateBounce.Translate ()
-		self.cache = Cache (limit = 65536)
+		self.cache: Cache[Key, Dict[str, Any]] = Cache (limit = 65536)
 		self.succeeded: DefaultDict[int, int] = defaultdict (int)
 		self.has_mailtrack: Dict[int, bool] = {}
 		self.has_mailtrack_last_read = 0
 
-	dsnparse = re.compile ('^([0-9])\\.([0-9])\\.([0-9])$')
+	dsnparse = re.compile ('^([0-9])\\.([0-9])\\.([0-9]+)$')
 	user_unknown = re.compile ('user unknown|unknown user', re.IGNORECASE)
-	timestamp_parser = ParseTimestamp ()
+	line_parser = Lineparser (
+		lambda a: a.split (';', 5),
+		'dsn',
+		Field ('licence_id', int),
+		Field ('mailing_id', int),
+		Field ('media', int),
+		Field ('customer_id', int),
+		'info'
+	)
 	@dataclass
 	class Breakdown:
 		timestamp: datetime
+		rule: int
 		detail: int
 		code: int
 		bounce_type: UserStatus
@@ -598,6 +586,7 @@ class UpdateBounce (Update): #{{{
 		def new (dsn: str, info: str, company_id: int, translate: UpdateBounce.Translate) -> UpdateBounce.Breakdown:
 			rc = UpdateBounce.Breakdown (
 				timestamp = datetime.now (),
+				rule = 0,
 				detail = Detail.Ignore,
 				code = 0,
 				bounce_type = UserStatus.BOUNCE,
@@ -608,9 +597,9 @@ class UpdateBounce (Update): #{{{
 			match = UpdateBounce.dsnparse.match (dsn)
 			if match is not None:
 				grp = match.groups ()
-				rc.code = int (grp[0]) * 100 + int (grp[1]) * 10 + int (grp[2])
+				rc.code = int (grp[0]) * 100 + int (grp[1]) * 10 + int (grp[2][0])
 				rc.infos = infos = UpdateBounce.Info (info)
-				timestamp = UpdateBounce.timestamp_parser (infos['timestamp'])
+				timestamp = Update.timestamp_parser (infos['timestamp'])
 				if timestamp is not None:
 					rc.timestamp = timestamp
 				rc.mailloop_remark = infos['mailloop']
@@ -633,9 +622,9 @@ class UpdateBounce (Update): #{{{
 						with Ignore (KeyError):
 							rc.bounce_type = UserStatus.find_status (status)
 				else:
-					rc.detail = translate.trans (company_id, rc.code, infos)
+					rc.rule, rc.detail = translate.trans (company_id, rc.code, infos)
 			if rc.bounce_remark is None:
-				rc.bounce_remark = f'bounce:{rc.detail}'
+				rc.bounce_remark = f'bounce:{rc.detail} (from {dsn} using {rc.rule})'
 			return rc
 
 	def __map_mailing_to_company (self, db: DB, mailing_id: int) -> int:
@@ -708,137 +697,133 @@ class UpdateBounce (Update): #{{{
 		return True
 
 	def update_line (self, db: DB, line: str) -> bool:
-		parts = line.split (';', 5)
-		if len (parts) != 6:
-			logger.warning (f'Got invalid line: {line}')
-			return False
+		rc = False
 		try:
-			(dsn, licence_id, mailing, media, customer, info) = (parts[0], int (parts[1]), int (parts[2]), int (parts[3]), int (parts[4]), parts[5])
-		except ValueError:
-			logger.warning (f'Unable to parse line: {line}')
-			return False
-		if licence_id != 0 and licence_id != licence:
-			logger.debug ('Ignore bounce for other licenceID %d' % licence_id)
-			return True
-		if customer == 0:
-			logger.debug ('Ignore virtual recipient')
-			return True
-		if mailing <= 0 or customer < 0:
-			logger.warning (f'Got line with invalid mailing or customer: {line}')
-			return False
-		company = self.__map_mailing_to_company (db, mailing)
-		if company <= 0:
-			logger.warning ('Cannot map mailing %d to company for line: %s' % (mailing, line))
-			return False
-		breakdown = UpdateBounce.Breakdown.new (dsn, info, company, self.translate)
-		if breakdown.detail == Detail.Ignore:
-			logger.debug (f'Ignoring line: {line}')
-			return True
-		if breakdown.detail < 0:
-			logger.warning ('Got line with invalid detail (%d): %s' % (breakdown.detail, line))
-			return False
-		now = int (time.time ())
-		if breakdown.detail == Detail.Success:
-			self.succeeded[mailing] += 1
-			logging = self.__log_success (db, company, now)
-		else:
-			logging = True
-		rc = True
-		if logging:
+			record = UpdateBounce.line_parser (line)
+			if record.licence_id != 0 and record.licence_id != licence:
+				logger.debug (f'Ignore bounce for other licenceID {record.licence_id}')
+				return True
+			if record.customer_id == 0:
+				logger.debug ('Ignore virtual recipient')
+				return True
+			if record.mailing_id <= 0 or record.customer_id < 0:
+				logger.warning (f'Got line with invalid mailing or customer: {line}')
+				return False
+			company_id = self.__map_mailing_to_company (db, record.mailing_id)
+			if company_id <= 0:
+				logger.warning ('Cannot map mailing %d to company_id for line: %s' % (record.mailing_id, line))
+				return False
+			breakdown = UpdateBounce.Breakdown.new (record.dsn, record.info, company_id, self.translate)
+			if breakdown.detail == Detail.Ignore:
+				logger.debug (f'Ignoring line: {line}')
+				return True
+			if breakdown.detail < 0:
+				logger.warning ('Got line with invalid detail (%d): %s' % (breakdown.detail, line))
+				return False
+			now = int (time.time ())
 			if breakdown.detail == Detail.Success:
-				data = {
-					'customer': customer,
-					'mailing': mailing,
-					'ts': breakdown.timestamp
-				}
-				try:
-					query = (
-						'INSERT INTO success_%d_tbl (customer_id, mailing_id, timestamp) '
-						'VALUES (:customer, :mailing, :ts)' % company
-					)
-					db.update (query, data)
-					self.plugin ().success (db.cursor, now, company, mailing, customer, breakdown.timestamp, breakdown.infos)
-				except error as e:
-					logger.error ('Unable to add success for company %d: %s' % (company, e))
-					rc = False
-				#
-				self.sucount += 1
-				if self.sucount % 1000 == 0:
-					db.sync ()
-			elif breakdown.bounce_type == UserStatus.BOUNCE:
-				data = {
-					'company': company,
-					'customer': customer,
-					'detail': breakdown.detail,
-					'mailing': mailing,
-					'dsn': breakdown.code,
-					'ts': breakdown.timestamp
-				}
-				try:
-					store = self.__track_store (now, mailing, customer, breakdown.detail)
-					if store:
-						query = db.qselect (
-							oracle = (
-								'INSERT INTO bounce_tbl '
-								'       (bounce_id, company_id, customer_id, detail, mailing_id, dsn, timestamp) '
-								'VALUES '
-								'       (bounce_tbl_seq.nextval, :company, :customer, :detail, :mailing, :dsn, :ts)'
-							), mysql = (
-								'INSERT INTO bounce_tbl '
-								'       (company_id, customer_id, detail, mailing_id, dsn, timestamp) '
-								'VALUES '
-								'       (:company, :customer, :detail, :mailing, :dsn, :ts)'
-							)
+				self.succeeded[record.mailing_id] += 1
+				logging = self.__log_success (db, company_id, now)
+			else:
+				logging = True
+			rc = True
+			if logging:
+				if breakdown.detail == Detail.Success:
+					data = {
+						'customer': record.customer_id,
+						'mailing': record.mailing_id,
+						'ts': breakdown.timestamp
+					}
+					try:
+						query = (
+							'INSERT INTO success_%d_tbl (customer_id, mailing_id, timestamp) '
+							'VALUES (:customer, :mailing, :ts)' % company_id
 						)
 						db.update (query, data)
-					elif breakdown.detail not in Detail.Hardbounces:
-						self.ccount += 1
-					self.plugin ().bounce (db.cursor, store, now, company, mailing, customer, breakdown.timestamp, breakdown.code, breakdown.detail, breakdown.infos)
-				except error as e:
-					logger.error ('Unable to add bounce %r to database: %s' % (data, e))
-					rc = False
-			if breakdown.detail in Detail.Hardbounces or (breakdown.detail == Detail.Internal and breakdown.bounce_type is not None and breakdown.bounce_remark is not None):
-				if breakdown.bounce_type == UserStatus.BLACKLIST:
-					self.blcount += 1
-				else:
-					self.hbcount += 1
-				try:
-					if breakdown.mailloop_remark is not None:
-						query = 'DELETE FROM success_%d_tbl WHERE customer_id = :customerID AND mailing_id = :mailing_id' % company
-						data = {
-							'customerID': customer,
-							'mailing_id': mailing
-						}
-						if db.update (query, data, commit = True) == 1:
-							self.rvcount += 1
-					query = (
-						'UPDATE customer_%d_binding_tbl '
-						'SET user_status = :status, timestamp = :ts, user_remark = :remark, exit_mailing_id = :mailing '
-						'WHERE customer_id = :customer AND user_status = 1 AND mediatype = :media'
-						% company
-					)
+						self.plugin ().success (db.cursor, now, company_id, record.mailing_id, record.customer_id, breakdown.timestamp, breakdown.infos)
+					except error as e:
+						logger.error ('Unable to add success for company_id %d: %s' % (company_id, e))
+						rc = False
+					#
+					self.sucount += 1
+					if self.sucount % 1000 == 0:
+						db.sync ()
+				elif breakdown.bounce_type == UserStatus.BOUNCE:
 					data = {
-						'status': breakdown.bounce_type.value,
-						'remark': breakdown.bounce_remark,
-						'mailing': mailing,
-						'ts': breakdown.timestamp,
-						'customer': customer,
-						'media': media
+						'company': company_id,
+						'customer': record.customer_id,
+						'detail': breakdown.detail,
+						'mailing': record.mailing_id,
+						'dsn': breakdown.code,
+						'ts': breakdown.timestamp
 					}
-					db.update (query, data, commit = True)
-				except error as e:
-					logger.error ('Unable to unsubscribe %r for company %d from database using %s: %s' % (data, company, query, e))
-					rc = False
-			elif breakdown.detail in Detail.Softbounces:
-				self.sbcount += 1
-				if self.sbcount % 1000 == 0:
-					db.sync ()
-		else:
-			self.igcount += 1
+					try:
+						store = self.__track_store (now, record.mailing_id, record.customer_id, breakdown.detail)
+						if store:
+							query = db.qselect (
+								oracle = (
+									'INSERT INTO bounce_tbl '
+									'       (bounce_id, company_id, customer_id, detail, mailing_id, dsn, timestamp) '
+									'VALUES '
+									'       (bounce_tbl_seq.nextval, :company, :customer, :detail, :mailing, :dsn, :ts)'
+								), mysql = (
+									'INSERT INTO bounce_tbl '
+									'       (company_id, customer_id, detail, mailing_id, dsn, timestamp) '
+									'VALUES '
+									'       (:company, :customer, :detail, :mailing, :dsn, :ts)'
+								)
+							)
+							db.update (query, data)
+						elif breakdown.detail not in Detail.Hardbounces:
+							self.ccount += 1
+						self.plugin ().bounce (db.cursor, store, now, company_id, record.mailing_id, record.customer_id, breakdown.timestamp, breakdown.code, breakdown.detail, breakdown.infos)
+					except error as e:
+						logger.error ('Unable to add bounce %r to database: %s' % (data, e))
+						rc = False
+				if breakdown.detail in Detail.Hardbounces or (breakdown.detail == Detail.Internal and breakdown.bounce_type is not None and breakdown.bounce_remark is not None):
+					if breakdown.bounce_type == UserStatus.BLACKLIST:
+						self.blcount += 1
+					else:
+						self.hbcount += 1
+					try:
+						if breakdown.mailloop_remark is not None:
+							query = 'DELETE FROM success_%d_tbl WHERE customer_id = :customer_id AND mailing_id = :mailing_id' % company_id
+							data = {
+								'customer_id': record.customer_id,
+								'mailing_id': record.mailing_id
+							}
+							if db.update (query, data, commit = True) == 1:
+								self.rvcount += 1
+						query = (
+							'UPDATE customer_%d_binding_tbl '
+							'SET user_status = :status, timestamp = :ts, user_remark = :remark, exit_mailing_id = :mailing '
+							'WHERE customer_id = :customer AND user_status = 1 AND mediatype = :media'
+							% company_id
+						)
+						data = {
+							'status': breakdown.bounce_type.value,
+							'remark': breakdown.bounce_remark,
+							'mailing': record.mailing_id,
+							'ts': breakdown.timestamp,
+							'customer': record.customer_id,
+							'media': record.media
+						}
+						db.update (query, data, commit = True)
+					except error as e:
+						logger.error ('Unable to unsubscribe %r for company %d from database using %s: %s' % (data, company_id, query, e))
+						rc = False
+				elif breakdown.detail in Detail.Softbounces:
+					self.sbcount += 1
+					if self.sbcount % 1000 == 0:
+						db.sync ()
+			else:
+				self.igcount += 1
+		except Exception as e:
+			logger.warning (f'{line}: invalid line: {e}')
 		return rc
 #}}}
 class UpdateAccount (Update): #{{{
-	__slots__ = ['tscheck', 'ignored', 'inserted', 'bccs', 'failed', 'status', 'changed', 'tracker']
+	__slots__ = ['tscheck', 'ignored', 'inserted', 'bccs', 'failed', 'status', 'changed', 'control_parser', 'data_parser', 'insert_query']
 	name = 'account'
 	path = os.path.join (base, 'log', 'account.log')
 	status_template: Final[str] = os.path.join (base, 'scripts', 'mailstatus3.tmpl')
@@ -874,7 +859,29 @@ class UpdateAccount (Update): #{{{
 		self.failed = 0
 		self.status: Dict[int, UpdateAccount.Mailinfo] = {}
 		self.changed: Set[UpdateAccount.Mailinfo] = set ()
-	
+		self.control_parser = Tokenparser (
+			Field ('licence_id', int, source = 'licence'),
+			Field ('owner', int),
+			Field ('bcc_count', int, optional = True, default = int, source = 'bcc-count'),
+			Field ('bcc_bytes', int, optional = True, default = int, source = 'bcc-bytes')
+		)
+		self.data_parser = Tokenparser (
+			Field ('company_id', int, source = 'company'),
+			Field ('mailinglist_id', int, source = 'mailinglist'),
+			Field ('mailing_id', int, source = 'mailing'),
+			Field ('maildrop_id', int, source = 'maildrop'),
+			'status_field',
+			Field ('mediatype', int),
+			Field ('mailtype', int, source = 'subtype'),
+			Field ('no_of_mailings', int, source = 'count'),
+			Field ('no_of_bytes', int, source = 'bytes'),
+			Field ('skip', int, optional = True, default = int),
+			Field ('chunks', int, optional = True, default = lambda: 1),
+			Field ('blocknr', int, source = 'block'),
+			'mailer',
+			Field ('timestamp', ParseTimestamp (), optional = True, default = lambda: datetime.now ())
+		)
+
 	def __mailing_status (self, db: DB, status_id: int, count: int, skip: int, ts: int) -> None:
 		try:
 			minfo = self.status[status_id]
@@ -949,10 +956,10 @@ class UpdateAccount (Update): #{{{
 			then = time.localtime (end)
 			rc = db.querys ('SELECT shortname, company_id FROM mailing_tbl WHERE mailing_id = :mid', {'mid': minfo.mailing_id})
 			if not rc is None and not None in rc:
-				mailingName = rc.shortname
+				mailing_name = rc.shortname
 				company_id = rc.company_id
 			else:
-				mailingName = ''
+				mailing_name = ''
 				company_id = 0
 			receiver = [_r for _r in minfo.mail_receiver.split () if _r]
 			ns = {
@@ -963,7 +970,7 @@ class UpdateAccount (Update): #{{{
 				'start': datetime (start[0], start[1], start[2], start[3], start[4], start[5]),
 				'end': datetime (then[0], then[1], then[2], then[3], then[4], then[5]),
 				'mailing_id': minfo.mailing_id,
-				'mailingName': mailingName,
+				'mailing_name': mailing_name,
 				'company_id': company_id,
 
 				'format': lambda a: f'{a:,d}'
@@ -991,7 +998,7 @@ class UpdateAccount (Update): #{{{
 				if not subject:
 					subject = tmpl['subject']
 					if not subject:
-						subject = 'Status report for mailing %d [%s]' % (minfo.mailing_id, mailingName)
+						subject = 'Status report for mailing %d [%s]' % (minfo.mailing_id, mailing_name)
 				else:
 					tmpl = Template (subject)
 					subject = tmpl.fill (ns)
@@ -1001,7 +1008,7 @@ class UpdateAccount (Update): #{{{
 				if not st[0]:
 					logger.warning ('Failed to send status mail to %s: [%s/%s]' % (minfo.mail_receiver, st[2].strip (), st[3].strip ()))
 				else:
-					logger.info ('Status mail for %s (%d) sent to %s' % (mailingName, minfo.mailing_id, minfo.mail_receiver))
+					logger.info ('Status mail for %s (%d) sent to %s' % (mailing_name, minfo.mailing_id, minfo.mail_receiver))
 
 	def __mailing_reached (self, minfo: UpdateAccount.Mailinfo) -> bool:
 		if minfo.mail_percent == 100:
@@ -1064,6 +1071,15 @@ class UpdateAccount (Update): #{{{
 				logger.debug (f'Saved entry {minfo}')
 
 	def update_start (self, db: DB) -> bool:
+		columns = [_f.name for _f in self.data_parser.fields]
+		placeholder = [f':{_c}' for _c in columns]
+		if db.dbms == 'oracle':
+			columns.insert (0, 'mailing_account_id')
+			placeholder.insert (0, 'mailing_account_tbl_seq.nextval')
+		self.insert_query = 'INSERT INTO mailing_account_tbl ({columns}) VALUES ({placeholder})'.format (
+			columns = ', '.join (columns),
+			placeholder = ', '.join (placeholder)
+		)
 		self.ignored = 0
 		self.inserted = 0
 		self.bccs = 0
@@ -1077,132 +1093,59 @@ class UpdateAccount (Update): #{{{
 		self.changed.clear ()
 		return True
 
-	@dataclass
-	class BCCCount:
-		mail_count: int = 0
-		byte_count: int = 0
 	def update_line (self, db: DB, line: str) -> bool:
-		sql = 'INSERT INTO mailing_account_tbl ('
-		values = 'VALUES ('
-		sep = ''
-		if db.dbms == 'oracle':
-			sql += 'mailing_account_id'
-			values += 'mailing_account_tbl_seq.nextval'
-			sep = ', '
-		timestamp = datetime.now ()
-		data: Dict[str, Any] = {}
-		ignore = False
-		skip = 0
-		record: Dict[str, str] = {}
-		bcc = UpdateAccount.BCCCount ()
-		for tok in line.split ():
-			tup = tok.split ('=', 1)
-			if len (tup) == 2:
-				name = None
-				(var, val) = tup
-				record[var] = val
-				if var == 'licence':
-					name = 'licence_id'
-					try:
-						licence_id = int (val)
-						if licence_id != 0 and licence_id != licence:
-							ignore = True
-					except ValueError:
-						ignore = True
-					name = None
-				elif var == 'company':
-					name = 'company_id'
-				elif var == 'mailinglist':
-					name = 'mailinglist_id'
-				elif var == 'mailing':
-					name = 'mailing_id'
-				elif var == 'maildrop':
-					name = 'maildrop_id'
-				elif var == 'status_field':
-					name = 'status_field'
-				elif var == 'mediatype':
-					name = 'mediatype'
-				elif var in ('mailtype', 'subtype'):
-					name = 'mailtype'
-				elif var == 'count':
-					name = 'no_of_mailings'
-				elif var == 'bytes':
-					name = 'no_of_bytes'
-				elif var == 'skip':
-					try:
-						skip = int (val)
-					except ValueError:
-						logger.warning ('Failed to parse skip count %r' % (val, ))
-				elif var == 'block':
-					name = 'blocknr'
-				elif var == 'mailer':
-					name = 'mailer'
-				elif var == 'timestamp':
-					m = self.tscheck.match (val)
-					if m is not None:
-						ts = [int (_g) for _g in m.groups ()]
-						timestamp = datetime (ts[0], ts[1], ts[2], ts[3], ts[4], ts[5])
-				elif var == 'bcc-count':
-					bcc.mail_count = atoi (val)
-				elif var == 'bcc-bytes':
-					bcc.byte_count = atoi (val)
-				if not name is None:
-					sql += '%s%s' % (sep, name)
-					values += '%s:%s' % (sep, name)
-					sep = ', '
-					data[name] = val
-		sql += '%stimestamp) %s%s:timestamp)' % (sep, values, sep)
-		data['timestamp'] = timestamp
-		
-		rc = True
-		if not ignore:
-			try:
-				db.update (sql, data, commit = True)
+		try:
+			tokens = self.control_parser.parse (line)
+			control = self.control_parser (tokens)
+			if control.licence_id != licence:
+				self.ignored += 1
+			else:
+				data = self.data_parser (tokens)
+				db.update (self.insert_query, data._asdict (), cleanup = True, commit = True)
 				self.inserted += 1
-				try:
-					if record['status_field'] == 'W':
-						status_id = int (record['maildrop'])
-						count = int (record['count'])
-						self.__mailing_status (db, status_id, count, skip, int (timestamp.timestamp ()))
-				except (KeyError, ValueError) as e:
-					logger.warning ('Failed to track %s: %s' % (line, e))
-				if bcc.mail_count > 0:
-					stmt = db.qselect (
-						oracle = 'INSERT INTO bcc_mailing_account_tbl (mailing_account_id, no_of_mailings, no_of_bytes) VALUES (mailing_account_tbl_seq.currval, :bcc_count, :bcc_bytes)',
-						mysql = 'INSERT INTO bcc_mailing_account_tbl (mailing_account_id, no_of_mailings, no_of_bytes) VALUES (last_insert_id(), :bcc_count, :bcc_bytes)'
-					)
+				if data.status_field == 'W':
+					self.__mailing_status (db, data.maildrop_id, data.no_of_mailings, data.skip, int (data.timestamp.timestamp ()))
+				if control.bcc_count > 0:
 					db.update (
-						stmt,
-						{
-							'bcc_count': bcc.mail_count,
-							'bcc_bytes': bcc.byte_count
+						db.qselect (
+							oracle = (
+								'INSERT INTO bcc_mailing_account_tbl '
+								'      (mailing_account_id, no_of_mailings, no_of_bytes) '
+								'VALUES '
+								'      (mailing_account_tbl_seq.currval, :bcc_count, :bcc_bytes)'
+							), mysql = (
+								'INSERT INTO bcc_mailing_account_tbl '
+								'       (mailing_account_id, no_of_mailings, no_of_bytes) '
+								'VALUES '
+								'       (last_insert_id(), :bcc_count, :bcc_bytes)'
+							)
+						), {
+							'bcc_count': control.bcc_count,
+							'bcc_bytes': control.bcc_bytes
 						},
 						commit = True
 					)
 					self.bccs += 1
-			except error as e:
-				logger.error ('Failed to insert %s into database: %s' % (line, e))
-				rc = False
-				self.failed += 1
-		else:
-			self.ignored += 1
-		return rc
+			return True
+		except (error, ValueError, KeyError) as e:
+			logger.error (f'{self.lineno}: {line!r}: {e}')
+			self.failed += 1
+		return False
 #}}}
 class UpdateDeliver (Update): #{{{
-	__slots__ = ['timestamp_parser', 'parser', 'existing_deliver_tables', 'mailings_to_companies', 'count']
+	__slots__ = ['existing_deliver_tables', 'mailings_to_companies', 'count']
 	name = 'deliver'
 	path = os.path.join (base, 'log', 'deliver.log')
+	line_parser = Lineparser (
+		lambda a: a.split (';', 4),
+		Field ('licence_id', int),
+		Field ('mailing_id', int),
+		Field ('customer_id', int),
+		Field ('timestamp', lambda n: Update.timestamp_parser (n)),
+		'line'
+	)
 	def __init__ (self) -> None:
 		super ().__init__ ()
-		self.timestamp_parser = ParseTimestamp ()
-		self.parser = Lineparser (
-			lambda a: a.split (';', 4),
-			Field ('licence_id', int),
-			Field ('mailing_id', int),
-			Field ('customer_id', int),
-			Field ('timestamp', lambda n: self.timestamp_parser (n)),
-			'line'
-		)
 		self.existing_deliver_tables: Set[str] = set ()
 		self.mailings_to_companies: Dict[int, int] = {}
 		self.count = 0
@@ -1217,7 +1160,7 @@ class UpdateDeliver (Update): #{{{
 	
 	def update_line (self, db: DB, line: str) -> bool:
 		try:
-			record = self.parser (line)
+			record = UpdateDeliver.line_parser (line)
 			if record.licence_id != licence:
 				logger.debug (f'{record.licence_id}: ignore foreign licence id (own is {licence})')
 			else:
@@ -1290,11 +1233,22 @@ class UpdateDeliver (Update): #{{{
 			return True
 #}}}
 class UpdateMailtrack (Update): #{{{
-	__slots__ = ['mailtrack_process_table', 'companies', 'count', 'parser', 'insert_statement']
+	__slots__ = ['mailtrack_process_table', 'companies', 'count', 'insert_statement']
 	name = 'mailtrack'
 	path = os.path.join (base, 'log', 'mailtrack.log')
 	mailtrack_process_table_default = 'mailtrack_process_tbl'
-	mailtrack_config_key = 'mailtrack-extended'
+	mailtrack_config_key: Final[str] = 'mailtrack-extended'
+	mailtrack_bulk_update_config_key: Final[str] = f'{mailtrack_config_key}:bulk-update'
+	line_parser = Lineparser (
+		lambda a: a.split (';', 6),
+		'id',
+		Field ('timestamp', lambda n: datetime.fromtimestamp (int (n))),
+		Field ('licence_id', int),
+		Field ('company_id', int),
+		Field ('mailing_id', int),
+		Field ('maildrop_status_id', int),
+		Field ('customer_ids', lambda n: [int (_n) for _n in n.split (',') if _n])
+	)
 	@dataclass
 	class CompanyCounter:
 		count: int = 0
@@ -1305,16 +1259,6 @@ class UpdateMailtrack (Update): #{{{
 		self.mailtrack_process_table = syscfg.get_str ('mailtrack-process-table', UpdateMailtrack.mailtrack_process_table_default)
 		self.companies: DefaultDict[int, UpdateMailtrack.CompanyCounter] = defaultdict (UpdateMailtrack.CompanyCounter)
 		self.count = 0
-		self.parser = Lineparser (
-			lambda a: a.split (';', 6),
-			'id',
-			Field ('timestamp', lambda n: datetime.fromtimestamp (int (n))),
-			Field ('licence_id', int),
-			Field ('company_id', int),
-			Field ('mailing_id', int),
-			Field ('maildrop_status_id', int),
-			Field ('customer_ids', lambda n: [int (_n) for _n in n.split (',') if _n])
-		)
 		self.insert_statement = (
 			'INSERT INTO {table} '
 			'       (company_id, mailing_id, maildrop_status_id, customer_id, timestamp) '
@@ -1378,19 +1322,20 @@ class UpdateMailtrack (Update): #{{{
 			ccfg.read ()
 			for (company_id, counter) in sorted (self.companies.items ()):
 				try:
-					active = ccfg.get_company_info (self.mailtrack_config_key, company_id = company_id)
+					active = ccfg.get_company_info (UpdateMailtrack.mailtrack_config_key, company_id = company_id)
 				except KeyError:
-					logger.debug ('%s: no value set for company %d, do not process entries' % (self.mailtrack_config_key, company_id))
+					logger.debug ('%s: no value set for company %d, do not process entries' % (UpdateMailtrack.mailtrack_config_key, company_id))
 					continue
 				else:
 					if not atob (active):
-						logger.debug ('%s: value %s set for company %d results to disable processing' % (self.mailtrack_config_key, active, company_id))
+						logger.debug ('%s: value %s set for company %d results to disable processing' % (UpdateMailtrack.mailtrack_config_key, active, company_id))
 						continue
 				#
+				bulk_update: bool = ccfg.get_company_info (UpdateMailtrack.mailtrack_bulk_update_config_key, company_id = company_id, default = False, convert = atob)
 				logger.info (f'{company_id}: processing {counter} update mailtracking')
 				self.__update_mailtracking (db, company_id, counter)
-				logger.info (f'{company_id}: processing profile updates')
-				self.__update_profile (db, company_id, counter)
+				logger.info (f'{company_id}: processing profile updates (bulk is {bulk_update})')
+				self.__update_profile (db, company_id, bulk_update, counter)
 				db.sync ()
 				logger.info (f'{company_id}: done')
 		logger.info ('Added mailtracking for {count} companies'.format (count = len (self.companies)))
@@ -1398,7 +1343,7 @@ class UpdateMailtrack (Update): #{{{
 
 	def update_line (self, db: DB, line: str) -> bool:
 		try:
-			record = self.parser (line)
+			record = UpdateMailtrack.line_parser (line)
 			if record.licence_id != licence:
 				logger.debug (f'{record.licence_id}: ignore foreign licence id (own is {licence})')
 			elif record.customer_ids:
@@ -1450,7 +1395,7 @@ class UpdateMailtrack (Update): #{{{
 		else:
 			logger.debug ('%d: mailtracking is disabled' % company_id)
 
-	def __update_profile (self, db: DB, company_id: int, counter: UpdateMailtrack.CompanyCounter) -> None:
+	def __update_profile (self, db: DB, company_id: int, bulk_update: bool, counter: UpdateMailtrack.CompanyCounter) -> None:
 		customer_table = 'customer_{company_id}_tbl'.format (company_id = company_id)
 		lastsend_date = 'lastsend_date'
 		if not db.exists (customer_table):
@@ -1462,36 +1407,144 @@ class UpdateMailtrack (Update): #{{{
 		if lastsend_date in columns:
 			logger.info (f'{company_id}: update for {lastsend_date} in {customer_table} started')
 			count = 0
-			query = (
-				'UPDATE {table} '
-				'SET {lastsend_date} = :{lastsend_date} '
-				'WHERE customer_id = :customer_id AND ({lastsend_date} IS NULL OR {lastsend_date} < :{lastsend_date})'
-				.format (table = customer_table, lastsend_date = lastsend_date)
-			)
-			with db.request () as cursor:
-				for (row_count, row) in enumerate (db.query (
-					'SELECT customer_id, timestamp '
-					'FROM {table} '
-					'WHERE company_id = :company_id'
-					.format (table = self.mailtrack_process_table),
-					{
-						'company_id': company_id
-					}
-				), start = 1):
-					count += cursor.update (
-						query,
-						{
-							'customer_id': row.customer_id,
-							lastsend_date: row.timestamp
-						}
+			if bulk_update:
+				count = db.update (db.qselect (
+					oracle = (
+						f'UPDATE {customer_table} cust '
+						f'SET cust.{lastsend_date} = '
+						f'    (SELECT max(temp.timestamp) FROM {self.mailtrack_process_table} temp WHERE temp.company_id = {company_id} AND temp.customer_id = cust.customer_id) '
+						'WHERE EXISTS '
+						f'     (SELECT 1 FROM {self.mailtrack_process_table} temp2 WHERE temp2.company_id = {company_id} AND temp2.customer_id = cust.customer_id AND (cust.{lastsend_date} IS NULL OR cust.{lastsend_date} < temp2.timestamp))'
+					), mysql = (
+						f'UPDATE {customer_table} cust INNER JOIN {self.mailtrack_process_table} temp '
+						f'ON (cust.customer_id = temp.customer_id AND temp.company_id = {company_id} AND (cust.{lastsend_date} IS NULL OR cust.{lastsend_date} < temp.timestamp)) '
+						f'SET cust.{lastsend_date} = temp.timestamp'
 					)
-					if row_count % 10000 == 0:
-						logger.info (f'Now at #{row_count:,d} of #{counter.count:,d}')
-						cursor.sync ()
-				cursor.sync ()
+				), sync_and_retry = True)
+			else:
+				query = (
+					'UPDATE {table} '
+					'SET {lastsend_date} = :{lastsend_date} '
+					'WHERE customer_id = :customer_id AND ({lastsend_date} IS NULL OR {lastsend_date} < :{lastsend_date})'
+					.format (table = customer_table, lastsend_date = lastsend_date)
+				)
+				with db.request () as cursor:
+					for (row_count, row) in enumerate (db.query (
+						'SELECT customer_id, timestamp '
+						'FROM {table} '
+						'WHERE company_id = :company_id'
+						.format (table = self.mailtrack_process_table),
+						{
+							'company_id': company_id
+						}
+					), start = 1):
+						for state in range (2):
+							try:
+								count += cursor.update (
+									query,
+									{
+										'customer_id': row.customer_id,
+										lastsend_date: row.timestamp
+									},
+									sync_and_retry = True
+								)
+							except Exception as e:
+								if state == 0:
+									cursor.sync ()
+									logger.warning (f'Failed to update customer {row.customer_id}, sync and retry: {e}')
+									time.sleep (2)
+								else:
+									logger.error (f'Failed to update customer {row.customer_id}, giving up: {e}')
+							else:
+								break
+						if row_count % 10000 == 0:
+							logger.info (f'Now at #{row_count:,d} of #{counter.count:,d}')
+							cursor.sync ()
+					cursor.sync ()
 			logger.info (f'{company_id}: update for {count:,d} {lastsend_date} in {customer_table} while having sent {counter.count:,d}')
 		else:
 			logger.info (f'{company_id}: no {lastsend_date} in database layout found')
+#}}}
+class UpdateRelease (Update): #{{{
+	__slots__ = ['releases']
+	name = 'release'
+	path = os.path.join (base, 'log', 'release.log')
+	release_log_table: Final[str] = 'release_log_tbl'
+	line_parser = Lineparser (
+		lambda a: a.split (';', 7),
+		Field ('licence_id', int),
+		'host',
+		'application',
+		'version',
+		Field ('timestamp', lambda t: Update.timestamp_parser (t)),
+		Field ('build_time', lambda t: Update.timestamp_parser (t)),
+		'build_host',
+		'build_user'
+	)
+	def __init__ (self) -> None:
+		super ().__init__ ()
+		self.check_for_duplicates = False
+		self.releases: Dict[Tuple[str, str], Line] = {}
+
+	def update_start (self, db: DB) -> bool:
+		self.releases.clear ()
+		return True
+	
+	def update_end (self, db: DB) -> bool:
+		if self.releases:
+			current: Dict[Tuple[str, str], Row] = {}
+			for row in db.query (
+				'SELECT host_name, application_name, version_number, startup_timestamp '
+				f'FROM {UpdateRelease.release_log_table}'
+			):
+				key = (row.host_name, row.application_name)
+				try:
+					if current[key].startup_timestamp < row.startup_timestamp:
+						current[key] = row
+				except KeyError:
+					current[key] = row
+			for record in self.releases.values ():
+				key = (record.host, record.application)
+				if key not in current or current[key].version_number != record.version:
+					count = db.update (
+						f'INSERT INTO {UpdateRelease.release_log_table} '
+						'       (host_name, application_name, version_number, startup_timestamp, build_time, build_host, build_user) '
+						'VALUES '
+						'       (:host_name, :application_name, :version_number, :startup_timestamp, :build_time, :build_host, :build_user)',
+						{
+							'host_name': record.host,
+							'application_name': record.application,
+							'version_number': record.version,
+							'startup_timestamp': record.timestamp,
+							'build_time': record.build_time,
+							'build_host': record.build_host,
+							'build_user': record.build_user
+						},
+						commit = True
+					)
+					if count != 1:
+						logger.error (f'{record}: failed to updated one row, updated {count} rows')
+					else:
+						logger.debug (f'{record}: written to database')
+		return True
+
+	def update_line (self, db: DB, line: str) -> bool:
+		try:
+			record = UpdateRelease.line_parser (line)
+			if record.licence_id != licence:
+				logger.debug (f'{record.licence_id}: ignore foreign licence id (own is {licence})')
+			else:
+				key = (record.host, record.application)
+				try:
+					if self.releases[key].timestamp < record.timestamp:
+						self.releases[key] = record
+				except KeyError:
+					self.releases[key] = record
+		except Exception as e:
+			logger.warning (f'{line}: invalid line: {e}')
+			return False
+		else:
+			return True
 #}}}
 #
 class Main (Runtime):
@@ -1524,8 +1577,7 @@ class Main (Runtime):
 			self.ctx.watchdog = False
 
 	def start_update (self, update_class: Type[Update]) -> bool:
-		self.ctx.processtitle (update_class.name)
-		with log (update_class.name):
+		with self.title (update_class.name), log (update_class.name):
 			upd = update_class ()
 			upd.execute (lambda: self.running, self.delay)
 		return True

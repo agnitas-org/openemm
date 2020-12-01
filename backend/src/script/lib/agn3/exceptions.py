@@ -13,3 +13,5 @@ __all__ = ['error']
 #
 class error (Exception):
 	pass
+class Timeout (error):
+	pass

@@ -20,7 +20,6 @@ from	queue import Queue
 from	types import FrameType, TracebackType
 from	typing import Any, Callable, Optional, Union
 from	typing import Dict, Iterator, List, Set, Tuple, Type
-from	typing import cast
 from	.definitions import program, user
 from	.exceptions import error
 from	.ignore import Ignore
@@ -66,7 +65,7 @@ active child exits."""
 				self._name = name
 			else:
 				self.__class__._incarnation += 1
-				self._name = 'Child-%d' % self.__class__._incarnation
+				self._name = f'Child-{self.__class__._incarnation}'
 			self._pid = -1
 			self._status = -1
 			self._state = self.NEW
@@ -140,7 +139,7 @@ of running child processes at the same time."""
 	def reset (self) -> None:
 		"""Resets the monitored children, running children stay active!"""
 		if self.children:
-			self.debug ('Reset: %s' % ', '.join ([_c._name for _c in self.children]))
+			self.debug ('Reset: {children}'.format (children = ', '.join ([_c._name for _c in self.children])))
 		else:
 			self.debug ('Reset with no children')
 		self.children = []
@@ -149,25 +148,25 @@ of running child processes at the same time."""
 		"""Add a new child or reschedule a terminated child"""
 		if child in self.children:
 			if not child.active ():
-				self.debug ('Reactived %s' % child._name)
+				self.debug (f'Reactived {child._name}')
 				child.reset ()
 			else:
-				self.debug ('Add already active %s' % child._name)
+				self.debug (f'Add already active {child._name}')
 		else:
-			self.debug ('Add %s' % child._name)
+			self.debug (f'Add {child._name}')
 			child.reset ()
 			self.children.append (child)
 
 	def __spawn (self, child: Family.Child) -> None:
 		child._state = child.RUNNING
-		self.debug ('Starting %s' % child._name)
+		self.debug (f'Starting {child._name}')
 		child._status = 0
 		child._pid = os.fork ()
 		if child._pid == 0:
 			child.setupHandler ()
 			try:
 				ec = child.start ()
-				self.debug ('%s: Exiting with %r' % (child._name, ec))
+				self.debug (f'{child._name}: Exiting with {ec!r}')
 				if type (ec) is bool:
 					ec = 0 if ec else 1
 				elif type (ec) is float:
@@ -175,7 +174,7 @@ of running child processes at the same time."""
 				elif type (ec) is not int:
 					ec = 0
 			except Exception as e:
-				self.debug ('%s: Exiting due to exception: %s' % (child._name, str (e)))
+				self.debug (f'{child._name}: Exiting due to exception: {e}')
 				logger.exception (child._name)
 				ec = 127
 			os._exit (ec)
@@ -192,7 +191,7 @@ of running child processes at the same time."""
 		for child in self.children:
 			if child._state == child.NEW:
 				child._state = child.SCHEDULE
-				self.debug ('%s: scheduled' % child._name)
+				self.debug (f'{child._name}: scheduled')
 			if child._state == child.SCHEDULE and (self.limit is None or self.running < self.limit):
 				self.__spawn (child)
 
@@ -201,9 +200,9 @@ of running child processes at the same time."""
 			if child._state == child.RUNNING:
 				try:
 					os.kill (child._pid, sig)
-					self.debug ('%s: signalled with %d' % (child._name, sig))
+					self.debug (f'{child._name}: signalled with {sig}')
 				except OSError as e:
-					self.debug ('%s: failed signalling with %d: %s' % (child._name, sig, str (e)))
+					self.debug (f'{child._name}: failed signalling with {sig}: {e}')
 
 	def stop (self) -> None:
 		"""Send SIGTERM to all active children"""
@@ -235,10 +234,10 @@ seconds to wait for children to terminate."""
 						if child._pid == pid:
 							self.__join (child, status)
 							active.remove (child)
-							self.debug ('%s: exited with %d' % (child._name, status))
+							self.debug (f'{child._name}: exited with {status}')
 							break
 			except OSError as e:
-				self.debug ('Wait aborted with %s' % str (e))
+				self.debug (f'Wait aborted with {e}')
 				if e.args[0] == errno.ECHILD:
 					for child in active:
 						if child._state == child.RUNNING:
@@ -247,7 +246,7 @@ seconds to wait for children to terminate."""
 			if timeout is not None:
 				if timeout == 0 or (timeout > 0 and active and start + timeout < time.time ()):
 					break
-				time.sleep (1)
+				time.sleep (0.1)
 		return len (active)
 
 	def active (self) -> int:
@@ -274,7 +273,7 @@ seconds to wait for children to terminate."""
 		for child in [_c for _c in self.children if _c._pid == -1]:
 			cleaned.append (child)
 			self.children.remove (child)
-			self.debug ('Removed %s' % child._name)
+			self.debug (f'Removed {child._name}')
 		return cleaned
 
 	def debug (self, m: str) -> None:
@@ -373,17 +372,16 @@ perform serveral queries on the result."""
 							else:
 								pp.child = p
 		else:
-			raise error ('Unable to read process table: %r' % err)
+			raise error (f'Unable to read process table: {err!r}')
 	
 	def find (self, val: Union[int, str]) -> Processentry:
 		"""Returns a process with PID ``val'' (if numeric) or tries to read the PID from the file ``val'' (if an absolute path)"""
 		pid: Optional[int] = None
-		if type (val) is int:
-			pid = cast (int, val)
-		elif type (val) is str:
-			sval = cast (str, val)
-			if len (sval) > 0 and sval[0] == '/':
-				with Ignore (), open (sval, 'r') as fd:
+		if isinstance (val, int):
+			pid = val
+		else:
+			if len (val) > 0 and val[0] == '/':
+				with Ignore (), open (val, 'r') as fd:
 					line = fd.readline ().strip ()
 					if line != '':
 						pid = int (line)
@@ -391,14 +389,14 @@ perform serveral queries on the result."""
 			with Ignore (ValueError):
 				pid = int (val)
 		if pid == None:
-			raise error ('Given paramter "%r" cannot be mapped to a pid' % (val, ))
+			raise error (f'Given paramter "{val!r}" cannot be mapped to a pid')
 		match = None
 		for p in self.table:
 			if p.stats.pid == pid:
 				match = p
 				break
 		if not match:
-			raise error ('No process with pid %r (extracted from %r) found' % (pid, val))
+			raise error (f'No process with pid {pid} (extracted from {val!r}) found')
 		return match
 	
 	def select (self, user: Optional[str] = None, group: Optional[str] = None, comm: Optional[str] = None, rcmd: Optional[str] = None, ropt: int = 0) -> List[Processentry]:
@@ -503,7 +501,7 @@ class Processtitle:
 	def _del_template (self) -> None:
 		self._set_template (None)
 	template = property (_get_template, _set_template, _del_template)
-
+	
 	def push (self, title: str) -> None:
 		self._stack.append (self._current)
 		self (title)
@@ -514,6 +512,23 @@ class Processtitle:
 			if new != self._current:
 				self._current = new
 				self._set (self._current)
+	
+	class ProcesstitleContext:
+		__slots__ = ['ref', 'title']
+		def __init__ (self, ref: Processtitle, title: str) -> None:
+			self.ref = ref
+			self.title = title
+			
+		def __enter__ (self) -> Processtitle.ProcesstitleContext:
+			self.ref.push (self.title)
+			return self
+
+		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+			self.ref.pop ()
+			return None
+	
+	def title (self, title: str) -> Processtitle.ProcesstitleContext:
+		return Processtitle.ProcesstitleContext (self, title)
 
 class Parallel:
 	"""Simple parallel framework using multiprocessing"""

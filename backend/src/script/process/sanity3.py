@@ -12,6 +12,8 @@
 #
 from	__future__ import annotations
 import	os, logging
+from	typing import Optional
+from	typing import Dict
 from	agn3.crontab import Crontab
 from	agn3.db import DB
 from	agn3.definitions import base
@@ -73,6 +75,35 @@ class OpenEMM (Sanity):
 					logger.info ('Added configuration for envelope address')
 				else:
 					logger.error ('Failed to set configuration for envelope address: %s' % db.last_error ())
+			for (key, value) in [
+				('LOGLEVEL', 'DEBUG'),
+				('MAILDIR', '${home}/var/spool/ADMIN'),
+				('BOUNDARY', 'OPENEMM'),
+				('MAILER', 'OpenEMM ${ApplicationMajorVersion}.${ApplicationMinorVersion}')
+			]:
+				data: Dict[str, Optional[str]] = {
+					'cls': 'mailout',
+					'name': 'ini.{key}'.format (key = key.lower ())
+				}
+				rq = db.querys (
+					'SELECT value '
+					'FROM config_tbl '
+					'WHERE class = :cls AND name = :name AND hostname IS NULL',
+					data
+				)
+				if rq is not None:
+					if rq.value != value:
+						logger.info (f'{key}: keep DB value "{rq.value}" and not overwrite it with default value {value}')
+				else:
+					data['value'] = value
+					db.update (
+						'INSERT INTO config_tbl '
+						'       (class, name, value, hostname, description, creation_date, change_date) '
+						'VALUES '
+						'       (:cls, :name, :value, NULL, NULL, current_timestamp, current_timestamp)',
+						data,
+						commit = True
+					)
 	
 	def __crontab (self, r: Report) -> None:
 		Crontab ().update ([
@@ -84,6 +115,11 @@ class Sanities:
 	checks = {'openemm': OpenEMM}
 
 def main () -> None:
-	OpenEMM ()
+	try:
+		OpenEMM ()
+	except Exception as e:
+		logger.exception (f'Sanity check failed: {e}')
+		raise
+
 if __name__ == '__main__':
 	main ()

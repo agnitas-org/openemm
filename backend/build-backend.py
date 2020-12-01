@@ -18,8 +18,7 @@ from	typing import DefaultDict, Dict, List, Tuple
 
 filemapping = """
 JAVA:
-	lib/Mailout.ini
-
+	
 bin mode=0755:
 	src/script/control/*
 	src/script/tools/activator
@@ -28,9 +27,9 @@ bin mode=0755:
 
 	src/c/bav/bav
 	src/c/tools/config-query
+	src/c/tools/pathstrip
 	src/c/tools/qctrl		user=root, group=root, mode=06755
 	src/c/tools/smctrl		user=root, group=root, mode=06755
-	src/c/tools/wrap
 	src/c/xmlback/luatc
 	src/c/xmlback/xmlback
 
@@ -58,6 +57,7 @@ scripts/agn3/emm:
 	src/script/lib/agn3/emm/*.*
 
 scripts/once mode=0755:
+	src/script/process/bounce-rules.sh
 	src/script/process/tag-install.sh
 	
 scripts/once/tags:

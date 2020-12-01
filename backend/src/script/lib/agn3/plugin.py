@@ -17,6 +17,7 @@ from	typing import Any, Callable, Optional, Union
 from	typing import Dict, Generator, IO, List, Set, Tuple, Type
 from	typing import cast
 from	.definitions import base, program
+from	.exceptions import error
 from	.rpc import XMLRPCProxy
 from	.tools import atoi, atob
 #
@@ -278,7 +279,7 @@ found, no module is loaded at all.
 									if callback.faulty_counter > 0:
 										callback.faulty_counter -= 1
 							except Exception as e:
-								self.ref.warning ('Faled to call %s: %s' % (callback.name, str (e)))
+								self.ref.warning (f'Faled to call {callback.name}: {e}')
 								if not self.ref.ignore:
 									raise
 								callback.faulty_counter += 1
@@ -298,32 +299,26 @@ found, no module is loaded at all.
 			return Manager.Dispatch.Proxy (var, self.adl, self.ref)
 	#}}}
 	def __parse_version (self, v: Any) -> Optional[Tuple[int, ...]]:
-		rc: Optional[Tuple[int, ...]]
-		if v is not None:
-			try:
-				if type (v) is float:
-					rc = (int (v), int (str (v).split ('.', 1)[1]))
-				elif type (v) is str:
-					rc = tuple ([int (_v) for _v in v.split ('.')])
-				elif type (v) in (list, tuple):
-					rc = tuple ([int (_v) for _v in v])
-				else:
-					rc = (int (v), )
-			except (TypeError, ValueError):
-				rc = (atoi (v), )
-		else:
-			rc = None
-		return rc
+		if v is None:
+			return None
+		try:
+			if isinstance (v, float):
+				return (int (v), int (str (v).split ('.', 1)[1]))
+			if isinstance (v, str):
+				return tuple ([int (_v) for _v in v.split ('.')])
+			if isinstance (v, list) or isinstance (v, tuple):
+				return tuple ([int (_v) for _v in v])
+			return (int (v), )
+		except (TypeError, ValueError):
+			return (atoi (v), )
 	
 	def __parse_description (self, d: Union[None, str, APIDescription]) -> Optional[APIDescription]:
 		rc: Optional[APIDescription]
-		if d is None or type (d) is APIDescription or issubclass (d.__class__, APIDescription):
-			rc = cast (Optional[APIDescription], d)
-		elif type (d) is str:
-			rc = APIDescription (cast (str, d))
-			if not rc.parse ():
-				rc = None
-		else:
+		if d is None or isinstance (d, APIDescription):
+			return d
+		#
+		rc = APIDescription (d)
+		if not rc.parse ():
 			rc = None
 		return rc
 
@@ -336,24 +331,24 @@ found, no module is loaded at all.
 	) -> None:
 		if paths is None:
 			self.paths = [os.getcwd ()]
-		elif type (paths) is str:
-			self.paths = [cast (str, paths)]
+		elif isinstance (paths, str):
+			self.paths = [paths]
 		else:
-			self.paths = cast (List[str], paths)
+			self.paths = paths
 		self.tolerant = tolerant
 		self.ignore = ignore
 		self.api_version = self.__parse_version (api_version)
 		self.api_description = self.__parse_description (api_description)
 		self.modules: List[Manager.Module] = []
 		self.dispatch = Manager.Dispatch (self)
-		self.plugins: Dict[str, List[Any]] = {}
-		self.always: Optional[List[Any]] = None
+		self.plugins: Dict[str, List[Manager.Callback]] = {}
+		self.always: Optional[List[Manager.Callback]] = None
 		self.logid = 'plugin'
 	
 	def __call__ (self) -> Manager.Dispatch:
 		return self.dispatch
 		
-	def _callbacks (self, name: str) -> Optional[List[Any]]:
+	def _callbacks (self, name: str) -> Optional[List[Manager.Callback]]:
 		if name in self.plugins:
 			if self.always:
 				return self.always + self.plugins[name]
@@ -377,7 +372,7 @@ found, no module is loaded at all.
 			name = funcname
 		cb = Manager.Callback (funcname, name, class_name, path, func)
 		if name == self.catchall:
-			self.verbose ('Register %s as a catchall method' % cb.name)
+			self.verbose (f'Register {cb.name} as a catchall method')
 			cb.indirect = True
 			cb.discard = True
 			if self.always is None:
@@ -385,9 +380,9 @@ found, no module is loaded at all.
 			else:
 				self.always.append (cb)
 		else:
-			self.verbose ('Register %s as %s' % (cb.name, cb.pose))
+			self.verbose (f'Register {cb.name} as {cb.pose}')
 			if self.api_description is not None and not self.api_description.valid (cb.pose):
-				self.warning ('Registered %s as %s is a not available in this API' % (cb.name, cb.pose))
+				self.warning (f'Registered {cb.name} as {cb.pose} is a not available in this API')
 			try:
 				self.plugins[name].append (cb)
 			except KeyError:
@@ -416,9 +411,12 @@ found, no module is loaded at all.
 	class XMLRPCProxy: #{{{
 		__slots__ = ['address', 'remote', 'methods']
 		def __init__ (self, host: str, port: Optional[int], protocol: Optional[str], path: Optional[str]) -> None:
-			self.address = '%s://%s' % (protocol if protocol is not None else 'http', host)
+			self.address = '{protocol}://{host}'.format (
+				protocol= protocol if protocol is not None else 'http',
+				host = host
+			)
 			if port is not None:
-				self.address += ':%d' % port
+				self.address += f':{port}'
 			if path is not None:
 				if not path.startswith ('/'):
 					self.address += '/'
@@ -474,7 +472,7 @@ found, no module is loaded at all.
 						rc = {'_m': self}
 					exec (m, rc)
 				except Exception as e:
-					self.warning ('Failed to load %s: %s' % (fpath, str (e)))
+					self.warning (f'Failed to load {fpath}: {e}')
 					if not self.tolerant:
 						raise
 					rc = None
@@ -501,7 +499,7 @@ found, no module is loaded at all.
 							self.register (method, path = path)
 	
 	def load (self, fname: str, ns: Optional[Dict[str, Any]] = None) -> None:
-		self.info ('Load plugin from %s' % fname)
+		self.info (f'Load plugin from {fname}')
 		path = fname
 		if os.path.isabs (fname):
 			paths = [os.path.dirname (fname)]
@@ -523,25 +521,25 @@ found, no module is loaded at all.
 		def iget (self, var: str, default: int = 0) -> int:
 			try:
 				val = self.ctrl[var]
-				return cast (int, val) if type (val) is int else atoi (val, default = default)
+				return val if isinstance (val, int) else atoi (val, default = default)
 			except KeyError:
 				return default
 		
 		def bget (self, var: str, default: bool = False) -> bool:
 			try:
 				val = self.ctrl[var]
-				return cast (bool, val) if type (val) is bool else atob (str (val))
+				return val if isinstance (val, bool) else atob (str (val))
 			except KeyError:
 				return default
 		
 		def lget (self, var: str, default: Optional[List[str]] = None) -> Optional[List[str]]:
 			try:
 				val = self.ctrl[var]
-				if type (val) is list:
-					return cast (List[str], val)
-				if type (val) is tuple:
-					return list (cast (Tuple[str, ...], val))
-				if type (val) is str:
+				if isinstance (val, list):
+					return val
+				if isinstance (val, tuple):
+					return list (val)
+				if isinstance (val, str):
 					return [_v.strip () for _v in val.split (',')] if val else None
 				return [str (val)]
 			except KeyError:
@@ -606,10 +604,10 @@ found, no module is loaded at all.
 			config_file = self.default_config_file
 		collect: List[Manager.Module] = []
 		remotes: List[Tuple[Callable[..., Any], Tuple[Any, ...]]] = []
-		self.info ('Bootstrap for paths %s' % ';'.join (self.paths))
+		self.info ('Bootstrap for paths {paths}'.format (paths = ';'.join (self.paths)))
 		for path in self.paths:
 			if not os.path.isdir (path):
-				self.verbose ('%s: not a directory' % path)
+				self.verbose (f'{path}: not a directory')
 				continue
 			seen: Set[str] = set ()
 			files = os.listdir (path)
@@ -617,10 +615,10 @@ found, no module is loaded at all.
 			if config_file != '-' and config_file in files:
 				cfg = RawConfigParser ()
 				cfg.read (os.path.join (path, config_file))
-				self.verbose ('%s: Using configuration file %s' % (path, config_file))
+				self.verbose (f'{path}: Using configuration file {config_file}')
 			else:
 				cfg = None
-				self.verbose ('%s: No separate configuration file found' % path)
+				self.verbose ('{path}: No separate configuration file found')
 				if force_config:
 					continue
 			sources = {}
@@ -642,13 +640,13 @@ found, no module is loaded at all.
 					m = self.__import (fname, [path], ns)
 					magic = '__aps__'
 					if m is None:
-						self.warning ('%s: %s skiped as it is unparsable' % (path, base))
+						self.warning (f'{path}: {base} skiped as it is unparsable')
 					elif magic not in m:
-						self.verbose ('%s: Skip %s as no %s attribute is found' % (path, base, magic))
+						self.verbose (f'{path}: Skip {base} as no {magic} attribute is found')
 					else:
 						ctrl = m[magic]
 						if cfg is not None and cfg.has_section (base):
-							self.debug ('%s: %s configuration is modified through config file' % (path, base))
+							self.debug (f'{path}: {base} configuration is modified through config file')
 							for opt in cfg.options (base):
 								try:
 									t = type (ctrl[opt])
@@ -666,12 +664,12 @@ found, no module is loaded at all.
 								ctrl[opt] = val
 						md = self.Module (base, os.path.join (path, fname), ctrl, m)
 						if not self.__valid (md.api):
-							self.info ('%s: Version conflict for module %s, disabled' % (path, base))
+							self.info (f'{path}: Version conflict for module {base}, disabled')
 						elif md.active:
 							collect.append (md)
-							self.info ('%s: Loaded module %s' % (path, base))
+							self.info (f'{path}: Loaded module {base}')
 						else:
-							self.info ('%s: module %s is marked as inactive' % (path, base))
+							self.info (f'{path}: module {base} is marked as inactive')
 					seen.add (base)
 			if cfg is not None and cfg.has_section (self.remote_section):
 				for opt in cfg.options (self.remote_section):
@@ -684,9 +682,17 @@ found, no module is loaded at all.
 								(protocol, host, port, path) = mtch.groups ()
 								remotes.append ((self.register_remote_xmlrpc, (host, int (port[1:]) if port is not None else None, protocol, path)))
 							else:
-								self.warning ('%s: invalid value %s for option %s in section %s' % (os.path.join (path, config_file), val, opt, self.remote_section))
+								self.warning ('{path}: invalid value {value} for option {option} in section {section}'.format (
+									path = os.path.join (path, config_file),
+									value = val,
+									option = opt,
+									section = self.remote_section
+								))
 					else:
-						self.warning ('%s: invalid option for section %s' % (os.path.join (path, config_file), self.remote_section))
+						self.warning ('{path}: invalid option for section {section}'.format (
+							path = os.path.join (path, config_file),
+							section = self.remote_section
+						))
 		backlog: List[Manager.Module] = []
 		seen = set ()
 		def resolve (md: Manager.Module) -> None:
@@ -715,12 +721,12 @@ found, no module is loaded at all.
 				resolve (module)
 		self.modules += backlog
 		for module in self.modules:
-			self.info ('Adding module %s' % module.name)
+			self.info (f'Adding module {module.name}')
 			module.bootstrap ()
 			self.__load (module.m, module.load, module.path)
 		for (method, args) in remotes:
 			rem = method (*args)
-			self.info ('Registered remote module %s' % rem.address)
+			self.info (f'Registered remote module {rem.address}')
 		self.info ('Bootstrapping finished')
 	
 	def shutdown (self) -> None:
@@ -733,20 +739,20 @@ found, no module is loaded at all.
 			if plugins:
 				for cb in plugins:
 					if cb.name != cb.pose:
-						name = '%s (known as %s)' % (cb.name, cb.pose)
+						name = f'{cb.name} (known as {cb.pose})'
 					else:
 						name = cb.name
 					if cb.source is not None:
-						name += ' derivated from %s' % cb.source
+						name += f' derivated from {cb.source}'
 					if cb.path is not None:
-						name += ' loaded from %s' % cb.path
+						name += f' loaded from {cb.path}'
 					if cb.calls == 0:
-						self.warning ('registered method "%s" is never called' % name)
+						self.warning (f'registered method "{name}" is never called')
 					else:
-						self.verbose ('registered method "%s" is called %d time%s' % (name, cb.calls, cb.calls != 1 and 's' or ''))
+						self.verbose (f'fregistered method "{name}" is called {cb.calls} times')
 		self.info ('Shuting down modules')
 		for m in reversed (self.modules):
-			self.info ('Shuting down %s' % m.name)
+			self.info (f'Shuting down {m.name}')
 			m.shutdown ()
 		self.info ('Shutdown completed')
 
@@ -823,17 +829,25 @@ class Plugin:
 		api_version = getattr (self, 'plugin_version') if  hasattr (self, 'plugin_version') else None
 		plocal = os.path.join (base, 'plugins', program)
 		pdist = os.path.join (base, 'scripts', 'plugins', program)
-		self.mgr: Manager = (manager if manager is not None else Manager) (paths = [pdist, plocal], api_version = api_version)
-		self.mgr.bootstrap (config_file = '%s.cfg' % program, ns = ns)
+		self.mgr: Optional[Manager] = (manager if manager is not None else Manager) (paths = [pdist, plocal], api_version = api_version)
+		if self.mgr is not None:
+			self.mgr.bootstrap (config_file = f'{program}.cfg', ns = ns)
 		self.pid = os.getpid ()
 	
 	def __del__ (self) -> None:
-		if self.pid == os.getpid ():
-			self.mgr.shutdown ()
+		self.shutdown ()
 	
 	def __call__ (self) -> Manager.Dispatch:
-		return self.mgr ()
+		return self.manager ()
 	
+	@property
 	def manager (self) -> Manager:
-		return self.mgr
+		if self.mgr is not None:
+			return self.mgr
+		raise error ('plugin system already shutdown')
+	
+	def shutdown (self) -> None:
+		if self.mgr is not None and self.pid == os.getpid ():
+			self.mgr.shutdown ()
+			self.mgr = None
 #}}}

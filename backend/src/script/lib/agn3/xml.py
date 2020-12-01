@@ -73,7 +73,7 @@ will create this output:
 """
 	__slots__ = ['output', 'output_charset', 'output_errors', 'backlog', 'state', 'partial']
 	escmap = {'<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', '\'': '&apos;'}
-	escape = re.compile ('[%s]' % ''.join (escmap.keys ()))
+	escape = re.compile ('[{special}]'.format (special = ''.join (escmap.keys ())))
 	
 	def __init__ (self, output: IO[Any], output_charset: Optional[str] = None, output_errors: Optional[str] = None, partial: bool = False) -> None:
 		"""``output'' is a file like object to write the
@@ -108,32 +108,42 @@ XML declaration."""
 			if clen > 1:
 				combined = []
 				for n in range (clen):
-					combined.append ('<![CDATA[%s%s%s]]>' % ('>' if n > 0 else '', chunks[n], ']]' if n + 1 < clen else ''))
+					combined.append ('<![CDATA[{prefix}{chunk}{postfix}]]>'.format (
+						prefix = '>' if n > 0 else '',
+						chunk = chunks[n],
+						postfix = ']]' if n + 1 < clen else ''
+					))
 				return ''.join (combined)
 			else:
-				return '<![CDATA[%s]]>' % s
+				return f'<![CDATA[{s}]]>'
 		else:
 			return self.escape.sub (lambda ch: self.escmap[ch.group ()], s)
 	
 	def __new_node (self, name: str, attrs: Optional[Dict[str, str]], simple: bool, text: Optional[str], cdata: bool) -> None:
-		out = '%s<%s' % (' ' * len (self.backlog), name)
+		out = '{indent}<{name}'.format (
+			indent = ' ' * len (self.backlog),
+			name = name
+		)
 		if attrs is not None:
 			for (var, val) in attrs.items ():
-				out += ' %s="%s"' % (var, self.__convert (val))
+				out += ' {var}="{val}"'.format (var = var, val =  self.__convert (val))
 		if simple:
 			if not text is None:
-				out += '>%s</%s>\n' % (self.__convert (text, cdata), name)
+				out += '>{text}</{name}>\n'.format (text = self.__convert (text, cdata), name = name)
 			else:
 				out += '/>\n'
 		else:
 			self.backlog.append (name)
 			out += '>\n'
 			if text is not None:
-				out += '%s\n' % self.__convert (text)
+				out += '{text}\n'.format (text = self.__convert (text))
 		self.__out (out)
 	
 	def __end_node (self, name: str) -> None:
-		self.__out ('%s</%s>\n' % (' ' * len (self.backlog), name))
+		self.__out ('{indent}</{name}>\n'.format (
+			indent = ' ' * len (self.backlog),
+			name = name
+		))
 
 	def open (_self, _name: str, **_attrs: Any) -> None:
 		"""open a new node with ``name'' using keyword style attributes"""
@@ -150,7 +160,7 @@ close it (implicit close all inner nodes as well)"""
 			self.__end_node (name)
 		else:
 			if not name in self.backlog:
-				raise error ('%s not found in backlog' % name)
+				raise error (f'{name} not found in backlog')
 			while self.backlog:
 				pname = self.backlog.pop ()
 				self.__end_node (pname)
@@ -193,7 +203,7 @@ close it (implicit close all inner nodes as well)"""
 		"""start the document, write the required XML header"""
 		self.state = 1
 		if not self.partial:
-			self.__out ('<?xml version="1.0" encoding="%s"?>\n' % self.output_charset)
+			self.__out (f'<?xml version="1.0" encoding="{self.output_charset}"?>\n')
 		if doctype is not None:
 			self.__out (doctype)
 	
@@ -298,8 +308,7 @@ that all of them had been crossed.
 			try:
 				method = self.method_cache[path]
 			except KeyError:
-				method = 'cb%s' % ''.join ([self.__normalizePattern.sub ('_', _p).capitalize () for _p in path.split ('.')])
-				self.method_cache[path] = method
+				method = self.method_cache[path] = 'cb{name}'.format (name = ''.join ([self.__normalizePattern.sub ('_', _p).capitalize () for _p in path.split ('.')]))
 			if method is not None:
 				try:
 					self.callback.__class__.__dict__[method] (self.callback, path, name, attrs, content)
@@ -475,7 +484,7 @@ that all of them had been crossed.
 		if self.level is not None:
 			if self.level.name != name:
 				self.__set_status (self.ERROR)
-				raise ValueError ('endElement: Expecting "%s", got "%s"' % (self.level.name, name))
+				raise ValueError (f'endElement: Expecting "{self.level.name}", got "{name}"')
 			self.level.leave ()
 			if self.level.path in self.borders:
 				for point in self.borders[self.level.path]:

@@ -11,6 +11,7 @@
 #
 from	__future__ import annotations
 import	os, logging, errno, time, fcntl
+from	datetime import datetime
 from	functools import partial
 from	typing import Optional
 from	typing import Generator, List, Set
@@ -61,17 +62,18 @@ path to the next mail file to process."""
 			self.files = sorted (os.listdir (self.path), key = atoi)
 			self.cur: Optional[str] = None
 		
+		def __str__ (self) -> str:
+			return '< Mailspool.Workspace (path = {path!r}) with {count:,d} files >'.format (path = self.path, count = len (self.files))
+		__repr__ = __str__
+		
 		def __iter__ (self) -> Generator[str, None, None]:
 			while self.files:
 				self.cur = os.path.join (self.path, self.files.pop (0))
 				yield self.cur
 
 		def __timestamp (self, daybased: bool) -> str:
-			now = time.localtime ()
-			if daybased:
-				return '%04d%02d%02d' % (now.tm_year, now.tm_mon, now.tm_mday)
-			else:
-				return '%02d%02d%02d' % (now.tm_hour, now.tm_min, now.tm_sec)
+			now = datetime.now ()
+			return f'{now.year:04d}{now.month:02d}{now.day:02d}' if daybased else f'{now.hour:02d}{now.minute:02d}{now.second:02d}'
 		
 		def done (self, force: bool = False) -> None:
 			"""Cleanup and remove the workspace"""
@@ -86,9 +88,9 @@ path to the next mail file to process."""
 						logger.exception (f'{path}: failed to remove: {e}')
 				try:
 					os.rmdir (self.path)
-					logger.debug (f'{self.path}: removed workspace')
+					logger.info (f'{self}: removed workspace')
 				except OSError as e:
-					logger.exception (f'{self.path}: failed to remove workspace: {e}')
+					logger.exception (f'{self}: failed to remove workspace: {e}')
 		
 		def abort (self) -> None:
 			"""Abort processing of a workspace and move it to quarantine"""
@@ -100,9 +102,9 @@ path to the next mail file to process."""
 				destdir = f'{basedir}.{n:06d}'
 			try:
 				os.rename (self.path, destdir)
-				logger.info (f'{self.path}: aborted workspace and moved to {destdir}')
+				logger.info (f'{self}: aborted workspace and moved to {destdir}')
 			except OSError as e:
-				logger.exception (f'{self.path}: failed to remove workspace ({e}), try to remove it')
+				logger.exception (f'{self}: failed to remove workspace ({e}), try to remove it')
 				self.done (True)
 
 		def fail (self) -> None:
@@ -110,12 +112,12 @@ path to the next mail file to process."""
 			if self.cur is not None:
 				destdir = os.path.join (self.ref.quarantine, self.__timestamp (True))
 				if self.ref.check_path (destdir):
-					bname = '%s-%s' % (self.__timestamp (False), os.path.basename (self.cur))
+					bname = '{timestamp}-{path}'.format (timestamp = self.__timestamp (False), path = os.path.basename (self.cur))
 					dest = os.path.join (destdir, bname)
 					n = 0
 					while os.path.isfile (dest) and n < 128:
 						n += 1
-						dest = os.path.join (destdir, '%s-%d' % (bname, n))
+						dest = os.path.join (destdir, f'{bname}-{n}')
 					try:
 						os.rename (self.cur, dest)
 						logger.debug (f'{self.cur}: moved to {dest}')
@@ -132,7 +134,7 @@ path to the next mail file to process."""
 		def success (self, sender: Optional[str] = None) -> None:
 			"""Mark processing of a file as successful and move it to store"""
 			if self.cur is not None:
-				dest = os.path.join (self.ref.store, '%s-mbox' % self.__timestamp (True))
+				dest = os.path.join (self.ref.store, '{timestamp}-mbox'.format (timestamp = self.__timestamp (True)))
 				try:
 					with open (self.cur, 'rb') as fdi, open (dest, 'ab') as fdo:
 						if self.ref.store_size and self.ref.store_size < 65536:
@@ -141,7 +143,10 @@ path to the next mail file to process."""
 							bufsize = 65536
 						fcntl.lockf (fdo, fcntl.LOCK_EX)
 						if sender is not None:
-							fdo.write (('From %s  %s\n' % (sender, time.ctime ())).encode ('UTF-8'))
+							fdo.write ('From {sender}  {time}\n'.format (
+								sender = sender,
+								time = time.ctime ()
+							).encode ('UTF-8'))
 						copied = 0
 						for buf in iter (partial (fdi.read, bufsize), b''):
 							fdo.write (buf)
@@ -204,10 +209,10 @@ limit hard drive usage in case of high volume mail traffic."""
 		while self.workspaces:
 			ws = self.Workspace (self.workspaces.pop (0), self)
 			if ws.files:
-				logger.debug (f'{ws.path}: provided')
+				logger.debug (f'{ws}: provided')
 				yield ws
 			else:
-				logger.debug (f'{ws.path}: skipped due to empty workspace')
+				logger.debug (f'{ws}: skipped due to empty workspace')
 			ws.done ()
 	
 	def check_path (self, path: str) -> bool:
@@ -243,8 +248,8 @@ limit hard drive usage in case of high volume mail traffic."""
 		lastts = ''
 		for fname in sorted ((_f for _f in os.listdir (self.incoming) if isnum (_f)), key = lambda f: int (f)):
 			while cur is None:
-				now = time.localtime ()
-				ts = '%04d%02d%02d%02d%02d%02d' % (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
+				now = datetime.now ()
+				ts = f'{now.year:04d}{now.month:02d}{now.day:02d}{now.hour:02d}{now.minute:02d}{now.second:02d}'
 				if ts != lastts:
 					lastts = ts
 					idx = 0
@@ -254,7 +259,7 @@ limit hard drive usage in case of high volume mail traffic."""
 						idx = 0
 						time.sleep (1)
 						continue
-				cur = os.path.join (self.workspace, '%s%03d' % (ts, idx))
+				cur = os.path.join (self.workspace, f'{ts}{idx:03d}')
 				if os.path.isdir (cur):
 					cur = None
 				else:
@@ -284,20 +289,19 @@ the incoming spool directory. If ``content'' is None, a suitable
 content is created, otherwise it must be provided. ``procmailrc'' is
 the path to the target file."""
 		if content is None:
-			content = '# created by agn3.spool.Mailspool\n:0:\n%s/.\n' % self.incoming
+			content = f'# created by agn3.spool.Mailspool\n:0:\n{self.incoming}/.\n'
 		try:
 			with open (procmailrc, 'r') as fd:
 				ocontent = fd.read ()
 		except IOError as e:
 			if e.args[0] != errno.ENOENT:
-				logger.warning ('Failed to read "%s": %s' % (procmailrc, e))
+				logger.warning (f'Failed to read "{procmailrc}": {e}')
 			ocontent = ''
 		if ocontent != content:
 			try:
 				with open (procmailrc, 'w') as fd:
 					fd.write (content)
 				os.chmod (procmailrc, 0o600)
-				logger.info ('Created new/Updated procmailrc file "%s".' % procmailrc)
+				logger.info (f'Created new/Updated procmailrc file "{procmailrc}".')
 			except (IOError, OSError) as e:
-				logger.exception ('Failed to install procmailrc file "%s": %s' % (procmailrc, e))
-	
+				logger.exception (f'Failed to install procmailrc file "{procmailrc}": {e}')
