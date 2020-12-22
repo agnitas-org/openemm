@@ -1,20 +1,28 @@
-**OpenEMM 2015 was succeeded by the completely revised OpenEMM 2020.**
+**Resources for OpenEMM**
 
-Visit the website of OpenEMM 2020:
+Website of OpenEMM with **Marketing Information**:
 
-[OpenEMM 2020 Website](https://www.agnitas.de/en/e-marketing_manager/email-marketing-software-variants/openemm/)
+[OpenEMM Website](https://www.agnitas.de/en/e-marketing_manager/email-marketing-software-variants/openemm/)
 
-Download the executable release of OpenEMM 2020:
+Wiki of OpenEMM with **Technical Information**:
 
-[OpenEMM 2020 Binaries Download](https://www.agnitas.de/en/download/openemm-binaries/)
+[OpenEMM Wiki](https://wiki.openemm.org)
 
-Read the OpenEMM 2019 Wiki with Installation & Configuration Guide (**Build process: See chapter 12**):
+Download of **Executable Code** of OpenEMM:
 
-[OpenEMM 2020 Wiki](https://wiki.openemm.org)
+[OpenEMM Binaries Download](https://www.agnitas.de/en/download/openemm-binaries/)
 
-And join the OpenEMM support forum:
+Forum for OpenEMM **Support**:
 
 [OpenEMM Forum](https://forum.openemm.org)
+
+**Source Code** of OpenEMM
+
+[OpenEMM GitHub Repository](https://github.com/agnitas-org/openemm)
+
+
+
+
 
 
 
