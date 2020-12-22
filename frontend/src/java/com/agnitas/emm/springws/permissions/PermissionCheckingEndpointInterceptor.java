@@ -16,7 +16,7 @@ import java.util.Locale;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
 import org.agnitas.emm.springws.security.authorities.EndpointAuthority;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.server.endpoint.MethodEndpoint;
 import org.springframework.ws.soap.SoapBody;
@@ -24,7 +24,19 @@ import org.springframework.ws.soap.SoapHeaderElement;
 import org.springframework.ws.soap.SoapMessage;
 import org.springframework.ws.soap.server.SoapEndpointInterceptor;
 
+/**
+ * Interceptor checking webservice permissions.
+ * 
+ * The required permission for an endpoint is derived from the simple name of the endpoint class by
+ * cutting the <i>Endpoint</i> suffix.
+ * Therefore the endpoint class must follow the form </i>&lt;endpoint-name>Endpoint</i>.
+ * If the endpoint class name does not satisfy this pattern, the simple endpoint class name (class name without
+ * package) is used.
+ */
 public final class PermissionCheckingEndpointInterceptor implements SoapEndpointInterceptor {
+	
+	/** The logger. */
+	private static final transient Logger LOGGER = Logger.getLogger(PermissionCheckingEndpointInterceptor.class);
 
 	@Override
 	public final void afterCompletion(final MessageContext messageContext, final Object endpoint, final Exception arg2) throws Exception {
@@ -38,14 +50,7 @@ public final class PermissionCheckingEndpointInterceptor implements SoapEndpoint
 
 	@Override
 	public final boolean handleRequest(final MessageContext messageContext, final Object endpoint) throws Exception {
-		final String endpointName;
-		if (endpoint instanceof MethodEndpoint) {
-			// Make first letter uppercase
-			endpointName = StringUtils.capitalize(((MethodEndpoint) endpoint).getMethod().getName());
-		} else {
-			final Class<?> endpointClass = endpoint. getClass();
-			endpointName = endpointNameFromClass(endpointClass);
-		}
+		final String endpointName = permissionFromEndpointInstance(endpoint);
 		
 		if (Utils.isAuthorityGranted(new EndpointAuthority(endpointName)) || Utils.isAuthorityGranted(AllEndpointsAuthority.INSTANCE)) {
 			return true;
@@ -57,10 +62,31 @@ public final class PermissionCheckingEndpointInterceptor implements SoapEndpoint
 		}
 	}
 	
-	private static final String endpointNameFromClass(final Class<?> clazz) {
+	private static final String permissionFromEndpointInstance(final Object endpoint) {
+		if (endpoint instanceof MethodEndpoint) {
+			final MethodEndpoint methodEndpoint = (MethodEndpoint) endpoint;
+			
+			return permissionFromEndpointClass(methodEndpoint.getBean().getClass());
+		} else {
+			final Class<?> endpointClass = endpoint.getClass();
+			
+			return permissionFromEndpointClass(endpointClass);
+		}
+	}
+	
+	private static final String permissionFromEndpointClass(final Class<?> clazz) {
 		try {
-			return WebservicePermissionUtils.permissionTokenFromEndpointClass(clazz);
+			final String permission = WebservicePermissionUtils.permissionTokenFromEndpointClass(clazz);
+			
+			if(LOGGER.isInfoEnabled()) {
+				LOGGER.info(String.format("Permission for endpoint class '%s' is '%s'", clazz.getCanonicalName(), permission));
+			}
+			
+			return permission;
 		} catch(final IllegalArgumentException e) {
+			LOGGER.error(String.format("Could not derive permission name from endpoint class: %s", clazz.getCanonicalName()), e);
+			
+			// Fallback to simple class name
 			return clazz.getSimpleName();
 		}
 	}

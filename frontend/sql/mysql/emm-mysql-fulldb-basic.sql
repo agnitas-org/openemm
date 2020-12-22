@@ -2409,6 +2409,7 @@ INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order,
 
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('forms.change', 'Forms', NULL, 1, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('forms.delete', 'Forms', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('forms.export', 'Forms', NULL, 3, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('forms.import', 'Forms', NULL, 4, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('forms.show', 'Forms', NULL, 5, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('forms.migration', 'Forms', NULL, 10, NULL);
@@ -2457,6 +2458,7 @@ INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order,
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.contentsource.date.limit', 'Mailing', NULL, 10, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.delete', 'Mailing', NULL, 11, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.envelope_address', 'Mailing', NULL, 12, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.export', 'Mailing', NULL, 13, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.extend_trackable_links', 'Mailing', NULL, 14, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.import', 'Mailing', NULL, 16, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.send.admin.options', 'Mailing', NULL, 19, NULL);

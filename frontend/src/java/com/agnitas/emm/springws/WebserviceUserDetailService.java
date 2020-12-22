@@ -93,7 +93,13 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
     }
     
     private final boolean areWebservicePermissionsEnabled(final int companyID) {
-    	return this.configService.getBooleanValue(Webservices.WebserviceEnablePermissions, companyID);
+    	final boolean enabled = this.configService.getBooleanValue(Webservices.WebserviceEnablePermissions, companyID);
+    	
+    	if(logger.isDebugEnabled()) {
+    		logger.debug(String.format("Webservice permission checking enabled for company %d: %b", companyID, enabled));
+    	}
+    	
+    	return enabled;
     }
     
     private final List<GrantedAuthority> loadGrantedAuthorities(final int companyID, final String username) {

@@ -127,7 +127,8 @@ public class ConfigValue {
 	public static final ConfigValue Predelivery_LitmusGuidPrefix = new ConfigValue("litmus.GuidPrefix");
 	public static final ConfigValue Predelivery_LitmusStatusUrl = new ConfigValue("predelivery.litmusstatusurl", "https://status.litmus.com/");
 	public static final ConfigValue Predelivery_RetentionDays = new ConfigValue("predelivery.retentationDays", "90");
-
+	public static final ConfigValue Predelivery_PollingTimeoutSeconds = new ConfigValue("predelivery.timeout.polling.seconds", "7200");
+	
 	public static final ConfigValue RdirUndecodableLinkUrl = new ConfigValue("rdir.undecodableLink.url", "/assets/rdir/404/404.html");
 	
 	public static final ConfigValue Thumbnail_Generate = new ConfigValue("thumbnail.generate");

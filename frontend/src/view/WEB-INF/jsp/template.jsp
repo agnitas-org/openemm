@@ -181,6 +181,7 @@
                     </div>
                     <div class="account-data-infobox">
                         <p><strong><c:if test="${not empty firstName}">${firstName} </c:if>${fullName}</strong></p>
+                        <c:if test="${not empty supervisorName}"><p><strong>${supervisorName}</strong></p></c:if>
                         <p>${companyShortName}</p>
                         <p><bean:message key="default.CompanyID"/>: ${companyID}</p>
                         <br/>
