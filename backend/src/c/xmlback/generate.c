@@ -319,7 +319,7 @@ spool_tmpprefix (spool_t *s) /*{{{*/
 	if (! s -> devnull) {
 		char	prefix[64];
 	
-		sprintf (prefix, "%lxT%04lx", (long) getpid (), ((unsigned long) time (NULL) >> 6) & 0xffff);
+		sprintf (prefix, "%lxT%04lx", (unsigned long) getpid () & 0xffff, ((unsigned long) time (NULL) >> 6) & 0xffff);
 		spool_addprefix (s, prefix);
 	}
 }/*}}}*/

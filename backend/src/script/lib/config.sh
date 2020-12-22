@@ -38,7 +38,7 @@ export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
 verbose=1
 quiet=0
-version="20.10.000.096"
+version="20.10.000.102"
 licence="`$BASE/bin/config-query licence`"
 system="`uname -s`"
 host="`uname -n | cut -d. -f1`"
