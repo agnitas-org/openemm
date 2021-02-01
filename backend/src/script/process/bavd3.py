@@ -63,29 +63,29 @@ class Autoresponder:
 		return False
 	
 	def is_limited (self, dryrun: bool) -> bool:
-		may_receive = False
+		may_receive = True
 		try:
 			arlimit = Autoresponder.limit_pattern % self.aid
-			now = time.time ()
+			now = int (time.time ())
 			with Autoresponder.lock, DBM (arlimit, 'c') as dbf:
 				sender_as_key = self.sender.encode ('UTF-8')
 				if sender_as_key not in dbf:
 					logger.debug ('Never sent mail to %s from this autoresponder %s' % (self.sender, self.aid))
-					may_receive = True
 				else:
-					with Ignore (ValueError):
+					try:
 						last = int (dbf[sender_as_key].decode ('UTF-8'))
 						if last + 24 * 60 * 60 < now:
 							logger.debug ('Last mail to "%s" is older than 24 hours' % self.sender)
-							may_receive = True
 						else:
 							diff = (now - last) / 60
 							logger.info ('Reject mail to "%s", sent already mail in last 24 hours (%d:%02d)' % (self.sender, diff / 60, diff % 60))
+							may_receive = False
+					except ValueError as e:
+						logger.debug (f'{self.sender}: got invalid entry from database: {e}')
 				if may_receive and not dryrun:
-					dbf[sender_as_key] = '{now:d}'.encode ('UTF-8')
+					dbf[sender_as_key] = f'{now:d}'.encode ('UTF-8')
 		except dbmerror as e:
 			logger.error ('Unable to acess %s %s' % (arlimit, e))
-			may_receive = False
 		return not may_receive
 	
 	def allow (self, parameter: Line, dryrun: bool) -> bool:
@@ -503,7 +503,10 @@ class BAV:
 		else:
 			self.parameter = bavconfig.parse ('')
 
-		self.header_from: Optional[BAV.From] = BAV.From (*parseaddr (cast (str, self.msg['from']))) if 'from' in self.msg else None
+		try:
+			self.header_from: Optional[BAV.From] = BAV.From (*parseaddr (cast (str, self.msg['from']))) if 'from' in self.msg else None
+		except:
+			self.header_from = None
 		self.rid = self.parameter.rid
 		if return_path is not None:
 			self.sender = return_path
@@ -855,7 +858,7 @@ class BAV:
 		if self.parsed_email.ignore:
 			action = 'ignore'
 		else:
-			action = 'unsub' if self.parsed_email.unsubscribe else 'unspec'
+			action = 'unspec'
 			scan = self.rule.scan_message (self.cinfo, self.msg, ['hard', 'soft'])
 			if scan and scan.minfo:
 				if self.parsed_email.unsubscribe:

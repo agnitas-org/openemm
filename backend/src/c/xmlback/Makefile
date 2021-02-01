@@ -10,7 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 
-CFLAGS	= '-DEMM_VERSION="OpenEMM 20.10.000.102"' -I. -I../lib -I/usr/include/libxml2
+CFLAGS	= '-DEMM_VERSION="OpenEMM 20.10.000.126"' -I. -I../lib -I/usr/include/libxml2
 LDFLAGS	= -L. -L../lib
 LIBS	= -lagn -lslang -llua -lssl -lcrypto -lxml2 -lz -ldl -lm
 SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c convert.c append.c \

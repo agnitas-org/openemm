@@ -210,7 +210,7 @@ portable across different databases."""
 				if isinstance (parameter, dict):
 					if self.need_reformat:
 						(statement, parameter_list) = self.db.reformat (statement, parameter)
-						if self.log: self.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = ', '.join (['{_p:r}' for _p in parameter_list])))
+						if self.log: self.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = ', '.join ([f'{_p!r}' for _p in parameter_list])))
 						return self.executor (statement, parameter_list)
 					elif cleanup:
 						parameter = self.db.cleanup (statement, parameter)
@@ -222,7 +222,7 @@ portable across different databases."""
 				if parameter is None:
 					self.log ('{what} {statement} failed: {error}'.format (what = what, statement = statement, error = self.last_error ()))
 				else:
-					self.log ('{what} {statement} using {parameter:r} failed: {error}'.format (what = what, statement = statement, parameter = parameter, error = self.last_error ()))
+					self.log ('{what} {statement} using {parameter!r} failed: {error}'.format (what = what, statement = statement, parameter = parameter, error = self.last_error ()))
 			raise error ('{what} using statement {statement} {parameter!r} start failed: {error}'.format (
 				what = what.lower (),
 				statement = statement,
@@ -641,14 +641,14 @@ class Binary:
 	def dump (cls, o: Any) -> Optional[str]:
 		if o.value is None:
 			return None
-		return base64.encodestring (o.value).decode ('us-ascii')
+		return base64.encodebytes (o.value).decode ('us-ascii')
 		
 	@classmethod
 	def load (cls, s: Optional[str]) -> Binary:
 		if s is None:
 			return cls (None)
 		try:
-			return cls (base64.decodestring (s.encode ('us-ascii')))
+			return cls (base64.decodebytes (s.encode ('us-ascii')))
 		except Exception:
 			return cls (s)
 
