@@ -17,13 +17,26 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.impl.ComAdminImpl;
+import com.agnitas.dao.ComAdminDao;
+import com.agnitas.dao.ComAdminGroupDao;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.AdminException;
+import com.agnitas.emm.core.admin.AdminNameNotFoundException;
+import com.agnitas.emm.core.admin.AdminNameNotUniqueException;
+import com.agnitas.emm.core.admin.encrypt.PasswordEncryptor;
+import com.agnitas.emm.core.news.enums.NewsType;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.AdminEntryImpl;
@@ -49,20 +62,6 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComCompany;
-import com.agnitas.beans.impl.ComAdminImpl;
-import com.agnitas.dao.ComAdminDao;
-import com.agnitas.dao.ComAdminGroupDao;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.admin.AdminException;
-import com.agnitas.emm.core.admin.AdminNameNotFoundException;
-import com.agnitas.emm.core.admin.AdminNameNotUniqueException;
-import com.agnitas.emm.core.admin.encrypt.PasswordEncryptor;
-import com.agnitas.emm.core.news.enums.NewsType;
 
 /**
  * DAO handler for ComAdmin-Objects
@@ -493,9 +492,9 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 
 	@Override
 	public Map<Integer, String> getAdminsNamesMap(@VelocityCheck int companyId) {
-		Map<Integer, String> map = new HashMap<>();
+		Map<Integer, String> map = new LinkedHashMap<>();
 
-		String sqlGetNames = "SELECT admin_id, username FROM admin_tbl WHERE company_id = ?";
+		String sqlGetNames = "SELECT admin_id, username FROM admin_tbl WHERE company_id = ? ORDER BY username";
 		query(logger, sqlGetNames, new NameMapCallback(map), companyId);
 
 		return map;

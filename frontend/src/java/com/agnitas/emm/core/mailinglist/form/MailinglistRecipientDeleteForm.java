@@ -18,26 +18,6 @@ public class MailinglistRecipientDeleteForm extends SimpleActionForm {
     
     private boolean noAdminAndTestUsers;
 
-    @Deprecated
-    public int getMailinglistId() {
-        return getId();
-    }
-
-    @Deprecated
-    public void setMailinglistId(int mailinglistId) {
-        setId(mailinglistId);
-    }
-
-    @Deprecated
-    public String getMailinglistShortname() {
-        return getShortname();
-    }
-
-    @Deprecated
-    public void setMailinglistShortname(String mailinglistShortname) {
-        setShortname(mailinglistShortname);
-    }
-    
     public boolean isOnlyActiveUsers() {
         return onlyActiveUsers;
     }

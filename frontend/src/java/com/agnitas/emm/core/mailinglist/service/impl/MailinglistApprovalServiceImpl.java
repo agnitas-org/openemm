@@ -143,15 +143,15 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
         return new HashSet<>(allowed);
     }
     @Override
-    public boolean editUsersApprovalPermissions(int companyId, int mailinglistId, Set<Integer> allowedRecipientIds, List<UserAction> userActions) {
+    public boolean editUsersApprovalPermissions(int companyId, int mailinglistId, Set<Integer> allowedUserIds, List<UserAction> userActions) {
         if(mailinglistId == 0) {
             return false;
         }
         
-        Collection<Integer> adminForDisallowing = CollectionUtils.removeAll(adminService.getAdminsNamesMap(companyId).keySet(), allowedRecipientIds);
+        Collection<Integer> adminForDisallowing = CollectionUtils.removeAll(adminService.getAdminsNamesMap(companyId).keySet(), allowedUserIds);
         boolean result = setAdminsDisallowedToUseMailinglist(companyId, mailinglistId, adminForDisallowing);
         if(result) {
-            userActions.add(new UserAction("mailing list edit", "Allowed mailing list for admins: " + StringUtils.join(allowedRecipientIds, ", ")));
+            userActions.add(new UserAction("mailing list edit", "Allowed mailing list for admins: " + StringUtils.join(allowedUserIds, ", ")));
             userActions.add(new UserAction("mailing list edit", "Disallowed mailing list for admins: " + StringUtils.join(adminForDisallowing, ", ")));
         }
         return result;

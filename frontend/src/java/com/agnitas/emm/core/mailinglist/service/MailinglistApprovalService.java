@@ -63,6 +63,6 @@ public interface MailinglistApprovalService {
 	
 	boolean hasAnyDisabledMailingListsForAdmin(@VelocityCheck int companyId, int adminId);
 
-	boolean editUsersApprovalPermissions(int companyId, int mailinglistId, Set<Integer> allowedRecipientIds, List<UserAction> userActions);
+	boolean editUsersApprovalPermissions(int companyId, int mailinglistId, Set<Integer> allowedUserIds, List<UserAction> userActions);
 
 }

@@ -118,4 +118,6 @@ public interface ImportRecipientsDao {
 	int changeStatusInMailingListNotIncludedInTempData(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, MediaTypes mediatype, int currentStatus, int updateStatus, String remark) throws Exception;
 
 	void removeFromBlackListNotIncludedInTempData(String temporaryImportTableName, int companyId);
+
+	void changeEmailColumnCollation(String temporaryImportTableName, String collation);
 }

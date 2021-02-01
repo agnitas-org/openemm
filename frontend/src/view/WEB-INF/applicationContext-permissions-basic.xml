@@ -131,7 +131,6 @@
                 <entry key="mailinglist.confirmBulkDelete" value="mailinglist.delete" />
                 <entry key="mailinglist.bulkDelete" value="mailinglist.delete" />
                 <entry key="mailinglist.confirmDelete" value="mailinglist.delete" />
-                <entry key="mailinglist.recipientList" value="mailinglist.show" />
                 <entry key="mailinglist.recipientsDeleteSettings" value="mailinglist.recipients.delete" />
                 <entry key="mailinglist.confirmRecipientsDelete" value="mailinglist.recipients.delete" />
                 <entry key="mailinglist.recipientsDelete" value="mailinglist.recipients.delete" />

@@ -622,10 +622,9 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				int customerToCopyID = selectIntWithDefaultValue(logger, "SELECT MIN(customer_id) FROM customer_1_tbl", 0);
 				int newCustomerID = selectInt(logger, "SELECT customer_" + newCompanyId + "_tbl_seq.NEXTVAL FROM DUAL");
 				if (customerToCopyID > 0) {
-					sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, firstname, lastname, email, mailtype) (SELECT " + newCustomerID + ", gender, firstname, lastname, email, mailtype FROM customer_1_tbl WHERE customer_id = " + customerToCopyID + ")";
-					update(logger, sql);
+					update(logger, "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, firstname, lastname, email, mailtype, creation_date, timestamp) (SELECT " + newCustomerID + ", gender, firstname, lastname, email, mailtype, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP FROM customer_1_tbl WHERE customer_id = " + customerToCopyID + ")");
 				} else {
-					update(logger, "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype) VALUES(?, 2, 0, 'test@example.com', 1)", newCustomerID);
+					update(logger, "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(?, 2, 0, 'test@example.com', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", newCustomerID);
 				}
 				if (customerToCopyID > 0) {
 					// Set binding for new customer
@@ -634,13 +633,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				}
 				
 				// New customer
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'adam+" + newCompanyId + "@adamatis.eu', 1)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'adam+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'eva+" + newCompanyId + "@adamatis.eu', 1)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'eva+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'kain+" + newCompanyId + "@adamatis.eu', 1)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'kain+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'abel+" + newCompanyId + "@adamatis.eu', 1)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'abel+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
 
 				// Default mediapool categories
@@ -677,9 +676,9 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				int customerToCopyID = selectIntWithDefaultValue(logger, "SELECT MIN(customer_id) FROM customer_1_tbl", 0);
 				int newCustomerID = 0;
 				if (customerToCopyID > 0) {
-					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, firstname, lastname, email, mailtype) (SELECT gender, firstname, lastname, email, mailtype FROM customer_1_tbl WHERE customer_id = ?)", customerToCopyID);
+					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, firstname, lastname, email, mailtype, creation_date, timestamp) (SELECT gender, firstname, lastname, email, mailtype, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP FROM customer_1_tbl WHERE customer_id = ?)", customerToCopyID);
 				} else {
-					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype) VALUES (2, 0, 'test@example.com', 1)");
+					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype, creation_date, timestamp) VALUES (2, 0, 'test@example.com', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
 				}
 				if (newCustomerID > 0) {
 					// Set binding for new customer
@@ -688,13 +687,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				}
 
 				// New customer
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype) VALUES(2, 1, 'adam+" + newCompanyId + "@adamatis.eu', 1)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(2, 1, 'adam+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype) VALUES(2, 1, 'eva+" + newCompanyId + "@adamatis.eu', 1)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(2, 1, 'eva+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype) VALUES(2, 1, 'kain+" + newCompanyId + "@adamatis.eu', 1)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(2, 1, 'kain+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype) VALUES(2, 1, 'abel+" + newCompanyId + "@adamatis.eu', 1)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(2, 1, 'abel+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
 
 				// Default mediapool categories
@@ -1062,9 +1061,9 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				sql = "CREATE INDEX cust" + newCompanyId + "b$cuid_ustat_mlid$idx ON customer_" + newCompanyId + "_binding_tbl (customer_id, user_status, mailinglist_id)";
 				executeWithRetry(logger, 0, 3, 120, sql);
 				
-				sql = "CREATE TABLE cust" + newCompanyId + "_ban_tbl (email VARCHAR(150) NOT NULL, timestamp timestamp DEFAULT CURRENT_TIMESTAMP, reason varchar(500), PRIMARY KEY (email)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+				sql = "CREATE TABLE cust" + newCompanyId + "_ban_tbl (email VARCHAR(150) COLLATE utf8mb4_bin NOT NULL, timestamp timestamp DEFAULT CURRENT_TIMESTAMP, reason varchar(500), PRIMARY KEY (email)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				executeWithRetry(logger, 0, 3, 120, sql);
-				sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$cust" + newCompanyId + "ban_tbl FOREIGN KEY (text) REFERENCES cust" + newCompanyId + "_ban_tbl (email)";
+				sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$cust" + newCompanyId + "ban_tbl FOREIGN KEY (email_ban) REFERENCES cust" + newCompanyId + "_ban_tbl (email)";
 				executeWithRetry(logger, 0, 3, 120, sql);
 			}
 		} catch (Exception e) {

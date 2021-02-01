@@ -15,50 +15,50 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class MailinglistRecipientForm {
+public class MailinglistUserForm {
     
     private int mailinglistId;
     
     private String mailinglistShortname;
     
-    private Set<Integer> allowedRecipientIds = new HashSet<>();
-    
+    private Set<Integer> allowedUserIds = new HashSet<>();
+
     private int userId;
-    
+
     public int getMailinglistId() {
         return mailinglistId;
     }
-    
+
     public void setMailinglistId(int mailinglistId) {
         this.mailinglistId = mailinglistId;
     }
-    
+
     public String getMailinglistShortname() {
         return mailinglistShortname;
     }
-    
+
     public void setMailinglistShortname(String mailinglistShortname) {
         this.mailinglistShortname = mailinglistShortname;
     }
-    
-    public Set<Integer> getAllowedRecipientIds() {
-        return allowedRecipientIds;
+
+    public Set<Integer> getAllowedUserIds() {
+        return allowedUserIds;
     }
-    
-    public void setAllowedRecipientIds(Set<Integer> allowedRecipientIds) {
-        this.allowedRecipientIds = allowedRecipientIds;
+
+    public void setAllowedUserIds(Set<Integer> allowedUserIds) {
+        this.allowedUserIds = allowedUserIds;
     }
-    
-    public String getAllowedRecipientId(int id) {
-        return allowedRecipientIds.contains(id) ? "on" : "";
+
+    public String getAllowedUserId(int id) {
+        return allowedUserIds.contains(id) ? "on" : "";
     }
-    
-    public void setAllowedRecipientId(int id, String value) {
+
+    public void setAllowedUserId(int id, String value) {
         if(StringUtils.equals(value, "on") || StringUtils.equals(value, "yes") || StringUtils.equals(value, "true")) {
-            this.allowedRecipientIds.add(id);
+            this.allowedUserIds.add(id);
         }
     }
-    
+
     public int getUserId() {
         return userId;
     }

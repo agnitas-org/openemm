@@ -284,9 +284,9 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 		int insertedItems;
 		if (isOracleDB()) {
 			String customerIdSequenceName = destinationTableName + "_seq";
-			insertedItems = update(logger, "INSERT INTO " + destinationTableName + " (customer_id, creation_date, datasource_id" + additionalColumns + ", " + StringUtils.join(columnsToInsert, ", ") + ") (SELECT " + customerIdSequenceName + ".NEXTVAL, CURRENT_TIMESTAMP, " + datasourceId + additionalValues + ", " + StringUtils.join(columnsToInsert, ", ") + " FROM " + tempTableName + " WHERE (customer_id = 0 OR customer_id IS NULL) AND " + duplicateIndexColumn + " IS NULL)");
+			insertedItems = update(logger, "INSERT INTO " + destinationTableName + " (customer_id, creation_date, timestamp, datasource_id" + additionalColumns + ", " + StringUtils.join(columnsToInsert, ", ") + ") (SELECT " + customerIdSequenceName + ".NEXTVAL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, " + datasourceId + additionalValues + ", " + StringUtils.join(columnsToInsert, ", ") + " FROM " + tempTableName + " WHERE (customer_id = 0 OR customer_id IS NULL) AND " + duplicateIndexColumn + " IS NULL)");
 		} else {
-			insertedItems = update(logger, "INSERT INTO " + destinationTableName + " (creation_date, datasource_id" + additionalColumns + ", " + StringUtils.join(columnsToInsert, ", ") + ") (SELECT CURRENT_TIMESTAMP, " + datasourceId + additionalValues + ", " + StringUtils.join(columnsToInsert, ", ") + " FROM " + tempTableName + " WHERE (customer_id = 0 OR customer_id IS NULL) AND " + duplicateIndexColumn + " IS NULL)");
+			insertedItems = update(logger, "INSERT INTO " + destinationTableName + " (creation_date, timestamp, datasource_id" + additionalColumns + ", " + StringUtils.join(columnsToInsert, ", ") + ") (SELECT CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, " + datasourceId + additionalValues + ", " + StringUtils.join(columnsToInsert, ", ") + " FROM " + tempTableName + " WHERE (customer_id = 0 OR customer_id IS NULL) AND " + duplicateIndexColumn + " IS NULL)");
 		}
 		
 		if (keyColumns != null && !keyColumns.isEmpty()) {
@@ -745,8 +745,8 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 	public int removeBlacklistedEmails(String tempTableName, int companyID) {
 		final boolean useNewWildcards = configService.getBooleanValue(ConfigValue.Development.UseNewBlacklistWildcards, companyID);
 		
-		// Remove emails by exact match (excludes blacklist entries with "%" and "*")		
-		int blacklistedEntries = useNewWildcards 
+		// Remove emails by exact match (excludes blacklist entries with "%" and "*")
+		int blacklistedEntries = useNewWildcards
 				? update(logger, "DELETE FROM " + tempTableName + " WHERE EXISTS (SELECT 1 FROM cust" + companyID + "_ban_tbl ban WHERE " + tempTableName + ".email = ban.email AND NOT ban.email LIKE '%*%' AND NOT ban.email LIKE '%|%%' ESCAPE '|')")
 				: update(logger, "DELETE FROM " + tempTableName + " WHERE EXISTS (SELECT 1 FROM cust" + companyID + "_ban_tbl ban WHERE " + tempTableName + ".email = ban.email)");
 		
@@ -762,7 +762,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 				blacklistedEntries += update(logger, sql, likePattern);
 			} else {
 				blacklistedEntries += update(logger, "DELETE FROM " + tempTableName + " WHERE email LIKE ?", blacklistPattern.replace("?", "_").replace("*", "%"));
-			}			
+			}
 		}
 		
 		return blacklistedEntries;
@@ -800,5 +800,10 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 		
 		return update(logger, "UPDATE customer_" + companyId + "_binding_tbl SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP WHERE user_status = ? AND mailinglist_id = ? AND mediatype = ? AND customer_id NOT IN ("
 			+ "SELECT dst.customer_id FROM " + temporaryImportTableName + " src, customer_" + companyId + "_tbl dst WHERE " + StringUtils.join(keycolumnParts, " AND ") + ")", updateStatus, remark, currentStatus, mailingListId, mediatype == null ? MediaTypes.EMAIL.getMediaCode() : mediatype.getMediaCode());
+	}
+
+	@Override
+	public void changeEmailColumnCollation(String temporaryImportTableName, String collation) {
+		execute(logger, "ALTER TABLE " + temporaryImportTableName + " MODIFY email VARCHAR(150) COLLATE " + collation + " NOT NULL");
 	}
 }

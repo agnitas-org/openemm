@@ -53,15 +53,8 @@
                 </div>
             </div>
 
-            <c:if test="${not isNew}">
-                <div class="form-group">
-                    <div class="col-sm-offset-4 col-sm-8">
-                        <c:url var="enableMailinglistUrl" value="/mailinglist/${mailinglistForm.id}/users.action"/>
-                        <a href="#" class="btn btn-primary btn-regular"
-                           data-form-url="${enableMailinglistUrl}" data-form-confirm=""><mvc:message code="button.Enabling" /></a>
-                    </div>
-                </div>
-            </c:if>
+            <%@include file="mailinglist-manage-approval-fragment.jspf.jsp" %>
+
         </div>
     </div>
     <c:if test="${not isNew or not empty mailinglistForm.statistic}">

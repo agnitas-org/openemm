@@ -10,6 +10,10 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,11 +30,16 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
-
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.reporting.birt.external.beans.LightMailingList;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.dao.LightTargetDao;
+import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
+import com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl;
+import com.agnitas.util.LongRunningSelectResultCacheDao;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Mediatype;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -52,17 +61,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.incrementer.MySQLMaxValueIncrementer;
-
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
-import com.agnitas.reporting.birt.external.beans.LightMailingList;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.dao.LightTargetDao;
-import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
-import com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl;
-import com.agnitas.util.LongRunningSelectResultCacheDao;
 
 public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	private static final transient Logger logger = Logger.getLogger(BIRTDataSet.class);
@@ -365,7 +363,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	
 	protected List<LightTarget> getTargets(String selectedTargets, @VelocityCheck Integer companyID) {
 		try {
-			if (!StringUtils.isEmpty(selectedTargets)) {
+			if (StringUtils.isNotEmpty(selectedTargets)) {
 				LightTargetDao lightTargetDao = new LightTargetDaoImpl();
 				((LightTargetDaoImpl) lightTargetDao).setDataSource(getDataSource());
 				

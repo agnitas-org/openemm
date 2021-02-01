@@ -14,6 +14,11 @@ if (params["selectedTargets"] != null) {
 	selectedTargets = params["selectedTargets"].value;
 }
 
+dataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingOpenersTimeBasedDataSet();
+tempTableID = dataSet.prepareData(params["mailingID"], params["companyID"], params["selectedTargets"], params["startDate"], params["stopDate"], params["hourScale"], params["recipientType"]);
+openingsData = dataSet.getData(tempTableID);
+
+
 function tr(key) {
 	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
 }
@@ -253,7 +258,7 @@ if (params["selectedTargets"].value != null &amp;&amp; params["selectedTargets"]
 	selectedTargets = params["selectedTargets"];
 }
 
-valueList = targetDescriptionDataSet.getTargetDescription (selectedTargets,  params["language"]);
+valueList = targetDescriptionDataSet.getTargetDescription(selectedTargets,  params["language"]);
 currentrow = 0;
 allTargets="";]]></method>
             <method name="fetch"><![CDATA[if( currentrow < valueList.size() ) {
@@ -365,14 +370,7 @@ return false;]]></method>
                 </list-property>
             </structure>
             <property name="dataSource">DummyDataSource</property>
-            <method name="open"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
-importPackage(Packages.java.lang);
-dataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingOpenersTimeBasedDataSet();
-tempTableID = dataSet.prepareData(params["mailingID"], params["companyID"], params["selectedTargets"], params["startDate"], params["stopDate"], params["hourScale"], params["recipientType"]);
-reportContext.setPersistentGlobalVariable("tempTableID", new Integer(tempTableID));
-openingsData = dataSet.getData(tempTableID);
-currentrow = 0;
-]]></method>
+            <method name="open"><![CDATA[currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if (currentrow < openingsData.size()) {
 	var data = openingsData.get(currentrow);
 	currentrow++;
@@ -4820,6 +4818,7 @@ function beforeDrawSeries(series, isr, icsc) {
                                     <property name="color">#707173</property>
                                     <property name="height">320px</property>
                                     <property name="width">780px</property>
+                                    <structure name="toc"/>
                                     <property name="dataSet">MailingOpenersTimeBasedDataSet</property>
                                     <list-property name="boundDataColumns">
                                         <structure>

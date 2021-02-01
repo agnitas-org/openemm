@@ -1368,6 +1368,9 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 	private SqlPreparedInsertStatementManager prepareInsertStatement(CaseInsensitiveMap<String, ProfileField> customerTableStructure, Recipient customer, boolean withEmptyParameters) throws Exception {
 		SqlPreparedInsertStatementManager insertStatementManager = new SqlPreparedInsertStatementManager("INSERT INTO " + getCustomerTableName(customer.getCompanyID()));
+		insertStatementManager.addValue("creation_date", "CURRENT_TIMESTAMP", true);
+		insertStatementManager.addValue("timestamp", "CURRENT_TIMESTAMP", true);
+		
 		for (Entry<String, ProfileField> entry : customerTableStructure.entrySet()) {
 			String fieldName = entry.getKey();
 			ProfileField profileField = entry.getValue();
@@ -1378,8 +1381,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			} else if (fieldName.equalsIgnoreCase("creation_date")
 					|| fieldName.equalsIgnoreCase("timestamp")
 					|| fieldName.equalsIgnoreCase("change_date")) {
-				// Field is a system timestamp field
-				insertStatementManager.addValue(fieldName, "current_timestamp", true);
+				// Field is a system timestamp field, which is set in a special way
 			} else if (columnType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATE) || columnType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATETIME)) {
 				if (hasTripleDateParameter(customer, fieldName)) {
 					// Customer table has a timestamp field, which is split into 3 or 6 separate fields (day, month, year) or (day, month, year, hour, minute, second)
@@ -1441,8 +1443,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			ProfileField profileField = entry.getValue();
 			String columnType = profileField.getDataType();
 	
-			if (fieldName.equalsIgnoreCase("customer_id") || fieldName.equalsIgnoreCase("change_date") || fieldName.equalsIgnoreCase("timestamp")
-					|| fieldName.equalsIgnoreCase("creation_date")) {
+			if (fieldName.equalsIgnoreCase("customer_id") || fieldName.equalsIgnoreCase("change_date") || fieldName.equalsIgnoreCase("timestamp") || fieldName.equalsIgnoreCase("creation_date")) {
 				// Do not update these special fields
 			} else if (fieldName.equalsIgnoreCase("datasource_id")) {
 				// Only update datasource_id if it is not set yet

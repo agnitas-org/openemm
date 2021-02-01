@@ -92,41 +92,36 @@ public class MailingClickersTimeBasedDataSet extends TimeBasedDataSet {
 			
 	        List<LightTarget> lightTargets = getTargets(selectedTargets, companyID);
 	        Map<Integer, LightTarget> targetGroups = new HashMap<>();
-	        Map<Integer, Integer> targetGroupIndexes = new HashMap<>();
-	        targetGroups.put(0, null);
+
+	        LightTarget allRecipients = new LightTarget();
+			allRecipients.setId(0);
+			allRecipients.setName(CommonKeys.ALL_SUBSCRIBERS);
+			allRecipients.setTargetSQL("");
+
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
-			targetGroupIndexes.put(0, CommonKeys.ALL_SUBSCRIBERS_INDEX);
+			targetGroups.put(targetGroupIndex, allRecipients);
 			for (LightTarget target : lightTargets) {
-				targetGroupIndex++;
-				targetGroups.put(target.getId(), target);
-				targetGroupIndexes.put(target.getId(), targetGroupIndex);
+				if (target != null) {
+					targetGroupIndex++;
+					targetGroups.put(target.getId(), target);
+				}
 			}
 
-			boolean mustJoinCustomerData;
-	        String recipientTypeSqlPart;
+			boolean mustJoinCustomerData = false;
+	        String recipientTypeSqlPart = "";
 	        if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientType)) {
 	        	recipientTypeSqlPart = " AND cust.customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl ml WHERE ml." + keyColumn + " = rlog." + keyColumn + ")) cust";
 	        	mustJoinCustomerData = true;
 	        } else if (CommonKeys.TYPE_WORLDMAILING.equals(recipientType)) {
 	        	recipientTypeSqlPart = " AND cust.customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl ml WHERE ml." + keyColumn + " = rlog." + keyColumn + ")) cust";
 	        	mustJoinCustomerData = true;
-	        } else {
-	        	recipientTypeSqlPart = "";
-	        	mustJoinCustomerData = false;
 	        }
 	        
 	        for (Entry<Integer, LightTarget> targetEntry : targetGroups.entrySet()) {
-				int currentTargetGroupIndex = targetGroupIndexes.get(targetEntry.getKey());
+				int currentTargetGroupIndex = targetEntry.getKey();
 				LightTarget targetGroup = targetEntry.getValue();
-				String currentTargetGroupName;
-				String targetGroupSql;
-				if (targetGroup != null) {
-					currentTargetGroupName = targetGroup.getName();
-					targetGroupSql = targetGroup.getTargetSQL();
-				} else {
-					currentTargetGroupName = CommonKeys.ALL_SUBSCRIBERS;
-					targetGroupSql = "";
-				}
+				String currentTargetGroupName = targetGroup.getName();
+				String targetGroupSql = targetGroup.getTargetSQL();
 
 				Date currentStartDate = startDate;
 				while (currentStartDate.before(endDate)) {

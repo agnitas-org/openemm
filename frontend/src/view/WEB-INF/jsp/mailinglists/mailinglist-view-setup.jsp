@@ -86,7 +86,7 @@
                 <c:set target="${dropDownItems}" property="1" value="${option}"/>
 
                 <c:set target="${option}" property="url">
-                    <c:url value="/mailinglist/${mailinglistForm.id}/usersDeleteSettings.action"/>
+                    <c:url value="/mailinglist/${mailinglistForm.id}/recipientsDeleteSettings.action"/>
                 </c:set>
                 <c:set target="${option}" property="icon" value="icon-trash-o"/>
                 <c:set target="${option}" property="extraAttributes" value=" data-confirm=''"/>

@@ -65,13 +65,17 @@ public class DateUtilities {
 	public static final Locale SPAIN = new Locale("es", "ES");
 
 	/** Date format for SOAP Webservices (ISO 8601) */
-	private static final String ISO_8601_DATE_FORMAT_NO_TIMEZONE = "yyyy-MM-dd";
+	public static final String ISO_8601_DATE_FORMAT_NO_TIMEZONE = "yyyy-MM-dd";
 	/** Date format for SOAP Webservices (ISO 8601) */
 	private static final String ISO_8601_DATE_FORMAT = "yyyy-MM-ddX";
 	/** DateTime format for SOAP Webservices (ISO 8601) */
 	private static final String ISO_8601_DATETIME_FORMAT_NO_TIMEZONE = "yyyy-MM-dd'T'HH:mm:ss";
 	/** DateTime format for SOAP Webservices (ISO 8601) */
 	public static final String ISO_8601_DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssX";
+	/** DateTime format for SOAP Webservices (ISO 8601) */
+	private static final String ISO_8601_DATETIME_FORMAT_WITH_MILLIS_NO_TIMEZONE = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+	/** DateTime format for SOAP Webservices (ISO 8601) */
+	public static final String ISO_8601_DATETIME_FORMAT_WITH_MILLIS = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
 
 	public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 	public static final ZoneId UTC_ZONE = UTC.toZoneId();
@@ -840,9 +844,9 @@ public class DateUtilities {
      * 
      * @param dateValue
      * @return
-     * @throws Exception
+     * @throws ParseException
      */
-    public static Date parseIso8601DateTimeString(String dateValue) throws Exception {
+    public static Date parseIso8601DateTimeString(String dateValue) throws ParseException {
     	if (StringUtils.isBlank(dateValue)) {
     		return null;
     	}
@@ -860,15 +864,43 @@ public class DateUtilities {
     	}
     	
     	if (dateValue.contains("T")) {
-    		// Date with time
-    		if (hasTimezone) {
-    			SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_8601_DATETIME_FORMAT);
-    			dateFormat.setLenient(false);
-    			return dateFormat.parse(dateValue);
+    		if (dateValue.contains(".")) {
+        		if (hasTimezone) {
+        			if (dateValue.substring(dateValue.indexOf(".")).length() > 10 ) {
+                		// Date with time and fractals
+    	    			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSSXXXXX");
+    	    		    LocalDateTime dateTime = LocalDateTime.parse(dateValue, formatter);
+    	    		    return Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant());
+            		} else {
+    	        		// Date with time and milliseconds
+	        			SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_8601_DATETIME_FORMAT_WITH_MILLIS);
+	        			dateFormat.setLenient(false);
+	        			return dateFormat.parse(dateValue);
+            		}
+        		} else {
+        			if (dateValue.substring(dateValue.indexOf(".")).length() > 4 ) {
+                		// Date with time and fractals
+    	    			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSS");
+    	    		    LocalDateTime dateTime = LocalDateTime.parse(dateValue, formatter);
+    	    		    return Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant());
+            		} else {
+    	        		// Date with time and milliseconds
+	        			SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_8601_DATETIME_FORMAT_WITH_MILLIS_NO_TIMEZONE);
+	        			dateFormat.setLenient(false);
+	        			return dateFormat.parse(dateValue);
+            		}
+        		}
     		} else {
-    			SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_8601_DATETIME_FORMAT_NO_TIMEZONE);
-    			dateFormat.setLenient(false);
-    			return dateFormat.parse(dateValue);
+	    		// Date with time
+	    		if (hasTimezone) {
+	    			SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_8601_DATETIME_FORMAT);
+	    			dateFormat.setLenient(false);
+	    			return dateFormat.parse(dateValue);
+	    		} else {
+	    			SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_8601_DATETIME_FORMAT_NO_TIMEZONE);
+	    			dateFormat.setLenient(false);
+	    			return dateFormat.parse(dateValue);
+	    		}
     		}
     	} else {
     		// Date only

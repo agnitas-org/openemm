@@ -1259,12 +1259,6 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
-	<definition name="mailinglist_users_view" extends="base_ajax">
-		<put name="body" value="/WEB-INF/jsp/mailinglists/mailinglist-users-view.jsp" type="page"/>
-		<!--<put name="page-setup" value="/WEB-INF/jsp/mailinglists/mailinglist-users-view-setup.jsp" type="page"/>-->
-		<put name="page-setup" value="" type="string"/>
-	</definition>
-
 	<definition name="mailinglist_recipients_delete_settings" extends="base_ajax">
 		<put name="body" value="/WEB-INF/jsp/mailinglists/mailinglist-recipients-delete-settings.jsp" type="page"/>
 		<put name="page-setup" value="" type="string"/>

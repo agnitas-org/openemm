@@ -13,6 +13,10 @@ if (params["selectedTargets"] != null) {
 	selectedTargets = params["selectedTargets"].value;
 }
 
+dataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingClickersTimeBasedDataSet();
+tempTableID = dataSet.prepareData("mailing_id", params["mailingID"], params["companyID"], params["selectedTargets"], params["startDate"], params["stopDate"], params["hourScale"], params["recipientType"]);
+clicksData = dataSet.getData(tempTableID);
+
 function tr(key) {
 	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
 }
@@ -273,12 +277,7 @@ if (reportContext.getOutputFormat() == "csv" || params["viewChart"].value == fal
                 </list-property>
             </structure>
             <property name="dataSource">DummyDataSource</property>
-            <method name="open"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
-importPackage(Packages.java.lang);
-dataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingClickersTimeBasedDataSet();
-tempTableID = dataSet.prepareData("mailing_id", params["mailingID"], params["companyID"], params["selectedTargets"], params["startDate"], params["stopDate"], params["hourScale"], params["recipientType"]);
-reportContext.setPersistentGlobalVariable("tempTableID", new Integer(tempTableID));
-clicksData = dataSet.getData(tempTableID);
+            <method name="open"><![CDATA[
 currentrow = 0;
 ]]></method>
             <method name="fetch"><![CDATA[if (currentrow < clicksData.size()) {

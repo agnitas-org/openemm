@@ -7,7 +7,7 @@
 <div class="modal">
     <div class="modal-dialog">
         <div class="modal-content">
-            <mvc:form servletRelativeAction="/mailinglist/usersDelete.action" modelAttribute="deleteForm">
+            <mvc:form servletRelativeAction="/mailinglist/recipientsDelete.action" modelAttribute="deleteForm">
                 <mvc:hidden path="id"/>
                 <mvc:hidden path="shortname"/>
                 <mvc:hidden path="onlyActiveUsers"/>

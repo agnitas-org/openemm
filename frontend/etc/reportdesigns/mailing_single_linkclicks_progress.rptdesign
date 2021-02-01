@@ -10,6 +10,10 @@ importPackage(Packages.java.lang);
 importPackage(Packages.java.text);
 importPackage(Packages.java.util);
 
+dataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingClickersTimeBasedDataSet();
+tempTableID = dataSet.prepareData("url_id", params["urlID"], params["companyID"], params["selectedTargets"], params["startDate"], params["stopDate"], params["hourScale"], params["recipientType"]);
+clicksData = dataSet.getData(tempTableID);
+
 var isSingleTargetMode = true;
 selectedTargets = null;
 if (params["selectedTargets"] != null) {
@@ -40,9 +44,7 @@ startDate = new SimpleDateFormat("yyyy-MM-dd").parse(startDateAsString);
 locale = new Locale(params["language"].value);
 
 startDateAsString =  DateFormat.getDateInstance(DateFormat.MEDIUM, locale ).format(startDate);
-reportContext.setPersistentGlobalVariable("linkReportHeader", tr("report.startDate") + ": " + startDateAsString);
-
-]]></method>
+reportContext.setPersistentGlobalVariable("linkReportHeader", tr("report.startDate") + ": " + startDateAsString);]]></method>
     <method name="beforeRender"><![CDATA[function drop(name) {
 	reportContext.getReportRunnable()
 		.designHandle
@@ -296,14 +298,7 @@ if (reportContext.getOutputFormat() == "csv" || params["viewChart"].value == fal
                 </list-property>
             </structure>
             <property name="dataSource">DummyDataSource</property>
-            <method name="open"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
-importPackage(Packages.java.lang);
-dataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingClickersTimeBasedDataSet();
-tempTableID = dataSet.prepareData("url_id", params["urlID"], params["companyID"], params["selectedTargets"], params["startDate"], params["stopDate"], params["hourScale"], params["recipientType"]);
-reportContext.setPersistentGlobalVariable("tempTableID", new Integer(tempTableID));
-clicksData = dataSet.getData(tempTableID);
-currentrow = 0;
-]]></method>
+            <method name="open"><![CDATA[currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if (currentrow < clicksData.size()) {
 	var data = clicksData.get(currentrow);
 

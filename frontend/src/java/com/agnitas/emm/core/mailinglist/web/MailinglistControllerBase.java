@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.mailinglist.web;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,7 +32,6 @@ import org.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,37 +51,33 @@ import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
 import com.agnitas.emm.core.mailinglist.form.MailinglistForm;
 import com.agnitas.emm.core.mailinglist.form.MailinglistRecipientDeleteForm;
-import com.agnitas.emm.core.mailinglist.form.MailinglistRecipientForm;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 
 import net.sf.json.JSONArray;
 
-@Controller
-@RequestMapping("/mailinglist")
-@PermissionMapping("mailinglist")
-public class MailinglistController {
-	private static final Logger logger = Logger.getLogger(MailinglistController.class);
+
+public class MailinglistControllerBase {
+	private static final Logger logger = Logger.getLogger(MailinglistControllerBase.class);
 
 	private static final String YEAR_LIST = "yearlist";
 	private static final String MONTH_LIST = "monthList";
 	private static final String BIRT_STATISTIC_URL_WITHOUT_FORMAT = "birtStatisticUrlWithoutFormat";
 
-	private final ComMailinglistService mailinglistService;
-	private final MailinglistApprovalService mailinglistApprovalService;
-	private final UserActivityLogService userActivityLogService;
+	protected final ComMailinglistService mailinglistService;
+	protected final MailinglistApprovalService mailinglistApprovalService;
+	protected final UserActivityLogService userActivityLogService;
 	private final ConversionService conversionService;
 	private final BirtStatisticsService birtStatisticsService;
 	private final WebStorage webStorage;
-	private final AdminService adminService;
+	protected final AdminService adminService;
 	private final ConfigService configService;
 
-	public MailinglistController(ComMailinglistService mailinglistService, UserActivityLogService userActivityLogService,
-								 ConversionService conversionService, BirtStatisticsService birtStatisticsService,
-								 WebStorage webStorage, AdminService adminService, ConfigService configService, final MailinglistApprovalService mailinglistApprovalService) {
+	public MailinglistControllerBase(ComMailinglistService mailinglistService, UserActivityLogService userActivityLogService,
+									 ConversionService conversionService, BirtStatisticsService birtStatisticsService,
+									 WebStorage webStorage, AdminService adminService, ConfigService configService, final MailinglistApprovalService mailinglistApprovalService) {
 		this.mailinglistService = mailinglistService;
 		this.userActivityLogService = userActivityLogService;
 		this.conversionService = conversionService;
@@ -172,14 +166,14 @@ public class MailinglistController {
 		}
 		return "redirect:/mailinglist/" + id + "/view.action";
 	}
-	
+
 	@GetMapping("/{id:\\d+}/confirmDelete.action")
 	public String confirmDelete(ComAdmin admin, @PathVariable("id") int mailinglistId, MailinglistForm form, Model model, Popups popups) {
 		int companyId = admin.getCompanyID();
 
 		if (isMailinglistIndependent(mailinglistId, companyId, model)) {
 			Mailinglist mailinglist = mailinglistService.getMailinglist(mailinglistId, companyId);
-			
+
 			if (mailinglist == null) {
 				model.addAttribute("excludeDialog", true);
 				popups.alert("Error");
@@ -213,10 +207,10 @@ public class MailinglistController {
 		} else {
 			popups.alert("error.mailinglist.cannot_delete");
 		}
-		
+
 		return "redirect:/mailinglist/list.action";
 	}
-	
+
 	@PostMapping("/bulkDelete.action")
 	public String bulkDelete(ComAdmin admin, BulkActionForm form, RedirectAttributes model, Popups popups) {
 		int companyId = admin.getCompanyID();
@@ -225,53 +219,31 @@ public class MailinglistController {
 					.map(id -> getDescription(id, companyId))
 					.map(description -> new UserAction("delete mailinglist", description))
 					.collect(Collectors.toList());
-			
+
 			mailinglistService.bulkDelete(new HashSet<>(form.getBulkIds()), companyId);
-			
+
 			for (UserAction action: userActions) {
 				userActivityLogService.writeUserActivityLog(admin, action, logger);
 			}
-			
+
 			popups.success("default.selection.deleted");
 		}
-		
+
 		return "redirect:/mailinglist/list.action";
 	}
-	
-	@PostMapping("/{id:\\d+}/users.action")
-	public String recipientList(ComAdmin admin, @PathVariable int id, Model model) {
-		int companyId = admin.getCompanyID();
-		
-		model.addAttribute("recipientMap", adminService.getAdminsNamesMap(companyId));
-		
-		MailinglistRecipientForm form = new MailinglistRecipientForm();
-		form.setMailinglistId(id);
-		form.setMailinglistShortname(mailinglistService.getMailinglistName(id, companyId));
-		form.setAllowedRecipientIds(mailinglistApprovalService.getAdminsAllowedToUseMailinglist(companyId, id));
-		
-		model.addAttribute("mailinglistRecipientForm", form);
-		
-		userActivityLogService.writeUserActivityLog(admin, "mailing list edit", "active tab - approval", logger);
 
-		return "mailinglist_users_view";
-	}
-	
-	@PostMapping("/saveUsers.action")
-	public String recipientSave(ComAdmin admin, @ModelAttribute("form") MailinglistRecipientForm form, Popups popups) {
-		List<UserAction> userActions = new ArrayList<>();
-		if(mailinglistApprovalService.editUsersApprovalPermissions(admin.getCompanyID(), form.getMailinglistId(), form.getAllowedRecipientIds(), userActions)) {
-			popups.success("default.changes_saved");
-			for(UserAction action: userActions) {
-				userActivityLogService.writeUserActivityLog(admin, action, logger);
-			}
-		} else {
-			popups.alert("changes_not_saved");
-		}
-		
-		return "redirect:/mailinglist/" + form.getMailinglistId() + "/view.action";
+	@PostMapping("/recipientsDelete.action")
+	public String recipientsDelete(ComAdmin admin, @ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form, Popups popups) {
+		int mailinglistId = form.getId();
+		mailinglistService.deleteMailinglistBindingRecipients(admin.getCompanyID(), mailinglistId, form.isOnlyActiveUsers(), form.isNoAdminAndTestUsers());
+
+		popups.success("mailinglist.recipients.deleted");
+
+		userActivityLogService.writeUserActivityLog(admin, "delete recipients from mailing list", getDescription(form.getShortname(), form.getId()));
+		return "redirect:/mailinglist/" + mailinglistId + "/view.action";
 	}
 
-	@GetMapping("/{id:\\d+}/usersDeleteSettings.action")
+	@GetMapping("/{id:\\d+}/recipientsDeleteSettings.action")
 	public String recipientsDeleteSettings(ComAdmin admin, @PathVariable("id") int mailinglistId, @ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form) {
 		form.setId(mailinglistId);
 		String shortname = mailinglistService.getMailinglistName(mailinglistId, admin.getCompanyID());
@@ -285,18 +257,7 @@ public class MailinglistController {
 	public String confirmRecipientsDelete(@ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form) {
 		return "mailinglist_recipients_delete";
 	}
-	
-	@PostMapping("/usersDelete.action")
-	public String recipientsDelete(ComAdmin admin, @ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form, Popups popups) {
-		int mailinglistId = form.getId();
-		mailinglistService.deleteMailinglistBindingRecipients(admin.getCompanyID(), mailinglistId, form.isOnlyActiveUsers(), form.isNoAdminAndTestUsers());
-		
-		popups.success("mailinglist.recipients.deleted");
-		
-		userActivityLogService.writeUserActivityLog(admin, "delete recipients from mailing list", getDescription(form.getShortname(), form.getId()));
-		return "redirect:/mailinglist/" + mailinglistId + "/view.action";
-	}
-	
+
 	private boolean isValid(int companyId, MailinglistForm form, Popups popups) {
 		final String shortname = form.getShortname();
 		if(StringUtils.isBlank(shortname)) {
@@ -311,7 +272,7 @@ public class MailinglistController {
 			popups.field("shortname", "error.mailinglist.duplicate", shortname);
 			return false;
 		}
-		
+
 		return true;
 	}
 
@@ -340,7 +301,7 @@ public class MailinglistController {
 		form.setStatistic(statistic);
 	}
 
-	private boolean isMailinglistsIndependent(List<Integer> bulkMailinglistIds, int companyId, Model model) {
+	protected boolean isMailinglistsIndependent(List<Integer> bulkMailinglistIds, int companyId, Model model) {
 		List<Mailing> dependedMailings = mailinglistService.getAllDependedMailing(new HashSet<>(bulkMailinglistIds), companyId);
 
 		if (!dependedMailings.isEmpty()) {
@@ -360,7 +321,7 @@ public class MailinglistController {
 		return true;
 	}
 
-	private boolean isMailinglistIndependent(int mailinglistId, int companyId, Model model) {
+	protected boolean isMailinglistIndependent(int mailinglistId, int companyId, Model model) {
 		if (!isMailinglistsIndependent(Collections.singletonList(mailinglistId), companyId, model)) {
 			return false;
 		}
@@ -370,22 +331,22 @@ public class MailinglistController {
 			model.addAttribute("affectedReportsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
 			model.addAttribute("affectedReportsMessageKey", "warning.mailinglist.affectedBirtReports");
 			model.addAttribute("affectedReports", affectedReports);
-			
+
 			return false;
 		}
 
 		return true;
 	}
-	
-	private String getDescription(String shortname, int id) {
+
+	protected String getDescription(String shortname, int id) {
 		return String.format("%s (%d)", shortname, id);
 	}
-	
-	private String getDescription(MailinglistForm form) {
+
+	protected String getDescription(MailinglistForm form) {
 		return getDescription(form.getShortname(), form.getId());
 	}
-	
-	private String getDescription(int mailinglistId, int companyId) {
+
+	protected String getDescription(int mailinglistId, int companyId) {
 		String shortname = mailinglistService.getMailinglistName(mailinglistId, companyId);
 		return getDescription(shortname, mailinglistId);
 	}
