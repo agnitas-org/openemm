@@ -340,6 +340,24 @@
 	</context-param>]]>
 			</insert>
 		</xmltask>
+		
+		<!-- RESTful services mappings in web.xml -->
+		<echo message="Including Restful Services" />
+		<xmltask source="${deploydir}${appname}/WEB-INF/web.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" preserveType="true">
+			<insert path="/:web-app/:servlet-mapping[last()]" position="after">
+			<![CDATA[&#09;
+	<!-- RESTful services -->
+			<servlet>
+				<servlet-name>RestfulServiceServlet</servlet-name>
+				<servlet-class>com.agnitas.emm.restful.RestfulServiceServlet</servlet-class>
+			</servlet>
+			<servlet-mapping>
+				<servlet-name>RestfulServiceServlet</servlet-name>
+				<url-pattern>/restful/*</url-pattern>
+			</servlet-mapping>
+			]]>
+			</insert>
+		</xmltask>
 
 		<!-- Remove unwanted namespace attributes -->
 		<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="">

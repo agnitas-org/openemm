@@ -229,7 +229,7 @@ public class Permission implements Comparable<Permission> {
 
 	public static final Permission MAILING_RESUME_WORLD = new Permission("mailing.resume.world", false, false);
 	
-	public static final Permission RESTFUL_ALLOWED = new Permission("restful.allowed", false, false);
+	public static final Permission RESTFUL_ALLOWED = new Permission("restful.allowed", true, true);
 
 	private String category = null;
 	private String subCategory = null;

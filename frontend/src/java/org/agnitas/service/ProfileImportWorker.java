@@ -790,11 +790,6 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				columns.add("data_" + i);
 			}
 			temporaryErrorTableName = importRecipientsDao.createTemporaryCustomerErrorTable(admin.getCompanyID(), admin.getAdminID(), datasourceId, columns, sessionId);
-
-			if (!isOracleDB() && (ImportMode.getFromInt(importProfile.getImportMode()) == ImportMode.BLACKLIST_EXCLUSIVE || ImportMode.getFromInt(importProfile.getImportMode()) == ImportMode.TO_BLACKLIST)) {
-				// Change collation of email column for blacklist import on mysql and mariadb
-				importRecipientsDao.changeEmailColumnCollation(temporaryErrorTableName, "utf8mb4_bin");
-			}
 		}
 	}
 

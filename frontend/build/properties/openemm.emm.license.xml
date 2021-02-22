@@ -11,6 +11,7 @@
 	<maximumNumberOfCustomers>-1</maximumNumberOfCustomers>
 	<maximumNumberOfProfileFields>-1</maximumNumberOfProfileFields>
 	<allowedPremiumFeatures>
+		restful.allowed
 		webservice.user.change
 		webservice.user.create
 		webservice.user.show

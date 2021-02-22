@@ -14,7 +14,7 @@ package com.agnitas.predelivery.litmus.helper;
  * This is a helper class for a litmus item that state = LITMUS_SENDEMAIL_TEST_STATUS_COMPLETE
  */
 public class CompleteLitmusItem {
-	private int id;
+	private long id;
 	private String applicationName;
 	private String applicationLongName;
 	
@@ -42,13 +42,13 @@ public class CompleteLitmusItem {
 	/**
 	 * @param id the id to set
 	 */
-	public void setId(int id) {
+	public void setId(long id) {
 		this.id = id;
 	}
 	/**
 	 * @return the id
 	 */
-	public int getId() {
+	public long getId() {
 		return id;
 	}
 	/**

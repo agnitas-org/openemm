@@ -18,8 +18,10 @@ BEGIN
   DECLARE company_cursor CURSOR FOR SELECT company_id FROM company_tbl WHERE status IN ('active', 'inactive') ORDER BY company_id;
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = true;
   
-  ALTER TABLE prevent_table_drop DROP FOREIGN KEY lock$cust_ban_tbl;
-  ALTER TABLE prevent_table_drop DROP KEY lock$cust_ban_tbl;
+  DECLARE CONTINUE HANDLER FOR SQLEXCEPTION BEGIN END;
+  ALTER TABLE prevent_table_drop DROP FOREIGN KEY IF EXISTS lock$cust_ban_tbl;
+  ALTER TABLE prevent_table_drop DROP KEY IF EXISTS lock$cust_ban_tbl;
+    
   ALTER TABLE prevent_table_drop ADD email_ban VARCHAR(150) COLLATE utf8mb4_bin COMMENT 'Referenced email';
   ALTER TABLE cust_ban_tbl MODIFY email VARCHAR(150) COLLATE utf8mb4_bin NOT NULL;
   ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$cust_ban_tbl FOREIGN KEY (email_ban) REFERENCES cust_ban_tbl (email);
@@ -32,10 +34,20 @@ BEGIN
       LEAVE read_loop;
     END IF;
 
+    SET @ddl2 = CONCAT('ALTER TABLE prevent_table_drop drop constraint lock$cust', companyid, 'ban_tbl');
+    PREPARE stmt2 FROM @ddl2;
+    EXECUTE stmt2;
+    DEALLOCATE PREPARE stmt2;
+
     SET @ddl1 = CONCAT('ALTER TABLE cust', companyid, '_ban_tbl MODIFY email VARCHAR(150) COLLATE utf8mb4_bin NOT NULL');
     PREPARE stmt1 FROM @ddl1;
     EXECUTE stmt1;
     DEALLOCATE PREPARE stmt1;
+
+    SET @ddl2 = CONCAT('ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$cust', companyid, 'ban_tbl FOREIGN KEY (email_ban) REFERENCES cust', companyid, '_ban_tbl (email)');
+    PREPARE stmt2 FROM @ddl2;
+    EXECUTE stmt2;
+    DEALLOCATE PREPARE stmt2;
   END LOOP;
   
   CLOSE company_cursor;
@@ -46,4 +58,4 @@ CALL TEMP_PROCEDURE;
 DROP PROCEDURE TEMP_PROCEDURE;
 
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('20.10.120', CURRENT_USER, CURRENT_TIMESTAMP);
+	VALUES ('20.10.121', CURRENT_USER, CURRENT_TIMESTAMP);
