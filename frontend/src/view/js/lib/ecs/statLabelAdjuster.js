@@ -49,158 +49,163 @@
         return rectangle.left !== rectangle.right && rectangle.top !== rectangle.bottom;
     }
 
-    function getRectangles(a) {
-        var rectangle = a.getBoundingClientRect();
-        var rects = _.map(a.children, getRectangles);//lodash because JS map or Jquery map do not work for wkhtmltopdf
-        rects.push(rectangle);
-        return _.filter(rects, checkNotEmptyRectangle);
+    function getRectangles(link) {
+      var elements = [].slice.call(link.children);
+      elements.push(link);
+
+      //lodash because JS map or Jquery map do not work for wkhtmltopdf
+      var rects = _.map(elements, function(el) {
+        return el.getBoundingClientRect();
+      });
+
+      return _.filter(rects, checkNotEmptyRectangle);
     }
 
     function getRectangleArea(rectangle) {
         return (rectangle.bottom - rectangle.top) * (rectangle.right - rectangle.left);
     }
 
+    function getLinkUid($link) {
+      var href = $link.prop('href');
+      var uid = -1;
+      if (href && href.lastIndexOf('http') != -1) {
+        if (href.lastIndexOf('uid=') > -1) {
+          uid = new URL(href).searchParams.get('uid');
+        } else if (href.lastIndexOf('/r/') > -1) {
+          var part = href.substr(href.lastIndexOf('/r/') + 3);
+          uid = part.replace('/', '');
+        }
+      }
+      return uid || -1;
+    }
+
     function showPopups() {
       // get ecs-frame document
-      var frameDocument = document;
+      var $scope = $(document);
 
-      var nullColorElement = document.getElementById('info-null-color');
-      if (nullColorElement == null) {
-        return;
-      }
-      var nullColor = nullColorElement.value;
+      var nullColorElement = $scope.find('#info-null-color');
 
-      // iterate through all links of document
-      var links = document.getElementsByTagName('a');
+      if (nullColorElement.length > 0) {
+        var nullColor = nullColorElement.val();
 
-      if (links != null && links.length > 0) {
-        for(var i = 0; i < links.length; i++) {
-          var a = links[i];
+        // iterate through all links of document
+        var links = $scope.find('a');
 
-          var linkUrl = a.getAttribute('href');
-          if (!linkUrl) {
-            continue;
-          } else if (linkUrl.lastIndexOf('http') == -1) {
-            continue;
-          } else if (linkUrl.lastIndexOf('uid=') > -1) {
-            var uid = linkUrl.substr(linkUrl.lastIndexOf('uid=') + 4);
-            if (uid.indexOf('&') != -1) {
-              uid = uid.substr(0, uid.indexOf('&'));
+        links.each(function (index) {
+          var link = this;
+          var $link = $(link);
+          var uid = getLinkUid($link);
+
+          if (uid > -1) {
+            // get stats info for the URL from hidden field
+            var linkInfo = $scope.find('#info-' + uid);
+
+            // if there is stats for the URL - create stats-label and put it near link
+            // in other case create default stat-label with zero-value
+            var clickValue = "0 (0%)";
+            var bgColor = nullColor;
+            if (linkInfo.length > 0) {
+              clickValue = linkInfo.val();
+              bgColor = linkInfo.prop('name');
             }
-            var codedUrlId = uid;
-          } else if (linkUrl.lastIndexOf('/r/') > -1) {
-            var uid = linkUrl.substr(linkUrl.lastIndexOf('/r/') + 3);
-            if (uid.indexOf('/') != -1) {
-              uid = uid.substr(0, uid.indexOf('/'));
-            }
-            var codedUrlId = uid;
-          } else {
-            continue;
-          }
 
-          // get stats info for the URL from hidden field
-          var infoElId = "info-" + codedUrlId;
-          var linkInfo = document.getElementById(infoElId);
+            // Get optimized clickable areas
+            var rectangles = getRectangles(link);
+            if (rectangles.length) {
+              rectangles = uniteIntersectingRectangles(rectangles);
 
-          // if there is stats for the URL - create stats-label and put it near link
-          // in other case create default stat-label with zero-value
-          var clickValue = "0 (0%)";
-          var bgColor = nullColor;
-          if (linkInfo != null) {
-            clickValue = linkInfo.value;
-            bgColor = linkInfo.name;
-          }
+              var biggestRectangle = rectangles[0];
 
-          // Get optimized clickable areas
-          var rectangles = getRectangles(a);
-          if (rectangles.length) {
-            rectangles = uniteIntersectingRectangles(rectangles);
+              for (var k = 0; k < rectangles.length; k++) {
+                var balloonId = createBalloon(bgColor, uid, index);
+                adjustBalloon(balloonId, rectangles[k]);
 
-            var biggestRectangle = rectangles[0];
-
-            for(var k = 0; k < rectangles.length; k++) {
-              var balloon = createBalloon(bgColor, codedUrlId);
-              adjustBalloon(balloon, rectangles[k]);
-
-              if (getRectangleArea(biggestRectangle) < getRectangleArea(rectangles[k])) {
-                biggestRectangle = rectangles[k];
+                if (getRectangleArea(biggestRectangle) < getRectangleArea(rectangles[k])) {
+                  biggestRectangle = rectangles[k];
+                }
               }
-            }
 
-            var tag = createTag(bgColor, clickValue, codedUrlId);
-            adjustTag(tag, biggestRectangle);
+              var tagId = createTag(bgColor, clickValue, uid, index);
+              adjustTag(tagId, biggestRectangle);
+            }
           }
-        }
+        });
       }
     }
 
-    function updatePopopsPositions() {
+    function updatePopupsPositions() {
       $('.clicks-statistic-balloon').remove();
       $('.clicks-statistic-tag').remove();
       showPopups();
     }
 
-    function createBalloon(color, uid) {
-        var myDiv = document.createElement('div');
-        myDiv.style.backgroundColor = color;
-        myDiv.className = 'clicks-statistic-balloon';
-        myDiv.setAttribute('urlId', uid);
-        myDiv.addEventListener('mouseover', highlightTag, false);
-        myDiv.addEventListener('mouseout', removeTagHighlighting, false)
-        document.body.appendChild(myDiv);
-        return myDiv;
+    function createBalloon(color, uid, index) {
+      var id = 'balloon_' + uid + '_' + index;
+      var myDiv = document.createElement('div');
+      myDiv.id = id;
+      myDiv.style.backgroundColor = color;
+      myDiv.className = 'clicks-statistic-balloon';
+      myDiv.setAttribute('urlId', uid);
+      myDiv.addEventListener('mouseover', highlightTag, false);
+      myDiv.addEventListener('mouseout', removeTagHighlighting, false)
+      document.body.appendChild(myDiv);
+      return id;
     }
 
-    function createTag(color, text, uid) {
-        var myDiv = document.createElement('div');
-        myDiv.innerHTML = text;
-        myDiv.style.backgroundColor = color;
-        myDiv.style.padding = '1px';
-        myDiv.style.border = '1px solid #777777';
-        myDiv.style.fontFamily = 'Tahoma, Arial, Helvetica, sans-serif';
-        myDiv.style.fontSize = '11px';
-        myDiv.style.zIndex = "10";
-        myDiv.style.whiteSpace = 'nowrap';
-        myDiv.style.opacity = '0.8';
-        myDiv.setAttribute('urlId', uid);
-        myDiv.className = 'clicks-statistic-tag';
-        document.body.appendChild(myDiv);
-        return myDiv;
+    function createTag(color, text, uid, index) {
+      var id = 'tag_' + uid + '_' + index;
+      var myDiv = document.createElement('div');
+      myDiv.id = id;
+      myDiv.innerHTML = text;
+      myDiv.style.backgroundColor = color;
+      myDiv.style.padding = '1px';
+      myDiv.style.border = '1px solid #777777';
+      myDiv.style.fontFamily = 'Tahoma, Arial, Helvetica, sans-serif';
+      myDiv.style.fontSize = '11px';
+      myDiv.style.zIndex = "10";
+      myDiv.style.whiteSpace = 'nowrap';
+      myDiv.style.opacity = '0.8';
+      myDiv.setAttribute('urlId', uid);
+      myDiv.className = 'clicks-statistic-tag';
+      document.body.appendChild(myDiv);
+      return id;
     }
 
-    function adjustBalloon(e, rectangle) {
-        $(e).css("position", "absolute");
-        $(e).css("opacity", "0.5");
-        // fix for opacity in IE
-        $(e).css("filter", "progid:DXImageTransform.Microsoft.Alpha(opacity=50)");
+    function adjustBalloon(id, rectangle) {
+      var $balloon = $('#' + id);
+      $balloon.css("position", "absolute");
+      $balloon.css("opacity", "0.5");
+      // fix for opacity in IE
+      $balloon.css("filter", "progid:DXImageTransform.Microsoft.Alpha(opacity=50)");
 
-        $(e).css({
-            left: rectangle.left,
-            top: rectangle.top,
-            width: rectangle.right - rectangle.left,
-            height: rectangle.bottom - rectangle.top
-        });
+      $balloon.css({
+          left: rectangle.left,
+          top: rectangle.top,
+          width: rectangle.right - rectangle.left,
+          height: rectangle.bottom - rectangle.top
+      });
     }
 
-    function adjustTag(e, rectangle) {
-        $(e).css("position", "absolute");
-        $(e).css("textAlign", "center");
+    function adjustTag(id, rectangle) {
+      var $tag = $('#' + id);
+      $tag.css("position", "absolute");
+      $tag.css("textAlign", "center");
 
-        var leftValue = rectangle.right - $(e).outerWidth();
-        if(leftValue < 0) {
-           leftValue = 0;
-        }
-        $(e).css({
-            left: leftValue,
-            top: rectangle.bottom
-        });
+      var leftValue = rectangle.right - $tag.outerWidth();
+      if(leftValue < 0) {
+         leftValue = 0;
+      }
+      $tag.css({
+          left: leftValue,
+          top: rectangle.bottom
+      });
     }
 
     function setImagesLoadedEvent() {
       $(window.document.body).imagesLoaded()
-        .progress(_.throttle(updatePopopsPositions, 100))
+        .progress(_.throttle(updatePopupsPositions, 100))
         .always(function() {
-          updatePopopsPositions();
+          updatePopupsPositions();
           window.status = "heatmapLoadFinished";
         });
     }

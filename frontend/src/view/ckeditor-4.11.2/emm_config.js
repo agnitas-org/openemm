@@ -149,7 +149,7 @@ CKEDITOR.editorConfig = function(config) {
     /*features available in toolbar "emm"*/
     /*FCKConfig.ToolbarSets["emm"]*/
     config.toolbar = [
-	['Cut','Copy','Paste','PasteText','PasteWord'],
+	['Cut','Copy'],
     ['Undo','Redo','-','Find','Replace','-','RemoveFormat'],
     ['TextColor','BGColor'],
 	['Bold','Italic','Underline','StrikeThrough','-','Subscript','Superscript'],
@@ -164,7 +164,7 @@ CKEDITOR.editorConfig = function(config) {
     /*FCKConfig.ToolbarSets["Default"]*/
     config.toolbar_Full = [
     ['Source','DocProps','-','Save','NewPage','Preview','-','Templates'],
-    ['Cut','Copy','Paste','PasteText','PasteWord','-','Print','SpellCheck'],
+    ['Cut','Copy','-','Print','SpellCheck'],
     ['Undo','Redo','-','Find','Replace','-','SelectAll','RemoveFormat'],
     ['Form','Checkbox','Radio','TextField','Textarea','Select','Button','ImageButton','HiddenField'],
     '/',
@@ -187,7 +187,7 @@ CKEDITOR.editorConfig = function(config) {
 
     config.toolbar_EMM =
         [
-            { name: 'clipboard', items : [ 'Cut','Copy','Paste','PasteText','PasteFromWord','-','Undo','Redo' ] },
+            { name: 'clipboard', items : [ 'Cut','Copy','-','Undo','Redo' ] },
             { name: 'editing', items : [ 'Find','Replace','-','SelectAll','-','Scayt' ] },
             { name: 'links', items : [ 'Link','Unlink','Anchor' ] },
             { name: 'insert', items : [ 'Image','Table','HorizontalRule','SpecialChar','AGNTag' ] },
@@ -203,7 +203,7 @@ CKEDITOR.editorConfig = function(config) {
     /*features available in toolbar "EMC"*/
     /*FCKConfig.ToolbarSets["EMC"]*/
     config.toolbar_EMC = [
-        ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord'],
+        ['Cut', 'Copy'],
         ['Undo','Redo','-','Find','Replace','-','SelectAll'],
         ['Scayt', '-', 'Link', 'Unlink', '-', 'SpecialChar'],
         ['Bold', 'Italic', 'Underline', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock']
@@ -212,7 +212,7 @@ CKEDITOR.editorConfig = function(config) {
     /*features available in toolbar "Classic"*/
     /*FCKConfig.ToolbarSets["Classic"]*/
     config.toolbar_Classic = [
-        ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord'],
+        ['Cut', 'Copy'],
         ['Undo', 'Redo', '-', 'Find', 'Replace', '-', 'SelectAll', '-', 'Scayt', '-', 'Link', 'Unlink', '-', 'Image', 'SpecialChar'],
         ['FontSize', '-', 'TextColor', '-', 'Bold', 'Italic', 'Underline', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
         ['NumberedList', 'BulletedList', '-', 'Blockquote']

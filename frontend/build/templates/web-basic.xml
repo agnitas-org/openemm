@@ -32,6 +32,8 @@
 		<filter-name>HttpSecurityHeaderFilter</filter-name>
 		<filter-class>com.agnitas.web.filter.HttpSecurityHeaderFilter</filter-class>
 		<async-supported>true</async-supported>
+		
+		<!-- Strict-Transport-Security -->
 		<init-param>
 			<param-name>hsts.enable</param-name>
 			<param-value>true</param-value>
@@ -40,6 +42,17 @@
 			<param-name>hsts.maxAge</param-name>
 			<param-value>15768000</param-value>
 			<!-- 6 month -->
+		</init-param>
+		
+		<!-- Referrer-Policy -->
+		<init-param>
+			<param-name>referrer-policy.enable</param-name>
+			<param-value>true</param-value>
+		</init-param>
+		
+		<init-param>
+			<param-name>referrer-policy.policy</param-name>
+			<param-value>no-referrer</param-value>
 		</init-param>
 	</filter>
 	<filter-mapping>

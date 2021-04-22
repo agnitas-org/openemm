@@ -21,8 +21,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
-import org.apache.log4j.Logger;
-
 /**
  * Filter implementing HTTP Security headers.
  *
@@ -70,9 +68,6 @@ import org.apache.log4j.Logger;
  * 
  */
 public final class HttpSecurityHeaderFilter implements Filter {
-	/** The logger. */
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(HttpSecurityHeaderFilter.class);
 
 	public static final String HSTS_HEADER_NAME = "Strict-Transport-Security";
 
@@ -80,6 +75,12 @@ public final class HttpSecurityHeaderFilter implements Filter {
 	public static final String HSTS_OVERWRITE_PARAMETER_NAME = "hsts.overwrite";
 	public static final String HSTS_MAXAGE_PARAMETER_NAME = "hsts.maxAge";
 	public static final String HSTS_INCLUDE_SUBDOMAINS_PARAMETER_NAME = "hsts.includeSubdomains";
+
+	public static final String REFERRER_POLICY_HEADER_NAME = "Referrer-Policy";
+	public static final String REFERRER_POLICY_ENABLE_PARAMETER_NAME = "referrer-policy.enable";
+	public static final String REFERRER_POLICY_OVERWRITE_PARAMETER_NAME = "referrer-policy.overwrite";
+	public static final String REFERRER_POLICY_POLICY_PARAMETER_NAME = "referrer-policy.policy";
+	
 	
 	public static final boolean COMMON_ENABLE_DEFAULT = false;
 	public static final boolean COMMON_OVERWRITE_DEFAULT = false;
@@ -93,6 +94,10 @@ public final class HttpSecurityHeaderFilter implements Filter {
 	private boolean hstsOverwrite = COMMON_OVERWRITE_DEFAULT;
 	private int hstsMaxAge = HSTS_MAXAGE_DEFAULT;
 	private boolean hstsIncludeSubdomains = HSTS_INCLUDE_SUBDOMAINS_DEFAULT;
+	
+	private boolean referrerPolicyEnabled = COMMON_ENABLE_DEFAULT;
+	private boolean referrerPolicyOverwrite = COMMON_OVERWRITE_DEFAULT;
+	private String referrerPolicyPolicy = null;
 
 	@Override
 	public final void destroy() {
@@ -112,6 +117,10 @@ public final class HttpSecurityHeaderFilter implements Filter {
 		if(hstsEnabled) {
 			insertHstsHeader(response);
 		}
+		
+		if(referrerPolicyEnabled) {
+			insertReferrerPolicyHeader(response);
+		}
 	}
 
 	private final void insertHstsHeader(final HttpServletResponse response) {
@@ -124,12 +133,24 @@ public final class HttpSecurityHeaderFilter implements Filter {
 		}
 	}
 	
+	private final void insertReferrerPolicyHeader(final HttpServletResponse response) {
+		if(referrerPolicyOverwrite || response.getHeader(REFERRER_POLICY_HEADER_NAME) == null) {
+			if(referrerPolicyPolicy != null) {
+				response.addHeader(REFERRER_POLICY_HEADER_NAME, referrerPolicyPolicy);
+			}
+		}
+	}
+	
 	@Override
 	public final void init(final FilterConfig config) throws ServletException {
 		hstsEnabled = getBooleanInitParam(config, HSTS_ENABLE_PARAMETER_NAME, COMMON_ENABLE_DEFAULT);
 		hstsOverwrite = getBooleanInitParam(config, HSTS_OVERWRITE_PARAMETER_NAME, COMMON_OVERWRITE_DEFAULT);
 		hstsMaxAge = getIntInitParam(config, HSTS_MAXAGE_PARAMETER_NAME, 86400);
 		hstsIncludeSubdomains = getBooleanInitParam(config, HSTS_INCLUDE_SUBDOMAINS_PARAMETER_NAME, HSTS_INCLUDE_SUBDOMAINS_DEFAULT);
+		
+		referrerPolicyEnabled = getBooleanInitParam(config, REFERRER_POLICY_ENABLE_PARAMETER_NAME, COMMON_ENABLE_DEFAULT);
+		referrerPolicyOverwrite = getBooleanInitParam(config, REFERRER_POLICY_OVERWRITE_PARAMETER_NAME, COMMON_OVERWRITE_DEFAULT);
+		referrerPolicyPolicy = getStringInitParam(config, REFERRER_POLICY_POLICY_PARAMETER_NAME, null);
 	}
 	
 	private static final boolean getBooleanInitParam(final FilterConfig config, final String name, final boolean defaultValue) {
@@ -158,6 +179,14 @@ public final class HttpSecurityHeaderFilter implements Filter {
 				return defaultValue;
 			}
 		}
+	}
+	
+	private static final String getStringInitParam(final FilterConfig config, final String name, final String defaultValue) {
+		final String value = config.getInitParameter(name);
+		
+		return value != null
+				? value
+				: defaultValue;
 	}
 
 }

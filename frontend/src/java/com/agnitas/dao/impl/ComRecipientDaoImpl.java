@@ -591,13 +591,17 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 				if (useUnsharpRecipientQuery) {
 					setRuleOptimizerMode(connection, true);
 				}
-				
+
 				final SingleConnectionDataSource scds = new SingleConnectionDataSource(connection, true);
 				final JdbcTemplate template = new JdbcTemplate(scds);
 				RecipientRowMapper rowMapper = new RecipientRowMapper(recipientFactory, companyID);
-				
+
+				logSqlStatement(logger, statement, parameters);
 				return template.query(statement, parameters, rowMapper);
-				
+
+			} catch (Exception e) {
+				logSqlError(e, logger, statement, parameters);
+				throw e;
 			} finally {
 				// TODO: IGNORE_BOUNCELOAD_COMPANY_ID is a bad hack for CONRAD-371!!!
 				if (useUnsharpRecipientQuery) {

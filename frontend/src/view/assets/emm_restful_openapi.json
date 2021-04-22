@@ -2,11 +2,11 @@
   "openapi" : "3.0.0",
   "info" : {
     "title" : "EMM Restful API",
-    "description" : "This is the EMM Restful API",
+    "description" : "This is the EMM Restful API.<br /><br />Authorization is done via username and password as URL parameters or via Basic Auth (see https://en.wikipedia.org/wiki/Basic_access_authentication).<br />Use username and password of an EMM GUI user with permission \"utilize the RESTful interface\".<br /><br />Example for request via wget with URL parameters:<br /><pre>wget -S -O - --content-on-error \"https://<emm_system_url>/restful/mailing/1?username=<UrlencodedUserName>&password=<UrlencodedPassword>\" > test.txt; cat test.txt</pre><br />Example for request via wget with BASIC AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"<UrlencodedUserName>\" --http-password=\"<UrlencodedPassword>\" \"https://<emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre>",
+    "version" : "1.0.0",
     "contact" : {
       "email" : "info@agnitas.ag"
-    },
-    "version" : "1.0.0"
+    }
   },
   "servers" : [ {
     "url" : "https://<emm_system_url>/restful"
@@ -65,8 +65,8 @@
     },
     "/mailing" : {
       "get" : {
-        "tags" : [ "Mailing" ],
         "summary" : "Get a list of all existing mailings",
+        "tags" : [ "Mailing" ],
         "operationId" : "getMailings",
         "responses" : {
           "200" : {
@@ -97,10 +97,10 @@
         }
       },
       "post" : {
-        "tags" : [ "Mailing" ],
         "summary" : "Write new mailing data",
-        "description" : "Write new mailing data. Does not update existing mailing objects.",
+        "tags" : [ "Mailing" ],
         "operationId" : "postMailing",
+        "description" : "Write new mailing data. Does not update existing mailing objects.",
         "requestBody" : {
           "description" : "Mailing data to add This is the complete EMM mailing JSON object",
           "content" : {
@@ -132,20 +132,18 @@
     },
     "/mailing/{mailing_id}" : {
       "get" : {
-        "tags" : [ "Mailing" ],
         "summary" : "Read existing mailing data",
-        "description" : "Read existing mailing data",
+        "tags" : [ "Mailing" ],
         "operationId" : "getMailingById",
+        "description" : "Read existing mailing data",
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to get",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to get"
         } ],
         "responses" : {
           "200" : {
@@ -172,32 +170,20 @@
           }
         }
       },
-      "put" : {
+      "delete" : {
+        "summary" : "Delete mailing",
         "tags" : [ "Mailing" ],
-        "summary" : "Update mailing",
-        "description" : "Update existing mailing data",
-        "operationId" : "putMailing",
+        "operationId" : "deleteMailing",
+        "description" : "Delete existing mailing",
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to update",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to delete"
         } ],
-        "requestBody" : {
-          "description" : "Mailing data to update",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/MailingInfoItem"
-              }
-            }
-          }
-        },
         "responses" : {
           "200" : {
             "description" : "Simple information text"
@@ -216,22 +202,30 @@
           }
         }
       },
-      "delete" : {
+      "put" : {
+        "summary" : "Update mailing",
         "tags" : [ "Mailing" ],
-        "summary" : "Delete mailing",
-        "description" : "Delete existing mailing",
-        "operationId" : "deleteMailing",
+        "operationId" : "putMailing",
+        "description" : "Update existing mailing data",
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to delete",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to update"
         } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MailingInfoItem"
+              }
+            }
+          },
+          "description" : "Mailing data to update"
+        },
         "responses" : {
           "200" : {
             "description" : "Simple information text"
@@ -253,18 +247,16 @@
     },
     "/content/{mailing_id}" : {
       "get" : {
-        "tags" : [ "Content" ],
         "summary" : "Read all existing content items for a single mailing",
+        "tags" : [ "Content" ],
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to get the contents for",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to get the contents for"
         } ],
         "responses" : {
           "200" : {
@@ -294,30 +286,28 @@
           }
         }
       },
-      "put" : {
+      "post" : {
+        "summary" : "Create new mailing content (no update)",
         "tags" : [ "Content" ],
-        "summary" : "Create or update mailing content",
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to create or update the contents for",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to create the content for"
         } ],
         "requestBody" : {
           "description" : "Data of new mailing content item",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/DynContentItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -344,30 +334,28 @@
           }
         }
       },
-      "post" : {
+      "put" : {
+        "summary" : "Create or update mailing content",
         "tags" : [ "Content" ],
-        "summary" : "Create new mailing content (no update)",
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to create the content for",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to create or update the contents for"
         } ],
         "requestBody" : {
           "description" : "Data of new mailing content item",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/DynContentItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -397,28 +385,24 @@
     },
     "/content/{mailing_id}/{content_id}" : {
       "get" : {
-        "tags" : [ "Content" ],
         "summary" : "Read a single existing mailing content",
+        "tags" : [ "Content" ],
         "parameters" : [ {
+          "in" : "path",
           "name" : "mailing_id",
-          "in" : "path",
-          "description" : "Numeric ID of the mailing to get the contents for",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to get the contents for"
         }, {
-          "name" : "content_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to get",
+          "name" : "content_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to get"
         } ],
         "responses" : {
           "200" : {
@@ -445,40 +429,81 @@
           }
         }
       },
-      "put" : {
+      "delete" : {
+        "summary" : "Delete single existing mailing content",
         "tags" : [ "Content" ],
-        "summary" : "Create or update mailing content",
         "parameters" : [ {
+          "in" : "path",
           "name" : "mailing_id",
-          "in" : "path",
-          "description" : "Numeric ID of the mailing to create or update the contents for",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to delete the content of"
         }, {
-          "name" : "content_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to get",
+          "name" : "content_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
           }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update mailing content",
+        "tags" : [ "Content" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mailing_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to create or update the contents for"
+        }, {
+          "in" : "path",
+          "name" : "content_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to get"
         } ],
         "requestBody" : {
           "description" : "New data for existing mailing content item",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/DynContentItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -504,81 +529,28 @@
             "description" : "Server side error"
           }
         }
-      },
-      "delete" : {
-        "tags" : [ "Content" ],
-        "summary" : "Delete single existing mailing content",
-        "parameters" : [ {
-          "name" : "mailing_id",
-          "in" : "path",
-          "description" : "Numeric ID of the mailing to delete the content of",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "content_id",
-          "in" : "path",
-          "description" : "Numeric ID of the mailing to get",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Simple confirmation text",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Any client side error like invalid mailing id or not existing mailing"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
       }
     },
     "/content/{mailing_id}/{content_name}" : {
       "get" : {
-        "tags" : [ "Content" ],
         "summary" : "Read existing mailing content",
+        "tags" : [ "Content" ],
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to get the contents for",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to get the contents for"
         }, {
-          "name" : "content_name",
           "in" : "path",
-          "description" : "Name of the mailing content to get",
+          "name" : "content_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Name of the mailing content to get"
         } ],
         "responses" : {
           "200" : {
@@ -605,89 +577,25 @@
           }
         }
       },
-      "put" : {
-        "tags" : [ "Content" ],
-        "summary" : "Create or update mailing content",
-        "parameters" : [ {
-          "name" : "mailing_id",
-          "in" : "path",
-          "description" : "Numeric ID of the mailing to create or update the contents for",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "content_name",
-          "in" : "path",
-          "description" : "Name of the mailing content to create or update",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "description" : "New data for existing mailing content item",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/DynContentItem"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "Stored data of new mailing content item",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DynContentItem"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Any client side error like invalid mailing id or not existing mailing"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
-      },
       "delete" : {
-        "tags" : [ "Content" ],
         "summary" : "Delete single existing mailing content",
+        "tags" : [ "Content" ],
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to delete the content for",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to delete the content for"
         }, {
-          "name" : "content_name",
           "in" : "path",
-          "description" : "Name of the mailing content to delete",
+          "name" : "content_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Name of the mailing content to delete"
         } ],
         "responses" : {
           "200" : {
@@ -713,22 +621,76 @@
             "description" : "Server side error"
           }
         }
+      },
+      "put" : {
+        "summary" : "Create or update mailing content",
+        "tags" : [ "Content" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mailing_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to create or update the contents for"
+        }, {
+          "in" : "path",
+          "name" : "content_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the mailing content to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mailing content item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DynContentItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mailing content item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DynContentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
       }
     },
     "/component/{mailing_id}" : {
       "get" : {
-        "tags" : [ "Component" ],
         "summary" : "Read all existing component items for a single mailing",
+        "tags" : [ "Component" ],
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to get the components for",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to get the components for"
         } ],
         "responses" : {
           "200" : {
@@ -758,30 +720,28 @@
           }
         }
       },
-      "put" : {
+      "post" : {
+        "summary" : "Create new mailing component (no update)",
         "tags" : [ "Component" ],
-        "summary" : "Create or update mailing component",
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to create or update the components for",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to create the component for"
         } ],
         "requestBody" : {
           "description" : "Data of new mailing component item",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/ComponentItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -808,30 +768,28 @@
           }
         }
       },
-      "post" : {
+      "put" : {
+        "summary" : "Create or update mailing component",
         "tags" : [ "Component" ],
-        "summary" : "Create new mailing component (no update)",
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to create the component for",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to create or update the components for"
         } ],
         "requestBody" : {
           "description" : "Data of new mailing component item",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/ComponentItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -861,28 +819,24 @@
     },
     "/component/{mailing_id}/{component_id}" : {
       "get" : {
-        "tags" : [ "Component" ],
         "summary" : "Read a single existing mailing component",
+        "tags" : [ "Component" ],
         "parameters" : [ {
+          "in" : "path",
           "name" : "mailing_id",
-          "in" : "path",
-          "description" : "Numeric ID of the mailing to get the components for",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to get the components for"
         }, {
-          "name" : "component_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to get",
+          "name" : "component_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to get"
         } ],
         "responses" : {
           "200" : {
@@ -909,40 +863,81 @@
           }
         }
       },
-      "put" : {
+      "delete" : {
+        "summary" : "Delete single existing mailing component",
         "tags" : [ "Component" ],
-        "summary" : "Create or update mailing component",
         "parameters" : [ {
+          "in" : "path",
           "name" : "mailing_id",
-          "in" : "path",
-          "description" : "Numeric ID of the mailing to create or update the components for",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to delete the component of"
         }, {
-          "name" : "component_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to get",
+          "name" : "component_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
           }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update mailing component",
+        "tags" : [ "Component" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mailing_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to create or update the components for"
+        }, {
+          "in" : "path",
+          "name" : "component_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to get"
         } ],
         "requestBody" : {
           "description" : "New data for existing mailing component item",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/ComponentItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -968,81 +963,28 @@
             "description" : "Server side error"
           }
         }
-      },
-      "delete" : {
-        "tags" : [ "Component" ],
-        "summary" : "Delete single existing mailing component",
-        "parameters" : [ {
-          "name" : "mailing_id",
-          "in" : "path",
-          "description" : "Numeric ID of the mailing to delete the component of",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "component_id",
-          "in" : "path",
-          "description" : "Numeric ID of the mailing to get",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Simple confirmation text",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Any client side error like invalid mailing id or not existing mailing"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
       }
     },
     "/component/{mailing_id}/{component_name}" : {
       "get" : {
-        "tags" : [ "Component" ],
         "summary" : "Read existing mailing component",
+        "tags" : [ "Component" ],
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to get the components for",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to get the components for"
         }, {
-          "name" : "component_name",
           "in" : "path",
-          "description" : "Name of the mailing component to get",
+          "name" : "component_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Name of the mailing component to get"
         } ],
         "responses" : {
           "200" : {
@@ -1069,89 +1011,25 @@
           }
         }
       },
-      "put" : {
-        "tags" : [ "Component" ],
-        "summary" : "Create or update mailing component",
-        "parameters" : [ {
-          "name" : "mailing_id",
-          "in" : "path",
-          "description" : "Numeric ID of the mailing to create or update the components for",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        }, {
-          "name" : "component_name",
-          "in" : "path",
-          "description" : "Name of the mailing component to create or update",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "description" : "New data for existing mailing component item",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ComponentItem"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "Stored data of new mailing component item",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ComponentItem"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Any client side error like invalid mailing id or not existing mailing"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
-      },
       "delete" : {
-        "tags" : [ "Component" ],
         "summary" : "Delete single existing mailing component",
+        "tags" : [ "Component" ],
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to delete the component for",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to delete the component for"
         }, {
-          "name" : "component_name",
           "in" : "path",
-          "description" : "Name of the mailing component to delete",
+          "name" : "component_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Name of the mailing component to delete"
         } ],
         "responses" : {
           "200" : {
@@ -1177,12 +1055,68 @@
             "description" : "Server side error"
           }
         }
+      },
+      "put" : {
+        "summary" : "Create or update mailing component",
+        "tags" : [ "Component" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mailing_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to create or update the components for"
+        }, {
+          "in" : "path",
+          "name" : "component_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the mailing component to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mailing component item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ComponentItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mailing component item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ComponentItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
       }
     },
     "/mediapool" : {
       "get" : {
-        "tags" : [ "Mediapool" ],
         "summary" : "Read all existing mediapool items (Not included in OpenEMM)",
+        "tags" : [ "Mediapool" ],
         "responses" : {
           "200" : {
             "description" : "All the mediapool items",
@@ -1211,19 +1145,19 @@
           }
         }
       },
-      "put" : {
+      "post" : {
+        "summary" : "Create new mediapool item (no update) (Not included in OpenEMM)",
         "tags" : [ "Mediapool" ],
-        "summary" : "Create or update mediapool item (Not included in OpenEMM)",
         "requestBody" : {
           "description" : "Data of new mediapool item",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/MediapoolItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -1250,19 +1184,19 @@
           }
         }
       },
-      "post" : {
+      "put" : {
+        "summary" : "Create or update mediapool item (Not included in OpenEMM)",
         "tags" : [ "Mediapool" ],
-        "summary" : "Create new mediapool item (no update) (Not included in OpenEMM)",
         "requestBody" : {
           "description" : "Data of new mediapool item",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/MediapoolItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -1292,18 +1226,16 @@
     },
     "/mediapool/{mediapool_id}" : {
       "get" : {
-        "tags" : [ "Mediapool" ],
         "summary" : "Read a single existing mediapool item (Not included in OpenEMM)",
+        "tags" : [ "Mediapool" ],
         "parameters" : [ {
-          "name" : "mediapool_id",
           "in" : "path",
-          "description" : "Numeric ID of the mediapool item to get",
+          "name" : "mediapool_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mediapool item to get"
         } ],
         "responses" : {
           "200" : {
@@ -1330,30 +1262,65 @@
           }
         }
       },
-      "put" : {
+      "delete" : {
+        "summary" : "Delete single existing mediapool item (Not included in OpenEMM)",
         "tags" : [ "Mediapool" ],
-        "summary" : "Create or update mediapool item (Not included in OpenEMM)",
         "parameters" : [ {
-          "name" : "mediapool_id",
           "in" : "path",
-          "description" : "Numeric ID of the mediapool item to get",
+          "name" : "mediapool_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
+          },
+          "description" : "Numeric ID of the mediapool item to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
           }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update mediapool item (Not included in OpenEMM)",
+        "tags" : [ "Mediapool" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mediapool_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mediapool item to get"
         } ],
         "requestBody" : {
           "description" : "New data for existing mediapool item",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/MediapoolItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -1379,61 +1346,20 @@
             "description" : "Server side error"
           }
         }
-      },
-      "delete" : {
-        "tags" : [ "Mediapool" ],
-        "summary" : "Delete single existing mediapool item (Not included in OpenEMM)",
-        "parameters" : [ {
-          "name" : "mediapool_id",
-          "in" : "path",
-          "description" : "Numeric ID of the mediapool item to delete",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Simple confirmation text",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Any client side error"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
       }
     },
     "/mediapool/{mediapool_name}" : {
       "get" : {
-        "tags" : [ "Mediapool" ],
         "summary" : "Read existing mediapool item (Not included in OpenEMM)",
+        "tags" : [ "Mediapool" ],
         "parameters" : [ {
-          "name" : "mediapool_name",
           "in" : "path",
-          "description" : "Name of the mediapool item to get",
+          "name" : "mediapool_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Name of the mediapool item to get"
         } ],
         "responses" : {
           "200" : {
@@ -1460,69 +1386,17 @@
           }
         }
       },
-      "put" : {
-        "tags" : [ "Mediapool" ],
-        "summary" : "Create or update mediapool item (Not included in OpenEMM)",
-        "parameters" : [ {
-          "name" : "mediapool_name",
-          "in" : "path",
-          "description" : "Name of the mediapool item to create or update",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "description" : "New data for existing mediapool item",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/MediapoolItem"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "Stored data of new mediapool item",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/MediapoolItem"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Any client side error"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
-      },
       "delete" : {
-        "tags" : [ "Mediapool" ],
         "summary" : "Delete single existing mediapool item (Not included in OpenEMM)",
+        "tags" : [ "Mediapool" ],
         "parameters" : [ {
-          "name" : "mediapool_name",
           "in" : "path",
-          "description" : "Name of the mediapool item to delete",
+          "name" : "mediapool_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Name of the mediapool item to delete"
         } ],
         "responses" : {
           "200" : {
@@ -1548,14 +1422,62 @@
             "description" : "Server side error"
           }
         }
+      },
+      "put" : {
+        "summary" : "Create or update mediapool item (Not included in OpenEMM)",
+        "tags" : [ "Mediapool" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mediapool_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the mediapool item to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mediapool item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MediapoolItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new mediapool item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MediapoolItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
       }
     },
     "/mailinglist" : {
       "get" : {
-        "tags" : [ "Mailinglist" ],
         "summary" : "Read all existing mailinglist data",
-        "description" : "Read existing mailinglist data",
+        "tags" : [ "Mailinglist" ],
         "operationId" : "getMailinglist",
+        "description" : "Read existing mailinglist data",
         "responses" : {
           "200" : {
             "description" : "search results matching criteria",
@@ -1584,11 +1506,12 @@
           }
         }
       },
-      "put" : {
+      "post" : {
+        "summary" : "Write new mailinglist data",
         "tags" : [ "Mailinglist" ],
-        "summary" : "Create or update mailinglist data",
+        "operationId" : "postMailinglist",
+        "description" : "Write new mailinglist data. Does not update existing mailinglist objects.",
         "requestBody" : {
-          "description" : "Mailinglist data to add",
           "content" : {
             "application/json" : {
               "schema" : {
@@ -1596,7 +1519,39 @@
               }
             }
           },
-          "required" : true
+          "description" : "Mailinglist data to add"
+        },
+        "responses" : {
+          "200" : {
+            "description" : "item created"
+          },
+          "400" : {
+            "description" : "invalid input, object invalid"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update mailinglist data",
+        "tags" : [ "Mailinglist" ],
+        "requestBody" : {
+          "description" : "Mailinglist data to add",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MailinglistItem"
+              }
+            }
+          }
         },
         "responses" : {
           "200" : {
@@ -1622,55 +1577,20 @@
             "description" : "Server side error"
           }
         }
-      },
-      "post" : {
-        "tags" : [ "Mailinglist" ],
-        "summary" : "Write new mailinglist data",
-        "description" : "Write new mailinglist data. Does not update existing mailinglist objects.",
-        "operationId" : "postMailinglist",
-        "requestBody" : {
-          "description" : "Mailinglist data to add",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/MailinglistItem"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "description" : "item created"
-          },
-          "400" : {
-            "description" : "invalid input, object invalid"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
       }
     },
     "/mailinglist/{mailinglist_id}" : {
       "get" : {
-        "tags" : [ "Mailinglist" ],
         "summary" : "Read a single existing mailinglist item",
+        "tags" : [ "Mailinglist" ],
         "parameters" : [ {
-          "name" : "mailinglist_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailinglist to get",
+          "name" : "mailinglist_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailinglist to get"
         } ],
         "responses" : {
           "200" : {
@@ -1697,30 +1617,65 @@
           }
         }
       },
-      "put" : {
+      "delete" : {
+        "summary" : "Delete single existing mailing content",
         "tags" : [ "Mailinglist" ],
-        "summary" : "Create or update mailinglist",
         "parameters" : [ {
-          "name" : "mailinglist_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailinglist to create or update",
+          "name" : "mailinglist_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailinglist to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
           }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update mailinglist",
+        "tags" : [ "Mailinglist" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mailinglist_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailinglist to create or update"
         } ],
         "requestBody" : {
           "description" : "New data for existing mailinglist item",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/MailinglistItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -1746,61 +1701,20 @@
             "description" : "Server side error"
           }
         }
-      },
-      "delete" : {
-        "tags" : [ "Mailinglist" ],
-        "summary" : "Delete single existing mailing content",
-        "parameters" : [ {
-          "name" : "mailinglist_id",
-          "in" : "path",
-          "description" : "Numeric ID of the mailinglist to delete",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Simple confirmation text",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Any client side error like invalid id or not existing item"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
       }
     },
     "/mailinglist/{mailinglist_name}" : {
       "get" : {
-        "tags" : [ "Mailinglist" ],
         "summary" : "Read a single existing mailinglist item",
+        "tags" : [ "Mailinglist" ],
         "parameters" : [ {
-          "name" : "mailinglist_name",
           "in" : "path",
-          "description" : "Name of the mailinglist to get",
+          "name" : "mailinglist_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Name of the mailinglist to get"
         } ],
         "responses" : {
           "200" : {
@@ -1827,69 +1741,17 @@
           }
         }
       },
-      "put" : {
-        "tags" : [ "Mailinglist" ],
-        "summary" : "Create or update mailinglist",
-        "parameters" : [ {
-          "name" : "mailinglist_name",
-          "in" : "path",
-          "description" : "Name of the mailinglist to create or update",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "description" : "New data for existing mailinglist item",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/MailinglistItem"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "Stored data of updated mailinglist item",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/MailinglistItem"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Any client side error like invalid id or not existing item"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
-      },
       "delete" : {
-        "tags" : [ "Mailinglist" ],
         "summary" : "Delete single existing mailing content",
+        "tags" : [ "Mailinglist" ],
         "parameters" : [ {
-          "name" : "mailinglist_name",
           "in" : "path",
-          "description" : "Name of the mailinglist to delete",
+          "name" : "mailinglist_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Name of the mailinglist to delete"
         } ],
         "responses" : {
           "200" : {
@@ -1915,22 +1777,101 @@
             "description" : "Server side error"
           }
         }
+      },
+      "put" : {
+        "summary" : "Create or update mailinglist",
+        "tags" : [ "Mailinglist" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mailinglist_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the mailinglist to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing mailinglist item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MailinglistItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated mailinglist item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MailinglistItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
       }
     },
     "/recipient" : {
-      "put" : {
+      "post" : {
+        "summary" : "Create new recipient entry (no update)",
         "tags" : [ "Recipient" ],
-        "summary" : "Create or update recipient entry",
+        "parameters" : [ {
+          "name" : "mailinglist",
+          "in" : "query",
+          "description" : "Optional: mailinglist id",
+          "required" : false,
+          "style" : "form",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "status",
+          "in" : "query",
+          "description" : "Optional: Subscription status of recipient. (Active(1), Bounce(2), AdminOut(3), UserOut(4), WaitForConfirm(5), Blacklisted(6), Suspend(7)), needs parameter mailinglist, default active",
+          "required" : false,
+          "style" : "form",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "mediaType",
+          "in" : "query",
+          "description" : "Optional: Mediatype of subscription: EMAIL (0), POST (2), SMS (2)",
+          "required" : false,
+          "style" : "form",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
         "requestBody" : {
           "description" : "Data of new recipient entry",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/RecipientItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -1957,19 +1898,50 @@
           }
         }
       },
-      "post" : {
+      "put" : {
+        "summary" : "Create or update recipient entry",
         "tags" : [ "Recipient" ],
-        "summary" : "Create new recipient entry (no update)",
+        "parameters" : [ {
+          "name" : "mailinglist",
+          "in" : "query",
+          "description" : "Optional: mailinglist id",
+          "required" : false,
+          "style" : "form",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "status",
+          "in" : "query",
+          "description" : "Optional: Subscription status of recipient. (Active(1), Bounce(2), AdminOut(3), UserOut(4), WaitForConfirm(5), Blacklisted(6), Suspend(7)), needs parameter mailinglist, default active",
+          "required" : false,
+          "style" : "form",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "mediaType",
+          "in" : "query",
+          "description" : "Optional: Mediatype of subscription: EMAIL (0), POST (2), SMS (2), needs parameter mailinglist, default EMAIL",
+          "required" : false,
+          "style" : "form",
+          "explode" : false,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
         "requestBody" : {
           "description" : "Data of new recipient entry",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/RecipientItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -1999,18 +1971,16 @@
     },
     "/recipient/{customer_id}" : {
       "get" : {
-        "tags" : [ "Recipient" ],
         "summary" : "Read a single existing recipient entry",
+        "tags" : [ "Recipient" ],
         "parameters" : [ {
-          "name" : "customer_id",
           "in" : "path",
-          "description" : "Numeric ID of the recipient entry",
+          "name" : "customer_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the recipient entry"
         } ],
         "responses" : {
           "200" : {
@@ -2037,38 +2007,25 @@
           }
         }
       },
-      "put" : {
+      "delete" : {
+        "summary" : "Delete single existing recipient entry",
         "tags" : [ "Recipient" ],
-        "summary" : "Create or update recipient entry",
         "parameters" : [ {
-          "name" : "customer_id",
           "in" : "path",
-          "description" : "Numeric ID of the recipient entry to get",
+          "name" : "customer_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "description" : "New data for existing recipient entry",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/RecipientItem"
-              }
-            }
           },
-          "required" : true
-        },
+          "description" : "Numeric ID of the recipient entry to delete"
+        } ],
         "responses" : {
           "200" : {
-            "description" : "Stored data of updated recipient entry",
+            "description" : "Simple confirmation text",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/RecipientItem"
+                  "type" : "string"
                 }
               }
             }
@@ -2087,27 +2044,36 @@
           }
         }
       },
-      "delete" : {
+      "put" : {
+        "summary" : "Create or update recipient entry",
         "tags" : [ "Recipient" ],
-        "summary" : "Delete single existing recipient entry",
         "parameters" : [ {
-          "name" : "customer_id",
           "in" : "path",
-          "description" : "Numeric ID of the recipient entry to delete",
+          "name" : "customer_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the recipient entry to get"
         } ],
+        "requestBody" : {
+          "description" : "New data for existing recipient entry",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecipientItem"
+              }
+            }
+          }
+        },
         "responses" : {
           "200" : {
-            "description" : "Simple confirmation text",
+            "description" : "Stored data of updated recipient entry",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "type" : "string"
+                  "$ref" : "#/components/schemas/RecipientItem"
                 }
               }
             }
@@ -2129,18 +2095,16 @@
     },
     "/recipient/{email}" : {
       "get" : {
-        "tags" : [ "Recipient" ],
         "summary" : "Read a single existing recipient entry",
+        "tags" : [ "Recipient" ],
         "parameters" : [ {
-          "name" : "email",
           "in" : "path",
-          "description" : "Email of the recipient entry",
+          "name" : "email",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Email of the recipient entry"
         } ],
         "responses" : {
           "200" : {
@@ -2167,30 +2131,65 @@
           }
         }
       },
-      "put" : {
+      "delete" : {
+        "summary" : "Delete single existing recipient entry",
         "tags" : [ "Recipient" ],
-        "summary" : "Create or update recipient entry",
         "parameters" : [ {
-          "name" : "email",
           "in" : "path",
-          "description" : "Email of the recipient entry to get",
+          "name" : "email",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
+          },
+          "description" : "Email of the recipient entry to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
           }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update recipient entry",
+        "tags" : [ "Recipient" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "email",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Email of the recipient entry to get"
         } ],
         "requestBody" : {
           "description" : "New data for existing recipient entry",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/RecipientItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -2216,61 +2215,20 @@
             "description" : "Server side error"
           }
         }
-      },
-      "delete" : {
-        "tags" : [ "Recipient" ],
-        "summary" : "Delete single existing recipient entry",
-        "parameters" : [ {
-          "name" : "email",
-          "in" : "path",
-          "description" : "Email of the recipient entry to delete",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Simple confirmation text",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Any client side error"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
       }
     },
     "/binding/{customer_id}" : {
       "get" : {
-        "tags" : [ "Binding" ],
         "summary" : "Read all existing binding entries for a single recipient",
+        "tags" : [ "Binding" ],
         "parameters" : [ {
-          "name" : "customer_id",
           "in" : "path",
-          "description" : "Numeric ID of the recipient to get all binding entries for",
+          "name" : "customer_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the recipient to get all binding entries for"
         } ],
         "responses" : {
           "200" : {
@@ -2300,38 +2258,25 @@
           }
         }
       },
-      "put" : {
+      "delete" : {
+        "summary" : "Delete all existing binding entries for a recipient",
         "tags" : [ "Binding" ],
-        "summary" : "Create or update binding entry",
         "parameters" : [ {
-          "name" : "customer_id",
           "in" : "path",
-          "description" : "Numeric ID of the recipient to create or update binding entry for",
+          "name" : "customer_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "description" : "New data for existing binding entry",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/BindingItem"
-              }
-            }
           },
-          "required" : true
-        },
+          "description" : "Numeric ID of the recipient to delete all binding entries for"
+        } ],
         "responses" : {
           "200" : {
-            "description" : "Stored data of updated binding entry",
+            "description" : "Simple confirmation text",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BindingItem"
+                  "type" : "string"
                 }
               }
             }
@@ -2351,29 +2296,27 @@
         }
       },
       "post" : {
-        "tags" : [ "Binding" ],
         "summary" : "Create new binding entry (no Update)",
+        "tags" : [ "Binding" ],
         "parameters" : [ {
-          "name" : "customer_id",
           "in" : "path",
-          "description" : "Numeric ID of the recipient to create binding entry for",
+          "name" : "customer_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the recipient to create binding entry for"
         } ],
         "requestBody" : {
           "description" : "Data for new binding entry",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/BindingItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -2400,27 +2343,36 @@
           }
         }
       },
-      "delete" : {
+      "put" : {
+        "summary" : "Create or update binding entry",
         "tags" : [ "Binding" ],
-        "summary" : "Delete all existing binding entries for a recipient",
         "parameters" : [ {
-          "name" : "customer_id",
           "in" : "path",
-          "description" : "Numeric ID of the recipient to delete all binding entries for",
+          "name" : "customer_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the recipient to create or update binding entry for"
         } ],
+        "requestBody" : {
+          "description" : "New data for existing binding entry",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BindingItem"
+              }
+            }
+          }
+        },
         "responses" : {
           "200" : {
-            "description" : "Simple confirmation text",
+            "description" : "Stored data of updated binding entry",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "type" : "string"
+                  "$ref" : "#/components/schemas/BindingItem"
                 }
               }
             }
@@ -2442,18 +2394,16 @@
     },
     "/binding/{email}" : {
       "get" : {
-        "tags" : [ "Binding" ],
         "summary" : "Read all existing binding entries for a single recipient",
+        "tags" : [ "Binding" ],
         "parameters" : [ {
-          "name" : "email",
           "in" : "path",
-          "description" : "Email address of the recipient to get all binding entries for",
+          "name" : "email",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Email address of the recipient to get all binding entries for"
         } ],
         "responses" : {
           "200" : {
@@ -2483,119 +2433,17 @@
           }
         }
       },
-      "put" : {
-        "tags" : [ "Binding" ],
-        "summary" : "Create or update binding entry",
-        "parameters" : [ {
-          "name" : "email",
-          "in" : "path",
-          "description" : "Email address of the recipient to create or update binding entry for",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "description" : "New data for existing binding entry",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/BindingItem"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "Stored data of updated binding entry",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/BindingItem"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Any client side error"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
-      },
-      "post" : {
-        "tags" : [ "Binding" ],
-        "summary" : "Create new binding entry (no Update)",
-        "parameters" : [ {
-          "name" : "email",
-          "in" : "path",
-          "description" : "Email address of the recipient to create binding entry for",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "description" : "Data for new binding entry",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/BindingItem"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "Stored data of updated binding entry",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/BindingItem"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Any client side error"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
-      },
       "delete" : {
-        "tags" : [ "Binding" ],
         "summary" : "Delete all existing binding entries for a recipient",
+        "tags" : [ "Binding" ],
         "parameters" : [ {
-          "name" : "email",
           "in" : "path",
-          "description" : "Email address of the recipient to delete all binding entries for",
+          "name" : "email",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Email address of the recipient to delete all binding entries for"
         } ],
         "responses" : {
           "200" : {
@@ -2621,32 +2469,124 @@
             "description" : "Server side error"
           }
         }
+      },
+      "post" : {
+        "summary" : "Create new binding entry (no Update)",
+        "tags" : [ "Binding" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "email",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Email address of the recipient to create binding entry for"
+        } ],
+        "requestBody" : {
+          "description" : "Data for new binding entry",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BindingItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated binding entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BindingItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update binding entry",
+        "tags" : [ "Binding" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "email",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Email address of the recipient to create or update binding entry for"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing binding entry",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BindingItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated binding entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BindingItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
       }
     },
     "/binding/{customer_id}/{mailinglist_id}" : {
       "get" : {
-        "tags" : [ "Binding" ],
         "summary" : "Read a single existing binding entry for a single recipient",
+        "tags" : [ "Binding" ],
         "parameters" : [ {
+          "in" : "path",
           "name" : "customer_id",
-          "in" : "path",
-          "description" : "Numeric ID of the recipient to get binding entry for",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the recipient to get binding entry for"
         }, {
-          "name" : "mailinglist_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailinglist to get the binding entry for",
+          "name" : "mailinglist_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailinglist to get the binding entry for"
         } ],
         "responses" : {
           "200" : {
@@ -2674,28 +2614,24 @@
         }
       },
       "delete" : {
-        "tags" : [ "Binding" ],
         "summary" : "Delete a single binding entry for a recipient",
+        "tags" : [ "Binding" ],
         "parameters" : [ {
+          "in" : "path",
           "name" : "customer_id",
-          "in" : "path",
-          "description" : "Numeric ID of the recipient to delete binding entry for",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the recipient to delete binding entry for"
         }, {
-          "name" : "mailinglist_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailinglist to delete the binding entry for",
+          "name" : "mailinglist_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailinglist to delete the binding entry for"
         } ],
         "responses" : {
           "200" : {
@@ -2725,28 +2661,24 @@
     },
     "/binding/{email}/{mailinglist_id}" : {
       "get" : {
-        "tags" : [ "Binding" ],
         "summary" : "Read a single existing binding entry for a single recipient",
+        "tags" : [ "Binding" ],
         "parameters" : [ {
-          "name" : "email",
           "in" : "path",
-          "description" : "Email address of the recipient to get binding entry for",
+          "name" : "email",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Email address of the recipient to get binding entry for"
         }, {
-          "name" : "mailinglist_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailinglist to get the binding entry for",
+          "name" : "mailinglist_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailinglist to get the binding entry for"
         } ],
         "responses" : {
           "200" : {
@@ -2774,28 +2706,24 @@
         }
       },
       "delete" : {
-        "tags" : [ "Binding" ],
         "summary" : "Delete a single binding entry for a recipient",
+        "tags" : [ "Binding" ],
         "parameters" : [ {
-          "name" : "email",
           "in" : "path",
-          "description" : "Email address of the recipient to get binding entry for",
+          "name" : "email",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Email address of the recipient to get binding entry for"
         }, {
-          "name" : "mailinglist_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailinglist to delete the binding entry for",
+          "name" : "mailinglist_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailinglist to delete the binding entry for"
         } ],
         "responses" : {
           "200" : {
@@ -2825,10 +2753,10 @@
     },
     "/blacklist" : {
       "get" : {
-        "tags" : [ "Blacklist" ],
         "summary" : "Read all existing blacklist data",
-        "description" : "Read existing blacklist data",
+        "tags" : [ "Blacklist" ],
         "operationId" : "getBlacklist",
+        "description" : "Read existing blacklist data",
         "responses" : {
           "200" : {
             "description" : "search results matching criteria",
@@ -2857,11 +2785,12 @@
           }
         }
       },
-      "put" : {
+      "post" : {
+        "summary" : "Write new blacklist data",
         "tags" : [ "Blacklist" ],
-        "summary" : "Create or update blacklist data",
+        "operationId" : "postBlacklist",
+        "description" : "Write new blacklist data. Does not update existing blacklist objects.",
         "requestBody" : {
-          "description" : "Blacklist data to add",
           "content" : {
             "application/json" : {
               "schema" : {
@@ -2869,7 +2798,39 @@
               }
             }
           },
-          "required" : true
+          "description" : "Blacklist data to add"
+        },
+        "responses" : {
+          "200" : {
+            "description" : "item created"
+          },
+          "400" : {
+            "description" : "invalid input, object invalid"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update blacklist data",
+        "tags" : [ "Blacklist" ],
+        "requestBody" : {
+          "description" : "Blacklist data to add",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BlacklistItem"
+              }
+            }
+          }
         },
         "responses" : {
           "200" : {
@@ -2895,55 +2856,20 @@
             "description" : "Server side error"
           }
         }
-      },
-      "post" : {
-        "tags" : [ "Blacklist" ],
-        "summary" : "Write new blacklist data",
-        "description" : "Write new blacklist data. Does not update existing blacklist objects.",
-        "operationId" : "postBlacklist",
-        "requestBody" : {
-          "description" : "Blacklist data to add",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/BlacklistItem"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "description" : "item created"
-          },
-          "400" : {
-            "description" : "invalid input, object invalid"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
       }
     },
     "/blacklist/{email}" : {
       "get" : {
-        "tags" : [ "Blacklist" ],
         "summary" : "Read a single existing blacklist item",
+        "tags" : [ "Blacklist" ],
         "parameters" : [ {
-          "name" : "email",
           "in" : "path",
-          "description" : "Email address to get data for",
+          "name" : "email",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Email address to get data for"
         } ],
         "responses" : {
           "200" : {
@@ -2970,30 +2896,65 @@
           }
         }
       },
-      "put" : {
+      "delete" : {
+        "summary" : "Delete single existing mailing content",
         "tags" : [ "Blacklist" ],
-        "summary" : "Create or update mailinglist",
         "parameters" : [ {
-          "name" : "email",
           "in" : "path",
-          "description" : "Email address to create or update in blacklist",
+          "name" : "email",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
+          },
+          "description" : "Email address to delete from blacklist"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
           }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update mailinglist",
+        "tags" : [ "Blacklist" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "email",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Email address to create or update in blacklist"
         } ],
         "requestBody" : {
           "description" : "New data for existing mailinglist item",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/BlacklistItem"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -3019,64 +2980,23 @@
             "description" : "Server side error"
           }
         }
-      },
-      "delete" : {
-        "tags" : [ "Blacklist" ],
-        "summary" : "Delete single existing mailing content",
-        "parameters" : [ {
-          "name" : "email",
-          "in" : "path",
-          "description" : "Email address to delete from blacklist",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Simple confirmation text",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Any client side error like invalid id or not existing item"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
       }
     },
     "/reference/{reference_table_id}" : {
       "get" : {
-        "tags" : [ "Reference" ],
         "summary" : "Read all existing reference data of a reference table (Not included in OpenEMM)",
-        "description" : "Read existing reference data",
-        "operationId" : "getReferencesByTableID",
+        "tags" : [ "Reference" ],
         "parameters" : [ {
-          "name" : "reference_table_id",
           "in" : "path",
-          "description" : "Numeric ID of the reference table to get data for",
+          "name" : "reference_table_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the reference table to get data for"
         } ],
+        "operationId" : "getReferencesByTableID",
+        "description" : "Read existing reference data",
         "responses" : {
           "200" : {
             "description" : "search results matching criteria",
@@ -3105,23 +3025,21 @@
           }
         }
       },
-      "put" : {
+      "post" : {
+        "summary" : "Write new reference data (Not included in OpenEMM)",
         "tags" : [ "Reference" ],
-        "summary" : "Create or update reference data (Not included in OpenEMM)",
-        "operationId" : "putReferenceByTableID",
         "parameters" : [ {
-          "name" : "reference_table_id",
           "in" : "path",
-          "description" : "Numeric ID of the reference table to get data for",
+          "name" : "reference_table_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the reference table to add data for"
         } ],
+        "operationId" : "postReferenceByTableID",
+        "description" : "Write new reference data. Does not update existing reference objects.",
         "requestBody" : {
-          "description" : "Reference data to add",
           "content" : {
             "application/json" : {
               "schema" : {
@@ -3129,18 +3047,11 @@
               }
             }
           },
-          "required" : true
+          "description" : "Reference data to add"
         },
         "responses" : {
           "200" : {
-            "description" : "Stored data of new reference item",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "object"
-                }
-              }
-            }
+            "description" : "item created"
           },
           "400" : {
             "description" : "Any client side error like invalid reference table id"
@@ -3156,24 +3067,22 @@
           }
         }
       },
-      "post" : {
+      "put" : {
+        "summary" : "Create or update reference data (Not included in OpenEMM)",
         "tags" : [ "Reference" ],
-        "summary" : "Write new reference data (Not included in OpenEMM)",
-        "description" : "Write new reference data. Does not update existing reference objects.",
-        "operationId" : "postReferenceByTableID",
         "parameters" : [ {
-          "name" : "reference_table_id",
           "in" : "path",
-          "description" : "Numeric ID of the reference table to add data for",
+          "name" : "reference_table_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the reference table to get data for"
         } ],
+        "operationId" : "putReferenceByTableID",
         "requestBody" : {
           "description" : "Reference data to add",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
@@ -3184,7 +3093,14 @@
         },
         "responses" : {
           "200" : {
-            "description" : "item created"
+            "description" : "Stored data of new reference item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
           },
           "400" : {
             "description" : "Any client side error like invalid reference table id"
@@ -3203,21 +3119,19 @@
     },
     "/reference/{reference_table_name}" : {
       "get" : {
-        "tags" : [ "Reference" ],
         "summary" : "Read all existing reference data of a reference table (Not included in OpenEMM)",
-        "description" : "Read existing reference data",
-        "operationId" : "getReferencesByTableName",
+        "tags" : [ "Reference" ],
         "parameters" : [ {
-          "name" : "reference_table_name",
           "in" : "path",
-          "description" : "Name of the reference table to get data for",
+          "name" : "reference_table_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Name of the reference table to get data for"
         } ],
+        "operationId" : "getReferencesByTableName",
+        "description" : "Read existing reference data",
         "responses" : {
           "200" : {
             "description" : "search results matching criteria",
@@ -3246,23 +3160,21 @@
           }
         }
       },
-      "put" : {
+      "post" : {
+        "summary" : "Write new reference data (Not included in OpenEMM)",
         "tags" : [ "Reference" ],
-        "summary" : "Create or update reference data (Not included in OpenEMM)",
-        "operationId" : "putReferenceByTableName",
         "parameters" : [ {
-          "name" : "reference_table_name",
           "in" : "path",
-          "description" : "Name of the reference table to get data for",
+          "name" : "reference_table_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Name of the reference table to add data for"
         } ],
+        "operationId" : "postReferenceByTableName",
+        "description" : "Write new reference data. Does not update existing reference objects.",
         "requestBody" : {
-          "description" : "Reference data to add",
           "content" : {
             "application/json" : {
               "schema" : {
@@ -3270,7 +3182,49 @@
               }
             }
           },
-          "required" : true
+          "description" : "Reference data to add"
+        },
+        "responses" : {
+          "200" : {
+            "description" : "item created"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid reference table name"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update reference data (Not included in OpenEMM)",
+        "tags" : [ "Reference" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "reference_table_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the reference table to get data for"
+        } ],
+        "operationId" : "putReferenceByTableName",
+        "requestBody" : {
+          "description" : "Reference data to add",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object"
+              }
+            }
+          }
         },
         "responses" : {
           "200" : {
@@ -3296,76 +3250,28 @@
             "description" : "Server side error"
           }
         }
-      },
-      "post" : {
-        "tags" : [ "Reference" ],
-        "summary" : "Write new reference data (Not included in OpenEMM)",
-        "description" : "Write new reference data. Does not update existing reference objects.",
-        "operationId" : "postReferenceByTableName",
-        "parameters" : [ {
-          "name" : "reference_table_name",
-          "in" : "path",
-          "description" : "Name of the reference table to add data for",
-          "required" : true,
-          "style" : "simple",
-          "explode" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "description" : "Reference data to add",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "type" : "object"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "description" : "item created"
-          },
-          "400" : {
-            "description" : "Any client side error like invalid reference table name"
-          },
-          "401" : {
-            "description" : "Authorization information is missing or invalid"
-          },
-          "404" : {
-            "description" : "Data requested was not found"
-          },
-          "500" : {
-            "description" : "Server side error"
-          }
-        }
       }
     },
     "/reference/{reference_table_id}/{reference_item_key}" : {
       "get" : {
-        "tags" : [ "Reference" ],
         "summary" : "Read a single existing reference item (Not included in OpenEMM)",
+        "tags" : [ "Reference" ],
         "parameters" : [ {
-          "name" : "reference_table_id",
           "in" : "path",
-          "description" : "Numeric ID of the reference table to get data for",
+          "name" : "reference_table_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the reference table to get data for"
         }, {
-          "name" : "reference_item_key",
           "in" : "path",
-          "description" : "Key of the reference item to get",
+          "name" : "reference_item_key",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Key of the reference item to get"
         } ],
         "responses" : {
           "200" : {
@@ -3392,48 +3298,33 @@
           }
         }
       },
-      "put" : {
+      "delete" : {
+        "summary" : "Delete single existing mailing content (Not included in OpenEMM)",
         "tags" : [ "Reference" ],
-        "summary" : "Create or update reference (Not included in OpenEMM)",
         "parameters" : [ {
-          "name" : "reference_table_id",
           "in" : "path",
-          "description" : "Numeric ID of the reference table to create data for",
+          "name" : "reference_table_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the reference table to delete data for"
         }, {
-          "name" : "reference_item_key",
           "in" : "path",
-          "description" : "Numeric ID of the reference to create or update",
+          "name" : "reference_item_key",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "description" : "New data for existing reference item",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "type" : "object"
-              }
-            }
           },
-          "required" : true
-        },
+          "description" : "Numeric ID of the reference to delete"
+        } ],
         "responses" : {
           "200" : {
-            "description" : "Stored data of reference item",
+            "description" : "Simple confirmation text",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "type" : "object"
+                  "type" : "string"
                 }
               }
             }
@@ -3452,37 +3343,44 @@
           }
         }
       },
-      "delete" : {
+      "put" : {
+        "summary" : "Create or update reference (Not included in OpenEMM)",
         "tags" : [ "Reference" ],
-        "summary" : "Delete single existing mailing content (Not included in OpenEMM)",
         "parameters" : [ {
-          "name" : "reference_table_id",
           "in" : "path",
-          "description" : "Numeric ID of the reference table to delete data for",
+          "name" : "reference_table_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the reference table to create data for"
         }, {
-          "name" : "reference_item_key",
           "in" : "path",
-          "description" : "Numeric ID of the reference to delete",
+          "name" : "reference_item_key",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Numeric ID of the reference to create or update"
         } ],
+        "requestBody" : {
+          "description" : "New data for existing reference item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object"
+              }
+            }
+          }
+        },
         "responses" : {
           "200" : {
-            "description" : "Simple confirmation text",
+            "description" : "Stored data of reference item",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "type" : "string"
+                  "type" : "object"
                 }
               }
             }
@@ -3504,28 +3402,24 @@
     },
     "/reference/{reference_table_name}/{reference_item_key}" : {
       "get" : {
-        "tags" : [ "Reference" ],
         "summary" : "Read a single existing reference item (Not included in OpenEMM)",
+        "tags" : [ "Reference" ],
         "parameters" : [ {
-          "name" : "reference_table_name",
           "in" : "path",
-          "description" : "Numeric ID of the reference table to get data for",
+          "name" : "reference_table_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the reference table to get data for"
         }, {
-          "name" : "reference_item_key",
           "in" : "path",
-          "description" : "Key of the reference item to get",
+          "name" : "reference_item_key",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Key of the reference item to get"
         } ],
         "responses" : {
           "200" : {
@@ -3552,48 +3446,33 @@
           }
         }
       },
-      "put" : {
+      "delete" : {
+        "summary" : "Delete single existing mailing content (Not included in OpenEMM)",
         "tags" : [ "Reference" ],
-        "summary" : "Create or update reference (Not included in OpenEMM)",
         "parameters" : [ {
-          "name" : "reference_table_name",
           "in" : "path",
-          "description" : "Numeric ID of the reference table to create data for",
+          "name" : "reference_table_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the reference table to delete data for"
         }, {
-          "name" : "reference_item_key",
           "in" : "path",
-          "description" : "Numeric ID of the reference to create or update",
+          "name" : "reference_item_key",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "description" : "New data for existing reference item",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "type" : "object"
-              }
-            }
           },
-          "required" : true
-        },
+          "description" : "Numeric ID of the reference to delete"
+        } ],
         "responses" : {
           "200" : {
-            "description" : "Stored data of reference item",
+            "description" : "Simple confirmation text",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "type" : "object"
+                  "type" : "string"
                 }
               }
             }
@@ -3612,37 +3491,44 @@
           }
         }
       },
-      "delete" : {
+      "put" : {
+        "summary" : "Create or update reference (Not included in OpenEMM)",
         "tags" : [ "Reference" ],
-        "summary" : "Delete single existing mailing content (Not included in OpenEMM)",
         "parameters" : [ {
-          "name" : "reference_table_name",
           "in" : "path",
-          "description" : "Numeric ID of the reference table to delete data for",
+          "name" : "reference_table_name",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the reference table to create data for"
         }, {
-          "name" : "reference_item_key",
           "in" : "path",
-          "description" : "Numeric ID of the reference to delete",
+          "name" : "reference_item_key",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "description" : "Numeric ID of the reference to create or update"
         } ],
+        "requestBody" : {
+          "description" : "New data for existing reference item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object"
+              }
+            }
+          }
+        },
         "responses" : {
           "200" : {
-            "description" : "Simple confirmation text",
+            "description" : "Stored data of reference item",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "type" : "string"
+                  "type" : "object"
                 }
               }
             }
@@ -3665,27 +3551,54 @@
     "/send/{mailing_id}" : {
       "put" : {
         "summary" : "Send an existing mailing",
+        "tags" : [ "Send" ],
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to send",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to send"
         } ],
         "requestBody" : {
-          "description" : "New data for existing reference item",
+          "description" : "Supplemental data for mailing send",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/body"
+                "type" : "object",
+                "required" : [ "send_type" ],
+                "properties" : {
+                  "send_type" : {
+                    "type" : "string",
+                    "description" : "Type of recipients used for this send action. (WORLD(\"W\"), TEST(\"T\"), ADMIN(\"A\"), DATE_BASED(\"R\", send_date on hour base only), ACTION_BASED(\"E\", immediate delivery start, send_date ignored))",
+                    "example" : "W"
+                  },
+                  "send_date" : {
+                    "type" : "string",
+                    "description" : "Date-time of sending (ISO-8601)",
+                    "example" : "2017-07-21T17:32:28Z"
+                  },
+                  "customer_id" : {
+                    "type" : "integer",
+                    "description" : "Optional customerId for actionbased mailings",
+                    "example" : 4711
+                  },
+                  "user_status" : {
+                    "type" : "integer",
+                    "description" : "Optional customer status, only if user is waiting for confirm (DOI)",
+                    "example" : 5
+                  },
+                  "data" : {
+                    "type" : "object",
+                    "description" : "Optional profile data to override in ACTION_BASED mailing",
+                    "example" : "{'voucher_code': 4711, 'price': '10.000 €'}"
+                  }
+                }
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -3707,31 +3620,338 @@
       },
       "post" : {
         "summary" : "Send an existing mailing",
+        "tags" : [ "Send" ],
         "parameters" : [ {
-          "name" : "mailing_id",
           "in" : "path",
-          "description" : "Numeric ID of the mailing to send",
+          "name" : "mailing_id",
           "required" : true,
-          "style" : "simple",
-          "explode" : false,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "description" : "Numeric ID of the mailing to send"
         } ],
         "requestBody" : {
-          "description" : "New data for existing reference item",
+          "description" : "Supplemental data for mailing send",
+          "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/body_1"
+                "type" : "object",
+                "required" : [ "send_type" ],
+                "properties" : {
+                  "send_type" : {
+                    "type" : "string",
+                    "description" : "Type of recipients used for this send action. (WORLD(\"W\"), TEST(\"T\"), ADMIN(\"A\"), DATE_BASED(\"R\"), ACTION_BASED(\"E\"))",
+                    "example" : "W"
+                  },
+                  "send_date" : {
+                    "type" : "string",
+                    "description" : "Date-time of sending (ISO-8601)",
+                    "example" : "2017-07-21T17:32:28Z"
+                  },
+                  "customer_id" : {
+                    "type" : "integer",
+                    "description" : "Optional customerId for actionbased mailings",
+                    "example" : 4711
+                  },
+                  "user_status" : {
+                    "type" : "integer",
+                    "description" : "Optional customer status, only if user is waiting for confirm (DOI)",
+                    "example" : 5
+                  },
+                  "data" : {
+                    "type" : "object",
+                    "description" : "Optional profile data to override in ACTION_BASED mailing",
+                    "example" : "{'voucher_code': 4711, 'price': '10.000 €'}"
+                  }
+                }
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
             "description" : "Simple information text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/actionExecute/{action_id}" : {
+      "put" : {
+        "summary" : "Execute an existing action",
+        "tags" : [ "ActionExecute" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "action_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the action to execute"
+        } ],
+        "requestBody" : {
+          "description" : "Supplemental data for action execution",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "customer_id" : {
+                    "type" : "integer",
+                    "description" : "Optional customerId for action",
+                    "example" : 4711
+                  },
+                  "other_values" : {
+                    "description" : "Optional other values for action"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Simple information text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Execute an existing action",
+        "tags" : [ "ActionExecute" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "action_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the action to execute"
+        } ],
+        "requestBody" : {
+          "description" : "Supplemental data for action execution",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "customer_id" : {
+                    "type" : "integer",
+                    "description" : "Optional customerId for action",
+                    "example" : 4711
+                  },
+                  "other_values" : {
+                    "description" : "Optional other values for action"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Simple information text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/url/fullview" : {
+      "put" : {
+        "summary" : "Create a fullview link url for a given mailing and customer",
+        "tags" : [ "Url" ],
+        "requestBody" : {
+          "description" : "Supplemental data for fullview link",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "customer_id" : {
+                    "type" : "integer",
+                    "description" : "customerId",
+                    "example" : 4711
+                  },
+                  "mailing_id" : {
+                    "type" : "integer",
+                    "description" : "mailingId",
+                    "example" : 4712
+                  },
+                  "other_values" : {
+                    "description" : "Optional parameter formName"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Simple url text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Create a fullview link url for a given mailing and customer",
+        "tags" : [ "Url" ],
+        "requestBody" : {
+          "description" : "Supplemental data for fullview link",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "customer_id" : {
+                    "type" : "integer",
+                    "description" : "customerId",
+                    "example" : 4711
+                  },
+                  "mailing_id" : {
+                    "type" : "integer",
+                    "description" : "mailingId",
+                    "example" : 4712
+                  },
+                  "other_values" : {
+                    "description" : "Optional parameter formName"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Simple url text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/url/agnUidInfo" : {
+      "put" : {
+        "summary" : "Aquire information included in agnUID",
+        "tags" : [ "Url" ],
+        "requestBody" : {
+          "description" : "agnUID data",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "agnUid" : {
+                    "type" : "string",
+                    "description" : "agnUID",
+                    "example" : "abc.123.456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Information json object"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Aquire information included in agnUID",
+        "tags" : [ "Url" ],
+        "requestBody" : {
+          "description" : "agnUID data",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "agnUid" : {
+                    "type" : "string",
+                    "description" : "agnUID",
+                    "example" : "abc.123.456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Information json object"
           },
           "400" : {
             "description" : "Any client side error like invalid id or not existing item"
@@ -3752,8 +3972,8 @@
   "components" : {
     "schemas" : {
       "DynContentItem" : {
-        "required" : [ "content", "name" ],
         "type" : "object",
+        "required" : [ "name", "content" ],
         "properties" : {
           "id" : {
             "type" : "integer",
@@ -3777,8 +3997,8 @@
         }
       },
       "ContentItem" : {
-        "required" : [ "text" ],
         "type" : "object",
+        "required" : [ "text" ],
         "properties" : {
           "id" : {
             "type" : "integer",
@@ -3802,8 +4022,8 @@
         }
       },
       "ComponentItem" : {
-        "required" : [ "name", "type" ],
         "type" : "object",
+        "required" : [ "name", "type" ],
         "properties" : {
           "component_id" : {
             "type" : "integer",
@@ -3854,8 +4074,8 @@
         }
       },
       "MediapoolItem" : {
-        "required" : [ "content", "filename", "mimetype" ],
         "type" : "object",
+        "required" : [ "filename", "mimetype", "content" ],
         "properties" : {
           "mediapoolelement_id" : {
             "type" : "integer",
@@ -3886,7 +4106,7 @@
           "keywords" : {
             "type" : "string",
             "description" : "Comma separated keywords for tagging",
-            "example" : "4714"
+            "example" : 4714
           },
           "mimetype" : {
             "type" : "string",
@@ -3901,8 +4121,8 @@
         }
       },
       "MailinglistItem" : {
-        "required" : [ "name" ],
         "type" : "object",
+        "required" : [ "name" ],
         "properties" : {
           "mailinglist_id" : {
             "type" : "integer",
@@ -3930,8 +4150,8 @@
         }
       },
       "RecipientItem" : {
-        "required" : [ "email" ],
         "type" : "object",
+        "required" : [ "email" ],
         "properties" : {
           "email" : {
             "type" : "string",
@@ -3953,8 +4173,8 @@
         }
       },
       "BindingItem" : {
-        "required" : [ "mailinglist_id", "user_status" ],
         "type" : "object",
+        "required" : [ "mailinglist_id", "user_status" ],
         "properties" : {
           "mailinglist_id" : {
             "type" : "integer",
@@ -4000,12 +4220,22 @@
             "type" : "string",
             "description" : "Date-time of change (ISO-8601). Only for read methods. Items to create or update may not have a creation_date.",
             "example" : "2018-07-21T17:32:28Z"
+          },
+          "action_id" : {
+            "type" : "integer",
+            "description" : "Optional action id to be executed after creation oder update of binding item",
+            "example" : 4712
+          },
+          "runActionAsynchronous" : {
+            "type" : "boolean",
+            "description" : "Optional setting to run action asynchronous",
+            "example" : true
           }
         }
       },
       "BlacklistItem" : {
-        "required" : [ "email", "reason" ],
         "type" : "object",
+        "required" : [ "email", "reason" ],
         "properties" : {
           "email" : {
             "type" : "string",
@@ -4023,8 +4253,8 @@
         }
       },
       "MailingInfoItem" : {
-        "required" : [ "mailinglist_id", "shortname" ],
         "type" : "object",
+        "required" : [ "shortname", "mailinglist_id" ],
         "properties" : {
           "shortname" : {
             "type" : "string",
@@ -4041,8 +4271,8 @@
         }
       },
       "MailingItem" : {
-        "required" : [ "mailinglist_id", "shortname" ],
         "type" : "object",
+        "required" : [ "shortname", "mailinglist_id" ],
         "properties" : {
           "version" : {
             "type" : "string"
@@ -4073,38 +4303,6 @@
             "items" : {
               "$ref" : "#/components/schemas/ContentItem"
             }
-          }
-        }
-      },
-      "body" : {
-        "required" : [ "content", "name" ],
-        "type" : "object",
-        "properties" : {
-          "send_type" : {
-            "type" : "string",
-            "description" : "Type of recipients used for this send action. (WORLD(\"W\"), TEST(\"T\"), ADMIN(\"A\"), DATE_BASED(\"R\"), ACTION_BASED(\"E\"))",
-            "example" : "W"
-          },
-          "send_date" : {
-            "type" : "string",
-            "description" : "Date-time of sending (ISO-8601)",
-            "example" : "2017-07-21T17:32:28Z"
-          }
-        }
-      },
-      "body_1" : {
-        "required" : [ "content", "name" ],
-        "type" : "object",
-        "properties" : {
-          "send_type" : {
-            "type" : "string",
-            "description" : "Type of recipients used for this send action. (WORLD(\"W\"), TEST(\"T\"), ADMIN(\"A\"), DATE_BASED(\"R\"), ACTION_BASED(\"E\"))",
-            "example" : "W"
-          },
-          "send_date" : {
-            "type" : "string",
-            "description" : "Date-time of sending (ISO-8601)",
-            "example" : "2017-07-21T17:32:28Z"
           }
         }
       }

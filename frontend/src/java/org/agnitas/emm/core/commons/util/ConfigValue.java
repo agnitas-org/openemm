@@ -120,6 +120,7 @@ public class ConfigValue {
 	public static final ConfigValue Linkchecker_Linktimeout = new ConfigValue("linkchecker.linktimeout", "30000");
 	public static final ConfigValue Linkchecker_Threadcount = new ConfigValue("linkchecker.threadcount", "25");
 	public static final ConfigValue Linkchecker_LocalUrlDetection = new ConfigValue("linkchecker.detectLocalUrls", "true");
+	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0");
 
 	public static final ConfigValue Predelivery_Litmusapikey = new ConfigValue("predelivery.litmusapikey");
 	public static final ConfigValue Predelivery_Litmusapiurl = new ConfigValue("predelivery.litmusapiurl");
@@ -567,7 +568,7 @@ public class ConfigValue {
 	 */
 	public static final class Development {
 		// TODO Remove after rollout EMM-7992
-		public static final ConfigValue UseNewBlacklistWildcards = new ConfigValue("development.use_new_blacklist_wildcards", "false");		
+		public static final ConfigValue UseNewBlacklistWildcards = new ConfigValue("development.use_new_blacklist_wildcards", "false");
 	}
 
 	// Fallback values for backend

@@ -18,13 +18,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.agnitas.beans.ComTrackableLink;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.linkcheck.beans.LinkReachability;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.beans.ComTrackableLink;
 
 /**
  * Checks availability of links.
@@ -49,7 +50,7 @@ public class LinkcheckService {
 		
 		// .. and remove links that have been found.
 		List<LinkReachability> filteredResults = new Vector<>();
-		checkResults.stream().filter(result -> result.getReachability() != LinkReachability.Reachability.OK).forEach(result -> filteredResults.add(result)); 
+		checkResults.stream().filter(result -> result.getReachability() != LinkReachability.Reachability.OK).forEach(result -> filteredResults.add(result));
 
 		return filteredResults;
 	}
@@ -71,7 +72,7 @@ public class LinkcheckService {
 		return checkRechability(checkList);
 	}
 	
-	/**	 
+	/**
 	 * Checks the availability of a list of URLs.
 	 * 
 	 * @param linkList list of URLs to check
@@ -85,9 +86,11 @@ public class LinkcheckService {
 		try {
 			linkCheckExecutor = Executors.newFixedThreadPool(configService.getIntegerValue(ConfigValue.Linkchecker_Threadcount));
 			
+			final String userAgent = configService.getValue(ConfigValue.LinkChecker_UserAgent);
+			
 			// Execute link checks
 			for (String url : linkList) {
-				linkCheckExecutor.execute(new LinkcheckWorker(configService.getIntegerValue(ConfigValue.Linkchecker_Linktimeout), url, resultList));
+				linkCheckExecutor.execute(new LinkcheckWorker(configService.getIntegerValue(ConfigValue.Linkchecker_Linktimeout), url, resultList, userAgent));
 			}
 		} finally {
 			if (linkCheckExecutor != null) {
@@ -104,7 +107,7 @@ public class LinkcheckService {
 		}
 		
 		return resultList;
-	}	
+	}
 	
 
 	/**

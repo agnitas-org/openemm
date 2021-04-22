@@ -167,8 +167,8 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     @Override
     public RecipientsReport.RecipientReportType getReportType(int companyId, int reportId) {
         String typeValue = selectObjectDefaultNull(logger,
-                "SELECT type FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id " +
-                        "WHERE ir.company_id = ? AND ir.recipients_report_id = ?",
+                "SELECT type FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id "
+                	+ "WHERE ir.company_id = ? AND ir.recipients_report_id = ?",
                 new StringRowMapper(), companyId, reportId);
         return typeValue != null ? RecipientsReport.RecipientReportType.valueOf(typeValue) : null;
     }
@@ -179,12 +179,15 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
         boolean direction = "ASC".equalsIgnoreCase(dir);
         String sql;
         List<Object> parameters = new ArrayList<>();
-        if(types == null || types.length == 0) {
-            sql = "SELECT ir.*, a.username FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id" +
-                    " WHERE ir.company_id = ?";
+        
+        if (types == null || types.length == 0) {
+            sql = "SELECT ir.recipients_report_id, ir.report_date, ir.filename, ir.datasource_id, ir.admin_id, ir.type, ir.download_id, ir.autoimport_id, ir.error, a.username"
+        		+ " FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id"
+        		+ " WHERE ir.company_id = ?";
         } else {
-            sql = "SELECT ir.*, a.username FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id" +
-                    " WHERE ir.company_id = ? AND type IN " + DbUtilities.joinForIN(types, RecipientsReport.RecipientReportType::name);
+            sql = "SELECT ir.recipients_report_id, ir.report_date, ir.filename, ir.datasource_id, ir.admin_id, ir.type, ir.download_id, ir.autoimport_id, ir.error, a.username"
+        		+ " FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id"
+        		+ " WHERE ir.company_id = ? AND type IN " + DbUtilities.joinForIN(types, RecipientsReport.RecipientReportType::name);
         }
         String dateClause = DbUtilities.getDateConstraint("REPORT_DATE", startDate, finishDate, isOracleDB());
         if (StringUtils.isNotBlank(dateClause)) {
@@ -196,7 +199,9 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
 
     @Override
     public RecipientsReport getReport(@VelocityCheck int companyId, int reportId) {
-        return selectObjectDefaultNull(logger, "SELECT ir.*, a.username FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id WHERE ir.company_id = ? AND ir.recipients_report_id = ?", REPORT_ROWS_MAPPER, companyId, reportId);
+        return selectObjectDefaultNull(logger, "SELECT ir.recipients_report_id, ir.report_date, ir.filename, ir.datasource_id, ir.admin_id, ir.type, ir.download_id, ir.autoimport_id, ir.error, a.username"
+        	+ " FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id WHERE ir.company_id = ? AND ir.recipients_report_id = ?",
+        	REPORT_ROWS_MAPPER, companyId, reportId);
     }
 
     @Override

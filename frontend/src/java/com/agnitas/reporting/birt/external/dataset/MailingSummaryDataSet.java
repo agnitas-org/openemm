@@ -571,8 +571,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 CommonKeys.CLICKER_MOBILE_INDEX,
                 CommonKeys.CLICKER_TABLET_INDEX,
                 CommonKeys.CLICKER_SMARTTV_INDEX,
-                CommonKeys.CLICKER_PC_AND_MOBILE_INDEX,
-                CommonKeys.CLICKS_ANONYMOUS_INDEX
+                CommonKeys.CLICKER_PC_AND_MOBILE_INDEX
         );
         updateRatesByCategories(tempTableID, clickerIndexes, new ArrayList<>(allTargets.values()), clickerIndexes);
 
@@ -581,8 +580,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 CommonKeys.OPENERS_TABLET_INDEX,
                 CommonKeys.OPENERS_MOBILE_INDEX,
                 CommonKeys.OPENERS_SMARTTV_INDEX,
-                CommonKeys.OPENERS_PC_AND_MOBILE_INDEX,
-                CommonKeys.OPENINGS_ANONYMOUS_INDEX
+                CommonKeys.OPENERS_PC_AND_MOBILE_INDEX
         );
         updateRatesByCategories(tempTableID, openingIndexes, new ArrayList<>(allTargets.values()), openingIndexes);
 
