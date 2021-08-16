@@ -421,8 +421,7 @@
                     <div class="input-group">
                         <div class="input-group-controls">
                             <fmt:formatDate var="sendDate" value="${sendDateTime}" pattern="${adminDateFormatPattern}" timeZone="${adminTimeZone}"/>
-                            <input id="resultSendDate" type="text" class="form-control datepicker-input js-datepicker" value="${sendDate}"
-                                   data-datepicker-options="format: '${fn:toLowerCase(adminDateFormatPattern)}', min: true"/>
+                            <input id="resultSendDate" type="text" class="form-control datepicker-input js-datepicker" value="${sendDate}" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormatPattern)}', min: true"/>
                         </div>
                         <div class="input-group-btn">
                             <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">

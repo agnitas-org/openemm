@@ -14,7 +14,7 @@ import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.util.DbUtilities;
 import org.apache.log4j.Logger;
 
-import com.agnitas.beans.ComMailing.MailingContentType;
+import com.agnitas.beans.MailingContentType;
 import com.agnitas.dao.AnonymizeStatisticsDao;
 
 public class AnonymizeStatisticsDaoImpl extends BaseDaoImpl implements AnonymizeStatisticsDao {

@@ -11,6 +11,7 @@
 package com.agnitas.mailing.autooptimization.web;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -18,7 +19,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.agnitas.beans.Company;
 import org.agnitas.beans.impl.MaildropDeleteException;
 import org.agnitas.emm.core.commons.util.Constants;
-import org.agnitas.emm.core.commons.util.DateUtil;
 import org.agnitas.emm.core.mailing.MailingAllReadySentException;
 import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
@@ -63,17 +63,17 @@ public class ComOptimizationScheduleAction extends DispatchAction {
 		startForm.setCampaignID(optimization.getCampaignID());
 		
 		if( optimization.getSendDate() != null ) {
-			startForm.setResultSendDateAsString( DateUtil.formatDateFull(optimization.getSendDate()) );
+			startForm.setResultSendDateAsString(new SimpleDateFormat(Constants.DATE_PATTERN_FULL).format(optimization.getSendDate()) );
 		}
 		
 		if( optimization.getTestMailingsSendDate() != null ) {
-			startForm.setTestMailingsSendDateAsString(DateUtil.formatDateFull(optimization.getTestMailingsSendDate()));
+			startForm.setTestMailingsSendDateAsString(new SimpleDateFormat(Constants.DATE_PATTERN_FULL).format(optimization.getTestMailingsSendDate()));
 		}
 		
 		return mapping.findForward("schedule");
 	}
 	
-	//  schedule the optimization. Save the senddates of the testmailings, and the senddate of the final mailing. 
+	//  schedule the optimization. Save the senddates of the testmailings, and the senddate of the final mailing.
 	public ActionForward schedule(ActionMapping mapping, ActionForm form,
 			HttpServletRequest request, HttpServletResponse response) {
 		
@@ -85,12 +85,12 @@ public class ComOptimizationScheduleAction extends DispatchAction {
 		ComOptimization optimization = optimizationService.get(scheduleForm.getOptimizationID(), company.getId());
 		
 		try {
-			optimization.setTestMailingsSendDate(DateUtil.parseFullDate(scheduleForm.getTestMailingsSendDateAsString()));
-			optimization.setSendDate(DateUtil.parseFullDate(scheduleForm.getResultSendDateAsString()));
+			optimization.setTestMailingsSendDate(new SimpleDateFormat(Constants.DATE_PATTERN_FULL).parse(scheduleForm.getTestMailingsSendDateAsString()));
+			optimization.setSendDate(new SimpleDateFormat(Constants.DATE_PATTERN_FULL).parse(scheduleForm.getResultSendDateAsString()));
 			optimization.setTestRun(false);
 			optimizationScheduleService.scheduleOptimization(optimization);
 		} catch (ParseException e) {
-			logger.error("Could not parse date : " + scheduleForm.getResultSendDateAsString() , e);			
+			logger.error("Could not parse date : " + scheduleForm.getResultSendDateAsString() , e);
 			errors.add( ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.autooptimization.errors.resultsenddate", Constants.DATE_PATTERN_FULL));
 			saveErrors(request, errors);
 		} catch (MailingAllReadySentException e) {
@@ -138,7 +138,7 @@ public class ComOptimizationScheduleAction extends DispatchAction {
 			saveMessages(request, actionMessages);
 			scheduleForm.reset(mapping, request);
 			return mapping.findForward("unscheduleSuccess");
-		}		
+		}
 		return mapping.findForward("schedule");
 		
 	}

@@ -20,6 +20,11 @@ public enum SpecialPremiumFeature {
     AUTOMATION("Automation Package"),
     
     /**
+     * Automation History Package uses ProfileFieldHistory in hst_customer_<cid>_tbl tables
+     */
+	AUTOMATION_HISTORY("Automation History Package"),
+    
+    /**
      * Retargeting Package needs additional rdirlog tables in db
      */
     RETARGETING("Retargeting Package"),
@@ -37,7 +42,12 @@ public enum SpecialPremiumFeature {
     /**
      * Delivery Package needs additional config values. Contains OMG and AHV
      */
-    DELIVERY_PACKAGE("Delivery Package");
+    DELIVERY_PACKAGE("Delivery Package"),
+	
+    /**
+     * Automation Delivery Information FeaturePackage needs additional company_info values
+     */
+    AUTOMATION_DELIVERY_INFORMATION("Automation Delivery Information");
     
     private final String name;
 

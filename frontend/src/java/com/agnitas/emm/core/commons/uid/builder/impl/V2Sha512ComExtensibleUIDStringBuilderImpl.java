@@ -200,7 +200,7 @@ public class V2Sha512ComExtensibleUIDStringBuilderImpl implements ExtensibleUIDS
 		signature.append(secretKey);
 		
 		/*
-		 *  Synchronizing on md5Encoder is a must-have. MessageDigest is not thread-safe!
+		 *  Synchronizing on hashEncoder is a must-have. MessageDigest is not thread-safe!
 		 * 
 		 *  We are loosing a bit of throughput here, but it's only around 2%
 		 */

@@ -1,4 +1,3 @@
-<%@page import="org.agnitas.beans.MailingComponentType"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>
@@ -25,7 +24,6 @@
     <c:param name="page" value="1"/>
 </c:url>
 
-<c:set var="MAILING_COMPONENT_TYPE_THUMBNAIL_IMAGE" value="<%= MailingComponentType.ThumbnailImage.getCode() %>" scope="request"/>
 <c:set var="mailingExists" value="${mailingBaseForm.mailingID ne 0}"/>
 
 <c:set var="sidemenu_active" 		value="Mailings" 				scope="request" />
@@ -53,8 +51,15 @@
 
         <c:choose>
             <c:when test="${mailingExists}">
-                <c:set var="agnNavigationKey"	value="templateView" 										scope="request" />
-                <c:set var="agnNavHrefAppend" 	value="&mailingID=${mailingBaseForm.mailingID}&init=true"	scope="request" />
+				<c:choose>
+					<c:when test="${isPostMailing}">
+						<c:set var="agnNavigationKey" value="templateView_post" scope="request" />
+					</c:when>
+					<c:otherwise>
+						<c:set var="agnNavigationKey" value="templateView" scope="request" />
+					</c:otherwise>
+				</c:choose>
+				<c:set var="agnNavHrefAppend" 	value="&mailingID=${mailingBaseForm.mailingID}&init=true"	scope="request" />
 				<c:set var="agnHighlightKey" 	value="Template" 											scope="request" />
 
                 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">

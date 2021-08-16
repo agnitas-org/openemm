@@ -13,8 +13,12 @@ package com.agnitas.emm.restful.mailinglist;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.TimeZone;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -25,14 +29,21 @@ import org.agnitas.beans.impl.MailinglistImpl;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
+import org.agnitas.service.ColumnInfoService;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.HttpUtils.RequestMethod;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -48,7 +59,7 @@ import com.agnitas.json.JsonObject;
 
 /**
  * This restful service is available at:
- * https:/<system.url>/restful/mailinglist
+ * https://<system.url>/restful/mailinglist
  */
 public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	@SuppressWarnings("unused")
@@ -58,6 +69,8 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 
 	private UserActivityLogDao userActivityLogDao;
 	private MailinglistDao mailinglistDao;
+	private ComRecipientDao recipientDao;
+	private ColumnInfoService columnInfoService;
 
 	@Required
 	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
@@ -67,6 +80,16 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setMailinglistDao(MailinglistDao mailinglistDao) {
 		this.mailinglistDao = mailinglistDao;
+	}
+	
+	@Required
+	public void setRecipientDao(ComRecipientDao recipientDao) {
+		this.recipientDao = recipientDao;
+	}
+	
+	@Required
+	public void setColumnInfoService(ColumnInfoService columnInfoService) {
+		this.columnInfoService = columnInfoService;
 	}
 
 	@Override
@@ -105,7 +128,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILINGLIST_SHOW.toString() + "'");
 		}
 		
-		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 1);
+		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 2);
 		
 		if (restfulContext.length == 0) {
 			// Show index of all mailinglists
@@ -135,6 +158,16 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 					}
 				}
 			}
+			
+			boolean showMailinglistRecipients = false;
+			if (restfulContext.length == 2) {
+				if ("recipients".equalsIgnoreCase(restfulContext[1])) {
+					showMailinglistRecipients = true;
+				} else {
+					throw new RestfulClientException("Invalid requestcontext: " + restfulContext[1]);
+				}
+			}
+			
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailinglist", new Date());
 			userActivityLogDao.writeUserActivityLog(admin, "restful/mailinglist GET", restfulContext[0]);
 			
@@ -152,6 +185,23 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 				}
 				mailinglistJsonObject.add("statistics", mailinglistStatisticsJsonObject);
 				
+				if (showMailinglistRecipients) {
+					CaseInsensitiveMap<String, ProfileField> profileFields = columnInfoService.getColumnInfoMap(admin.getCompanyID(), admin.getAdminID());
+					JsonArray recipientArray = new JsonArray();
+					List<CaseInsensitiveMap<String, Object>> recipients = recipientDao.getMailinglistRecipients(admin.getCompanyID(), mailinglist.getId(), MediaTypes.EMAIL, null, Arrays.asList(new UserStatus[] { UserStatus.Active }), TimeZone.getTimeZone(admin.getAdminTimezone()));
+					for (CaseInsensitiveMap<String, Object> customerDataMap : recipients) {
+						JsonObject customerJsonObject = new JsonObject();
+						for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
+							if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
+								customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
+							} else {
+								customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
+							}
+						}
+						recipientArray.add(customerJsonObject);
+					}
+					mailinglistJsonObject.add("recipients", recipientArray);
+				}
 				return mailinglistJsonObject;
 			} else {
 				throw new RestfulNoDataFoundException("No data found");

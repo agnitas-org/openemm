@@ -183,6 +183,12 @@ public class SFtpHelper implements RemoteFileHelper {
             int hostSeparatorIndex = fileServerAndAuthConfigString.lastIndexOf("@");
             String authPart = fileServerAndAuthConfigString.substring(0, hostSeparatorIndex);
             String serverPart = fileServerAndAuthConfigString.substring(hostSeparatorIndex + 1);
+            
+            if (serverPart.toLowerCase().startsWith("ftp://")) {
+    			throw new Exception("Invalid protocol for SFtpHelper");
+    		} else if (serverPart.toLowerCase().startsWith("sftp://")) {
+    			serverPart = serverPart.substring(7);
+    		}
 			
 			if (authPart.contains(":")) {
 				user = authPart.substring(0, authPart.indexOf(":"));
@@ -203,7 +209,11 @@ public class SFtpHelper implements RemoteFileHelper {
 			
 			if (serverPart.contains(":")) {
 				host = serverPart.substring(0, serverPart.indexOf(":"));
-				port = Integer.parseInt(serverPart.substring(serverPart.indexOf(":") + 1));
+				try {
+					port = Integer.parseInt(serverPart.substring(serverPart.indexOf(":") + 1));
+				} catch (NumberFormatException e) {
+					throw new Exception("Invalid port for sftp connection: Must be Integer");
+				}
 			} else {
 				host = serverPart;
 			}
@@ -623,5 +633,10 @@ public class SFtpHelper implements RemoteFileHelper {
      */
 	public String getSetUpDataWithoutString(){
 		return toString();
+	}
+
+	@Override
+	public void deleteFile(String filePath) throws Exception {
+		channel.rm(filePath);
 	}
 }

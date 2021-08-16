@@ -12,7 +12,6 @@ package org.agnitas.backend.dao;
 
 import	java.sql.Connection;
 import	java.sql.PreparedStatement;
-import	java.sql.ResultSet;
 import	java.sql.SQLException;
 import	java.sql.Timestamp;
 import	java.util.Date;
@@ -272,23 +271,15 @@ public class MaildropStatusDAO {
 						"SET genchange = CURRENT_TIMESTAMP, genstatus = ? " +
 						"WHERE status_id = ?" + (fromStatus > 0 ? " AND genstatus = ?" : "");
 					try (Connection conn = dbase.getConnection (query, toStatus, statusID, fromStatus)) {
-						boolean	autoCommit = conn.getAutoCommit ();
-					
-						try {
-							if (! autoCommit) {
-								conn.setAutoCommit (true);
+						try (PreparedStatement prep = conn.prepareStatement (query)) {
+							prep.setLong (1, toStatus);
+							prep.setLong (2, statusID);
+							if (fromStatus > 0) {
+								prep.setLong (3, fromStatus);
 							}
-							try (PreparedStatement prep = conn.prepareStatement (query)) {
-								prep.setLong (1, toStatus);
-								prep.setLong (2, statusID);
-								if (fromStatus > 0) {
-									prep.setLong (3, fromStatus);
-								}
-								priv = prep.executeUpdate ();
-							}
-						} finally {
-							conn.setAutoCommit (autoCommit);
+							priv = prep.executeUpdate ();
 						}
+						conn.commit ();
 					}
 					if (priv == 1) {
 						Map <String, Object>	rq;
@@ -355,68 +346,6 @@ public class MaildropStatusDAO {
 		}
 	}
 
-	public boolean updateGenStatus_old (DBase dbase, int fromStatus, int toStatus) throws SQLException {
-		boolean	rc = false;
-		String	query =
-			"UPDATE maildrop_status_tbl " +
-			"SET genchange = CURRENT_TIMESTAMP, genstatus = :toStatus " +
-			"WHERE status_id = :statusID" + (fromStatus > 0 ? " AND genstatus = :fromStatus" : "");
-		String	vquery =
-			"SELECT genstatus FROM  maildrop_status_tbl WHERE status_id = ?";
-		
-		for (int retry = 0; (! rc) && (retry < 3); ++retry) {
-			if ((! rc) && (retry > 0)) {
-				try {
-					Thread.sleep (1000);
-				} catch (InterruptedException e) {
-					// do nothing
-				}
-			}
-			try (DBase.With with = dbase.with ()) {
-				int	count;
-			
-				if (fromStatus > 0) {
-					count = dbase.update (with.jdbc (),
-							      query,
-							      "toStatus", toStatus,
-							      "fromStatus", fromStatus,
-							      "statusID", statusID);
-				} else {
-					count = dbase.update (with.jdbc (),
-							      query,
-							      "toStatus", toStatus,
-							      "statusID", statusID);
-				}
-				if (count != 1) {
-					dbase.logging (Log.ERROR, "genstatus", "Update genstatus from " + fromStatus + " to " + toStatus + " for " + statusID + " affected " + count + " rows");
-					break;
-				}
-				try (Connection conn = dbase.getConnection (vquery, statusID);
-				     PreparedStatement	prep = conn.prepareStatement (vquery)) {
-					prep.setLong (1, statusID);
-					try (ResultSet rset = prep.executeQuery ()) {
-						for (int pos = 1; rset.next (); ++pos) {
-							if (pos == 1) {
-								long	currentStatus = rset.getLong (1);
-							
-								if (currentStatus == toStatus) {
-									rc = true;
-								} else {
-									dbase.logging (Log.ERROR, "genstatus", "Even after ``successful'' update of genstatus to " + toStatus + " the current genstatus is " + currentStatus);
-								}
-							} else {
-								dbase.logging (Log.ERROR, "genstatus", "Got " + rset.getLong (1) + " for unexpected " + pos + " row to validate current status");
-								rc = false;
-							}
-						}
-					}
-				}
-			}
-		}
-		dbase.logging (rc ? Log.INFO : Log.ERROR, "genstatus", (rc ? "" : "NOT ") + "Changed generation state" + (fromStatus > 0 ? " from " + fromStatus : "") + " to " + toStatus);
-		return rc;
-	}
-	
 	/**
 	 * remove an entry in the table
 	 */

@@ -12,6 +12,8 @@ package com.agnitas.emm.core.action.service.impl;
 
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Recipient;
@@ -59,6 +61,14 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
 		if (params.get("mailingID") != null) {
 			mailingID = ((Integer) params.get("mailingID")).intValue();
 		}
+		
+		String remoteAddr;
+		try {
+			HttpServletRequest request = (HttpServletRequest) params.get("_request");
+			remoteAddr = request.getRemoteAddr();
+		} catch (Exception e) {
+			remoteAddr = "IP unknown";
+		}
 
 		if (customerID != 0 && mailingID != 0) {
 			Recipient aCust = beanLookupFactory.getBeanRecipient();
@@ -82,7 +92,7 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
 							case Suspend:
 								if (!aEntry.getUserType().equals(UserType.TestVIP.getTypeCode()) && !aEntry.getUserType().equals(UserType.WorldVIP.getTypeCode())) {
 									aEntry.setUserStatus(UserStatus.UserOut.getStatusCode());
-									aEntry.setUserRemark("Opt-Out-Mailing: " + mailingID);
+									aEntry.setUserRemark("User-Opt-Out: " + remoteAddr);
 									aEntry.setExitMailingID(mailingID);
 									aEntry.updateBindingInDB(companyID);
 									// next Event-Mailing goes to a user with status 4

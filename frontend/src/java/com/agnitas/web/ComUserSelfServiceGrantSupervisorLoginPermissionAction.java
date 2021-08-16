@@ -131,8 +131,7 @@ public final class ComUserSelfServiceGrantSupervisorLoginPermissionAction extend
 	        	errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("supervisor.error.unknown_id"));
 	        } catch(final Exception e) {
 	        	logger.error(String.format("Error granting limited login permission to department %d (all if 0)", loginPermissionForm.getDepartmentID()), e);
-	        	// TODO Why the f#@* is the only generic error message "An error occured" related to webservices????
-	        	errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.webserviceuser.general"));
+	        	errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("supervisor.error.general"));
 	        }
         } catch(final ParseException e) {
         	errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.date.format"));
@@ -163,7 +162,7 @@ public final class ComUserSelfServiceGrantSupervisorLoginPermissionAction extend
         } catch(final Exception e) {
         	logger.error(String.format("Error granting unlimited login permission to department %d (all if 0)", loginPermissionForm.getDepartmentID()), e);
         	// TODO Why the f#@* is the only generic error message "An error occured" related to webservices????
-        	errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.webserviceuser.general"));
+        	errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("supervisor.error.general"));
         }
 	}
 

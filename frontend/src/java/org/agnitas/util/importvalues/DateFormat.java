@@ -16,15 +16,21 @@ import org.agnitas.util.DateUtilities;
  * Values for dateFormat property of import profile
  */
 public enum DateFormat {
-	ddMMyyyyHHmm("dd.MM.yyyy HH:mm", "import.date.format.ddMMyyyyHHmm", 0),
 	ddMMyyyy("dd.MM.yyyy", "import.date.format.ddMMyyyy", 1),
+	ddMMyy("dd.MM.yy", "import.date.format.ddMMyy", 6),
+	ddMMyyyyHHmm("dd.MM.yyyy HH:mm", "import.date.format.ddMMyyyyHHmm", 0),
+	ddMMyyyyHHmmss("dd.MM.yyyy HH:mm:ss", "import.date.format.ddMMyyyyHHmmss", 5),
+	
+	MMddyyyy("MM/dd/yyyy", "import.date.format.MM_dd_yyyy", 11),
+	MMddyy("MM/dd/yy", "import.date.format.MM_dd_yy", 12),
+	MMddyyyyhhmm("MM/dd/yyyy HH:mm", "import.date.format.MM_dd_yyyy_hh_mm", 10),
+	MMddyyyyhhmmss("MM/dd/yyyy HH:mm:ss", "import.date.format.MM_dd_yyyy_hh_mm_ss", 7),
+	
 	yyyyMMdd("yyyyMMdd", "import.date.format.yyyyMMdd", 2),
+	yyyy_MM_dd("yyyy-MM-dd", "import.date.format.yyyy_MM_dd", 8),
 	yyyyMMddHHmm("yyyyMMdd HH:mm", "import.date.format.yyyyMMddHHmm", 3),
 	yyyyMMddHHmmss("yyyy-MM-dd HH:mm:ss", "import.date.format.yyyyMMddHHmmss", 4),
-	ddMMyyyyHHmmss("dd.MM.yyyy HH:mm:ss", "import.date.format.ddMMyyyyHHmmss", 5),
-	ddMMyy("dd.MM.yy", "import.date.format.ddMMyy", 6),
-	MM_dd_yyyy_hh_mm_ss("MM/dd/yyyy hh:mm:ss", "import.date.format.MM_dd_yyyy_hh_mm_ss", 7),
-	yyyy_MM_dd("yyyy-MM-dd", "import.date.format.yyyy_MM_dd", 8),
+	
 	ISO8601(DateUtilities.ISO_8601_DATETIME_FORMAT, "import.date.format.iso8601", 9);
 
 	/**

@@ -250,4 +250,36 @@ public interface ExportPredef {
 	boolean isAlwaysQuote();
 
 	void setAlwaysQuote(boolean alwaysQuote);
+
+	int getDateFormat();
+
+	void setDateFormat(int dateFormat);
+
+	int getDateTimeFormat();
+
+	void setDateTimeFormat(int dateTimeFormat);
+
+	String getTimezone();
+
+	void setTimezone(String timezone);
+
+	String getDecimalSeparator();
+
+	void setDecimalSeparator(String decimalSeparator);
+
+	boolean isTimestampIncludeCurrentDay();
+
+	void setTimestampIncludeCurrentDay(boolean timestampIncludeCurrentDay);
+
+	boolean isCreationDateIncludeCurrentDay();
+
+	void setCreationDateIncludeCurrentDay(boolean creationDateIncludeCurrentDay);
+
+	boolean isMailinglistBindIncludeCurrentDay();
+
+	void setMailinglistBindIncludeCurrentDay(boolean mailinglistBindIncludeCurrentDay);
+
+	boolean isTimeLimitsLinkedByAnd();
+
+	void setTimeLimitsLinkedByAnd(boolean timeLimitsLinkedByAnd);
 }

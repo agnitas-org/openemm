@@ -16,13 +16,14 @@ import java.util.Date;
 import java.util.List;
 
 public interface RemoteFileHelper extends Closeable {
-	public void connect() throws Exception;
-	public void cd(String path) throws Exception;
-	public List<String> ls(String path) throws Exception;
-	public boolean directoryExists(String directoryPath) throws Exception;
-	public boolean fileExists(String filePath) throws Exception;
-	public void put(InputStream inputStream, String destination, boolean useTempFileNameWhileUploading) throws Exception;
-	public InputStream get(String name) throws Exception;
-	public Date getModifyDate(String filePathAndName) throws Exception;
-	public long getFileSize(String filePathAndName) throws Exception;
+	void connect() throws Exception;
+	void cd(String path) throws Exception;
+	List<String> ls(String path) throws Exception;
+	boolean directoryExists(String directoryPath) throws Exception;
+	boolean fileExists(String filePath) throws Exception;
+	void put(InputStream inputStream, String destination, boolean useTempFileNameWhileUploading) throws Exception;
+	InputStream get(String name) throws Exception;
+	Date getModifyDate(String filePathAndName) throws Exception;
+	long getFileSize(String filePathAndName) throws Exception;
+	void deleteFile(String filePath) throws Exception;
 }

@@ -23,6 +23,7 @@ public class RecipientSqlOptions implements RecipientOptions {
     private int targetId;
     private int accessLimitTargetId;
     private String targetEQL;
+    private String queryBuilderRules;
     private String userType;
     private String searchFirstName;
     private String searchLastName;
@@ -64,6 +65,10 @@ public class RecipientSqlOptions implements RecipientOptions {
 
     public String getTargetEQL() {
         return targetEQL;
+    }
+
+    public String getQueryBuilderRules() {
+        return queryBuilderRules;
     }
 
     @Override
@@ -176,6 +181,11 @@ public class RecipientSqlOptions implements RecipientOptions {
 
         public Builder setTargetEQL(String targetEQL) {
             options.targetEQL = targetEQL;
+            return this;
+        }
+
+        public Builder setQueryBuilderRules(String queryBuilderRules) {
+            options.queryBuilderRules = queryBuilderRules;
             return this;
         }
     }

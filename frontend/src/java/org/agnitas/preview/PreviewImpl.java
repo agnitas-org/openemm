@@ -29,14 +29,12 @@ import org.agnitas.backend.Mailgun;
 import org.agnitas.backend.MailgunImpl;
 import org.agnitas.util.Log;
 import org.agnitas.util.PubID;
-import org.apache.log4j.Logger;
 
 public class PreviewImpl implements Preview {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(PreviewImpl.class);
-
 	private static Pattern linkSearch = Pattern.compile("<[ \t\n\r]*([a-z][a-z0-9_-]*)([ \t\n\r]+[^>]*[a-z_][a-z0-9_-]*=)(\"http://[^\"]+\"|http://[^> \t\n\r]+)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL);
 
+	private static final transient Pattern URL_PATTERN = Pattern.compile("(.+?)://(.*)$");
+	
 	/**
 	 * PCache (Page Cache)
 	 * This class is used to cache full generated pages for a single
@@ -390,14 +388,14 @@ public class PreviewImpl implements Preview {
 			rc = text;
 		} else {
 			try {
-				MessageDigest md = MessageDigest.getInstance("MD5");
+				MessageDigest sha512Digest = MessageDigest.getInstance("SHA-512");
 				byte[] digest;
 				StringBuffer buf;
 				String[] hd = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F" };
 
-				md.update(text.getBytes(StandardCharsets.UTF_8));
-				digest = md.digest();
-				buf = new StringBuffer(md.getDigestLength());
+				sha512Digest.update(text.getBytes(StandardCharsets.UTF_8));
+				digest = sha512Digest.digest();
+				buf = new StringBuffer(sha512Digest.getDigestLength());
 				for (int n = 0; n < digest.length; ++n) {
 					buf.append(hd[(digest[n] >> 4) & 0xf]);
 					buf.append(hd[digest[n] & 0xf]);
@@ -426,11 +424,11 @@ public class PreviewImpl implements Preview {
 	 * @param ecsUIDs         if set we should use ecs (extended click statistics) style UIDs
 	 * @param createAll       if set create all displayable parts of the mailing
 	 * @param cachable        if the result should be cached
-	 * @param each            targetID is considered as true during text block creation for previewing
+	 * @param targetIDs            targetID is considered as true during text block creation for previewing
 	 * @return the preview
 	 */
 	@Override
-	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs) {
+	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs, boolean isMobile) {
 		long now;
 		String lid;
 		String error;
@@ -479,7 +477,7 @@ public class PreviewImpl implements Preview {
 						}
 						if (c == null) {
 							try {
-								c = new Cache(mailingID, now, null, createAll, cachable);
+								c = new Cache(mailingID, now, null, createAll, cachable, isMobile);
 								push(c);
 								log.out(Log.DEBUG, "create", "Created new mailout cache entry for " + mailingID + "/" + customerID);
 							} catch (Exception e) {
@@ -500,7 +498,7 @@ public class PreviewImpl implements Preview {
 					} else {
 						c = null;
 						try {
-							c = new Cache(mailingID, now, text, createAll, cachable);
+							c = new Cache(mailingID, now, text, createAll, cachable, isMobile);
 							rc = c.makePreview(customerID, selector, anon, convertEntities, ecsUIDs, cachable, targetIDs);
 							c.release();
 						} catch (Exception e) {
@@ -518,7 +516,7 @@ public class PreviewImpl implements Preview {
 		} else {
 			rc = null;
 			try {
-				c = new Cache(mailingID, now, text, createAll, cachable);
+				c = new Cache(mailingID, now, text, createAll, cachable, isMobile);
 				rc = c.makePreview(customerID, selector, anon, convertEntities, ecsUIDs, cachable, targetIDs);
 				c.release();
 				log.out(Log.DEBUG, "create", "Created uncached preview for " + lid);
@@ -543,33 +541,70 @@ public class PreviewImpl implements Preview {
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable) {
-		return makePreview(mailingID, customerID, selector, text, anon, convertEntities, ecsUIDs, createAll, cachable, null);
+		return makePreview(mailingID, customerID, selector, text, anon, convertEntities, ecsUIDs, createAll, cachable, null, false);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean cachable) {
-		return makePreview(mailingID, customerID, selector, text, anon, convertEntities, ecsUIDs, shallCreateAll(), cachable, null);
+		return makePreview(mailingID, customerID, selector, text, anon, convertEntities, ecsUIDs, shallCreateAll(), cachable, null, false);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean cachable) {
-		return makePreview(mailingID, customerID, selector, text, anon, false, false, false, cachable, null);
+		return makePreview(mailingID, customerID, selector, text, anon, false, false, false, cachable, null, false);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, boolean anon, boolean cachable) {
-		return makePreview(mailingID, customerID, selector, null, anon, false, false, false, cachable, null);
+		return makePreview(mailingID, customerID, selector, null, anon, false, false, false, cachable, null, false);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, boolean cachable) {
-		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null);
+		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null, false);
+	}
+
+	@Override
+	public Page makePreview(long mailingID, long customerID, boolean cachable, boolean isMobile) {
+		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null, isMobile);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, long targetID) {
 		long[] targetIDs = { targetID };
-		return makePreview(mailingID, customerID, null, null, false, false, false, false, false, targetIDs);
+		return makePreview(mailingID, customerID, null, null, false, false, false, false, false, targetIDs, false);
+	}
+
+	@Override
+	public Page makePreview(long mailingID, long customerID, long targetID, boolean isMobile) {
+		long[] targetIDs = { targetID };
+		return makePreview(mailingID, customerID, null, null, false, false, false, false, false, targetIDs, isMobile);
+	}
+
+	@Override
+	public String makePreview(long mailingID, long customerID, String text, boolean cachable) {
+		if (text.indexOf("[agn") == -1) {
+			return text;
+		}
+
+		Page temp = makePreview(mailingID, customerID, null, text, false, false, false, false, cachable);
+
+		return temp != null ? temp.getText() : null;
+	}
+
+	@Override
+	public String makePreview(long mailingID, long customerID, String text) {
+		return makePreview(mailingID, customerID, text, true);
+	}
+
+	@Override
+	public String makePreview(long mailingID, long customerID, String text, String proxy, boolean encode) {
+		return insertProxy(makePreview(mailingID, customerID, text), proxy, encode);
+	}
+
+	@Override
+	public String makePreview(long mailingID, long customerID, String text, String proxy) {
+		return makePreview(mailingID, customerID, text, proxy, false);
 	}
 
 	/**
@@ -582,9 +617,19 @@ public class PreviewImpl implements Preview {
 
 	@Override
 	public String makePreviewForHeatmap(long mailingID, long customerID) {
-		Page page = makePreview(mailingID, customerID, null, null, false, false, true, false, false, null);
+		Page page = makePreview(mailingID, customerID, null, null, false, false, true, false, false, null, false);
 
 		return page != null ? page.getHTML() : null;
+	}
+
+	@Override
+	public String makePreviewForHeatmap(long mailingID, long customerID, String proxy, boolean encode) {
+		return insertProxy(makePreviewForHeatmap(mailingID, customerID), proxy, encode);
+	}
+
+	@Override
+	public String makePreviewForHeatmap(long mailingID, long customerID, String proxy) {
+		return makePreviewForHeatmap(mailingID, customerID, proxy, false);
 	}
 
 	private String getErrorMessage(Exception e) {
@@ -1048,36 +1093,6 @@ public class PreviewImpl implements Preview {
 		return returnString;
 	}
 
-	public String makePreview(long mailingID, long customerID, String text, boolean cachable) {
-		if (text.indexOf("[agn") == -1) {
-			return text;
-		}
-
-		Page temp = makePreview(mailingID, customerID, null, text, false, false, false, false, cachable);
-
-		return temp != null ? temp.getText() : null;
-	}
-
-	public String makePreview(long mailingID, long customerID, String text) {
-		return makePreview(mailingID, customerID, text, true);
-	}
-
-	public String makePreview(long mailingID, long customerID, String text, String proxy, boolean encode) {
-		return insertProxy(makePreview(mailingID, customerID, text), proxy, encode);
-	}
-
-	public String makePreview(long mailingID, long customerID, String text, String proxy) {
-		return makePreview(mailingID, customerID, text, proxy, false);
-	}
-
-	public String makePreviewForHeatmap(long mailingID, long customerID, String proxy, boolean encode) {
-		return insertProxy(makePreviewForHeatmap(mailingID, customerID), proxy, encode);
-	}
-
-	public String makePreviewForHeatmap(long mailingID, long customerID, String proxy) {
-		return makePreviewForHeatmap(mailingID, customerID, proxy, false);
-	}
-
 	@Deprecated
 	public Map<String, Object> createPreview(PubID pid, boolean cachable) {
 		return createPreview(pid.getMailingID(), pid.getCustomerID(), pid.getParm(), true, cachable);
@@ -1159,17 +1174,8 @@ public class PreviewImpl implements Preview {
 					temp.append(entity);
 					temp.append(m.group(2)); // group 2 contains leading whitespaces and trailing equal sign
 					temp.append("\"");
-					temp.append(proxy);
 
-					if (encode) {
-						try {
-							temp.append(URLEncoder.encode(url, "UTF-8"));
-						} catch (UnsupportedEncodingException e) {
-							temp.append(url);
-						}
-					} else {
-						temp.append(url);
-					}
+					temp.append(createProxiedUrl(proxy, url, encode));
 
 					temp.append("\"");
 				} else {
@@ -1187,5 +1193,26 @@ public class PreviewImpl implements Preview {
 
 			return temp.toString();
 		}
+	}
+	
+	private final String createProxiedUrl(final String proxy, final String url, final boolean encode) {
+		final StringBuffer temp = new StringBuffer(proxy);
+
+		final Matcher matcher = URL_PATTERN.matcher(url);
+		final String proxyPath = matcher.matches()
+				? String.format("%s/%s", matcher.group(1), matcher.group(2))
+				: url;
+		
+		if (encode) {
+			try {
+				temp.append(URLEncoder.encode(proxyPath, "UTF-8"));
+			} catch (UnsupportedEncodingException e) {
+				temp.append(proxyPath);
+			}
+		} else {
+			temp.append(proxyPath);
+		}
+
+		return temp.toString();
 	}
 }

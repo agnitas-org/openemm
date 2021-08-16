@@ -80,12 +80,12 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 		}
 	}
 
-	public BouncesAvailableContainer getBouncesWithDetailByMailings(int companyID, String mailings, String language, String selectedTargets, BounceType bounceType) throws Exception{
+	public BouncesAvailableContainer getBouncesWithDetailByMailings(int companyID, String mailings, String language, String selectedTargets, BounceType bounceType, String hiddenTarget) throws Exception{
 		List<Integer> mailingIDs = parseCommaSeparatedIds(mailings);
 		if (!mailingIDs.isEmpty()){
 			BouncesAvailableContainer container = new BouncesAvailableContainer();
 			for(Integer id : mailingIDs){
-				container.addBouncesData(id, getBouncesWithDetail(companyID, id, language, selectedTargets, bounceType));
+				container.addBouncesData(id, getBouncesWithDetail(companyID, id, language, selectedTargets, bounceType, hiddenTarget));
 			}
 			return container;
 		} else {
@@ -94,6 +94,10 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 	}
 
 	public List<BouncesRow> getBouncesWithDetail(@VelocityCheck int companyID, int mailingID, String language, String selectedTargets, BounceType bounceType) throws Exception {
+		return getBouncesWithDetail(companyID, mailingID, language, selectedTargets, bounceType, null);
+	}
+
+	public List<BouncesRow> getBouncesWithDetail(@VelocityCheck int companyID, int mailingID, String language, String selectedTargets, BounceType bounceType, String hiddenTarget) throws Exception {
 		language = StringUtils.defaultIfEmpty(language, "EN");
 
 		// In the mailing_statistic.rptdesign "-1" is a default value if target groups are not present
@@ -105,7 +109,7 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 
 		if (bounceType == BounceType.SOFTBOUNCES || bounceType == BounceType.BOTH) {
 			StringBuilder query = new StringBuilder();
-			String targetSql = getTargetSqlString(selectedTargets, companyID);
+			String targetSql = joinWhereClause(getTargetSqlString(selectedTargets, companyID), getTargetSqlString(hiddenTarget, companyID));
 			query.append("SELECT COUNT(DISTINCT bounce.customer_id) amount, bounce.detail AS detail FROM bounce_tbl bounce");
 			if (StringUtils.isNotBlank(targetSql)) {
 				query.append(" JOIN customer_" + companyID + "_tbl cust ON (bounce.customer_id = cust.customer_id)");

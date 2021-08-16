@@ -16,9 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
+import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
@@ -26,7 +28,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import com.agnitas.beans.ComCompany;
-import com.agnitas.beans.ComMediatype;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
@@ -38,8 +39,9 @@ import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
+import com.agnitas.mailing.preview.service.MailingPreviewService;
 
-	public class ActionOperationGetArchiveListImpl implements EmmActionOperation, ApplicationContextAware {
+public class ActionOperationGetArchiveListImpl implements EmmActionOperation, ApplicationContextAware {
 	
 	/**
 	 * The logger.
@@ -51,6 +53,7 @@ import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 	private ComMailingDao mailingDao;
 	private ComCompanyDao companyDao;
 	private ConfigService configService;
+	private MailingPreviewService mailingPreviewService;
 
 	@Override
 	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors actionOperationErrors) {
@@ -82,6 +85,7 @@ import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
         }
 
         final int licenseID = this.configService.getLicenseID();
+        final boolean useNewMailingPreview = this.configService.getBooleanValue(ConfigValue.Development.UseBackendMailingPreview, companyID);
         ComExtensibleUID uid = UIDFactory.from(licenseID, companyID, customerID);
 
         try {
@@ -92,12 +96,17 @@ import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 
                 MediatypeEmail aType= aMailing.getEmailParam();
 
-                if(aType != null) {
-	                if(aType.getStatus()==ComMediatype.STATUS_ACTIVE) {
+                if (aType != null) {
+	                if (aType.getStatus() == MediaTypeStatus.Active.getCode()) {
 	                    mailingids.add(Integer.toString(tmpMailingID));
 	                    shortnames.put(Integer.toString(tmpMailingID), (String) map.get("shortname"));
-	                    subjects.put(Integer.toString(tmpMailingID), aMailing.getPreview(aType.getSubject(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, applicationContext));
 	                    
+	                    final String subject = useNewMailingPreview
+	                    		? mailingPreviewService.renderPreviewFor(tmpMailingID, customerID, aType.getSubject())
+	                    	    : aMailing.getPreview(aType.getSubject(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, applicationContext);
+	                    
+	                    subjects.put(Integer.toString(tmpMailingID), subject);		
+	                    		
 	                    uid = UIDFactory.copyWithNewMailingID(uid, tmpMailingID);
 	                    
 	                    try {
@@ -150,6 +159,11 @@ import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 	@Required
 	public final void setConfigService(final ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "Config service cannot be null");
+	}
+	
+	@Required
+	public final void setMailingPreviewService(final MailingPreviewService service) {
+		this.mailingPreviewService = Objects.requireNonNull(service, "MailingPreviewService is null");
 	}
 	
 	@Required

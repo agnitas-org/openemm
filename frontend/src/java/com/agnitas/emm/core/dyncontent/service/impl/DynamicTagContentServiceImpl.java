@@ -16,7 +16,7 @@ import java.util.Map;
 import javax.annotation.Resource;
 
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.impl.DynamicTagContentImpl;
 import org.agnitas.dao.DynamicTagContentDao;
 import org.agnitas.emm.core.dyncontent.service.ContentModel;

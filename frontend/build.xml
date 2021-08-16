@@ -7,7 +7,7 @@
 	<taskdef name="mergexml" classname="com.agnitas.ant.MergeXml" classpath="lib_ant/mergexml.jar" />
 	<taskdef name="signfile" classname="com.agnitas.ant.SignFile" classpath="lib_ant/signfile.jar">
 		<classpath>
-			<pathelement location="lib_ant/bcprov-jdk15-141.jar" />
+			<pathelement location="lib_ant/bcprov-ext-jdk15on-166.jar" />
 		</classpath>
 	</taskdef>
 
@@ -203,6 +203,7 @@
 		</replace>
 
 		<echo message="emm/log4j.properties build with data from 'build/properties/${deploytarget}.xml'" />
+		<copy file="${basecss}/build/templates/startup-jobs.whitelist" tofile="${deploydir}${appname}/WEB-INF/startup-jobs.whitelist" overwrite="true" />
 	</target>
 
 	<target name="copyEhcacheConfig" depends="checkForPropertiesFile">
@@ -278,7 +279,7 @@
 		<pathconvert property="mandatoryDbChangesFileList_mysql" refid="mandatoryDbChanges_mysql" pathsep="${line.separator}">
 			<map from="${deploydir}${appname}/WEB-INF/sql/mysql/" to="" />
 		</pathconvert>
-		<propertyregex property="mandatoryDbChangesList_mysql" input="${mandatoryDbChangesFileList_mysql}" regexp=".*-(\d+\.\d+\.\d+).*" replace="\1" global="true" />
+		<propertyregex property="mandatoryDbChangesList_mysql" input="${mandatoryDbChangesFileList_mysql}" regexp=".*-((\d+\.\d+\.\d+\.\d+)|(\d+\.\d+\.\d+)).*" replace="\1" global="true" />
 		<echo file="${deploydir}${appname}/WEB-INF/classes/mandatoryDbChanges_mysql.csv" message="${mandatoryDbChangesList_mysql}" />
 		<echo message="Created mandatoryDbChanges_mysql.csv" />
 	</target>
@@ -338,24 +339,6 @@
 		<param-name>sessionfilestore</param-name>
 		<param-value>WEB-INF/sessions</param-value>
 	</context-param>]]>
-			</insert>
-		</xmltask>
-		
-		<!-- RESTful services mappings in web.xml -->
-		<echo message="Including Restful Services" />
-		<xmltask source="${deploydir}${appname}/WEB-INF/web.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" preserveType="true">
-			<insert path="/:web-app/:servlet-mapping[last()]" position="after">
-			<![CDATA[&#09;
-	<!-- RESTful services -->
-			<servlet>
-				<servlet-name>RestfulServiceServlet</servlet-name>
-				<servlet-class>com.agnitas.emm.restful.RestfulServiceServlet</servlet-class>
-			</servlet>
-			<servlet-mapping>
-				<servlet-name>RestfulServiceServlet</servlet-name>
-				<url-pattern>/restful/*</url-pattern>
-			</servlet-mapping>
-			]]>
 			</insert>
 		</xmltask>
 
@@ -431,6 +414,24 @@
 				</replace>
 			</then>
 		</if>
+		
+		<!-- RESTful services mappings in web.xml -->
+		<echo message="Including Restful Services" />
+		<xmltask source="${deploydir}${appname}/WEB-INF/web.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" preserveType="true">
+			<insert path="/:web-app/:servlet-mapping[last()]" position="after">
+			<![CDATA[&#09;
+	<!-- RESTful services -->
+			<servlet>
+				<servlet-name>RestfulServiceServlet</servlet-name>
+				<servlet-class>com.agnitas.emm.restful.RestfulServiceServlet</servlet-class>
+			</servlet>
+			<servlet-mapping>
+				<servlet-name>RestfulServiceServlet</servlet-name>
+				<url-pattern>/restful/*</url-pattern>
+			</servlet-mapping>
+			]]>
+			</insert>
+		</xmltask>
 
 		<!-- Deactivate jobqueue (default: keep job queue)-->
 		<property name = "deactivateJobQueue" value="false" />

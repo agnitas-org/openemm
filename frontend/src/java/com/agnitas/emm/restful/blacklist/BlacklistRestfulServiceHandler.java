@@ -46,7 +46,7 @@ import com.agnitas.json.JsonObject;
 
 /**
  * This restful service is available at:
- * https:/<system.url>/restful/blacklist
+ * https://<system.url>/restful/blacklist
  */
 public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 	@SuppressWarnings("unused")

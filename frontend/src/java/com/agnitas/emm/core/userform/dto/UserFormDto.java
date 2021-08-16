@@ -10,41 +10,19 @@
 
 package com.agnitas.emm.core.userform.dto;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.Objects;
 
 public class UserFormDto {
 	private int id;
 	private String name;
 	private String description;
-	private List<String> actionNames = new ArrayList<>();
 	private Date creationDate;
 	private Date changeDate;
 	private boolean active;
 	
 	private ResultSettings successSettings = new ResultSettings(true);
 	private ResultSettings errorSettings = new ResultSettings(true);
-	
-	public boolean isUseActions() {
-		return successSettings.getStartActionId() > 0 || successSettings.getFinalActionId() > 0;
-	}
-	
-	public List<String> getActionNames() {
-		return actionNames;
-	}
-	
-	public void setActionNames(List<String> actionNames) {
-		this.actionNames = actionNames;
-	}
-	
-	public void setActionName(String actionName) {
-		if (Objects.nonNull(actionName)) {
-			this.actionNames.add(actionName);
-		}
-	}
-	
+
 	public void setDescription(String description) {
 		this.description = description;
 	}

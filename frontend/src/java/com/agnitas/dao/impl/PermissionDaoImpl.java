@@ -33,10 +33,24 @@ public class PermissionDaoImpl extends BaseDaoImpl implements PermissionDao {
 	
     @Override
 	public List<Permission> getAllPermissions() {
-    	List<Permission> list = select(logger, "SELECT permission_name, category, sub_category, sort_order, feature_package FROM permission_tbl", new Permission_RowMapper());
+    	List<Permission> list = select(logger, "SELECT permission_name, category, sub_category, sort_order, feature_package FROM permission_tbl ORDER BY category, sub_category, sort_order, permission_name", new Permission_RowMapper());
     	
 		while (list.remove(null)) {
 			// do nothing here, just remove null entries
+		}
+		
+		// Read display order of categories
+		if (Permission.CATEGORY_DISPLAY_ORDER.length == 0) {
+			List<String> newCategoriesOrder = select(logger, "SELECT category_name FROM permission_category_tbl ORDER BY sort_order, category_name", new StringRowMapper());
+			Permission.CATEGORY_DISPLAY_ORDER = newCategoriesOrder.toArray(new String[0]);
+		}
+		
+		// Read display order of subcategories
+		if (Permission.SUBCATEGORY_DISPLAY_ORDER.size() == 0) {
+			for (String category : Permission.CATEGORY_DISPLAY_ORDER) {
+				List<String> newSubCategoriesOrder = select(logger, "SELECT subcategory_name FROM permission_subcategory_tbl WHERE category_name = ? ORDER BY sort_order, subcategory_name", new StringRowMapper(), category);
+				Permission.SUBCATEGORY_DISPLAY_ORDER.put(category, newSubCategoriesOrder.toArray(new String[0]));
+			}
 		}
 		
 		return list;

@@ -14,6 +14,6 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComCompanyDao {
 
-	public boolean hasDeepTrackingTables(@VelocityCheck int companyID);
+	boolean hasDeepTrackingTables(@VelocityCheck int companyID);
 	
 }

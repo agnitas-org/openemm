@@ -112,8 +112,10 @@ public interface ComWorkflowDao {
      * @param dependency the dependency reference (see {@link WorkflowDependency})
      */
     void addDependency(@VelocityCheck int companyId, int workflowId, WorkflowDependency dependency);
-    
+
     List<Workflow> getWorkflowsOverview(@VelocityCheck int companyId, int adminId);
+
+    List<Workflow> getWorkflowsOverview(@VelocityCheck int companyId, int adminId, int altgId);
 
 	List<Workflow> getWorkflowsToDeactivate(CompaniesConstraints constraints);
 

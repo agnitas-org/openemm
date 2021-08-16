@@ -11,23 +11,13 @@
 package com.agnitas.emm.core.admin.form;
 
 public final class AdminPreferences {
-    private int startPage;
     private int mailingContentView;
     private int dashboardMailingsView;
-    private int navigationLocation;
     private int mailingSettingsView;
     private int livePreviewPosition;
     private int statisticLoadType;
 
     public AdminPreferences() {
-    }
-
-    public int getStartPage() {
-        return startPage;
-    }
-
-    public void setStartPage(int startPage) {
-        this.startPage = startPage;
     }
 
     public int getMailingContentView() {
@@ -44,14 +34,6 @@ public final class AdminPreferences {
 
     public void setDashboardMailingsView(int dashboardMailingsView) {
         this.dashboardMailingsView = dashboardMailingsView;
-    }
-
-    public int getNavigationLocation() {
-        return navigationLocation;
-    }
-
-    public void setNavigationLocation(int navigationLocation) {
-        this.navigationLocation = navigationLocation;
     }
 
     public int getMailingSettingsView() {

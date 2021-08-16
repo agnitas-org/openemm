@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.agnitas.beans.Recipient;
+
 /**
  * UID interface with EMM extensions.
  */
@@ -27,7 +29,19 @@ public interface ComExtensibleUID {
 	 */
 	enum NamedUidBit {
 
-		/** <i>Do not track</i> bit. */
+		/** 
+		 * <i>Do not track</i> bit.
+		 * 
+		 * Do not use this bit for links in mailings. 
+		 * The tracking veto state for recipients is determined from DB.
+		 * 
+		 * This bit is currently for internal purpose only to propagate the tracking veto state
+		 * in a performant way. This should be not longer done, too.
+		 * 
+		 * @see Recipient#isDoNotTrackMe()
+		 * @see Recipient#setDoNotTrackMe(boolean) 
+		 */
+		@Deprecated
 		DO_NO_TRACK(0),
 		
 		/** <i>No link extension</i> bit. */

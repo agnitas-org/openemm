@@ -69,7 +69,6 @@ import com.agnitas.emm.core.admin.service.AdminChangesLogService;
 import com.agnitas.emm.core.admin.service.AdminGroupService;
 import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.emm.core.logon.web.LogonControllerBasic;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
@@ -142,12 +141,12 @@ public class AdminController extends AbstractAdminControllerBase {
                                        @RequestParam(value = FormSearchParams.RESTORE_PARAM_NAME, required = false) boolean restoreSearchParams,
                                        @ModelAttribute AdminListFormSearchParams adminListSearchParams) {
         FormUtils.syncNumberOfRows(webStorage, WebStorage.ADMIN_OVERVIEW, form);
-        if(resetSearchParams) {
+        if (resetSearchParams) {
             FormUtils.resetSearchParams(adminListSearchParams, form);
         } else {
             FormUtils.syncSearchParams(adminListSearchParams, form, restoreSearchParams);
         }
-        model.addAttribute(ADMIN_ENTRIES_KEY, new PaginatedListImpl<CompanyEntry>());
+        model.addAttribute(ADMIN_ENTRIES_KEY, new PaginatedListImpl<AdminEntry>());
         int companyID = admin.getCompanyID();
 
         PollingUid pollingUid = PollingUid.builder(session.getId(), ADMIN_ENTRIES_KEY)
@@ -220,26 +219,22 @@ public class AdminController extends AbstractAdminControllerBase {
     }
 
     @PostMapping(value = "/{adminID}/save.action")
-    public String save(final ComAdmin admin, final AdminForm form, final Popups popups, final Model model, final HttpSession session) {
+    public String save(final ComAdmin admin, final AdminForm form, final Popups popups) {
         if (!AdminFormValidator.validate(form, popups)){
-            return "messages";
-        }
-        if (adminUsernameChangedToExisting(form)) {
+        	popups.alert("error.admin.save");
+        	return "redirect:/admin/" + form.getAdminID() + "/view.action";
+        } else if (adminUsernameChangedToExisting(form)) {
             popups.alert("error.username.duplicate");
-        } else if (form.getGroupIDs() == null || form.getGroupIDs().isEmpty()) {
-            popups.alert("error.user.group");
+            return "redirect:/admin/" + form.getAdminID() + "/view.action";
         } else {
             if (StringUtils.isEmpty(form.getPassword()) || checkPassword(form, popups)) {
-                saveAdminAndGetView(form, admin, session, popups);
+                saveAdminAndGetView(form, admin, popups);
+                logonService.updateSessionsLanguagesAttributes(admin);
                 // Show "changes saved"
                 popups.success("default.changes_saved");
             }
+            return "redirect:/admin/" + form.getAdminID() + "/view.action";
         }
-
-        loadDataForViewPage(admin, model);
-        model.addAttribute("PASSWORD_POLICY", PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService).getPolicyName());
-
-        return "settings_admin_view";
     }
 
     @PostMapping(value = "/{adminID}/rights/save.action")
@@ -273,7 +268,7 @@ public class AdminController extends AbstractAdminControllerBase {
     }
 
     @PostMapping(value = "/saveNew.action")
-    public String saveNew(final ComAdmin admin, final AdminForm form, final Popups popups, final HttpSession session) {
+    public String saveNew(final ComAdmin admin, final AdminForm form, final Popups popups) {
         final int maximumNumberOfAdmins = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfAdmins);
         if (maximumNumberOfAdmins >= 0 && maximumNumberOfAdmins <= adminService.getNumberOfAdmins()) {
             popups.alert("error.numberOfAdminsExceeded", maximumNumberOfAdmins);
@@ -299,13 +294,12 @@ public class AdminController extends AbstractAdminControllerBase {
             return "messages";
         }
 
-        return saveAdminAndGetView(form, admin, session, popups);
+        return saveAdminAndGetView(form, admin, popups);
     }
 
     @RequestMapping("/list/export/csv.action")
     public Object exportCsv(final ComAdmin admin, final AdminListForm form, final Popups popups) throws Exception {
         byte[] csvData = csvService.getUserCSV(getAdminListFromAdminListForm(admin, form, Integer.MAX_VALUE).getList());
-        String fileName = "users.csv";
 
         if (csvData == null) {
             popups.alert("error.export.file_not_ready");
@@ -319,7 +313,7 @@ public class AdminController extends AbstractAdminControllerBase {
         return ResponseEntity.ok()
                 .contentLength(csvData.length)
                 .contentType(MediaType.parseMediaType("application/csv"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionHeaderContent(fileName))
+                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment("users.csv"))
                 .body(new InputStreamResource(new ByteArrayInputStream(csvData)));
     }
 
@@ -327,7 +321,6 @@ public class AdminController extends AbstractAdminControllerBase {
     public ResponseEntity<InputStreamResource> exportPdf(final ComAdmin admin, final AdminListForm form)
             throws IOException, DocumentException {
 
-        String pdfFileNameToDownload = "users.pdf";
         byte[] pdfFileBytes = pdfService
                 .writeUsersToPdfAndGetByteArray(getAdminListFromAdminListForm(admin, form, Integer.MAX_VALUE).getList());
 
@@ -340,12 +333,12 @@ public class AdminController extends AbstractAdminControllerBase {
                 .contentLength(pdfFileBytes.length)
                 .contentType(MediaType.parseMediaType("application/pdf"))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        HttpUtils.getContentDispositionHeaderContent(pdfFileNameToDownload))
+                        HttpUtils.getContentDispositionAttachment("users.pdf"))
                 .body(new InputStreamResource(new ByteArrayInputStream(pdfFileBytes)));
     }
 
     @RequestMapping("/{adminID}/confirmDelete.action")
-    public String confirmDelete(final ComAdmin admin, final AdminForm form, final Popups popups, final Model model) {
+    public String confirmDelete(final ComAdmin admin, final AdminForm form, final Popups popups) {
         final int adminIdToDelete = form.getAdminID(), companyID = admin.getCompanyID();
         final ServiceResult<ComAdmin> deleteConfirmSR = adminService.isPossibleToDeleteAdmin(adminIdToDelete, companyID);
         if (deleteConfirmSR.isSuccess()) {
@@ -429,7 +422,7 @@ public class AdminController extends AbstractAdminControllerBase {
                 numberOfRows);
     }
 
-    private String saveAdminAndGetView(AdminForm form, ComAdmin admin, HttpSession session, Popups popups) {
+    private String saveAdminAndGetView(AdminForm form, ComAdmin admin, Popups popups) {
         final boolean isNew = form.getAdminID() == 0;
 
         ComAdmin oldSavingAdmin = null;
@@ -456,6 +449,10 @@ public class AdminController extends AbstractAdminControllerBase {
         }
 
         final ComAdmin savedAdmin = result.getResult();
+
+        if(admin.getAdminID() == savedAdmin.getAdminID()) {
+            updateCurrentAdmin(admin, savedAdmin);
+        }
 
 		if (isNew) {
 			// Log successful creation of new user
@@ -500,8 +497,7 @@ public class AdminController extends AbstractAdminControllerBase {
         form.setEmail(adminToEdit.getEmail());
         form.setLayoutBaseId(adminToEdit.getLayoutBaseID());
         form.setInitialCompanyName(adminToEdit.getInitialCompanyName());
-        form.setOneTimePassword(adminToEdit.isOneTimePassword());
-        form.setAltgId(adminToEdit.getAltgId());
+        form.setAltgId(adminToEdit.getAccessLimitingTargetGroupID());
 
         form.setAdminPreferences(
                 conversionService.convert(
@@ -541,6 +537,12 @@ public class AdminController extends AbstractAdminControllerBase {
                     admin, "edit user", action + " Removed permissions: " + removed, LOGGER);
         }
         return true;
+    }
+
+    private void updateCurrentAdmin(final ComAdmin currentAdmin, final ComAdmin savedAdmin) {
+        currentAdmin.setAdminLang(savedAdmin.getAdminLang());
+        currentAdmin.setAdminCountry(savedAdmin.getAdminCountry());
+        currentAdmin.setAdminTimezone(savedAdmin.getAdminTimezone());
     }
 
 }

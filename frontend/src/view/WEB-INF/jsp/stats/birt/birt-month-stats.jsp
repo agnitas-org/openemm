@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page import="com.agnitas.emm.core.birtstatistics.monthly.MonthlyStatType" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
@@ -8,6 +9,12 @@
 <%--@elvariable id="birtStatisticUrlWithoutFormat" type="java.lang.String"--%>
 <%--@elvariable id="monthList" type="java.util.List"--%>
 <%--@elvariable id="yearList" type="java.util.List"--%>
+
+<c:set var="MONTHLY_RECIPIENT_NUM" value="<%= MonthlyStatType.RECIPIENT_NUM.getCode() %>"/>
+<c:set var="MONTHLY_OPENERS" value="<%= MonthlyStatType.OPENERS.getCode() %>"/>
+<c:set var="MONTHLY_ANONYMOUS_OPENINGS" value="<%= MonthlyStatType.ANONYMOUS_OPENINGS.getCode() %>"/>
+<c:set var="MONTHLY_CLICKERS" value="<%= MonthlyStatType.CLICKERS.getCode() %>"/>
+<c:set var="MONTHLY_ANONYMOUS_CLICKS" value="<%= MonthlyStatType.ANONYMOUS_CLICKS.getCode() %>"/>
 
 <mvc:form servletRelativeAction="/statistics/monthly/view.action" modelAttribute="monthlyStatisticForm">
     <div class="tile">
@@ -32,9 +39,11 @@
                 </div>
                 <div class="col-sm-8">
                     <mvc:select path="top10MetricsId" cssClass="form-control select2-offscreen">
-                        <mvc:option value="0"><bean:message key="report.numberRecipients"/></mvc:option>
-                        <mvc:option value="1"><bean:message key="statistic.opener"/></mvc:option>
-                        <mvc:option value="2"><bean:message key="statistic.clicker"/></mvc:option>
+                        <mvc:option value="${MONTHLY_RECIPIENT_NUM}"><bean:message key="report.numberRecipients"/></mvc:option>
+                        <mvc:option value="${MONTHLY_OPENERS}"><bean:message key="statistic.opener"/></mvc:option>
+                        <mvc:option value="${MONTHLY_ANONYMOUS_OPENINGS}"><bean:message key="statistic.openings.anonym"/></mvc:option>
+                        <mvc:option value="${MONTHLY_CLICKERS}"><bean:message key="statistic.clicker"/></mvc:option>
+                        <mvc:option value="${MONTHLY_ANONYMOUS_CLICKS}"><bean:message key="statistic.clicks.anonym"/></mvc:option>
                     </mvc:select>
                 </div>
             </div>
@@ -45,16 +54,14 @@
         <div class="tile-header">
             <h2 class="headline">
                 <c:set var="top10MetricsValue" value="${monthlyStatisticForm.top10MetricsId}"/>
-
-                <c:if test="${top10MetricsValue == 0}">
-                    <bean:message key="topTenByMailings"/>
-                </c:if>
-                <c:if test="${top10MetricsValue == 1}">
-                    <bean:message key="topTenByOpenings"/>
-                </c:if>
-                <c:if test="${top10MetricsValue == 2}">
-                    <bean:message key="topTenByClickRecipients"/>
-                </c:if>
+                
+                <c:choose>
+                    <c:when test="${top10MetricsValue eq MONTHLY_RECIPIENT_NUM}"><bean:message key="topTenByMailings"/></c:when>
+                    <c:when test="${top10MetricsValue eq MONTHLY_OPENERS}"><bean:message key="topTenByOpenings"/></c:when>
+                    <c:when test="${top10MetricsValue eq MONTHLY_CLICKERS}"><bean:message key="topTenByClickRecipients"/></c:when>
+                    <c:when test="${top10MetricsValue eq MONTHLY_ANONYMOUS_OPENINGS}"><bean:message key="statistic.MonthlyStat.Top10.openings.anonymous"/></c:when>
+                    <c:when test="${top10MetricsValue eq MONTHLY_ANONYMOUS_CLICKS}"><bean:message key="statistic.MonthlyStat.Top10.clicks.anonymous"/></c:when>
+                </c:choose>
             </h2>
             <ul class="tile-header-actions">
                 <li class="dropdown">
@@ -87,10 +94,7 @@
                     </div>
                     <div class="control">
                         <mvc:select path="startYear" cssClass="form-control select2-offscreen">
-                            <%--<c:forEach items="${yearlist}" var="year">--%>
                                 <mvc:options items="${yearList}" />
-                                <%--<mvc:option value="${year}"><c:out value="${year}"/></mvc:option>--%>
-                            <%--</c:forEach>--%>
                         </mvc:select>
                     </div>
                 </div>

@@ -145,4 +145,12 @@ public interface ComAdminDao {
 	ComAdmin getOldestAdminOfCompany(int companyId);
 
 	DataSource getDataSource();
+
+	int getAdminWelcomeMailingId(String language);
+
+	int getPasswordResetMailingId(String language);
+
+	int getPasswordChangedMailingId(String language);
+
+	void updateLoginDate(int adminID, Date date);
 }

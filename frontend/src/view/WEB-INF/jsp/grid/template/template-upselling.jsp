@@ -1,24 +1,25 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"%>
-<%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
+<%@ page contentType="text/html; charset=utf-8"%>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <div class="tile" data-sizing="container">
     <div class="tile-header" data-sizing="top">
         <h2 class="headline">
             <i class="icon icon-bolt"></i>
-            <bean:message key="grid.layout.builder"/>
+            <mvc:message code="grid.layout.builder"/>
         </h2>
     </div>
 
-    <div class="tile-content grid-upselling" data-sizing="scroll">
-        <div class="grid-upselling--desc">
-            <h3><bean:message key="grid.layout.builder"/></h3>
-            <h1><bean:message key="grid.layout.builder.teaser.headline"/></h1>
+    <div class="upselling-content grid-upselling" data-sizing="scroll">
 
-            <p><bean:message key="grid.layout.builder.teaser.text"/></p>
+        <div class="upselling-headline">
+            <h3 class="upselling-title"><mvc:message code="grid.layout.builder"/></h3>
+            <h1 class="upselling-header"><mvc:message code="grid.layout.builder.teaser.headline"/></h1>
+        </div>
+        <div class="upselling-desc">
+            <p><mvc:message code="grid.layout.builder.teaser.text"/></p>
 
-            <a href="mailto:sales@agnitas.de?Subject=<bean:message key="grid.layout.builder"/>" class="btn btn-primary btn-large">
-                <i class="icon icon-envelope-o"></i>
-                <bean:message key="contact.sales"/>
+            <a href="#" class="more-info-btn">
+                <mvc:message code="general.upselling.information"/>
             </a>
         </div>
 
@@ -27,7 +28,7 @@
     <div class="tile-footer" data-sizing="bottom">
         <a href="javascript:void(0);" class="btn btn-large pull-left" onclick="history.back(); return false;">
             <i class="icon icon-angle-left"></i>
-            <span class="text"><bean:message key="button.Back" /></span>
+            <span class="text"><mvc:message code="button.Back" /></span>
         </a>
     </div>
 </div>

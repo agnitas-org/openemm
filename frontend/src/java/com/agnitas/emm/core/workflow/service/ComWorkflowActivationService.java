@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.workflow.service;
 
+import static com.agnitas.emm.core.workflow.beans.WorkflowRecipient.WorkflowTargetOption.ALL_TARGETS_REQUIRED;
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.WORKFLOW_TARGET_NAME_PATTERN;
 
 import java.util.ArrayList;
@@ -32,7 +33,6 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
 import org.agnitas.emm.core.autoimport.service.AutoImportService;
@@ -48,9 +48,9 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.CompositeKey;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingSendOptions;
 import com.agnitas.beans.MailingSendingProperties;
 import com.agnitas.beans.MediatypeEmail;
@@ -58,6 +58,7 @@ import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
 import com.agnitas.emm.core.workflow.beans.Workflow;
@@ -122,6 +123,7 @@ public class ComWorkflowActivationService {
 	/** DAO accessing target groups. */
 	private ComTargetDao targetDao;
 	private ComWorkflowReactionDao reactionDao;
+	private AdminService adminService;
 	private ComWorkflowReportScheduleDao reportScheduleDao;
     private AutoImportService autoImportService;
     private AutoExportService autoExportService;
@@ -131,7 +133,7 @@ public class ComWorkflowActivationService {
 	public boolean activateWorkflow(int workflowId, ComAdmin admin, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
 		int companyId = admin.getCompanyID();
 		Set<WorkflowNode> processedNodes = new HashSet<>();
-		Map<Integer, ComMailing> mailingsToUpdate = new HashMap<>();
+		Map<Integer, Mailing> mailingsToUpdate = new HashMap<>();
 		Map<Integer, Date> reportsSendDates = new HashMap<>();
 		Map<Integer, Date> optimizationsTestSendDates = new HashMap<>();
 	    Map<Integer, Date> importsActivationDates = new HashMap<>();
@@ -200,7 +202,7 @@ public class ComWorkflowActivationService {
 			processRecipientIcons(workflowGraph, processedNodes, startIcon, assignedRecipients);
 
 			assignedRecipients.forEach((mailingId, recipientIcons) -> {
-				ComMailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
+				Mailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
 				mailing.setMailinglistID(recipientIcons.get(0).getMailinglistId());
 			});
 
@@ -209,7 +211,7 @@ public class ComWorkflowActivationService {
 			processArchiveIcons(workflowGraph, startIcon, assignedArchives);
 
 			assignedArchives.forEach((mailingId, archiveId) -> {
-				ComMailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
+				Mailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
 				mailing.setCampaignID(archiveId);
 			});
 
@@ -240,6 +242,8 @@ public class ComWorkflowActivationService {
 						});
 			}
 
+			int accesLimitationTargetId = adminService.getAccessLimitTargetId(admin);
+
 			// Generate and assign target expressions for mailings
 			for (Entry<Integer, List<WorkflowRecipient>> entry : assignedRecipients.entrySet()) {
 				Integer mailingId = entry.getKey();
@@ -249,6 +253,22 @@ public class ComWorkflowActivationService {
 				List<WorkflowRecipient> recipientIcons = entry.getValue();
 				if (CollectionUtils.isNotEmpty(recipientIcons)) {
 					// Assign target groups from a recipient icon to the following mailings
+
+					if (accesLimitationTargetId > 0) {
+						//for users with ALTG add ALTG target group
+						recipientIcons
+								.forEach(recipient -> {
+									//for users with ALTG add ALTG target group is such the group is absent
+									if (!recipient.getTargets().contains(accesLimitationTargetId)) {
+										recipient.getTargets().add(accesLimitationTargetId);
+									}
+
+									//for user with ALTG is available only ALL_TARGETS_REQUIRED option
+									if (recipient.getTargetsOption() != ALL_TARGETS_REQUIRED) {
+										recipient.setTargetsOption(ALL_TARGETS_REQUIRED);
+									}
+								});
+					}
 
 					recipientIcons.stream()
 							.filter(recipient -> {
@@ -303,7 +323,7 @@ public class ComWorkflowActivationService {
 			applyListSplitsToMailings(companyId, workflowId, mailingsToUpdate, assignedParameters, true);
 
 			mailingsSendDates.forEach((mailingId, sendDate) -> {
-				ComMailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
+				Mailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
 				mailing.setPlanDate(sendDate);
 			});
 
@@ -366,12 +386,12 @@ public class ComWorkflowActivationService {
 		return StringUtils.EMPTY;
 	}
 
-	private ComMailing getMailingToUpdate(int companyId, int mailingId, Map<Integer, ComMailing> mailingsToUpdate) {
+	private Mailing getMailingToUpdate(int companyId, int mailingId, Map<Integer, Mailing> mailingsToUpdate) {
     	return mailingsToUpdate.computeIfAbsent(mailingId, mId -> mailingDao.getMailing(mId, companyId));
 	}
 
-	private void saveUpdatedMailings(Map<Integer, ComMailing> mailingsToUpdate) {
-		for (ComMailing mailing : mailingsToUpdate.values()) {
+	private void saveUpdatedMailings(Map<Integer, Mailing> mailingsToUpdate) {
+		for (Mailing mailing : mailingsToUpdate.values()) {
 			mailingDao.saveMailing(mailing, false);
 		}
 		mailingsToUpdate.clear();
@@ -401,7 +421,7 @@ public class ComWorkflowActivationService {
 		}
 	}
 
-	private void sendMailings(int companyId, WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, int adminId, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) {
+	private void sendMailings(int companyId, WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, int adminId, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
 		Map<Integer, WorkflowMailingAware> mailingIconsMap = getMailingIconsMap(workflowGraph);
 
 		for (Entry<Integer, Date> entry : mailingsSendDates.entrySet()) {
@@ -484,7 +504,7 @@ public class ComWorkflowActivationService {
 		}
 	}
 
-	private List<ComOptimization> processAutoOptimizations(int companyId, int workflowId, WorkflowGraph workflowGraph, Map<Integer, Date> optimizationsTestSendDates, Map<Integer, ComMailing> mailingsToUpdate, Workflow workflow,
+	private List<ComOptimization> processAutoOptimizations(int companyId, int workflowId, WorkflowGraph workflowGraph, Map<Integer, Date> optimizationsTestSendDates, Map<Integer, Mailing> mailingsToUpdate, Workflow workflow,
 										  Map<WorkflowDecision, List<Integer>> optimizationMailings,
 										  Map<Integer, List<WorkflowParameter>> mailingsParameters,
 										  boolean testRun) {
@@ -527,7 +547,7 @@ public class ComWorkflowActivationService {
 		return entitiesToSchedule;
 	}
 
-	private ComOptimization createOptimization(int companyId, int workflowId, WorkflowGraph workflowGraph, Map<Integer, ComMailing> mailingsToUpdate, ComOptimization optimization, Workflow workflow, int campaignId,
+	private ComOptimization createOptimization(int companyId, int workflowId, WorkflowGraph workflowGraph, Map<Integer, Mailing> mailingsToUpdate, ComOptimization optimization, Workflow workflow, int campaignId,
 											   WorkflowDecision decisionIcon, WorkflowRecipient recipientIcon,
 											   List<Integer> testMailings, Date testSendDate,
 											   Map<Integer, List<WorkflowParameter>> mailingsParameters, boolean testRun) {
@@ -592,7 +612,7 @@ public class ComWorkflowActivationService {
 		}
 
         // todo: auto-optimization doesn't seem to support "Subscriber isn't allowed to be in target-groups" target mode
-        if (recipientIcon.getTargetsOption() == WorkflowRecipient.WorkflowTargetOption.ALL_TARGETS_REQUIRED) {
+        if (recipientIcon.getTargetsOption() == ALL_TARGETS_REQUIRED) {
             optimization.setTargetMode(Mailing.TARGET_MODE_AND);
         } else {
             optimization.setTargetMode(Mailing.TARGET_MODE_OR);
@@ -621,7 +641,7 @@ public class ComWorkflowActivationService {
 		return optimization;
 	}
 
-	private LinkedHashMap<Integer, Integer> applyListSplitsToMailings(int companyId, int workflowId, Map<Integer, ComMailing> mailingsToUpdate, Map<Integer, List<WorkflowParameter>> mailingsParameters, boolean assignToMailings) {
+	private LinkedHashMap<Integer, Integer> applyListSplitsToMailings(int companyId, int workflowId, Map<Integer, Mailing> mailingsToUpdate, Map<Integer, List<WorkflowParameter>> mailingsParameters, boolean assignToMailings) {
 		Map<Integer, Double> mailingsParts = new HashMap<>();
 		Set<Integer> mailingsWithoutSplitting = new HashSet<>();
 
@@ -654,14 +674,14 @@ public class ComWorkflowActivationService {
 		if (assignToMailings) {
 			splitTargets.forEach((mailingId, splitId) -> {
 				if (mailingId > 0) {
-					ComMailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
+					Mailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
 					mailing.setSplitID(splitId);
 				}
 			});
 
 			for (int mailingId : mailingsWithoutSplitting) {
 				// No splitting required - reset splitId.
-				ComMailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
+				Mailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
 				mailing.setSplitID(0);
 			}
 		}
@@ -677,7 +697,7 @@ public class ComWorkflowActivationService {
 		return value;
 	}
 
-	private void handleFollowupMailings(int companyId, Map<Integer, ComMailing> mailingsToUpdate, List<WorkflowNode> followupMailings) throws Exception {
+	private void handleFollowupMailings(int companyId, Map<Integer, Mailing> mailingsToUpdate, List<WorkflowNode> followupMailings) throws Exception {
 		for (WorkflowNode followupMailingNode : followupMailings) {
 			WorkflowFollowupMailing followupMailingIcon = (WorkflowFollowupMailing) followupMailingNode.getNodeIcon();
 			Mailing followupMailing = getMailingToUpdate(companyId, followupMailingIcon.getMailingId(), mailingsToUpdate);
@@ -1378,7 +1398,12 @@ public class ComWorkflowActivationService {
 	public void setEqlHelper(ComWorkflowEQLHelper eqlHelper) {
 		this.eqlHelper = eqlHelper;
 	}
-	
+
+	@Required
+	public void setAdminService(AdminService adminService) {
+		this.adminService = adminService;
+	}
+
 	private class ActionBasedCampaignProcessor {
 		private TimeZone timezone;
 		private boolean testing;

@@ -11,10 +11,12 @@
 package org.agnitas.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.dao.ImportRecipientsDao;
+import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.web.ProfileImportReporter;
@@ -25,6 +27,7 @@ import com.agnitas.emm.core.Permission;
 
 public class ProfileImportWorkerFactory {
 	ConfigService configService;
+	MailinglistDao mailinglistDao;
 	ProfileImportReporter profileImportReporter;
 	ImportModeHandlerFactory importModeHandlerFactory;
 	ImportRecipientsDao importRecipientsDao;
@@ -32,6 +35,11 @@ public class ProfileImportWorkerFactory {
 	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
+	}
+	
+	@Required
+	public void setMailinglistDao(MailinglistDao mailinglistDao) {
+		this.mailinglistDao = mailinglistDao;
 	}
 
 	@Required
@@ -64,7 +72,12 @@ public class ProfileImportWorkerFactory {
 		profileImportWorker.setImportProfile(importProfile);
 		profileImportWorker.setImportFile(importFile);
 		profileImportWorker.setCustomerImportStatus(importStatus);
-		profileImportWorker.setMailingListIdsToAssign(mailingListIdsToAssign);
+		
+		if (importProfile.isMailinglistsAll()) {
+			profileImportWorker.setMailingListIdsToAssign(mailinglistDao.getMailinglists(importProfile.getCompanyId()).stream().map(mailinglist -> mailinglist.getId()).collect(Collectors.toList()));
+		} else {
+			profileImportWorker.setMailingListIdsToAssign(mailingListIdsToAssign);
+		}
 		
 		if (admin.permissionAllowed(Permission.RECIPIENT_GENDER_EXTENDED)) {
 			profileImportWorker.setMaxGenderValue(ConfigService.MAX_GENDER_VALUE_EXTENDED);

@@ -34,6 +34,7 @@ import java.util.function.BiConsumer;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.agnitas.dao.FollowUpType;
 import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
@@ -42,7 +43,6 @@ import org.agnitas.web.forms.WorkflowParameters;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import com.agnitas.beans.ComMailing;
 import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
 import com.agnitas.emm.core.workflow.beans.WorkflowDeadline;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
@@ -251,16 +251,16 @@ public class WorkflowUtils {
 
 		switch (reactionType) {
 			case CLICKED:
-				return ComMailing.TYPE_FOLLOWUP_CLICKER;
+				return FollowUpType.TYPE_FOLLOWUP_CLICKER.getKey();
 
 			case NOT_CLICKED:
-				return ComMailing.TYPE_FOLLOWUP_NON_CLICKER;
+				return FollowUpType.TYPE_FOLLOWUP_NON_CLICKER.getKey();
 
 			case OPENED:
-				return ComMailing.TYPE_FOLLOWUP_OPENER;
+				return FollowUpType.TYPE_FOLLOWUP_OPENER.getKey();
 
 			case NOT_OPENED:
-				return ComMailing.TYPE_FOLLOWUP_NON_OPENER;
+				return FollowUpType.TYPE_FOLLOWUP_NON_OPENER.getKey();
 
 			// FIXME: Not supported as followup methods.
 			case BOUGHT:

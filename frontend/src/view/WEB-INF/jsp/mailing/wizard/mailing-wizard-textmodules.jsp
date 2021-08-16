@@ -8,7 +8,9 @@
 
 <c:set var="ACTION_FINISH" value="<%= MailingWizardAction.ACTION_FINISH %>"/>
 <c:set var="ACTION_TEXTMODULE" value="<%= MailingWizardAction.ACTION_TEXTMODULE %>"/>
-<c:set var="ACTION_TEXTMODULES_PREVIOUS" value="<%= MailingWizardAction.ACTION_TEXTMODULES_PREVIOUS %>"/>
+<c:set var="ACTION_SUBJECT" value="<%= MailingWizardAction.ACTION_SUBJECT %>"/>
+
+<c:url var="previous" value="/mwSubject.do?action=${ACTION_SUBJECT}"/>
 
 <agn:agnForm action="/mwTextmodules" id="wizard-step-8" data-form="resource">
     <html:hidden property="action" value="${ACTION_TEXTMODULE}"/>
@@ -25,7 +27,7 @@
                     <li class="">
                         <ul class="pagination">
                             <li>
-                                <a href="#" data-form-action="previous">
+                                <a href="${previous}">
                                     <i class="icon icon-angle-left"></i>
                                     <bean:message key="button.Back" />
                                 </a>
@@ -58,7 +60,7 @@
             <div class="tile-content tile-content-forms">
             </div>
             <div class="tile-footer">
-                <a href="#" class="btn btn-large pull-left" data-form-action="previous">
+                <a href="${previous}" class="btn btn-large pull-left">
                     <i class="icon icon-angle-left"></i>
                     <span class="text"><bean:message key="button.Back"/></span>
                 </a>

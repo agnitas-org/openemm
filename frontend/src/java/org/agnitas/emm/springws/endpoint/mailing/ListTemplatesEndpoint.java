@@ -10,7 +10,7 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;

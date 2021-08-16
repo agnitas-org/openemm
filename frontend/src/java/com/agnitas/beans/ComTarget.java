@@ -37,6 +37,7 @@ public interface ComTarget extends TargetLight {
      * @see ComTargetService#createRecipientTargetGroupMatcher(int, int)
      * @see RecipientTargetGroupMatcher
      */
+    @Deprecated
     boolean isCustomerInGroup(Interpreter interpreter, final EqlFacade eqlFacade);
 
     /**

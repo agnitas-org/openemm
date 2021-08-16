@@ -21,7 +21,8 @@ import java.util.Set;
 import org.agnitas.util.AgnUtils;
 
 public class Permission implements Comparable<Permission> {
-	public static final String[] CATEGORY_DISPLAY_ORDER = new String[] { "General", "Mailing", "Template", "Campaigns", "Subscriber-Editor", "ImportExport", "Target-Groups", "Statistics", "Forms", "Actions", "Administration", "NegativePermissions", "System", "Premium", "PushNotifications", "Messenger" };
+	public static String[] CATEGORY_DISPLAY_ORDER = new String[0];
+	public static final Map<String, String[]> SUBCATEGORY_DISPLAY_ORDER = new HashMap<>();
 
 	public static final String CATEGORY_KEY_SYSTEM = "System";
 	public static final String USERRIGHT_MESSAGEKEY_PREFIX = "UserRight.";
@@ -39,6 +40,7 @@ public class Permission implements Comparable<Permission> {
 	public static final Permission ADMIN_SETPERMISSION = new Permission("admin.setpermission", true, false);
 	public static final Permission ADMIN_SHOW = new Permission("admin.show", true, false);
 	public static final Permission ADMINLOG_SHOW = new Permission("adminlog.show", false, false);
+	public static final Permission ADMIN_SEND_WELCOME = new Permission("admin.sendWelcome", true, false);
 
 	public static final Permission ALWAYS_ALLOWED = new Permission("always.allowed", false, false);
 	public static final Permission ALWAYS_DISALLOWED = new Permission("always.disallowed", false, false);
@@ -61,16 +63,18 @@ public class Permission implements Comparable<Permission> {
 	public static final Permission FORMS_DELETE = new Permission("forms.delete", true, false);
 	public static final Permission FORMS_IMPORT = new Permission("forms.import", true, false);
 	public static final Permission FORMS_SHOW = new Permission("forms.show", true, false);
+	public static final Permission FORMS_CREATOR = new Permission("forms.creator", false, true);
 
 	public static final Permission IMPORT_MEDIATYPE = new Permission("import.mediatype", false, true);
 	public static final Permission IMPORT_MODE_ADD = new Permission("import.mode.add", true, false);
 	public static final Permission IMPORT_MODE_ADD_UPDATE = new Permission("import.mode.add_update", true, false);
 	public static final Permission IMPORT_MODE_BLACKLIST = new Permission("import.mode.blacklist", true, false);
-	public static final Permission IMPORT_MODE_BLACKLIST_EXCLUSIVE = new Permission("import.mode.blacklist_exclusive", true, false);
+	public static final Permission IMPORT_MODE_BLACKLIST_EXCLUSIVE = new Permission("import.mode.blacklist_exclusive", false, true);
 	public static final Permission IMPORT_MODE_BOUNCE = new Permission("import.mode.bounce", true, false);
 	public static final Permission IMPORT_MODE_BOUNCEREACTIVATE = new Permission("import.mode.bouncereactivate", false, true);
 	public static final Permission IMPORT_MODE_DOUBLECHECKING = new Permission("import.mode.doublechecking", true, false);
 	public static final Permission IMPORT_MODE_ONLY_UPDATE = new Permission("import.mode.only_update", true, false);
+	public static final Permission IMPORT_MAILINGLISTS_ALL = new Permission("import.mailinglists.all", true, false);
 
 	/** Show classic import the GUI toggle and set default to "update only the first duplicate", otherwise default is "update all dupliactes" **/
 	public static final Permission IMPORT_MODE_UNSUBSCRIBE = new Permission("import.mode.unsubscribe", true, false);
@@ -122,8 +126,9 @@ public class Permission implements Comparable<Permission> {
 	public static final Permission RECIPIENT_DELETE = new Permission("recipient.delete", true, false);
 	public static final Permission RECIPIENT_GENDER_EXTENDED = new Permission("recipient.gender.extended", true, false);
 	public static final Permission RECIPIENT_HISTORY = new Permission("recipient.history", true, false);
+	public static final Permission RECIPIENT_ADVANCED_SEARCH_MIGRATION = new Permission("recipient.advanced.search.migration", false, true);
 
-	public static final Permission RECIPIENT_PROFILEFIELD_HTML_ALLOWED = new Permission("recipient.profileField.html.allowed", true, true);
+	public static final Permission RECIPIENT_PROFILEFIELD_HTML_ALLOWED = new Permission("recipient.profileField.html.allowed", false, true);
 	public static final Permission RECIPIENT_SHOW = new Permission("recipient.show", true, false);
 	public static final Permission RECIPIENT_TRACKING_VETO = new Permission("recipient.tracking.veto", true, false);
 	public static final Permission RECIPIENT_HISTORY_MAILING_DELIVERY = new Permission("recipient.history.mailing.delivery", false, true);
@@ -155,6 +160,8 @@ public class Permission implements Comparable<Permission> {
 	public static final Permission TARGETS_LOCK = new Permission("targets.lock", true, false);
 	public static final Permission TARGETS_SHOW = new Permission("targets.show", true, false);
 
+	public static final Permission TARGETS_MIGRATION = new Permission("targets.migration", false, true);
+	
 	public static final Permission TEMPLATE_CHANGE = new Permission("template.change", true, false);
 	public static final Permission TEMPLATE_DELETE = new Permission("template.delete", true, false);
 	public static final Permission TEMPLATE_SHOW = new Permission("template.show", true, false);
@@ -171,7 +178,8 @@ public class Permission implements Comparable<Permission> {
 	public static final Permission WORKFLOW_CHANGE = new Permission("workflow.change", true, false);
 	public static final Permission WORKFLOW_DELETE = new Permission("workflow.delete", true, false);
 	public static final Permission WORKFLOW_SHOW = new Permission("workflow.show", true, false);
-	
+	public static final Permission WORKFLOW_JSPLUMB2 = new Permission("workflow.jsplumb2", false, false);
+
 	public static final Permission FORMS_EXPORT = new Permission("forms.export", true, false);
 	public static final Permission MAILING_EXPORT = new Permission("mailing.export", true, false);
 
@@ -209,23 +217,17 @@ public class Permission implements Comparable<Permission> {
 	public static final Permission MASTER_COMPANIES_SHOW = new Permission("master.companies.show", false, true);
 	/** Edit link targets in sent mailings **/
 	public static final Permission MAILING_TRACKABLELINKS_URL_CHANGE = new Permission("mailing.trackablelinks.url.change", false, true);
-	public static final Permission GRID_CHANGE = new Permission("grid.change", false, true);
 
 	public static final Permission RECIPIENT_HISTORY_MAILING = new Permission("recipient.history.mailing", false, true);
 	public static final Permission RECIPIENT_IMPORT_ENCRYPTED = new Permission("recipient.import.encrypted", false, true);
 	/**	user activity log permissions **/
 	public static final Permission MASTERLOG_SHOW = new Permission("masterlog.show", false, true);
-	public static final Permission TEMP_ALPHA = new Permission("temp.alpha", false, true);
-	public static final Permission TEMP_BETA = new Permission("temp.beta", false, true);
-	public static final Permission TEMP_GAMMA = new Permission("temp.gamma", false, true);
 	public static final Permission MASTER_SHOW = new Permission("master.show", false, true);
 	public static final Permission MEDIATYPE_FAX = new Permission("mediatype.fax", false, true);
 	public static final Permission MEDIATYPE_MMS = new Permission("mediatype.mms", false, true);
 	public static final Permission MEDIATYPE_POST = new Permission("mediatype.post", false, true);
 	public static final Permission MEDIATYPE_SMS = new Permission("mediatype.sms", false, true);
 	public static final Permission MEDIATYPE_WHATSAPP = new Permission("mediatype.whatsapp", false, true);
-
-	public static final Permission ACTIONS_MIGRATION = new Permission("actions.migration", false, false);
 
 	public static final Permission MAILING_RESUME_WORLD = new Permission("mailing.resume.world", false, false);
 	

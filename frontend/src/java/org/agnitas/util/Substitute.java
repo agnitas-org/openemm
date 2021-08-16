@@ -52,7 +52,7 @@ public class Substitute {
 	 * replace all placeholder in input string with the values
 	 * of the variables, if found. If a placeholder could not
 	 * be resolved, the name is added to the optional missing
-	 * paramter.
+	 * parameter.
 	 * 
 	 * @param str     the input string to replace the placeholder
 	 * @param extra   an optional extra bunch of known variables

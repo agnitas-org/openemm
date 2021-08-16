@@ -19,7 +19,7 @@
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
 
-<div id="tab-advancedSearch" class="hidden">
+<div id="tab-advancedSearch" class="hidden" ${forceShowAdvancedSearchTab ? 'data-tab-show="true"' : ''}>
     <div class="tile-content-forms" style="padding-bottom: 0">
         <div class="row">
             <div class="col-md-3">

@@ -14,8 +14,8 @@ CREATE TABLE ref_import_action_tbl (
 	name                       VARCHAR(128) COMMENT 'Displayname of this pre import action',
 	type                       VARCHAR(32) NOT NULL COMMENT 'Type of this pre import action. Mostly SQL',
 	action                     LONGTEXT NOT NULL COMMENT 'Content of this pre import action. Mostly SQL script',
-	creation_date              TIMESTAMP COMMENT 'Creation date of this pre import action',
-	change_date                TIMESTAMP COMMENT 'Change date of this pre import action',
+	creation_date              TIMESTAMP NULL COMMENT 'Creation date of this pre import action',
+	change_date                TIMESTAMP NULL COMMENT 'Change date of this pre import action',
 	PRIMARY KEY (ref_importaction_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT 'Pre import actions for reference tables';
 

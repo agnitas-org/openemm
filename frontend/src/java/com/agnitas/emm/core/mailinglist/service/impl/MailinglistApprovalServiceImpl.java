@@ -126,7 +126,12 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
     public boolean hasAnyDisabledMailingListsForAdmin(ComAdmin admin) {
         return hasAnyDisabledMailingListsForAdmin(admin.getCompanyID(), admin.getAdminID());
     }
-    
+
+    @Override
+    public boolean hasAnyDisabledRecipientBindingsForAdmin(ComAdmin admin, int recipientId) {
+        return admin != null && mailinglistApprovalDao.hasAnyDisabledRecipientBindingsForAdmin(admin.getCompanyID(), admin.getAdminID(), recipientId);
+    }
+
     @Override
     public boolean hasAnyDisabledMailingListsForAdmin(@VelocityCheck int companyId, int adminId) {
         return companyId > 0 && adminId > 0 && mailinglistApprovalDao.hasAnyDisabledMailingListsForAdmin(companyId, adminId);
@@ -137,7 +142,7 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
         List<Integer> adminsDisallowedToUseMailinglist = mailinglistApprovalDao.getAdminsDisallowedToUseMailinglist(companyId, mailinglistId);
         Set<Integer> adminIds= adminService.getAdminsNamesMap(companyId).keySet();
         Collection<Integer> allowed = adminIds;
-        if(!adminsDisallowedToUseMailinglist.isEmpty()) {
+        if (!adminsDisallowedToUseMailinglist.isEmpty()) {
             allowed = CollectionUtils.removeAll(adminIds, adminsDisallowedToUseMailinglist);
         }
         return new HashSet<>(allowed);
@@ -150,10 +155,15 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
         
         Collection<Integer> adminForDisallowing = CollectionUtils.removeAll(adminService.getAdminsNamesMap(companyId).keySet(), allowedUserIds);
         boolean result = setAdminsDisallowedToUseMailinglist(companyId, mailinglistId, adminForDisallowing);
-        if(result) {
+        if (result) {
             userActions.add(new UserAction("mailing list edit", "Allowed mailing list for admins: " + StringUtils.join(allowedUserIds, ", ")));
             userActions.add(new UserAction("mailing list edit", "Disallowed mailing list for admins: " + StringUtils.join(adminForDisallowing, ", ")));
         }
         return result;
     }
+
+	@Override
+	public List<Integer> getMailinglistsWithMailinglistApproval(int companyId) {
+		return mailinglistApprovalDao.getMailinglistsWithMailinglistApproval(companyId);
+	}
 }

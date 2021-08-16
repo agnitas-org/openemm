@@ -24,7 +24,7 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 	
 	@Override
 	public boolean hasLicenseData() throws Exception {
-		return selectInt(logger, "SELECT COUNT(*) FROM license_tbl WHERE name = ?", "LicenseData") > 0;
+		return selectInt(logger, "SELECT COUNT(*) FROM license_tbl WHERE name = ? AND data IS NOT NULL", "LicenseData") > 0;
 	}
 
 	@Override

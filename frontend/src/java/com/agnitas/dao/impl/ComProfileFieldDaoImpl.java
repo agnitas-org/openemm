@@ -31,6 +31,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
+import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.SafeString;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -438,6 +439,18 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 						field.getColumn().equalsIgnoreCase("latest_datasource_id")) {
 					field.setModeEdit(ProfileField.MODE_EDIT_READONLY);
 				}
+				
+				if (isOracleDB()) {
+					// Some Oracle DATE fields should be displayed with time
+					if (field.getColumn().equalsIgnoreCase("creation_date")
+							|| field.getColumn().equalsIgnoreCase("timestamp")
+							|| field.getColumn().equalsIgnoreCase("lastclick_date")
+							|| field.getColumn().equalsIgnoreCase("lastopen_date")
+							|| field.getColumn().equalsIgnoreCase("lastsend_date")) {
+						field.setOverrideSimpleDataType(SimpleDataType.DateTime);
+					}
+				}
+				
 				// determines not customer's fields (not hidden fields was created by customer)
 				field.setHiddenField(HIDDEN_COLUMNS.contains(field.getColumn().trim()));
 

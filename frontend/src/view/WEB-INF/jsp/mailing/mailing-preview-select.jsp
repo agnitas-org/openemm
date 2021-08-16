@@ -24,7 +24,9 @@
 
 <c:set var="EMAIL_TYPE_CODE" value="<%= MediaTypes.EMAIL.getMediaCode() %>" scope="page"/>
 <c:set var="RECIPIENT_MODE" value="<%= ModeType.RECIPIENT %>"/>
+<c:set var="RECIPIENT_MODE_CODE" value="<%= ModeType.RECIPIENT.getCode() %>"/>
 <c:set var="TARGET_GROUP_MODE" value="<%= ModeType.TARGET_GROUP %>"/>
+<c:set var="TARGET_GROUP_MODE_CODE" value="<%= ModeType.TARGET_GROUP.getCode() %>"/>
 
 <%-- If preview is requested as a separate tile (to be embedded) then it must look the same for both regular and grid mailings --%>
 <c:set var="isMailingGrid" value="${mailingSendForm.isMailingGrid and not (mailingSendForm.previewForm.pure eq true)}" scope="request"/>
@@ -40,6 +42,13 @@
     <html:hidden property="isMailingGrid" value="${isMailingGrid}"/>
     <html:hidden property="previewForm.pure" value="${mailingSendForm.previewForm.pure}"/>
     <html:hidden property="previewForm.reload"/>
+
+    <script id="config:mailing-preview" type="application/json">
+        {
+            "RECIPIENT_MODE": "${RECIPIENT_MODE_CODE}",
+            "TARGET_MODE": "${TARGET_GROUP_MODE_CODE}"
+        }
+    </script>
 
 
 <div id="container-preview" data-load-target="#preview-container">

@@ -14,9 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 
 public class BirtReporUtils {
 
@@ -52,7 +53,9 @@ public class BirtReporUtils {
         RECIPIENT_DEVELOPMENT_NET("recipientDevelopmentNet"),
         ACTIVITY_ANALYSIS("activityAnalysis"),
         OPENERS_AFTER_DEVICE("openersAfterDevice"),
-        CLICKERS_AFTER_DEVICE("clickersAfterDevice"),
+		CLICKERS_AFTER_DEVICE("clickersAfterDevice"),
+		OPENERS_DEVICES("openerDevices"),
+		CLICKER_DEVICES("clickerDevices"),
         MAILING_TYPE("mailingType"),
 		SENT_MAILS("sentMails"),
         OPENERS("openers");

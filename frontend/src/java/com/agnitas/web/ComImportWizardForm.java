@@ -35,6 +35,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.ImportWizardHelper;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CsvColInfo;
+import org.agnitas.util.CsvDataInvalidItemCountException;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.agnitas.util.importvalues.ImportMode;
 import org.agnitas.web.forms.StrutsFormBase;
@@ -274,6 +275,8 @@ public class ComImportWizardForm extends StrutsFormBase {
         } else if (useCsvUpload && attachmentCsvFileID != 0) {
             try {
                 importFile = getFormFileByUploadId(attachmentCsvFileID, "text/csv");
+            } catch (CsvDataInvalidItemCountException e) {
+                errors.add("global", new ActionMessage("error.import.data.itemcount", e.getExpected(), e.getActual(), e.getErrorLineNumber()));
             } catch (Exception e) {
                 errors.add("global", new ActionMessage("error.import.exception", e.getMessage()));
             }

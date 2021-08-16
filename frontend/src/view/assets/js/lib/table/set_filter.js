@@ -2,12 +2,14 @@
   var SetFilter = function () {};
 
   SetFilter.prototype.init = function (params) {
-    this.column = params.colDef.field
+    this.column = params.colDef.field;
     this.values = _.sortBy(_.uniq(
       _.map(params.rowModel.rowsToDisplay, function(row) {
         return row.data[params.colDef.field]
       })
-    ))
+    ));
+
+    this.labels = _.extend({}, params.labels);
 
     this.eGui = document.createElement('div');
     this.eGui.innerHTML =
@@ -34,30 +36,32 @@
   };
 
   SetFilter.prototype.buildOptions = function() {
+    var labels = this.labels;
     return _.map(this.values, function(value) {
+      var valueLabel = labels.hasOwnProperty(value) ? labels[value] : value;
       return "<div class=\"ag-filter-body\">" +
       "  <label class=\"\">" +
       "    <input class=\"\" type=\"checkbox\" value=\"" + value + "\">" +
-      "    " + value +
+      "    " + valueLabel +
       "  </label>" +
       "</div>"
     }).join("\n");
-  }
+  };
 
   SetFilter.prototype.afterGuiAttached = function () {
-  }
+  };
 
   SetFilter.prototype.destroy = function () {
     this.checkBoxes.off('change', this.checkBoxesChanged.bind(this));
     this.clearFilter.off('click', this.filterClear.bind(this));
-  }
+  };
 
   SetFilter.prototype.checkBoxesChanged = function () {
     this.valuesFiltered = _.map(_.filter(this.checkBoxes, { checked: true }), function(checkbox) {
       return checkbox.value;
-    })
+    });
 
-    this.filterActive = this.valuesFiltered.length != 0;
+    this.filterActive = this.valuesFiltered.length !== 0;
     this.filterChangedCallback();
   };
 

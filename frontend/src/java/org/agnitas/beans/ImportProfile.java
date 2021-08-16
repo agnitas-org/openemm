@@ -278,13 +278,6 @@ public interface ImportProfile {
     Integer getGenderValueByFieldValue(String fieldValue);
 
     /**
-	 * Method that saves gender mappings converting that from sequence
-	 * @param stringGenderSequence sequence of gender string values (e.g. "Mr, Sir, Herr")
-	 * @param intGender gender number value
-	 */
-	boolean addGenderMappingSequence(String stringGenderSequence, int intGender);
-
-    /**
      *
      * @return
      */
@@ -350,15 +343,15 @@ public interface ImportProfile {
 
 	void setMailinglists(List<Integer> mailinglists);
 
-	MediaTypes getMediatype();
+	Set<MediaTypes> getMediatypes();
 	
-	void setMediatype(MediaTypes mediatype);
-
-	int getMediatypeCode();
-
-	void setMediatypeCode(int mediatypeCode);
+	void setMediatypes(Set<MediaTypes> mediatype);
 	
 	String getDatatype();
 
 	void setDatatype(String datatype);
+
+	void setMailinglistsAll(boolean allMailinglists);
+	
+	boolean isMailinglistsAll();
 }

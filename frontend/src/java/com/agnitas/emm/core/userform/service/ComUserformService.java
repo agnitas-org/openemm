@@ -15,16 +15,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.userforms.UserformService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DbColumnType;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.commons.ActivenessStatus;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.userform.bean.UserForm;
+
+import net.sf.json.JSONArray;
 
 public interface ComUserformService extends UserformService {
 
@@ -33,10 +34,7 @@ public interface ComUserformService extends UserformService {
     List<UserForm> getUserForms(@VelocityCheck int companyId);
 
     UserAction setActiveness(@VelocityCheck int companyId, Map<Integer, Boolean> activeness);
-    
-	PaginatedListImpl<UserFormDto> getUserFormsWithActionData(ComAdmin admin, String sort, String order, int page,
-			int numberOfRows, ActivenessStatus filter);
-	
+
 	UserFormDto getUserForm(@VelocityCheck int companyId, int formId);
 
 	boolean isFormNameUnique(String formName, int formId, int companyId);
@@ -54,4 +52,12 @@ public interface ComUserformService extends UserformService {
 	File exportUserForm(ComAdmin admin, int userFormId, String userFormName);
 
 	String getUserFormUrlPattern(ComAdmin admin, boolean resolveUID);
+
+    JSONArray getUserFormsJson(ComAdmin admin);
+
+    List<String> getUserFormNames(@VelocityCheck int companyId);
+
+	Map<String, String> getMediapoolImages(ComAdmin admin);
+
+	Map<String, String> getProfileFields(ComAdmin admin, DbColumnType.SimpleDataType... allowedTypes);
 }

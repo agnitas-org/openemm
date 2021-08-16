@@ -358,26 +358,28 @@ public class FileUtils {
      */
     public static File downloadAsTemporaryFile(String prefix, String suffix, String dirName, String birtUrl, String clientInternalUrl) throws Exception {
 		HttpClient httpClient = HttpUtils.initializeHttpClient(clientInternalUrl);
+		NetworkUtil.setHttpClientProxyFromSystem(httpClient, birtUrl);
 		return downloadAsTemporaryFile(prefix, suffix, dirName, birtUrl, httpClient, logger);
 	}
 	
     public static File downloadAsTemporaryFile(String prefix, String suffix, String dirName, String birtUrl, HttpClient httpClient, Logger loggerParameter) throws Exception {
-        final GetMethod method = new GetMethod(birtUrl);
-		
+		final GetMethod method = new GetMethod(birtUrl);
+		method.setFollowRedirects(true);
+
 		try {
             int responseCode = httpClient.executeMethod(method);
 
-            if (responseCode != HttpStatus.SC_NOT_FOUND) {
-            	File file = File.createTempFile(prefix, suffix, AgnUtils.createDirectory(dirName));
-            	
-            	try( InputStream in = method.getResponseBodyAsStream()) {
-	            	try( FileOutputStream out = new FileOutputStream( file)) {
-	            		IOUtils.copy( in, out);
+            if (responseCode == HttpStatus.SC_OK) {
+				File file = File.createTempFile(prefix, suffix, AgnUtils.createDirectory(dirName));
+
+				try (InputStream in = method.getResponseBodyAsStream()) {
+	            	try (FileOutputStream out = new FileOutputStream(file)) {
+	            		IOUtils.copy(in, out);
 	            	}
             	}
-            	
-            	return file;
-            } else {
+
+				return file;
+			} else {
             	loggerParameter.error("downloadAsTemporaryFile received http-code " + responseCode + " for url:\n" + birtUrl);
             	return null;
             }

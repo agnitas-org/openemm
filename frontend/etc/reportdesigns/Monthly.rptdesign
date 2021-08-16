@@ -170,31 +170,6 @@ currentrow = 0;]]></method>
 }
 return false;]]></method>
         </script-data-set>
-        <script-data-set name="RecipientCountDataSet" id="382">
-            <list-property name="resultSetHints">
-                <structure>
-                    <property name="position">1</property>
-                    <property name="name">recipient_count</property>
-                    <property name="dataType">integer</property>
-                </structure>
-            </list-property>
-            <list-property name="columnHints">
-                <structure>
-                    <property name="columnName">recipient_count</property>
-                </structure>
-            </list-property>
-            <structure name="cachedMetaData">
-                <list-property name="resultSet">
-                    <structure>
-                        <property name="position">1</property>
-                        <property name="name">recipient_count</property>
-                        <property name="dataType">integer</property>
-                    </structure>
-                </list-property>
-            </structure>
-            <property name="dataSource">Scripted Data Source</property>
-            <method name="fetch"><![CDATA[return false;]]></method>
-        </script-data-set>
         <script-data-set name="MailCounterDataSet" id="402">
             <list-property name="resultSetHints">
                 <structure>
@@ -290,22 +265,17 @@ return false;]]></method>
                 </structure>
                 <structure>
                     <property name="position">7</property>
-                    <property name="name">open_count</property>
-                    <property name="dataType">integer</property>
-                </structure>
-                <structure>
-                    <property name="position">8</property>
-                    <property name="name">click_recipients</property>
-                    <property name="dataType">integer</property>
-                </structure>
-                <structure>
-                    <property name="position">9</property>
                     <property name="name">name_cut</property>
                     <property name="dataType">string</property>
                 </structure>
                 <structure>
-                    <property name="position">10</property>
+                    <property name="position">8</property>
                     <property name="name">mailing_id</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">total</property>
                     <property name="dataType">integer</property>
                 </structure>
             </list-property>
@@ -329,16 +299,13 @@ return false;]]></method>
                     <property name="columnName">mailtype</property>
                 </structure>
                 <structure>
-                    <property name="columnName">open_count</property>
-                </structure>
-                <structure>
-                    <property name="columnName">click_recipients</property>
-                </structure>
-                <structure>
                     <property name="columnName">name_cut</property>
                 </structure>
                 <structure>
                     <property name="columnName">mailing_id</property>
+                </structure>
+                <structure>
+                    <property name="columnName">total</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -375,29 +342,24 @@ return false;]]></method>
                     </structure>
                     <structure>
                         <property name="position">7</property>
-                        <property name="name">open_count</property>
-                        <property name="dataType">integer</property>
-                    </structure>
-                    <structure>
-                        <property name="position">8</property>
-                        <property name="name">click_recipients</property>
-                        <property name="dataType">integer</property>
-                    </structure>
-                    <structure>
-                        <property name="position">9</property>
                         <property name="name">name_cut</property>
                         <property name="dataType">string</property>
                     </structure>
                     <structure>
-                        <property name="position">10</property>
+                        <property name="position">8</property>
                         <property name="name">mailing_id</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">total</property>
                         <property name="dataType">integer</property>
                     </structure>
                 </list-property>
             </structure>
             <property name="dataSource">Scripted Data Source</property>
             <method name="open"><![CDATA[monthStatDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MonthStatDataSet();
-mailDetails = monthStatDataSet.getMonthDetails(params["companyID"], params["adminID"], params["startdate"] , params["enddate"]);
+mailDetails = monthStatDataSet.getMonthDetails(params["companyID"], params["adminID"], params["startdate"] , params["enddate"], params["top10metrics"]);
 currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if( currentrow < mailDetails.size() ) {
     row["mailing_id"] = mailDetails.get(currentrow).getMailingId();
@@ -407,12 +369,11 @@ currentrow = 0;]]></method>
 	row["kilobyte"] = mailDetails.get(currentrow).getKiloByte();
 	row["mailing_count"] = mailDetails.get(currentrow).getMailingCount();
 	row["mailtype"] = mailDetails.get(currentrow).getMailtype();
-	row["open_count"] = mailDetails.get(currentrow).getOpenings();
-	row["click_recipients"] = mailDetails.get(currentrow).getClickRecipients();
 	row["name_cut"] = row["shortname"];
 	if (row["name_cut"].length > 40) {
 		row["name_cut"] = row["name_cut"].substring(0, 37) + "...";
-	}	
+	}
+	row["total"] = mailDetails.get(currentrow).getTotal();		
 	currentrow++;
 	return true;
 }
@@ -820,33 +781,6 @@ return false;]]></method>
                                         </structure>
                                         <property name="textAlign">right</property>
                                         <property name="resultSetColumn">kilobyte</property>
-                                    </data>
-                                </cell>
-                            </row>
-                            <row id="766">
-                                <property name="style">even</property>
-                                <cell id="767">
-                                    <text-data id="769">
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.recipient.active", reportContext.getLocale())</expression>
-                                    </text-data>
-                                </cell>
-                                <cell id="768">
-                                    <data id="770">
-                                        <property name="numberAlign">right</property>
-                                        <structure name="numberFormat">
-                                            <property name="category">Fixed</property>
-                                            <property name="pattern">#,##0</property>
-                                        </structure>
-                                        <property name="textAlign">right</property>
-                                        <property name="dataSet">RecipientCountDataSet</property>
-                                        <list-property name="boundDataColumns">
-                                            <structure>
-                                                <property name="name">recipient_count</property>
-                                                <expression name="expression" type="javascript">dataSetRow["recipient_count"]</expression>
-                                                <property name="dataType">integer</property>
-                                            </structure>
-                                        </list-property>
-                                        <property name="resultSetColumn">recipient_count</property>
                                     </data>
                                 </cell>
                             </row>
@@ -2581,11 +2515,6 @@ function beforeDrawAxisLabel( axis, label, icsc ) {
                                 <property name="dataType">string</property>
                             </structure>
                             <structure>
-                                <property name="name">Column Binding</property>
-                                <expression name="expression" type="javascript">dataSetRow["open_count"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">mailing_id</property>
                                 <expression name="expression" type="javascript">dataSetRow["mailing_id"]</expression>
                                 <property name="dataType">integer</property>
@@ -2595,13 +2524,39 @@ function beforeDrawAxisLabel( axis, label, icsc ) {
                                 <expression name="expression" type="javascript">dataSetRow["description"]</expression>
                                 <property name="dataType">string</property>
                             </structure>
+                            <structure>
+                                <property name="name">total</property>
+                                <expression name="expression" type="javascript">dataSetRow["total"]</expression>
+                                <property name="dataType">integer</property>
+                                <property name="allowExport">true</property>
+                            </structure>
                         </list-property>
                         <property name="pageBreakInterval">1410065408</property>
                         <list-property name="sort">
                             <structure>
+                                <expression name="key" type="javascript">row["total"]</expression>
+                                <property name="direction">desc</property>
+                                <property name="strength">-1</property>
+                            </structure>
+                            <structure>
                                 <expression name="key" type="javascript">new Date(dataSetRow["date"].substr(6,4),dataSetRow["date"].substr(3,2),dataSetRow["date"].substr(0,2))</expression>
                                 <property name="direction">asc</property>
                                 <property name="strength">-1</property>
+                            </structure>
+                            <structure>
+                                <expression name="key" type="javascript">row["shortname"]</expression>
+                                <property name="direction">asc</property>
+                                <property name="strength">-1</property>
+                            </structure>
+                        </list-property>
+                        <list-property name="filter">
+                            <structure>
+                                <property name="operator">top-n</property>
+                                <expression name="expr" type="javascript">row["total"]</expression>
+                                <simple-property-list name="value1">
+                                    <value>10</value>
+                                </simple-property-list>
+                                <property name="updateAggregation">true</property>
                             </structure>
                         </list-property>
                         <column id="170"/>

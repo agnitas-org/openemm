@@ -838,8 +838,10 @@ public abstract class BaseDaoImpl {
 			validateStatement(selectBlobStatement);
 			logSqlStatement(logger, selectBlobStatement, parameter);
 			Blob blob = getJdbcTemplate().queryForObject(selectBlobStatement, Blob.class, parameter);
-			try (InputStream inputStream = blob.getBinaryStream()) {
-				IOUtils.copy(inputStream, outputStream);
+			if (blob != null) {
+				try (InputStream inputStream = blob.getBinaryStream()) {
+					IOUtils.copy(inputStream, outputStream);
+				}
 			}
 		} catch (DataAccessException e) {
 			logSqlError(e, logger, selectBlobStatement, parameter);

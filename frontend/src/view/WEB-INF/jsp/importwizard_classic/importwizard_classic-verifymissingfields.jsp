@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"
-         import="org.agnitas.util.*, java.util.*, java.text.*, org.agnitas.web.*, org.agnitas.beans.*"  errorPage="/error.do" %>
+         import="org.agnitas.util.*, java.util.*, java.text.*, org.agnitas.web.*, org.agnitas.beans.*, com.agnitas.beans.*"  errorPage="/error.do" %>
 <%@ page import="org.agnitas.util.importvalues.ImportMode" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>

@@ -189,7 +189,14 @@ public class RecipientImpl implements Recipient {
 	@Override
 	public int getCustomerID() {
 		if (customerID == 0) {
-			customerID = NumberUtils.toInt((String) custParameters.get("customer_id"));
+			Object value = custParameters.get("customer_id");
+			if (value == null || value instanceof String) {
+				customerID = NumberUtils.toInt((String) value);
+			} else if (value instanceof Integer){
+				customerID = (Integer) value;
+			} else {
+				throw new RuntimeException("Invalid data type for customerID");
+			}
 		}
 		
 		return customerID;
@@ -399,7 +406,7 @@ public class RecipientImpl implements Recipient {
 	 *            the name of the field to copy.
 	 * @param suffix
 	 *            a suffix for the parameters in the map.
-	 * @return true when the copying was successfull.
+	 * @return true when the copying was successful.
 	 */
 	private boolean copyDate(Map<String, Object> req, String name, String suffix) {
 		String[] field = { ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR, ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE, ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND };
@@ -487,7 +494,7 @@ public class RecipientImpl implements Recipient {
 							setCustParameters(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE, Integer.toString(date.get(Calendar.MINUTE)));
 							setCustParameters(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND, Integer.toString(date.get(Calendar.SECOND)));
 						} catch (ParseException e) {
-							logger.error("Invalid value for customer field '" + entry.getKey() + "' with expected format '" + ((String) caseInsensitiveParameters.get(entry.getKey() + "_format")) + "'");
+							logger.error("Invalid value for customer field '" + entry.getKey() + "' with expected format '" + ((String) caseInsensitiveParameters.get(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT)) + "'");
 						}
 					}
 				} else {
@@ -566,7 +573,7 @@ public class RecipientImpl implements Recipient {
 		// Those are used for updating the users data only without any new subscription
 		
 		for (Entry<String, Object> entry : requestParameters.entrySet()) {
-			if (entry.getKey().startsWith("agnSUBSCRIBE")) {
+			if (StringUtils.startsWithIgnoreCase(entry.getKey(), "agnSUBSCRIBE")) {
 				String postfix = "";
 				
 				int mediatype;
@@ -626,20 +633,45 @@ public class RecipientImpl implements Recipient {
 		}
 
 		if (aEntry != null) {
-			boolean changeit = false;
 			// put changes in db
 			switch (UserStatus.getUserStatusByID(aEntry.getUserStatus())) {
 				case AdminOut:
 				case Bounce:
 				case UserOut:
 					if (subscribeStatus == 1) {
-						changeit = true;
+						// Subscribe this currently inactive recipient
+						if (!doubleOptIn) {
+							aEntry.setUserStatus(UserStatus.Active.getStatusCode());
+							if (remoteAddr == null) {
+								aEntry.setUserRemark("CSV Import");
+							} else {
+								aEntry.setUserRemark("Opt-In-IP: " + remoteAddr);
+								aEntry.setReferrer(referrer);
+							}
+						} else {
+							aEntry.setUserStatus(UserStatus.WaitForConfirm.getStatusCode());
+							if (remoteAddr == null) {
+								aEntry.setUserRemark("CSV Import");
+							} else {
+								aEntry.setUserRemark("Opt-In-IP: " + remoteAddr);
+								aEntry.setReferrer(referrer);
+							}
+						}
+						bindingEntryDao.updateStatus(aEntry, companyID);
 					}
 					break;
 				case WaitForConfirm:
 				case Active:
 					if (subscribeStatus == 0) {
-						changeit = true;
+						// Unsubscribe this currently active recipient
+						aEntry.setUserStatus(UserStatus.UserOut.getStatusCode());
+						if (remoteAddr == null) {
+							aEntry.setUserRemark("CSV Import");
+						} else {
+							aEntry.setUserRemark("User-Opt-Out: " + remoteAddr);
+							aEntry.setExitMailingID(mailingID);
+						}
+						bindingEntryDao.updateStatus(aEntry, companyID);
 					}
 					break;
 				case Blacklisted:
@@ -648,43 +680,6 @@ public class RecipientImpl implements Recipient {
 					break;
 				default:
 					break;
-			}
-			if (changeit) {
-				switch (subscribeStatus) {
-				case 0:
-					aEntry.setUserStatus(UserStatus.UserOut.getStatusCode());
-					if (mailingID != 0) {
-						aEntry.setUserRemark("Opt-Out-Mailing: " + mailingID);
-						aEntry.setExitMailingID(mailingID);
-					} else {
-						aEntry.setUserRemark("User-Opt-Out: " + remoteAddr);
-						aEntry.setExitMailingID(0);
-					}
-					break;
-
-				case 1:
-					if (!doubleOptIn) {
-						aEntry.setUserStatus(UserStatus.Active.getStatusCode());
-						if (remoteAddr == null) {
-							aEntry.setUserRemark("CSV Import");
-						} else {
-							aEntry.setUserRemark("Opt-In-IP: " + remoteAddr);
-							aEntry.setReferrer(referrer);
-						}
-					} else {
-						aEntry.setUserStatus(UserStatus.WaitForConfirm.getStatusCode());
-						if (remoteAddr == null) {
-							aEntry.setUserRemark("CSV Import");
-						} else {
-							aEntry.setUserRemark("Opt-In-IP: " + remoteAddr);
-							aEntry.setReferrer(referrer);
-						}
-					}
-					break;
-				default:
-					throw new Exception("Invalid subscribeStatus");
-				}
-				bindingEntryDao.updateStatus(aEntry, companyID);
 			}
 		} else {
 			if (subscribeStatus == 1) {

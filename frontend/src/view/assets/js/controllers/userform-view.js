@@ -1,17 +1,17 @@
 AGN.Lib.Controller.new('userform-view', function () {
+    var FormBuilder = AGN.Lib.FormBuilder;
+
     var actionURLPattern;
 
     this.addDomInitializer('userform-view', function() {
         var config = this.config;
         actionURLPattern = config.actionURLPattern;
-
     });
 
     this.addAction({change: 'change-intro-action'}, function() {
         var link = $('#startActionLink');
         var actionId = this.el.val();
         changeLinkState(link, actionId);
-
     });
 
     this.addAction({change: 'change-final-action'}, function() {
@@ -24,6 +24,28 @@ AGN.Lib.Controller.new('userform-view', function () {
         var $el = $(this.el);
         var options = AGN.Lib.Helpers.objFromString($el.data("action-options"));
         checkVelocityScripts(options.type);
+    });
+
+    this.addAction({click: 'saveUserForm'}, function () {
+        var form = AGN.Lib.Form.get($("form#userFormForm"));
+
+        if(FormBuilder.isCreated('#successFormBuilder')) {
+            var successFormBuilderJson = FormBuilder.get('#successFormBuilder').getJson();
+            form.setValueOnce("successSettings.formBuilderJson", successFormBuilderJson);
+            var successFormDisabledFields = $('#successFormBuilder').find('input:enabled,select:enabled');
+            successFormDisabledFields.prop('disabled', true);
+        }
+
+        if(FormBuilder.isCreated('#errorFormBuilder')) {
+            var errorFormBuilderJson = FormBuilder.get('#errorFormBuilder').getJson();
+            form.setValueOnce("errorSettings.formBuilderJson", errorFormBuilderJson);
+            var errorFormDisabledFields = $('#errorFormBuilder').find('input:enabled,select:enabled');
+            errorFormDisabledFields.prop('disabled', true);
+        }
+
+        form.submit();
+        successFormDisabledFields.prop('disabled', false);
+        errorFormDisabledFields.prop('disabled', false);
     });
 
     function checkVelocityScripts(type) {

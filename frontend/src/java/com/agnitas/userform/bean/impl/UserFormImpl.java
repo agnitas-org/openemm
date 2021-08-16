@@ -32,7 +32,6 @@ import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.springframework.context.ApplicationContext;
 
-import com.agnitas.beans.LinkProperty;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.userform.bean.UserForm;
@@ -112,6 +111,9 @@ public class UserFormImpl implements UserForm {
 	protected String errorMimetype = "text/html"; // alternative: "application/json"
 
     private boolean isActive;
+
+    private String successFormBuilderJson;
+    private String errorFormBuilderJson;
 
     /**
      * Getter for property companyID.
@@ -216,7 +218,7 @@ public class UserFormImpl implements UserForm {
     
     /**
      * Setter for property successTemplate.
-     * @param successTemplate 
+     * @param successTemplate
      */
     @Override
 	public void setSuccessTemplate(String successTemplate) {
@@ -336,12 +338,11 @@ public class UserFormImpl implements UserForm {
     }
 
     protected boolean evaluateAction(ApplicationContext con, org.agnitas.actions.EmmAction aAction, Map<String, Object> params, final EmmActionOperationErrors errors) {
-        boolean result=true;
-        
-        if(aAction==null) {
-            return result;
+        if (aAction == null) {
+            return true;
         }
-       
+
+        boolean result = false;
         try {
         	EmmActionService emmActionService = (EmmActionService) con.getBean("EmmActionService");
             result = emmActionService.executeActions(aAction.getId(), aAction.getCompanyID(), params, errors);
@@ -350,7 +351,6 @@ public class UserFormImpl implements UserForm {
         } catch (Exception e) {
             logFormParameters(params);
             logger.error("evaluateAction: "+e, e);
-			result = false;
         }
         
         return result;
@@ -404,7 +404,7 @@ public class UserFormImpl implements UserForm {
 		return evaluateFormResult(params, actionResult, con);
 	}
     
-	private final void evaluteTemplate(final Map<String, Object> params, final ApplicationContext applicationContext, final String template, final Writer writer) throws Exception {
+	private void evaluteTemplate(final Map<String, Object> params, final ApplicationContext applicationContext, final String template, final Writer writer) throws Exception {
 		final VelocityWrapperFactory factory = VelocitySpringUtils.getVelocityWrapperFactory(applicationContext);
 		final VelocityWrapper velocity = factory.getWrapper(companyID);
 
@@ -413,7 +413,7 @@ public class UserFormImpl implements UserForm {
 		velocity.evaluate(paramsEscaped, template, writer, id, 0);	// This script is from the form, not from a action, so action ID is 0
 	}
 	
-	private final String evaluateResultUrl(final Map<String, Object> params, final ApplicationContext applicationContext, final String url) throws Exception {
+	private String evaluateResultUrl(final Map<String, Object> params, final ApplicationContext applicationContext, final String url) throws Exception {
 		try(final StringWriter writer = new StringWriter()) {
 			evaluteTemplate(params, applicationContext, url, writer);
 			
@@ -500,13 +500,17 @@ public class UserFormImpl implements UserForm {
     }
 
     @Override
-    public String getActionNames() {
-        return actionNames;
-    }
+    public List<Integer> getUsedActionIds() {
+        ArrayList<Integer> actions = new ArrayList<>();
+        if (startActionID > 0) {
+            actions.add(startActionID);
+        }
 
-    @Override
-    public void setActionNames(String actionNames) {
-        this.actionNames = actionNames;
+        if (endActionID > 0) {
+            actions.add(endActionID);
+        }
+
+        return actions;
     }
 
     @Override
@@ -551,11 +555,7 @@ public class UserFormImpl implements UserForm {
 
 	@Override
 	public void setSuccessMimetype(String successMimetype) {
-		if (StringUtils.isBlank(successMimetype)) {
-			this.successMimetype = "text/html";
-		} else {
-			this.successMimetype = successMimetype;
-		}
+		this.successMimetype = StringUtils.defaultIfBlank(successMimetype, "text/html");
 	}
 
 	@Override
@@ -565,36 +565,7 @@ public class UserFormImpl implements UserForm {
 
 	@Override
 	public void setErrorMimetype(String errorMimetype) {
-		if (StringUtils.isBlank(errorMimetype)) {
-			this.errorMimetype = "text/html";
-		} else {
-			this.errorMimetype = errorMimetype;
-		}
-	}
-
-	/**
-	 * Returns a list of link properties with are contained in all links of thi mailing.
-	 * Link properties contained in a link but not in all the others are not contained in this list,
-	 * but are contained in the link property list of the specific link additionally to the links of this list.
-	 * 
-	 * @return
-	 */
-	@Override
-	public List<LinkProperty> getCommonLinkExtensions() {
-		List<LinkProperty> commonLinkProperties = null;
-		for (ComTrackableUserFormLink link : getTrackableLinks().values()) {
-			if (commonLinkProperties == null) {
-				commonLinkProperties = new ArrayList<>(link.getProperties());
-			} else {
-				commonLinkProperties.retainAll(link.getProperties());
-			}
-		}
-		
-		if (commonLinkProperties == null) {
-			commonLinkProperties = new ArrayList<>();
-		}
-		
-		return commonLinkProperties;
+		this.errorMimetype = StringUtils.defaultIfBlank(errorMimetype, "text/html");
 	}
 
     @Override
@@ -615,5 +586,25 @@ public class UserFormImpl implements UserForm {
     @Override
 	public void setIsActive(boolean active) {
         isActive = active;
+    }
+
+    @Override
+    public String getSuccessFormBuilderJson() {
+        return successFormBuilderJson;
+    }
+
+    @Override
+    public void setSuccessFormBuilderJson(String successFormBuilderJson) {
+        this.successFormBuilderJson = successFormBuilderJson;
+    }
+
+    @Override
+    public String getErrorFormBuilderJson() {
+        return errorFormBuilderJson;
+    }
+
+    @Override
+    public void setErrorFormBuilderJson(String errorFormBuilderJson) {
+        this.errorFormBuilderJson = errorFormBuilderJson;
     }
 }

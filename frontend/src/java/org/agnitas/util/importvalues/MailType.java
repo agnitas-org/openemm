@@ -13,7 +13,20 @@ package org.agnitas.util.importvalues;
 public enum MailType {
 	TEXT("recipient.mailingtype.text", 0),
 	HTML("HTML", 1),
-	HTML_OFFLINE("recipient.mailingtype.htmloffline", 2);
+	HTML_OFFLINE("recipient.mailingtype.htmloffline", 2),
+	
+	/**
+	 * Historical Mailtype, used in old mailingaccount data. Use HTML_OFFLINE for new data instead
+	 */
+	@Deprecated
+	HTML_OFFLINE_HST("recipient.mailingtype.htmloffline", 3),
+	
+	/**
+	 * Historical Mailtype
+	 * Text-, HTML-, MobileHTML- and Offline-HTML-Mail
+	 */
+	@Deprecated
+	MHTML_OFFLINE_HST("recipient.mailingtype.mhtml_and_offline", 4);
 
 	private String messageKey;
 	

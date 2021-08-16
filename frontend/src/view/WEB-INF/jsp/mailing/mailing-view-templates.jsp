@@ -63,13 +63,17 @@
                         <div class="col-xs-6 col-sm-4 col-md-3 card-content">
                             <a href="#" class="card old-cards" data-form-submit data-action="select-layout" data-form-set="templateID: ${template.id}" data-layout-id="${template.id}" data-action="select-layout">
                                 <c:choose>
+                                    <c:when test="${template.onlyPostType}">
+                                        <c:url var="previewImageSrc" value="assets/core/images/facelift/post_thumbnail.jpg"/>
+                                    </c:when>
                                     <c:when test="${template.previewComponentId eq 0}">
-                                        <img class="card-image" src="${absoluteImagePath}/facelift/no_preview.png"/>
+                                        <c:url var="previewImageSrc" value="/assets/core/images/facelift/no_preview.png"/>
                                     </c:when>
                                     <c:otherwise>
-                                        <img class="card-image" src="<html:rewrite page="/sc?compID=${template.previewComponentId}" />"/>
+                                        <c:url var="previewImageSrc" value="/sc?compID=${template.previewComponentId}"/>
                                     </c:otherwise>
                                 </c:choose>
+                                <img class="card-image" src="${previewImageSrc}"/>
                                 <div class="card-body">
                                     <strong class="headline">
                                             ${template.shortname}

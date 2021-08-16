@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -48,6 +49,12 @@ public abstract class BaseValidator {
     protected void assertIsNotEmpty(final byte[] propertyValue, final String propertyNameCode) {
         if (ArrayUtils.isEmpty(propertyValue)) {
             throwException("err.required", propertyNameCode);
+        }
+    }
+    
+    protected void assertIsEmail(String propertyValue, final String propertyNameCode) {
+        if (!AgnUtils.isEmailValid(propertyValue)) {
+            throwException("err.isEmail", propertyNameCode);
         }
     }
 

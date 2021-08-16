@@ -1,0 +1,48 @@
+******* ADD-ONS' IMPLEMENTATION *******
+Changelist of ckeditor's files. Modified add-ons should be pasted as the are after migration:
+1) /plugins/image/dialogs/image.js
+Changed to use img-tag attributes instead of style properties when changing image settings in image-dialog (GWUA-2211)
+
+2) /plugins/htmlwriter/plugin.js
+Changed to keep ampersands within attributes (doesn't break href/src attributes anymore)
+Changed agn-tags processing in attributes to prevent quotes escaping
+
+3) /plugins/pastefromword/filter/default.js
+Changes to trim unnecessary attributes for the `font` and remove the tag `font` if it is empty.
+
+4) /plugins/image/plugin.js
+Changes that prevent the plugin from turning img-element attributes into styles.
+
+5) /plugins/table/plugin.js
+Removed transformation of width attribute to width style. GWUA-4097
+
+6) /plugins/showprotected/plugin.js and /plugins/showprotected/dialogs/protected.js
+Implemented actual text inlining instead of icon.
+
+7) /plugins/showprotected/plugin.js
+Changed to prevent making widget of head('meta' and 'script') and comment elements.
+
+8) /ckeditor-emm-helper.jsp
+Implemented replace defaultHtmlFilterRulesForAll to prevent remove class attribute from <html> tag if fullPage is true. GWUA-4607
+Introduced allowExternalScript parameter that allows external script tags
+
+******* CUSTOM IMPLEMENTATION *******
+EMM implementations which should also be saved after migration of ckeditor:
+1) /plugins/emm/*
+2) ckeditor-emm-helper.jsp
+3) emm-image-browser.jsp
+4) emm_config.js
+5) emm_fonts.css
+
+******* FAQ *******
+In case of migration :
+1) use ckeditor builder (https://ckeditor.com/cke4/builder) and upload there current version of build-config.js.
+2) put modified add-ons in /plugins dir
+3) put emm implementations in corresponding folders
+
+In Case you need to modify source code of some add-on:
+1) exclude you add-on from build-config.js;
+2) rebuild ckeditor using build-config.js (it exclude uglified version of your add-on from ckeditor.js)
+3) find and download source code of your add-on;
+4) modify it;
+5) include you modified add-on as external using `config.extraPlugins` property in emm_config.js file

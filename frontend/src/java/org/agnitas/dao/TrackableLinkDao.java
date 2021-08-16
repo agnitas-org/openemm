@@ -13,9 +13,9 @@ package org.agnitas.dao;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.beans.ComTrackableLink;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.TrackableLinkListItem;
 
 public interface TrackableLinkDao {
@@ -45,4 +45,6 @@ public interface TrackableLinkDao {
     void batchSaveTrackableLinks(@VelocityCheck int companyID, int mailingId, Map<String, ComTrackableLink> trackableLinksMap, boolean removeUnusedLinks);
 
 	List<TrackableLinkListItem> listTrackableLinksForMailing(@VelocityCheck int companyID, int mailingID);
+
+    boolean isTrackingOnEveryPositionAvailable(@VelocityCheck int companyId, int mailingId);
 }

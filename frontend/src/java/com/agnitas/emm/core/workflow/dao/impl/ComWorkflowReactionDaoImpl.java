@@ -588,8 +588,8 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
 			sqlGetRecipientsBuilder.append(")");
         }
 
-        if (joinType.equals("FULL") && isMariaDB()) {
-		    // Duplicate parameters for UNION that combines two similar SELECT clauses having same placeholders.
+        if (joinType.equals("FULL") && !isOracleDB()) {
+            // Duplicate parameters for UNION that combines two similar SELECT clauses having same placeholders.
             sqlParameters.addAll(Arrays.asList(sqlParameters.toArray()));
             return select(logger, convertFullJoinToUnion(sqlGetRecipientsBuilder), new IntegerRowMapper(), sqlParameters.toArray());
         } else {

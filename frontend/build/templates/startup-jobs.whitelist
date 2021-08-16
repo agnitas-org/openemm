@@ -1,0 +1,16 @@
+#
+# Whitelist for startup jobs.
+#
+# To allow a startup job to be run, list its full-qualified classname here.
+#
+# Empty lines are skipped.
+# Comments starts a "#" and are also skipped
+#
+
+# Jobs already present (and in common also already executed)
+com.agnitas.startuplistener.startupjobs.LastLoginMigrationStartupJob
+com.agnitas.startuplistener.startupjobs.TargetGroupUsageDataStartupJob
+com.agnitas.startuplistener.startupjobs.PasswordConversionStartupJob
+com.agnitas.startuplistener.startupjobs.LoginTrackSettingsMigrationStartupJob
+
+# Add new jobs here. Leave a comment on each job (JIRA issue, short description, ...)

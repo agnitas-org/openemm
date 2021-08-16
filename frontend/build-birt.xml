@@ -319,7 +319,7 @@
 				<include name="mail.jar" />
 				<include name="quartz-*" />
 				<include name="spring-*" />
-				<include name="bcprov-jdk*" />
+				<include name="bcprov-ext-jdk*" />
 				<include name="ojdbc*" />
 				<include name="quartz-oracle-*" />
 				<include name="mysql-*" />

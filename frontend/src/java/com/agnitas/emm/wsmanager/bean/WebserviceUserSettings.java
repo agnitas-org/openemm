@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.wsmanager.bean;
 
+import java.util.Optional;
 import java.util.OptionalInt;
 
 public final class WebserviceUserSettings {
@@ -18,13 +19,14 @@ public final class WebserviceUserSettings {
 	private final OptionalInt requestRateLimit;
 	private final OptionalInt bulkSizeLimit;
 	private final OptionalInt maxResultListSize;
+	private final Optional<String> apiCallLimits;
 	
-	public WebserviceUserSettings(final int defaultDataSourceID, final Integer requestRateLimitOrNull, final Integer bulkSizeLimitOrNull, final Integer maxResultListSizeOrNull) {
-		super();
+	public WebserviceUserSettings(final int defaultDataSourceID, final Integer requestRateLimitOrNull, final Integer bulkSizeLimitOrNull, final Integer maxResultListSizeOrNull, final String apiCallLimits) {
 		this.defaultDataSourceID = defaultDataSourceID;
 		this.requestRateLimit = requestRateLimitOrNull != null ? OptionalInt.of(requestRateLimitOrNull) : OptionalInt.empty();
 		this.bulkSizeLimit = bulkSizeLimitOrNull != null ? OptionalInt.of(bulkSizeLimitOrNull) : OptionalInt.empty();
 		this.maxResultListSize = maxResultListSizeOrNull != null ? OptionalInt.of(maxResultListSizeOrNull) : OptionalInt.empty();
+		this.apiCallLimits = Optional.ofNullable(apiCallLimits);
 	}
 
 	public final int getDefaultDataSourceID() {
@@ -41,6 +43,10 @@ public final class WebserviceUserSettings {
 
 	public final OptionalInt getMaxResultListSize() {
 		return maxResultListSize;
+	}
+
+	public final Optional<String> getApiCallLimitsSpec() {
+		return this.apiCallLimits;
 	}
 
 }

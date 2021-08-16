@@ -37,7 +37,6 @@ import org.agnitas.util.CsvDataInvalidItemCountException;
 import org.agnitas.util.CsvDataInvalidTextAfterQuoteException;
 import org.agnitas.util.CsvReader;
 import org.agnitas.util.DbColumnType;
-import org.agnitas.util.TempFileInputStream;
 import org.agnitas.util.ZipDataException;
 import org.agnitas.util.ZipUtilities;
 import org.agnitas.util.importvalues.Charset;
@@ -54,6 +53,9 @@ import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader.JsonToken;
+
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.FileHeader;
 
 public class ProfileImportCsvPreviewLoader {
     @SuppressWarnings("unused")
@@ -112,13 +114,26 @@ public class ProfileImportCsvPreviewLoader {
 			            	csvFileColumnsForDuplicateCheck.add(csvColumns);
 			            }
 					} else {
+						List<String> firstDataLine = csvReader.readNextCsvLine();
 						fileHeaders = new ArrayList<>();
-						int i = 1;
 						for (ColumnMapping columnMapping : mappingList) {
 							if (!columnMapping.getDatabaseColumn().equals(ColumnMapping.DO_NOT_IMPORT)) {
-								fileHeaders.add("column_" + i);
+								if (!columnMapping.getFileColumn().startsWith("column_")) {
+									throw new ImportWizardContentParseException("error.import.mapping.column.invalid", columnMapping.getFileColumn());
+								} else {
+									int columnId;
+									try {
+										columnId = Integer.parseInt(columnMapping.getFileColumn().substring(7));
+									} catch (Exception e) {
+										throw new ImportWizardContentParseException("error.import.mapping.column.invalid", columnMapping.getFileColumn());
+									}
+									if (columnId > firstDataLine.size()) {
+										throw new ImportWizardContentParseException("error.import.mapping.column.invalid", columnMapping.getFileColumn());
+									} else {
+										fileHeaders.add(columnMapping.getFileColumn());
+									}
+								}
 							}
-							i++;
 						}
 					}
 						
@@ -186,17 +201,15 @@ public class ProfileImportCsvPreviewLoader {
 					}
 					return dataInputStream;
 				} else {
-					File unzipPath = new File(importFile.getAbsolutePath() + ".unzipped");
-					unzipPath.mkdir();
-					ZipUtilities.decompressFromEncryptedZipFile(importFile, unzipPath, importProfile.getZipPassword());
-					
-					// Check if there was only one file within the zip file and use it for import
-					String[] filesToImport = unzipPath.list(); // Returns null if no files found
-					if (filesToImport == null || filesToImport.length != 1) {
+					ZipFile zipFile = new ZipFile(importFile);
+					zipFile.setPassword(importProfile.getZipPassword().toCharArray());
+					List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+					// Check if there is only one file within the zip file
+					if (fileHeaders == null || fileHeaders.size() != 1) {
 						throw new Exception("Invalid number of files included in zip file");
+					} else {
+						return zipFile.getInputStream(fileHeaders.get(0));
 					}
-					InputStream dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
-					return new TempFileInputStream(dataInputStream, unzipPath);
 				}
 			} catch (ImportException e) {
 				throw e;
@@ -271,7 +284,17 @@ public class ProfileImportCsvPreviewLoader {
 								int csvColumnsExpected = 0;
 								for (ColumnMapping columnMapping : importProfile.getColumnMapping()) {
 									if (StringUtils.isNotBlank(columnMapping.getFileColumn())) {
-										csvColumnsExpected++;
+										if (!columnMapping.getFileColumn().startsWith("column_")) {
+											throw new ImportWizardContentParseException("error.import.mapping.column.invalid", columnMapping.getFileColumn());
+										} else {
+											int columnId;
+											try {
+												columnId = Integer.parseInt(columnMapping.getFileColumn().substring(7));
+											} catch (Exception e) {
+												throw new ImportWizardContentParseException("error.import.mapping.column.invalid", columnMapping.getFileColumn());
+											}
+											csvColumnsExpected = Math.max(csvColumnsExpected, columnId);
+										}
 									}
 								}
 								
@@ -281,10 +304,10 @@ public class ProfileImportCsvPreviewLoader {
 								columns = new CSVColumnState[Math.min(csvLineData.size(), importProfile.getColumnMapping().size())];
 								
 								for (int i = 0; i < columns.length; i++) {
-									final String columnName = importProfile.getColumnMapping().get(i).getDatabaseColumn();
+									ColumnMapping columnMapping = importProfile.getColumnMapping().get(i);
 									columns[i] = new CSVColumnState();
-									columns[i].setColName("column_" + (i + 1));
-									if (columnName != null && !columnName.equals(ColumnMapping.DO_NOT_IMPORT)) {
+									columns[i].setColName(columnMapping.getFileColumn());
+									if (columnMapping.getDatabaseColumn() != null && !columnMapping.getDatabaseColumn().equals(ColumnMapping.DO_NOT_IMPORT)) {
 										columns[i].setImportedColumn(true);
 									} else {
 										columns[i].setImportedColumn(false);

@@ -1,22 +1,18 @@
 (function() {
     var WorkflowManagerStatistics = function(campaignManager) {
 
-        var statisticsVisible = false;
+        this.statisticsVisible = false;
 
         this.showStatistics = function(workflowId) {
-            jQuery.ajax({
-                type: "POST",
-                url: AGN.url("/workflow/loadStatistics.action"),
-                data: {
-                    workflowId: workflowId
-                },
-                success: function(data) {
-                    for(var nodeId in data) {
-                        campaignManager.getCMNodes().getNodes()[nodeId].statisticsList = data[nodeId];
-                    }
-                    campaignManager.relayout();
-                    window.status = 'wmLoadFinished';
+            $.post(AGN.url("/workflow/loadStatistics.action"), {workflowId: workflowId})
+              .done(function(data) {
+                for(var nodeId in data) {
+                    campaignManager.getCMNodes().getNodes()[nodeId].statisticsList = data[nodeId];
                 }
+                campaignManager.relayout();
+                window.status = 'wmLoadFinished';
+              }).fail(function() {
+                  AGN.Lib.Messages(t("Error"), t("defaults.error"), "alert");
             });
         };
 

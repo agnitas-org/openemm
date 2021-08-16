@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class AdminForm {
@@ -37,7 +38,6 @@ public class AdminForm {
     private int layoutBaseId;
     private String initialCompanyName;
     private String adminPhone;
-    private boolean isOneTimePassword;
     private int gender = 2;
     private String title;
     private String language;
@@ -45,11 +45,11 @@ public class AdminForm {
     private int altgId;
 
     public String getUsername() {
-        return username;
+        return StringUtils.trimToNull(username);
     }
 
     public void setUsername(String username) {
-        this.username = username;
+        this.username = StringUtils.trimToNull(username);
     }
 
     public int getAdminID() {
@@ -128,11 +128,11 @@ public class AdminForm {
     }
 
     public String getStatEmail() {
-        return statEmail;
+        return StringUtils.trimToNull(StringUtils.lowerCase(statEmail));
     }
 
     public void setStatEmail(String statEmail) {
-        this.statEmail = statEmail;
+        this.statEmail = StringUtils.trimToNull(StringUtils.lowerCase(statEmail));
     }
 
     public String getCompanyName() {
@@ -144,11 +144,11 @@ public class AdminForm {
     }
 
     public String getEmail() {
-        return email;
+        return StringUtils.trimToNull(StringUtils.lowerCase(email));
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = StringUtils.trimToNull(StringUtils.lowerCase(email));
     }
 
     public int getLayoutBaseId() {
@@ -173,14 +173,6 @@ public class AdminForm {
 
     public void setAdminPhone(String adminPhone) {
         this.adminPhone = adminPhone;
-    }
-
-    public boolean isOneTimePassword() {
-        return isOneTimePassword;
-    }
-
-    public void setOneTimePassword(boolean oneTimePassword) {
-        isOneTimePassword = oneTimePassword;
     }
 
     public int getGender() {

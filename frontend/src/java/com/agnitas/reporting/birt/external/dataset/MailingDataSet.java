@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 
 import org.agnitas.beans.Campaign;
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.factory.impl.MailingComponentFactoryImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.SafeString;
@@ -265,7 +266,7 @@ public class MailingDataSet extends BIRTDataSet {
 		((ComMailingComponentDaoImpl) componentDao).setDataSource(getDataSource());
 		((ComMailingComponentDaoImpl) componentDao).setMailingComponentFactory(new MailingComponentFactoryImpl());
 
-		int componentId = componentDao.getImageComponent(companyId, mailingId, 8);
+		int componentId = componentDao.getImageComponent(companyId, mailingId, MailingComponentType.ThumbnailImage);
 		MailingComponent component = componentDao.getMailingComponent(componentId, companyId);
 		if (component != null) {
 			return component.getBinaryBlock();
@@ -514,7 +515,7 @@ public class MailingDataSet extends BIRTDataSet {
 	public int[] getBounces(Integer mailingId, @VelocityCheck Integer companyId, String language, String selectedTargets) throws Exception {
 		int soft = 0;
 		int hard = 0;
-		List<BouncesRow> list = new MailingBouncesDataSet().getBouncesWithDetail(companyId, mailingId, language, selectedTargets, MailingBouncesDataSet.BounceType.BOTH);
+		List<BouncesRow> list = new MailingBouncesDataSet().getBouncesWithDetail(companyId, mailingId, language, selectedTargets, MailingBouncesDataSet.BounceType.BOTH, null);
 		
 		for (BouncesRow row : list) {
 			if (row.getDetail()<510) {

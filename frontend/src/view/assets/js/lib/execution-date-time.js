@@ -8,9 +8,13 @@
       }];
     };
 
-    TimeSchedule.create = function(scheduleElement) {
+    TimeSchedule.create = function(scheduleElement, extended) {
       scheduleElement = $.extend(TimeSchedule.defaults()[0], scheduleElement);
-      return AGN.Lib.Template.dom('schedule-time-wrapper', {scheduleElement: scheduleElement});
+      if (extended) {
+        return AGN.Lib.Template.dom('schedule-extended-time-wrapper', {scheduleElement: scheduleElement});
+      } else {
+        return AGN.Lib.Template.dom('schedule-time-wrapper', {scheduleElement: scheduleElement});
+      }
     };
 
     TimeSchedule.get = function($needle) {
@@ -59,7 +63,7 @@
         var self = this,
           wrapper = self.$rowWrapper;
 
-        var $timeWrapper = TimeSchedule.create(scheduleElement);
+        var $timeWrapper = TimeSchedule.create(scheduleElement, true);
 
         wrapper.find('.schedule-settings-wrapper').append($timeWrapper);
 
@@ -68,7 +72,7 @@
     };
 
     DayRow.prototype.removeSchedule = function($needle) {
-        TimeSchedule.get().remove();
+        TimeSchedule.get($needle).remove();
         this.$rowWrapper.trigger('row:remove-schedule');
     };
 
@@ -171,11 +175,12 @@
 
 
        $row.on('row:add-schedule', function() {
-            //show delete buttons if more than one schedule lines
             var timeLines = $row.find('.schedule-time-wrapper');
-            if (timeLines.length > 1) {
-                $row.find('[data-action="remove-schedule"]').closest('.input-group-addon').removeClass('hidden');
-            }
+            var multipleLines = timeLines.length > 1;
+
+            $row.find('[data-action="remove-schedule"]').closest('.input-group-addon')
+              .toggleClass('hidden', !multipleLines);
+            $row.find('.interval-reminder').toggleClass('hidden', !multipleLines);
 
             var $hourCheckbox = $row.find('.hour-checkbox');
             dayRow.hourCheckboxToggle($hourCheckbox);
@@ -184,11 +189,12 @@
             dayRow.timeCheckboxToggle($timeCheckbox);
        });
        $row.on('row:remove-schedule', function() {
-            //hide delete button if less than 2 schedule lines
             var timeLines = $row.find('.schedule-time-wrapper');
-            if (timeLines.length < 2) {
-                $row.find('[data-action="remove-schedule"]').closest('.input-group-addon').addClass('hidden');
-            }
+            var multipleLines = timeLines.length > 1;
+
+            $row.find('[data-action="remove-schedule"]').closest('.input-group-addon')
+              .toggleClass('hidden', !multipleLines);
+            $row.find('.interval-reminder').toggleClass('hidden', !multipleLines);
 
             if (timeLines.length === 0) {
                 dayRow.addSchedule();
@@ -259,7 +265,7 @@
     };
 
     PeriodRow.prototype.removeSchedule = function($needle) {
-        TimeSchedule.get().remove();
+        TimeSchedule.get($needle).remove();
         this.$rowWrapper.trigger('row:remove-schedule');
     };
 
@@ -277,7 +283,7 @@
         };
     };
 
-    PeriodRow.deserialize = function(object) {
+    PeriodRow.deserialize = function(object, type) {
       var data = $.extend(PeriodRow.defaults(), object);
       data.type = convertTypeToInt(object.type);
       data.monthDay = convertMonthToInt(object.monthDay);
@@ -363,7 +369,7 @@
                 dayLines.find('[data-action="remove-day"]').addClass('hidden');
             }
         });
-    };
+    }
 
     ScheduleTimeTable.prototype.clean = function() {
         this.$container.find('tr.l-time-schedule-row').remove();

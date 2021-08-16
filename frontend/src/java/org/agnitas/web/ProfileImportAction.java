@@ -357,7 +357,11 @@ public class ProfileImportAction extends ImportBaseFileAction {
 					break;
 				}
 
-				request.setAttribute("importProfileMode", importPreviewProfile.getImportMode());
+				request.setAttribute("showImportMailinglistSelection",
+						importPreviewProfile.getImportMode() != ImportMode.TO_BLACKLIST.getIntValue()
+						&& importPreviewProfile.getImportMode() != ImportMode.BLACKLIST_EXCLUSIVE.getIntValue()
+						&& !importPreviewProfile.isMailinglistsAll());
+				
 				if (importPreviewProfile.getImportMode() == ImportMode.REACTIVATE_BOUNCED.getIntValue()) {
                     messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING,
 		                    new ActionMessage(I18nString.getLocaleString("warning.import.mode.bounceractivation", AgnUtils.getLocale(request)), false));
@@ -419,7 +423,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 					aForm.setAllMailingLists(getAllMailingLists(admin));
 					aForm.setMailinglistAddMessage(profileImportCsvPreviewLoader.createMailinglistAddMessage());
 					aForm.getSelectedMailinglists().addAll(importPreviewProfile.getMailinglistIds());
-					checkProfileKeyColumnIndexed(messages, importPreviewProfile);
+					checkProfileKeyColumnIndexed(messages, errors, importPreviewProfile);
 
 					destination = mapping.findForward("preview");
 				}
@@ -432,7 +436,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 						messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("import.boundToMailinglist", "\"" + enforceMailinglist.getShortname() + "\" (ID: " + enforceMailinglist.getId() + ")"));
 						aForm.setEnforceMailinglist(enforceMailinglist);
 					} else if (mailinglistIDs.size() > 1) {
-						errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("import.error.import.toManyMailinglists"));
+						errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.import.mailinglists.one"));
 					}
 				}
 				break;
@@ -457,7 +461,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 
 					// Check for right to import without assigning to mailinglists
 					List<Integer> assignedLists = getAssignedMailingLists(aForm);
-					if (assignedLists.isEmpty() && !admin.permissionAllowed(Permission.IMPORT_WITHOUT_MAILINGLIST)) {
+					if (assignedLists.isEmpty() && !admin.permissionAllowed(Permission.IMPORT_WITHOUT_MAILINGLIST) && !importProceedProfile.isMailinglistsAll()) {
 						int importMode = importProceedProfile.getImportMode();
 						if ((importMode == ImportMode.ADD.getIntValue()
 								|| importMode == ImportMode.ADD_AND_UPDATE.getIntValue())) {
@@ -764,11 +768,16 @@ public class ProfileImportAction extends ImportBaseFileAction {
 	 * @param importProfile
 	 *             selected import profile
 	 */
-	private void checkProfileKeyColumnIndexed(ActionMessages messages, ImportProfile importProfile) {
+	private void checkProfileKeyColumnIndexed(ActionMessages messages, ActionMessages errors, ImportProfile importProfile) {
 		List<String> columnsToCheck = importProfile.getKeyColumns();
 		if (CollectionUtils.isNotEmpty(columnsToCheck)) {
 			if (!importRecipientsDao.isKeyColumnIndexed(importProfile.getCompanyId(), columnsToCheck)) {
-				messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.import.keyColumn.index"));
+				int unindexedLimit = configService.getIntegerValue(ConfigValue.MaximumContentLinesForUnindexedImport, importProfile.getCompanyId());
+				if (unindexedLimit >= 0 && importRecipientsDao.getResultEntriesCount("SELECT COUNT(*) FROM customer_" + importProfile.getCompanyId() + "_tbl") > unindexedLimit) {
+					errors.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.import.keyColumn.index"));
+				} else {
+					messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.import.keyColumn.index"));
+				}
 			}
 		}
 	}

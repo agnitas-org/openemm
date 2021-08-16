@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
@@ -29,7 +30,7 @@ public interface ComMailingComponentDao extends MailingComponentDao {
 
 	Map<Integer, Date> getImageComponentsTimestamps(@VelocityCheck int companyID, int mailingID);
 
-	List<MailingComponent> getMailingComponentsByType(int type, @VelocityCheck int companyID);
+	List<MailingComponent> getMailingComponentsByType(MailingComponentType type, @VelocityCheck int companyID);
 
     Map<Integer, Integer> getImageSizes(@VelocityCheck int companyID, int mailingID);
 
@@ -41,11 +42,11 @@ public interface ComMailingComponentDao extends MailingComponentDao {
 	
 	void deleteMailingComponentsByMailing(int mailingID);
 
-	boolean deleteHostedImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds);
+	boolean deleteImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds);
 
-    int getImageComponent(@VelocityCheck int companyId, int mailingId, int componentType);
+    int getImageComponent(@VelocityCheck int companyId, int mailingId, MailingComponentType componentType);
 
-    CdnImage getCdnImage(@VelocityCheck int companyID, int mailingID, String imageName);
+    CdnImage getCdnImage(@VelocityCheck int companyID, int mailingID, String imageName, boolean mobile);
 
 	MailingComponent getComponentByCdnID(String cdnID);
 
@@ -59,5 +60,5 @@ public interface ComMailingComponentDao extends MailingComponentDao {
      */
 	int setUnPresentComponentsForMailing(int mailingId, List<MailingComponent> presentComponents);
 
-	boolean updateBinBlockBulk(@VelocityCheck int companyId, Collection<Integer> mailingIds, int componentType, Collection<String> namePatterns, byte[] value) throws Exception;
+	boolean updateBinBlockBulk(@VelocityCheck int companyId, Collection<Integer> mailingIds, MailingComponentType componentType, Collection<String> namePatterns, byte[] value) throws Exception;
 }

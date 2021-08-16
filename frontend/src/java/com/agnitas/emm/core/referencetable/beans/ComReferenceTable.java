@@ -94,4 +94,8 @@ public interface ComReferenceTable {
 	void setDbTableSize(long dbTableSize);
 
 	String getTableSizeHumanReadable();
+
+	String getContentViewKeyColumn();
+
+	void setContentViewKeyColumn(String contentViewKeyColumn);
 }

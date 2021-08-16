@@ -138,7 +138,7 @@
         <emm:instantiate var="element" type="java.util.LinkedHashMap">
             <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
             <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-            <c:set target="${element}" property="extraAttributes" value="data-form-target='#userFormForm' data-form-submit=''"/>
+            <c:set target="${element}" property="extraAttributes" value="data-action='saveUserForm'"/>
             <c:set target="${element}" property="iconBefore" value="icon-save"/>
             <c:set target="${element}" property="name">
                 <mvc:message code="button.Save"/>

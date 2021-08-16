@@ -14,6 +14,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -153,12 +156,15 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			
 			List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
 			
-			String sql = "UPDATE customer_" + companyID + "_binding_tbl SET user_status = ?, user_remark = ?, exit_mailing_id = ?, user_type = ?, timestamp = CURRENT_TIMESTAMP";
+			entry.setChangeDate(new Date());
+			
+			String sql = "UPDATE customer_" + companyID + "_binding_tbl SET user_status = ?, user_remark = ?, exit_mailing_id = ?, user_type = ?, timestamp = ?";
 			List<Object> sqlParameters = new ArrayList<>();
 			sqlParameters.add(entry.getUserStatus());
 			sqlParameters.add(entry.getUserRemark());
 			sqlParameters.add(entry.getExitMailingID());
 			sqlParameters.add(entry.getUserType());
+			sqlParameters.add(entry.getChangeDate());
 			if (bindingColumns.contains("referrer")) {
 				sql += ", referrer = ?";
 				sqlParameters.add(entry.getReferrer());
@@ -199,16 +205,22 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 					
 					List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
 					
+					entry.setCreationDate(new Date());
+					entry.setChangeDate(entry.getCreationDate());
+					
 					String sqlInsertPart = "mailinglist_id, customer_id, user_type, user_status, timestamp, user_remark, creation_date, exit_mailing_id, mediatype";
-					String sqlValuePart = "?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, ?, ?";
+					String sqlValuePart = "?, ?, ?, ?, ?, ?, ?, ?, ?";
 					List<Object> sqlParameters = new ArrayList<>();
 					sqlParameters.add(entry.getMailinglistID());
 					sqlParameters.add(entry.getCustomerID());
 					sqlParameters.add(entry.getUserType());
 					sqlParameters.add(entry.getUserStatus());
+					sqlParameters.add(entry.getChangeDate());
 					sqlParameters.add(entry.getUserRemark());
+					sqlParameters.add(entry.getCreationDate());
 					sqlParameters.add(entry.getExitMailingID());
 					sqlParameters.add(entry.getMediaType());
+					
 					if (bindingColumns.contains("referrer")) {
 						sqlInsertPart += ", referrer";
 						sqlValuePart += ", ?";
@@ -317,13 +329,19 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean addTargetsToMailinglist(@VelocityCheck int companyID, int mailinglistID, ComTarget target) {
+	public boolean addTargetsToMailinglist(@VelocityCheck int companyID, int mailinglistID, ComTarget target, Set<MediaTypes> mediaTypes) {
 		try {
 			if (companyID <= 0) {
 				return false;
 			}
-			String sql = "INSERT INTO customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, user_type, user_status, user_remark, timestamp, exit_mailing_id, creation_date, mediatype) (SELECT cust.customer_id, " + mailinglistID + ", '" + UserType.World.getTypeCode() + "', 1, " + "'From Target " + target.getId() + "', CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, 0 FROM customer_" + companyID + "_tbl cust WHERE " + target.getTargetSQL() + ")";
-			update(logger, sql);
+			if (mediaTypes == null || mediaTypes.size() == 0) {
+				mediaTypes = new HashSet<>(Arrays.asList(MediaTypes.EMAIL));
+			}
+			for (MediaTypes mediaType : mediaTypes) {
+				String sql = "INSERT INTO customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, user_type, user_status, user_remark, timestamp, exit_mailing_id, creation_date, mediatype)"
+						+ " (SELECT cust.customer_id, " + mailinglistID + ", '" + UserType.World.getTypeCode() + "', 1, " + "'From Target " + target.getId() + "', CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, ? FROM customer_" + companyID + "_tbl cust WHERE " + target.getTargetSQL() + ")";
+				update(logger, sql, mediaType.getMediaCode());
+			}
 			return true;
 		} catch (Exception e3) {
 			return false;
@@ -412,11 +430,11 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			final String escapeClause = isOracleDB() ? " ESCAPE '\\'" : "";
 			
 			final String customerIdByPatternSubselect = String.format(
-					"SELECT customer_id FROM customer_%d_tbl WHERE email LIKE REPLACE(REPLACE(?, '_', '\\_'), '*', '%%') %s", 
+					"SELECT customer_id FROM customer_%d_tbl WHERE email LIKE REPLACE(REPLACE(?, '_', '\\_'), '*', '%%') %s",
 					companyId,
 					escapeClause);
 			
-			final String sql = String.format("UPDATE customer_%d_binding_tbl SET user_status=?, user_remark=?, timestamp=CURRENT_TIMESTAMP WHERE customer_id IN (%s)", 
+			final String sql = String.format("UPDATE customer_%d_binding_tbl SET user_status=?, user_remark=?, timestamp=CURRENT_TIMESTAMP WHERE customer_id IN (%s)",
 					companyId,
 					customerIdByPatternSubselect);
 			

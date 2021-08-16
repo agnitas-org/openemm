@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.CampaignAction;

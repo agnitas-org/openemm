@@ -54,4 +54,6 @@ public interface ComTemplateSettings {
     void setTargetExpression(String targetExpression);
     String getMailingParameters();
     void setMailingParameters(String mailingParameters);
+	boolean isNeedsTarget();
+	void setNeedsTarget(boolean needsTarget);
 }

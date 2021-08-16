@@ -1,9 +1,10 @@
+<%@ page import="org.agnitas.dao.MailingStatus" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.*, com.agnitas.web.forms.*" %>
 <%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>
 <%@ page import="org.agnitas.emm.core.commons.util.Constants" %>
-<%@ page import="com.agnitas.beans.ComMailing" %>
+<%@ page import="com.agnitas.beans.Mailing" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -56,6 +57,7 @@
         <html:hidden property="__STRUTS_CHECKBOX_searchNameChecked" value="false"/>
         <html:hidden property="__STRUTS_CHECKBOX_searchDescriptionChecked" value="false"/>
         <html:hidden property="__STRUTS_CHECKBOX_searchContentChecked" value="false"/>
+        <input type="hidden" name="fromListPage" value="true" > <%-- HTML tag is used, because this is not part of the form bean! --%>
 
         <div class="tile">
             <div class="tile-header">
@@ -313,7 +315,7 @@
                 String types = "0,1,2,3";
                 ComMailingBaseForm aForm = (ComMailingBaseForm) session.getAttribute("mailingBaseForm");
                 if (aForm != null) {
-                    types = aForm.getTypes();
+                    types = aForm.getTypesString();
                 }
             %>
 
@@ -391,38 +393,38 @@
                         <li>
                             <label class="label">
                                 <input type="checkbox" name="filterStatus" value="new" data-field-filter="" ${filterStatusSelectedNew}>
-                                <bean:message key="mailing.status.new"/>
+                                <bean:message key="<%= MailingStatus.NEW.getMessageKey() %>"/>
                             </label>
                         </li>
                         <li>
                             <label class="label">
                                 <input type="checkbox" name="filterStatus" value="edit" data-field-filter="" ${filterStatusSelectedEdit}>
-                                <bean:message key="mailing.status.edit"/>
+                                <bean:message key="<%= MailingStatus.EDIT.getMessageKey() %>"/>
                             </label>
                         </li>
                         <li>
                             <label class="label">
                                 <input type="checkbox" name="filterStatus" value="ready" data-field-filter="" ${filterStatusSelectedReady}>
-                                <bean:message key="mailing.status.ready"/>
+                                <bean:message key="<%= MailingStatus.READY.getMessageKey() %>"/>
                             </label>
                         </li>
                         <li>
                             <label class="label">
                                 <input type="checkbox" name="filterStatus" value="admin" data-field-filter="" ${filterStatusSelectedAdmin}>
-                                <bean:message key="mailing.status.admin"/>
+                                <bean:message key="<%= MailingStatus.ADMIN.getMessageKey() %>"/>
                             </label>
                         </li>
                         <li>
                             <label class="label">
                                 <input type="checkbox" name="filterStatus" value="test" data-field-filter="" ${filterStatusSelectedTest}>
-                                <bean:message key="mailing.status.test"/>
+                                <bean:message key="<%= MailingStatus.TEST.getMessageKey() %>"/>
                             </label>
                         </li>
                         <c:if test="${mailingBaseForm.mailingTypeNormal or mailingBaseForm.mailingTypeFollowup}">
                             <li>
                                 <label class="label">
                                     <input type="checkbox" name="filterStatus" value="scheduled" data-field-filter="" ${filterStatusSelectedScheduled}>
-                                    <bean:message key="mailing.status.scheduled"/>
+                                    <bean:message key="<%= MailingStatus.SCHEDULED.getMessageKey() %>"/>
                                 </label>
                             </li>
 
@@ -430,13 +432,13 @@
 	                            <li>
 	                                <label class="label">
 	                                    <input type="checkbox" name="filterStatus" value="in-generation" data-field-filter="" ${filterStatusSelectedInGeneration}>
-	                                    <bean:message key="mailing.status.in-generation"/>
+	                                    <bean:message key="<%= MailingStatus.IN_GENERATION.getMessageKey() %>"/>
 	                                </label>
 	                            </li>
 	                            <li>
 	                                <label class="label">
 	                                    <input type="checkbox" name="filterStatus" value="generation-finished" data-field-filter="" ${filterStatusSelectedGenerated}>
-	                                    <bean:message key="mailing.status.generation-finished"/>
+	                                    <bean:message key="<%= MailingStatus.GENERATION_FINISHED.getMessageKey() %>"/>
 	                                </label>
 	                            </li>
 							</c:if>                        
@@ -444,25 +446,25 @@
                             <li>
                                 <label class="label">
                                     <input type="checkbox" name="filterStatus" value="sent" data-field-filter="" ${filterStatusSelectedSent}>
-                                    <bean:message key="mailing.status.sent"/>
+                                    <bean:message key="<%= MailingStatus.SENT.getMessageKey() %>"/>
                                 </label>
                             </li>
                             <li>
                                 <label class="label">
                                     <input type="checkbox" name="filterStatus" value="norecipients" data-field-filter="" ${filterStatusSelectedNorecipients}>
-                                    <bean:message key="mailing.status.norecipients"/>
+                                    <bean:message key="<%= MailingStatus.NORECIPIENTS.getMessageKey() %>"/>
                                 </label>
                             </li>
                             <li>
                                 <label class="label">
                                     <input type="checkbox" name="filterStatus" value="canceled" data-field-filter="" ${filterStatusSelectedCanceled}>
-                                    <bean:message key="mailing.status.canceled"/>
+                                    <bean:message key="<%= MailingStatus.CANCELED.getMessageKey() %>"/>
                                 </label>
                             </li>
                             <li>
                                 <label class="label">
                                     <input type="checkbox" name="filterStatus" value="sending" data-field-filter="" ${filterStatusSelectedSending}>
-                                    <bean:message key="mailing.status.sending"/>
+                                    <bean:message key="<%= MailingStatus.SENDING.getMessageKey() %>"/>
                                 </label>
                             </li>
                         </c:if>
@@ -470,13 +472,13 @@
                             <li>
                                 <label class="label">
                                     <input type="checkbox" name="filterStatus" value="active" data-field-filter="" ${filterStatusSelectedActive}>
-                                    <bean:message key="mailing.status.active"/>
+                                    <bean:message key="<%= MailingStatus.ACTIVE.getMessageKey() %>"/>
                                 </label>
                             </li>
                             <li>
                                 <label class="label">
                                     <input type="checkbox" name="filterStatus" value="disable" data-field-filter="" ${filterStatusSelectedDisable}>
-                                    <bean:message key="mailing.status.disable"/>
+                                    <bean:message key="<%= MailingStatus.DISABLE.getMessageKey() %>"/>
                                 </label>
                             </li>
                         </c:if>
@@ -712,20 +714,8 @@
 
                             <div class="col-xs-6 col-sm-4 col-md-3">
                                 <a href="${mailingViewLink}" class="card">
-                                    <c:choose>
-                                        <c:when test="${mailing.preview_component eq 0}">
-                                            <c:url var="previewImageSrc" value="assets/core/images/facelift/no_preview.svg"/>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <c:url var="previewImageSrc" value="/sc">
-                                                <c:param name="compID" value="${mailing.preview_component}"/>
-                                                <c:param name="cacheKiller" value="${emm:milliseconds()}"/>
-                                            </c:url>
-                                        </c:otherwise>
-                                    </c:choose>
-
-                                    <img src="${previewImageSrc}" class="card-image" alt="${mailing.shortname}"/>
-
+                                    <%@include file="fragments/mailing-preview-src.jspf"%>
+                                    <img src="${previewImageSrc}" class="card-image" alt="${fn:escapeXml(mailing.shortname)}"/>
                                     <div class="card-body" style="overflow: hidden">
                                         <div class="col-sm-12">
                                             <div class="input-group">
@@ -964,18 +954,8 @@
                         <%-- Actions --%>
                         <display:column class="table-actions">
                             <script type="text/x-mustache-template" class="js-row-popover">
-                                <c:choose>
-                                    <c:when test="${mailing.preview_component eq 0}">
-                                        <c:url var="previewImageSrc" value="assets/core/images/facelift/no_preview.svg"/>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <c:url var="previewImageSrc" value="/sc">
-                                            <c:param name="compID" value="${mailing.preview_component}"/>
-                                            <c:param name="cacheKiller" value="${emm:milliseconds()}"/>
-                                        </c:url>
-                                    </c:otherwise>
-                                </c:choose>
-                                <img src="${previewImageSrc}" style="max-width: 200px" alt="${mailing.shortname}" border="0">
+                                <%@include file="fragments/mailing-preview-src.jspf"%>
+                                <img src="${previewImageSrc}" style="max-width: 200px" alt="${fn:escapeXml(mailing.shortname)}" border="0">
                             </script>
 
                             <c:if test="${mailing.hasActions}">
@@ -1024,18 +1004,8 @@
                         </display:column>
                         <display:column class="table-actions">
                             <script type="text/x-mustache-template" class="js-row-popover">
-                                <c:choose>
-                                    <c:when test="${mailing.preview_component eq 0}">
-                                        <c:url var="previewImageSrc" value="assets/core/images/facelift/no_preview.svg"/>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <c:url var="previewImageSrc" value="/sc">
-                                            <c:param name="compID" value="${mailing.preview_component}"/>
-                                            <c:param name="cacheKiller" value="${emm:milliseconds()}"/>
-                                        </c:url>
-                                    </c:otherwise>
-                                </c:choose>
-                                <img src="${previewImageSrc}" style="max-width: 200px" alt="${mailing.shortname}" border="0">
+                                <%@include file="fragments/mailing-preview-src.jspf" %>
+                                <img src="${previewImageSrc}" style="max-width: 200px" alt="${fn:escapeXml(mailing.shortname)}" border="0">
                             </script>
 
                             <emm:ShowByPermission token="template.delete">

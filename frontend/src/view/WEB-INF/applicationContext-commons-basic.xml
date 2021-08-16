@@ -110,8 +110,6 @@
 	</bean>
 
 <!-- ============================================================================================================================== EMM actions -->
-	<bean id="EmmActionFactory" class="org.agnitas.beans.factory.impl.EmmActionFactoryImpl" />
-	
 	<bean id="EmmAction" class="org.agnitas.actions.impl.EmmActionImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== EMM action operations -->
@@ -133,7 +131,7 @@
 	<bean id="MailgunFactory" class="com.agnitas.backend.MailgunFactoryImpl" />
 
 <!-- ============================================================================================================================== Mailing -->
-	<bean id="Mailing" class="com.agnitas.beans.impl.ComMailingImpl" scope="prototype">
+	<bean id="Mailing" class="com.agnitas.beans.impl.MailingImpl" scope="prototype">
 		<property name="components">
 			<map></map>
 		</property>
@@ -332,6 +330,10 @@
 		<property name="configService" ref="ConfigService" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
+
+	<bean id="TargetEqlQueryBuilder" class="org.agnitas.service.impl.TargetEqlQueryBuilderImpl">
+		<property name="columnInfoService" ref="ColumnInfoService" />
+    </bean>
 
 	<bean id="VelocityWrapperFactory" class="com.agnitas.emm.core.velocity.ComVelocityWrapperFactoryImpl">
 		<property name="velocityWrapperCache" ref="VelocityWrapperCache" />
@@ -644,12 +646,42 @@ Euer freundlicher EMM
 				<value>|</value>
 				<value>$</value>
 				<value>!</value>
-				<value>&lt;</value>
-				<value>%</value>
+				<value>&gt;</value>
 				<value>_</value>
 			</list>
 		</constructor-arg>
-		<constructor-arg value="\" type="java.lang.Character"/>
+		<constructor-arg>
+			<list value-type="java.lang.String">
+				<value>ABOUT</value>
+				<value>ACCUM</value>
+				<value>AND</value>
+				<value>BT</value>
+				<value>BTG</value>
+				<value>BTI</value>
+				<value>BTP</value>
+				<value>EQUIV</value>
+				<value>FUZZY</value>
+				<value>HASPATH</value>
+				<value>INPATH</value>
+				<value>MDATA</value>
+				<value>MINUS</value>
+				<value>NEAR</value>
+				<value>NOT</value>
+				<value>NT</value>
+				<value>NTG</value>
+				<value>NTI</value>
+				<value>NTP</value>
+				<value>OR</value>
+				<value>PT</value>
+				<value>RT</value>
+				<value>SQE</value>
+				<value>SYN</value>
+				<value>TR</value>
+				<value>TRSYN</value>
+				<value>TT</value>
+				<value>WITHIN</value>
+			</list>
+		</constructor-arg>
 	</bean>
 
 	<bean id="fulltextSearchReservedLiteralsFactory" class="com.agnitas.emm.core.commons.database.fulltext.impl.factory.FulltextSearchReservedLiteralsFactoryImpl">
@@ -719,6 +751,10 @@ Euer freundlicher EMM
 	</bean>
 		  
 	<bean id="componentModelValidator" class="org.agnitas.emm.core.component.service.validation.ComponentModelValidator">
+		<constructor-arg value="validator-messages"/>
+	</bean>
+
+	<bean id="blacklistModelValidator" class="org.agnitas.emm.core.blacklist.service.validation.BlacklistModelValidator">
 		<constructor-arg value="validator-messages"/>
 	</bean>
 </beans>

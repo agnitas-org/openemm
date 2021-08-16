@@ -14,7 +14,23 @@ import java.util.List;
 
 public interface FulltextSearchReservedLiteralsConfig {
 
-    List<Character> getSpecialSymbols();
+    List<Character> getSpecialCharacters();
 
-    Character getEscapeSymbol();
+    List<String> getSpecialWords();
+
+    default boolean isReservedCharacter(Character character) {
+        return getSpecialCharacters().contains(character);
+    }
+
+    default boolean isReservedWord(String word) {
+        return getSpecialWords().contains(word);
+    }
+
+    default String escapeCharacter(char character) {
+        return "\\" + character;
+    }
+
+    default String escapeWord(String word) {
+        return word;
+    }
 }

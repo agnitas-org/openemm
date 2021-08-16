@@ -17,15 +17,16 @@ import java.util.Set;
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.springframework.context.ApplicationContext;
 
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.TrackableLinkListItem;
 import com.agnitas.beans.TrackableLinkModel;
 import com.agnitas.beans.TrackableLinkSettings;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
+import com.agnitas.web.exception.ClearLinkExtensionsException;
 
 /**
  * Service interface for trackable links.
@@ -52,28 +53,24 @@ public interface ComTrackableLinkService {
 	/**
 	 * Checks, if URL editing is allowed for given mailing.
 	 * 
+	 *
+	 * @param admin
 	 * @param mailingID mailing ID
-	 * @param companyId company ID of mailing
-	 * 
 	 * @return true if editing is allowed, otherwise false
 	 */
-	boolean isUrlEditingAllowed(int mailingID, @VelocityCheck int companyId);
+	boolean isUrlEditingAllowed(ComAdmin admin, int mailingID);
 
-    void addExtensions(ComMailing aMailing, Set<Integer> linksIds, List<LinkProperty> passedLinkProperties);
+    void addExtensions(Mailing aMailing, Set<Integer> linksIds, List<LinkProperty> extensions, List<UserAction> userActions);
+	
+	void removeLegacyMailingLinkExtension(Mailing aMailing, Set<Integer> bulkLinkIds);
+	
+	void setMailingLinkExtension(Mailing aMailing, String linkExtension);
 
-	void replaceCommonExtensions(ComMailing aMailing, List<LinkProperty> passedLinkProperties, Set<Integer> bulkLinkIds, List<UserAction> userActions);
+    void setLegacyLinkExtensionMarker(Mailing aMailing, Map<Integer, Boolean> linksToExtends);
 	
-	void removeLegacyMailingLinkExtension(ComMailing aMailing, Set<Integer> bulkLinkIds);
+	void setStandardDeeptracking(Mailing aMailing, Set<Integer> bulkLinkIds, int deepTracking, Map<Integer, Integer> getLinkItemsDeepTracking);
 	
-	void setMailingLinkExtension(ComMailing aMailing, String linkExtension);
-
-    void setLegacyLinkExtensionMarker(ComMailing aMailing, Map<Integer, Boolean> linksToExtends);
-	
-	boolean saveEveryPositionLinks(ComMailing aMailing, ApplicationContext aContext, Set<Integer> bulkLinks) throws Exception;
-
-	void setStandardDeeptracking(ComMailing aMailing, Set<Integer> bulkLinkIds, int deepTracking, Map<Integer, Integer> getLinkItemsDeepTracking);
-	
-	void setShortname(ComMailing aMailing, Map<Integer, String> linkItemNames);
+	void setShortname(Mailing aMailing, Map<Integer, String> linkItemNames);
 	
 	/**
 	 * Gets trackable links
@@ -91,22 +88,23 @@ public interface ComTrackableLinkService {
      * @return list of trackable links. Returns empty list when mailing for the company doesn't have trackable links.
 	 * @throws MailinglistNotExistException if mailing doesn't belong to the company.
      */
-	List<TrackableLinkListItem> getTrackableLinks(int mailingID, @VelocityCheck int companyId);
-	
+	List<TrackableLinkListItem> getTrackableLinkItems(int mailingID, @VelocityCheck int companyId);
+
+	List<ComTrackableLink> getTrackableLinks(int mailingId, @VelocityCheck int companyId);
+
 	List<ComTrackableLink> getTrackableLinks(@VelocityCheck int companyId, List<Integer> urlIds);
 
-	TrackableLinkSettings getTrackableLinkSettings(int linkID, @VelocityCheck int companyId);
+	int saveTrackableLink(ComTrackableLink trackableLink);
 
-    /**
-     * Removes any link extension (global and individual) from all links of given mailing.
-	 *
-     * @param companyId company ID
-     * @param mailingId mailing ID
-     * 
-     * @throws Exception on errors removing link extensions
-     */
-    void removeGlobalAndIndividualLinkExtensions(@VelocityCheck int companyId, int mailingId) throws Exception;
+	ComTrackableLink getTrackableLink(@VelocityCheck int companyId, int linkId);
+
+	TrackableLinkSettings getTrackableLinkSettings(int linkID, @VelocityCheck int companyId);
+	
+    void bulkClearExtensions(@VelocityCheck int mailingId, int companyId, Set<Integer> bulkIds) throws ClearLinkExtensionsException;
 
 	void updateTrackableLinkSettings(TrackableLinkModel trackableLinkModel);
 
+	boolean isTrackingOnEveryPositionAvailable(@VelocityCheck int companyId, int mailingId);
+
+    List<LinkProperty> getCommonExtensions(int mailingId, int companyId, Set<Integer> bulkIds);
 }

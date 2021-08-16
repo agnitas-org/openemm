@@ -10,8 +10,9 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.MailingComponentImpl;
 import org.agnitas.dao.MailingDao;
@@ -66,7 +67,7 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
         MailingComponent component = new MailingComponentImpl();
         component.setMailingID(request.getMailingID());
         component.setCompanyID(Utils.getUserCompany());
-        component.setType(MailingComponent.TYPE_HOSTED_IMAGE);
+        component.setType(MailingComponentType.HostedImage);
         component.setDescription(request.getDescription());
         
         byte[] fileData = Base64Utils.decodeFromString(request.getContent());

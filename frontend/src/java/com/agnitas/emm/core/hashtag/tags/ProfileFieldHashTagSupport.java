@@ -27,8 +27,7 @@ import com.agnitas.emm.core.hashtag.exception.HashTagException;
 
 public class ProfileFieldHashTagSupport {
 	/** The logger. */
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(ProfileFieldHashTagSupport.class);
+	private static final transient Logger LOGGER = Logger.getLogger(ProfileFieldHashTagSupport.class);
 	
 	/** Factory creating new recipients. */
 	private final RecipientFactory recipientFactory;
@@ -62,7 +61,15 @@ public class ProfileFieldHashTagSupport {
 		// Return static value, if link is marked to support static values and if value is found in map
 		if(context.getCurrentTrackableLink().isStaticValue()) {
 			if(context.getStaticValueMap().containsKey(expression)) {
-				return context.getStaticValueMap().get(expression).toString();
+				final Object value = context.getStaticValueMap().get(expression);
+				
+				if(value != null) {
+					return value.toString();
+				} else {
+					LOGGER.warn(String.format("Value '%s' in statis value map is set to null", expression));
+					
+					return "";
+				}
 			}
 		}
 		

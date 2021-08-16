@@ -1327,7 +1327,7 @@ public class DateUtilities {
 	    		filename = filename.replace("[MI]", twoDigitsFormat.format(zonedDateTime.get(ChronoField.MINUTE_OF_HOUR)));
 	    		filename = filename.replace("[SS]", twoDigitsFormat.format(zonedDateTime.get(ChronoField.SECOND_OF_MINUTE)));
     		}
-    		return filename;
+    		return filename.replace("\\[", "[").replace("\\]", "]");
     	} else {
     		return fileNameWithPatterns;
     	}

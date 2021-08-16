@@ -26,7 +26,8 @@ import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
 public interface ProfileFieldService {
     boolean checkDatabaseNameExists(@VelocityCheck final int companyID, final String fieldNameOnDatabase) throws ProfileFieldException;
 
-    String translateDatabaseNameToVisibleName(@VelocityCheck final int companyID, final String visibleName) throws ProfileFieldException;
+    String translateDatabaseNameToVisibleName(@VelocityCheck final int companyID, final String databaseName) throws ProfileFieldException;
+    String translateVisibleNameToDatabaseName(final int companyID, final String visibleName) throws ProfileFieldException;
 
     List<ProfileField> getProfileFieldsWithInterest(ComAdmin admin);
 

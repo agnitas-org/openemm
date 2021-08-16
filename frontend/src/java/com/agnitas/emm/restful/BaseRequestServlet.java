@@ -40,7 +40,6 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -262,42 +261,6 @@ public abstract class BaseRequestServlet extends HttpServlet {
 
 	protected String getRequestDataTempFile(HttpServletRequest request) {
 		return (String) request.getAttribute(REQUEST_ATTRIBUTE_REQUEST_DATA_TEMP_FILE);
-	}
-	
-	protected static String getBasicAuthenticationUsername(HttpServletRequest request) {
-		try {
-			String basicAuthorizationHeader = request.getHeader("Authorization"); // like: "Basic bXl1c2VybmFtZTpteXBhc3N3b3Jk"
-			if (StringUtils.isBlank(basicAuthorizationHeader) || !basicAuthorizationHeader.startsWith("Basic ")) {
-				return null;
-			} else {
-				String decodedAuthorization = new String(AgnUtils.decodeBase64(basicAuthorizationHeader.substring(6)), "UTF-8"); // like: "myusername:mypassword"
-				if (decodedAuthorization.contains(":")) {
-					return decodedAuthorization.substring(0, decodedAuthorization.indexOf(":"));
-				} else {
-					return decodedAuthorization;
-				}
-			}
-		} catch (UnsupportedEncodingException e) {
-			return null;
-		}
-	}
-	
-	protected static String getBasicAuthenticationPassword(HttpServletRequest request) {
-		try {
-			String basicAuthorizationHeader = request.getHeader("Authorization"); // like: "Basic bXl1c2VybmFtZTpteXBhc3N3b3Jk"
-			if (StringUtils.isBlank(basicAuthorizationHeader) || !basicAuthorizationHeader.startsWith("Basic ")) {
-				return null;
-			} else {
-				String decodedAuthorization = new String(AgnUtils.decodeBase64(basicAuthorizationHeader.substring(6)), "UTF-8"); // like: "myusername:mypassword"
-				if (decodedAuthorization.contains(":")) {
-					return decodedAuthorization.substring(decodedAuthorization.indexOf(":") + 1);
-				} else {
-					return null;
-				}
-			}
-		} catch (UnsupportedEncodingException e) {
-			return null;
-		}
 	}
 
     private ConfigService getConfigService() {

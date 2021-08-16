@@ -16,7 +16,8 @@ public enum MailingComponentType {
 	Attachment(3),
 	PersonalizedAttachment(4),
 	HostedImage(5), // Image hosted on by the EMM systems
-	PrecAAttachement(7),
+	Font(6),
+	PrecAAttachement(7), // Precoded Attachment encoded in base64 (for eABO and others)
 	ThumbnailImage(8);
 	
 	private final int code;

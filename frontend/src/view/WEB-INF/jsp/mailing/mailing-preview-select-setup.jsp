@@ -73,7 +73,14 @@
     <c:otherwise>
         <c:choose>
             <c:when test="${mailingSendForm.isTemplate}">
-                <c:set var="agnNavigationKey" 		value="templateView" 			scope="request" />
+                <c:choose>
+					<c:when test="${isPostMailing}">
+						<c:set var="agnNavigationKey" value="templateView_post" scope="request" />
+					</c:when>
+					<c:otherwise>
+						<c:set var="agnNavigationKey" value="templateView" scope="request" />
+					</c:otherwise>
+				</c:choose>
                 <c:set var="agnNavHrefAppend" 		value="&mailingID=${mailingId}"	scope="request" />
                 <c:set var="agnTitleKey" 			value="Template" 				scope="request" />
                 <c:set var="agnSubtitleKey" 		value="Template" 				scope="request" />

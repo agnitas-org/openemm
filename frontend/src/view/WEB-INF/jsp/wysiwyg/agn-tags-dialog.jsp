@@ -61,7 +61,7 @@
                 <script type="text/x-mustache-template" id="agnFORM-extended-attributes">
                     <div class="form-group">
                         <div class="col-sm-4">
-                            <label class="control-label"><s:message code="GWUA.default.createLink"/>:</label>
+                            <label class="control-label"><s:message code="TrackableLink.createLink"/>:</label>
                         </div>
                         <div class="col-sm-8">
                             <label class="toggle">
@@ -71,7 +71,7 @@
                         </div>
                         <div id="tagLinkParams">
                             <div class="col-sm-4">
-                                <label class="control-label"><s:message code="GWUA.default.linkText"/>:</label>
+                                <label class="control-label"><s:message code="TrackableLink.linkText"/>:</label>
                             </div>
                             <div class="col-sm-8">
                                 <input type="text" class="form-control" id="tagLinkText"/>

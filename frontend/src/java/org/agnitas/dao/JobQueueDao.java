@@ -50,4 +50,6 @@ public interface JobQueueDao {
 	public boolean deleteCleanupStartEntry();
 
 	public boolean updateJobStatus(JobDto job);
+
+	public void acknowledgeErrorneousJob(int idToAcknowledge);
 }

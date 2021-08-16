@@ -13,7 +13,7 @@
 <emm:ShowByPermission token="webservice.user.show">
 
     <mvc:form servletRelativeAction="/administration/wsmanager/user/new.action" id="wsuser-creation-form"
-               data-resource-selector="#wsuser-creation-form" modelAttribute="webserviceUserForm"
+               data-resource-selector="#wsuser-creation-form, #wsuser-list-form" modelAttribute="webserviceUserForm"
               data-form-focus="userName" data-form="resource">
         <div class="tile">
             <div class="tile-header">

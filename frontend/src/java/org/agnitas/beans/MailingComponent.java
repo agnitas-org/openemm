@@ -15,14 +15,6 @@ import java.util.Date;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface MailingComponent {
-	int TYPE_ATTACHMENT = 3;
-	int TYPE_PERSONALIZED_ATTACHMENT = 4;
-	int TYPE_HOSTED_IMAGE = 5;
-	int TYPE_IMAGE = 1;
-	int TYPE_TEMPLATE = 0;
-	int TYPE_PREC_ATTACHMENT = 7;
-	//int TYPE_THUMBNAIL_IMAGE = 8;
-
 	boolean loadContentFromURL();
 
 	byte[] getBinaryBlock();
@@ -39,7 +31,7 @@ public interface MailingComponent {
 
 	int getTargetID();
 
-	int getType();
+	MailingComponentType getType();
 
 	int getPresent();
 
@@ -57,7 +49,7 @@ public interface MailingComponent {
 
 	void setTargetID(int targetID);
 
-	void setType(int type);
+	void setType(MailingComponentType type);
 
 	void setPresent(int present);
 

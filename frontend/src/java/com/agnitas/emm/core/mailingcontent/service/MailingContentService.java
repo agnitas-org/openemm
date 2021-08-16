@@ -13,7 +13,7 @@ package com.agnitas.emm.core.mailingcontent.service;
 import java.util.List;
 
 import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 

@@ -14,16 +14,20 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.LinkService;
-import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
-import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
-import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
-import com.agnitas.emm.grid.grid.beans.GridCustomPlaceholderType;
-import com.agnitas.web.mvc.Popups;
+import org.agnitas.util.HtmlUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.linkcheck.service.LinkService;
+import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
+import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
+import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
+import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToPopup;
+import com.agnitas.emm.grid.grid.beans.GridCustomPlaceholderType;
+import com.agnitas.web.mvc.Popups;
 
 @Component
 @Order(2)
@@ -43,13 +47,23 @@ public class HtmlContentValidator implements DynTagValidator {
         boolean hasNoErrors = true;
 
         for (DynContentDto contentBlock : contentBlocks) {
+            if (HtmlUtils.containsElementByTag(contentBlock.getContent(), "script")) {
+                popups.alert("error.mailing.content.illegal.script");
+                return false;
+            }
             try {
                 LinkService.LinkScanResult linkScanResult = linkService.scanForLinks(contentBlock.getContent(), dynTagDto.getCompanyId());
                 List<LinkService.ErrorneousLink> linksWithErros = linkScanResult.getErrorneousLinks();
                 for (LinkService.ErrorneousLink link : linksWithErros) {
-                    popups.alert(link.getErrorMessageKey());
+                    popups.alert(link.getErrorMessageKey(), link.getLinkText());
                     hasNoErrors = false;
                 }
+                
+                for (final String url : linkScanResult.getNotTrackableLinks()) {
+                	popups.warning("warning.mailing.link.agntag", StringEscapeUtils.escapeHtml4(dynTagDto.getName()), StringEscapeUtils.escapeHtml4(url));
+                }
+                
+                LinkScanResultToPopup.linkWarningsToPopups(linkScanResult, popups);
 
                 validatePoorLink(dynTagDto.getCompanyId(), contentBlock.getContent(), popups);
             } catch (Exception e) {
@@ -67,7 +81,7 @@ public class HtmlContentValidator implements DynTagValidator {
         if (isMatching) {
             boolean hasWhitespaces = Objects.nonNull(linkService.validateLink(companyId, link, GridCustomPlaceholderType.Link));
             if (hasWhitespaces) {
-                popups.warning("error.mailing.url.blank");
+                popups.warning("error.mailing.url.blank", StringEscapeUtils.escapeHtml4(link));
             }
         }
     }

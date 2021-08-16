@@ -16,8 +16,10 @@ public class DbColumnType {
 	public static final String GENERIC_TYPE_INTEGER = "INTEGER";
 	public static final String GENERIC_TYPE_FLOAT = "FLOAT";
 	public static final String GENERIC_TYPE_VARCHAR = "VARCHAR";
+	public static final String GENERIC_TYPE_VARCHAR2 = "VARCHAR2";
 	public static final String GENERIC_TYPE_DATE = "DATE";
 	public static final String GENERIC_TYPE_DATETIME = "DATETIME";
+	public static final String GENERIC_TYPE_BLOB = "BLOB";
 
 	private String typeName;
 	private int characterLength; // only for VARCHAR and VARCHAR2 types
@@ -92,7 +94,7 @@ public class DbColumnType {
 			return SimpleDataType.DateTime;
 		} else if (typeName.toUpperCase().contains("DATE")) {
 			return SimpleDataType.Date;
-		} else if (typeName.equalsIgnoreCase("blob") || typeName.equalsIgnoreCase("bytea")) {
+		} else if (typeName.equalsIgnoreCase("blob") || typeName.equalsIgnoreCase("tinyblob") || typeName.equalsIgnoreCase("mediumblob") || typeName.equalsIgnoreCase("longblob") || typeName.equalsIgnoreCase("bytea")) {
 			return SimpleDataType.Blob;
 		} else if (typeName.equalsIgnoreCase("FLOAT") || typeName.equalsIgnoreCase("DOUBLE") || (typeName.equalsIgnoreCase("NUMBER") && scale != 0)) {
 			return SimpleDataType.Float;
@@ -134,6 +136,11 @@ public class DbColumnType {
 				|| typeName.equalsIgnoreCase("TIMESTAMP")
 				|| typeName.equalsIgnoreCase("TIME")) {
 			return GENERIC_TYPE_DATETIME;
+		} else if (typeName.equalsIgnoreCase("BLOB")
+				|| typeName.equalsIgnoreCase("TINYBLOB")
+				|| typeName.equalsIgnoreCase("MEDIUMBLOB")
+				|| typeName.equalsIgnoreCase("LONGBLOB")) {
+			return GENERIC_TYPE_BLOB;
 		} else {
 			return "UNKNOWN(" + typeName + ")";
 		}

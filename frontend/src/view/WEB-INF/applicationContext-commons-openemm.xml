@@ -32,7 +32,6 @@
 		<lookup-method name="getBeanExtensibleUIDService" bean="ExtensibleUIDService"/>
 		<lookup-method name="getBeanBindingEntry" bean="BindingEntry"/>
 		<lookup-method name="getBeanScriptHelper" bean="ScriptHelper"/>
-		<lookup-method name="getBeanTarget" bean="Target"/>
 		<lookup-method name="getBeanMailinglist" bean="Mailinglist"/>
 		<lookup-method name="getBeanJavaMailService" bean="JavaMailService"/>
 		<lookup-method name="getBeanConfigService" bean="ConfigService"/>
@@ -226,6 +225,7 @@
 		<property name="helperService" ref="ScriptHelperService" />
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="recipientDao" ref="RecipientDao" />
+		<property name="bindingEntryDao" ref="BindingEntryDao" />
 		<property name="scripthelperEmailLogDao" ref="ScripthelperEmailLogDao" />
 		<property name="configService" ref="ConfigService" />
 		<property name="javaMailService" ref="JavaMailService" />

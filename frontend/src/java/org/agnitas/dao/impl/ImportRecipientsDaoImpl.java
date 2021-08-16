@@ -265,7 +265,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 	}
 
 	@Override
-	public int insertNewCustomers(String tempTableName, String destinationTableName, List<String> keyColumns, List<String> columnsToInsert, String duplicateIndexColumn, int datasourceId, int defaultMailType, List<ColumnMapping> columnMappingForDefaultValues) {
+	public int insertNewCustomers(String tempTableName, String destinationTableName, List<String> keyColumns, List<String> columnsToInsert, String duplicateIndexColumn, int datasourceId, int defaultMailType, List<ColumnMapping> columnMappingForDefaultValues, int companyId) {
 		String additionalColumns = "";
 		String additionalValues = "";
 		if (!columnsToInsert.contains("mailtype")) {
@@ -282,11 +282,21 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 		columnsToInsert.remove("customer_id");
 		
 		int insertedItems;
-		if (isOracleDB()) {
-			String customerIdSequenceName = destinationTableName + "_seq";
-			insertedItems = update(logger, "INSERT INTO " + destinationTableName + " (customer_id, creation_date, timestamp, datasource_id" + additionalColumns + ", " + StringUtils.join(columnsToInsert, ", ") + ") (SELECT " + customerIdSequenceName + ".NEXTVAL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, " + datasourceId + additionalValues + ", " + StringUtils.join(columnsToInsert, ", ") + " FROM " + tempTableName + " WHERE (customer_id = 0 OR customer_id IS NULL) AND " + duplicateIndexColumn + " IS NULL)");
+
+		if (configService.getBooleanValue(ConfigValue.DontWriteLatestDatasourceId, companyId)) {
+			if (isOracleDB()) {
+				String customerIdSequenceName = destinationTableName + "_seq";
+				insertedItems = update(logger, "INSERT INTO " + destinationTableName + " (customer_id, creation_date, timestamp, datasource_id" + additionalColumns + ", " + StringUtils.join(columnsToInsert, ", ") + ") (SELECT " + customerIdSequenceName + ".NEXTVAL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, " + datasourceId + additionalValues + ", " + StringUtils.join(columnsToInsert, ", ") + " FROM " + tempTableName + " WHERE (customer_id = 0 OR customer_id IS NULL) AND " + duplicateIndexColumn + " IS NULL)");
+			} else {
+				insertedItems = update(logger, "INSERT INTO " + destinationTableName + " (creation_date, timestamp, datasource_id" + additionalColumns + ", " + StringUtils.join(columnsToInsert, ", ") + ") (SELECT CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, " + datasourceId + additionalValues + ", " + StringUtils.join(columnsToInsert, ", ") + " FROM " + tempTableName + " WHERE (customer_id = 0 OR customer_id IS NULL) AND " + duplicateIndexColumn + " IS NULL)");
+			}
 		} else {
-			insertedItems = update(logger, "INSERT INTO " + destinationTableName + " (creation_date, timestamp, datasource_id" + additionalColumns + ", " + StringUtils.join(columnsToInsert, ", ") + ") (SELECT CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, " + datasourceId + additionalValues + ", " + StringUtils.join(columnsToInsert, ", ") + " FROM " + tempTableName + " WHERE (customer_id = 0 OR customer_id IS NULL) AND " + duplicateIndexColumn + " IS NULL)");
+			if (isOracleDB()) {
+				String customerIdSequenceName = destinationTableName + "_seq";
+				insertedItems = update(logger, "INSERT INTO " + destinationTableName + " (customer_id, creation_date, timestamp, datasource_id, latest_datasource_id" + additionalColumns + ", " + StringUtils.join(columnsToInsert, ", ") + ") (SELECT " + customerIdSequenceName + ".NEXTVAL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, " + datasourceId + ", " + datasourceId + additionalValues + ", " + StringUtils.join(columnsToInsert, ", ") + " FROM " + tempTableName + " WHERE (customer_id = 0 OR customer_id IS NULL) AND " + duplicateIndexColumn + " IS NULL)");
+			} else {
+				insertedItems = update(logger, "INSERT INTO " + destinationTableName + " (creation_date, timestamp, datasource_id, latest_datasource_id" + additionalColumns + ", " + StringUtils.join(columnsToInsert, ", ") + ") (SELECT CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, " + datasourceId + ", " + datasourceId + additionalValues + ", " + StringUtils.join(columnsToInsert, ", ") + " FROM " + tempTableName + " WHERE (customer_id = 0 OR customer_id IS NULL) AND " + duplicateIndexColumn + " IS NULL)");
+			}
 		}
 		
 		if (keyColumns != null && !keyColumns.isEmpty()) {
@@ -359,7 +369,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 		if (configService.getBooleanValue(ConfigValue.DontWriteLatestDatasourceId, companyId)) {
 			updatedItems = update(logger, "UPDATE " + destinationTableName + " SET timestamp = CURRENT_TIMESTAMP WHERE customer_id IN (SELECT DISTINCT customer_id FROM " + tempTableName + " WHERE customer_id != 0 AND customer_id IS NOT NULL)");
 		} else {
-			updatedItems = update(logger, "UPDATE " + destinationTableName + " SET timestamp = CURRENT_TIMESTAMP, latest_datasource_id = " + datasourceId + " WHERE customer_id IN (SELECT DISTINCT customer_id FROM " + tempTableName + " WHERE customer_id != 0 AND customer_id IS NOT NULL)");
+			updatedItems = update(logger, "UPDATE " + destinationTableName + " SET timestamp = CURRENT_TIMESTAMP, latest_datasource_id = ? WHERE customer_id IN (SELECT DISTINCT customer_id FROM " + tempTableName + " WHERE customer_id != 0 AND customer_id IS NOT NULL)", datasourceId);
 		}
 		
 		return updatedItems;
@@ -425,7 +435,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 		if (configService.getBooleanValue(ConfigValue.DontWriteLatestDatasourceId, companyId)) {
 			updatedItems = update(logger, "UPDATE " + destinationTableName + " SET timestamp = CURRENT_TIMESTAMP WHERE (" + StringUtils.join(keyColumns, ", ") + ") IN (SELECT DISTINCT " + StringUtils.join(keyColumns, ", ") + " FROM " + tempTableName + " WHERE customer_id != 0 AND customer_id IS NOT NULL)");
 		} else {
-			updatedItems = update(logger, "UPDATE " + destinationTableName + " SET timestamp = CURRENT_TIMESTAMP, latest_datasource_id = " + datasourceId + " WHERE (" + StringUtils.join(keyColumns, ", ") + ") IN (SELECT DISTINCT " + StringUtils.join(keyColumns, ", ") + " FROM " + tempTableName + " WHERE customer_id != 0 AND customer_id IS NOT NULL)");
+			updatedItems = update(logger, "UPDATE " + destinationTableName + " SET timestamp = CURRENT_TIMESTAMP, latest_datasource_id = ? WHERE (" + StringUtils.join(keyColumns, ", ") + ") IN (SELECT DISTINCT " + StringUtils.join(keyColumns, ", ") + " FROM " + tempTableName + " WHERE customer_id != 0 AND customer_id IS NOT NULL)", datasourceId);
 		}
 		
 		return updatedItems;
@@ -800,6 +810,25 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 		
 		return update(logger, "UPDATE customer_" + companyId + "_binding_tbl SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP WHERE user_status = ? AND mailinglist_id = ? AND mediatype = ? AND customer_id NOT IN ("
 			+ "SELECT dst.customer_id FROM " + temporaryImportTableName + " src, customer_" + companyId + "_tbl dst WHERE " + StringUtils.join(keycolumnParts, " AND ") + ")", updateStatus, remark, currentStatus, mailingListId, mediatype == null ? MediaTypes.EMAIL.getMediaCode() : mediatype.getMediaCode());
+	}
+
+	@Override
+	public void gatherTableStats(String tableName) {
+		if (isOracleDB()) {
+			String username = select(logger, "SELECT USER FROM DUAL", String.class);
+			execute(logger,
+				"begin\n"
+				+ " dbms_stats.gather_table_stats(\n"
+					+ " ownname => '" + username.toUpperCase() + "',\n"
+					+ " tabname => '" + tableName.toUpperCase() + "',\n"
+					+ " estimate_percent => 30,\n"
+					+ " method_opt => 'for all columns size 254',\n"
+					+ " cascade => true,\n"
+					+ " no_invalidate => FALSE\n"
+				+ " );\n"
+				+ " end;"
+			);
+		}
 	}
 
 	@Override

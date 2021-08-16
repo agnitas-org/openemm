@@ -7,6 +7,7 @@ import org.agnitas.service.WebStorage;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Controller;
 
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.logon.service.ClientHostIdService;
 import com.agnitas.emm.core.logon.service.ComHostAuthenticationService;
 import com.agnitas.emm.core.logon.service.ComLogonService;
@@ -16,7 +17,7 @@ public class LogonControllerOpenemm extends LogonControllerBasic {
     @SuppressWarnings("unused")
 	private static final Logger logger = Logger.getLogger(LogonControllerOpenemm.class);
 
-    public LogonControllerOpenemm(ComLogonService logonService, LoginTrackService loginTrackService, ComHostAuthenticationService hostAuthenticationService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService, final ClientHostIdService clientHostIdService) {
-    	super(logonService, loginTrackService, hostAuthenticationService, webStorage, configService, userActivityLogService, clientHostIdService);
+    public LogonControllerOpenemm(ComLogonService logonService, LoginTrackService loginTrackService, ComHostAuthenticationService hostAuthenticationService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService, final ClientHostIdService clientHostIdService, final AdminService adminService) {
+    	super(logonService, loginTrackService, hostAuthenticationService, webStorage, configService, userActivityLogService, clientHostIdService, adminService);
     }
 }

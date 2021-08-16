@@ -1,0 +1,22 @@
+
+<emm:ShowByPermission token="mailing.extend_trackable_links">
+    <div class="form-group">
+        <div class="col-sm-4">
+            <label for="settings_modifyLinkExtensions" class="control-label">
+                <bean:message key="mailing.trackablelinks.extensions.change"/>
+            </label>
+        </div>
+        <div class="col-sm-8">
+            <label class="toggle">
+                <input type="checkbox" name="modifyExtensionsForAllLinks" id="settings_modifyLinkExtensions"/>
+                <div class="toggle-control"></div>
+            </label>
+        </div>
+    </div>
+
+    <div id='settingsExtensions' data-show-by-checkbox="#settings_modifyLinkExtensions">
+        <c:set var="extensionTableTitle"><bean:message key="GWUA.mailing.trackablelinks.extensionsForAllLinks" /></c:set>
+        <c:set var="enterdownAction" value="settingsExtensionsEnterdown"/>
+        <%@ include file="../extensions-table.jspf" %>
+    </div>
+</emm:ShowByPermission>

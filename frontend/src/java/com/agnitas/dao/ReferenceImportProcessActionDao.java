@@ -17,5 +17,5 @@ import com.agnitas.beans.ReferenceImportProcessAction;
 public interface ReferenceImportProcessActionDao {
 	public List<ReferenceImportProcessAction> getAvailableImportProcessActions(int companyID);
 	public ReferenceImportProcessAction getImportProcessAction(int referenceImportProcessActionID);
-	public void executeReferenceImportProcessAction(int companyId, int referenceImportProcessActionID, String temporaryTableName) throws Exception;
+	public void executeReferenceImportProcessAction(int companyId, int referenceImportProcessActionID, String temporaryTableName, String importIndexColumn) throws Exception;
 }

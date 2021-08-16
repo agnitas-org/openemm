@@ -10,12 +10,14 @@
 
 package org.agnitas.preview;
 
+import java.util.Locale;
+
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface TAGCheckFactory {
-	TAGCheck createTAGCheck(int mailingId) throws Exception;
+	TAGCheck createTAGCheck(int mailingId, Locale locale) throws Exception;
 
-	TAGCheck createTAGCheck(@VelocityCheck int companyId, int mailinglistId) throws Exception;
+	TAGCheck createTAGCheck(@VelocityCheck int companyId, int mailinglistId, Locale locale) throws Exception;
 
-	TAGCheck createTAGCheck(@VelocityCheck int companyId, int mailingId, int mailinglistId) throws Exception;
+	TAGCheck createTAGCheck(@VelocityCheck int companyId, int mailingId, int mailinglistId, Locale locale) throws Exception;
 }

@@ -12,11 +12,14 @@ package org.agnitas.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
@@ -69,6 +72,19 @@ public class DataEncryptor {
 	}
 	
 	public String encrypt(String dataToEncrypt) throws Exception {
+		return encryptByCompatibilityMode(dataToEncrypt);
+    }
+
+	public String decrypt(String encryptedDataBase64) throws Exception {
+		try {
+			return decryptByLiveMode(encryptedDataBase64);
+		} catch(final GeneralSecurityException e) {
+			// Cannot decrypt with stronger cipher, falling back to old one
+			return decryptByCompatibilityMode(encryptedDataBase64);
+		}
+    }
+	
+	public String encryptByCompatibilityMode(String dataToEncrypt) throws Exception {
 		if (saltBytes == null) {
 			init();
 		}
@@ -78,8 +94,20 @@ public class DataEncryptor {
         pbeCipher.init(Cipher.ENCRYPT_MODE, key, new PBEParameterSpec(saltBytes, 20));
         return AgnUtils.encodeBase64(pbeCipher.doFinal(dataToEncrypt.getBytes("UTF-8")));
     }
+	
+	public String encryptByLiveMode(String dataToEncrypt) throws Exception {
+		if (saltBytes == null) {
+			init();
+		}
+        final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_256");
+        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(encryptorPassword));
+        final Cipher pbeCipher = Cipher.getInstance("PBEWithHmacSHA256AndAES_256");
+        final IvParameterSpec ivParamSpec = new IvParameterSpec(Arrays.copyOf(saltBytes, 16));
+        pbeCipher.init(Cipher.ENCRYPT_MODE, key, new PBEParameterSpec(saltBytes, 20, ivParamSpec));
+        return AgnUtils.encodeBase64(pbeCipher.doFinal(dataToEncrypt.getBytes("UTF-8")));
+    }
 
-	public String decrypt(String encryptedDataBase64) throws Exception {
+	public String decryptByCompatibilityMode(String encryptedDataBase64) throws Exception {
 		if (saltBytes == null) {
 			init();
 		}
@@ -87,6 +115,18 @@ public class DataEncryptor {
         SecretKey key = keyFactory.generateSecret(new PBEKeySpec(encryptorPassword));
         Cipher pbeCipher = Cipher.getInstance("PBEWithMD5AndDES");
         pbeCipher.init(Cipher.DECRYPT_MODE, key, new PBEParameterSpec(saltBytes, 20));
+        return new String(pbeCipher.doFinal(AgnUtils.decodeBase64(encryptedDataBase64)), "UTF-8");
+    }
+
+	public String decryptByLiveMode(String encryptedDataBase64) throws Exception {
+		if (saltBytes == null) {
+			init();
+		}
+        final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_256");
+        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(encryptorPassword));
+        final Cipher pbeCipher = Cipher.getInstance("PBEWithHmacSHA256AndAES_256");
+        final IvParameterSpec ivParamSpec = new IvParameterSpec(Arrays.copyOf(saltBytes, 16));
+        pbeCipher.init(Cipher.DECRYPT_MODE, key, new PBEParameterSpec(saltBytes, 20, ivParamSpec));
         return new String(pbeCipher.doFinal(AgnUtils.decodeBase64(encryptedDataBase64)), "UTF-8");
     }
 }

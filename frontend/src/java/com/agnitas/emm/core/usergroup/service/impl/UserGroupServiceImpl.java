@@ -217,7 +217,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     @Override
     public boolean deleteUserGroup(int userGroupId, ComAdmin admin) {
         int companyId = admin.getCompanyID();
-        AdminGroup adminGroup = userGroupDao.getAdminGroup(userGroupId, admin.getCompanyID());
+        AdminGroup adminGroup = userGroupDao.getAdminGroup(userGroupId, companyId);
         if (adminGroup == null || (adminGroup.getCompanyID() != companyId && admin.getAdminID() != ROOT_ADMIN_ID)) {
             return false;
         }

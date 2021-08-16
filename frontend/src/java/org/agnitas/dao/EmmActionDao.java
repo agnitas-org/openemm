@@ -15,18 +15,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.actions.EmmAction;
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.Tuple;
 
 import com.agnitas.emm.core.action.operations.ActionOperationType;
-import com.agnitas.emm.core.commons.ActivenessStatus;
 
 /**
  * DAO accessing EMM actions.
  */
 public interface EmmActionDao {
-	
+
 	/**
 	 * Checks if given action exists.
 	 * 
@@ -78,15 +75,13 @@ public interface EmmActionDao {
      * @return List of emm actions or empty list
      */
     List<EmmAction> getEmmActions(@VelocityCheck int companyID);
-    List<EmmAction> getAllEmmActions(@VelocityCheck int companyID);
-    
+    List<EmmAction> getEmmActions(@VelocityCheck int companyID, boolean includeDeleted);
+
     List<EmmAction> getEmmActionsByName(@VelocityCheck int companyID, String shortName);
 
     String getEmmActionName(int actionId, @VelocityCheck int companyId);
 
-    List<Tuple<Integer, String>> getEmmActionNames(int companyID, List<Integer> actionIDs);
-    
-    Map<Integer, String> getEmmActionNamesNew(int companyId, List<Integer> actionIds);
+    Map<Integer, String> getEmmActionNames(@VelocityCheck int companyId, List<Integer> actionIds);
 
     /**
      *  Loads all emm actions for certain company except actions of form type
@@ -137,17 +132,6 @@ public interface EmmActionDao {
      */
     Map<Integer, Integer> loadUsed( @VelocityCheck int companyID);
 
-    /**
-     *  Gets names of forms for which the action is used
-     *
-     * @param actionId
-     *              The id of emm action in database
-     * @param companyId
-     *              The id of the company that uses the action
-     * @return String with form names are separated by semicolon, or empty string
-     */
-    String getUserFormNames(int actionId, @VelocityCheck int companyId);
-
     List<String> getActionUserFormNames(int actionId, @VelocityCheck int companyId);
 
     /**
@@ -174,5 +158,4 @@ public interface EmmActionDao {
      */
     List<EmmAction> getActionListBySendMailingId(@VelocityCheck int companyId, int mailingId);
 
-    PaginatedListImpl<EmmAction> getPaginatedActionList(@VelocityCheck int companyId, String sort, String order, int page, int numberOfRows, ActivenessStatus filter);
 }

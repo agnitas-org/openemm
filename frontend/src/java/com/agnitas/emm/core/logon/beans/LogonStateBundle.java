@@ -64,7 +64,7 @@ public class LogonStateBundle {
     public final void toPasswordChangeState() {
     	requireLogonState(LogonState.MAINTAIN_PASSWORD);
     	
-    	if(admin.isSupervisor()) {
+    	if (admin.isSupervisor()) {
     		setState(LogonState.CHANGE_SUPERVISOR_PASSWORD);
     	} else {
     		setState(LogonState.CHANGE_ADMIN_PASSWORD);

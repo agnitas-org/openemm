@@ -1,8 +1,9 @@
 <HelpBalloon>
+<!-- -*- scope: openemm -*- -->
 	<title><![CDATA[E-mail enveloppe]]></title>
-	<content><![CDATA[L'adresse de l'enveloppe est l'adresse de l'exp&eacute;diteur d'un serveur de courrier électronique et est fix&eacute;e par d&eacute;faut par AGNITAS.
+	<content><![CDATA[L'adresse de l'enveloppe est l'adresse de l'exp&eacute;diteur d'un serveur de courrier &eacute;lectronique et est fix&eacute;e par d&eacute;faut par Administration du syst&egrave;me.
 	<br><br>
-	<b>Important:</b> si vous voulez utiliser votre propre adresse d'enveloppe, il doit y avoir un enregistrement A valide dans le syst&egrave;me de noms de domaine (DNS) pour le domaine de l'adresse d'enveloppe et le domaine doit avoir agnitas.de inclus dans l'enregistrement SPF. Vous pouvez obtenir l'enregistrement SPF aupr&egrave;s d'AGNITAS. AGNITAS doit &eacute;galement activer l'utilisation d'une adresse d'enveloppe propre dans le backend. Si vous &ecirc;tes int&eacute;ress&eacute;, veuillez contacter <a href="mailto:support@agnitas.de">support@agnitas.de</a>.
+	<b>Important:</b> si vous voulez utiliser votre propre adresse d'enveloppe, il doit y avoir un enregistrement A valide dans le syst&egrave;me de noms de domaine (DNS) pour le domaine de l'adresse d'enveloppe.
 	<br><br>
 	<b>Remarque:</b> Si l'adresse Enveloppe de doit &ecirc;tre trait&eacute;e directement par le filtre de rebond, un enregistrement MX doit &ecirc;tre stock&eacute; dans le DNS en plus de l'enregistrement A, qui fait r&eacute;f&eacute;rence <b>au nom du service de filtrage</b>. Il faut &eacute;galement s'assurer qu'un filtre de rebondissement est stock&eacute; dans l'EMM pour l'adresse de l'exp&eacute;diteur.]]></content>
 </HelpBalloon>

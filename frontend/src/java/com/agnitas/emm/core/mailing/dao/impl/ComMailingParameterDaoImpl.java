@@ -35,28 +35,23 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComMailingParameterDaoImpl.class);
 
-	public static final String TABLE = "mailing_info_tbl";
-		
-	private static final String SELECT_BY_COMPANYID = "SELECT * FROM " + TABLE + " WHERE company_id = ? ORDER BY creation_date";
-	private static final String SELECT_BY_COMPANYID_AND_MAILINGID = "SELECT * FROM " + TABLE + " WHERE company_id = ? AND mailing_id = ? ORDER BY creation_date";
-	private static final String SELECT_BY_MAILINGINFOID = "SELECT * FROM " + TABLE + " WHERE mailing_info_id = ?";
-	private static final String INSERT_ORACLE = "INSERT INTO " + TABLE + " (mailing_info_id, mailing_id, company_id, name, value, description, creation_date, change_date, creation_admin_id, change_admin_id) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
-	private static final String INSERT_MYSQL = "INSERT INTO " + TABLE + " (mailing_id, company_id, name, value, description, creation_date, change_date, creation_admin_id, change_admin_id) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
-	private static final String UPDATE = "UPDATE " + TABLE + " SET mailing_id = ?, company_id = ?, name = ?, value = ?, description = ?, change_date = CURRENT_TIMESTAMP, change_admin_id = ? WHERE mailing_info_id = ?";
-	private static final String DELETE_BY_MAILINGINFOID = "DELETE FROM " + TABLE + " WHERE mailing_info_id = ?";
-	private static final String DELETE_BY_COMPANYID = "DELETE FROM " + TABLE + " WHERE company_id = ?";
+	private static final String INSERT_ORACLE = "INSERT INTO mailing_info_tbl (mailing_info_id, mailing_id, company_id, name, value, description, creation_date, change_date, creation_admin_id, change_admin_id) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
+	private static final String INSERT_MYSQL = "INSERT INTO mailing_info_tbl (mailing_id, company_id, name, value, description, creation_date, change_date, creation_admin_id, change_admin_id) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
+	private static final String UPDATE = "UPDATE mailing_info_tbl SET mailing_id = ?, company_id = ?, name = ?, value = ?, description = ?, change_date = CURRENT_TIMESTAMP, change_admin_id = ? WHERE mailing_info_id = ?";
+	private static final String DELETE_BY_MAILINGINFOID = "DELETE FROM mailing_info_tbl WHERE mailing_info_id = ?";
+	private static final String DELETE_BY_COMPANYID = "DELETE FROM mailing_info_tbl WHERE company_id = ?";
 		
 	/** Query for selecting mailing parameter by name. */
-	private static final String SELECT_BY_NAME = "SELECT * FROM " + TABLE + " WHERE company_id = ? AND mailing_id = ? and name = ?";
+	private static final String SELECT_BY_NAME = "SELECT mailing_info_id, mailing_id, company_id, name, value, description, change_date, change_admin_id, creation_date, creation_admin_id FROM mailing_info_tbl WHERE company_id = ? AND mailing_id = ? and name = ?";
 	
 	@Override
 	public List<ComMailingParameter> getAllParameters(@VelocityCheck int companyID) {
-		return select(logger, SELECT_BY_COMPANYID, new ComMailingParameter_RowMapper(), companyID);
+		return select(logger, "SELECT mailing_info_id, mailing_id, company_id, name, value, description, change_date, change_admin_id, creation_date, creation_admin_id FROM mailing_info_tbl WHERE company_id = ? ORDER BY creation_date", new ComMailingParameter_RowMapper(), companyID);
 	}
 	
 	@Override
 	public List<ComMailingParameter> getMailingParameters(@VelocityCheck int companyID, int mailingID) {
-		return select(logger, SELECT_BY_COMPANYID_AND_MAILINGID, new ComMailingParameter_RowMapper(), companyID, mailingID);
+		return select(logger, "SELECT mailing_info_id, mailing_id, company_id, name, value, description, change_date, change_admin_id, creation_date, creation_admin_id FROM mailing_info_tbl WHERE company_id = ? AND mailing_id = ? ORDER BY creation_date", new ComMailingParameter_RowMapper(), companyID, mailingID);
 	}
 
 	@Override
@@ -71,7 +66,7 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 
 		// whole query.
 		StringBuilder selectBySearchQuery = new StringBuilder();
-		selectBySearchQuery.append("SELECT * FROM mailing_info_tbl info");
+		selectBySearchQuery.append("SELECT mailing_info_id, mailing_id, company_id, name, value, description, change_date, change_admin_id, creation_date, creation_admin_id FROM mailing_info_tbl info");
 		selectBySearchQuery.append(" WHERE info.company_id = ?");
 		selectBySearchQuery.append(" AND (").append(searchRulesSubQuery).append(")");
 		selectBySearchQuery.append(" AND (info.mailing_id IS NOT NULL AND CAST(info.mailing_id AS CHAR(15)) LIKE ?)");
@@ -92,7 +87,7 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 
 	@Override
 	public ComMailingParameter getParameter(int mailingInfoID) {
-		return selectObjectDefaultNull(logger, SELECT_BY_MAILINGINFOID, new ComMailingParameter_RowMapper(), mailingInfoID);
+		return selectObjectDefaultNull(logger, "SELECT mailing_info_id, mailing_id, company_id, name, value, description, change_date, change_admin_id, creation_date, creation_admin_id FROM mailing_info_tbl WHERE mailing_info_id = ?", new ComMailingParameter_RowMapper(), mailingInfoID);
 	}
 	
 	@Override
@@ -104,7 +99,7 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 		int touchedLines;
 		int newId;
 		if (isOracleDB()) {
-			newId = selectInt(logger, "SELECT " + TABLE + "_seq.NEXTVAL FROM DUAL");
+			newId = selectInt(logger, "SELECT mailing_info_tbl_seq.NEXTVAL FROM DUAL");
 			touchedLines = update(logger, 
 				INSERT_ORACLE,
 				newId,
@@ -173,9 +168,9 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 		}
 
 		if (existingIds.isEmpty()) {
-			update(logger, "DELETE FROM " + TABLE + " WHERE company_id = ? AND mailing_id = ?", companyID, mailingID);
+			update(logger, "DELETE FROM mailing_info_tbl WHERE company_id = ? AND mailing_id = ?", companyID, mailingID);
 		} else {
-			update(logger, "DELETE FROM " + TABLE + " WHERE company_id = ? AND mailing_id = ? AND mailing_info_id NOT IN (" + StringUtils.join(existingIds, ", ") + ")", companyID, mailingID);
+			update(logger, "DELETE FROM mailing_info_tbl WHERE company_id = ? AND mailing_id = ? AND mailing_info_id NOT IN (" + StringUtils.join(existingIds, ", ") + ")", companyID, mailingID);
 		}
 
 		if (CollectionUtils.isNotEmpty(parameterList)) {
@@ -276,7 +271,7 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	
 	@Override
 	public String getIntervalParameter(int mailingID) {
-		List<Map<String, Object>> resultInterval = select(logger, "SELECT value FROM " + TABLE + " WHERE mailing_id = ? AND name = ?", mailingID, PARAMETERNAME_INTERVAL);
+		List<Map<String, Object>> resultInterval = select(logger, "SELECT value FROM mailing_info_tbl WHERE mailing_id = ? AND name = ?", mailingID, PARAMETERNAME_INTERVAL);
 		if (resultInterval.size() > 0) {
 			return (String) resultInterval.get(0).get("value");
 		} else {
@@ -288,9 +283,9 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	@DaoUpdateReturnValueCheck
 	public void updateNextStartParameter(int mailingID, Date nextStart) {
 		if (nextStart == null) {
-			update(logger, "UPDATE " + TABLE + " SET value = null WHERE mailing_id = ? AND name = ?", mailingID, PARAMETERNAME_NEXT_START);
+			update(logger, "UPDATE mailing_info_tbl SET value = null WHERE mailing_id = ? AND name = ?", mailingID, PARAMETERNAME_NEXT_START);
 		} else {
-			update(logger, "UPDATE " + TABLE + " SET value = ? WHERE mailing_id = ? AND name = ?", new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM).format(nextStart), mailingID, PARAMETERNAME_NEXT_START);
+			update(logger, "UPDATE mailing_info_tbl SET value = ? WHERE mailing_id = ? AND name = ?", new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM).format(nextStart), mailingID, PARAMETERNAME_NEXT_START);
 		}
 	}
 

@@ -41,6 +41,7 @@ import com.agnitas.beans.ComCompany;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
+import com.agnitas.util.ImageUtils;
 
 /**
  * This servlet loads and shows a image from the mailing_component_tbl.
@@ -52,12 +53,15 @@ public class ShowImageServlet extends HttpServlet {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ShowImageServlet.class);
 
+    /**
+     * Dummy object to be stored in cache for not found images.
+     * This is needed, because "containsKey" may be "true", but before retrieving the value the cache might have it removed because it was outdated.
+     * But we still need the information whether there was no value in the cache or there was a value but it was null(=NOT_FOUND_IMAGE).
+     */
+	private static final DeliverableImage NOT_FOUND_IMAGE = new DeliverableImage();
+
 	/** Serial version UID: */
 	private static final long serialVersionUID = -595094416663851734L;
-
-	public static final String MOBILE_IMAGE_PREFIX = "mobile_";
-
-	private static int NOT_FOUND_RELOAD_TIMEOUT_MILLIS = 300000; // AGNEMM-2384: set from 30 sec to 5 min
 
 	protected ComMailingComponentDao componentDao;
 	protected ComDeviceService deviceService;
@@ -101,12 +105,12 @@ public class ShowImageServlet extends HttpServlet {
 	 *
 	 * We are changing the image links in html mail content, for the purpose of better performance on systems with Kaspersky AV
 	 * With this change the following kind of links is allowed now:
-	 * 		http://rdir.de/image/1/2270/105141/logo.jpg
+	 * 		https://rdir.de/image/1/2270/105141/logo.jpg
 	 *
 	 * This is new way is optional. The old image linktype is still allowed too:
-	 * 		http://rdir.de/image?ci=2270&mi=105141&name=logo.jpg
+	 * 		https://rdir.de/image?ci=2270&mi=105141&name=logo.jpg
 	 * or
-	 * 		http://rdir.de/image?ci=2270&mi=105141&name=logo.jpg&lic=1
+	 * 		https://rdir.de/image?ci=2270&mi=105141&name=logo.jpg&lic=1
 	 */
 	@Override
 	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
@@ -189,7 +193,7 @@ public class ShowImageServlet extends HttpServlet {
 					if (getDeviceService().getDeviceClassForStatistics(request.getHeader("User-Agent")) == DeviceClass.MOBILE) {
 						image = getImageForMobileRequest(request, companyID, Integer.parseInt(mailingIdString), imageName, noCache);
 					} else {
-						image = getImageForStandardRequest(request, companyID, Integer.parseInt(mailingIdString), imageName, false, noCache);
+						image = getImageForStandardRequest(request, companyID, Integer.parseInt(mailingIdString), imageName, noCache);
 					}
 				}
 	
@@ -200,10 +204,13 @@ public class ShowImageServlet extends HttpServlet {
 					writeImageToResponse(request, response, image);
 				}
 			} else {
-				String cacheKey = generateCachingKey(companyID, Integer.parseInt(mailingIdString), imageName);
+				boolean mobile = getDeviceService().getDeviceClassForStatistics(request.getHeader("User-Agent")) == DeviceClass.MOBILE;
+				int mailingID = Integer.parseInt(mailingIdString);
+				String cacheKey = generateCachingKey(companyID, mailingID, (mobile ? ImageUtils.MOBILE_IMAGE_PREFIX : "") + imageName);
+				
 				CdnImage cdnImage = getCdnCache().get(cacheKey);
 				if (cdnImage == null) {
-					cdnImage = getComponentDao().getCdnImage(companyID, Integer.parseInt(mailingIdString), imageName);
+					cdnImage = getComponentDao().getCdnImage(companyID, Integer.parseInt(mailingIdString), imageName, mobile);
 					getCdnCache().put(cacheKey, cdnImage);
 				}
 				if (cdnImage != null) {
@@ -237,17 +244,21 @@ public class ShowImageServlet extends HttpServlet {
 	 */
 	private DeliverableImage getImageForMobileRequest(HttpServletRequest request, @VelocityCheck int companyID, int mailingID, String imageName, boolean noCache) throws Exception {
 		// Generate cache lookup key for mobile image
-		String mobileCacheKey = generateCachingKey(companyID, mailingID, MOBILE_IMAGE_PREFIX + imageName);
+		String mobileCacheKey = generateCachingKey(companyID, mailingID, ImageUtils.MOBILE_IMAGE_PREFIX + imageName);
 
 		// Look up image in cache
 		DeliverableImage mobileImage = getImageCache().get(mobileCacheKey);
 		if (mobileImage != null && !noCache) {
-			return mobileImage;
+			if (mobileImage == NOT_FOUND_IMAGE) {
+				return null;
+			} else {
+				return mobileImage;
+			}
 		}  else {
 			// Load image component from database
 			MailingComponent comp = null;
 			try {
-				comp = getComponentDao().getMailingComponentByName(mailingID, companyID, MOBILE_IMAGE_PREFIX + imageName);
+				comp = getComponentDao().getMailingComponentByName(mailingID, companyID, ImageUtils.MOBILE_IMAGE_PREFIX + imageName);
 			} catch (Exception e) {
 				logger.error("Exception: " + e.getMessage(), e);
 			}
@@ -268,7 +279,13 @@ public class ShowImageServlet extends HttpServlet {
 
 				return newImage;
 			} else {
-				return getImageForStandardRequest(request, companyID, mailingID, imageName, true, noCache);
+				DeliverableImage image = getImageForStandardRequest(request, companyID, mailingID, imageName, noCache);
+				
+				if (image == null) {
+					getImageCache().put(mobileCacheKey, NOT_FOUND_IMAGE);
+				}
+				
+				return image;
 			}
 		}
 	}
@@ -285,22 +302,17 @@ public class ShowImageServlet extends HttpServlet {
 	 * @return
 	 * @throws Exception
 	 */
-	private DeliverableImage getImageForStandardRequest(HttpServletRequest request, @VelocityCheck int companyID, int mailingID, String imageName, boolean isMobileRequest, boolean noCache) throws Exception {
+	private DeliverableImage getImageForStandardRequest(HttpServletRequest request, @VelocityCheck int companyID, int mailingID, String imageName, boolean noCache) throws Exception {
 		// Generate cache lookup key
 		String cacheKey = generateCachingKey(companyID, mailingID, imageName);
 		// Look up image in cache
-		DeliverableImage image = getImageCache().get(cacheKey);
+		DeliverableImage image = getImageCache().get(cacheKey); // Get image first, so it may not be removed after "containsKey"
 		if (image != null && !noCache) {
-			if (isMobileRequest) {
-				String mobileCacheKey = generateCachingKey(companyID, mailingID, MOBILE_IMAGE_PREFIX + imageName);
-				if (checkImageCacheSize(image)) {
-					getImageCache().put(mobileCacheKey, image);
-					if (logger.isDebugEnabled()) {
-						logger.debug("mobile image added to cache: " + mobileCacheKey);
-					}
-				}
+			if (image == NOT_FOUND_IMAGE) {
+				return null;
+			} else {
+				return image;
 			}
-			return image;
 		} else {
 			// Load image component from database
 			MailingComponent comp = null;
@@ -312,7 +324,6 @@ public class ShowImageServlet extends HttpServlet {
 
 			// Create newImage
 			DeliverableImage newImage = null;
-			boolean notFound = false;
 			if (comp != null && checkValidityPeriod(comp) && comp.getBinaryBlock() != null) {
 				// Valid imagedata found
 				newImage = new DeliverableImage();
@@ -330,14 +341,9 @@ public class ShowImageServlet extends HttpServlet {
 				newImage = getDefaultImage(request);
 				if (newImage == null) {
 					// default image was not found
-					newImage = new DeliverableImage();
-					newImage.mtype = "text/html";
-					newImage.imageData = "Default image not found".getBytes("UTF-8");
-					newImage.name = "";
-					if (checkImageCacheSize(newImage)) {
-						getImageCache().put(cacheKey, newImage, NOT_FOUND_RELOAD_TIMEOUT_MILLIS);
-					}
-					notFound = true;
+					newImage = NOT_FOUND_IMAGE;
+					getImageCache().put(cacheKey, newImage);
+
 					if (logger.isDebugEnabled()) {
 						logger.debug("default image not found: " + cacheKey);
 					}
@@ -350,49 +356,27 @@ public class ShowImageServlet extends HttpServlet {
 						}
 					}
 				}
-			} else if (newImage == null) {
-				notFound = true;
+			} else {
 				ComCompany company = getCompanyDaoCache().getItem(companyID);
 				if (company == null) {
 					if (logger.isDebugEnabled()) {
 						logger.debug("image not found for not existing company: " + cacheKey);
 					}
-					newImage = null;
 				} else if (!(CompanyStatus.ACTIVE == company.getStatus())) {
 					if (logger.isDebugEnabled()) {
 						logger.debug("image not found for inactive company: " + cacheKey);
 					}
-					newImage = null;
-				} else {
-					newImage = new DeliverableImage();
-					newImage.mtype = "text/html";
-					newImage.imageData = "Image not found".getBytes("UTF-8");
-					newImage.name = "";
-					if (logger.isDebugEnabled()) {
-						logger.debug("image not found: " + cacheKey);
-					}
 				}
 				
-				if (checkImageCacheSize(newImage)) {
-					getImageCache().put(cacheKey, newImage, NOT_FOUND_RELOAD_TIMEOUT_MILLIS);
-				}
-			}
-
-			if (isMobileRequest && newImage != null) {
-				String mobileCacheKey = generateCachingKey(companyID, mailingID, MOBILE_IMAGE_PREFIX + imageName);
-				if (checkImageCacheSize(newImage)) {
-					if (notFound) {
-						getImageCache().put(mobileCacheKey, newImage, NOT_FOUND_RELOAD_TIMEOUT_MILLIS);
-					} else  {
-						getImageCache().put(mobileCacheKey, newImage);
-					}
-					if (logger.isDebugEnabled()) {
-						logger.debug("mobile image added to cache: " + mobileCacheKey);
-					}
-				}
+				newImage = NOT_FOUND_IMAGE;
+				getImageCache().put(cacheKey, newImage);
 			}
 			
-			return newImage;
+			if (newImage == NOT_FOUND_IMAGE) {
+				return null;
+			} else {
+				return newImage;
+			}
 		}
 	}
 

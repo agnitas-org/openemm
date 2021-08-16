@@ -13,15 +13,12 @@ package org.agnitas.beans;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.context.ApplicationContext;
 
+import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface Mediatype {
-    int STATUS_NOT_USED = 0;
-    int STATUS_INACTIVE = 1;
-    int STATUS_ACTIVE = 2;
-
     static boolean isActive(Mediatype mediaType) {
-        return mediaType != null && STATUS_ACTIVE == mediaType.getStatus();
+        return mediaType != null && MediaTypeStatus.Active.getCode() == mediaType.getStatus();
     }
 
     /**
@@ -85,10 +82,10 @@ public interface Mediatype {
     void syncTemplate(Mailing mailing, ApplicationContext con) throws Exception;
     
     /**
-     * Makes a standalone copy of this mediatype without any references to this objects data 
+     * Makes a standalone copy of this mediatype without any references to this objects data
      * 
      * @return
-     * @throws Exception 
+     * @throws Exception
      */
     Mediatype copy() throws Exception;
     

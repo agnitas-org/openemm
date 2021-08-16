@@ -1,4 +1,4 @@
-<%@ page language="java" import="org.agnitas.util.*, org.agnitas.beans.*" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" import="org.agnitas.util.*, org.agnitas.beans.*, com.agnitas.beans.*" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -11,8 +11,8 @@
 
 <c:set var="ACTION_LIST" 							value="<%= MailingBaseAction.ACTION_LIST %>"		scope="request" />
 <c:set var="ACTION_VIEW"							value="<%= MailingBaseAction.ACTION_VIEW %>"		scope="request" />
-<c:set var="MAILING_COMPONENT_TYPE_IMAGE"			value="<%= MailingComponent.TYPE_IMAGE %>"			scope="request" />
-<c:set var="MAILING_COMPONENT_TYPE_HOSTED_IMAGE"	value="<%= MailingComponent.TYPE_HOSTED_IMAGE %>"	scope="request" />
+<c:set var="MAILING_COMPONENT_TYPE_IMAGE"			value="<%= MailingComponentType.Image %>"			scope="request" />
+<c:set var="MAILING_COMPONENT_TYPE_HOSTED_IMAGE"	value="<%= MailingComponentType.HostedImage %>"	scope="request" />
 
 <emm:CheckLogon/>
 <emm:Permission token="mailing.components.show"/>

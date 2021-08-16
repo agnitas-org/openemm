@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.importvalues.MailType;
@@ -143,18 +144,18 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		int tempTableID = createTempTable();
         List<LightTarget> targets = Optional.ofNullable(getTargets(selectedTargetsAsString, companyID)).orElse(new ArrayList<>());
         DateFormats dateFormats = new DateFormats(startDate, stopDate, hourScale);
-		insertSendIntoTempTable(mailingID, tempTableID, companyID, targets, recipientsType, dateFormats);
-		insertClickersIntoTempTable(mailingID, tempTableID, companyID, targets, recipientsType, true, dateFormats);
+		insertSendIntoTempTable(mailingID, tempTableID, companyID, targets, null, recipientsType, dateFormats);
+		insertClickersIntoTempTable(mailingID, tempTableID, companyID, targets, null, recipientsType, true, dateFormats);
         insertClicksAnonymousIntoTempTable(mailingID, tempTableID, companyID, dateFormats);
-		insertOpenersIntoTempTable(mailingID, tempTableID, companyID, targets, recipientsType, true, false, dateFormats);
-		insertOpenedInvisibleIntoTempTable(mailingID, tempTableID, companyID, targets, recipientsType, dateFormats);
+		insertOpenersIntoTempTable(mailingID, tempTableID, companyID, targets, null, recipientsType, true, false, dateFormats);
+		insertOpenedInvisibleIntoTempTable(mailingID, tempTableID, companyID, targets, null, recipientsType, dateFormats);
         insertOpenedGrossIntoTempTable(mailingID, tempTableID, companyID, targets, dateFormats);
         insertOpenedAnonymousIntoTempTable(mailingID, tempTableID, companyID, dateFormats);
-		insertBouncesIntoTempTable(mailingID ,tempTableID, companyID, targets, recipientsType, false, dateFormats);
+		insertBouncesIntoTempTable(mailingID ,tempTableID, companyID, targets, null, recipientsType, false, dateFormats);
         insertSoftbouncesUndeliverable(mailingID, tempTableID, companyID, targets, recipientsType, showSoftbounces);
-		insertOptOutsIntoTempTable(mailingID, tempTableID, companyID, targets, recipientsType, dateFormats);
-		insertRevenueIntoTempTable(mailingID, tempTableID, companyID, targets, dateFormats);
-        insertDeliveredIntoTempTable(tempTableID, mailingID, companyID, targets, recipientsType, dateFormats);
+		insertOptOutsIntoTempTable(mailingID, tempTableID, companyID, targets, null, recipientsType, dateFormats);
+		insertRevenueIntoTempTable(mailingID, tempTableID, companyID, targets, null, dateFormats);
+        insertDeliveredIntoTempTable(tempTableID, mailingID, companyID, targets, null, recipientsType, dateFormats);
 		updateRates(tempTableID, companyID, targets);
 		return tempTableID;
 	}
@@ -198,9 +199,10 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         return cumulateTableId;
     }
 
-    public void insertDeliveredIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType, DateFormats dateFormats) throws Exception {
+    public void insertDeliveredIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets,
+                                             LightTarget hiddenTarget, String recipientsType, DateFormats dateFormats) throws Exception {
         if (successTableActivated(companyID) && hasSuccessTableData(companyID, mailingID)) {
-            insertDeliveredMailsFromSuccessTbl(tempTableID, mailingID, companyID, targets, recipientsType, dateFormats);
+            insertDeliveredMailsFromSuccessTbl(tempTableID, mailingID, companyID, targets, hiddenTarget, recipientsType, dateFormats);
         } else if (isMailingNotExpired(mailingID)) {
             insertDeliveredMailsCalculated(tempTableID, companyID);
         }
@@ -293,40 +295,35 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         }
     }
 
-    public int prepareDashboard(int mailingID, @VelocityCheck int companyID ) throws Exception {
-		int tempTableID = createTempTable();
-        DateFormats dateFormats = new DateFormats();
-		insertSendIntoTempTable(mailingID, tempTableID, companyID, null, CommonKeys.TYPE_WORLDMAILING, dateFormats);
-		insertClickersIntoTempTable(mailingID, tempTableID, companyID, null, CommonKeys.TYPE_WORLDMAILING, false, dateFormats);
-		insertOpenersIntoTempTable(mailingID, tempTableID, companyID, null, CommonKeys.TYPE_WORLDMAILING, false, false, dateFormats);
-		insertBouncesIntoTempTable(mailingID ,tempTableID, companyID, null, CommonKeys.TYPE_WORLDMAILING, false, dateFormats );
-		insertOptOutsIntoTempTable(mailingID, tempTableID, companyID, null, CommonKeys.TYPE_WORLDMAILING, dateFormats);
-		updateDashboardRates(tempTableID);
-		return tempTableID;
-	}
-
     public int prepareDashboardForCharts(int mailingID, @VelocityCheck int companyID ) throws Exception {
         int tempTableID = createTempTable();
         DateFormats dateFormats = new DateFormats();
-        insertSendIntoTempTable(mailingID, tempTableID, companyID, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, dateFormats);
-        insertClickersIntoTempTable(mailingID, tempTableID, companyID, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, true, dateFormats);
-        insertOpenersIntoTempTable(mailingID, tempTableID, companyID, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, true, false, dateFormats);
-        insertBouncesIntoTempTable(mailingID ,tempTableID, companyID,null, CommonKeys.TYPE_ALL_SUBSCRIBERS, false, dateFormats );
-        insertOptOutsIntoTempTable(mailingID, tempTableID, companyID,null, CommonKeys.TYPE_ALL_SUBSCRIBERS, dateFormats);
+        insertSendIntoTempTable(mailingID, tempTableID, companyID, null, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, dateFormats);
+        insertClickersIntoTempTable(mailingID, tempTableID, companyID, null, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, true, dateFormats);
+        insertOpenersIntoTempTable(mailingID, tempTableID, companyID, null, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, true, false, dateFormats);
+        insertBouncesIntoTempTable(mailingID ,tempTableID, companyID,null, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, false, dateFormats );
+        insertOptOutsIntoTempTable(mailingID, tempTableID, companyID,null, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, dateFormats);
         updateDashboardRates(tempTableID);
         return tempTableID;
     }
 
 	@DaoUpdateReturnValueCheck
-    public void insertOpenersIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType, boolean readForAllDeviceClasses, boolean useOwnTargetGroups, DateFormats dateFormats) throws Exception {
+    public void insertOpenersIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+                                           LightTarget hiddenTarget, String recipientsType, boolean readForAllDeviceClasses,
+                                           boolean useOwnTargetGroups, DateFormats dateFormats) throws Exception {
         List<LightTarget> needTargets = useOwnTargetGroups ? getTargets(getTargetIds(mailingID, companyID), companyID) : targets;
         List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(needTargets);
         int targetDisplayIndex = CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
 
         List<TempRow> results = new ArrayList<>();
 
+        final String hiddenTargetSql = hiddenTarget == null ? null : hiddenTarget.getTargetSQL();
+
         for (LightTarget target : allTargets) {
-        	int totalOpeners = selectOpeners(companyID, mailingID, recipientsType, target.getTargetSQL(), dateFormats.getStartDate(), dateFormats.getStopDate());
+
+            String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
+
+        	int totalOpeners = selectOpeners(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
 
             TempRow allSubscribersRow = new TempRow();
             allSubscribersRow.setCategory(target.getId() == CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID && !readForAllDeviceClasses ? CommonKeys.OPENERS : CommonKeys.OPENERS_MEASURED);
@@ -340,7 +337,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             if (readForAllDeviceClasses) {
             	// If a customer is within one of theses deviceclasses he hasn't opened the mail with any other deviceclass.
 				Map<DeviceClass,Integer> openersByDeviceClassWithoutCombinations =
-                        selectOpenersByDeviceClassWithoutCombinations(companyID, mailingID, recipientsType, target.getTargetSQL(), dateFormats.getStartDate(), dateFormats.getStopDate());
+                        selectOpenersByDeviceClassWithoutCombinations(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
 
 				// Calculating the openers which used more than one deviceclass for link-opens
 				int openersWithDeviceClassCombinations = totalOpeners;
@@ -412,15 +409,22 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-	public void insertClickersIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType, boolean readForAllDeviceClasses, DateFormats dateFormats) throws Exception {
+	public void insertClickersIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+                                            LightTarget hiddenTarget, String recipientsType, boolean readForAllDeviceClasses,
+                                            DateFormats dateFormats) throws Exception {
     	List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(targets);
         int targetDisplayIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
 
         List<TempRow> results = new ArrayList<>();
 
+        final String hiddenTargetSql = hiddenTarget == null ? null : hiddenTarget.getTargetSQL();
+
 		for (LightTarget target : allTargets) {
-        	int totalClicks = selectClicks(companyID, mailingID, recipientsType, target.getTargetSQL(), dateFormats.getStartDate(), dateFormats.getStopDate());
-        	int totalClickers = selectClickers(companyID, mailingID, recipientsType, target.getTargetSQL(), dateFormats.getStartDate(), dateFormats.getStopDate());
+
+            final String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
+
+        	int totalClicks = selectClicks(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
+        	int totalClickers = selectClickers(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
 
             TempRow clickerIndexRow = new TempRow();
             clickerIndexRow.setCategory(CommonKeys.CLICKER);
@@ -443,7 +447,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             if (readForAllDeviceClasses) {
             	// If a customer is within one of theses deviceclasses he hasn't clicked in the mail with any other deviceclass.
 				Map<DeviceClass,Integer> clickersByDeviceClassWithoutCombinations =
-                        selectClickersByDeviceClassWithoutCombinations(companyID, mailingID, recipientsType, target.getTargetSQL(), dateFormats.getStartDate(), dateFormats.getStopDate());
+                        selectClickersByDeviceClassWithoutCombinations(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
 
 				// Calculating the clickers which used more than one deviceclass for link-clicks
 				int clickersWithDeviceClassCombinations = totalClickers;
@@ -667,14 +671,19 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 	}
 
 	@DaoUpdateReturnValueCheck
-	public void insertRevenueIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, DateFormats dateFormats) throws Exception {
+	public void insertRevenueIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+                                           LightTarget hiddenTarget, DateFormats dateFormats) throws Exception {
         if (DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_num_tbl")) {
+            final String hiddenTargetSql = hiddenTarget == null ? null : hiddenTarget.getTargetSQL();
+
 	        List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(targets);
 
 			int targetDisplayIndex = CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
 	        List<TempRow> results = new ArrayList<>();
 	        for (LightTarget target : allTargets) {
-	        	double revenue = selectRevenue(companyID, mailingID, target.getTargetSQL(), dateFormats.getStartDate(), dateFormats.getStopDate());
+                final String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
+
+	        	double revenue = selectRevenue(companyID, mailingID, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
 
 	        	TempRow newItem = new TempRow();
 				newItem.setCategory(CommonKeys.REVENUE);
@@ -693,13 +702,20 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 	}
 
 	@DaoUpdateReturnValueCheck
-	public void insertOptOutsIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType, DateFormats dateFormats) throws Exception {
+	public void insertOptOutsIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+                                           LightTarget hiddenTarget, String recipientsType, DateFormats dateFormats) throws Exception {
 		List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(targets);
 
 		int targetDisplayIndex = CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
+
+        final String hiddenTargetSql = hiddenTarget == null ? null : hiddenTarget.getTargetSQL();
+
 		List<TempRow> results = new ArrayList<>();
 		for (LightTarget target : allTargets) {
-			int optouts = selectOptOuts(companyID, mailingID, target.getTargetSQL(), recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
+
+            final String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
+
+			int optouts = selectOptOuts(companyID, mailingID, resultTargetSql, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
 
 			TempRow newItem = new TempRow();
 			newItem.setCategory(CommonKeys.OPT_OUTS);
@@ -751,27 +767,34 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 anonymousOpenings);
     }
 
-    public void insertOpenedInvisibleIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType, DateFormats dateFormats) throws Exception {
-        insertOpenedInvisibleIntoTempTable(mailingID, tempTableID, companyID, targets, recipientsType, false, dateFormats);
+    public void insertOpenedInvisibleIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+                                                   LightTarget hiddenTarget, String recipientsType, DateFormats dateFormats) throws Exception {
+        insertOpenedInvisibleIntoTempTable(mailingID, tempTableID, companyID, targets, hiddenTarget, recipientsType, false, dateFormats);
     }
 
 	@DaoUpdateReturnValueCheck
-	public void insertOpenedInvisibleIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> subTargets, String recipientsType, boolean useOwnTargetGroups, DateFormats dateFormats) throws Exception {
+	public void insertOpenedInvisibleIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> subTargets,
+                                                   LightTarget hiddenTarget, String recipientsType, boolean useOwnTargetGroups, DateFormats dateFormats) throws Exception {
 		Map<Integer, Integer> measuredAll = getMeasuredFromTempTable(tempTableID);
 		List<LightTarget> needTargets = useOwnTargetGroups ? getTargets(getTargetIds(mailingID, companyID), companyID) : subTargets;
 		List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(needTargets);
 		List<TempRow> results = new ArrayList<>();
 		int targetDisplayIndex = CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
 
+        final String hiddenTargetSql = hiddenTarget == null ? null : hiddenTarget.getTargetSQL();
+
 		for (LightTarget target : allTargets) {
-			int openingClickers = selectOpeningClickers(companyID, mailingID, recipientsType, target.getTargetSQL(), dateFormats.getStartDate(), dateFormats.getStopDate());
-			int nonOpeningClickers = selectNonOpeningClickers(companyID, mailingID, recipientsType, target.getTargetSQL(), dateFormats.getStartDate(), dateFormats.getStopDate());
+
+            final String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
+
+			int openingClickers = selectOpeningClickers(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
+			int nonOpeningClickers = selectNonOpeningClickers(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
 			int maximumOverallOpeners;
 			if (successTableActivated(companyID) && isMailingNotExpired(mailingID)) {
-				maximumOverallOpeners = selectNumberOfDeliveredMails(companyID, mailingID, recipientsType, target.getTargetSQL(), dateFormats.getStartDate(), dateFormats.getStopDate());
+				maximumOverallOpeners = selectNumberOfDeliveredMails(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
 	        } else {
 	        	if (isMailingNotExpired(mailingID)) {
-		        	if (StringUtils.isBlank(target.getTargetSQL()) || target.getTargetSQL().replace(" ", "").equals("1=1")) {
+		        	if (StringUtils.isBlank(resultTargetSql) || resultTargetSql.replace(" ", "").equals("1=1")) {
 		        		// this calculation only works for the "all_recipients" target
 			        	int mailsSent = getNumberSentMailings(companyID, mailingID, CommonKeys.TYPE_WORLDMAILING, null, dateFormats.getStartDate(), dateFormats.getStopDate());
 			        	int hardbounces = selectHardbouncesFromBounces(companyID, mailingID, null, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
@@ -780,7 +803,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		        		maximumOverallOpeners = 0;
 		        	}
 	            } else {
-	            	if (StringUtils.isBlank(target.getTargetSQL()) || target.getTargetSQL().replace(" ", "").equals("1=1")) {
+	            	if (StringUtils.isBlank(resultTargetSql) || resultTargetSql.replace(" ", "").equals("1=1")) {
 		        		// this calculation only works for the "all_recipients" target
 	    	        	int mailsSent = getNumberSentMailings(companyID, mailingID, CommonKeys.TYPE_WORLDMAILING, null, dateFormats.getStartDate(), dateFormats.getStopDate());
 	            		maximumOverallOpeners = mailsSent;
@@ -827,15 +850,22 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		insertIntoTempTable(tempTableID, results);
 	}
 
-    public void insertBouncesIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType, boolean includeSoftbounces, DateFormats dateFormats) throws Exception {
+    public void insertBouncesIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+                                           LightTarget hiddenTarget, String recipientsType, boolean includeSoftbounces,
+                                           DateFormats dateFormats) throws Exception {
         List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(targets);
 
         List<TempRow> results = new ArrayList<>();
 
 		int targetDisplayIndex = CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
+
+        final String hiddenTargetSql = hiddenTarget == null ? null : hiddenTarget.getTargetSQL();
+
         if (!isMailingBouncesExpire(companyID, mailingID) || !isOracleDB()) {
             for (LightTarget target : allTargets) {
-	        	int hardbounces = selectHardbouncesFromBounces(companyID, mailingID, target.getTargetSQL(), recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
+                final String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
+
+	        	int hardbounces = selectHardbouncesFromBounces(companyID, mailingID, resultTargetSql, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
 
 				TempRow row = new TempRow();
 				row.setCategory(CommonKeys.HARD_BOUNCES);
@@ -847,7 +877,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 				results.add(row);
 
 				if (includeSoftbounces) {
-	            	int softbounces = selectSoftbouncesFromBounces(companyID, mailingID, target.getTargetSQL(), recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
+	            	int softbounces = selectSoftbouncesFromBounces(companyID, mailingID, resultTargetSql, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
 
 					row = new TempRow();
 					row.setCategory(CommonKeys.SOFT_BOUNCES);
@@ -863,7 +893,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             }
         } else {
             for (LightTarget target : allTargets) {
-            	int hardbounces = selectHardbouncesFromBindings(companyID, mailingID, target.getTargetSQL(), recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
+                final String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
+
+            	int hardbounces = selectHardbouncesFromBindings(companyID, mailingID, resultTargetSql, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
 
 				TempRow row = new TempRow();
 				row.setCategory(CommonKeys.HARD_BOUNCES);
@@ -875,7 +907,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 				results.add(row);
 
 				if (includeSoftbounces) {
-	            	int softbounces = selectSoftbouncesFromBindings(companyID, mailingID, target.getTargetSQL(), recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
+	            	int softbounces = selectSoftbouncesFromBindings(companyID, mailingID, resultTargetSql, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
 
 					row = new TempRow();
 					row.setCategory(CommonKeys.SOFT_BOUNCES);
@@ -895,7 +927,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
 	@DaoUpdateReturnValueCheck
-	public void insertSendIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType, DateFormats dateFormats) throws Exception {
+	public void insertSendIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+                                        LightTarget hiddenTarget, String recipientsType, DateFormats dateFormats) throws Exception {
 		/*
 		Date startDate = null;
 		Date endDate = null;
@@ -912,7 +945,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		}
 		*/
 
-		int mailsSent = getNumberSentMailings(companyID, mailingID, CommonKeys.TYPE_WORLDMAILING, null, dateFormats.getStartDate(), dateFormats.getStopDate());
+        final String hiddenTargetSql = hiddenTarget == null ? null : hiddenTarget.getTargetSQL();
+
+		int mailsSent = getNumberSentMailings(companyID, mailingID, CommonKeys.TYPE_WORLDMAILING, hiddenTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
 
         List<TempRow> results = new ArrayList<>();
 
@@ -935,7 +970,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
 				int numberSentMailings = -1;
                 if (mailingTrackingDataAvailable) {
-                    numberSentMailings = getNumberSentMailings(companyID, mailingID, recipientsType, target.getTargetSQL(), dateFormats.getStartDate(), dateFormats.getStopDate());
+                    final String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
+                    numberSentMailings = getNumberSentMailings(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
                 }
 
 				TempRow newItem = new TempRow();
@@ -995,14 +1031,21 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-    private void insertDeliveredMailsFromSuccessTbl(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType, DateFormats dateFormats) throws Exception {
+    private void insertDeliveredMailsFromSuccessTbl(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets,
+                                                    LightTarget hiddenTarget, String recipientsType, DateFormats dateFormats) throws Exception {
         boolean isMailingNotExpired = isMailingNotExpired(mailingID);
         List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(targets);
         int targetDisplayIndex = CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
         List<TempRow> results = new ArrayList<>();
 
+        final String hiddenTargetSql = hiddenTarget == null ? null : hiddenTarget.getTargetSQL();
+
+
         for (LightTarget target : allTargets) {
-        	int deliveredMails = selectNumberOfDeliveredMails(companyID, mailingID, recipientsType, target.getTargetSQL(), dateFormats.getStartDate(), dateFormats.getStopDate());
+
+            final String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
+
+        	int deliveredMails = selectNumberOfDeliveredMails(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
         	if (deliveredMails > 0 || isMailingNotExpired) {
                 TempRow newItem = new TempRow();
                 newItem.setCategory(CommonKeys.DELIVERED_EMAILS_DELIVERED);
@@ -1626,24 +1669,19 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
     private int getTempTableValuesByCategoryAndTargetGroupId(int tempTableID, String category, int targetGroupId) throws Exception {
 		String query = "SELECT value FROM " + getTempTableName(tempTableID) + " WHERE category = ? AND targetgroup_id = ?";
-        int value = 0;
+        int value;
         try {
             value = selectEmbedded(logger, query, Integer.class, category, targetGroupId);
-        }
-        catch (EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             logger.error("No data found for category: " + category + ", targetId: " + targetGroupId);
+            value = 0;
         }
 		return value;
 	}
 
     private String getTargetIds(int mailingId, @VelocityCheck int companyId) throws Exception {
 		String query = "SELECT target_expression FROM mailing_tbl WHERE mailing_id = ? AND company_id = ?";
-		String targetExpression = "";
-		try {
-			targetExpression = select(logger, query, String.class, mailingId, companyId);
-		} catch (EmptyResultDataAccessException e) {
-			// nothing to do
-		}
+		String targetExpression = selectObjectDefaultNull(logger, query, new StringRowMapper(), mailingId, companyId);
 		final Pattern pattern = Pattern.compile("^.*?(\\d+)(.*)$");
 		Set<Integer> targetIds = new HashSet<>();
 		if (targetExpression != null) {

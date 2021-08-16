@@ -85,7 +85,7 @@ public abstract class BindingServiceImpl implements BindingService {
 	@Validate(groups = BindingModel.SetGroup.class)
 	public void setBinding(BindingModel model) throws MailinglistException {
 		if (!mailinglistDao.exist(model.getMailinglistId(), model.getCompanyId())) {
-			throw new MailinglistNotExistException(model.getMailinglistId());
+			throw new MailinglistNotExistException(model.getMailinglistId(), model.getCompanyId());
 		}
 		if (!recipientDao.exist(model.getCustomerId(), model.getCompanyId())) {
 			throw new RecipientNotExistException();

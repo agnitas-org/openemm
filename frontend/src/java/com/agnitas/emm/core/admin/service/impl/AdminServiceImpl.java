@@ -345,7 +345,7 @@ public class AdminServiceImpl implements AdminService {
 	public final boolean deleteAdmin(final int adminID, final int companyID) {
 		final boolean result = adminDao.delete(adminID, companyID);
 
-		if(!result) {
+		if (!result) {
 			logger.info(String.format("Cannot delete unknown admin ID %d (company ID %d)", adminID, companyID));
 			return false;
 		}
@@ -411,10 +411,8 @@ public class AdminServiceImpl implements AdminService {
 		map(savingAdmin, form, editorAdmin);
 
 		final AdminPreferences formAdminPreferences = form.getAdminPreferences();
-		savingAdminPreferences.setStartPage(formAdminPreferences.getStartPage());
 		savingAdminPreferences.setMailingContentView(formAdminPreferences.getMailingContentView());
 		savingAdminPreferences.setDashboardMailingsView(formAdminPreferences.getDashboardMailingsView());
-		savingAdminPreferences.setNavigationLocation(formAdminPreferences.getNavigationLocation());
 		savingAdminPreferences.setMailingSettingsView(formAdminPreferences.getMailingSettingsView());
 		savingAdminPreferences.setLivePreviewPosition(formAdminPreferences.getLivePreviewPosition());
 		savingAdminPreferences.setStatisticLoadType(formAdminPreferences.getStatisticLoadType());
@@ -603,11 +601,6 @@ public class AdminServiceImpl implements AdminService {
 
 	@Override
 	public PasswordState getPasswordState(ComAdmin admin) {
-		if (admin.isOneTimePassword()) {
-			// One-time password must be changed immediately upon log on.
-			return PasswordState.ONE_TIME;
-		}
-
 		int expirationDays = configService.getIntegerValue(ConfigValue.UserPasswordExpireDays, admin.getCompanyID());
 		if (expirationDays <= 0) {
 			// Expiration is disabled for company.
@@ -644,11 +637,6 @@ public class AdminServiceImpl implements AdminService {
 
 	@Override
 	public Date computePasswordExpireDate(ComAdmin admin) {
-		// Password gets expired once user logs in.
-		if (admin.isOneTimePassword()) {
-			return null;
-		}
-
 		int expirationDays = configService.getIntegerValue(ConfigValue.UserPasswordExpireDays, admin.getCompanyID());
 		if (expirationDays <= 0) {
 			// Expiration is disabled for company.
@@ -668,7 +656,6 @@ public class AdminServiceImpl implements AdminService {
 
 		admin.setPasswordForStorage(password);
 		admin.setLastPasswordChange(DateUtils.round(new Date(), Calendar.SECOND));
-		admin.setOneTimePassword(false);
 
 		try {
 			adminDao.save(admin);
@@ -734,8 +721,8 @@ public class AdminServiceImpl implements AdminService {
 		
 		adminDao.save(admin);
 		
-		if(passwordChanged) {
-			this.passwordChangedNotifier.notifyAdminAboutChangedPassword(admin);
+		if (passwordChanged) {
+			passwordChangedNotifier.notifyAdminAboutChangedPassword(admin);
 		}
 	}
 
@@ -771,7 +758,6 @@ public class AdminServiceImpl implements AdminService {
 		target.setLayoutBaseID(sourceForm.getLayoutBaseId());
 		target.setGender(sourceForm.getGender());
 		target.setTitle(sourceForm.getTitle());
-		target.setOneTimePassword(sourceForm.isOneTimePassword());
 		target.setAdminPhone(sourceForm.getAdminPhone());
 
 		mapExtendedFields(target, sourceForm, editorAdmin);
@@ -781,4 +767,28 @@ public class AdminServiceImpl implements AdminService {
 	public int getAccessLimitTargetId(ComAdmin admin) {
 		return 0;
 	}
+
+	@Override
+	public int getAdminWelcomeMailingId(String language) {
+		return adminDao.getAdminWelcomeMailingId(language);
+	}
+
+	@Override
+	public int getPasswordResetMailingId(String language) {
+		return adminDao.getPasswordResetMailingId(language);
+	}
+
+	@Override
+	public int getPasswordChangedMailingId(String language) {
+		return adminDao.getPasswordChangedMailingId(language);
+	}
+
+	@Override
+	public final void updateLoginDate(final int adminID) {
+		final Date now = new Date();
+		
+		this.adminDao.updateLoginDate(adminID, now);
+	}
+	
+	
 }

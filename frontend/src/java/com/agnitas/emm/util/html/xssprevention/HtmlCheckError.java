@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.util.html.xssprevention;
 
+import com.agnitas.messages.Message;
+
 public abstract class HtmlCheckError {
 
 	// Keep this abstract method in here to ensure it is implemented in subclass
@@ -19,5 +21,9 @@ public abstract class HtmlCheckError {
 	// Keep this abstract method in here to ensure it is implemented in subclass
 	@Override
 	public abstract int hashCode();
-	
+
+	public Message toMessage() {
+		return Message.of("error.html.genericError");
+	}
+
 }

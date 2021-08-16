@@ -15,19 +15,17 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.springframework.context.ApplicationContextAware;
 
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
 
-public interface MailingDao extends ApplicationContextAware {
+public interface MailingDao {
 	/**
 	 * Checks whether a mailing was sent at least once and whether one was sent more than 'expire-mailtrack' (taken from company_info_tbl) days ago
 	 *
@@ -46,7 +44,7 @@ public interface MailingDao extends ApplicationContextAware {
      *              Id of the company that created a mailing
      * @return Mailing bean object or null
 	 */
-	ComMailing getMailing(int mailingID, @VelocityCheck int companyID);
+	Mailing getMailing(int mailingID, @VelocityCheck int companyID);
 
 	/**
 	 * Saves mailing, its mediatypes and trackable links

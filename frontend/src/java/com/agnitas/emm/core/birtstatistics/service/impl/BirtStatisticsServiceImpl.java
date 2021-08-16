@@ -581,7 +581,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 	@Override
 	public String getUserFormTrackableLinkStatisticUrl(ComAdmin admin, String sessionId, int formId) throws Exception {
     	Map<String, Object> map = new HashMap<>();
-    	map.put(REPORT_NAME, "formula_click_stat.rptdesign");
+    	map.put(REPORT_NAME, "form_click_statistics.rptdesign");
     	map.put(COMPANY_ID, admin.getCompanyID());
 		map.put(EMM_SESSION, sessionId);
 		map.put(FORM_ID, formId);
@@ -603,7 +603,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 	}
 
 	protected String generateTargetBaseUrl() {
-		return configService.getValue(ConfigValue.BirtDrilldownUrl);
+		return configService.getValue(ConfigValue.SystemUrl);
 	}
 
 	@Required

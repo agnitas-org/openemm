@@ -65,6 +65,16 @@
         <url-pattern>/</url-pattern>
     </servlet-mapping>
 
+	<!-- RESTful services -->
+	<servlet>
+		<servlet-name>RestfulServiceServlet</servlet-name>
+		<servlet-class>com.agnitas.emm.restful.RestfulServiceServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>RestfulServiceServlet</servlet-name>
+		<url-pattern>/restful/*</url-pattern>
+	</servlet-mapping>
+
 	<!-- listener for generation messages property-files from database -->
 	<listener>
 		<listener-class>com.agnitas.messages.I18NContextListenerForWebservice</listener-class>

@@ -58,6 +58,7 @@ public class BirtMessagesPropertiesContextListener implements ServletContextList
 		try {
 			logger.info("Creating MessagesPropertiesFiles");
 
+			// TODO Use WebAppFileUtil.getWebInfDirectoryPath()
 			String path = servletContext.getRealPath("/WEB-INF/classes");
 			
 			Map<String, Map<String, String>> allMessages = I18nString.MESSAGE_RESOURCES.getAllMessages();

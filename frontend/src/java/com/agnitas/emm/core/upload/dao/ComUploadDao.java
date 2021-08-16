@@ -51,7 +51,7 @@ public interface ComUploadDao {
      * This method returns the file associated with the given uploadID.
      * This method is dangerous, it loads the file completely into memory!
      * If possible, use {@link #getDownloadData(int)} and {@link #sendDataToStream(int, OutputStream)}.
-     *  
+     * 
 	 * @param uploadID
 	 * @return
 	 */
@@ -59,9 +59,9 @@ public interface ComUploadDao {
 	UploadData loadData(int uploadID);
 	
 	/**
-	 * This method saves or updates the given Upload Data Object and returns the upload-id. 
+	 * This method saves or updates the given Upload Data Object and returns the upload-id.
 	 * @return
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	void saveData(UploadData uploadData, InputStream inStream) throws Exception;
 	
@@ -113,7 +113,7 @@ public interface ComUploadDao {
 	
 	/**
 	 * Sends the content of the file of given upload to given stream.
-	 *  
+	 * 
 	 * @param uploadId ID of upload
 	 * @param stream {@link OutputStream} for sending data
 	 * 
@@ -126,4 +126,8 @@ public interface ComUploadDao {
 	boolean isOwnerOrAdmin(int id, int adminId, int companyId);
 
     boolean exists(int id);
+
+	DownloadData getDownloadData(int companyID, String filename);
+
+	long getCurrentUploadOverallSizeBytes(int companyID);
 }

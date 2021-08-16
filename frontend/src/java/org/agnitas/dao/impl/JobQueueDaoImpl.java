@@ -10,11 +10,8 @@
 
 package org.agnitas.dao.impl;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -35,54 +32,13 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
  * DAO handler for JobDto-Objects
  */
 public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
-	
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(JobQueueDaoImpl.class);
 	
-	private static final String FIELD_CREATED = "created";
-	private static final String FIELD_LASTSTART = "lastStart";
-	private static final String FIELD_RUNNING = "running";
-	private static final String FIELD_LASTRESULT = "lastResult";
-	private static final String FIELD_STARTAFTERERROR = "startAfterError";
-	private static final String FIELD_LASTDURATION = "lastDuration";
-	private static final String FIELD_INTERVAL_ORACLE = "interval";
-	private static final String FIELD_INTERVAL_MYSQL = "`interval`";
-	private static final String FIELD_NEXTSTART = "nextStart";
-	private static final String FIELD_HOSTNAME = "hostname";
-	private static final String FIELD_RUNCLASS = "runClass";
-	private static final String FIELD_DELETED = "deleted";
-	private static final String FIELD_RUNONLYONHOSTS = "runonlyonhosts";
-	private static final String FIELD_EMAILONERROR = "emailonerror";
-	
-	private static final String SELECT_UPCOMING_JOBS = "SELECT * FROM job_queue_tbl WHERE " + FIELD_RUNNING + " <= 0 AND " + FIELD_NEXTSTART + " IS NOT NULL AND " + FIELD_NEXTSTART + " < CURRENT_TIMESTAMP AND " + FIELD_DELETED + " <= 0 AND (" + FIELD_LASTRESULT + " IS NULL OR " + FIELD_LASTRESULT + " = 'OK' OR " + FIELD_STARTAFTERERROR + " > 0) AND " + FIELD_RUNCLASS + " IS NOT NULL";
-	private static final String SELECT_NOT_DELETED_JOBS = "SELECT * FROM job_queue_tbl WHERE " + FIELD_DELETED + " <= 0 ORDER BY id";
-	private static final String SELECT_ERRORNEOUS_JOBS_ORACLE = "SELECT * FROM job_queue_tbl WHERE " + FIELD_DELETED + " <= 0 AND ((" + FIELD_LASTRESULT + " IS NOT NULL AND " + FIELD_LASTRESULT + " != 'OK') OR (" + FIELD_NEXTSTART + " IS NOT NULL AND " + FIELD_NEXTSTART + " < CURRENT_TIMESTAMP - 0.05) OR " + FIELD_INTERVAL_ORACLE + " IS NULL OR " + FIELD_RUNCLASS + " IS NULL)";
-	private static final String SELECT_ERRORNEOUS_JOBS_MYSQL = "SELECT * FROM job_queue_tbl WHERE " + FIELD_DELETED + " <= 0 AND ((" + FIELD_LASTRESULT + " IS NOT NULL AND " + FIELD_LASTRESULT + " != 'OK') OR (" + FIELD_NEXTSTART + " IS NOT NULL AND " + FIELD_NEXTSTART + " < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 * 60 * 0.05 MINUTE)) OR " + FIELD_INTERVAL_MYSQL + " IS NULL OR " + FIELD_RUNCLASS + " IS NULL)";
-	private static final String SELECT_BY_ID = "SELECT * FROM job_queue_tbl WHERE id = ?";
-	private static final String UPDATE_ORACLE = "UPDATE job_queue_tbl SET description = ?, " + FIELD_CREATED + " = ?, " + FIELD_LASTSTART + " = ?, " + FIELD_RUNNING + " = ?, " + FIELD_LASTRESULT + " = ?, " + FIELD_STARTAFTERERROR + " = ?, " + FIELD_LASTDURATION + " = ?, " + FIELD_INTERVAL_ORACLE + " = ?, " + FIELD_NEXTSTART + " = ?, " + FIELD_HOSTNAME + " = ?," + FIELD_RUNCLASS + " = ?, " + FIELD_RUNONLYONHOSTS + " = ?, " + FIELD_EMAILONERROR + " = ?, " + FIELD_DELETED + " = ? WHERE id = ?";
-	private static final String UPDATE_MYSQL = "UPDATE job_queue_tbl SET description = ?, " + FIELD_CREATED + " = ?, " + FIELD_LASTSTART + " = ?, " + FIELD_RUNNING + " = ?, " + FIELD_LASTRESULT + " = ?, " + FIELD_STARTAFTERERROR + " = ?, " + FIELD_LASTDURATION + " = ?, " + FIELD_INTERVAL_MYSQL + " = ?, " + FIELD_NEXTSTART + " = ?, " + FIELD_HOSTNAME + " = ?," + FIELD_RUNCLASS + " = ?, " + FIELD_RUNONLYONHOSTS + " = ?, " + FIELD_EMAILONERROR + " = ?, " + FIELD_DELETED + " = ? WHERE id = ?";
-	private static final String SELECT_JOB_STATUS_FOR_UPDATE = "SELECT " + FIELD_RUNNING + " FROM job_queue_tbl WHERE " + FIELD_RUNNING + " <= 0 AND " + FIELD_NEXTSTART + " IS NOT NULL AND " + FIELD_NEXTSTART + " < CURRENT_TIMESTAMP AND " + FIELD_DELETED + " <= 0 AND (" + FIELD_LASTRESULT + " IS NULL OR " + FIELD_LASTRESULT + " = 'OK' OR " + FIELD_STARTAFTERERROR + " > 0) AND id = ? FOR UPDATE";
-	private static final String SELECT_JOB_STATUS_FOR_UPDATE_MANUALLY_OVERRIDE = "SELECT " + FIELD_RUNNING + " FROM job_queue_tbl WHERE " + FIELD_RUNNING + " <= 0 AND id = ? FOR UPDATE";
-	private static final String UPDATE_JOB_STATUS = "UPDATE job_queue_tbl SET " + FIELD_RUNNING + " = 1, " + FIELD_NEXTSTART + " = ?, " + FIELD_HOSTNAME + " = ? WHERE id = ?";
-	
-	private static final String DELETE_BY_ID = "UPDATE job_queue_tbl SET " + FIELD_DELETED + " = 1 WHERE " + FIELD_DELETED + " <= 0 AND id = ?";
-	
-	private static final String PARAMETER_FIELD_JOBID = "job_id";
-	private static final String PARAMETER_FIELD_PARAMETERNAME = "parameter_name";
-	private static final String PARAMETER_FIELD_PARAMETERVALUE = "parameter_value";
-	
-	private static final String SELECT_PARAMETERS_BY_JOBID = "SELECT * FROM job_queue_parameter_tbl WHERE " + PARAMETER_FIELD_JOBID + " = ?";
-
-	// ----------------------------------------------------------------------------------------------------------------
-	// Dependency Injection
-
-	// ----------------------------------------------------------------------------------------------------------------
-	// Business Logic
-
 	@Override
 	public List<JobDto> readUpcomingJobsForExecution() {
 		try {
-			return select(logger, SELECT_UPCOMING_JOBS, new Job_RowMapper());
+			return select(logger, "SELECT * FROM job_queue_tbl WHERE running <= 0 AND nextStart IS NOT NULL AND nextStart < CURRENT_TIMESTAMP AND deleted <= 0 AND (lastResult IS NULL OR lastResult = 'OK' OR startAfterError > 0) AND runClass IS NOT NULL", new Job_RowMapper());
 		} catch (Exception e) {
 			throw new RuntimeException("Error while reading jobs from database", e);
 		}
@@ -94,7 +50,7 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 			return null;
 		} else {
 			try {
-				return selectObjectDefaultNull(logger, SELECT_BY_ID, new Job_RowMapper(), id);
+				return selectObjectDefaultNull(logger, "SELECT * FROM job_queue_tbl WHERE id = ?", new Job_RowMapper(), id);
 			} catch (Exception e) {
 				throw new RuntimeException("Error while reading job from database", e);
 			}
@@ -119,60 +75,20 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	public boolean initJobStart(int id, Date nextStart) {
 		return initJobStart(id, nextStart, false);
 	}
-
+	
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean initJobStart(int id, Date nextStart, boolean manuallyOverride) {
+	public boolean initJobStart(final int id, final Date nextStart, final boolean manuallyOverride) {
 		if (id < 0) {
 			return false;
 		} else {
-			try {
-				try (Connection connection = getDataSource().getConnection()) {
-					boolean previousAutoCommit = connection.getAutoCommit();
-					connection.setAutoCommit(false);
-					
-					String selectSql;
-					if (manuallyOverride) {
-						selectSql = SELECT_JOB_STATUS_FOR_UPDATE_MANUALLY_OVERRIDE;
-					} else {
-						selectSql = SELECT_JOB_STATUS_FOR_UPDATE;
-					}
-					
-					logSqlStatement(logger, selectSql);
-					try (PreparedStatement lockStatement = connection.prepareStatement(selectSql)) {
-						lockStatement.setInt(1, id);
-						
-						try (ResultSet lockQueryResult = lockStatement.executeQuery()) {
-							if (lockQueryResult.next()) {
-								// Lock this job by setting to running and calculating next start
-								logSqlStatement(logger, UPDATE_JOB_STATUS);
-								try(PreparedStatement updateStatement = connection.prepareStatement(UPDATE_JOB_STATUS)) {
-									if (nextStart == null) {
-										updateStatement.setTimestamp(1, null);
-									} else {
-										updateStatement.setTimestamp(1, new Timestamp(nextStart.getTime()));
-									}
-									
-									updateStatement.setString(2, AgnUtils.getHostName());
-									updateStatement.setInt(3, id);
-									updateStatement.executeUpdate();
-								}
-								
-								return true;
-							} else {
-								return false;
-							}
-						} finally {
-							connection.commit();
-						}
-					} finally {
-						connection.setAutoCommit(previousAutoCommit);
-					}
-				}
-			} catch(Exception e) {
-				logger.error("Error while setting job job status", e);
-				throw new RuntimeException("Error while setting job status", e);
-			}
+			// Lock this job by setting running flag and setting next start to calculated value
+			int touchedLines = update(logger, "UPDATE job_queue_tbl SET running = 1, nextStart = ?, hostname = ?"
+				+ " WHERE running <= 0"
+				+ (manuallyOverride ? "": " AND nextStart IS NOT NULL AND nextStart < CURRENT_TIMESTAMP AND deleted <= 0 AND (lastResult IS NULL OR lastResult = 'OK' OR startAfterError > 0)")
+				+ " AND id = ?", nextStart, AgnUtils.getHostName(), id);
+			
+			return touchedLines == 1;
 		}
 	}
 	
@@ -191,8 +107,14 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 				if (lastResult != null && lastResult.length() > 512) {
 					lastResult = lastResult.substring(0, 508) + " ...";
 				}
+				String updateSql;
+				if (isOracleDB()) {
+					updateSql = "UPDATE job_queue_tbl SET description = ?, created = ?, lastStart = ?, running = ?, lastResult = ?" + (lastResult == null || "OK".equalsIgnoreCase(lastResult) ? ", acknowledged = 0" : "") + ", startAfterError = ?, lastDuration = ?, interval = ?, nextStart = ?, hostname = ?, runClass = ?, runonlyonhosts = ?, emailonerror = ?, deleted = ? WHERE id = ?";
+				} else {
+					updateSql = "UPDATE job_queue_tbl SET description = ?, created = ?, lastStart = ?, running = ?, lastResult = ?" + (lastResult == null || "OK".equalsIgnoreCase(lastResult) ? ", acknowledged = 0" : "") + ", startAfterError = ?, lastDuration = ?, `interval` = ?, nextStart = ?, hostname = ?, runClass = ?, runonlyonhosts = ?, emailonerror = ?, deleted = ? WHERE id = ?";
+				}
 				int touchedLines = update(logger,
-					isOracleDB() ? UPDATE_ORACLE : UPDATE_MYSQL,
+					updateSql,
 					job.getDescription(),
 					job.getCreated(),
 					job.getLastStart(),
@@ -227,11 +149,8 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 		if (id <= 0) {
 			return false;
 		} else {
-			if (logger.isDebugEnabled()) {
-				logger.debug("stmt:" + DELETE_BY_ID);
-			}
 			try {
-				return update(logger, DELETE_BY_ID, id) > 0;
+				return update(logger, "UPDATE job_queue_tbl SET deleted = 1 WHERE deleted <= 0 AND id = ?", id) > 0;
 			} catch (DataAccessException e) {
 				// No Job found
 				return false;
@@ -245,9 +164,7 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	@DaoUpdateReturnValueCheck
 	public int resetJobsForCurrentHost() {
 		return update(logger,
-			"UPDATE job_queue_tbl"
-			+ " SET " + FIELD_RUNNING + " = 0, " + FIELD_NEXTSTART + " = CURRENT_TIMESTAMP"
-			+ " WHERE " + FIELD_HOSTNAME + " = ? AND " + FIELD_RUNNING + " = 1",
+			"UPDATE job_queue_tbl SET running = 0, nextStart = CURRENT_TIMESTAMP WHERE hostname = ? AND running = 1",
 			AgnUtils.getHostName());
 	}
 
@@ -258,28 +175,30 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 
 			newJob.setId(resultSet.getInt("id"));
 			newJob.setDescription(resultSet.getString("description"));
-			newJob.setCreated(resultSet.getTimestamp(FIELD_CREATED));
-			newJob.setLastStart(resultSet.getTimestamp(FIELD_LASTSTART));
-			newJob.setRunning(resultSet.getInt(FIELD_RUNNING) > 0);
-			newJob.setLastResult(resultSet.getString(FIELD_LASTRESULT));
-			newJob.setStartAfterError(resultSet.getInt(FIELD_STARTAFTERERROR) > 0);
-			newJob.setLastDuration(resultSet.getInt(FIELD_LASTDURATION));
-			newJob.setInterval(resultSet.getString(FIELD_INTERVAL_ORACLE));
-			newJob.setNextStart(resultSet.getTimestamp(FIELD_NEXTSTART));
-			newJob.setRunClass(resultSet.getString(FIELD_RUNCLASS));
-			newJob.setDeleted(resultSet.getInt(FIELD_DELETED) > 0);
-			newJob.setRunOnlyOnHosts(resultSet.getString(FIELD_RUNONLYONHOSTS));
-			newJob.setEmailOnError(resultSet.getString(FIELD_EMAILONERROR));
+			newJob.setCreated(resultSet.getTimestamp("created"));
+			newJob.setLastStart(resultSet.getTimestamp("lastStart"));
+			newJob.setRunning(resultSet.getInt("running") > 0);
+			newJob.setLastResult(resultSet.getString("lastResult"));
+			newJob.setStartAfterError(resultSet.getInt("startAfterError") > 0);
+			newJob.setLastDuration(resultSet.getInt("lastDuration"));
+			newJob.setInterval(resultSet.getString("interval"));
+			newJob.setNextStart(resultSet.getTimestamp("nextStart"));
+			newJob.setRunClass(resultSet.getString("runClass"));
+			newJob.setDeleted(resultSet.getInt("deleted") > 0);
+			newJob.setRunOnlyOnHosts(resultSet.getString("runonlyonhosts"));
+			newJob.setEmailOnError(resultSet.getString("emailonerror"));
+			newJob.setCriticality(resultSet.getInt("criticality"));
+			newJob.setAcknowledged(resultSet.getInt("acknowledged") > 0);
 
 			// Read parameters for this job
 			if (logger.isDebugEnabled()) {
-				logger.debug("stmt:" + SELECT_PARAMETERS_BY_JOBID);
+				logger.debug("stmt:" + "SELECT * FROM job_queue_parameter_tbl WHERE job_id = ?");
 			}
-			List<Map<String, Object>> result = select(logger, SELECT_PARAMETERS_BY_JOBID, newJob.getId());
+			List<Map<String, Object>> result = select(logger, "SELECT * FROM job_queue_parameter_tbl WHERE job_id = ?", newJob.getId());
 			
 			Map<String, String> parameters = new HashMap<>();
 			for (Map<String, Object> resultRow : result) {
-				parameters.put((String) resultRow.get(PARAMETER_FIELD_PARAMETERNAME), (String) resultRow.get(PARAMETER_FIELD_PARAMETERVALUE));
+				parameters.put((String) resultRow.get("parameter_name"), (String) resultRow.get("parameter_value"));
 			}
 			newJob.setParameters(parameters);
 			
@@ -291,9 +210,9 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	public List<JobDto> selectErrorneousJobs() {
 		try {
 			if (isOracleDB()) {
-				return select(logger, SELECT_ERRORNEOUS_JOBS_ORACLE, new Job_RowMapper());
+				return select(logger, "SELECT * FROM job_queue_tbl WHERE deleted <= 0 AND ((lastResult IS NOT NULL AND lastResult != 'OK') OR (nextStart IS NOT NULL AND nextStart < CURRENT_TIMESTAMP - 0.05) OR interval IS NULL OR runClass IS NULL)", new Job_RowMapper());
 			} else {
-				return select(logger, SELECT_ERRORNEOUS_JOBS_MYSQL, new Job_RowMapper());
+				return select(logger, "SELECT * FROM job_queue_tbl WHERE deleted <= 0 AND ((lastResult IS NOT NULL AND lastResult != 'OK') OR (nextStart IS NOT NULL AND nextStart < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 * 60 * 0.05 MINUTE)) OR `interval` IS NULL OR runClass IS NULL)", new Job_RowMapper());
 			}
 		} catch (Exception e) {
 			throw new RuntimeException("Error while reading errorneous jobs from database", e);
@@ -303,7 +222,7 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	@Override
 	public List<JobDto> getAllActiveJobs() {
 		try {
-			return select(logger, SELECT_NOT_DELETED_JOBS, new Job_RowMapper());
+			return select(logger, "SELECT * FROM job_queue_tbl WHERE deleted <= 0 ORDER BY id", new Job_RowMapper());
 		} catch (Exception e) {
 			throw new RuntimeException("Error while reading not deleted jobs from database", e);
 		}
@@ -312,7 +231,7 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	@Override
 	public List<JobDto> getHangingJobs(Date timeLimit) {
 		try {
-			return select(logger, "SELECT * FROM job_queue_tbl WHERE " + FIELD_DELETED + " <= 0 AND " + FIELD_RUNNING + " > 0 AND " + FIELD_LASTSTART + " < ? ORDER BY id", new Job_RowMapper(), timeLimit);
+			return select(logger, "SELECT * FROM job_queue_tbl WHERE deleted <= 0 AND running > 0 AND lastStart < ? ORDER BY id", new Job_RowMapper(), timeLimit);
 		} catch (Exception e) {
 			throw new RuntimeException("Error while reading hanging jobs from database", e);
 		}
@@ -322,8 +241,9 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	@DaoUpdateReturnValueCheck
 	public void writeJobResult(int job_id, Date time, String result, int durationInSeconds, String hostname) {
 		try {
-			if (result != null && result.length() > 512) {
-				result = result.substring(0, 508) + " ...";
+			// Watchout: OracleDB counts in bytes of texts not in chars
+			if (result != null && result.getBytes("UTF-8").length > 512) {
+				result = result.substring(0, 450) + " ...";
 			}
 			update(logger, "INSERT INTO job_queue_result_tbl (job_id, time, result, duration, hostname) VALUES (?, ?, ?, ?, ?)", job_id, time, result, durationInSeconds, hostname);
 		} catch (Exception e) {
@@ -376,10 +296,11 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 			try {
 				String lastResult = job.getLastResult();
 				if (lastResult != null && lastResult.length() > 512) {
-					lastResult = lastResult.substring(0, 508) + " ...";
+					// Watch out for german Umlaute in string which count as 2 bytes etc., so make it shorter than 508 chars.
+					lastResult = lastResult.substring(0, 500) + " ...";
 				}
 				int touchedLines = update(logger,
-					"UPDATE job_queue_tbl SET running = ?, lastResult = ?, lastDuration = ? WHERE id = ?",
+					"UPDATE job_queue_tbl SET running = ?, lastResult = ?" + (lastResult == null || "OK".equalsIgnoreCase(lastResult) ? ", acknowledged = 0" : "") + ", lastDuration = ? WHERE id = ?",
 					job.isRunning(),
 					lastResult,
 					job.getLastDuration(),
@@ -395,5 +316,10 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 				throw new RuntimeException("Error while updating job job status", e);
 			}
 		}
+	}
+
+	@Override
+	public void acknowledgeErrorneousJob(int idToAcknowledge) {
+		update(logger, "UPDATE job_queue_tbl SET acknowledged = 1 WHERE id = ?", idToAcknowledge);
 	}
 }

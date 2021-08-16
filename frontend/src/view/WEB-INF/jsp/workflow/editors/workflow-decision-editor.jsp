@@ -354,7 +354,7 @@
         </c:forEach>
     </emm:instantiate>
 
-    <script id="decision-editor-data" type="application/json">
+    <script id="config:decision-editor-initializer" type="application/json">
         {
             "form": "decisionForm",
             "container": "#decisionReactionPanel",

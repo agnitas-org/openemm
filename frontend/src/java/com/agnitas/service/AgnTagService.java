@@ -50,7 +50,7 @@ public interface AgnTagService {
     /**
      * A shortcut for {@link #resolveTags(String, boolean, AgnTagResolver)} with {@code recursive = true}.
      */
-    String resolveTags(int companyID, String content, AgnTagResolver resolver) throws Exception;
+    String resolveTags(String content, AgnTagResolver resolver) throws Exception;
 
     /**
      * Perform substitution for all found agn-tags (except dynamic tags). This is recursive algorithm so if some tag
@@ -63,7 +63,7 @@ public interface AgnTagService {
      * @return translated content.
      * @throws Exception if parsing error occurred.
      */
-    String resolveTags(int companyID, String content, boolean recursive, AgnTagResolver resolver) throws Exception;
+    String resolveTags(String content, boolean recursive, AgnTagResolver resolver) throws Exception;
 
     /**
      * Perform substitution for all found agn-tags (except dynamic tags). An optimized (due to caching) combination of

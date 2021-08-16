@@ -10,8 +10,6 @@
 
 package com.agnitas.emm.core.serverstatus.web;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -23,26 +21,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComServerMessageDao;
-import com.agnitas.dao.LicenseDao;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.logon.service.ComLogonService;
-import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
-import com.agnitas.emm.core.serverstatus.dto.ConfigValueDto;
-import com.agnitas.emm.core.serverstatus.forms.ServerConfigForm;
-import com.agnitas.emm.core.serverstatus.forms.ServerStatusForm;
-import com.agnitas.emm.core.serverstatus.forms.validation.ServerConfigFormValidator;
-import com.agnitas.emm.core.serverstatus.forms.validation.ServerStatusFormValidator;
-import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
-import com.agnitas.messages.Message;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.util.Version;
-import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.Anonymous;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -76,6 +57,33 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriUtils;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComServerMessageDao;
+import com.agnitas.dao.LicenseDao;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.logon.service.ComLogonService;
+import com.agnitas.emm.core.logon.service.LogonServiceException;
+import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
+import com.agnitas.emm.core.serverstatus.dto.ConfigValueDto;
+import com.agnitas.emm.core.serverstatus.forms.ServerConfigForm;
+import com.agnitas.emm.core.serverstatus.forms.ServerStatusForm;
+import com.agnitas.emm.core.serverstatus.forms.validation.ServerConfigFormValidator;
+import com.agnitas.emm.core.serverstatus.forms.validation.ServerStatusFormValidator;
+import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
+import com.agnitas.json.JsonArray;
+import com.agnitas.json.JsonObject;
+import com.agnitas.json.JsonWriter;
+import com.agnitas.messages.Message;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.util.Version;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.Anonymous;
+
+import net.sf.json.JSONArray;
 
 public class ServerStatusControllerBasic {
 	private static final Logger logger = Logger.getLogger(ServerStatusControllerBasic.class);
@@ -347,51 +355,69 @@ public class ServerStatusControllerBasic {
 	}
 
 	@Anonymous
-	@RequestMapping(value = "/jobqueuestatus.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.TEXT_PLAIN_VALUE)
+	@RequestMapping(value = "/jobqueuestatus.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public @ResponseBody String showJobqueueStatus(HttpServletRequest request, HttpServletResponse response) {
-		ComAdmin admin = AgnUtils.getAdmin(request);
-		if (admin == null) {
-			try {
-				// User has no session, but try to logon user by given
-				// parameters (this is
-				// especially for nagios/icinga checks)
-				if (StringUtils.isNotEmpty(request.getParameter("username")) && StringUtils.isNotEmpty(request.getParameter("password"))) {
-					admin = logonService.getAdminByCredentials(request.getParameter("username"), request.getParameter("password"), request.getRemoteAddr());
-				}
-
-				if (admin == null) {
-					throw new Exception("Access denied");
-				}
-			} catch (Exception e) {
-				return "ACCESS DENIED";
+		try {
+			JsonObject resultJsonObject = new JsonObject();
+			int responseCode;
+			
+			ComAdmin admin = AgnUtils.getAdmin(request);
+			if (admin == null) {
+				admin = loginAdminByRequestParameters(request, admin);
 			}
-		}
-
-		if (!admin.permissionAllowed(Permission.SERVER_STATUS)) {
-			return "PERMISSION DENIED";
-		} else {
-			String result;
-			int httpCode;
-			if (!serverStatusService.isJobQueueRunning()) {
-				result = "ERROR: Jobqueue is not running";
-				httpCode = 500;
-			} else if (!serverStatusService.isJobQueueStatusOK()) {
-				result = "WARNING: Some jobqueue jobs have errors";
-				List<JobDto> errorneousJobs = serverStatusService.getErrorneousJobs();
-				for (JobDto jobDto : errorneousJobs) {
-					result += "\n\t" + jobDto.getDescription() + ": " + StringUtils.substring(jobDto.getLastResult(), 0, 20) + " Laststart: "
-							+ new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).format(jobDto.getLastStart());
-				}
-				httpCode = 409;
-			} else if (serverStatusService.isImportStalling()) {
-				result = "WARNING: Some import job is stalling";
-				httpCode = 409;
+	
+			if (admin == null) {
+				resultJsonObject.add("error", "ACCESS DENIED");
+				responseCode = 403;
+			} else if (!admin.permissionAllowed(Permission.SERVER_STATUS)) {
+				resultJsonObject.add("error", "PERMISSION DENIED");
+				responseCode = 403;
 			} else {
-				result = "OK";
-				httpCode = 200;
+				try {
+					if (!serverStatusService.isJobQueueRunning()) {
+						resultJsonObject.add("status", "ERROR: Jobqueue is not running");
+						responseCode = 500;
+					} else if (!serverStatusService.isJobQueueStatusOK()) {
+						if (StringUtils.isNotBlank(request.getParameter("acknowledge"))) {
+							int idToAcknowledge = Integer.parseInt(request.getParameter("acknowledge"));
+							serverStatusService.acknowledgeErrorneousJob(idToAcknowledge);
+							JobDto job = jobQueueService.getJob(idToAcknowledge);
+							javaMailService.sendEmail(job.getEmailOnError(), "Erorrneous Job \"" + job.getDescription() + "\" (ID: " + idToAcknowledge + ", Criticality: " + job.getCriticality() + ") acknowledged", "No more further emails about this error will be sent: \n" + job.getLastResult(), "No more further emails about this error will be sent: <br />\n" + job.getLastResult());
+						}
+						
+						resultJsonObject.add("message", "WARNING: Some jobqueue jobs have errors");
+						JsonArray errorneousJobsArray = new JsonArray();
+						resultJsonObject.add("errorneousJobs", errorneousJobsArray);
+						List<JobDto> errorneousJobs = serverStatusService.getErrorneousJobs();
+						for (JobDto jobDto : errorneousJobs) {
+							JsonObject errorneousJobObject = new JsonObject();
+							errorneousJobObject.add("id", jobDto.getId());
+							errorneousJobObject.add("description", jobDto.getDescription());
+							errorneousJobObject.add("criticality", jobDto.getCriticality());
+							errorneousJobObject.add("lastResult", jobDto.getLastResult());
+							errorneousJobObject.add("laststart", jobDto.getLastStart());
+							errorneousJobObject.add("acknowledged", jobDto.isAcknowledged());
+							errorneousJobsArray.add(errorneousJobObject);
+						}
+						responseCode = 409;
+					} else if (serverStatusService.isImportStalling()) {
+						resultJsonObject.add("status", "ERROR: Some import job is stalling");
+						responseCode = 409;
+					} else {
+						resultJsonObject.add("status", "OK");
+						responseCode = 200;
+					}
+				} catch (Exception e) {
+					resultJsonObject.add("error", "Internal server error: Cannot read errorneous jobs: " + e.getMessage());
+					responseCode = 500;
+				}
 			}
-			response.setStatus(httpCode);
-			return result;
+			
+			response.setStatus(responseCode);
+			return JsonWriter.getJsonItemString(resultJsonObject);
+		} catch (Exception e) {
+			response.setStatus(500);
+			return "\"Internal server error: " + e.getMessage() + "\"";
 		}
 	}
 
@@ -401,12 +427,9 @@ public class ServerStatusControllerBasic {
 		ComAdmin admin = AgnUtils.getAdmin(request);
 		if (admin == null) {
 			try {
-				// User has no session, but try to logon user by given
-				// parameters (this is
-				// especially for nagios/icinga checks)
-				if (StringUtils.isNotEmpty(request.getParameter("username")) && StringUtils.isNotEmpty(request.getParameter("password"))) {
-					admin = logonService.getAdminByCredentials(request.getParameter("username"), request.getParameter("password"), request.getRemoteAddr());
-				}
+				// User has no session, but try to logon user by given parameters
+				// This is especially for nagios/icinga checks
+				admin = loginAdminByRequestParameters(request, admin);
 
 				if (admin == null) {
 					throw new Exception("Access denied");
@@ -443,12 +466,7 @@ public class ServerStatusControllerBasic {
 		ComAdmin admin = AgnUtils.getAdmin(request);
 		if (admin == null) {
 			try {
-				// User has no session, but try to logon user by given
-				// parameters (this is
-				// especially for nagios/icinga checks)
-				if (StringUtils.isNotEmpty(request.getParameter("username")) && StringUtils.isNotEmpty(request.getParameter("password"))) {
-					admin = logonService.getAdminByCredentials(request.getParameter("username"), request.getParameter("password"), request.getRemoteAddr());
-				}
+				admin = loginAdminByRequestParameters(request, admin);
 
 				if (admin == null) {
 					throw new Exception("Access denied");
@@ -495,12 +513,7 @@ public class ServerStatusControllerBasic {
     	ComAdmin admin = AgnUtils.getAdmin(request);
 		if (admin == null) {
 			try {
-				// User has no session, but try to logon user by given
-				// parameters (this is
-				// especially for nagios/icinga checks)
-				if (StringUtils.isNotEmpty(request.getParameter("username")) && StringUtils.isNotEmpty(request.getParameter("password"))) {
-					admin = logonService.getAdminByCredentials(request.getParameter("username"), request.getParameter("password"), request.getRemoteAddr());
-				}
+				admin = loginAdminByRequestParameters(request, admin);
 
 				if (admin == null) {
 					throw new Exception("Access denied");
@@ -614,5 +627,23 @@ public class ServerStatusControllerBasic {
 	@RequestMapping(value = "/killRunningImports.action", method = { RequestMethod.GET, RequestMethod.POST })
 	public @ResponseBody List<String> killRunningImports() {
 		return serverStatusService.killRunningImports();
+	}
+	
+	@Anonymous
+	@RequestMapping(value = "/getSystemStatus.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = {MediaType.APPLICATION_JSON_VALUE})
+	public @ResponseBody JSONArray getSystemStatus (HttpServletRequest request, HttpServletResponse response) throws Exception {
+		return serverStatusService.getSystemStatus();
+	}
+
+	private ComAdmin loginAdminByRequestParameters(HttpServletRequest request, ComAdmin admin) throws LogonServiceException {
+		String basicAuthorizationUsername = HttpUtils.getBasicAuthenticationUsername(request);
+		String basicAuthorizationPassword = HttpUtils.getBasicAuthenticationPassword(request);
+		String username = StringUtils.isNotBlank(basicAuthorizationUsername) ? basicAuthorizationUsername : request.getParameter("username");
+		String password = StringUtils.isNotBlank(basicAuthorizationPassword) ? basicAuthorizationPassword : request.getParameter("password");
+		
+		if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
+			admin = logonService.getAdminByCredentials(username, password, request.getRemoteAddr());
+		}
+		return admin;
 	}
 }

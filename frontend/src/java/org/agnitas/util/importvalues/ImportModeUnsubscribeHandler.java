@@ -13,14 +13,22 @@ package org.agnitas.util.importvalues;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
+import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.UserStatus;
+import org.agnitas.service.ImportException;
 import org.agnitas.util.DbColumnType;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
@@ -36,12 +44,57 @@ public class ImportModeUnsubscribeHandler implements ImportModeHandler {
 
 	@Override
 	public void checkPreconditions(ImportProfile importProfile) throws Exception {
-		// Do nothing
+		// If customer_id is imported it may only be used for updates, never for imports(ADD)
+		// Permission to import customer_id is checked later
+		boolean isCustomerIdImported = false;
+		for (ColumnMapping mapping : importProfile.getColumnMapping()) {
+			if ("customer_id".equalsIgnoreCase(mapping.getDatabaseColumn())) {
+				isCustomerIdImported = true;
+			}
+		}
+		
+		if (isCustomerIdImported) {
+			throw new ImportException(false, "error.import.customerid_insert");
+		}
+		
+		// Check "not nullable" fields
+		CaseInsensitiveMap<String, DbColumnType> customerDbFields = importRecipientsDao.getCustomerDbFields(importProfile.getCompanyId());
+		for (Entry<String, DbColumnType> columnEntry : customerDbFields.entrySet()) {
+			if (!columnEntry.getValue().isNullable()
+					&& DbUtilities.getColumnDefaultValue(importRecipientsDao.getDataSource(), "customer_" + importProfile.getCompanyId() + "_tbl", columnEntry.getKey()) == null
+					&& !"customer_id".equalsIgnoreCase(columnEntry.getKey())
+					&& !"gender".equalsIgnoreCase(columnEntry.getKey())
+					&& !"mailtype".equalsIgnoreCase(columnEntry.getKey())
+					&& !ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD.equalsIgnoreCase(columnEntry.getKey())) {
+				boolean notNullColumnIsSet = false;
+				for (ColumnMapping mapping : importProfile.getColumnMapping()) {
+					if (columnEntry.getKey().equalsIgnoreCase(mapping.getDatabaseColumn()) && (mapping.getFileColumn() != null || mapping.getDefaultValue() != null)) {
+						notNullColumnIsSet = true;
+						break;
+					}
+				}
+				if (!notNullColumnIsSet) {
+					throw new ImportException(false, "error.import.missingNotNullableColumnInMapping", columnEntry.getKey());
+				}
+			}
+		}
+		
+		for (ColumnMapping mapping : importProfile.getColumnMapping()) {
+			if ("gender".equalsIgnoreCase(mapping.getDatabaseColumn())) {
+				if (StringUtils.isBlank(mapping.getFileColumn()) && (StringUtils.isBlank(mapping.getDefaultValue()) || mapping.getDefaultValue().trim().equals("''") || mapping.getDefaultValue().trim().equalsIgnoreCase("null"))) {
+					throw new ImportException(false, "error.import.missingNotNullableColumnInMapping", "gender");
+				}
+			} else if ("mailtype".equalsIgnoreCase(mapping.getDatabaseColumn())) {
+				if (StringUtils.isBlank(mapping.getFileColumn()) && (StringUtils.isBlank(mapping.getDefaultValue()) || mapping.getDefaultValue().trim().equals("''") || mapping.getDefaultValue().trim().equalsIgnoreCase("null"))) {
+					throw new ImportException(false, "error.import.missingNotNullableColumnInMapping", "mailtype");
+				}
+			}
+		}
 	}
 
 	@Override
 	public boolean isNullValueAllowedForData(DbColumnType columnType, NullValuesAction nullValuesAction) {
-		return true;
+		return columnType.isNullable();
 	}
 	
 	@Override
@@ -56,16 +109,28 @@ public class ImportModeUnsubscribeHandler implements ImportModeHandler {
 
 	@Override
 	public void handleExistingCustomers(CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
-		// Do nothing
+		// Update customer data
+		if (importProfile.getUpdateAllDuplicates()) {
+			// Update all existing customer identified by keycolumns
+			int updatedEntries = importRecipientsDao.updateAllExistingCustomersByKeyColumn(temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
+			status.setUpdated(updatedEntries);
+		} else {
+			// Update the first existing customer only
+			int updatedEntries = importRecipientsDao.updateFirstExistingCustomers(temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
+			status.setUpdated(updatedEntries);
+		}
 	}
 
 	@Override
-	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, MediaTypes mediatype) throws Exception {
+	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
 		// Mark customers as opt-out in binding table if current status is active
 		if (mailingListIdsToAssign != null) {
 			Map<Integer, Integer> mailinglistAssignStatistics = new HashMap<>();
 	    	for (int mailingListId : mailingListIdsToAssign) {
-	    		int changed = importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Active.getStatusCode(), UserStatus.AdminOut.getStatusCode(), "Mass Opt-Out by Admin");
+	    		int changed = 0;
+	    		for (MediaTypes mediatype : mediatypes) {
+	    			changed += importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Active.getStatusCode(), UserStatus.AdminOut.getStatusCode(), "Mass Opt-Out by Admin");
+	    		}
 	    		mailinglistAssignStatistics.put(mailingListId, changed);
 	    	}
 			return mailinglistAssignStatistics;

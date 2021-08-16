@@ -202,9 +202,10 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     return $form;
   };
 
-  Form.prototype.valid = function() {
+  Form.prototype.valid = function(options) {
     var validationEvent = $.Event('validation');
-    this.$form.trigger(validationEvent);
+    options = _.merge({}, this.validatorOptions, options);
+    this.$form.trigger(validationEvent, options);
 
     if (validationEvent.isDefaultPrevented()) {
       return false;
@@ -217,15 +218,15 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     if (this.validatorName) {
       var validator = AGN.Lib.Validator.get(this.validatorName);
       if (validator) {
-        return validator.valid(this, this.validatorOptions, fieldsValid);
+        return validator.valid(this, options, fieldsValid);
       }
     }
 
     return fieldsValid;
   };
 
-  Form.prototype.validate = function() {
-    if (this.valid()) {
+  Form.prototype.validate = function(options) {
+    if (this.valid(options)) {
       return true;
     } else {
       this.handleErrors();
@@ -542,9 +543,16 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
   };
 
   Form.prototype.submit = function(type) {
-    var opts = Array.prototype.slice.call(arguments, 1);
+    var actionId = 0;
+    var validationOptions = {};
+    if ((type == 'confirm' || type == 'action') && typeof arguments[1] === 'number') {
+      actionId = arguments[1];
+      validationOptions = arguments[2];
+    } else {
+      validationOptions = arguments[1];
+    }
 
-    if (this.valid()) {
+    if (this.valid(validationOptions)) {
       this.cleanErrors();
     } else {
       this.handleErrors();
@@ -553,13 +561,13 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
 
     switch(type) {
       case "static":
-        return this._submitStatic(opts);
+        return this._submitStatic();
       case "confirm":
-        return this._submitConfirm(opts);
+        return this._submitConfirm(actionId);
       case "action":
-        return this._submitAction(opts);
+        return this._submitAction(actionId);
       case "event":
-        return this._submitEvent(opts);
+        return this._submitEvent();
       default:
         return this._submit();
     }
@@ -736,16 +744,38 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
 
     this.cleanErrors();
 
+    var errors = this.errors().filter(function (error) {
+      return error.field && error.field.length > 0;
+    });
+
+    //print errors
+    _.each(errors, function(error) {
+      var $field = error.field;
+      $field.parents('.form-group').addClass('has-alert has-feedback js-form-error');
+      appendFeedbackMessage($field, error.msg);
+    });
+
+    //calculate errors positions
     _.each(this.errors(), function(error) {
       var $field = error.field;
-      if ($field && $field.length > 0) {
-        $field.parents('.form-group').addClass('has-alert has-feedback js-form-error');
-        appendFeedbackMessage($field, error.msg);
-        errorPos.push($field.offset().top)
+      if ($field.data('select2')) {
+        errorPos.push($field.parent().find('.select2-container').offset().top);
+      } else if ($field.data('_editor') && $field.data('_editor').editor) {
+        var editor = $field.data('_editor').editor;
+        errorPos.push($(editor.container).offset().top);
+      } else {
+        errorPos.push($field.offset().top);
       }
     });
 
+    var containerScroll = false;
     var $view = this.$form.closest('.modal');
+    if (!$view.exists()) {
+      $view = $('.tile-content[data-sizing="scroll"]');
+      if ($view.exists()) {
+        containerScroll = true;
+      }
+    }
     if (!$view.exists()) {
       $view = $(document);
     }
@@ -755,7 +785,12 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     }
 
     var formPosition = this.$form.offset().top;
-    var scrollTopPos = _.sortBy(errorPos)[0] - formPosition - 25;
+    var scrollTopPos;
+    if(containerScroll) {
+      scrollTopPos = _.sortBy(errorPos)[0] + $view.scrollTop() - $view.offset().top - 25;
+    } else {
+      scrollTopPos = _.sortBy(errorPos)[0] - formPosition - 25;
+    }
     $view.scrollTop(scrollTopPos);
   };
 

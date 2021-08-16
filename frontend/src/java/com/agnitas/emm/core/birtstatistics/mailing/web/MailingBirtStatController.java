@@ -52,7 +52,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComAdminPreferences;
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
@@ -151,7 +151,7 @@ public class MailingBirtStatController {
             return "messages";
         }
         
-        ComMailing mailing = mailingBaseService.getMailing(admin.getCompanyID(), mailingId);
+        Mailing mailing = mailingBaseService.getMailing(admin.getCompanyID(), mailingId);
     
         if (mailing == null) {
             return "/statistics/mailing/list.action";
@@ -237,7 +237,7 @@ public class MailingBirtStatController {
         return props;
     }
 
-    protected void processStatisticView(ComAdmin admin, Model model, MailingStatisticDto mailingStatisticDto, MailingStatisticForm form, ComMailing mailing) throws Exception {
+    protected void processStatisticView(ComAdmin admin, Model model, MailingStatisticDto mailingStatisticDto, MailingStatisticForm form, Mailing mailing) throws Exception {
         String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
         String birtUrl = getBirtUrl(admin, sessionId, mailingStatisticDto);
         String birtDownloadUrl = "";

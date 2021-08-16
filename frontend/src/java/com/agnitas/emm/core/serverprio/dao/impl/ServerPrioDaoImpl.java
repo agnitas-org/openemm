@@ -11,9 +11,11 @@
 package com.agnitas.emm.core.serverprio.dao.impl;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.DateRowMapper;
 import org.apache.log4j.Logger;
 
 import com.agnitas.emm.core.serverprio.bean.ServerPrio;
@@ -82,10 +84,15 @@ public final class ServerPrioDaoImpl extends BaseDaoImpl implements ServerPrioDa
 
 	@Override
 	public final List<ServerPrio> listServerPriosByMailingAndCompany(final int companyID, final int mailingID) {
-		final String sql = "SELECT * FROM serverprio_tbl WHERE company_id=? AND mailing_Id=?";
+		final String sql = "SELECT company_id, mailing_id, priority, start_date, end_date FROM serverprio_tbl WHERE company_id=? AND mailing_Id=?";
 		
 		return select(LOGGER, sql, new ServerPrioRowMapper(), companyID, mailingID);
 	}
 
+	@Override
+	public Date getDeliveryPauseDate(final int companyId, final int mailingId) {
+		final String sql = "SELECT start_date FROM serverprio_tbl WHERE (company_id = 0 OR company_id = ?) AND mailing_Id = ? AND priority = 0";
 
+		return selectObject(LOGGER, sql, new DateRowMapper(), companyId, mailingId);
+	}
 }

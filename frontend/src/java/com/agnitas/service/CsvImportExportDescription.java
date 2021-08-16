@@ -29,9 +29,9 @@ import org.agnitas.service.UpdateMethod;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CsvReader;
 import org.agnitas.util.DbColumnType;
-import org.agnitas.util.TempFileInputStream;
 import org.agnitas.util.ZipUtilities;
 import org.agnitas.util.importvalues.CheckForDuplicates;
+import org.agnitas.util.importvalues.DateFormat;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -42,6 +42,9 @@ import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader.JsonToken;
 import com.agnitas.service.ImportError.ImportErrorKey;
+
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.FileHeader;
 
 public class CsvImportExportDescription {
 	private int id = -1;
@@ -63,6 +66,10 @@ public class CsvImportExportDescription {
 	private boolean autoMapping = false;
     private String datatype = "CSV";
     private int referenceImportProcessActionID = 0;
+	private int dateFormat = DateFormat.ddMMyyyy.getIntValue();
+	private int dateTimeFormat = DateFormat.ddMMyyyyHHmmss.getIntValue();
+	private String timezone = "Europe/Berlin";
+	private String decimalSeparator = ",";
 
 	private String creationDateField = "";
 
@@ -378,20 +385,19 @@ public class CsvImportExportDescription {
 					ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
 					if (zipEntry == null) {
 						throw new ImportException(false, "error.unzip.noEntry");
+					} else {
+						return dataInputStream;
 					}
-					return dataInputStream;
 				} else {
-					File unzipPath = new File(importFile.getAbsolutePath() + ".unzipped");
-					unzipPath.mkdir();
-					ZipUtilities.decompressFromEncryptedZipFile(importFile, unzipPath, getZipPassword());
-					
-					// Check if there was only one file within the zip file and use it for import
-					String[] filesToImport = unzipPath.list(); // Return null if no files found
-					if (filesToImport == null || filesToImport.length != 1) {
+					ZipFile zipFile = new ZipFile(importFile);
+					zipFile.setPassword(getZipPassword().toCharArray());
+					List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+					// Check if there is only one file within the zip file
+					if (fileHeaders == null || fileHeaders.size() != 1) {
 						throw new Exception("Invalid number of files included in zip file");
+					} else {
+						return zipFile.getInputStream(fileHeaders.get(0));
 					}
-					InputStream dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
-					return new TempFileInputStream(dataInputStream, unzipPath);
 				}
 			} catch (ImportException e) {
 				throw e;
@@ -558,5 +564,37 @@ public class CsvImportExportDescription {
 		}
 		
 		return output.toString();
+	}
+	
+	public int getDateFormat() {
+		return dateFormat;
+	}
+
+	public void setDateFormat(int dateFormat) {
+		this.dateFormat = dateFormat;
+	}
+
+	public int getDateTimeFormat() {
+		return dateTimeFormat;
+	}
+
+	public void setDateTimeFormat(int dateTimeFormat) {
+		this.dateTimeFormat = dateTimeFormat;
+	}
+
+	public String getTimezone() {
+		return timezone;
+	}
+
+	public void setTimezone(String timezone) {
+		this.timezone = timezone;
+	}
+
+	public String getDecimalSeparator() {
+		return decimalSeparator;
+	}
+
+	public void setDecimalSeparator(String decimalSeparator) {
+		this.decimalSeparator = decimalSeparator;
 	}
 }

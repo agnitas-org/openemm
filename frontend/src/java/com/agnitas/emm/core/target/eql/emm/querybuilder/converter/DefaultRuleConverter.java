@@ -11,6 +11,8 @@
 package com.agnitas.emm.core.target.eql.emm.querybuilder.converter;
 
 import com.agnitas.emm.core.target.eql.codegen.DataType;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderCondition;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderOperator;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
 
@@ -20,11 +22,37 @@ public class DefaultRuleConverter extends GenericRuleConverter {
 
     private static final String WHITESPACE = " ";
 
+    private static final String IS_EMPTY = "IS EMPTY";
+
+    private static final char OPEN_PARENTHESIS = '(';
+
+    private static final char CLOSE_PARENTHESIS = ')';
+
     @Override
     public String convert(QueryBuilderRuleNode ruleNode, DataType dataType, String operator) throws QueryBuilderToEqlConversionException {
-        return String.valueOf(GRAVE_ACCENT) + ruleNode.getId() +
-                GRAVE_ACCENT + WHITESPACE +
-                operator + WHITESPACE + valueOfRule(ruleNode, dataType);
+        final boolean includeEmptyField = ruleNode.isIncludeEmpty(),
+                addEmptyFieldCheck = includeEmptyField && QueryBuilderOperator.NEQ.queryBuilderName().equals(ruleNode.getOperator());
+        final StringBuilder builder = new StringBuilder();
+        if(addEmptyFieldCheck) {
+            builder.append(OPEN_PARENTHESIS);
+        }
+
+        builder.append(GRAVE_ACCENT).append(ruleNode.getId()).append(GRAVE_ACCENT);
+        builder.append(WHITESPACE);
+        builder.append(operator);
+        builder.append(WHITESPACE);
+        builder.append(valueOfRule(ruleNode, dataType));
+
+        if(addEmptyFieldCheck) {
+            builder.append(WHITESPACE);
+            builder.append(QueryBuilderCondition.OR.queryBuilderName());
+            builder.append(WHITESPACE);
+            builder.append(GRAVE_ACCENT).append(ruleNode.getId()).append(GRAVE_ACCENT);
+            builder.append(WHITESPACE);
+            builder.append(IS_EMPTY);
+            builder.append(CLOSE_PARENTHESIS);
+        }
+        return builder.toString();
     }
 
 }

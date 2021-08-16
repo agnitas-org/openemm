@@ -1,0 +1,21 @@
+
+<div class="form-group">
+    <div class="col-sm-4">
+        <label for="linkAction" class="control-label">
+            <bean:message key="DefaultAction" />
+        </label>
+    </div>
+    <div class="col-sm-8">
+        <html:select property="linkAction" styleClass="form-control js-select" styleId="linkAction" value="${KEEP_UNCHANGED}">
+            <html:option value="${KEEP_UNCHANGED}">
+                <bean:message key="KeepUnchanged" />
+            </html:option>
+            <html:option value="0">
+                <bean:message key="settings.No_Action" />
+            </html:option>
+            <logic:iterate id="action" name="notFormActions" scope="request">
+                <html:option value="${action.id}">${action.shortname}</html:option>
+            </logic:iterate>
+        </html:select>
+    </div>
+</div>

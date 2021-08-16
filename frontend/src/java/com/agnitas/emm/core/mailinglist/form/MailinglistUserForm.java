@@ -22,37 +22,37 @@ public class MailinglistUserForm {
     private String mailinglistShortname;
     
     private Set<Integer> allowedUserIds = new HashSet<>();
-
+    
     private int userId;
-
+    
     public int getMailinglistId() {
         return mailinglistId;
     }
-
+    
     public void setMailinglistId(int mailinglistId) {
         this.mailinglistId = mailinglistId;
     }
-
+    
     public String getMailinglistShortname() {
         return mailinglistShortname;
     }
-
+    
     public void setMailinglistShortname(String mailinglistShortname) {
         this.mailinglistShortname = mailinglistShortname;
     }
-
+    
     public Set<Integer> getAllowedUserIds() {
         return allowedUserIds;
     }
-
+    
     public void setAllowedUserIds(Set<Integer> allowedUserIds) {
         this.allowedUserIds = allowedUserIds;
     }
-
+    
     public String getAllowedUserId(int id) {
         return allowedUserIds.contains(id) ? "on" : "";
     }
-
+    
     public void setAllowedUserId(int id, String value) {
         if(StringUtils.equals(value, "on") || StringUtils.equals(value, "yes") || StringUtils.equals(value, "true")) {
             this.allowedUserIds.add(id);

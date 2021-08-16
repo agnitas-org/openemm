@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.DateUtilities;
 import org.apache.log4j.Logger;
@@ -50,7 +51,7 @@ public class ComparisonBirtDataSet extends BIRTDataSet {
         countOfPeriodicallySending.append(" JOIN mailing_tbl mt ON mst.mailing_id = mt.mailing_id");
         countOfPeriodicallySending.append(" WHERE mst.mailing_id = ?");
         countOfPeriodicallySending.append(" AND mst.status_field IN ('C', 'E', 'R', 'D')");
-        countOfPeriodicallySending.append(" AND mt.work_status = 'mailing.status.active'");
+        countOfPeriodicallySending.append(" AND mt.work_status = '" + MailingStatus.ACTIVE.getDbKey() + "'");
         countOfPeriodicallySending.append(" AND mst.senddate < CURRENT_DATE");
 
         StringBuilder countOfOnceSending = new StringBuilder();

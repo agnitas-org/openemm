@@ -164,9 +164,9 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 		if (CollectionUtils.isNotEmpty(permissions)) {
 			List<Object[]> parameterList = new ArrayList<>();
 			for (Permission permission : permissions) {
-				parameterList.add(new Object[] { adminGroupId, permission.getTokenString(), permission.getTokenString() });
+				parameterList.add(new Object[] { adminGroupId, permission.getTokenString() });
 			}
-			batchupdate(logger, "INSERT INTO admin_group_permission_tbl (admin_group_id, security_token, permission_name) VALUES (?, ?, ?)", parameterList);
+			batchupdate(logger, "INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) VALUES (?, ?)", parameterList);
 		}
 	}
 	
@@ -276,7 +276,7 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
     public Set<String> getGroupPermissionsTokens(int adminGroupId) {
     	Set<String> returnSet = new HashSet<>();
     	
-    	returnSet.addAll(select(logger, "SELECT security_token FROM admin_group_permission_tbl WHERE admin_group_id = ?", new StringRowMapper(), adminGroupId));
+    	returnSet.addAll(select(logger, "SELECT permission_name FROM admin_group_permission_tbl WHERE admin_group_id = ?", new StringRowMapper(), adminGroupId));
         
         returnSet.addAll(getParentGroupsPermissionTokens(adminGroupId));
         
@@ -293,7 +293,7 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
     	Set<String> returnSet = new HashSet<>();
     	
         for (int parentGroupId : getParentGroupIds(adminGroupId)) {
-        	returnSet.addAll(select(logger, "SELECT security_token FROM admin_group_permission_tbl WHERE admin_group_id = ?", new StringRowMapper(), parentGroupId));
+        	returnSet.addAll(select(logger, "SELECT permission_name FROM admin_group_permission_tbl WHERE admin_group_id = ?", new StringRowMapper(), parentGroupId));
         }
         
         return returnSet;

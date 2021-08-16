@@ -10,14 +10,17 @@
 
 package com.agnitas.web.mvc.impl;
 
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 
-import com.agnitas.service.ServiceResult;
 import org.agnitas.util.GuiConstants;
 import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 
 import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.web.mvc.Popups;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -51,6 +54,28 @@ public class StrutsPopups implements Popups {
             map.put(MESSAGES_KEY, popups.getMessages());
             map.put(ERRORS_KEY, popups.getErrors());
         }
+    }
+
+    public static void insertMessagesToPopups(final ActionMessages warnings, final ActionMessages errors, final Popups popups) {
+        @SuppressWarnings("unchecked")
+        final Iterator<ActionMessage> warIt = warnings == null || warnings.isEmpty() ? Collections.emptyIterator() : warnings.get();
+        warIt.forEachRemaining(el -> {
+            if (el.isResource()) {
+                popups.warning(el.getKey(), el.getValues());
+            } else {
+                popups.exactWarning(el.getKey());
+            }
+        });
+
+        @SuppressWarnings("unchecked")
+        final Iterator<ActionMessage> errIt = errors == null || errors.isEmpty() ? Collections.emptyIterator() : errors.get();
+        errIt.forEachRemaining(el -> {
+            if (el.isResource()) {
+                popups.alert(el.getKey(), el.getValues());
+            } else {
+                popups.exactAlert(el.getKey());
+            }
+        });
     }
 
     private final ActionMessages messages;

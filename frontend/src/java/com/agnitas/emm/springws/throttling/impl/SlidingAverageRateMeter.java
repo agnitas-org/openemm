@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.springws.throttling.impl;
 
-
+@Deprecated // Removed without replacement (after rollout EMM-8146)
 public class SlidingAverageRateMeter {
 
 	private long lastUpdatedTime;

@@ -20,8 +20,6 @@ import java.util.concurrent.Future;
 
 import javax.sql.DataSource;
 
-import com.agnitas.service.SimpleServiceResult;
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -35,13 +33,14 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.service.SimpleServiceResult;
 
 
 public interface ComMailingBaseService {
@@ -210,7 +209,7 @@ public interface ComMailingBaseService {
      * @param mailing the mailing entity to evaluate.
      * @return the tuple of maximum possible mail sizes in bytes (first - without external images, second - with external images).
      */
-    Tuple<Long, Long> calculateMaxSize(ComMailing mailing);
+    Tuple<Long, Long> calculateMaxSize(Mailing mailing);
 
     /**
      * Check if the given mailing content is blank (resolve all the dyn-tags (if any) and check if mail contains at least
@@ -226,7 +225,7 @@ public interface ComMailingBaseService {
 
     void doTextTemplateFilling(Mailing mailing, ComAdmin admin, ActionMessages messages);
     
-    ComMailing getMailing(@VelocityCheck int companyId, int mailingId);
+    Mailing getMailing(@VelocityCheck int companyId, int mailingId);
     
     /**
      * Loads list of non-deleted mailing have been sent by certain company
@@ -246,8 +245,6 @@ public interface ComMailingBaseService {
     
     int getMailingType(int mailingId);
 
-    String toViewUri(int mailingId);
-
     Timestamp getMailingLastSendDate(int mailingId);
 
     /**
@@ -255,5 +252,8 @@ public interface ComMailingBaseService {
      *
      * @param mailing a mailing entity to check.
      */
-    SimpleServiceResult checkContentNotBlank(ComMailing mailing);
+    SimpleServiceResult checkContentNotBlank(Mailing mailing);
+
+    boolean activateTrackingLinksOnEveryPosition(ComAdmin admin, Mailing mailing, Set<Integer> bulkLinks, ApplicationContext context) throws Exception;
+
 }

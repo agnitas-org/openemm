@@ -10,14 +10,25 @@
 
 package com.agnitas.mailing.autooptimization.service.impl;
 
+import static com.agnitas.emm.core.workflow.service.ComWorkflowActivationService.DEFAULT_STEPPING;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_SCHEDULED;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.beans.ComMailing;
+import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.emm.core.mailing.MailingAllReadySentException;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.Tuple;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Required;
+
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingSendingProperties;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.impl.MaildropEntryImpl;
@@ -31,17 +42,6 @@ import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationCommonService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationScheduleService;
 import com.agnitas.mailing.autooptimization.service.OptimizationIsFinishedException;
-import org.agnitas.beans.Mailing;
-import org.agnitas.beans.impl.MaildropDeleteException;
-import org.agnitas.emm.core.mailing.MailingAllReadySentException;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.Tuple;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
-import static com.agnitas.emm.core.workflow.service.ComWorkflowActivationService.DEFAULT_STEPPING;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_SCHEDULED;
 
 public class ComOptimizationScheduleServiceImpl implements ComOptimizationScheduleService {
 	/** DAO accessing mailings. */
@@ -84,12 +84,12 @@ public class ComOptimizationScheduleServiceImpl implements ComOptimizationSchedu
 							+ " has state " + optimization.getStatus());
 		}
 
-		List<ComMailing> allMailings = getTestMailings(optimization);
+		List<Mailing> allMailings = getTestMailings(optimization);
 
 		// loop over mailings
 
 		int i = 0;
-		for (ComMailing testMailing : allMailings) {
+		for (Mailing testMailing : allMailings) {
 			i++;
 
 			// check if mailingtype is 'normal' and mailing has not been sent as
@@ -193,15 +193,15 @@ public class ComOptimizationScheduleServiceImpl implements ComOptimizationSchedu
 		mailingDao.updateStatus(drop.getMailingID(), testRun ? "test" : "scheduled");
 	}
 
-	private List<ComMailing> getTestMailings(ComOptimization optimization) {
+	private List<Mailing> getTestMailings(ComOptimization optimization) {
 
-		List<ComMailing> allMailings = new ArrayList<>();
+		List<Mailing> allMailings = new ArrayList<>();
 		List<Integer> testMailingIDs = optimization.getTestmailingIDs();
 
 		for (Integer mailingID : testMailingIDs) {
 			Mailing mailing = mailingDao.getMailing(mailingID, optimization
 					.getCompanyID());
-			allMailings.add((ComMailing) mailing);
+			allMailings.add(mailing);
 		}
 
 		return allMailings;

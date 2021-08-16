@@ -15,8 +15,9 @@ import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
@@ -107,7 +108,7 @@ public class ClassicTemplateGenerator implements ApplicationContextAware {
 	public void removeMailingImageComponents(Mailing mailing) {
 		Vector<String> remove = new Vector<>();
 		for (MailingComponent commponent : mailing.getComponents().values()) {
-			if (commponent.getType() == MailingComponent.TYPE_IMAGE || commponent.getType() == MailingComponent.TYPE_HOSTED_IMAGE) {
+			if (commponent.getType() == MailingComponentType.Image || commponent.getType() == MailingComponentType.HostedImage) {
 				remove.add(commponent.getComponentName());
 			}
 		}

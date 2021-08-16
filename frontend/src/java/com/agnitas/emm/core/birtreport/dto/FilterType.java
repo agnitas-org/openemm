@@ -16,7 +16,8 @@ public enum FilterType {
     FILTER_NO_FILTER(0),
     FILTER_ARCHIVE(1),
     FILTER_MAILINGLIST(2),
-    FILTER_MAILING(3);
+    FILTER_MAILING(3),
+    FILTER_TARGET(4);
     
     private final int key;
     

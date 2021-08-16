@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">Data Cube1.RecipientsForPieChart.x</property>
@@ -74,7 +74,7 @@ importPackage(Packages.com.agnitas.reporting.birt.external.utils);
 reportContext.getAppContext().put("CHART_RESOLUTION", 300);
 
 compareDataSet = new BirtReportMailingCompareDataSet();
-tempTableID = compareDataSet.prepareReport(params["selectedMailings"], params["companyID"], params["targetGroups"], params["figures"]);
+tempTableID = compareDataSet.prepareReport(params["selectedMailings"], params["companyID"], params["targetGroups"], params["hiddenTargetId"], params["figures"]);
 
 reportContext.setPersistentGlobalVariable("tempTableID", new Integer(tempTableID));
 reportContext.setPersistentGlobalVariable("sortBy", params["sortBy"]);
@@ -274,6 +274,21 @@ reportContext.setPersistentGlobalVariable("type_offline_show", BirtReporUtils.is
             <property name="isRequired">false</property>
             <property name="dataType">string</property>
             <property name="distinct">true</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="hiddenTargetId" id="7728">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
             <structure name="format">
@@ -3567,10 +3582,22 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
  */
 function beforeDrawAxisTitle(axis, label, icsc) {
     var reportContext =  icsc.getExternalContext().getObject();
-	if (axis.getTitle().getCaption().getValue() == &quot;openers_value&quot;) {
-		label.getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_total_legend&quot;));
+	var tr = reportContext.getGlobalVariable(&quot;tr&quot;);
+    
+	if (axis.getTitle().getCaption().getValue() == &quot;_value&quot;) {
+        openers_total_show = reportContext.getPersistentGlobalVariable(&quot;openers_total_show&quot;);
+        anonymous_openings_show = reportContext.getPersistentGlobalVariable(&quot;anonymous_openings_show&quot;);
+     	title = &quot;&quot;;
+     	if (anonymous_openings_show == &quot;true&quot;) {
+     		title = tr(&quot;statistic.openings&quot;);
+     	}
+     	if (openers_total_show == &quot;true&quot;) {
+     		title = tr(&quot;birt.report.opens&quot;) + (anonymous_openings_show == &quot;true&quot; ? &quot; / &quot; + title : &quot;&quot;);
+     	}
+		label.getCaption().setValue(title);
     }
-    if (axis.getTitle().getCaption().getValue() == &quot;openers_rate&quot;) {
+    
+    if (axis.getTitle().getCaption().getValue() == &quot;_rate&quot;) {
 		label.getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_total_legend&quot;) + &quot; in %&quot;);
     }
 }
@@ -6249,10 +6276,21 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
  */
 function beforeDrawAxisTitle(axis, label, icsc) {
     var reportContext =  icsc.getExternalContext().getObject();
-	if (axis.getTitle().getCaption().getValue() == &quot;clickers_value&quot;) {
-		label.getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;clicker_legend&quot;));
+	var tr = reportContext.getGlobalVariable(&quot;tr&quot;);    
+	if (axis.getTitle().getCaption().getValue() == &quot;_value&quot;) {
+		clickers_total_show = reportContext.getPersistentGlobalVariable(&quot;clickers_total_show&quot;);
+        anonymous_clicks_show = reportContext.getPersistentGlobalVariable(&quot;anonymous_clicks_show&quot;);
+        
+        title = &quot;&quot;;
+     	if (anonymous_clicks_show == &quot;true&quot;) {
+     		title = tr(&quot;statistic.Clicks&quot;);
+     	}
+     	if (clickers_total_show == &quot;true&quot;) {
+     		title = tr(&quot;statistic.clicker&quot;) + (anonymous_clicks_show == &quot;true&quot; ? &quot; / &quot; + title : &quot;&quot;);
+     	}
+		label.getCaption().setValue(title);
     }
-    if (axis.getTitle().getCaption().getValue() == &quot;clickers_rate&quot;) {
+    if (axis.getTitle().getCaption().getValue() == &quot;_rate&quot;) {
 		label.getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;clicker_legend&quot;) + &quot; in %&quot;);
     }
 }
@@ -8576,7 +8614,7 @@ reportContext.setPersistentGlobalVariable("maxRowNumber", new Integer(this.getRo
                                         <property name="borderTopWidth">thin</property>
                                         <extended-item extensionName="Chart" id="6930">
                                             <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:data="http://www.birt.eclipse.org/ChartModelData" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
-  <Version>2.5.1</Version>
+  <Version>2.6.1</Version>
   <Type>Bar Chart</Type>
   <SubType>Side-by-side</SubType>
   <Description>

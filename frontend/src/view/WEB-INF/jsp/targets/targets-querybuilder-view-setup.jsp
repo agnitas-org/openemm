@@ -154,12 +154,19 @@
 						<emm:instantiate var="dropDownItem" type="java.util.LinkedHashMap">
 							<c:set target="${dropDownItems}" property="5" value="${dropDownItem}" />
 							<c:set target="${dropDownItem}" property="extraAttributes" value="data-confirm=''" />
-							<c:set target="${dropDownItem}" property="url">
-								<c:url value="/target.do">
-									<c:param name="action" value="${ACTION_CREATE_ML}" />
-									<c:param name="targetID" value="${editTargetForm.targetID}" />
-								</c:url>
-							</c:set>
+							<emm:HideByPermission token="targets.migration">
+								<c:set target="${dropDownItem}" property="url">
+									<c:url value="/target.do">
+										<c:param name="action" value="${ACTION_CREATE_ML}" />
+										<c:param name="targetID" value="${editTargetForm.targetID}" />
+									</c:url>
+								</c:set>
+							</emm:HideByPermission>
+                            <emm:ShowByPermission token="targets.migration">
+                                <c:set target="${dropDownItem}" property="url">
+                                    <c:url value="/target/${editTargetForm.targetID}/confirm/create/mailinglist.action" />
+                                </c:set>
+                            </emm:ShowByPermission>
 							<c:set target="${dropDownItem}" property="icon" value="icon-file-o" />
 							<c:set target="${dropDownItem}" property="name">
 								<bean:message key="createMList" />
@@ -226,12 +233,19 @@
 					<c:set target="${dropDownItems}" property="6" value="${dropDownItem}" />
 					<c:set target="${dropDownItem}" property="extraAttributes" value="data-confirm" />
 					<c:set target="${dropDownItem}" property="type" value="href" />
-					<c:set target="${dropDownItem}" property="url">
-						<c:url value="/target.do">
-							<c:param name="action" value="${ACTION_DELETE_RECIPIENTS_CONFIRM}" />
-							<c:param name="targetID" value="${editTargetForm.targetID}" />
-						</c:url>
-					</c:set>
+					<emm:HideByPermission token="targets.migration">
+						<c:set target="${dropDownItem}" property="url">
+							<c:url value="/target.do">
+								<c:param name="action" value="${ACTION_DELETE_RECIPIENTS_CONFIRM}" />
+								<c:param name="targetID" value="${editTargetForm.targetID}" />
+							</c:url>
+						</c:set>
+					</emm:HideByPermission>
+                    <emm:ShowByPermission token="targets.migration">
+                        <c:set target="${dropDownItem}" property="url">
+                            <c:url value="/target/${editTargetForm.targetID}/confirm/delete/recipients.action" />
+                        </c:set>
+                    </emm:ShowByPermission>
 					<c:set target="${dropDownItem}" property="icon" value="icon-trash-o" />
 					<c:set target="${dropDownItem}" property="name">
 						<bean:message key="target.delete.recipients" />

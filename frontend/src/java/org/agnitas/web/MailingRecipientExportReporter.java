@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.MailingRecipientExportWorker;
@@ -387,6 +387,14 @@ public class MailingRecipientExportReporter {
 	}
 
 	public void createAndSaveExportReport(MailingRecipientExportWorker exportWorker, ComAdmin admin, boolean isError) throws Exception {
-		recipientsReportService.createAndSaveExportReport(admin, new File(exportWorker.getExportFile()).getName(), exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker, admin), isError);
+		String fileToShow;
+		if (exportWorker.getRemoteFile() != null && StringUtils.isNotBlank(exportWorker.getRemoteFile().getRemoteFilePath())) {
+			// Remote file on ftp or sftp server
+			fileToShow = exportWorker.getRemoteFile().getRemoteFilePath();
+		} else {
+			//Local exported File
+			fileToShow = exportWorker.getExportFile();
+		}
+		recipientsReportService.createAndSaveExportReport(admin, fileToShow, exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker, admin), isError);
 	}
 }

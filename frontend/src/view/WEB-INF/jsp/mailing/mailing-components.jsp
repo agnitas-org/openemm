@@ -1,8 +1,10 @@
+<%@page import="org.agnitas.beans.MailingComponentType"%>
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
 <%@ page import="com.agnitas.web.ComMailingComponentsAction" %>
 <%@ page import="com.agnitas.web.ShowImageServlet" %>
 <%@ page import="org.agnitas.beans.MailingComponent" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
+<%@ page import="com.agnitas.util.ImageUtils" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -20,7 +22,7 @@
 <%--@elvariable id="adminTimeFormat" type="java.lang.String"--%>
 <%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
 
-<c:set var="MOBILE_IMAGE_PREFIX" value="<%=ShowImageServlet.MOBILE_IMAGE_PREFIX%>"/>
+<c:set var="MOBILE_IMAGE_PREFIX" value="<%=ImageUtils.MOBILE_IMAGE_PREFIX%>"/>
 <c:set var="ACTION_SAVE_COMPONENTS" value="<%=ComMailingComponentsAction.ACTION_SAVE_COMPONENTS%>"/>
 <c:set var="ACTION_UPLOAD_ARCHIVE" value="<%=ComMailingComponentsAction.ACTION_UPLOAD_ARCHIVE%>"/>
 <c:set var="ACTION_BULK_DOWNLOAD_COMPONENT" value="<%=ComMailingComponentsAction.ACTION_BULK_DOWNLOAD_COMPONENT%>"/>
@@ -32,8 +34,8 @@
 
 <c:set var="ACTION_LIST"                            value="<%= MailingBaseAction.ACTION_LIST %>"        scope="request" />
 <c:set var="ACTION_VIEW"							value="<%= MailingBaseAction.ACTION_VIEW %>"		scope="request" />
-<c:set var="MAILING_COMPONENT_TYPE_IMAGE"           value="<%= MailingComponent.TYPE_IMAGE %>"          scope="request" />
-<c:set var="MAILING_COMPONENT_TYPE_HOSTED_IMAGE"	value="<%= MailingComponent.TYPE_HOSTED_IMAGE %>"	scope="request" />
+<c:set var="MAILING_COMPONENT_TYPE_IMAGE"           value="<%= MailingComponentType.Image %>"          scope="request" />
+<c:set var="MAILING_COMPONENT_TYPE_HOSTED_IMAGE"	value="<%= MailingComponentType.HostedImage %>"	scope="request" />
 
 <fmt:setLocale value="${sessionScope['emm.admin'].locale}"/>
 

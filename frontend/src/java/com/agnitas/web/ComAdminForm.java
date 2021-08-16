@@ -35,9 +35,7 @@ public class ComAdminForm extends StrutsFormBase {
 	private String initialCompanyName;
 	private String email;
 	private int layoutBaseId;
-	private int startPage;
 	private int dashboardMailingsView;
-	private int navigationLocation;
     private int mailingSettingsView;
     private int livePreviewPosition;
 	private int statisticLoadType;
@@ -106,9 +104,9 @@ public class ComAdminForm extends StrutsFormBase {
 		ActionErrors actionErrors = new ActionErrors();
 		boolean doNotDelete = request.getParameter("delete") == null || request.getParameter("delete").isEmpty();
 		if (doNotDelete && "save".equals(action)) {
-			if (username == null || username.length() < 3) {
+			if (StringUtils.trimToNull(username) == null || StringUtils.trimToNull(username).length() < 3) {
 				actionErrors.add("username", new ActionMessage("error.username.tooShort"));
-			} else if(username.length() > 180) {
+			} else if (StringUtils.trimToNull(username).length() > 180) {
 				actionErrors.add("username", new ActionMessage("error.username.tooLong"));
 			}
 
@@ -134,12 +132,12 @@ public class ComAdminForm extends StrutsFormBase {
 				actionErrors.add("companyName", new ActionMessage("error.company.tooLong"));
 			}
 
-			if (StringUtils.isBlank(email) || !AgnUtils.isEmailValid(email)) {
+			if (StringUtils.isBlank(StringUtils.trimToNull(StringUtils.lowerCase(email))) || !AgnUtils.isEmailValid(StringUtils.trimToNull(StringUtils.lowerCase(email)))) {
 				actionErrors.add("mailForReport", new ActionMessage("error.invalid.email"));
 			}
 
 			statEmail = StringUtils.defaultIfEmpty(statEmail, "");
-			if (StringUtils.isNotBlank(statEmail) && !AgnUtils.isEmailValid(statEmail)) {
+			if (StringUtils.isNotBlank(StringUtils.trimToNull(StringUtils.lowerCase(statEmail))) && !AgnUtils.isEmailValid(StringUtils.trimToNull(StringUtils.lowerCase(statEmail)))) {
 				actionErrors.add("statEmail", new ActionMessage("error.invalid.email.statistics"));
 			}
 		}
@@ -147,11 +145,11 @@ public class ComAdminForm extends StrutsFormBase {
 	}
 
     public String getStatEmail() {
-		return statEmail;
+		return StringUtils.trimToNull(StringUtils.lowerCase(statEmail));
 	}
 
     public String getEmail() {
-        return this.email;
+        return StringUtils.trimToNull(StringUtils.lowerCase(email));
     }
 
     public String getCompanyName() {
@@ -159,11 +157,11 @@ public class ComAdminForm extends StrutsFormBase {
     }
 
 	public void setStatEmail(String statEmail) {
-		this.statEmail = statEmail;
+		this.statEmail = StringUtils.trimToNull(StringUtils.lowerCase(statEmail));
 	}
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = StringUtils.trimToNull(StringUtils.lowerCase(email));
     }
 
     public void setCompanyName(String companyName) {
@@ -186,28 +184,12 @@ public class ComAdminForm extends StrutsFormBase {
 		this.initialCompanyName = initialCompanyName;
 	}
 
-    public int getStartPage() {
-        return startPage;
-    }
-
-    public void setStartPage(int startPage) {
-        this.startPage = startPage;
-    }
-
     public int getDashboardMailingsView() {
         return dashboardMailingsView;
     }
 
     public void setDashboardMailingsView(int dashboardMailingsView) {
         this.dashboardMailingsView = dashboardMailingsView;
-    }
-
-    public int getNavigationLocation() {
-        return navigationLocation;
-    }
-
-    public void setNavigationLocation(int navigationLocation) {
-        this.navigationLocation = navigationLocation;
     }
 
     public int getMailingSettingsView() {
@@ -277,7 +259,7 @@ public class ComAdminForm extends StrutsFormBase {
 	 * @return Value of property username.
 	 */
 	public String getUsername() {
-		return username;
+		return StringUtils.trimToNull(username);
 	}
 
 	/**
@@ -379,7 +361,7 @@ public class ComAdminForm extends StrutsFormBase {
 	 *            New value of property username.
 	 */
 	public void setUsername(String username) {
-		this.username = username;
+		this.username = StringUtils.trimToNull(username);
 	}
 
 	/**

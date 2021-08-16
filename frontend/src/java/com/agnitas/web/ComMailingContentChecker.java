@@ -10,7 +10,7 @@
 
 package com.agnitas.web;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.util.GuiConstants;
 import org.apache.commons.lang.StringUtils;

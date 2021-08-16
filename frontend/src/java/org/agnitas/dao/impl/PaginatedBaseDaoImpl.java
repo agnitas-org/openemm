@@ -65,7 +65,29 @@ public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
 		} else {
 			countQuery = "SELECT COUNT(*) FROM (" + selectStatement + ") selection";
 		}
-		int totalRows = selectInt(logger, countQuery, parameters);
+		
+		return selectPaginatedListWithSortClause(logger, countQuery, parameters, selectStatement, sortClause, sortColumn, sortDirectionAscending, pageNumber, pageSize, rowMapper, parameters);
+	}
+	
+	/**
+	 * Parameter "selectCountStatement" may differ from parameter "selectDataStatement" to improve db performace.
+	 * Especially "LEFT OUTER JOIN" statement parts do not need to be included in "selectCountStatement".
+	 * 
+	 * @param <T>
+	 * @param logger
+	 * @param selectCountStatement
+	 * @param selectDataStatement
+	 * @param sortClause
+	 * @param sortColumn
+	 * @param sortDirectionAscending
+	 * @param pageNumber
+	 * @param pageSize
+	 * @param rowMapper
+	 * @param parameters
+	 * @return
+	 */
+	public <T> PaginatedListImpl<T> selectPaginatedListWithSortClause(Logger logger, String selectCountStatement, Object[] selectCountParameter, String selectDataStatement, String sortClause, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize, RowMapper<T> rowMapper, Object... parameters) {
+		int totalRows = selectInt(logger, selectCountStatement, parameters);
 
 		// Check pageSize validity
 		if (pageSize < 1) {
@@ -87,16 +109,15 @@ public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
 				}
 			}
 	
-			String selectDataStatement;
 			if (isOracleDB()) {
 				// Borders in oracle dbstatement "between" are included in resultset
 				int rowStart = (pageNumber - 1) * pageSize + 1;
 				int rowEnd_inclusive = rowStart + pageSize - 1;
-				selectDataStatement = "SELECT * FROM (SELECT selection.*, rownum AS r FROM (" + selectStatement + " " + sortClause + ") selection) WHERE r BETWEEN ? AND ?";
+				selectDataStatement = "SELECT * FROM (SELECT selection.*, rownum AS r FROM (" + selectDataStatement + " " + sortClause + ") selection) WHERE r BETWEEN ? AND ?";
 				parameters = AgnUtils.extendObjectArray(parameters, rowStart, rowEnd_inclusive);
 			} else {
 				int rowStart = (pageNumber - 1) * pageSize;
-				selectDataStatement = selectStatement + " " + sortClause + " LIMIT ?, ?";
+				selectDataStatement = selectDataStatement + " " + sortClause + " LIMIT ?, ?";
 				parameters = AgnUtils.extendObjectArray(parameters, rowStart, pageSize);
 			}
 	

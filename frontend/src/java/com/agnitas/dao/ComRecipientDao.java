@@ -139,6 +139,8 @@ public interface ComRecipientDao {
 
 	List<CaseInsensitiveMap<String, Object>> getCustomers(List<Integer> customerIDs, int companyID);
 
+    int getAdminOrTestRecipientId(@VelocityCheck int companyID, int adminId);
+
     /**
      * Check whether it is allowed to add the given number of recipients.
      * The maximum number of recipients/company is defined in
@@ -386,7 +388,7 @@ public interface ComRecipientDao {
 	
 	boolean isOracleDB();
 
-    List<Integer> insertTestRecipients(@VelocityCheck int companyId, int mailingListId, int userStatus, List<String> addresses);
+    List<Integer> insertTestRecipients(@VelocityCheck int companyId, int mailingListId, int userStatus, String remark, List<String> addresses);
 
     String getEmail(@VelocityCheck int companyId, int customerId);
 
@@ -431,4 +433,9 @@ public interface ComRecipientDao {
     boolean isNotSavedRecipientDataMatchTarget(int companyId, String targetExpression, Recipient recipient) throws Exception;
     
     public List<Integer> listRecipientIdsByTargetGroup(final int companyId, final ComTarget target);
+
+	boolean updateInDB(Recipient customer, boolean missingFieldsToNull, boolean throwExceptionOnError) throws Exception;
+
+	List<CaseInsensitiveMap<String, Object>> getMailinglistRecipients(int companyID, int mailinglistID, MediaTypes mediaTypes, String targetSql, List<UserStatus> userstatusList,
+			TimeZone timeZone) throws Exception;
 }

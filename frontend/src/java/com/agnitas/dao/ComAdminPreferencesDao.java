@@ -18,11 +18,9 @@ import com.agnitas.beans.ComAdminPreferences;
 public interface ComAdminPreferencesDao extends AdminPreferencesDao {
     // Preferences default values
     int PREFERENCE_CONTENTBLOCKS_DEFAULT = 0;
-    int PREFERENCE_NAVIGATION_LOCATION_DEFAULT = 0;
     int PREFERENCE_DASHBOARD_MAILING_DEFAULT = 0;
     int PREFERENCE_MAILING_LIVE_PREVIEW_DEFAULT = 0;
     int PREFERENCE_MAILING_SETTINGS_DEFAULT = 0;
-    int PREFERENCE_STARTPAGE_DEFAULT = 0;
     int PREFERENCE_STATISTIC_LOADTYPE_DEFAULT = 1;
 
     /**

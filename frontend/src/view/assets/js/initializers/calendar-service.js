@@ -970,7 +970,7 @@
 
         musData.subject = d.subject;
         musData.mailsSent = d.mailsSent;
-        musData.previewImage = getPreviewImage(d.preview_component);
+        musData.previewImage = getPreviewImage(d.preview_component, d.isOnlyPostType);
         musData.popupClass = d.preview_component ? "" : "calendar-mail-popup-preview-missing";
         musData.emptyWorkstatus = !d.workstatus.trim();
         musData.openers = d.openers;
@@ -997,10 +997,12 @@
       return link;
     }
 
-    function getPreviewImage(previewComp) {
+    function getPreviewImage(previewComp, isPostType) {
       var link;
 
-      if (previewComp) {
+      if (isPostType) {
+        link = AGN.url("/assets/core/images/facelift/post_thumbnail.jpg");
+      } else if (previewComp) {
         link = AGN.url("/sc?compID=" + previewComp);
       } else {
         link = AGN.url("/assets/core/images/facelift/no_preview.svg");

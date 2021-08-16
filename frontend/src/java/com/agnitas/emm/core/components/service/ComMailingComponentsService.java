@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
@@ -62,11 +63,11 @@ public interface ComMailingComponentsService {
 
 	List<MailingComponent> getComponents(@VelocityCheck int companyId, int mailingId, boolean includeContent);
 
-	List<MailingComponent> getComponentsByType(@VelocityCheck int companyID, int mailingId, List<Integer> types);
+	List<MailingComponent> getComponentsByType(@VelocityCheck int companyID, int mailingId, List<MailingComponentType> types);
 	
 	void deleteComponent(MailingComponent component);
 
-	boolean deleteHostedImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds);
+	boolean deleteImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds);
 
 	ServiceResult<Boolean> reloadImage(ComAdmin admin, int mailingId, int componentId);
 

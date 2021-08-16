@@ -2,7 +2,7 @@
 <%@ page import="com.agnitas.web.ComMailingContentAction" %>
 <%@ page import="com.agnitas.web.ComMailingSendActionBasic" %>
 <%@ page import="org.agnitas.beans.EmmLayoutBase" %>
-<%@ page import="org.agnitas.beans.Mailing" %>
+<%@ page import="com.agnitas.beans.Mailing" %>
 <%@ page import="com.agnitas.emm.core.mailing.web.MailingPreviewHelper" %>
 
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>

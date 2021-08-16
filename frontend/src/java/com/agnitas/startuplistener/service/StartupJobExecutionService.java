@@ -10,6 +10,9 @@
 
 package com.agnitas.startuplistener.service;
 
+import java.io.File;
+
+import com.agnitas.startuplistener.api.StartupJobException;
 import com.agnitas.startuplistener.common.JobState;
 
 /**
@@ -22,12 +25,17 @@ public interface StartupJobExecutionService {
 	 * 
 	 * To run a job, the job must be
 	 * <ul>
+	 *   <li>whitelisted in given file</li>
 	 *   <li>enabled and </li>
 	 *   <li>in state {@link JobState#PENDING}</li>
 	 * </ul>
 	 * 	
+	 * @param whitelistFile file containing whitelist
+	 * 
 	 * @return result of execution
+	 * 
+	 * @throws StartupJobException if loading whitelist failed
 	 */
-	public ExecutionResult executeAllPendingJobs();
+	public ExecutionResult executeAllPendingJobs(final File whitelistFile) throws StartupJobServiceException;
 
 }

@@ -17,7 +17,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.agnitas.util.DbUtilities;
 import org.apache.log4j.Logger;
 
 public class URLDescriptionDataSet extends BIRTDataSet {
@@ -28,22 +27,14 @@ public class URLDescriptionDataSet extends BIRTDataSet {
 
 		List<String> urlDescription = new ArrayList<>();
 		String query = getURLDescriptionQuery(urlID);
-		Connection connection = null;
-        Statement statement = null;
-        ResultSet resultSet = null;
-        try {
-			connection = getDataSource().getConnection();
-			statement = connection.createStatement();
-			resultSet = statement.executeQuery(query);
+        try (Connection connection = getDataSource().getConnection();
+        		Statement statement = connection.createStatement();
+        		ResultSet resultSet = statement.executeQuery(query)) {
 			if (resultSet.next()){
 				urlDescription.add(resultSet.getString("url_name"));
 			}
 		} catch (SQLException e) {
 			logger.error(" SQL-Exception ! URL-Description-Query is: " + query , e);
-		} finally {
-            DbUtilities.closeQuietly(connection, "Could not close DB connection ");
-            DbUtilities.closeQuietly(statement, "Could not close DB-statement !");
-            DbUtilities.closeQuietly(resultSet, "Could not close result set !");
 		}
 		return urlDescription;
 	}

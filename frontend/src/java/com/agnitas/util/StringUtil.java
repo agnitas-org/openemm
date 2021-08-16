@@ -42,7 +42,7 @@ public final class StringUtil {
 		int index = -1;
 		
 		for(final String value : values) {
-			final int tempIndex = string.indexOf(value);
+			final int tempIndex = string.indexOf(value, startIndex);
 			
 			if(tempIndex != -1) {
 				if(index == -1) {

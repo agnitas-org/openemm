@@ -115,6 +115,8 @@
                                 <tbody>
                                 <%
                                     SimpleDateFormat dateTimeFormat = AgnUtils.getAdmin(session).getDateTimeFormat();
+                                	// Do not use a special timezone here, because the data comes from the users data file directly and wasn't stored in db before, where it would have been converted in systems default timezone.
+                        			dateTimeFormat.setTimeZone(TimeZone.getDefault());
                                 %>
                                 <logic:iterate id="element2" indexId="element2idx" name="importWizardForm"
                                                offset="<%= Integer.toString(tmpOffset) %>" length="5" property="parsedContent"

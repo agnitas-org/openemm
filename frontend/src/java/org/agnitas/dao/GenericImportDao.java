@@ -67,4 +67,6 @@ public interface GenericImportDao {
 	List<Triple<Integer, ReasonCode, String>> getFirstErrorLines(String temporaryErrorTableName, int limit) throws Exception;
 
 	CaseInsensitiveSet getPrimaryKeyColumns(String dbTableName) throws Exception;
+
+	void gatherTableStats(String tableName);
 }

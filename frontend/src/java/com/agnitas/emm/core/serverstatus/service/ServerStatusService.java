@@ -26,6 +26,8 @@ import com.agnitas.emm.core.serverstatus.dto.ConfigValueDto;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.Version;
 
+import net.sf.json.JSONArray;
+
 public interface ServerStatusService {
     
     boolean checkDatabaseConnection();
@@ -67,6 +69,10 @@ public interface ServerStatusService {
 	boolean isReportStatusOK();
 
 	File downloadConfigFile() throws IOException, Exception;
-	
+
 	File getFullTbl(String dbStatement, String tableName) throws Exception;
+
+	JSONArray getSystemStatus();
+
+	void acknowledgeErrorneousJob(int idToAcknowledge);
 }

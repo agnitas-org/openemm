@@ -1,3 +1,4 @@
+<%@page import="org.agnitas.beans.MailingComponentType"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.MailingWizardAction" %>
 <%@ page import="org.agnitas.beans.MailingComponent" %>
@@ -13,8 +14,8 @@
 <c:set var="ACTION_FINISH" value="<%= MailingWizardAction.ACTION_FINISH %>"/>
 <c:set var="ACTION_ATTACHMENT_DOWNLOAD" value="<%= MailingWizardAction.ACTION_ATTACHMENT_DOWNLOAD %>"/>
 
-<c:set var="TYPE_ATTACHMENT" value="<%= MailingComponent.TYPE_ATTACHMENT %>"/>
-<c:set var="TYPE_PERSONALIZED_ATTACHMENT" value="<%= MailingComponent.TYPE_PERSONALIZED_ATTACHMENT %>"/>
+<c:set var="TYPE_ATTACHMENT" value="<%= MailingComponentType.Attachment %>"/>
+<c:set var="TYPE_PERSONALIZED_ATTACHMENT" value="<%= MailingComponentType.PersonalizedAttachment %>"/>
 
 <agn:agnForm action="/mwAttachment" id="wizard-step-10" enctype="multipart/form-data" data-form="static">
     <html:hidden property="action" value="${ACTION_FINISH}"/>

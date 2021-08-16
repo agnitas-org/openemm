@@ -39,3 +39,12 @@
 11) dropzone.js
 - removed statement that applies extra CSS styles to <input type="file">
 - exposed Dropzone as window.Dropzone
+
+12) jquery-ui-1.12.1.js
+- fixed "items are not correctly calculated using css transformations on container element" (https://bugs.jqueryui.com/ticket/15263);
+- added support of function value for "cursorAt" option of droppable widget;
+
+13) jquery-dirty-0.8.3.js
+- added statuses property to Dirty.prototype
+- added support of adding custom methods
+- added support of extending dirty lib

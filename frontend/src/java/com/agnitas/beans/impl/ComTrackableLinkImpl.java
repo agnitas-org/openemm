@@ -25,6 +25,7 @@ public class ComTrackableLinkImpl extends BaseTrackableLinkImpl implements ComTr
 	private String originalUrl;
 	private boolean staticValue;
 	public String altText;
+	public boolean measureSeparately;
 
 	@Override
 	public final boolean isStaticValue() {
@@ -32,6 +33,16 @@ public class ComTrackableLinkImpl extends BaseTrackableLinkImpl implements ComTr
 	}
 
 	@Override
+	public void setMeasureSeparately(boolean measureSeparately) {
+		this.measureSeparately = measureSeparately;
+	}
+
+	@Override
+    public boolean isMeasureSeparately() {
+        return this.measureSeparately;
+    }
+
+    @Override
 	public final void setStaticValue(final boolean flag) {
 		this.staticValue = flag;
 	}

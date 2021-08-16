@@ -30,6 +30,7 @@ public class ComMessageDaoImpl extends BaseDaoImpl implements ComMessageDao {
 	
 	@Override
     public Map<String, Map<String, String>> getAllMessages(boolean isIncludeDeleted) {
+		// keep SELECT * because of different available languages
         String sql = "SELECT * FROM messages_tbl";
         if (!isIncludeDeleted) {
             sql += " WHERE deleted = 0";

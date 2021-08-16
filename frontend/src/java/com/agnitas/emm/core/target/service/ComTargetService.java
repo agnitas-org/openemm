@@ -13,9 +13,9 @@ package com.agnitas.emm.core.target.service;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
@@ -28,11 +28,13 @@ import org.apache.struts.action.ActionMessages;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ListSplit;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
+import com.agnitas.service.SimpleServiceResult;
 
 /**
  * Service for target groups.
@@ -55,7 +57,9 @@ public interface ComTargetService {
 
     int saveTarget(ComTarget target) throws TargetGroupPersistenceException;
 
-    boolean hasMailingDeletedTargetGroups( Mailing mailing);
+    SimpleServiceResult canBeDeleted(int targetId, @VelocityCheck int companyId);
+
+    boolean hasMailingDeletedTargetGroups(Mailing mailing);
     Set<Integer> getTargetIdsFromExpression(Mailing mailing);
 	
 	/**
@@ -80,10 +84,13 @@ public interface ComTargetService {
 
 	String getSQLFromTargetExpression(String targetExpression, int splitId, @VelocityCheck int companyId);
 
+	@Deprecated // Use getTargetGroup(int, int) and ComTarget.getTargetSQL() instead
 	String getTargetSQL(int targetId, @VelocityCheck int companyId);
 	
+	@Deprecated // Use getTargetGroup(int, int) and ComTarget.getTargetSQL() instead
 	String getTargetSQLWithSimpleIfNotExists(int targetId, @VelocityCheck int companyId);
 	
+	@Deprecated // Use getTargetGroup(int, int) and ComTarget.getTargetSQL() instead
 	String getTargetSQL(int targetId, @VelocityCheck int companyId, boolean isPositive);
 
 	String getMailingSqlTargetExpression(int mailingId, @VelocityCheck int companyId, boolean appendListSplit);
@@ -114,11 +121,13 @@ public interface ComTargetService {
 	 */
 	ComTarget getTargetGroup(int targetId, int companyId) throws UnknownTargetGroupIdException;
 
-    boolean lockTargetGroup(@VelocityCheck int companyId, int targetId);
+	Optional<Integer> getNumberOfRecipients(int targetId, int companyId);
+
+	boolean lockTargetGroup(@VelocityCheck int companyId, int targetId);
 
 	boolean unlockTargetGroup(@VelocityCheck int companyId, int targetId);
 
-	void deleteRecipients(int targetId, @VelocityCheck int companyId);
+	boolean deleteRecipients(int targetId, @VelocityCheck int companyId);
 
 	String getTargetName(int targetId, @VelocityCheck int companyId);
 
@@ -176,30 +185,9 @@ public interface ComTargetService {
 	 */
 	List<TargetLight> listTargetGroupsUsingProfileFieldByDatabaseName(final String fieldNameOnDatabase, @VelocityCheck final int companyID);
 
-	/**
-	 * Lists all target groups of the given company ID that reference the given reference table. 
-	 * 
-	 * @param tableName of reference table
-	 * @param companyID company ID
-	 * 
-	 * @return list of target groups referencing given reference table
-	 */
-	List<TargetLight> listTargetGroupsUsingReferenceTable(final String tableName, @VelocityCheck final int companyID);
+    List<String> getTargetNamesByIds(@VelocityCheck int companyId, Set<Integer> targetIds);
 
-	/**
-	 * Lists all target groups of the given company ID that reference the given field of reference table. 
-	 * 
-	 * @param tableName name of reference table
-	 * @param columnName name of column in reference table
-	 * @param companyID company ID
-	 * 
-	 * @return list of target groups referencing given reference table field
-	 */
-	List<TargetLight> listTargetGroupsUsingReferenceTableColumn(final String tableName, final String columnName, @VelocityCheck final int companyID);
-
-	String toViewUri(int targetId);
-	
-	/**
+    /**
 	 * Creates a matcher that checks, if a recipient matches a given target group.
 	 * 
 	 * @param customerID ID of customer

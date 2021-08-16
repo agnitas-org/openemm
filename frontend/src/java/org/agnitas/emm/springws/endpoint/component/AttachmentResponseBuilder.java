@@ -22,28 +22,28 @@ public class AttachmentResponseBuilder {
 	private static Logger logger = Logger.getLogger(AttachmentResponseBuilder.class);
 	
 	public org.agnitas.emm.springws.jaxb.Attachment createResponse(MailingComponent component, boolean copyData, boolean useISODateFormat) {
-		Attachment response;
+		Attachment attachment;
 		if (useISODateFormat) {
 			AttachmentDateTimeISO attachmentDateTimeISO = new AttachmentDateTimeISO();
 			attachmentDateTimeISO.setTimestamp(component.getTimestamp());
-			response = attachmentDateTimeISO;
+			attachment = attachmentDateTimeISO;
 		} else {
 			AttachmentDateTimeDefault attachmentDateTimeDefault = new AttachmentDateTimeDefault();
 			attachmentDateTimeDefault.setTimestamp(component.getTimestamp());
-			response = attachmentDateTimeDefault;
+			attachment = attachmentDateTimeDefault;
 		}
-		response.setComponentID(component.getId());
-		response.setMimeType(component.getMimeType());
-		response.setComponentType(component.getType());
-		response.setComponentName(component.getComponentName());
+		attachment.setComponentID(component.getId());
+		attachment.setMimeType(component.getMimeType());
+		attachment.setComponentType(component.getType().getCode());
+		attachment.setComponentName(component.getComponentName());
 
 		byte[] data = component.getBinaryBlock();
-		response.setSize(data != null ? data.length : 0);
+		attachment.setSize(data != null ? data.length : 0);
 		if (copyData) {
-			response.setData(data);
+			attachment.setData(data);
 		}
 		
-		return response;
+		return attachment;
 	}
 
     public org.agnitas.emm.springws.jaxb.Attachment createResponse(MailingComponent component, boolean copyData) {

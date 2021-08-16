@@ -16,9 +16,6 @@ import java.util.function.Supplier;
 
 import org.agnitas.backend.Mailgun;
 import org.agnitas.dao.MaildropStatusDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.TimeoutLRUMap;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -35,6 +32,14 @@ import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
  * Implementation of {@link SendActionbasedMailingService} interface.
  */
 public class SendActionbasedMailingServiceImpl implements SendActionbasedMailingService {
+	
+	/*
+	 * Notes on caching:
+	 * 
+	 * As seen in EMM-7844 storing Mailgun instances in a cache has no impact on the performance
+	 * but can consume a lot of heap space (up to a OutOfMemoryException).
+	 */
+	
 	/*
 	 * TODO: Refactoring required!
 	 *
@@ -46,14 +51,9 @@ public class SendActionbasedMailingServiceImpl implements SendActionbasedMailing
 	private static final transient Logger logger = Logger.getLogger(SendActionbasedMailingServiceImpl.class);
 
 	private MaildropStatusDao maildropStatusDao;
-	
-	private ConfigService configService;
 
 	/** Factory for instantiating new Mailgun objects. */
 	private MailgunFactory mailgunFactory;
-
-	/** Cache for Mailgun objects. */
-	private TimeoutLRUMap<String, Mailgun> mailgunCache;
 
 	@Override
 	public final void sendActionbasedMailing(final int companyId, final int mailingId, final int customerId, final int delayMinutes, final MailgunOptions options) throws SendActionbasedMailingException {
@@ -92,18 +92,11 @@ public class SendActionbasedMailingServiceImpl implements SendActionbasedMailing
 		this.maildropStatusDao = maildropStatusDao;
 	}
 
-	@Required
-	public void setConfigService(final ConfigService configService) {
-		this.configService = configService;
-	}
-
 	private class MailgunSupplier {
-		private final int companyId;
 		private final int mailingId;
 		private final Supplier<MaildropEntry> maildropSupplier;
 
 		public MailgunSupplier(final int companyId, final int mailingId) {
-			this.companyId = companyId;
 			this.mailingId = mailingId;
 			this.maildropSupplier = () -> maildropStatusDao.getEntryForStatus(mailingId, companyId, MaildropStatus.ACTION_BASED.getCode());
 		}
@@ -116,33 +109,18 @@ public class SendActionbasedMailingServiceImpl implements SendActionbasedMailing
 		 * @throws Exception on errors processing the method.
 		 */
 		public Mailgun get() throws Exception {
-			final String cacheId = companyId + "_" + mailingId;
-			Mailgun mailgun = getMailgunCache().get(cacheId);
+			final MaildropEntry maildropEntry = getMaildropEntry();
 
+			final Mailgun mailgun = mailgunFactory.newMailgun();
 			if (mailgun == null) {
-				final MaildropEntry maildropEntry = getMaildropEntry();
-
-				mailgun = mailgunFactory.newMailgun();
-				if (mailgun == null) {
-					logger.error("Mailgun could not be created: " + mailingId);
-					throw new SendActionbasedMailingException("Unable to create Mailgun");
-				}
-
-				mailgun.initialize(Integer.toString(maildropEntry.getId()));
-				mailgun.prepare(new Hashtable<>());
-
-				getMailgunCache().put(cacheId, mailgun);
+				logger.error("Mailgun could not be created: " + mailingId);
+				throw new SendActionbasedMailingException("Unable to create Mailgun");
 			}
+
+			mailgun.initialize(Integer.toString(maildropEntry.getId()));
+			mailgun.prepare(new Hashtable<>());
 
 			return mailgun;
-		}
-
-		private TimeoutLRUMap<String, Mailgun> getMailgunCache() {
-			if (mailgunCache == null) {
-				mailgunCache = new TimeoutLRUMap<>(configService.getIntegerValue(ConfigValue.MailgunMaxCache), configService.getLongValue(ConfigValue.MailgunMaxCacheTimeMillis));
-			}
-			
-			return mailgunCache;
 		}
 
 		private MaildropEntry getMaildropEntry() throws Exception {

@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.HttpUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,7 +34,7 @@ import com.agnitas.emm.core.logon.web.LogonFailedException;
 
 /**
  * Restful services are available at:
- * https:/<system.url>/restful/*
+ * https://<system.url>/restful/*
  * 
  * Test call via wget with auth parameter:
  * > rm test.txt; wget -S -O - --content-on-error "http://localhost:8080/restful/reference/TestTbl?username=<UrlencodedUserName>&password=<UrlencodedPassword>" > test.txt; cat test.txt; echo
@@ -114,8 +115,8 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 					restfulResponse = new XmlRequestResponse();
 				}
 				
-				String basicAuthorizationUsername = getBasicAuthenticationUsername(request);
-				String basicAuthorizationPassword = getBasicAuthenticationPassword(request);
+				String basicAuthorizationUsername = HttpUtils.getBasicAuthenticationUsername(request);
+				String basicAuthorizationPassword = HttpUtils.getBasicAuthenticationPassword(request);
 				String username = StringUtils.isNotBlank(basicAuthorizationUsername) ? basicAuthorizationUsername : getRequestParameter(request, "username", true);
 				String password = StringUtils.isNotBlank(basicAuthorizationPassword) ? basicAuthorizationPassword : getRequestParameter(request, "password", true);
 				

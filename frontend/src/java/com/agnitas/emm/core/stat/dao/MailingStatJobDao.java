@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.stat.dao;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import com.agnitas.emm.core.stat.beans.MailingStatJobDescriptor;
@@ -36,7 +37,7 @@ public interface MailingStatJobDao {
 	 */
 	public List<MailingStatJobDescriptor> findMailingStatJobs(int mailingId, int recipientsTyp, String targetGroups, int maxAgeSeconds);
 
-	public void removeExpiredMailingStatJobs(int maxAgeSeconds);
+	public void removeExpiredMailingStatJobs(final ZonedDateTime threshold);
 	
 	public void deleteMailingStatJob(int id);
 	

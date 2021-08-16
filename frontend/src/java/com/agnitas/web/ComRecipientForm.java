@@ -40,10 +40,8 @@ public class ComRecipientForm extends RecipientForm {
     private Set<Integer> bulkIDs = new HashSet<>();
 
     private PaginatedListImpl<ComRecipientReaction> recipientReactions;
-    private String dateFormatPattern;
     private Map<String, String> bulkChange = new HashMap<>();
     private boolean trackingVeto;
-    private boolean selectAllColumns;
 
     public final boolean isTrackingVeto() {
 		return trackingVeto;
@@ -55,12 +53,10 @@ public class ComRecipientForm extends RecipientForm {
 
 	public static final Map<Integer, String> MAILING_TYPE_NAMES;
 	static {
-		MAILING_TYPE_NAMES = new HashMap<>();
-		MAILING_TYPE_NAMES.put(MailingTypes.NORMAL.getCode(), "mailing.Normal_Mailing");
-		MAILING_TYPE_NAMES.put(MailingTypes.DATE_BASED.getCode(), "mailing.Rulebased_Mailing");
-		MAILING_TYPE_NAMES.put(MailingTypes.ACTION_BASED.getCode(), "mailing.action.based.mailing");
-		MAILING_TYPE_NAMES.put(MailingTypes.FOLLOW_UP.getCode(), "mailing.Followup_Mailing");
-		MAILING_TYPE_NAMES.put(MailingTypes.INTERVAL.getCode(), "mailing.Interval_Mailing");
+	    MAILING_TYPE_NAMES = new HashMap<>();
+        for (MailingTypes mt : MailingTypes.values()) {
+            MAILING_TYPE_NAMES.put(mt.getCode(), mt.getTranslationKey());
+        }
 	}
 
 	/**
@@ -125,8 +121,7 @@ public class ComRecipientForm extends RecipientForm {
         super.reset(mapping, request);
         clearBulkIds();
         bulkChange = new HashMap<>();
-        this.trackingVeto = false;
-        selectAllColumns = false;
+        trackingVeto = false;
     }
 
     public void setBulkID(int id, String value) {
@@ -155,14 +150,6 @@ public class ComRecipientForm extends RecipientForm {
         this.recipientReactions = recipientReactions;
     }
 
-    public String getDateFormatPattern() {
-        return dateFormatPattern;
-    }
-
-    public void setDateFormatPattern(String dateFormatPattern) {
-        this.dateFormatPattern = dateFormatPattern;
-    }
-
 	/**
 	 * Load additional Data which should be stored in request attributes etc.
 	 *
@@ -185,22 +172,4 @@ public class ComRecipientForm extends RecipientForm {
 	public void setBulkChange(String key, String value) {
 		bulkChange.put(key, value);
 	}
-	
-	private boolean deleteAllDuplicate;
-    
-    public boolean isDeleteAllDuplicate() {
-        return deleteAllDuplicate;
-    }
-    
-    public void setDeleteAllDuplicate(boolean deleteAllDuplicate) {
-        this.deleteAllDuplicate = deleteAllDuplicate;
-    }
-
-    public boolean isSelectAllColumns() {
-        return selectAllColumns;
-    }
-
-    public void setSelectAllColumns(boolean selectAllColumns) {
-        this.selectAllColumns = selectAllColumns;
-    }
 }

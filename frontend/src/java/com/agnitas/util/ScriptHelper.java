@@ -37,8 +37,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.agnitas.beans.Mailing;
+import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.Recipient;
+import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
@@ -66,7 +67,9 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.MaildropEntryImpl;
+import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ScripthelperEmailLogDao;
@@ -99,6 +102,9 @@ public class ScriptHelper {
 
 	/** DAO accessing subscriber data. */
 	protected ComRecipientDao recipientDao;
+	
+	/** DAO accessing recipient binding data. */
+	protected ComBindingEntryDao bindingEntryDao;
 
 	private ScriptHelperService helperService;
 
@@ -731,7 +737,7 @@ public class ScriptHelper {
     	 */
 
 		try {
-			return recipientDao.updateInDB(recipient);
+			return recipientDao.updateInDB(recipient, false);
 		} catch (Exception e) {
 			logger.error("Error in storeRecipient: " + e.getMessage());
 			return false;
@@ -775,7 +781,7 @@ public class ScriptHelper {
 	}
 
 	/**
-	 * Computes MD5 hash for given String. Encoding is to be specified.
+	 * Computes SHA512 hash for given String. Encoding is to be specified.
 	 * Result is sequence of hex digits.
 	 *
 	 * @param s String to encode
@@ -1268,7 +1274,7 @@ public class ScriptHelper {
 	}
 	
 	public int random(int startLimitInclusive, int endLimitExclusive) {
-		return (int) (Math.random() * (endLimitExclusive - startLimitInclusive));
+		return ((int) (Math.random() * (endLimitExclusive - startLimitInclusive)) + startLimitInclusive);
 	}
 	
 	public boolean checkEmailExcludes(String emailAddress, List<String> excludeEmailPatterns) {
@@ -1313,6 +1319,35 @@ public class ScriptHelper {
 	private boolean emailMatchesPattern(String emailAddress, String emailPattern) {
 		return Pattern.matches(emailPattern.replace(".", "\\.").replace("*", ".*").replace("?", "."), emailAddress);
 	}
+	
+	/**
+	 * Check for existing binding and insert new one or update an existing one
+	 * 
+	 * @param customerID
+	 * @param mailinglistID
+	 * @param mediaType
+	 * @param userType
+	 * @param userStatus
+	 * @param userRemark
+	 * @param referrer
+	 * @param entryMailingID
+	 * @param exitMailingID
+	 */
+	public void saveBinding(int customerID, int mailinglistID, int mediaType, String userType, int userStatus, String userRemark, String referrer, int entryMailingID, int exitMailingID) {
+		BindingEntry bindingEntry = new BindingEntryImpl();
+		
+		bindingEntry.setCustomerID(customerID);
+		bindingEntry.setMailinglistID(mailinglistID);
+		bindingEntry.setMediaType(mediaType);
+		bindingEntry.setUserType(userType);
+		bindingEntry.setUserStatus(userStatus);
+		bindingEntry.setUserRemark(userRemark);
+		bindingEntry.setReferrer(referrer);
+		bindingEntry.setEntryMailingID(entryMailingID);
+		bindingEntry.setExitMailingID(exitMailingID);
+		
+		bindingEntryDao.save(companyID, bindingEntry);
+	}
 
 	public void setMailingDao(final ComMailingDao mailingDao) {
 
@@ -1351,6 +1386,19 @@ public class ScriptHelper {
     	 */
 
 		this.recipientDao = recipientDao;
+	}
+
+	public void setBindingEntryDao(final ComBindingEntryDao bindingEntryDao) {
+
+    	/*
+    	 * **************************************************
+    	 *   IMPORTANT  IMPORTANT    IMPORTANT    IMPORTANT
+    	 * **************************************************
+    	 *
+    	 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
+    	 */
+
+		this.bindingEntryDao = bindingEntryDao;
 	}
 
 	public void setCompanyID(final int companyID) {

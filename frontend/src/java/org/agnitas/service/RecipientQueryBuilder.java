@@ -13,13 +13,10 @@ package org.agnitas.service;
 import java.util.List;
 
 import org.agnitas.util.SqlPreparedStatementManager;
-import org.agnitas.web.RecipientForm;
 
 import com.agnitas.beans.ComAdmin;
 
 public interface RecipientQueryBuilder {
-	String createEqlFromForm(final RecipientForm form, final int companyId);
-
 	SqlPreparedStatementManager getRecipientListSQLStatement(ComAdmin admin, RecipientSqlOptions options) throws Exception;
 
 	SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(ComAdmin admin, RecipientDuplicateSqlOptions options, boolean includeBounceLoad) throws Exception;

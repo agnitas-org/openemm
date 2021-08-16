@@ -10,16 +10,16 @@
 
 package org.agnitas.emm.core.component.service;
 
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class ComponentModel {
-
 	private int companyId;
 	private int componentId;
 	private int mailingId;
 	private String mimeType;
 	private String componentName;
-	private int componentType;
+	private MailingComponentType componentType;
 	
 	private byte[] data;
 
@@ -63,12 +63,12 @@ public class ComponentModel {
 		this.componentName = componentName;
 	}
 
-	public int getComponentType() {
+	public MailingComponentType getComponentType() {
 		return componentType;
 	}
 
-	public void setComponentType(int componentType) {
-		this.componentType = componentType;
+	public void setComponentType(MailingComponentType componentTypeCode) {
+		this.componentType = componentTypeCode;
 	}
 
 	public byte[] getData() {

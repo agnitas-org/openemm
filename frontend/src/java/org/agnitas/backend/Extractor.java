@@ -19,8 +19,8 @@ import java.util.Set;
 
 import org.agnitas.util.Blackdata;
 import org.agnitas.util.Blacklist;
-import org.agnitas.util.Const;
 import org.agnitas.util.Log;
+import org.agnitas.util.importvalues.MailType;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
 
@@ -173,15 +173,15 @@ public class Extractor implements ResultSetExtractor<Object> {
 				userType = "W";
 			}
 			if (data.maildropStatus.isPreviewMailing()) {
-				mtype = Const.Mailtype.HTML;
+				mtype = MailType.HTML.getIntValue();
 			} else {
 				if (mailtype == null) {
 					data.logging(Log.WARNING, "mailout", "Unset mailtype for customer_id " + cid + ", using default");
-					mtype = Const.Mailtype.HTML;
+					mtype = MailType.HTML.getIntValue();
 				} else {
 					mtype = Integer.parseInt(mailtype);
-					if (mtype > Const.Mailtype.HTML_OFFLINE) {
-						mtype = Const.Mailtype.HTML_OFFLINE;
+					if (mtype > MailType.HTML_OFFLINE.getIntValue()) {
+						mtype = MailType.HTML_OFFLINE.getIntValue();
 					}
 					if (mtype > data.masterMailtype) {
 						mtype = data.masterMailtype;
@@ -254,7 +254,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 						for (int n = 0; n < emailCount; ++n) {
 							emailTags.get(n).setTagValue(email);
 						}
-						for (int n = 0; (n < Const.Mailtype.HTML_OFFLINE) && (n <= data.masterMailtype); ++n) {
+						for (int n = 0; (n < MailType.HTML_OFFLINE.getIntValue()) && (n <= data.masterMailtype); ++n) {
 							try {
 								mailer.writeMail(cinfo, mcount + 1, n, 0, Media.typeName(Media.TYPE_EMAIL), tagNames);
 								mailer.writeContent(cinfo, 0, tagNames, rmap);

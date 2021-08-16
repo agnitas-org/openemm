@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.util.html.xssprevention;
 
+import com.agnitas.messages.Message;
+
 public final class UnopenedTagError extends AbstractTagError {
 	
 	public UnopenedTagError(final String tagName) {
@@ -30,6 +32,11 @@ public final class UnopenedTagError extends AbstractTagError {
 	@Override
 	public final int hashCode() {
 		return this.getTagName().hashCode();
+	}
+
+	@Override
+	public Message toMessage() {
+		return Message.of("error.html.missingStartTag", getTagName());
 	}
 
 }

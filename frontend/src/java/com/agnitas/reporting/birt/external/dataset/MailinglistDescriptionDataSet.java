@@ -17,7 +17,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -40,22 +39,14 @@ public class MailinglistDescriptionDataSet extends BIRTDataSet {
 			return mailinglistDescription;
 		}
 		String query = getMailinglistDescriptionQuery(mailinglistID);
-		Connection connection = null;
-        Statement statement = null;
-        ResultSet resultSet = null;
-        try {
-			connection = getDataSource().getConnection();
-			statement = connection.createStatement();
-			resultSet = statement.executeQuery(query);
+        try (Connection connection = getDataSource().getConnection();
+        		Statement statement = connection.createStatement();
+        		ResultSet resultSet = statement.executeQuery(query)) {
 			if (resultSet.next()){
 				mailinglistDescription.add(resultSet.getString("mailinglist_name"));
 			}
 		} catch (SQLException e) {
 			logger.error(" SQL-Exception ! Mailinglist-Description-Query is: " + query , e);
-		} finally {
-            DbUtilities.closeQuietly(connection, "Could not close DB connection ");
-            DbUtilities.closeQuietly(statement, "Could not close DB-statement !");
-            DbUtilities.closeQuietly(resultSet, "Could not close result set !");
 		}
 		return mailinglistDescription;
 	}

@@ -156,15 +156,6 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
         try {
             String userName = oldAdmin.getUsername();
             AdminPreferences newAdminPreferences = newAdminData.getAdminPreferences();
-            //Log changes of start page
-            if (oldAdminPreferences.getStartPage() != newAdminPreferences.getStartPage()) {
-                if (oldAdminPreferences.getStartPage() == 0 && newAdminPreferences.getStartPage() == 1) {
-                    userActions.add(new UserAction("edit user", "Username: " + userName + ". Start page changed from Dashboard to Calendar"));
-                }
-                if (oldAdminPreferences.getStartPage() == 1 && newAdminPreferences.getStartPage() == 0) {
-                    userActions.add(new UserAction("edit user", "Username: " + userName + ". Start page changed from Calendar to Dashboard"));
-                }
-            }
 
             // Log changes of default mailing content view
             int oldMailingContentView = oldAdminPreferences.getMailingContentView();
@@ -184,16 +175,6 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
                 userActions.add(new UserAction("edit user",
                         "Username: " + userName + ". Dashboard mailings view type changed from " + AdminChangesLogService.getDashboardMailingsView(oldDashboardMailingsView) +
                                 " to " + AdminChangesLogService.getDashboardMailingsView(newDashboardMailingsView)));
-            }
-
-            // Log changes of default navigation location
-            int oldNavigationLocation = oldAdminPreferences.getNavigationLocation();
-            int newNavigationLocation = newAdminPreferences.getNavigationLocation();
-
-            if (oldNavigationLocation != newNavigationLocation) {
-                userActions.add(new UserAction("edit user",
-                        "Username: " + userName + ". Navigation location changed from " + AdminChangesLogService.getNavigationLocationName(oldNavigationLocation) +
-                                " to " + AdminChangesLogService.getNavigationLocationName(newNavigationLocation)));
             }
 
             // Log changes of default mailing settings view (expanded ot collapsed)

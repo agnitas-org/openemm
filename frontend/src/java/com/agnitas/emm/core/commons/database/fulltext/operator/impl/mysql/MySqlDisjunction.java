@@ -11,23 +11,17 @@
 package com.agnitas.emm.core.commons.database.fulltext.operator.impl.mysql;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.agnitas.emm.core.commons.database.fulltext.operator.impl.BinaryOperator;
 
 public class MySqlDisjunction extends BinaryOperator {
-
-    private static final String DOUBLE_QUOTE = "\"";
 
     private static final String WHITESPACE = " ";
 
     @Override
     public String process(List<String> operands) {
         checkOperands(operands);
-        return operands.stream()
-                //Prevent operand from double escaping
-                .map(operand -> !operand.startsWith(DOUBLE_QUOTE) && !operand.endsWith(DOUBLE_QUOTE) ? DOUBLE_QUOTE + operand + DOUBLE_QUOTE : operand)
-                .collect(Collectors.joining(WHITESPACE));
+        return String.join(WHITESPACE, operands);
     }
 
 }

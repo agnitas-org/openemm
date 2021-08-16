@@ -14,7 +14,7 @@ var cachedTemplates = [];
       preparedTemplate = Template.prepare(templateName);
       cachedTemplates[templateName] = preparedTemplate;
     }
-      this.eGui.innerHTML = preparedTemplate({value: params.value});
+      this.eGui.innerHTML = preparedTemplate({value: params.value, entry: params.data});
   };
 
   // gets called once when grid ready to insert the element

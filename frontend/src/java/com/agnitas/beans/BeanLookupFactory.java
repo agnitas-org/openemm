@@ -13,7 +13,6 @@ package com.agnitas.beans;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.Mediatype;
@@ -40,9 +39,6 @@ public abstract class BeanLookupFactory {
 	abstract public ExtensibleUIDService getBeanExtensibleUIDService();
 	abstract public BindingEntry getBeanBindingEntry();
 	abstract public ScriptHelper getBeanScriptHelper();
-	
-	@Deprecated // TODO Seems to be not used. (If used: Switch to TargetFactory)
-	abstract public ComTarget getBeanTarget();
 	abstract public Mailinglist getBeanMailinglist();
 	abstract public JavaMailService getBeanJavaMailService();
 	abstract public ConfigService getBeanConfigService();

@@ -25,9 +25,6 @@
 	ComAdmin admin = AgnUtils.getAdmin(request);
 %>
 
-<c:set var="START_PAGE_DASHBOARD" value="<%= ComAdminPreferences.START_PAGE_DASHBOARD %>"/>                    <%-- 0 --%>
-<c:set var="START_PAGE_CALENDAR" value="<%= ComAdminPreferences.START_PAGE_CALENDAR %>"/>                      <%-- 1 --%>
-
 <c:set var="LOGIN_STATUS_SUCCESS" value="<%= LoginStatus.SUCCESS.getStatusCode() %>" />
 <c:set var="LOGIN_STATUS_FAIL" value="<%= LoginStatus.FAIL.getStatusCode() %>" />
 <c:set var="LOGIN_STATUS_SUCCESS_BUT_BLOCKED" value="<%= LoginStatus.SUCCESS_BUT_BLOCKED.getStatusCode() %>" />
@@ -37,9 +34,6 @@
 
 <c:set var="DASHBOARD_MAILINGS_LIST" value="<%= ComAdminPreferences.DASHBOARD_MAILINGS_LIST %>"/>              <%-- 0 --%>
 <c:set var="DASHBOARD_MAILINGS_PREVIEW" value="<%= ComAdminPreferences.DASHBOARD_MAILINGS_PREVIEW %>"/>        <%-- 1 --%>
-
-<c:set var="NAVIGATION_LEFT" value="<%= ComAdminPreferences.NAVIGATION_LEFT %>"/>                              <%-- 0 --%>
-<c:set var="NAVIGATION_TOP" value="<%= ComAdminPreferences.NAVIGATION_TOP %>"/>                                <%-- 1 --%>
 
 <c:set var="MAILING_SETTINGS_EXPANDED" value="<%= ComAdminPreferences.MAILING_SETTINGS_EXPANDED %>"/>          <%-- 0 --%>
 <c:set var="MAILING_SETTINGS_COLLAPSED" value="<%= ComAdminPreferences.MAILING_SETTINGS_COLLAPSED %>"/>        <%-- 1 --%>
@@ -269,20 +263,6 @@
                 </div>
             </div>
             
-			<emm:ShowByPermission token="calendar.show">
-				<div class="form-group">
-					<div class="col-sm-4">
-						<label class="control-label" for="startPage"><bean:message key="start.page.label"/></label>
-					</div>
-					<div class="col-sm-8">
-						<html:select styleClass="form-control js-select" property="startPage" styleId="startPage">
-							<html:option value="${START_PAGE_DASHBOARD}"><bean:message key="Dashboard"/></html:option>
-							<html:option value="${START_PAGE_CALENDAR}"><bean:message key="calendar.Calendar"/></html:option>
-						</html:select>
-					</div>
-				</div>
-			</emm:ShowByPermission>
-
             <div class="form-group">
                 <div class="col-sm-4">
                     <label class="control-label" for="statisticLoadType"><bean:message key="statistic.summary"/></label>

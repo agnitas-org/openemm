@@ -38,7 +38,7 @@ public class Cache {
 	 */
 	private Map<String, Object> opts;
 
-	public Cache(long nMailingID, long nCtime, String text, boolean createAll, boolean cacheImages) throws Exception {
+	public Cache(long nMailingID, long nCtime, String text, boolean createAll, boolean cacheImages, boolean isMobile) throws Exception {
 		prev = null;
 		next = null;
 		ctime = nCtime;
@@ -50,6 +50,7 @@ public class Cache {
 			opts.put("preview-input", text);
 		opts.put("preview-create-all", createAll);
 		opts.put("preview-cache-images", cacheImages);
+		opts.put("preview-for-mobile", isMobile);
 		Map<String, Object> mapOpts = opts;
 		//TODO no such method when hash table is used?
 		mailout.prepare(mapOpts);

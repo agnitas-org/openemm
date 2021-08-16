@@ -12,6 +12,7 @@ package org.agnitas.util.importvalues;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.ImportProfile;
@@ -31,7 +32,7 @@ public interface ImportModeHandler {
 
 	void handleExistingCustomers(CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception;
 
-	Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, MediaTypes mediatype) throws Exception;
+	Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception;
 
 	int handleBlacklist(ImportProfile importProfile, String temporaryImportTableName);
 }

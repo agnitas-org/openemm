@@ -13,7 +13,7 @@ package org.agnitas.emm.core.mailinglist.service.impl;
 public class MailinglistInUseException extends MailinglistException {
 	private static final long serialVersionUID = 7924517567502063265L;
 
-	public MailinglistInUseException(final int mailinglistID) {
-		super(mailinglistID, "Mailinglist is in use");
+	public MailinglistInUseException(final int mailinglistID, final int companyID) {
+		super(mailinglistID, companyID, String.format("Mailinglist %d is in use (company ID %d)", mailinglistID, companyID));
 	}
 }

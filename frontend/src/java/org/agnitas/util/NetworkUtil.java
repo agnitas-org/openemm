@@ -119,7 +119,7 @@ public class NetworkUtil {
 			String proxyPort = System.getProperty("http.proxyPort");
 
 			if (StringUtils.isBlank(nonProxyHosts)) {
-				httpClient.getHostConfiguration().setProxy(proxyHost, org.apache.commons.lang3.math.NumberUtils.toInt(proxyPort, 8080));
+				httpClient.getHostConfiguration().setProxy(proxyHost, NumberUtils.toInt(proxyPort, 8080));
 			} else {
 				boolean ignoreProxy = false;
 				String urlDomain = getDomainFromUrl(url);
@@ -134,13 +134,13 @@ public class NetworkUtil {
 					}
 
 					if (!ignoreProxy) {
-						httpClient.getHostConfiguration().setProxy(proxyHost, org.apache.commons.lang3.math.NumberUtils.toInt(proxyPort, 8080));
+						httpClient.getHostConfiguration().setProxy(proxyHost, NumberUtils.toInt(proxyPort, 8080));
 					}
 				}
 			}
 		}
 	}
-
+	
 	public static String getDomainFromUrl(String url) {
 		if (!url.startsWith("http") && !url.startsWith("https")) {
 			url = "http://" + url;
@@ -159,7 +159,7 @@ public class NetworkUtil {
 		if (StringUtils.isNotBlank(proxyHost)) {
 			String proxyPort = System.getProperty("http.proxyPort");
 			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
-
+			
 			if (StringUtils.isBlank(nonProxyHosts)) {
 				if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
 					request.setConfig(RequestConfig.custom().setProxy(new HttpHost(proxyHost, Integer.parseInt(proxyPort), "http")).build());

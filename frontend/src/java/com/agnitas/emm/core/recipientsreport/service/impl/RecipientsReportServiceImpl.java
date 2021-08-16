@@ -23,10 +23,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.DateUtilities;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
@@ -35,7 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.download.dao.DownloadDao;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
 import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
@@ -54,8 +50,6 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     private RecipientsReportDao recipientsReportDao;
-    private DownloadDao downloadDao;
-    private ConfigService configService;
     private MimeTypeService mimeTypeService;
 
     @Required
@@ -63,16 +57,6 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         this.recipientsReportDao = recipientsReportDao;
     }
 
-    @Required
-    public void setConfigService(ConfigService configService) {
-        this.configService = configService;
-    }
-
-    @Required
-    public void setDownloadDao(DownloadDao downloadDao) {
-        this.downloadDao = downloadDao;
-    }
-    
     @Required
     public void setMimeTypeService(MimeTypeService mimeTypeService) {
         this.mimeTypeService = mimeTypeService;
@@ -122,18 +106,9 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-    public int deleteOldReports(int companyId) {
-        int expireDays = configService.getIntegerValue(ConfigValue.ExpireRecipientsReport, companyId);
-        Date oldestReportDate = DateUtilities.getDateOfDaysAgo(new Date(),  expireDays);
-        downloadDao.deleteAllContentOfOldExportReports(companyId, oldestReportDate);
-        return recipientsReportDao.deleteOldReports(companyId, oldestReportDate);
-    }
-
-    @Override
     @Transactional
     public PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(ComAdmin admin, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types){
         int companyId = admin.getCompanyID();
-        deleteOldReports(companyId);
         PaginatedListImpl<RecipientsReport> returnList = getReports(companyId, pageNumber, pageSize, sortProperty, dir, startDate, finishDate, getAllowedReportTypes(types, admin));
         DateTimeFormatter formatter = admin.getDateTimeFormatter();
         ZoneId dbTimezone = ZoneId.systemDefault();

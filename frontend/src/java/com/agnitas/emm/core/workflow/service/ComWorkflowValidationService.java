@@ -12,17 +12,17 @@ package com.agnitas.emm.core.workflow.service;
 
 import static org.agnitas.target.ConditionalOperator.CONTAINS;
 import static org.agnitas.target.ConditionalOperator.EQ;
-import static org.agnitas.target.ConditionalOperator.GT;
 import static org.agnitas.target.ConditionalOperator.GEQ;
+import static org.agnitas.target.ConditionalOperator.GT;
 import static org.agnitas.target.ConditionalOperator.IS;
+import static org.agnitas.target.ConditionalOperator.LEQ;
 import static org.agnitas.target.ConditionalOperator.LIKE;
 import static org.agnitas.target.ConditionalOperator.LT;
-import static org.agnitas.target.ConditionalOperator.LEQ;
 import static org.agnitas.target.ConditionalOperator.MOD;
 import static org.agnitas.target.ConditionalOperator.NEQ;
-import static org.agnitas.target.ConditionalOperator.NOT_LIKE;
 import static org.agnitas.target.ConditionalOperator.NO;
 import static org.agnitas.target.ConditionalOperator.NOT_CONTAINS;
+import static org.agnitas.target.ConditionalOperator.NOT_LIKE;
 import static org.agnitas.target.ConditionalOperator.NOT_STARTS_WITH;
 import static org.agnitas.target.ConditionalOperator.STARTS_WITH;
 import static org.agnitas.target.ConditionalOperator.YES;
@@ -46,6 +46,7 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import org.agnitas.dao.MaildropStatusDao;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
@@ -66,9 +67,11 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
 import com.agnitas.emm.core.workflow.beans.WorkflowDeadline;
@@ -231,13 +234,14 @@ public class ComWorkflowValidationService {
     private ComMailingDao mailingDao;
     private MaildropStatusDao maildropStatusDao;
     private ComProfileFieldDao profileFieldDao;
+    private ComTargetDao targetDao;
 
     static {
-        FOLLOWED_MAILING_STATUSES.add("mailing.status.active");
-        FOLLOWED_MAILING_STATUSES.add("mailing.status.scheduled");
-        FOLLOWED_MAILING_STATUSES.add("mailing.status.sent");
-        FOLLOWED_MAILING_STATUSES.add("mailing.status.norecipients");
-        FOLLOWED_MAILING_STATUSES.add("mailing.status.sending");
+        FOLLOWED_MAILING_STATUSES.add(MailingStatus.ACTIVE.getDbKey());
+        FOLLOWED_MAILING_STATUSES.add(MailingStatus.SCHEDULED.getDbKey());
+        FOLLOWED_MAILING_STATUSES.add(MailingStatus.SENT.getDbKey());
+        FOLLOWED_MAILING_STATUSES.add(MailingStatus.NORECIPIENTS.getDbKey());
+        FOLLOWED_MAILING_STATUSES.add(MailingStatus.SENDING.getDbKey());
     }
 
     public boolean validateBasicStructure(List<WorkflowIcon> icons) {
@@ -1095,40 +1099,6 @@ public class ComWorkflowValidationService {
         return errors;
     }
 
-    public boolean noParallelBranches(List<WorkflowIcon> icons) {
-        Set<Integer> parameterIcons = new HashSet<>();
-
-        for (WorkflowIcon icon : icons) {
-            if (icon.getType() == WorkflowIconType.PARAMETER.getId()) {
-                parameterIcons.add(icon.getId());
-            }
-        }
-
-        for (WorkflowIcon icon : icons) {
-            int type = icon.getType();
-            if (type != WorkflowIconType.DECISION.getId() && type != WorkflowIconType.START.getId()) {
-                int outgoingConnections = 0;
-                int parameterOutgoingConnections = 0;
-
-                List<WorkflowConnection> connections = icon.getConnections();
-                if (CollectionUtils.isNotEmpty(connections)) {
-                    outgoingConnections = connections.size();
-                    for (WorkflowConnection connection : connections) {
-                        if (parameterIcons.contains(connection.getTargetIconId())) {
-                            parameterOutgoingConnections++;
-                        }
-                    }
-                }
-
-                // Multiple outgoing connections are disallowed unless all of them lead to parameter icons (list split).
-                if (outgoingConnections > 1 && parameterOutgoingConnections < outgoingConnections) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
     public boolean parametersSumNotHigher100(List<WorkflowIcon> icons) {
         // Maps iconId -> parameterValue (only parameter icons).
         Map<Integer, Integer> parameterIconValueMap = new HashMap<>();
@@ -1516,9 +1486,11 @@ public class ComWorkflowValidationService {
             if (icon.getType() == WorkflowIconType.IMPORT.getId()) {
                 WorkflowImport importIcon = (WorkflowImport) icon;
                 if (importIcon.getImportexportId() > 0) {
-                    AutoImport autoImport = autoImportService.getAutoImport(importIcon.getImportexportId(), companyId);
-                    if (autoImport.isActive()) {
-                        return false;
+                    if (autoImportService != null) {
+                        AutoImport autoImport = autoImportService.getAutoImport(importIcon.getImportexportId(), companyId);
+                        if (autoImport.isActive()) {
+                            return false;
+                        }
                     }
                 }
             }
@@ -1532,9 +1504,11 @@ public class ComWorkflowValidationService {
             if (icon.getType() == WorkflowIconType.EXPORT.getId()) {
                 WorkflowExport exportIcon = (WorkflowExport) icon;
                 if (exportIcon.getImportexportId() > 0) {
-                    AutoExport autoExport = autoExportService.getAutoExport(exportIcon.getImportexportId(), companyId);
-                    if (autoExport.isActive()) {
-                        return false;
+                    if (autoExportService != null) {
+                        AutoExport autoExport = autoExportService.getAutoExport(exportIcon.getImportexportId(), companyId);
+                        if (autoExport.isActive()) {
+                            return false;
+                        }
                     }
                 }
             }
@@ -1705,6 +1679,28 @@ public class ComWorkflowValidationService {
         return messages;
     }
 
+    public Set<Integer> getInvalidTargetGroups(@VelocityCheck final int companyId, final List<WorkflowIcon> icons) {
+        final Set<Integer> mailingIds = new HashSet<>();
+
+        for (WorkflowIcon icon : icons) {
+            if (WorkflowUtils.isMailingIcon(icon) || WorkflowUtils.isBranchingDecisionIcon(icon)) {
+                int mailingId = ((WorkflowMailingAware)icon).getMailingId();
+                if(mailingId > 0){
+                    mailingIds.add(mailingId);
+                }
+            }
+        }
+
+        final Map<Integer, String> targetExpressions = mailingDao.getTargetExpressions(companyId, mailingIds);
+        final Map<Integer, Set<Integer>> contentTargets = mailingDao.getTargetsUsedInContent(companyId, mailingIds);
+
+        final Set<Integer> targets = new HashSet<>();
+        targetExpressions.values().stream().map(TargetExpressionUtils::getTargetIds).forEach(targets::addAll);
+        contentTargets.values().forEach(targets::addAll);
+
+        return targetDao.getInvalidTargets(companyId, targets);
+    }
+
     // Make sure that given operator is applicable to data type that selected column belongs to.
     private boolean isOperatorApplicable(SimpleDataType columnType, ConditionalOperator operator) {
         return ALLOWED_OPERATORS_BY_TYPE.get(columnType).contains(operator.getOperatorCode());
@@ -1784,5 +1780,10 @@ public class ComWorkflowValidationService {
     @Required
     public void setProfileFieldDao(ComProfileFieldDao profileFieldDao) {
         this.profileFieldDao = profileFieldDao;
+    }
+
+    @Required
+    public void setTargetDao(ComTargetDao targetDao) {
+        this.targetDao = targetDao;
     }
 }

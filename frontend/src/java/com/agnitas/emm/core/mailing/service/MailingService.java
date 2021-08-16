@@ -12,7 +12,6 @@ package com.agnitas.emm.core.mailing.service;
 
 import java.util.List;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
@@ -24,8 +23,8 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 
@@ -36,7 +35,7 @@ public interface MailingService {
 
 	Mailing getMailing(MailingModel model);
 
-	ComMailing getMailing(final int companyID, final int mailingID);
+	Mailing getMailing(final int companyID, final int mailingID);
 
 	void updateMailing(MailingModel model, List<UserAction> userActions) throws MailinglistException;
 

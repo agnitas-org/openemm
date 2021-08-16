@@ -12,10 +12,11 @@ package com.agnitas.service;
 
 import java.util.List;
 
-import com.agnitas.beans.MailingSendOptions;
-import com.agnitas.messages.Message;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+
+import com.agnitas.beans.MailingSendOptions;
+import com.agnitas.messages.Message;
 
 public interface ComMailingSendService {
 	enum DeliveryType {
@@ -25,7 +26,7 @@ public interface ComMailingSendService {
 	}
 
 	/**
-	 * Schedule a mailing referenced by {@code mailingId} to be sent (also triggers mailing via {@link com.agnitas.beans.impl.ComMailingImpl#triggerMailing(int)}
+	 * Schedule a mailing referenced by {@code mailingId} to be sent (also triggers mailing via {@link com.agnitas.beans.impl.MailingImpl#triggerMailing(int)}
 	 * to be processed immediately if required).
 	 *
 	 * @param mailingId an identifier of a mailing to be scheduled.
@@ -34,8 +35,9 @@ public interface ComMailingSendService {
 	 * @param warnings a bundle to store warnings (if any).
 	 * @param errors a bundle to store errors (if any).
 	 * @param userActions a list of user actions to store one if succeeded (for UAL).
+	 * @throws Exception
 	 */
-    void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, List<Message> warnings, List<Message> errors, List<UserAction> userActions);
+    void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception;
 
 	void deactivateMailing(int mailingId, int companyId);
 }

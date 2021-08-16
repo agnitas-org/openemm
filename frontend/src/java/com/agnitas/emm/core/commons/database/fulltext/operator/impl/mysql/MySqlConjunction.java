@@ -21,13 +21,11 @@ public class MySqlConjunction extends BinaryOperator {
 
     private static final String WHITESPACE = " ";
 
-    private static final String DOUBLE_QUOTE = "\"";
-
     @Override
     public String process(List<String> operands) {
         checkOperands(operands);
         return operands.stream()
-                .map(operand -> PLUS + DOUBLE_QUOTE + operand + DOUBLE_QUOTE)
+                .map(operand -> PLUS + operand)
                 .collect(Collectors.joining(WHITESPACE));
     }
 

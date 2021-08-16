@@ -11,7 +11,7 @@
 package org.agnitas.util;
 
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.exceptions.CharacterEncodingValidationException;
 import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;

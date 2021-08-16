@@ -23,4 +23,5 @@ public interface MailingSummaryStatisticJobService {
 	MailingStatJobDescriptor getStatisticJob(int jobId) throws SummaryStatJobNotExistException;
 	MailingStatisticTgtGrp getStatisticTgtGrp(int jobId, int targetGroupId) throws DataAccessException;
 	public List<Integer> parseGroupList(String targetGroups) throws NumberFormatException;
+	void removeExpiredData();
 }

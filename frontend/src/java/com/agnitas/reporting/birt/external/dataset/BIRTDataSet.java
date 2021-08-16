@@ -10,10 +10,6 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -30,18 +26,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
-import com.agnitas.reporting.birt.external.beans.LightMailingList;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.dao.LightTargetDao;
-import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
-import com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl;
-import com.agnitas.util.LongRunningSelectResultCacheDao;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
+
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Mediatype;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
@@ -61,6 +53,17 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.incrementer.MySQLMaxValueIncrementer;
+
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.reporting.birt.external.beans.LightMailingList;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.dao.LightTargetDao;
+import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
+import com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl;
+import com.agnitas.util.LongRunningSelectResultCacheDao;
 
 public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	private static final transient Logger logger = Logger.getLogger(BIRTDataSet.class);
@@ -439,6 +442,18 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		}
 		
 		return "";
+	}
+
+	protected String joinWhereClause(final String leftClause, final String rightClause) {
+		if(StringUtils.isBlank(leftClause) && StringUtils.isBlank(rightClause)) {
+			return "";
+		}
+		if(StringUtils.isBlank(leftClause)) {
+			return rightClause;
+		} else if(StringUtils.isBlank(rightClause)) {
+			return leftClause;
+		}
+		return StringUtils.join(leftClause, " AND " , rightClause);
 	}
 	
 	protected int getNextTmpID() {
@@ -958,7 +973,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	}
     
 	public boolean isMailTrackingExpired(@VelocityCheck int companyID, int mailingID) {
-        int periodicallySendEntries = selectInt(logger, "SELECT COUNT(mst.mailing_id) AS count FROM maildrop_status_tbl mst JOIN mailing_tbl mt ON mst.mailing_id = mt.mailing_id WHERE mst.mailing_id = ? AND mst.status_field IN ('C', 'E', 'R', 'D') AND mt.work_status = 'mailing.status.active' AND mst.senddate < CURRENT_TIMESTAMP", mailingID);
+        int periodicallySendEntries = selectInt(logger, "SELECT COUNT(mst.mailing_id) AS count FROM maildrop_status_tbl mst JOIN mailing_tbl mt ON mst.mailing_id = mt.mailing_id WHERE mst.mailing_id = ? AND mst.status_field IN ('C', 'E', 'R', 'D') AND mt.work_status = '" + MailingStatus.ACTIVE.getDbKey() + "' AND mst.senddate < CURRENT_TIMESTAMP", mailingID);
         if (periodicallySendEntries > 0) {
         	return false;
         } else {

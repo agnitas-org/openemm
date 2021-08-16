@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Ausf&uuml;hrung]]></title>
+	<content><![CDATA[Mit dieser Einstellung legen Sie fest, wie oft ein Empf&auml;nger eine Kampagne durchlaufen kann. Soll er eine datumsgesteuerte Kampagne, wie z.B. Geburtstagskampagne, jedes Jahr aufs Neue erhalten, dann ben&ouml;tigen Sie die Einstellung <b>dauerhaft</b>. Wenn ein Empf&auml;nger eine Kampagne nur einmal bekommen soll, auch wenn er die Kriterien mehrmals erf&uuml;llt, z.B. reaktionsgesteuert bei &Ouml;ffnung eines bestimmten Mailings, dann stellen Sie hier <b>einmalig</b> ein - andernfalls w&uuml;rde die Kampagne mit jeder &Ouml;ffnung neu ausgel&ouml;st für diesen Empf&auml;nger.]]></content>
+</HelpBalloon>

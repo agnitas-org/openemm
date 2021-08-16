@@ -16,30 +16,35 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
-import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
-import com.agnitas.service.AgnTagService;
 import org.agnitas.beans.Campaign;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.beans.Mediatype;
 import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.MailingBaseAction;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
+import com.agnitas.service.AgnTagService;
 
 public class MailingBaseForm extends StrutsFormBase {
 	
@@ -353,7 +358,7 @@ public class MailingBaseForm extends StrutsFormBase {
                 .getBean("MediatypeFactory", MediatypeFactory.class)
                 .create(MediaTypes.EMAIL.getMediaCode());
 
-        mt.setStatus(Mediatype.STATUS_ACTIVE);
+        mt.setStatus(MediaTypeStatus.Active.getCode());
         mediatypes.put(MediaTypes.EMAIL.getMediaCode(), mt);
 
         this.emailReplytoEmail = "";
@@ -1100,17 +1105,20 @@ public class MailingBaseForm extends StrutsFormBase {
     private boolean archived = false;
 
     /**
-     * Getter for property archived.
-     * @return Value of property archived.
-     */
+	 * Getter for property archived.
+	 *
+	 * @return Value of property archived.
+	 */
     public boolean isArchived() {
         return this.archived;
     }
 
     /**
-     * Setter for property archived.
-     * @param archived New value of property archived.
-     */
+	 * Setter for property archived.
+	 *
+	 * @param archived
+	 *            New value of property archived.
+	 */
     public void setArchived(boolean archived) {
         this.archived = archived;
     }
@@ -1137,11 +1145,6 @@ public class MailingBaseForm extends StrutsFormBase {
      * Holds value of property mailingTypeDate.
      */
     protected boolean mailingTypeDate;
-    
-    /**
-     * Holds value of property types.
-     */
-    protected String types = "";
 
 	private boolean dynamicTemplate;
 
@@ -1207,32 +1210,27 @@ public class MailingBaseForm extends StrutsFormBase {
 		return this.messages;
 	}
 
+	protected List<Integer> getTypeList() {
+		List<Integer> typeList = new ArrayList<>();
+		if (mailingTypeNormal) {
+		    typeList.add(MailingType.NORMAL.getCode());
+		}
+		if (mailingTypeEvent) {
+		    typeList.add(MailingType.ACTION_BASED.getCode());
+		}
+		if (mailingTypeDate) {
+		    typeList.add(MailingType.DATE_BASED.getCode());
+		}
+
+		return typeList;
+	}
+
     /**
-     * Getter for property mailingType.
-     *
-     * @return Value of property mailingType.
+     * @return join ID of mailing types to string
      */
-	public String getTypes() {
-		types = "";
-		if(mailingTypeNormal) {
-			types = "0";
-		}
-		if(mailingTypeEvent) {
-			if(!types.equals("")) {
-				types = types + ",";
-			}
-			types = types + "1";
-		}
-		if(mailingTypeDate) {
-			if(!types.equals("")) {
-				types = types + ",";
-			}
-			types = types + "2";
-		}
-		if(types.equals("")) {
-			types = "100";
-		}
-		return types;
+	public String getTypesString() {
+        List<Integer> typeList = getTypeList();
+		return typeList.isEmpty() ? "100" : StringUtils.join(typeList, ",");
 	}
 
 	public int getPreviousAction() {

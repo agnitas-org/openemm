@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -44,6 +43,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
@@ -73,7 +73,7 @@ public class MailinglistControllerBase {
 	private final BirtStatisticsService birtStatisticsService;
 	private final WebStorage webStorage;
 	protected final AdminService adminService;
-	private final ConfigService configService;
+	protected final ConfigService configService;
 
 	public MailinglistControllerBase(ComMailinglistService mailinglistService, UserActivityLogService userActivityLogService,
 									 ConversionService conversionService, BirtStatisticsService birtStatisticsService,
@@ -166,14 +166,14 @@ public class MailinglistControllerBase {
 		}
 		return "redirect:/mailinglist/" + id + "/view.action";
 	}
-
+	
 	@GetMapping("/{id:\\d+}/confirmDelete.action")
 	public String confirmDelete(ComAdmin admin, @PathVariable("id") int mailinglistId, MailinglistForm form, Model model, Popups popups) {
 		int companyId = admin.getCompanyID();
 
 		if (isMailinglistIndependent(mailinglistId, companyId, model)) {
 			Mailinglist mailinglist = mailinglistService.getMailinglist(mailinglistId, companyId);
-
+			
 			if (mailinglist == null) {
 				model.addAttribute("excludeDialog", true);
 				popups.alert("Error");
@@ -207,10 +207,10 @@ public class MailinglistControllerBase {
 		} else {
 			popups.alert("error.mailinglist.cannot_delete");
 		}
-
+		
 		return "redirect:/mailinglist/list.action";
 	}
-
+	
 	@PostMapping("/bulkDelete.action")
 	public String bulkDelete(ComAdmin admin, BulkActionForm form, RedirectAttributes model, Popups popups) {
 		int companyId = admin.getCompanyID();
@@ -219,16 +219,16 @@ public class MailinglistControllerBase {
 					.map(id -> getDescription(id, companyId))
 					.map(description -> new UserAction("delete mailinglist", description))
 					.collect(Collectors.toList());
-
+			
 			mailinglistService.bulkDelete(new HashSet<>(form.getBulkIds()), companyId);
-
+			
 			for (UserAction action: userActions) {
 				userActivityLogService.writeUserActivityLog(admin, action, logger);
 			}
-
+			
 			popups.success("default.selection.deleted");
 		}
-
+		
 		return "redirect:/mailinglist/list.action";
 	}
 
@@ -331,21 +331,21 @@ public class MailinglistControllerBase {
 			model.addAttribute("affectedReportsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
 			model.addAttribute("affectedReportsMessageKey", "warning.mailinglist.affectedBirtReports");
 			model.addAttribute("affectedReports", affectedReports);
-
+			
 			return false;
 		}
 
 		return true;
 	}
-
+	
 	protected String getDescription(String shortname, int id) {
 		return String.format("%s (%d)", shortname, id);
 	}
-
+	
 	protected String getDescription(MailinglistForm form) {
 		return getDescription(form.getShortname(), form.getId());
 	}
-
+	
 	protected String getDescription(int mailinglistId, int companyId) {
 		String shortname = mailinglistService.getMailinglistName(mailinglistId, companyId);
 		return getDescription(shortname, mailinglistId);

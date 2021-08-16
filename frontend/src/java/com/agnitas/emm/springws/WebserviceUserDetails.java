@@ -32,5 +32,4 @@ public final class WebserviceUserDetails extends User {
 		return this.companyID;
 	}
 	
-	
 }

@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.serverprio.server;
 
+import java.util.Date;
+
 import com.agnitas.emm.core.mailing.service.MailingStopService;
 
 /**
@@ -50,5 +52,6 @@ public interface ServerPrioService {
 	 * @return <code>true</code> if mail generation and delivery is paused
 	 */
 	public boolean isMailGenerationAndDeliveryPaused(final int mailingID);
-	
+
+	Date getDeliveryPauseDate(int companyId, int mailingId);
 }

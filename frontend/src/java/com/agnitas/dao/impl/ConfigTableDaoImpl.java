@@ -118,7 +118,26 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 
 	@Override
 	public int getJobqueueHostStatus(String hostName) {
-		return selectIntWithDefaultValue(logger, "SELECT MIN(value) FROM config_tbl WHERE class = ? AND name = ?", 0, "system", hostName + ".IsActive");
+		// Do not read this value by configservice, so it is not cached
+		List<Map<String, Object>> legacyValues = select(logger, "SELECT MIN(value) AS value FROM config_tbl WHERE class = ? AND name = ?", "system", hostName + ".IsActive");
+		if (legacyValues.size() > 0 && legacyValues.get(0).get("value") != null) {
+			return Integer.parseInt((String) legacyValues.get(0).get("value"));
+		} else {
+			String configValueName = ConfigValue.JobQueueExecute.toString();
+			String classValue = configValueName.substring(0, configValueName.indexOf("."));
+			String nameValue = configValueName.substring(configValueName.indexOf(".") + 1);
+			int returnValueWithoutExactHostnameMatch = 0;
+			for (Map<String, Object> row : select(logger, "SELECT hostname, value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR TRIM(hostname) IS NULL OR hostname = ?) ORDER BY hostname", classValue, nameValue, AgnUtils.getHostName())) {
+				String hostname = (String) row.get("hostname");
+				int value = Integer.parseInt((String) row.get("value"));
+				if (AgnUtils.getHostName().equals(hostname)) {
+					return value;
+				} else {
+					returnValueWithoutExactHostnameMatch = value;
+				}
+			}
+			return returnValueWithoutExactHostnameMatch;
+		}
 	}
 
 	@Override

@@ -17,14 +17,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.agnitas.messages.I18nString;
-import cz.vutbr.web.domassign.DeclarationMap;
 import org.agnitas.ecs.EcsGlobals;
 import org.agnitas.ecs.EcsPreviewSize;
 import org.agnitas.ecs.backend.service.EmbeddedClickStatService;
@@ -37,6 +36,10 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
+
+import com.agnitas.messages.I18nString;
+
+import cz.vutbr.web.domassign.DeclarationMap;
 
 /**
  * Servlet for generating Embedded click statistics mailing HTML.
@@ -157,7 +160,6 @@ public class EmbeddedClickStatView extends HttpServlet {
 										.setMediaType(media)
 										.setEscapeAgnTags(true)
 										.setPrettyPrint(false)
-										.setUseNewLib(configService.getBooleanValue(ConfigValue.UseNewCssLibForStylesEmbedding, companyId))
 										.build();
 
 								mailingContent = HtmlUtils.embedStyles(document, declarationMap, options);
@@ -178,9 +180,9 @@ public class EmbeddedClickStatView extends HttpServlet {
 	private String getScriptsAndStyles(EcsPreviewSize previewSize) {
 		final String baseUrl = StringUtils.removeEnd(getConfigService().getValue(ConfigValue.SystemUrl), "/");
 
-		return  "<script type=\"text/javascript\" src=\"" + baseUrl + "/assets/js/vendor/jquery-3.4.1.js\"></script>\n" +
+		return  "<script type=\"text/javascript\" src=\"" + baseUrl + "/js/lib/jquery/jquery-3.5.1.js\"></script>\n" +
 				"<script type=\"text/javascript\" src=\"" + baseUrl + "/js/lib/grid/jquery.imagesloaded.min.js\"></script>\n" +
-				"<script type=\"text/javascript\" src=\"" + baseUrl + "/assets/js/vendor/lodash-4.17.15.js\"></script>\n" +
+				"<script type=\"text/javascript\" src=\"" + baseUrl + "/js/lib/lodash/lodash-4.17.20.js\"></script>\n" +
 				"<script type=\"text/javascript\" src=\"" + baseUrl + "/js/lib/ecs/statLabelAdjuster.js\"></script>\n" +
 				"<style>\n" +
 				getCssStyles(previewSize) +

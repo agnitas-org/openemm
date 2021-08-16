@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.wsmanager.dao;
 
+import java.time.ZonedDateTime;
+
 import org.agnitas.beans.impl.PaginatedListImpl;
 
 import com.agnitas.emm.wsmanager.common.WebserviceUser;
@@ -88,6 +90,8 @@ public interface WebserviceUserDao {
 	int getNumberOfWebserviceUsers();
 
 	void saveGrantedPermissionsAndGroups(WebserviceUser user);
+
+	void updateLastLoginDate(final String username, final ZonedDateTime loginDate);
 
 
 }

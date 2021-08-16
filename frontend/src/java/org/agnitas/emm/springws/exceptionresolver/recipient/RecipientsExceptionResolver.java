@@ -15,20 +15,26 @@ import org.agnitas.emm.core.recipient.service.impl.RecipientsSizeLimitExceededEx
 import org.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 
+import com.agnitas.emm.springws.exception.DuplicateKeyColumnValueException;
+
 public class RecipientsExceptionResolver extends AbstractEmmExceptionResolver {
 
 	@Override
-	protected SoapFaultDefinition getFaultDefinition(Object endpoint,
-			Exception ex) {
+	protected SoapFaultDefinition getFaultDefinition(Object endpoint, Exception ex) {
        if (ex instanceof RecipientWrongRequestException) {
-            SoapFaultDefinition definition = getDefaultDefinition(ex);
-            definition.setFaultStringOrReason("Data isn't correct: " + ex.getMessage());
-            return definition;
+    	   final SoapFaultDefinition definition = getDefaultDefinition(ex);
+           definition.setFaultStringOrReason("Data isn't correct: " + ex.getMessage());
+           return definition;
        } else if (ex instanceof RecipientsSizeLimitExceededExeption) {
-           SoapFaultDefinition definition = getDefaultDefinition(ex);
+    	   final SoapFaultDefinition definition = getDefaultDefinition(ex);
+           definition.setFaultStringOrReason(ex.getMessage());
+           return definition;
+       } else if (ex instanceof DuplicateKeyColumnValueException) {
+           final SoapFaultDefinition definition = getDefaultDefinition(ex);
            definition.setFaultStringOrReason(ex.getMessage());
            return definition;
        }
+       
        return super.getFaultDefinition(endpoint, ex);
 	}
 }

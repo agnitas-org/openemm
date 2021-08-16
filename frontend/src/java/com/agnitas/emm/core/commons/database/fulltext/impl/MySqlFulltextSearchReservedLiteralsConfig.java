@@ -18,12 +18,12 @@ import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchReservedLite
 public class MySqlFulltextSearchReservedLiteralsConfig implements FulltextSearchReservedLiteralsConfig {
 
     @Override
-    public List<Character> getSpecialSymbols() {
+    public List<Character> getSpecialCharacters() {
         return new ArrayList<>();
     }
 
     @Override
-    public Character getEscapeSymbol() {
-        return null;
+    public List<String> getSpecialWords() {
+        return new ArrayList<>();
     }
 }

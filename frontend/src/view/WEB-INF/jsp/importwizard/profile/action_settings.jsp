@@ -37,7 +37,8 @@
                 </label>
             </div>
             <div class="col-sm-8">
-                <agn:agnSelect styleId="import_mode_select" styleClass="form-control" property="profile.importMode" data-field-vis="">
+                <agn:agnSelect styleId="import_mode_select" styleClass="form-control" property="profile.importMode"
+                               data-action="mode-select-change" data-field-vis="">
                     <c:forEach var="importMode" items="${importProfileForm.importModes}">
                         <c:if test="${importMode == importModeUpdateOnly}">
                             <c:set var="hideAttr" value="#selectMailTypeFormGroup"/>
@@ -143,26 +144,6 @@
                 </html:select>
             </div>
         </div>
-        
-        <emm:ShowByPermission token="import.mediatype">
-        <div class="form-group">
-            <div class="col-sm-4">
-                <label class="control-label">
-                    <label for="import_mediatype"><bean:message key="import.recipient.mediatype"/></label>
-                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/MediaType.xml" tabindex="-1" type="button"></button>
-                </label>
-            </div>
-            <div class="col-sm-8">
-                <html:select styleId="import_mediatype" styleClass="form-control" property="profile.mediatypeCode">
-                	<c:forEach var="mediatype" items="${mediatypes}">
-                        <html:option value="${mediatype.mediaCode}">
-                            <bean:message key="mailing.MediaType.${mediatype.mediaCode}"/>
-                        </html:option>
-                    </c:forEach>
-                </html:select>
-            </div>
-        </div>
-		</emm:ShowByPermission>
 
         <div class="form-group">
             <div class="col-sm-4">

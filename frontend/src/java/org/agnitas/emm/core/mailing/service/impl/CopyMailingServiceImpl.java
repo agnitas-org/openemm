@@ -22,6 +22,8 @@ import org.agnitas.util.FileUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.util.TimingLogger;
+
 public class CopyMailingServiceImpl implements CopyMailingService {
     @SuppressWarnings("unused")
 	private static final Logger logger = Logger.getLogger(CopyMailingService.class);
@@ -32,16 +34,35 @@ public class CopyMailingServiceImpl implements CopyMailingService {
 
 	@Override
 	public int copyMailing(int sourceCompanyID, int sourceMailingID, int destinationCompanyID, String nameOfCopy, String descriptionOfCopy) throws Exception {
+		return copyMailing(null, sourceCompanyID, sourceMailingID, destinationCompanyID, nameOfCopy, descriptionOfCopy);
+	}
+    
+	@Override
+	public int copyMailing(final TimingLogger timingLogger, int sourceCompanyID, int sourceMailingID, int destinationCompanyID, String nameOfCopy, String descriptionOfCopy) throws Exception {
+		if(timingLogger != null) {
+			timingLogger.log("Entered CopyMailingServiceImpl.copyMailing()");
+		}
+		
 		File tempFile = null;
 		try {
 			tempFile = File.createTempFile("CopyMailing_", FileUtils.JSON_EXTENSION);
 			try (FileOutputStream output = new FileOutputStream(tempFile)) {
-				mailingExporter.exportMailingToJson(sourceCompanyID, sourceMailingID, output, false);
+				mailingExporter.exportMailingToJson(timingLogger, sourceCompanyID, sourceMailingID, output, false);
 			}
+			
+			if(timingLogger != null) {
+				timingLogger.log("Mailing exported. Starting import");
+			}
+			
 			try (FileInputStream input = new FileInputStream(tempFile)) {
 				// set importGridTemplateAllowed to true for copy, because permissions have to exists, when hit copy button
 				// set checkIsTemplate to false for copy, because imported template to mailing
-				ImportResult result = mailingImporter.importMailingFromJson(destinationCompanyID, input, false, nameOfCopy, descriptionOfCopy, true, false, true);
+				ImportResult result = mailingImporter.importMailingFromJson(timingLogger, destinationCompanyID, input, false, nameOfCopy, descriptionOfCopy, true, false, true);
+	
+				if(timingLogger != null) {
+					timingLogger.log("Mailing imported.");
+				}
+				
 				if (result.isSuccess()) {
 					return result.getMailingID();
 				} else {
@@ -49,8 +70,16 @@ public class CopyMailingServiceImpl implements CopyMailingService {
 				}
 			}
 		} finally {
+			if(timingLogger != null) {
+				timingLogger.log("Deleting temp file");
+			}
+			
 			if (tempFile != null) {
 				tempFile.delete();
+			}
+
+			if(timingLogger != null) {
+				timingLogger.log("Leaving CopyMailingServiceImpl.copyMailing()");
 			}
 		}
 	}

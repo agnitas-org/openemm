@@ -10,28 +10,34 @@
 
 package org.agnitas.web;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 
-import com.agnitas.beans.ComMailing.MailingContentType;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.upload.FormFile;
+
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingContentType;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 
 public class MailingWizardForm extends StrutsFormBase {
 	
@@ -40,10 +46,10 @@ public class MailingWizardForm extends StrutsFormBase {
     private static final long serialVersionUID = 9104717555855628618L;
     private static final Pattern CONTENT_PARAMETER_PATTERN = Pattern.compile("newContent|content\\[\\d+]\\.dynContent");
 
-    private int altgId;
+    private int newModuleTargetID;
 
 
-	/** Creates a new instance of TemplateForm */
+    /** Creates a new instance of TemplateForm */
     public MailingWizardForm() {
     }
     
@@ -108,8 +114,7 @@ public class MailingWizardForm extends StrutsFormBase {
 
         if (mailing != null && (MailingWizardAction.ACTION_TARGET.equalsIgnoreCase(action) ||
                 MailingWizardAction.ACTION_FINISH.equalsIgnoreCase(action))) {
-    	  if ((mailing.getTargetGroups() == null ||
-                  mailing.getTargetGroups().isEmpty() ) && getTargetID() == 0  && mailing.getMailingType() == MailingTypes.DATE_BASED.getCode()) {
+    	  if (CollectionUtils.isEmpty(mailing.getTargetGroups()) && CollectionUtils.isEmpty(targetGroups) && mailing.getMailingType() == MailingTypes.DATE_BASED.getCode()) {
               errors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
           }
     	}
@@ -167,6 +172,56 @@ public class MailingWizardForm extends StrutsFormBase {
     public void setMailing(Mailing mailing) {
         this.mailing = mailing;
     }
+
+    /**
+     * Holds value of property targetGroups.
+     */
+    protected Collection<Integer> targetGroups;
+
+    // Mailing's target expression won't be overwritten unless this flag is set to true.
+	private boolean assignTargetGroups;
+
+	private int addTargetID;
+
+    public int getAddTargetID() {
+        return addTargetID;
+    }
+
+    public void setAddTargetID(int addTargetID) {
+        this.addTargetID = addTargetID;
+    }
+
+    public Collection<Integer> getTargetGroups() {
+        return targetGroups;
+    }
+
+    public void setTargetGroups(Collection<Integer> targetGroups) {
+        this.targetGroups = targetGroups;
+    }
+
+    public void setTargetGroupIds(Integer[] targetGroupIds) {
+		targetGroups = new ArrayList<>(Arrays.asList(targetGroupIds));
+	}
+
+    public Integer[] getTargetGroupIds() {
+        if (CollectionUtils.isEmpty(targetGroups)) {
+            targetGroups = mailing.getTargetGroups();
+        }
+
+        if (CollectionUtils.isNotEmpty(targetGroups)) {
+			return targetGroups.toArray(new Integer[targetGroups.size()]);
+		} else {
+			return ArrayUtils.EMPTY_INTEGER_OBJECT_ARRAY;
+		}
+	}
+
+    public boolean getAssignTargetGroups() {
+		return assignTargetGroups;
+	}
+
+	public void setAssignTargetGroups(boolean assignTargetGroups) {
+		this.assignTargetGroups = assignTargetGroups;
+	}
 
     /**
      * Holds value of property aktTracklinkID.
@@ -278,28 +333,6 @@ public class MailingWizardForm extends StrutsFormBase {
         }
     }
 
-    /**
-     * Holds value of property targetID.
-     */
-    private int targetID;
-
-    /**
-     * Getter for property targetID.
-     *
-     * @return Value of property targetID.
-     */
-    public int getTargetID() {
-        return this.targetID;
-    }
-
-    /**
-     * Setter for property targetID.
-     *
-     * @param targetID New value of property targetID.
-     */
-    public void setTargetID(int targetID) {
-        this.targetID = targetID;
-    }
 
     /**
      * Holds value of property senderEmail.
@@ -710,11 +743,11 @@ public class MailingWizardForm extends StrutsFormBase {
 		mailingContentType = mailingContentTypeAdvertising ? MailingContentType.advertising : MailingContentType.transaction;
 	}
 
-    public int getAltgId() {
-        return altgId;
+    public int getNewModuleTargetID() {
+        return newModuleTargetID;
     }
 
-    public void setAltgId(int altgId) {
-        this.altgId = altgId;
+    public void setNewModuleTargetID(int newModuleTargetID) {
+        this.newModuleTargetID = newModuleTargetID;
     }
 }

@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.factory.DynamicTagContentFactory;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.emm.core.useractivitylog.UserAction;

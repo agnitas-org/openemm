@@ -36,8 +36,14 @@
       enableFilter: true,
       enableColResize: true,
       pagination: true,
+      filtersDescription: {
+        enabled: false,
+        templateName: '',
+        templateParams: {}
+      },
       paginationPageSize: 100,
       rowSelection: 'multiple',
+      unSortIcon: true,
       onCellClicked: function(cell) {
         switch (cell.colDef.cellAction) {
           case 'select':
@@ -83,10 +89,10 @@
           '  <div ref="eLabel" class="ag-header-cell-label" role="presentation">' +
           '    <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon" ></span>' +
           '    <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" ></span>' +
+          '    <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon" ></span>' +
           '    <span ref="eText" class="ag-header-cell-text" role="columnheader"></span>' +
           '    <span ref="eFilter" class="ag-header-icon ag-filter-icon"></span>' +
           '    <span ref="eSortOrder" class="ag-header-icon ag-sort-order" ></span>' +
-          '    <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon" ></span>' +
           '  </div>' +
           '</div>'
         },
@@ -131,6 +137,13 @@
           cellRenderer: AGN.Opt.TableCellRenderers['DeleteCellRenderer'],
           suppressSizeToFit: true,
           'button-tooltip': t('defaults.delete')
+        },
+        textCaseInsensitiveColumn: {
+          filter: {
+            clearButton: true,
+            caseSensitive: false
+          },
+          comparator: AGN.Lib.TableCaseInsensitiveComparator
         }
       },
       icons: {
@@ -144,7 +157,8 @@
         checkboxIndeterminate: '<i class="icon icon-square-o"/>',
         checkboxCheckedReadOnly: '<i class="icon icon-check-square-o"/>',
         checkboxUncheckedReadOnly: '<i class="icon icon-square-o"/>',
-        checkboxIndeterminateReadOnly: '<i class="icon icon-square-o"/>'
+        checkboxIndeterminateReadOnly: '<i class="icon icon-square-o"/>',
+        sortUnSort: '<i class="icon-fa5 icon-fa5-sort"/>'
       },
       localeText: window.I18n.tables
     }, options || {});
@@ -193,6 +207,12 @@
     };
 
     this.$paginationTop.html(paginationTopTemplate(paginationData));
+
+    var filtersDescription = this.gridOptions.filtersDescription;
+    if (filtersDescription.enabled && filtersDescription.templateName) {
+      this.$paginationTop.find('#filtersDescription').html(AGN.Lib.Template.text(filtersDescription.templateName), filtersDescription.templateParams);
+    }
+
     this.$paginationBottom.html(paginationBottomTemplate(paginationData));
     this.api.redrawRows();
   };

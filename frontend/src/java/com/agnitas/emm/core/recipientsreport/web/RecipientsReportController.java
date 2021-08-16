@@ -139,7 +139,7 @@ public class RecipientsReportController {
         writeDownloadUserActivityLog(admin, fileData.getFilename(), reportId, "Export report");
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + HttpUtils.escapeFileName(fileData.getFilename()) + "\";")
+                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(fileData.getFilename()))
                 .contentType(fileData.getMediaType())
                 .body(new ByteArrayResource(fileData.getContent()));
     }
@@ -158,7 +158,7 @@ public class RecipientsReportController {
         }
         
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + HttpUtils.escapeFileName(fileData.getFilename()) + "\";")
+                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(fileData.getFilename()))
                 .contentType(fileData.getMediaType())
                 .body(new ByteArrayResource(fileData.getContent()));
     }

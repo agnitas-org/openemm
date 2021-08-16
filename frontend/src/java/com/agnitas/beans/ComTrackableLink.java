@@ -71,4 +71,8 @@ public interface ComTrackableLink extends TrackableLink {
 	void setStaticValue(final boolean flag);
 	
 	boolean isStaticValue();
+
+    void setMeasureSeparately(boolean measureSeparately);
+
+    boolean isMeasureSeparately();
 }

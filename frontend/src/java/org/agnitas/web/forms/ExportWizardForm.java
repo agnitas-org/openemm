@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.importvalues.DateFormat;
 import org.agnitas.web.ExportWizardAction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.struts.action.ActionErrors;
@@ -137,20 +138,30 @@ public class ExportWizardForm extends StrutsFormBase {
     private String timestampStart;
     private String timestampEnd;
     private String timestampLastDays;
+	private boolean timestampIncludeCurrentDay;
 
     private String creationDateStart;
     private String creationDateEnd;
     private String creationDateLastDays;
+	private boolean creationDateIncludeCurrentDay;
 
     private String mailinglistBindStart;
     private String mailinglistBindEnd;
     private String mailinglistBindLastDays;
+	private boolean mailinglistBindIncludeCurrentDay;
     
     private Date exportStartDate = null;
 
     private String localeDatePattern;
 
     private int alwaysQuote = 0;
+	
+	private int dateFormat = DateFormat.ddMMyyyy.getIntValue();
+	private int dateTimeFormat = DateFormat.ddMMyyyyHHmmss.getIntValue();
+	private String timezone = "Europe/Berlin";
+	private String decimalSeparator = ",";
+	
+	private boolean timeLimitsLinkedByAnd = false;
 
 	/**
      * Reset all properties to their default values.
@@ -184,13 +195,17 @@ public class ExportWizardForm extends StrutsFormBase {
         timestampStart = "";
         timestampEnd = "";
         timestampLastDays = "";
+        setTimestampIncludeCurrentDay(false);
         creationDateStart = "";
         creationDateEnd = "";
         creationDateLastDays = "";
+        setCreationDateIncludeCurrentDay(false);
         mailinglistBindStart = "";
         mailinglistBindEnd = "";
         mailinglistBindLastDays = "";
+        setMailinglistBindIncludeCurrentDay(false);
         exportStartDate = null;
+        timeLimitsLinkedByAnd = false;
     }
     
 	/**
@@ -793,5 +808,69 @@ public class ExportWizardForm extends StrutsFormBase {
 
 	public void setAlwaysQuote(int alwaysQuote) {
 		this.alwaysQuote = alwaysQuote;
+	}
+
+	public int getDateFormat() {
+		return dateFormat;
+	}
+
+	public void setDateFormat(int dateFormat) {
+		this.dateFormat = dateFormat;
+	}
+
+	public int getDateTimeFormat() {
+		return dateTimeFormat;
+	}
+
+	public void setDateTimeFormat(int dateTimeFormat) {
+		this.dateTimeFormat = dateTimeFormat;
+	}
+
+	public String getTimezone() {
+		return timezone;
+	}
+
+	public void setTimezone(String timezone) {
+		this.timezone = timezone;
+	}
+
+	public String getDecimalSeparator() {
+		return decimalSeparator;
+	}
+
+	public void setDecimalSeparator(String decimalSeparator) {
+		this.decimalSeparator = decimalSeparator;
+	}
+
+	public boolean isTimestampIncludeCurrentDay() {
+		return timestampIncludeCurrentDay;
+	}
+
+	public void setTimestampIncludeCurrentDay(boolean timestampIncludeCurrentDay) {
+		this.timestampIncludeCurrentDay = timestampIncludeCurrentDay;
+	}
+
+	public boolean isCreationDateIncludeCurrentDay() {
+		return creationDateIncludeCurrentDay;
+	}
+
+	public void setCreationDateIncludeCurrentDay(boolean creationDateIncludeCurrentDay) {
+		this.creationDateIncludeCurrentDay = creationDateIncludeCurrentDay;
+	}
+
+	public boolean isMailinglistBindIncludeCurrentDay() {
+		return mailinglistBindIncludeCurrentDay;
+	}
+
+	public void setMailinglistBindIncludeCurrentDay(boolean mailinglistBindIncludeCurrentDay) {
+		this.mailinglistBindIncludeCurrentDay = mailinglistBindIncludeCurrentDay;
+	}
+
+	public boolean isTimeLimitsLinkedByAnd() {
+		return timeLimitsLinkedByAnd;
+	}
+
+	public void setTimeLimitsLinkedByAnd(boolean timeLimitsLinkedByAnd) {
+		this.timeLimitsLinkedByAnd = timeLimitsLinkedByAnd;
 	}
 }

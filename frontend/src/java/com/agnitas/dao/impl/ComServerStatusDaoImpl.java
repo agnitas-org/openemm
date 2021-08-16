@@ -55,9 +55,9 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 	
 	private static final String CHECK_DB_CONNECTION = "SELECT 1 FROM DUAL";
 	private static final String SELECT_DB_VERSION_ORACLE = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE REGEXP_LIKE(" + DB_VERSION_FIELD_VERSION + ", '^0*' || ? || '.0*' || ? || '.0*' || ? || '$')";
-	private static final String SELECT_DB_VERSION_ORACLE_HOTFIX = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE REGEXP_LIKE(" + DB_VERSION_FIELD_VERSION + ", '^0*' || ? || '.0*' || ? || '.0*' || ? || '-hf' || ? || '$')";
+	private static final String SELECT_DB_VERSION_ORACLE_HOTFIX = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE REGEXP_LIKE(" + DB_VERSION_FIELD_VERSION + ", '^0*' || ? || '.0*' || ? || '.0*' || ? || '.0*' || ? || '$')";
 	private static final String SELECT_DB_VERSION_MYSQL = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('^0*', ?, '.0*', ?, '.0*', ?, '$')";
-	private static final String SELECT_DB_VERSION_MYSQL_HOTFIX = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('^0*', ?, '.0*', ?, '.0*', ?, '-hf', ?, '$')";
+	private static final String SELECT_DB_VERSION_MYSQL_HOTFIX = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('^0*', ?, '.0*', ?, '.0*', ?, '.0*', ?, '$')";
 	
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
@@ -103,7 +103,7 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 
 	@Override
 	public String getJobWorkerStatus(String jobWorkerName) {
-		List<Map<String, Object>> result = select(logger, "SELECT * FROM job_queue_tbl WHERE description = ?", jobWorkerName);
+		List<Map<String, Object>> result = select(logger, "SELECT deleted, laststart, lastresult FROM job_queue_tbl WHERE description = ?", jobWorkerName);
 		if (result.size() == 0) {
 			return "Not available";
 		} else if (result.size() > 1) {
@@ -145,7 +145,7 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 		DataSource dataSource = getDataSource();
 		Map<String, String> status = new HashMap<>();
 		if (DbUtilities.checkDbVendorIsOracle(dataSource)) {
-			String version = select(logger, "SELECT * FROM v$version WHERE rownum = 1", String.class);
+			String version = select(logger, "SELECT banner FROM v$version WHERE rownum = 1", String.class);
 			status.put("db.version", "Oracle " + version);
 			return status;
 		} else {

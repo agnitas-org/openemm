@@ -44,16 +44,18 @@ import org.agnitas.backend.dao.ConfigDAO;
 import org.agnitas.backend.dao.RecipientDAO;
 import org.agnitas.backend.dao.TagDAO;
 import org.agnitas.backend.dao.TitleDAO;
+import org.agnitas.dao.FollowUpType;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.preview.Page;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Blacklist;
-import org.agnitas.util.Const;
 import org.agnitas.util.DBConfig;
 import org.agnitas.util.Log;
 import org.agnitas.util.Substitute;
 import org.agnitas.util.Systemconfig;
 import org.agnitas.util.Title;
+import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -314,7 +316,7 @@ public class Data {
 	/**
 	 * the largest mailtype to generate
 	 */
-	public int masterMailtype = Const.Mailtype.HTML_OFFLINE;
+	public int masterMailtype = MailType.HTML_OFFLINE.getIntValue();
 	/**
 	 * default line length in text part
 	 */
@@ -480,6 +482,8 @@ public class Data {
 	 */
 	private long inc = 0;
 
+	private boolean isMobilePreview;
+
 	static {
 		syscfg = new Systemconfig ();
 		dbcfg = new DBConfig ();
@@ -594,7 +598,7 @@ public class Data {
 			if (islog(Log.DEBUG)) {
 				logSettings();
 			}
-			mailing.setWorkStatus(Const.Workstatus.MAILING_STATUS_IN_GENERATION);
+			mailing.setWorkStatus(MailingStatus.IN_GENERATION.getDbKey());
 		}
 	}
 
@@ -761,6 +765,16 @@ public class Data {
 	 */
 	protected void configuration() throws Exception {
 		cfg = new Config("mailout.");
+		for (Map.Entry <String, String> kv : System.getenv ().entrySet ()) {
+			String	name = kv.getKey ();
+			
+			if (name.startsWith ("MAILOUT_")) {
+				String	key = name.substring (8).toLowerCase ();
+				
+				cfg.set (key, kv.getValue ());
+				cfg.lock (key);
+			}
+		}
 		configure();
 	}
 
@@ -1148,8 +1162,8 @@ public class Data {
 					}
 					mailing.subject(findMediadata(tmp, "subject"));
 					masterMailtype = ifindMediadata(tmp, "mailformat", masterMailtype);
-					if (masterMailtype > Const.Mailtype.HTML_OFFLINE) {
-						masterMailtype = Const.Mailtype.HTML_OFFLINE;
+					if (masterMailtype > MailType.HTML_OFFLINE.getIntValue()) {
+						masterMailtype = MailType.HTML_OFFLINE.getIntValue();
 					}
 					mailing.encoding(findMediadata(tmp, "encoding", mailing.defaultEncoding()));
 					mailing.charset(findMediadata(tmp, "charset", mailing.defaultCharset()));
@@ -1334,13 +1348,13 @@ public class Data {
 			int method = METHOD_NON_OPENER;
 
 			if (followupMethod != null) {
-				if (followupMethod.equals(Const.Mailing.TYPE_FOLLOWUP_NON_OPENER)) {
+				if (followupMethod.equals(FollowUpType.TYPE_FOLLOWUP_NON_OPENER.getKey())) {
 					method = METHOD_NON_OPENER;
-				} else if (followupMethod.equals(Const.Mailing.TYPE_FOLLOWUP_OPENER)) {
+				} else if (followupMethod.equals(FollowUpType.TYPE_FOLLOWUP_OPENER.getKey())) {
 					method = METHOD_OPENER;
-				} else if (followupMethod.equals(Const.Mailing.TYPE_FOLLOWUP_NON_CLICKER)) {
+				} else if (followupMethod.equals(FollowUpType.TYPE_FOLLOWUP_NON_CLICKER.getKey())) {
 					method = METHOD_NON_CLICKER;
-				} else if (followupMethod.equals(Const.Mailing.TYPE_FOLLOWUP_CLICKER)) {
+				} else if (followupMethod.equals(FollowUpType.TYPE_FOLLOWUP_CLICKER.getKey())) {
 					method = METHOD_CLICKER;
 				}
 			}
@@ -1694,7 +1708,20 @@ public class Data {
 	}
 
 	protected void setupSubstitution() {
-		substitute = new Substitute("status-id", maildropStatus.id(), "licence-id", licenceID, "company-id", company.id(), "base-company-id", company.baseID(), "mailinglist-id", mailinglist.id(), "mailtemplate-id", mailing.mailtemplateID(), "mailing-id", mailing.id(), "status-field", maildropStatus.statusField(), "mailing-name", mailing.name(), "company-name", company.name(), "rdir-domain", rdirDomain, "mailloop-domain", mailloopDomain, "total-subscribers", totalSubscribers, "total-receivers", totalReceivers);
+		substitute = new Substitute("status-id", maildropStatus.id(),
+					    "licence-id", licenceID,
+					    "company-id", company.id(),
+					    "base-company-id", company.baseID(),
+					    "mailinglist-id", mailinglist.id(),
+					    "mailtemplate-id", mailing.mailtemplateID(),
+					    "mailing-id", mailing.id(),
+					    "status-field", maildropStatus.statusField(),
+					    "mailing-name", mailing.name(),
+					    "company-name", company.name(),
+					    "rdir-domain", rdirDomain,
+					    "mailloop-domain", mailloopDomain,
+					    "total-subscribers", totalSubscribers,
+					    "total-receivers", totalReceivers);
 		if (mailingInfo != null) {
 			for (Map.Entry<String, String> kv : mailingInfo.entrySet()) {
 				substitute.put("mailing." + kv.getKey(), kv.getValue());
@@ -2219,12 +2246,15 @@ public class Data {
 				}
 			}
 		}
-		if ((mailingType == MailingType.INTERVAL.getCode()) && (!maildropStatus.isAdminMailing()) && (!maildropStatus.isTestMailing())) {
+		if ((mailingType == MailingType.INTERVAL.getCode()) && (maildropStatus.isWorldMailing() || maildropStatus.isOnDemandMailing())) {
 			String intervalTrackTable = "interval_track_" + company.id() + "_tbl";
 			String query = bigClause.intervalStatement(intervalTrackTable);
 
 			try {
-				dbase.update(query, "mailingID", mailing.id(), "sendDate", (maildropStatus.sendDate() == null ? new Date() : maildropStatus.sendDate()));
+				Date	sendDate = maildropStatus.sendDate ();
+				Date	now = new Date ();
+				
+				dbase.update(query, "mailingID", mailing.id(), "sendDate", (sendDate  == null) || sendDate.before (now) ? now : sendDate);
 			} catch (Exception e) {
 				logging(Log.ERROR, "mailtrack", "Failed to save interval mailing information: " + e.toString(), e);
 			}
@@ -2360,6 +2390,11 @@ public class Data {
 		if (opts == null) {
 			return;
 		}
+		logging (Log.DEBUG, "options" + state, "-- OPTION DUMP START --");
+		for (Map.Entry <String, Object> option : opts.entrySet ()) {
+			logging (Log.DEBUG, "options" + state, "--> " + option.getKey () + " = " + option.getValue ());
+		}
+		logging (Log.DEBUG, "options" + state, "--  OPTION DUMP END  --");
 		if (state == 1) {
 			if ((previewInput = (String) opts.get("preview-input")) != null) {
 				logging(Log.DEBUG, "options1", "--> preview-input = " + previewInput);
@@ -2371,6 +2406,10 @@ public class Data {
 			if ((tmp = opts.get("preview-cache-images")) != null) {
 				previewCacheImages = obj2bool(tmp, "preview-cache-images");
 				logging(Log.DEBUG, "options1", "--> preview-cache-images = " + previewCacheImages);
+			}
+			if ((tmp = opts.get("preview-for-mobile")) != null) {
+				isMobilePreview = obj2bool(tmp, "preview-for-mobile");
+				logging(Log.DEBUG, "options1", "--> preview-for-mobile = " + isMobilePreview);
 			}
 		} else if (state == 2) {
 			if ((tmp = opts.get("customer-id")) != null) {
@@ -2652,6 +2691,10 @@ public class Data {
 	 */
 	public String defaultImageLink(String name, String source, boolean use) {
 		boolean nocache = maildropStatus.isPreviewMailing() && (!previewCacheImages);
+		return defaultImageLink(name, source, use, nocache);
+	}
+
+	protected String defaultImageLink(String name, String source, boolean use, boolean nocache) {
 		Image image = null;
 		String template = null;
 
@@ -2675,12 +2718,12 @@ public class Data {
 				break;
 			case Imagepool.MAILING:
 				template = nocache ? imageTemplateNoCache : imageTemplate;
-				image = new Image(0, name, name, null);
+				image = imagepool.findImage(name, isMobilePreview);
 				break;
 			case Imagepool.MEDIAPOOL:
 			case Imagepool.MEDIAPOOL_BACKGROUND:
 				template = nocache ? mediapoolTemplateNoCache : mediapoolTemplate;
-				image = imagepool.findMediapoolImage(name);
+				image = imagepool.findMediapoolImage(name, isMobilePreview);
 				break;
 		}
 		if ((image != null) && (template != null)) {
@@ -2926,7 +2969,7 @@ public class Data {
 	 * @return true, if it is a dryrun
 	 */
 	public boolean isDryRun() {
-		return maildropStatus.isTestMailing() && (workStatus != null) && workStatus.equals(Const.Workstatus.MAILING_STATUS_TEST) && isWorkflowMailing;
+		return maildropStatus.isTestMailing() && (workStatus != null) && workStatus.equals(MailingStatus.TEST.getDbKey()) && isWorkflowMailing;
 	}
 
 	public String getDefaultMediaType() {
@@ -3476,33 +3519,35 @@ public class Data {
 							query = "SELECT rdir_url_tbl_seq.nextval FROM dual";
 							urlID = dbase.queryLong(jdbc, query);
 							if (urlID > 0) {
-								query = "INSERT INTO rdir_url_tbl (url_id, full_url, mailing_id, company_id, " + dbase.measureType + ", action_id, shortname, deep_tracking, alt_text, extend_url, admin_link) " + "VALUES (:urlID, :fullURL, :mailingID, :companyID, :measure, :actionID, :shortname, :deepTracking, :altText, :extendURL, :adminLink)";
+								query = "INSERT INTO rdir_url_tbl (url_id, full_url, mailing_id, company_id, " + dbase.measureType + ", action_id, shortname, deep_tracking, alt_text, extend_url, admin_link, from_mailing) " + "VALUES (:urlID, :fullURL, :mailingID, :companyID, :measure, :actionID, :shortname, :deepTracking, :altText, :extendURL, :adminLink, :fromMailing)";
 								dbase.update(jdbc, query,
-								 "urlID", urlID, "fullURL", rqurl,
-								 "mailingID", mailing.id(),
-								 "companyID", company.id(),
-								 "measure", 3, "actionID", 0,
-								 "shortname", (name == null ? "auto generated" : name),
-								 "deepTracking", 0,
-								 "altText", null,
-								 "extendURL", 0,
-								 "adminLink", (isAdminLink ? 1 : 0));
+									     "urlID", urlID, "fullURL", rqurl,
+									     "mailingID", mailing.id(),
+									     "companyID", company.id(),
+									     "measure", 3, "actionID", 0,
+									     "shortname", (name == null ? "auto generated" : name),
+									     "deepTracking", 0,
+									     "altText", null,
+									     "extendURL", 0,
+									     "adminLink", (isAdminLink ? 1 : 0),
+									     "fromMailing", 1);
 							}
 						} else {
 							query = "INSERT INTO rdir_url_tbl (full_url, mailing_id, company_id, " + dbase.measureType +
-							", action_id, shortname, deep_tracking, alt_text, extend_url, admin_link) " +
-							"VALUES (:fullURL, :mailingID, :companyID, :measure, :actionID, :shortname, :deepTracking, :altText, :extendURL, :adminLink)";
+							", action_id, shortname, deep_tracking, alt_text, extend_url, admin_link, from_mailing) " +
+							"VALUES (:fullURL, :mailingID, :companyID, :measure, :actionID, :shortname, :deepTracking, :altText, :extendURL, :adminLink, :fromMailing)";
 							dbase.update(jdbc, query,
-							"urlID", urlID,
-							"fullURL", rqurl,
-							"mailingID", mailing.id(),
-							"companyID", company.id(),
-							"measure", 3, "actionID", 0,
-							"shortname", (name == null ? "auto generated" : name),
-							"deepTracking", 0,
-							"altText", null,
-							"extendURL", 0,
-							"adminLink", (isAdminLink ? 1 : 0));
+								     "urlID", urlID,
+								     "fullURL", rqurl,
+								     "mailingID", mailing.id(),
+								     "companyID", company.id(),
+								     "measure", 3, "actionID", 0,
+								     "shortname", (name == null ? "auto generated" : name),
+								     "deepTracking", 0,
+								     "altText", null,
+								     "extendURL", 0,
+								     "adminLink", (isAdminLink ? 1 : 0),
+								     "fromMailing", 1);
 							query = "SELECT last_insert_id()";
 							urlID = dbase.queryLong(jdbc, query);
 						}

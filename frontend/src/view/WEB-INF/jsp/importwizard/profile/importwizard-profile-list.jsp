@@ -76,12 +76,12 @@
 
                         <c:choose>
                             <c:when test="${importProfileForm.defaultProfileId == profile.id}">
-                                <button type="button" class="btn btn-regular btn-success" disabled>
+                                <button type="button" class="btn btn-regular profile_checkbox_btn--checked" disabled="disabled">
                                     <i class="icon icon-check-square-o"></i>
                                 </button>
                             </c:when>
                             <c:otherwise>
-                                <button type="button" class="btn btn-regular btn-primary" data-form-set="setDefault: 'setDefault', defaultProfileId: '${profile.id}'" data-form-submit>
+                                <button type="button" class="btn btn-regular profile_checkbox_btn" data-form-set="setDefault: 'setDefault', defaultProfileId: '${profile.id}'" data-form-submit>
                                     <i class="icon icon-square-o"></i>
                                 </button>
                             </c:otherwise>

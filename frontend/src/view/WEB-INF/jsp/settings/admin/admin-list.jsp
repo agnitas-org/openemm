@@ -234,7 +234,7 @@
 
                     <display:column class="table-actions">
                         <a href="${adminViewUrl}" class="js-row-show hidden" title="<mvc:message code='settings.admin.edit'/> "></a>
-                        <emm:ShowByPermission token="temp.beta">
+                        <emm:ShowByPermission token="admin.sendWelcome">
 	                       	<mvc:message var="passwordSendMessage" code="password.send" />
     	                    <a href="${adminSendUrl}" class="btn btn-regular btn-alert js-row-delete" data-tooltip="${passwordSendMessage}">
         	                    <i class="icon icon-envelope-o"></i>

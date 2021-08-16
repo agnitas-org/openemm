@@ -1,3 +1,14 @@
+#campaignEditorBody {
+    width: 100%;
+}
+
+#campaignEditorBody .editor-content-body-bottom {
+    width: 100%;
+    display: table;
+    position: relative;
+    table-layout: fixed;
+}
+
 #viewPort {
     position: relative;
     /*display: table-cell;*/
@@ -7,7 +18,29 @@
     height: 510px;
     background-color:#ffffff;
     z-index: 10; /* be careful modifying this, synchronize with JS: Z_INDEX_VIEW_PORT */
-    overflow: scroll;
+    overflow: hidden;
+}
+
+#viewPort.js-panning {
+    cursor: move;
+}
+
+#canvas, #selection-backdrop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#selection-backdrop {
+    display: none;
+    z-index: 10000;
+}
+
+.ui-selectable-helper {
+    border: 1px dotted blue !important;
+    background-color: rgba(0, 0, 255, 0.05) !important;
 }
 
 body.dark-theme #viewPort {
@@ -20,6 +53,26 @@ body.dark-theme #viewPort {
     overflow: hidden;
 }
 
+.draggableIconNode {
+    background-color: transparent;
+    cursor: grabbing;
+    width: 64px;
+    height: 64px;
+}
+
+.draggableIconNode.js-collision-detected {
+    opacity: 0.4;
+    cursor: no-drop !important;
+}
+
+.iconNode.js-collision-detected {
+    opacity: 0.2;
+}
+
+.iconNode.js-no-drop {
+    cursor: no-drop !important;
+}
+
 .iconNode {
     position: absolute;
     background-color: transparent;
@@ -30,6 +83,12 @@ body.dark-theme #viewPort {
     text-align:center;
     width: 64px;
     height: 64px;
+    border-radius: 4px;
+}
+
+.iconNode.jtk-dragged {
+    cursor: grabbing;
+    z-index: 11; /* be careful modifying this, synchronize with JS: Z_INDEX_DRAGGED_ICON_NODE */
 }
 
 .iconNode .node-image, .campaign-collapse-button img, .campaign-thumbnail img {
@@ -39,10 +98,31 @@ body.dark-theme #viewPort {
     height: 100%;
 }
 
-.iconNode.hover {
-    background-color: rgba(255, 180, 0, 0.5) !important;
+.iconNode:hover {
+    background-color: rgba(226, 226, 226, 0.3);
+}
+
+.selected {
+    background-color: rgba(60, 185, 255, 0.3);
     border-radius: 4px;
+    filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr='#4c3CB9FF', endColorstr='#4c3CB9FF'); /* IE */
+}
+
+.iconNode.hover, .iconNode.jtk-drag-hover, .iconNode.jtk-drag-selected.jtk-drag-active {
+    background-color: rgba(255, 180, 0, 0.5) !important;
     filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr='#80FFB400', endColorstr='#80FFB400') !important; /* IE */
+}
+
+.iconNode.jtk-source-hover, .iconNode.jtk-target-hover {
+    background-color: rgba(226, 226, 226, 0.3);
+}
+
+.iconNode:hover:not(.jtk-drag-hover):not(.jtk-dragged) > .iconNodeConnectButton, .iconNode.jtk-drag-selected.jtk-drag-active > .iconNodeConnectButton {
+    visibility: visible;
+}
+
+.iconNode.active .inactive-node-image, .iconNode:not(.active) .active-node-image {
+    display: none;
 }
 
 .iconNode.icon-commented::before{
@@ -111,12 +191,6 @@ footer#footnotes-container {
     border: 2px dotted #cccccc
 }
 
-.selected {
-    background-color: rgba(60, 185, 255, 0.3);
-    border-radius: 4px;
-    filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr='#4c3CB9FF', endColorstr='#4c3CB9FF'); /* IE */
-}
-
 .ui-state-disabled {
     opacity: 1;
     cursor: pointer !important;
@@ -124,7 +198,7 @@ footer#footnotes-container {
 }
 
 
-#connectRapidButton {
+#connectRapidButton, .iconNodeConnectButton {
     position: absolute;
     z-index: 20; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECT_RAPID_BUTTON */
     visibility: hidden;
@@ -134,11 +208,16 @@ footer#footnotes-container {
     border-radius: 3px;
 }
 
-#connectRapidButton:hover {
+.iconNodeConnectButton {
+    top: 0;
+    right: 0;
+}
+
+#connectRapidButton:hover, .iconNodeConnectButton:hover {
     background-color: #cccccc;
 }
 
-#connectRapidButton img {
+#connectRapidButton img, .iconNodeConnectButton img {
     display: block;
     position: absolute;
     width: 100%;
@@ -149,7 +228,7 @@ footer#footnotes-container {
 /*Toolbar and layout styles*/
 
 #toolbarTop {
-    width: 100%;
+    width: auto;
     height: 87px;
     border-bottom: 1px solid #d1d1d1;
     background-color: #f6f6f6;
@@ -170,7 +249,7 @@ footer#footnotes-container {
 }
 
 #toolbarCross {
-    width: 87px;
+    width: 88px;
     height: 87px;
     float: left;
     border-right: 1px solid #d1d1d1;
@@ -198,27 +277,32 @@ footer#footnotes-container {
     float: left;
     border-right: 1px solid #d1d1d1;
     height: 87px;
-    padding-right: 10px;
-    padding-left: 8px;
+    padding: 0 10px 0 10px;
 }
+
+.iconPanelRow {
+    line-height: 0;
+}
+
+.iconPanelRow .toolbarButton:not(:last-child) {
+    margin-right: 5px;
+}
+
 .noBorder {
     border: 0;
 }
 
 .actionPanel {
     float: right;
-    border-left: 1px solid #d1d1d1;
     height: 87px;
+    border-left: 1px solid #d1d1d1;
 }
 
-.actionPanelOpenButton {
+.actionPanel.actionPanel-sm {
     display: none;
-    float: right;
-    height: 87px;
-    border-left: 1px solid #d1d1d1;
 }
 
-#actionPanelOpenButton {
+.actionPanel.actionPanel-sm .actionPanelButton {
     height: 77px;
     line-height: 77px;
     font-size: 18px;
@@ -230,6 +314,7 @@ footer#footnotes-container {
     float: left;
     margin-right: 20px;
     margin-left: 6px;
+    text-align: center;
 }
 
 .actionMiddlePanel {
@@ -238,7 +323,15 @@ footer#footnotes-container {
     margin-top: 10px;
 }
 
+.iconPanelTitle {
+    margin-top: 4px;
+}
+
 .actionPanelTitle {
+    margin-top: 4px;
+}
+
+.toolbarLeftTitle {
     margin-top: 4px;
     margin-left: 5px;
     margin-right: 2px;
@@ -250,8 +343,9 @@ footer#footnotes-container {
 }
 
 .leftMenuLabel {
+    width: 100%;
+    text-align: center;
     margin-bottom: 6px;
-    margin-left: 10px;
     color: #3B3B3B;
 }
 
@@ -266,40 +360,29 @@ footer#footnotes-container {
 }
 
 .toolbarButton {
+    display: inline-block;
     width: 32px;
     height: 32px;
+}
+
+.toolbarButton:not(.disabled) {
     cursor: pointer;
-    float: left;
-    margin-left: 5px;
-}
-
-#undoButtonWrapper,
-.toolbarButtonWithoutHover {
-    width: 37px;
-    height: 32px;
-    float: left;
-    position: absolute;
-}
-
-#undoButtonFake {
-    width: 32px;
-    margin-left: 5px;
-    background-image: url("../../images/campaignManager/undo_disabled_s.png");
-}
-
-.backgroundImageNone {
-    background-image: none !important;
 }
 
 .toolbarButtonLeft {
-    width: 64px !important;
-    height: 64px !important;
-    float: none !important;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto;
+    cursor: pointer;
 }
 
-.toolbarButton:hover {
+.toolbarButton:hover:not(.disabled), .toolbarButtonLeft:hover {
     background-color: #dadada !important;
     border-radius: 4px;
+}
+
+.toolbarButton:active:not(.disabled), .toolbarButtonLeft:active {
+    background-color: #c7c6c6 !important;
 }
 
 .button-selected, button-selected:hover {
@@ -321,29 +404,32 @@ footer#footnotes-container {
 #zoomMin {
     width: 30%;
     height: 15px;
+    line-height: 15px;
     cursor: pointer;
     text-align: center;
     float: left;
-    margin-left: 0px;
+    margin-left: 0;
 }
 
 #zoomMiddle {
     width: 40%;
     height: 15px;
+    line-height: 15px;
     cursor: pointer;
     float: left;
     text-align: center;
-    margin-left: 0px;
+    margin-left: 0;
     margin-bottom: 2px;
 }
 
 #zoomMax {
     width: 30%;
     height: 15px;
+    line-height: 15px;
     cursor: pointer;
     text-align: center;
     float: right;
-    margin-left: 0px;
+    margin-left: 0;
 }
 
 #zoomToolContent {
@@ -356,6 +442,11 @@ footer#footnotes-container {
 
 #deleteButton {
     background-image: url(../../images/campaignManager/delete_s.png);
+    background-size: 32px 32px;
+}
+
+#deleteButton.disabled {
+    background-image: url(../../images/campaignManager/delete_g.png);
 }
 
 #autoLayout {
@@ -366,95 +457,79 @@ footer#footnotes-container {
     background-image: url(../../images/campaignManager/undo_s.png);
 }
 
+#undoButton.disabled {
+    background-image: url(../../images/campaignManager/undo_disabled_s.png);
+}
+
 /* Dragable toolbar buttons */
 
-#startButton {
+.toolbarButton[data-type="start"] {
     background-image: url(../../images/campaignManager/icon_start_s.png);
 }
 
-#decisionButton {
+.toolbarButton[data-type="decision"] {
     background-image: url(../../images/campaignManager/icon_decision_s.png);
 }
 
-#parameterButton {
+.toolbarButton[data-type="parameter"] {
     background-image: url(../../images/campaignManager/icon_parameter_s.png);
 }
 
-#deadlineButton {
+.toolbarButton[data-type="deadline"] {
     background-image: url(../../images/campaignManager/icon_deadline_s.png);
 }
 
-#reportButton {
+.toolbarButton[data-type="report"] {
     background-image: url(../../images/campaignManager/icon_report_s.png);
 }
 
-#recipientButton {
+.toolbarButton[data-type="recipient"] {
     background-image: url(../../images/campaignManager/icon_recipient_s.png);
 }
 
-#mailingButton {
+.toolbarButton[data-type="mailing"] {
     background-image: url(../../images/campaignManager/icon_mailing_s.png);
 }
 
-#actionbasedMailingButton {
+.toolbarButton[data-type="actionbased_mailing"] {
     background-image: url(../../images/campaignManager/icon_actionbased_mailing_s.png);
 }
 
-#archiveButton {
+.toolbarButton[data-type="archive"] {
     background-image: url(../../images/campaignManager/icon_archive_s.png);
 }
 
-#datebasedMailingButton {
+.toolbarButton[data-type="datebased_mailing"] {
     background-image: url(../../images/campaignManager/icon_datebased_mailing_s.png);
 }
 
-#followupMailingButton {
+.toolbarButton[data-type="followup_mailing"] {
     background-image: url(../../images/campaignManager/icon_followup_mailing_s.png);
 }
 
-#formsButton {
-    background-image: url(../../images/campaignManager/icon_form_s.png);
-}
-
-#optinFormButton {
-    background-image: url(../../images/campaignManager/icon_optin_form_s.png);
-}
-
-#fullviewButton {
-    background-image: url(../../images/campaignManager/icon_fullview_s.png);
-}
-
-#optoutFormButton {
-    background-image: url(../../images/campaignManager/icon_optout_form_s.png);
-}
-
-#importButton {
+.toolbarButton[data-type="import"] {
     background-image: url(../../images/campaignManager/icon_import_s.png);
 }
 
-#exportButton {
+.toolbarButton[data-type="export"] {
     background-image: url(../../images/campaignManager/icon_export_s.png);
 }
 
-#ownWorkflowButton {
+.toolbarButtonLeft[data-type="ownWorkflow"] {
     background-image: url(../../images/campaignManager/icon_ownWorkflow_l.png);
 }
 
-#scABTestButton {
+.toolbarButtonLeft[data-type="scABTest"] {
     background-image: url(../../images/campaignManager/icon_scABTest_l.png);
 }
 
-#scBirthdayButton {
+.toolbarButtonLeft[data-type="scBirthday"] {
     background-image: url(../../images/campaignManager/icon_scBirthday_l.png);
 }
 
-#scDOIButton {
+.toolbarButtonLeft[data-type="scDOI"] {
     background-image: url(../../images/campaignManager/icon_scDOI_l.png);
     margin-bottom: 5px;
-}
-
-#legendButton {
-    background: url(../../images/campaignManager/icon_legend_s.png);
 }
 
 #scDOIButtonLabel {
@@ -512,42 +587,45 @@ footer#footnotes-container {
     color: #ffffff;
 }
 
-#navigatorBody {
+.js-navigation {
     background: url(../../images/campaignManager/navigator_body.png);
     position: absolute;
     z-index: 30; /* be careful modifying this, synchronize with JS: Z_INDEX_NAVIGATOR_GLOBE */
     width: 41px;
     height: 41px;
+    right: 20px;
+    bottom: 20px;
 }
 
-#navigatorArrowTop {
+.js-navigation .js-navigation-top {
     background-image: url(../../images/campaignManager/navigator_arrow_top.png);
     top: 0;
     left: 14px;
 }
-#navigatorArrowRight {
+
+.js-navigation .js-navigation-right {
     background-image: url(../../images/campaignManager/navigator_arrow_right.png);
     top: 14px;
     left: 28px;
 }
-#navigatorArrowBottom {
+.js-navigation .js-navigation-bottom {
     background-image: url(../../images/campaignManager/navigator_arrow_bottom.png);
     top: 28px;
     left: 14px;
 }
-#navigatorArrowLeft {
+.js-navigation .js-navigation-left {
     background-image: url(../../images/campaignManager/navigator_arrow_left.png);
     top: 14px;
     left: 0;
 }
-#navigatorArrowTop, #navigatorArrowRight, #navigatorArrowBottom, #navigatorArrowLeft {
+.js-navigation-top, .js-navigation-right, .js-navigation-bottom, .js-navigation-left {
     position: absolute;
     background-position: 0 0;
     z-index: 31; /* be careful modifying this, synchronize with JS: Z_INDEX_NAVIGATOR_ARROWS */
     width: 13px;
     height: 13px;
 }
-#navigatorArrowTop:hover, #navigatorArrowRight:hover, #navigatorArrowBottom:hover, #navigatorArrowLeft:hover {
+.js-navigation-top:hover, .js-navigation-right:hover, .js-navigation-bottom:hover, .js-navigation-left:hover {
     background-position: 0 13px;
     cursor: pointer;
 }
@@ -790,8 +868,12 @@ body .ui-dialog .dialog-title-image {
 }
 
 @media all and (max-width: 900px) {
-    .iconPanel .toolbarButton {
-        margin-left: 0;
+    .iconPanel {
+        padding: 0 5px 0 5px;
+    }
+
+    .iconPanelRow .toolbarButton {
+        margin-right: 0 !important;
     }
 
     .actionPanelTool {
@@ -800,11 +882,11 @@ body .ui-dialog .dialog-title-image {
 }
 
 @media all and (max-width: 768px) {
-    .actionPanel {
+    .actionPanel.actionPanel-md {
         display: none;
     }
 
-    .actionPanelOpenButton {
+    .actionPanel.actionPanel-sm {
         display: block;
     }
 }

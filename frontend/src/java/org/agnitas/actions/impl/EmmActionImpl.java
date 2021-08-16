@@ -19,7 +19,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationParameters;
 
 /** Main Container for Actions. Allows managing and executing Actions with an easy interface
  */
@@ -43,10 +42,7 @@ public class EmmActionImpl implements EmmAction {
     
     /** Holds value of property description. */
     protected String description = "";
-    
-    /** Holds value of property actions. */
-    protected List<ActionOperationParameters> actions;
-    
+
     private List<AbstractActionOperationParameters> actionOperations = new ArrayList<>();
     
     /**

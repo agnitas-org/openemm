@@ -10,8 +10,6 @@
 
 package com.agnitas.emm.core.action.operations;
 
-import org.apache.commons.lang3.StringUtils;
-
 public class ActionOperationSendMailingParameters extends AbstractActionOperationParameters {
 	private int mailingID;
 	private int delayMinutes;
@@ -43,20 +41,5 @@ public class ActionOperationSendMailingParameters extends AbstractActionOperatio
 
 	public void setBcc(String bcc) {
 		this.bcc = bcc;
-	}
-
-	@Override
-	@Deprecated
-	public String getUalDescription(AbstractActionOperationParameters oldOperation) {
-		if (oldOperation instanceof ActionOperationSendMailingParameters) {
-			ActionOperationSendMailingParameters operation = (ActionOperationSendMailingParameters) oldOperation;
-			if (StringUtils.equals(operation.getBcc(), bcc)) {
-				return "";
-			} else {
-				return "Changed bcc emails to: " + bcc;
-			}
-		}
-
-		return "Set bcc emails to: " + bcc;
 	}
 }

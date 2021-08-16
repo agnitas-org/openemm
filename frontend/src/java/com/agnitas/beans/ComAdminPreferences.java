@@ -17,18 +17,12 @@ public interface ComAdminPreferences extends AdminPreferences {
     int DASHBOARD_MAILINGS_LIST = 0;
     int DASHBOARD_MAILINGS_PREVIEW = 1;
 
-    int NAVIGATION_LEFT = 0;
-    int NAVIGATION_TOP = 1;
-
     int MAILING_SETTINGS_EXPANDED = 0;
     int MAILING_SETTINGS_COLLAPSED = 1;
 
     int LIVE_PREVIEW_RIGHT = 0;
     int LIVE_PREVIEW_BOTTOM = 1;
     int LIVE_PREVIEW_DEACTIVATE = 2;
-
-    int START_PAGE_DASHBOARD = 0;
-    int START_PAGE_CALENDAR = 1;
 
     int STATISTIC_LOADTYPE_ON_CLICK = 0;
     int STATISTIC_LOADTYPE_IMMEDIATELY = 1;
@@ -42,16 +36,6 @@ public interface ComAdminPreferences extends AdminPreferences {
      * Setter for the preferred dashboard mailing view type
      */
     void setDashboardMailingsView(int dashboardMailingsView);
-
-    /**
-     * Getter for the preferred navigation location (left(0) or top(1))
-     */
-    int getNavigationLocation();
-
-    /**
-     * Setter for the preferred navigation location (left(0) or top(1))
-     */
-    void setNavigationLocation(int navigationLocation);
 
     /**
      * Getter for the preferred mailing settings view type (expanded(0) or collapsed(1))
@@ -72,16 +56,6 @@ public interface ComAdminPreferences extends AdminPreferences {
      * Setter for the preferred position of the mailing content live preview (right(0)/bottom(1)/deactivated(2))
      */
     void setLivePreviewPosition(int livePreviewPosition);
-
-    /**
-     * Getter for the preferred start page (dashboard(0)/calender(1))
-     */
-    int getStartPage();
-
-    /**
-     * Setter for the preferred start page (dashboard(0)/calender(1))
-     */
-    void setStartPage(int startPage);
 
     /**
      * Getter for the preferred Statistic-Summary load type (immediately(0)/on click(1))

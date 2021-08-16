@@ -54,6 +54,7 @@
         <c:set target="${element0}" property="url">
             <html:rewrite page="/recipient.do">
                 <html:param name="action" value="${ACTION_LIST}"/>
+                <html:param name="latestDataSourceId" value="${newImportWizardForm.datasourceId}"/>
             </html:rewrite>
         </c:set>
         <c:set target="${element0}" property="name">

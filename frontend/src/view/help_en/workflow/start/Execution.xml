@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Execution]]></title>
+	<content><![CDATA[With this setting you define how often a recipient can run a campaign. If the recipient is to receive a date-controlled campaign, such as a birthday campaign, every year, then you need the setting <b>permanent</b>. If a recipient is to receive a campaign only once, even if he meets the criteria several times, e.g. reaction-controlled when opening a certain mailing, then set this setting <b>once</b> - otherwise the campaign would be triggered anew for this recipient every time he opens it.]]></content>
+</HelpBalloon>

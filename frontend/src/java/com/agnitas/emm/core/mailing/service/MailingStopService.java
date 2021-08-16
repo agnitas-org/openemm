@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.mailing.service;
 
+import java.util.Date;
+
 /**
  * Service to stop delivery / generation of mailings. 
  */
@@ -61,5 +63,7 @@ public interface MailingStopService {
 	 * 
 	 * @return <code>true</code> if mailing can be resumed
 	 */
-	public boolean canResumeMailing(final int companyID, final int mailingID);
+	boolean isStopped(final int companyID, final int mailingID);
+
+	Date getDeliveryPauseDate(final int companyId, final int mailingId);
 }

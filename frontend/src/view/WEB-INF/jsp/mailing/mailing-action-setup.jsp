@@ -1,5 +1,4 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" import="org.agnitas.web.forms.MailingBaseForm"  errorPage="/error.do" %>
-<%@ page import="org.agnitas.web.EmmActionAction" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -11,8 +10,6 @@
 <emm:CheckLogon/>
 
 <emm:Permission token="mailing.show"/>
-
-<c:set var="ACTION_LIST" value="<%= EmmActionAction.ACTION_LIST %>" scope="page" />
 
 <c:choose>
     <c:when test="${limitedRecipientOverview}">

@@ -10,6 +10,7 @@
 
 package org.agnitas.emm.core.recipient.service.impl;
 
+import static com.agnitas.emm.core.Permission.RECIPIENT_ADVANCED_SEARCH_MIGRATION;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_CUSTOMER_ID;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_EMAIL;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
@@ -63,6 +64,7 @@ import org.agnitas.service.RecipientBeanQueryWorker;
 import org.agnitas.service.RecipientDuplicateSqlOptions;
 import org.agnitas.service.RecipientQueryBuilder;
 import org.agnitas.service.RecipientSqlOptions;
+import org.agnitas.service.TargetEqlQueryBuilder;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CaseInsensitiveSet;
 import org.agnitas.util.DateUtilities;
@@ -94,7 +96,6 @@ import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
-import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.profilefields.ProfileFieldBulkUpdateException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
@@ -102,6 +103,8 @@ import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
 import com.agnitas.emm.core.recipient.service.DuplicatedRecipientsExportWorker;
 import com.agnitas.emm.core.recipient.service.FieldsSaveResults;
 import com.agnitas.emm.core.recipient.service.RecipientWorkerFactory;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConverter;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
@@ -132,15 +135,22 @@ public class RecipientServiceImpl implements RecipientService {
 	private ComProfileFieldDao profileFieldDao;
 	private ProfileFieldValidationService profileFieldValidationService;
 	protected ColumnInfoService columnInfoService;
+	protected TargetEqlQueryBuilder targetEqlQueryBuilder;
 	protected RecipientQueryBuilder recipientQueryBuilder;
 	private RecipientWorkerFactory recipientWorkerFactory;
 	private AdminService adminService;
+	private QueryBuilderToEqlConverter queryBuilderToEqlConverter;
 
 	@Required
 	public void setColumnInfoService(ColumnInfoService columnInfoService) {
 		this.columnInfoService = columnInfoService;
 	}
 	
+	@Required
+	public void setTargetEqlQueryBuilder(TargetEqlQueryBuilder targetEqlQueryBuilder) {
+		this.targetEqlQueryBuilder = targetEqlQueryBuilder;
+	}
+
 	@Required
 	public void setRecipientQueryBuilder(RecipientQueryBuilder recipientQueryBuilder) {
 		this.recipientQueryBuilder = recipientQueryBuilder;
@@ -283,7 +293,8 @@ public class RecipientServiceImpl implements RecipientService {
 			if (!redirectUrl.endsWith("/")) {
 				redirectUrl += "/";
 			}
-			return redirectUrl + "form.do?agnCI=" + companyId + "&agnFN=fullview";
+			
+			return redirectUrl + "form.action?agnCI=" + companyId + "&agnFN=fullview";
 		}
 		return null;
 	}
@@ -303,8 +314,8 @@ public class RecipientServiceImpl implements RecipientService {
 	public int addSubscriber(RecipientModel model, final String username, final int companyId, List<UserAction> userActions) throws Exception {
 		recipientDao.checkParameters(model.getParameters(), model.getCompanyId());
 
-		int returnValue = 0;
-		int tmpCustID = 0;
+		int returnValue;
+		int tmpCustID;
 
 		model.setEmail(model.getEmail().toLowerCase());
 
@@ -551,7 +562,7 @@ public class RecipientServiceImpl implements RecipientService {
 			}
 			
 			// (4) ... store new address to pending table ...
-			final String confirmationCode = recordEmailAddressChangeRequest(recipient.getCompanyID(), recipient.getCustomerID(), newEmailAddress, mailingID);
+			final String confirmationCode = recordEmailAddressChangeRequest(recipient.getCompanyID(), recipient.getCustomerID(), newEmailAddress);
 			
 			// (5) ... and send confirmation mail
 			final MailgunOptions mailgunOptions = new MailgunOptions()
@@ -564,7 +575,7 @@ public class RecipientServiceImpl implements RecipientService {
 		}
 	}
 	
-	private final String recordEmailAddressChangeRequest(final int companyID, final int customerID, final String newEmailAddress, final int mailingID) throws SendActionbasedMailingException {
+	private String recordEmailAddressChangeRequest(final int companyID, final int customerID, final String newEmailAddress) {
 		final UUID uuid = UUID.randomUUID();
 		final String confirmationCode = uuid.toString();
 		
@@ -576,28 +587,23 @@ public class RecipientServiceImpl implements RecipientService {
 	@Override
 	public final void confirmEmailAddressChange(final ComExtensibleUID uid, final String confirmationCode) throws Exception {
 		final String newEmailAddress = readEmailAddressForPendingChangeRequest(uid, confirmationCode);
+		
+		assert newEmailAddress != null; // Ensured by implementation of readEmailAddressForPendingChangeRequest()
 
-		if (newEmailAddress != null) {
-			final Recipient recipient = this.getRecipient(uid.getCompanyID(), uid.getCustomerID());
-			recipient.setCustParameters("email", newEmailAddress);
-			
-			if (recipient.updateInDB()) {
-				deletePendingEmailAddressChangeRequest(uid, confirmationCode);
-			} else {
-				final String msg = String.format("Cannot change email address for pending change requence (customer %d, company %d, confirmation code '%s')", uid.getCustomerID(), uid.getCompanyID(), confirmationCode);
-				logger.error(msg);
-				
-				throw new Exception(msg);
-			}
+		final Recipient recipient = this.getRecipient(uid.getCompanyID(), uid.getCustomerID());
+		recipient.setCustParameters("email", newEmailAddress);
+		
+		if (recipient.updateInDB()) {
+			deletePendingEmailAddressChangeRequest(uid, confirmationCode);
 		} else {
-			final String msg = String.format("Request to change email to null (customer %d, company %d, confirmation code '%s')", uid.getCustomerID(), uid.getCompanyID(), confirmationCode);
+			final String msg = String.format("Cannot change email address for pending change requence (customer %d, company %d, confirmation code '%s')", uid.getCustomerID(), uid.getCompanyID(), confirmationCode);
 			logger.error(msg);
 			
 			throw new Exception(msg);
 		}
 	}
 	
-	private final String readEmailAddressForPendingChangeRequest(final ComExtensibleUID uid, final String confirmationCode) throws Exception {
+	private String readEmailAddressForPendingChangeRequest(final ComExtensibleUID uid, final String confirmationCode) throws Exception {
 		final String address = this.recipientDao.readEmailAddressForPendingChangeRequest(uid.getCompanyID(), uid.getCustomerID(), confirmationCode);
 		
 		if (address == null) {
@@ -607,7 +613,7 @@ public class RecipientServiceImpl implements RecipientService {
 		return address;
 	}
 	
-	private final void deletePendingEmailAddressChangeRequest(final ComExtensibleUID uid, final String confirmationCode) {
+	private void deletePendingEmailAddressChangeRequest(final ComExtensibleUID uid, final String confirmationCode) {
 		this.recipientDao.deletePendingEmailAddressChangeRequest(uid.getCompanyID(), uid.getCustomerID(), confirmationCode);
 	}
 
@@ -680,27 +686,8 @@ public class RecipientServiceImpl implements RecipientService {
 		return false;
 	}
 
-	protected RecipientSqlOptions getRecipientOptions(HttpServletRequest request, RecipientForm form) {
-		final ComAdmin admin = AgnUtils.getAdmin(request);
-
-		return RecipientSqlOptions.builder()
-				.setDirection(request.getParameter("dir") != null ? request.getParameter("dir") : form.getDir())
-				.setListId(request.getParameter("listID") != null ? Integer.parseInt(request.getParameter("listID")) :form.getListID())
-				.setSearchEmail(request.getParameter("searchEmail") != null ? request.getParameter("searchEmail") : form.getEmail())
-				.setSearchFirstName(request.getParameter("searchFirstName") != null ? request.getParameter("searchFirstName") : form.getFirstname())
-				.setSearchLastName(request.getParameter("searchLastName") != null ? request.getParameter("searchLastName") : form.getLastname())
-				.setSort(request.getParameter("sort") != null ? request.getParameter("sort") : form.getOrder())
-				.setTargetId(request.getParameter("targetID") != null ? Integer.parseInt(request.getParameter("targetID")) : form.getTargetID())
-				.setLimitAccessTargetId(adminService.getAccessLimitTargetId(admin))
-				.setTargetEQL(recipientQueryBuilder.createEqlFromForm(form, admin.getCompanyID()))
-				.setUserStatus(request.getParameter("user_status") != null ? Integer.parseInt(request.getParameter("user_status")) : form.getUser_status())
-				.setUserType(request.getParameter("user_type") != null ? request.getParameter("user_type") : form.getUser_type())
-				.setUseAdvancedSearch(form.isAdvancedSearch(), form)
-				.build();
-	}
-
-	protected RecipientSqlOptions getRecipientOptions(final ComAdmin admin, final RecipientForm form) {
-		return RecipientSqlOptions.builder()
+	protected RecipientSqlOptions getRecipientOptions(final ComAdmin admin, final RecipientForm form) throws QueryBuilderToEqlConversionException {
+		RecipientSqlOptions.Builder builder = RecipientSqlOptions.builder()
 				.setDirection(form.getDir())
 				.setListId(form.getListID())
 				.setSearchEmail(form.getEmail())
@@ -709,18 +696,24 @@ public class RecipientServiceImpl implements RecipientService {
 				.setSort(form.getOrder())
 				.setTargetId(form.getTargetID())
 				.setLimitAccessTargetId(adminService.getAccessLimitTargetId(admin))
-				.setTargetEQL(recipientQueryBuilder.createEqlFromForm(form, admin.getCompanyID()))
 				.setUserStatus(form.getUser_status())
 				.setUserType(form.getUser_type())
-				.setUseAdvancedSearch(form.isAdvancedSearch(), form)
-				.build();
+				.setUseAdvancedSearch(form.isAdvancedSearch(), form);
+
+		if (admin.permissionAllowed(RECIPIENT_ADVANCED_SEARCH_MIGRATION)) {
+			builder.setTargetEQL(queryBuilderToEqlConverter.convertQueryBuilderJsonToEql(form.getQueryBuilderRules(), admin.getCompanyID()));
+		} else {
+			builder.setTargetEQL(targetEqlQueryBuilder.createEqlFromForm(form.getTargetEqlBuilder(), admin.getCompanyID()));
+		}
+
+		return builder.build();
 	}
 
 	@Override
     public Callable<PaginatedListImpl<DynaBean>> getRecipientWorker(HttpServletRequest request, RecipientForm form, Set<String> recipientDbColumns, String sort, String direction, int pageNumber, int rownums) throws Exception {
 		ComAdmin admin = AgnUtils.getAdmin(request);
 
-		RecipientSqlOptions options = getRecipientOptions(request, form);
+		RecipientSqlOptions options = getRecipientOptions(admin, form);
 		final SqlPreparedStatementManager sqlStatementManagerForDataSelect = recipientQueryBuilder.getRecipientListSQLStatement(admin, options);
 
 		String selectDataStatement = sqlStatementManagerForDataSelect.getPreparedSqlString().replaceAll("cust[.]bind", "bind").replace("lower(cust.email)", "cust.email");
@@ -970,5 +963,10 @@ public class RecipientServiceImpl implements RecipientService {
 	@Required
 	public void setAdminService(AdminService adminService) {
 		this.adminService = adminService;
+	}
+
+	@Required
+	public void setQueryBuilderToEqlConverter(QueryBuilderToEqlConverter queryBuilderToEqlConverter) {
+		this.queryBuilderToEqlConverter = queryBuilderToEqlConverter;
 	}
 }

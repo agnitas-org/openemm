@@ -28,14 +28,20 @@ import org.agnitas.beans.EmmLayoutBase;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;
+import org.agnitas.preview.Page;
+import org.agnitas.preview.Preview;
+import org.agnitas.preview.PreviewFactory;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
+import org.apache.struts.Globals;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComAdminPreferences;
@@ -90,6 +96,8 @@ public class ComLogonServiceImpl implements ComLogonService {
 	private LoginTrackService loginTrackService;
 
 	private JavaMailService javaMailService;
+
+	protected PreviewFactory previewFactory;
 
 	// ----------------------------------------------------------- Business code
 	
@@ -444,12 +452,29 @@ public class ComLogonServiceImpl implements ComLogonService {
 
 	private void sendPasswordResetMail(ComAdmin admin, String passwordResetLink) {
 		Locale locale = admin.getLocale();
+		
+		final String mailSubject;
+		final String mailContentHtml;
+		final String mailContentText;
+		int resetPasswordMailingID = adminService.getPasswordResetMailingId(admin.getLocale().getLanguage());
+		if (resetPasswordMailingID <= 0 && !"en".equalsIgnoreCase(admin.getLocale().getLanguage())) {
+			resetPasswordMailingID = adminService.getPasswordResetMailingId("en");
+		}
+		if (resetPasswordMailingID > 0) {
+			final Preview preview = previewFactory.createPreview();
+			final Page output = preview.makePreview(resetPasswordMailingID, 0, true);
+			preview.done();
 
-		String subject = I18nString.getLocaleString("passwordReset.mail.subject", locale, admin.getUsername());
-		String textVersion = I18nString.getLocaleString("passwordReset.mail.body.text", locale, passwordResetLink);
-		String htmlVersion = I18nString.getLocaleString("passwordReset.mail.body.html", locale, passwordResetLink);
-
-		javaMailService.sendEmail(admin.getEmail(), subject, textVersion, htmlVersion);
+			mailSubject = output.getHeaderField("subject").replace("{0}", admin.getUsername()).replace("{1}", admin.getUsername()).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
+			mailContentText = output.getText().replace("{0}", admin.getUsername()).replace("{1}", passwordResetLink).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
+			mailContentHtml = output.getHTML().replace("{0}", admin.getUsername()).replace("{1}", passwordResetLink).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
+		} else {
+			mailSubject = I18nString.getLocaleString("passwordReset.mail.subject", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
+			mailContentText = I18nString.getLocaleString("passwordReset.mail.body.text", locale, passwordResetLink, admin.getUsername(), admin.getFirstName(), admin.getFullname());
+			mailContentHtml = I18nString.getLocaleString("passwordReset.mail.body.html", locale, passwordResetLink, admin.getUsername(), admin.getFirstName(), admin.getFullname());
+		}
+		
+		javaMailService.sendEmail(admin.getEmail(), mailSubject, mailContentText, mailContentHtml);
 	}
 	
 	private void checkLicense() {
@@ -551,6 +576,11 @@ public class ComLogonServiceImpl implements ComLogonService {
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
+
+	@Required
+	public void setPreviewFactory(final PreviewFactory previewFactory) {
+		this.previewFactory = previewFactory;
+	}
 	
 	@Override
 	public SimpleServiceResult sendWelcomeMail(ComAdmin admin, String clientIp, String linkPattern) {
@@ -559,11 +589,28 @@ public class ComLogonServiceImpl implements ComLogonService {
 		String passwordResetLink = getPasswordResetLink(linkPattern, admin.getUsername(), token);
 		Locale locale = admin.getLocale();
 		
-		String subject = I18nString.getLocaleString("user.welcome.mail.subject", locale);
-		String textVersion = I18nString.getLocaleString("user.welcome.mail.body.text", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
-		String htmlVersion = I18nString.getLocaleString("user.welcome.mail.body.html", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
+		final String mailSubject;
+		final String mailContentHtml;
+		final String mailContentText;
+		int adminWelcomeMailingID = adminService.getAdminWelcomeMailingId(admin.getLocale().getLanguage());
+		if (adminWelcomeMailingID <= 0 && !"en".equalsIgnoreCase(admin.getLocale().getLanguage())) {
+			adminWelcomeMailingID = adminService.getAdminWelcomeMailingId("en");
+		}
+		if (adminWelcomeMailingID > 0) {
+			final Preview preview = previewFactory.createPreview();
+			final Page output = preview.makePreview(adminWelcomeMailingID, 0, true);
+			preview.done();
+
+			mailSubject = output.getHeaderField("subject").replace("{0}", admin.getUsername()).replace("{1}", admin.getUsername()).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
+			mailContentText = output.getText().replace("{0}", admin.getUsername()).replace("{1}", passwordResetLink).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
+			mailContentHtml = output.getHTML().replace("{0}", admin.getUsername()).replace("{1}", passwordResetLink).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
+		} else {
+			mailSubject = I18nString.getLocaleString("user.welcome.mail.subject", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
+			mailContentText = I18nString.getLocaleString("user.welcome.mail.body.text", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
+			mailContentHtml = I18nString.getLocaleString("user.welcome.mail.body.html", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
+		}
 		
-		javaMailService.sendEmail(admin.getEmail(), subject, textVersion, htmlVersion);
+		javaMailService.sendEmail(admin.getEmail(), mailSubject, mailContentText, mailContentHtml);
 		return new SimpleServiceResult(true);
 	}
 	
@@ -584,5 +631,12 @@ public class ComLogonServiceImpl implements ComLogonService {
 		if (adminOptional.isPresent()) {
 			passwordResetDao.riseErrorCount(adminOptional.get().getAdminID());
 		}
+	}
+
+	@Override
+	public void updateSessionsLanguagesAttributes(final ComAdmin admin) {
+		final RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+		attributes.setAttribute(Globals.LOCALE_KEY, admin.getLocale(), RequestAttributes.SCOPE_SESSION);  // To be removed when Struts message tags are not in use anymore.
+		attributes.setAttribute("helplanguage", this.getHelpLanguage(admin), RequestAttributes.SCOPE_SESSION);
 	}
 }

@@ -1,0 +1,51 @@
+
+.form-wrap.form-builder {
+  padding: 5px;
+  @include box-shadow(inset 0px 0px 5px 1px rgba(0,0,0,0.3));
+  border-radius: 5px;
+  background-color: $c-gray-11;
+
+  .form-field {
+    cursor: move;
+
+    .frm-holder {
+      cursor: auto;
+    }
+  }
+
+  .frmb {
+    @media (min-width: $screen-md) {
+      width: calc(100% - 325px) !important;
+    }
+
+    h1 {
+      color: $c-black;
+    }
+
+    &>li {
+      border: 1px dotted rgba(0,0,0,0.3);
+    }
+  }
+
+  .cb-wrap {
+    @media (min-width: $screen-md) {
+      width: 320px !important;
+    }
+    .form-actions {
+      display: flex !important;
+      max-width: 100%;
+
+      button {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}
+
+body.dark-theme .form-wrap.form-builder {
+  color: $c-black;
+  .form-control {
+    color: $c-black;
+  }
+}

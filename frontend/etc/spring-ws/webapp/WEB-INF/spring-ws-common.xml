@@ -23,8 +23,30 @@
         </property>
     </bean>
 
-	<bean id="throttlingService" class="com.agnitas.emm.springws.throttling.impl.SimpleSlidingAverageThrottlingServiceImpl" >
+	<bean id="LegacyThrottlingService" class="com.agnitas.emm.springws.throttling.impl.SimpleSlidingAverageThrottlingServiceImpl" >
         <property name="webserviceUserService" ref="WebserviceUserService"/>
+    </bean>
+ 
+ 	<bean id="Bucket4jThrottlingService" class="com.agnitas.emm.springws.throttling.tokenbucket.service.Bucket4jThrottlingService">
+ 		<property name="bucketManager">
+ 			<bean class="com.agnitas.emm.springws.throttling.tokenbucket.service.LocalBucketManager">
+ 				<property name="configService" ref="ConfigService" />
+ 				<property name="webserviceUserService" ref="WebserviceUserService" />
+ 			</bean>
+ 		</property>
+ 		
+ 		<property name="webserviceInvocationCosts">
+ 		    <bean class="com.agnitas.emm.springws.throttling.tokenbucket.service.WebserviceInvocationCostsCache">
+ 		    	<constructor-arg><bean class="com.agnitas.emm.springws.throttling.tokenbucket.dao.DatabaseBasedWebserviceInvocationCosts" parent="_BaseDao" /></constructor-arg>
+ 		    	<constructor-arg ref="ConfigService" />
+ 		    </bean>
+ 		</property>
+ 	</bean>
+ 	
+    <bean id="throttlingService" class="com.agnitas.emm.springws.throttling.migration.ThrottlingServiceImplementationSwitch">
+    	<property name="legacyThrottlingService" ref="LegacyThrottlingService" />
+    	<property name="newThrottlingService" ref="Bucket4jThrottlingService" />
+    	<property name="configService" ref="ConfigService" />
     </bean>
 
 	<bean id="throttlingInterceptor" class="com.agnitas.emm.springws.throttling.ThrottlingInterceptor" >
@@ -75,10 +97,13 @@
 
 
 
+<!-- Is this AOP config still needed? -->
+<!-- 
     <aop:config>
 	    <aop:pointcut id="userDetailsServiceMethods"
 	                expression="execution(* org.springframework.security.userdetails.jdbc.JdbcDaoImpl.*(..)) or execution(* com.agnitas.emm.springws.throttling.impl.SimpleSlidingAverageThrottlingServiceImpl.checkAndTrack(..))"/>
 	</aop:config>
+-->
 
     <bean id="objectFactory" class="org.agnitas.emm.springws.jaxb.ObjectFactory" />
     <bean id="comObjectFactory" class="com.agnitas.emm.springws.jaxb.ObjectFactory" />

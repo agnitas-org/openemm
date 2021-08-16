@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.serverprio.server.impl;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,7 +26,7 @@ public final class ServerPrioServiceImpl implements ServerPrioService {
 	
 	@Override
 	public final boolean pauseMailGenerationAndDelivery(final int mailingID) {
-		final ServerPrio serverPrio = new ServerPrio(0, mailingID, 0, null, null);
+		final ServerPrio serverPrio = new ServerPrio(0, mailingID, 0, new Date(), null);
 
 		this.serverPrioDao.insertServerPrio(serverPrio);
 		
@@ -48,6 +49,11 @@ public final class ServerPrioServiceImpl implements ServerPrioService {
 				.findFirst();									// Returns the first (if present)
 
 		return result.isPresent();
+	}
+
+	@Override
+	public final Date getDeliveryPauseDate(final int companyId, final int mailingId) {
+		return serverPrioDao.getDeliveryPauseDate(companyId, mailingId);
 	}
 
 	public final void setServerPrioDao(final ServerPrioDao dao) {

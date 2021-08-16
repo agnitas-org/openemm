@@ -21,7 +21,8 @@
         self.data = data;
         action();
 
-        if ($(self.event.target).is("a")) {
+        var $target = $(self.event.target);
+        if ($target.is("a") || $target.parent("a").length === 1) {
           self.event.preventDefault();
         }
       })

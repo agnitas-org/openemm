@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="org.agnitas.beans.Mailing" %>
+<%@ page import="com.agnitas.beans.Mailing" %>
 <%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -48,7 +48,7 @@
         <jsp:param name="baseMailingEditor" value="action-mailing-editor-base"/>
     </jsp:include>
 
-<script id="action-mailing-editor-data" type="application/json">
+<script id="config:action-mailing-editor-initializer" type="application/json">
     {
         "form":"actionbasedMailingForm",
         "container": "#actionbased_mailing-editor",

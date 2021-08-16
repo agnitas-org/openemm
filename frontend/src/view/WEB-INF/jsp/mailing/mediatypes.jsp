@@ -1,5 +1,6 @@
-<%@ page import="com.agnitas.web.forms.ComMailingBaseForm" errorPage="/error.do" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" %>
+<%@ page import="com.agnitas.web.forms.ComMailingBaseForm" errorPage="/error.do" %>
+<%@ page import="com.agnitas.web.ComMailingBaseAction" errorPage="/error.do" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -8,6 +9,9 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
+
+<c:set var="ACTION_MOVE_MEDIA_DOWN" value="<%= ComMailingBaseAction.ACTION_MOVE_MEDIA_DOWN %>"/>
+<c:set var="ACTION_MOVE_MEDIA_UP" value="<%= ComMailingBaseAction.ACTION_MOVE_MEDIA_UP %>"/>
 
 <c:set var="isMailingEditable" value="${not mailingBaseForm.worldMailingSend}"/>
 <emm:ShowByPermission token="mailing.content.change.always">
@@ -33,12 +37,14 @@
                 </div>
                 <div class="col-sm-8">
                     <ul class="list-group">
-                        <c:forEach items="${mailingBaseForm.priorities}" var="mediaTypeCode">
-                            <c:set var="mediaTypeName" value="${mailingBaseForm.mediaTypeLabelsLowerCase[mediaTypeCode]}"/>
+                        <c:forEach items="${mailingBaseForm.prioritizedMediatypes}" var="mediaType">
+
+                            <c:set var="mediaTypeName" value="${fn:toLowerCase(mediaType.name())}"/>
+                            <c:set var="mediaTypeCode" value="${mediaType.mediaCode}"/>
                             <c:choose>
                                 <c:when test="${mailingBaseForm.isMailingGrid}">
                                     <c:if test="${mediaTypeName eq 'email'}">
-                                        <emm:ShowByPermission token="mediatype.${mediaTypeName}">
+                                        <emm:ShowByPermission token="${mediaType.requiredPermission}">
                                             <li class="list-group-item checkbox">
                                                 <c:if test="${isMailingEditable}">
                                                     <input type="hidden" name="__STRUTS_CHECKBOX_useMediaType[${mediaTypeCode}]" value="false"/>
@@ -59,15 +65,15 @@
                                                     <input type="hidden" name="__STRUTS_CHECKBOX_useMediaType[${mediaTypeCode}]" value="false"/>
                                                 </c:if>
                                                 <label>
-                                                    <agn:agnCheckbox property="useMediaType[${mediaTypeCode}]" value="true" disabled="${not isMailingEditable}" data-form-action="9" />
+                                                    <agn:agnCheckbox property="useMediaType[${mediaTypeCode}]" value="true" disabled="${not isMailingEditable}" data-action="change-media" />
                                                     <bean:message key="mailing.MediaType.email"/>
                                                 </label>
                                                 <c:if test="${mailingBaseForm.useMediaType[mediaTypeCode]}">
                                                     <div class="list-group-item-controls">
-                                                        <a href="#" data-form-set="activeMedia:${mediaTypeCode}" data-form-action="21">
+                                                        <a href="#" data-config="activeMedia: ${mediaTypeCode}, action: ${ACTION_MOVE_MEDIA_DOWN}" data-action="prioritise-media">
                                                             <i class="icon icon-chevron-circle-down"></i>
                                                         </a>
-                                                        <a href="#" data-form-set="activeMedia:${mediaTypeCode}" data-form-action="20">
+                                                        <a href="#" data-config="activeMedia: ${mediaTypeCode}, action: ${ACTION_MOVE_MEDIA_UP}" data-action="prioritise-media">
                                                             <i class="icon icon-chevron-circle-up"></i>
                                                         </a>
                                                     </div>

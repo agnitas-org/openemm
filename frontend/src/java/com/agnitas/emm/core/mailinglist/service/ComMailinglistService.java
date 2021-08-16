@@ -13,14 +13,16 @@ package com.agnitas.emm.core.mailinglist.service;
 import java.util.List;
 import java.util.Set;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
-import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
-import net.sf.json.JSONArray;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
+import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
+
+import net.sf.json.JSONArray;
 
 
 public interface ComMailinglistService {
@@ -31,7 +33,7 @@ public interface ComMailinglistService {
 
 	void deleteRecipientBindings(Set<Integer> mailinglistIds, @VelocityCheck int companyId);
 
-	List<ComLightweightBirtReport> getConnectedBirtReportList (int mailinglistId, @VelocityCheck int companyId);
+	List<ComLightweightBirtReport> getConnectedBirtReportList(int mailinglistId, @VelocityCheck int companyId);
 
 	List<Mailinglist> getMailinglists(@VelocityCheck int companyId);
 

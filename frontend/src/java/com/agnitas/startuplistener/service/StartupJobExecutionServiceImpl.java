@@ -10,9 +10,16 @@
 
 package com.agnitas.startuplistener.service;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -42,12 +49,48 @@ public final class StartupJobExecutionServiceImpl implements StartupJobExecution
 	private ApplicationContext applicationContext;
 	
 	@Override
-	public final ExecutionResult executeAllPendingJobs() {
+	public final ExecutionResult executeAllPendingJobs(final File whitelistFile) throws StartupJobServiceException {
+		final Set<String> whitelist = readWhitelist(whitelistFile);
+		
 		// List all jobs to execute
 		final List<StartupJobEntry> entries = this.startupJobEntryDao.listActiveAndPendingJobs();
+	
+		// Log classes of active startup jobs not on whitelist
+		entries.stream()
+				.filter(entry -> !whitelist.contains(entry.getClassname()))
+				.map(entry -> entry.getClassname())
+				.distinct()
+				.forEach(classname -> LOGGER.warn(String.format("Found enabled startup job with class '%s', but class is not whitelisted in file '%s'. Job is not executed.", classname, whitelistFile.getName())));
+		
+		// Remove all jobs not on whitelist
+		final List<StartupJobEntry> whitelistedJobs = entries
+				.stream()
+				.filter(entry -> whitelist.contains(entry.getClassname()))
+				.collect(Collectors.toList());
 		
 		// Execute jobs in order sorted ascending by version number
-		return entries.stream().sorted(new StartupJobEntryByVersionComparator()).map(entry -> executeJob(entry)).collect(ExecutionResultCollector.sumUpResults());
+		return whitelistedJobs.stream().sorted(new StartupJobEntryByVersionComparator()).map(entry -> executeJob(entry)).collect(ExecutionResultCollector.sumUpResults());
+	}
+	
+	private static final Set<String> readWhitelist(final File file) throws StartupJobServiceException {
+		try(final FileReader reader = new FileReader(file)) {
+			try(final BufferedReader in = new BufferedReader(reader)) {
+				final Set<String> whitelist = new HashSet<>();
+				
+				String line;
+				while((line = in.readLine()) != null) {
+					line = line.trim();
+					
+					if(line.length() > 0 && !line.startsWith("#")) {
+						whitelist.add(line);
+					}
+				}
+				
+				return whitelist;
+			}
+		} catch(final IOException e) {
+			throw new StartupJobServiceException(String.format("Error reading whitelist file %s", file.getAbsolutePath()), e);
+		}
 	}
 	
 	private final ExecutionResult executeJob(final StartupJobEntry entry) {

@@ -106,16 +106,16 @@ public class BindingEntryImpl implements BindingEntry {
 	}
 
 	@Override
-	public void setUserRemark(String remark) {
-		if (remark == null) {
-			remark = "";
+	public void setUserRemark(String userRemark) {
+		if (userRemark == null) {
+			userRemark = "";
 		}
-		userRemark = remark;
+		this.userRemark = userRemark;
 	}
 
 	@Override
-	public void setUserStatus(int us) {
-		userStatus = us;
+	public void setUserStatus(int userStatus) {
+		this.userStatus = userStatus;
 	}
 
 	/*
@@ -123,8 +123,8 @@ public class BindingEntryImpl implements BindingEntry {
 	 */
 
 	@Override
-	public void setChangeDate(Date ts) {
-		changeDate = ts;
+	public void setChangeDate(Date changeDate) {
+		this.changeDate = changeDate;
 	}
 
 	@Override

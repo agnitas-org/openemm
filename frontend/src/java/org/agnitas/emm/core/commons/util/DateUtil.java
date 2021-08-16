@@ -10,8 +10,6 @@
 
 package org.agnitas.emm.core.commons.util;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -21,35 +19,9 @@ import org.agnitas.util.SafeString;
 
 /**
  * Use this class to handle standard formats
- * 
- *
  */
 public class DateUtil {
-	
-	/**
-	 * @param date
-	 * @return the date formatted with the Constants.DATE_PATTERN_FULL
-	 */
-	public static String formatDateFull(Date date ) {
-		SimpleDateFormat format = new SimpleDateFormat(Constants.DATE_PATTERN_FULL);
-		return format.format(date);
-	}
-	
-	/**
-	 * @param dateAsString - date which matches the Constants.DATE_PATTERN_FULL
-	 * @return
-	 * @throws ParseException
-	 */
-	
-	public static Date parseFullDate(String dateAsString) throws ParseException {
-		SimpleDateFormat format = new SimpleDateFormat(Constants.DATE_PATTERN_FULL);
-		Date date;
-		date = format.parse(dateAsString);
-		return date;
-	}
-
 	public static String getTimespanString(long timespanInMillis, Locale locale) {
-		// TODO: Are the types of the new variables (int) correct? Longs are used in computation...
 		int days = (int) (timespanInMillis / Constants.MILLISECONDS_PER_DAY);
 		int leftover = (int) (timespanInMillis % Constants.MILLISECONDS_PER_DAY);
 		int hours = leftover / Constants.MILLISECONDS_PER_HOUR;
@@ -66,9 +38,9 @@ public class DateUtil {
 			}
 		} else if (hours > 0) {
 			if (minutes == 0 && seconds == 0) {
-				return hours + " " + SafeString.getLocaleString("hours", locale) + " " + minutes + " " + SafeString.getLocaleString("minutes", locale);
+				return hours + " " + SafeString.getLocaleString("hours", locale);
 			} else {
-				return hours + " " + SafeString.getLocaleString("hours", locale) + " " + minutes + " " + SafeString.getLocaleString("minutes", locale);
+				return hours + " " + SafeString.getLocaleString("hours", locale) + " " + minutes + " " + SafeString.getLocaleString("minutes", locale) + " " + seconds + " " + SafeString.getLocaleString("seconds", locale);
 			}
 		} else if (minutes > 0) {
 			return minutes + " " + SafeString.getLocaleString("minutes", locale) + " " + seconds + " " + SafeString.getLocaleString("seconds", locale);

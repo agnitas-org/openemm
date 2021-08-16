@@ -62,17 +62,17 @@
         <jsp:param name="baseMailingEditor" value="mailing-editor-base"/>
     </jsp:include>
 
-<script id="mailing-editor-data" type="application/json">
-  {
-    "form":"mailingForm",
-    "container": "#mailing-editor",
-    "mailingType": "${MAILING_TYPE_NORMAL}",
-    "selectName": "${selectName}",
-    "mailingStatus": "mailings_status",
-    "showCreateEditLinks": "true",
-    "mailingTypesForLoading": ["${MAILING_TYPE_NORMAL}"],
-    "defaultMailingsSort": "sent_sort_status asc, sent_sort_date",
-    "defaultMailingsOrder": "desc"
-  }
-</script>
+    <script id="config:mailing-editor-initializer" type="application/json">
+      {
+        "form":"mailingForm",
+        "container": "#mailing-editor",
+        "mailingType": "${MAILING_TYPE_NORMAL}",
+        "selectName": "${selectName}",
+        "mailingStatus": "mailings_status",
+        "showCreateEditLinks": "true",
+        "mailingTypesForLoading": ["${MAILING_TYPE_NORMAL}"],
+        "defaultMailingsSort": "sent_sort_status asc, sent_sort_date",
+        "defaultMailingsOrder": "desc"
+      }
+    </script>
 </div>

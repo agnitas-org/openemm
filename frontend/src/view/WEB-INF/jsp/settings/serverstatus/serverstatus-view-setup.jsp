@@ -6,6 +6,7 @@
 <c:set var="agnNavigationKey"	    value="serverStatusTabs"        scope="request"/>
 
 <c:set var="agnTitleKey"            value="settings.server.status"  scope="request" />
+<c:set var="agnHelpKey" 			value="Server_status" 			scope="request" />
 
 <c:set var="agnSubtitleKey"         value="settings.server.status"  scope="request" />
 <c:set var="agnHighlightKey"        value="settings.server.status"  scope="request" />

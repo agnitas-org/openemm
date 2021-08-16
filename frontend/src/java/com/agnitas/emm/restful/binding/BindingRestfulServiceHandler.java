@@ -14,6 +14,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.servlet.ServletContext;
@@ -21,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.BindingEntry;
+import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.UserStatus;
@@ -35,6 +38,8 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.action.service.ComEmmActionService;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.service.RecipientType;
 import com.agnitas.emm.restful.BaseRequestResponse;
@@ -52,7 +57,7 @@ import com.agnitas.json.JsonObject;
 
 /**
  * This restful service is available at:
- * https:/<system.url>/restful/binding
+ * https://<system.url>/restful/binding
  */
 public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	@SuppressWarnings("unused")
@@ -64,6 +69,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	private ComRecipientDao recipientDao;
 	private ComBindingEntryDao bindingEntryDao;
 	private MailinglistDao mailinglistDao;
+	private ComEmmActionService emmActionService;
 
 	@Required
 	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
@@ -83,6 +89,11 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setMailinglistDao(MailinglistDao mailinglistDao) {
 		this.mailinglistDao = mailinglistDao;
+	}
+	
+	@Required
+	public void setEmmActionService(ComEmmActionService emmActionService) {
+		this.emmActionService = emmActionService;
 	}
 
 	@Override
@@ -308,6 +319,9 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 		BindingEntry newBindingEntry = new BindingEntryImpl();
 		newBindingEntry.setCustomerID(requestedCustomerID);
 		
+		Integer actionID = null;
+		boolean runActionAsynchronous = false;
+		
 		try (InputStream inputStream = new FileInputStream(requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 				JsonNode jsonNode = jsonReader.read();
@@ -361,6 +375,18 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 							} else {
 								throw new RestfulClientException("Invalid data type for 'user_status'. Integer or String expected");
 							}
+						} else if ("user_type".equals(entry.getKey())) {
+							if (entry.getValue() != null && entry.getValue() instanceof String) {
+								String userType = (String) entry.getValue();
+								try {
+									UserType.getUserTypeByString(userType);
+								} catch(Exception e) {
+									throw new RestfulClientException("Invalid value for 'user_type'");
+								}
+								newBindingEntry.setUserType(userType);
+							} else {
+								throw new RestfulClientException("Invalid data type for 'user_type'. String expected");
+							}
 						} else if ("user_remark".equals(entry.getKey())) {
 							if (entry.getValue() == null || entry.getValue() instanceof String) {
 								newBindingEntry.setUserRemark((String) entry.getValue());
@@ -385,6 +411,18 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 							} else {
 								throw new RestfulClientException("Invalid data type for 'exit_mailing_id'. Integer expected");
 							}
+						} else if ("action_id".equals(entry.getKey())) {
+							if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+								actionID = (Integer) entry.getValue();
+							} else {
+								throw new RestfulClientException("Invalid data type for 'action_id'. Integer expected");
+							}
+						} else if ("runActionAsynchronous".equals(entry.getKey())) {
+							if (entry.getValue() != null && entry.getValue() instanceof Boolean) {
+								runActionAsynchronous = (Boolean) entry.getValue();
+							} else {
+								throw new RestfulClientException("Invalid data type for 'runActionAsynchronous'. Integer expected");
+							}
 						} else {
 							throw new RestfulClientException("Invalid property '" + entry.getKey() + "' for binding entry");
 						}
@@ -402,8 +440,43 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 		} else if (bindingEntryDao.exist(newBindingEntry.getCustomerID(), admin.getCompanyID(), newBindingEntry.getMailinglistID(), newBindingEntry.getMediaType())) {
 			throw new RestfulClientException("Binding entry already exists");
 		} else {
-			bindingEntryDao.insertNewBinding(newBindingEntry, admin.getCompanyID());
-			return "1 binding entry created";
+			if (actionID == null) {
+				bindingEntryDao.insertNewBinding(newBindingEntry, admin.getCompanyID());
+				return "1 binding entry created";
+			} else if (!emmActionService.actionExists(actionID, admin.getCompanyID())) {
+				throw new RestfulClientException("Invalid non-existent action_id: " + actionID);
+			} else {
+				bindingEntryDao.insertNewBinding(newBindingEntry, admin.getCompanyID());
+				final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
+				
+				final Map<String, Object> params = new HashMap<>();
+				params.put("customerID", requestedCustomerID);
+				params.put("actionErrors", actionOperationErrors);
+				
+				if (runActionAsynchronous) {
+					final int actionIdFinal = actionID;
+					final Runnable actionRunner = new Runnable() {
+						@Override
+						public final void run() {
+							try {
+								emmActionService.executeActions(actionIdFinal, admin.getCompanyID(), params, actionOperationErrors);
+							} catch (Exception e) {
+								throw new RuntimeException(e);
+							}
+						}
+					};
+					new Thread(actionRunner).start();
+					return "1 binding entry created and action started";
+				} else {
+					emmActionService.executeActions(actionID, admin.getCompanyID(), params, actionOperationErrors);
+					if (actionOperationErrors.isEmpty()) {
+						return "1 binding entry created and action executed";
+					} else {
+						throw new RestfulClientException("1 binding entry created, but action had error: " + actionOperationErrors.toString());
+					}
+				}
+				
+			}
 		}
 	}
 
@@ -439,6 +512,9 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 		BindingEntry newBindingEntry = new BindingEntryImpl();
 		newBindingEntry.setCustomerID(requestedCustomerID);
 		
+		Integer actionID = null;
+		boolean runActionAsynchronous = false;
+		
 		try (InputStream inputStream = new FileInputStream(requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 				JsonNode jsonNode = jsonReader.read();
@@ -492,6 +568,18 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 							} else {
 								throw new RestfulClientException("Invalid data type for 'user_status'. Integer or String expected");
 							}
+						} else if ("user_type".equals(entry.getKey())) {
+							if (entry.getValue() != null && entry.getValue() instanceof String) {
+								String userType = (String) entry.getValue();
+								try {
+									UserType.getUserTypeByString(userType);
+								} catch(Exception e) {
+									throw new RestfulClientException("Invalid value for 'user_type'");
+								}
+								newBindingEntry.setUserType(userType);
+							} else {
+								throw new RestfulClientException("Invalid data type for 'user_type'. String expected");
+							}
 						} else if ("user_remark".equals(entry.getKey())) {
 							if (entry.getValue() == null || entry.getValue() instanceof String) {
 								newBindingEntry.setUserRemark((String) entry.getValue());
@@ -516,6 +604,18 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 							} else {
 								throw new RestfulClientException("Invalid data type for 'exit_mailing_id'. Integer expected");
 							}
+						} else if ("action_id".equals(entry.getKey())) {
+							if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+								actionID = (Integer) entry.getValue();
+							} else {
+								throw new RestfulClientException("Invalid data type for 'action_id'. Integer expected");
+							}
+						} else if ("runActionAsynchronous".equals(entry.getKey())) {
+							if (entry.getValue() != null && entry.getValue() instanceof Boolean) {
+								runActionAsynchronous = (Boolean) entry.getValue();
+							} else {
+								throw new RestfulClientException("Invalid data type for 'runActionAsynchronous'. Integer expected");
+							}
 						} else {
 							throw new RestfulClientException("Invalid property '" + entry.getKey() + "' for binding entry");
 						}
@@ -531,11 +631,81 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 		} else if (newBindingEntry.getUserStatus() <= 0) {
 			throw new RestfulClientException("Missing mandatory value for 'user_status'");
 		} else if (bindingEntryDao.exist(newBindingEntry.getCustomerID(), admin.getCompanyID(), newBindingEntry.getMailinglistID(), newBindingEntry.getMediaType())) {
-			bindingEntryDao.updateBinding(newBindingEntry, admin.getCompanyID());
-			return "1 binding entry updated";
+			if (actionID == null) {
+				bindingEntryDao.updateBinding(newBindingEntry, admin.getCompanyID());
+				return "1 binding entry updated";
+			} else if (!emmActionService.actionExists(actionID, admin.getCompanyID())) {
+				throw new RestfulClientException("Invalid non-existent action_id: " + actionID);
+			} else {
+				bindingEntryDao.updateBinding(newBindingEntry, admin.getCompanyID());
+				final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
+				
+				final Map<String, Object> params = new HashMap<>();
+				params.put("customerID", requestedCustomerID);
+				params.put("actionErrors", actionOperationErrors);
+				
+				if (runActionAsynchronous) {
+					final int actionIdFinal = actionID;
+					final Runnable actionRunner = new Runnable() {
+						@Override
+						public final void run() {
+							try {
+								emmActionService.executeActions(actionIdFinal, admin.getCompanyID(), params, actionOperationErrors);
+							} catch (Exception e) {
+								throw new RuntimeException(e);
+							}
+						}
+					};
+					new Thread(actionRunner).start();
+					return "1 binding entry updated and action started";
+				} else {
+					emmActionService.executeActions(actionID, admin.getCompanyID(), params, actionOperationErrors);
+					if (actionOperationErrors.isEmpty()) {
+						return "1 binding entry updated and action executed";
+					} else {
+						throw new RestfulClientException("1 binding entry updated, but action had error: " + actionOperationErrors.toString());
+					}
+				}
+				
+			}
 		} else {
-			bindingEntryDao.insertNewBinding(newBindingEntry, admin.getCompanyID());
-			return "1 binding entry created";
+			if (actionID == null) {
+				bindingEntryDao.insertNewBinding(newBindingEntry, admin.getCompanyID());
+				return "1 binding entry created";
+			} else if (!emmActionService.actionExists(actionID, admin.getCompanyID())) {
+				throw new RestfulClientException("Invalid non-existent action_id: " + actionID);
+			} else {
+				bindingEntryDao.insertNewBinding(newBindingEntry, admin.getCompanyID());
+				final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
+				
+				final Map<String, Object> params = new HashMap<>();
+				params.put("customerID", requestedCustomerID);
+				params.put("actionErrors", actionOperationErrors);
+				
+				if (runActionAsynchronous) {
+					final int actionIdFinal = actionID;
+					final Runnable actionRunner = new Runnable() {
+						@Override
+						public final void run() {
+							try {
+								emmActionService.executeActions(actionIdFinal, admin.getCompanyID(), params, actionOperationErrors);
+							} catch (Exception e) {
+								throw new RuntimeException(e);
+							}
+						}
+					};
+					new Thread(actionRunner).start();
+					return "1 binding entry created and action started";
+				} else {
+					emmActionService.executeActions(actionID, admin.getCompanyID(), params, actionOperationErrors);
+					if (actionOperationErrors.isEmpty()) {
+						return "1 binding entry created and action executed";
+					} else {
+						throw new RestfulClientException("1 binding entry created, but action had error: " + actionOperationErrors.toString());
+					}
+				}
+				
+			}
 		}
 	}
 

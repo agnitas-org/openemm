@@ -76,7 +76,7 @@ for sqlfilename in ${sqlScriptsToDo}; do
 	MYSQL_PWD=${password} mysql -h ${hostname} -P 3306 -u ${username} --database=${dbname} --default-character-set=utf8 < ${sqlfilename}
 
 	if [ $? != 0 ]; then {
-		echo "Error in sql script"
+		echo "Error in sql script ${sqlfilename}"
 		exit 1
 	} fi
 done
@@ -104,13 +104,17 @@ if [ -e "${scriptDir}/emm-mysql-test-post-update.sql" ]; then {
 	sqlScriptsToDo+=" ${scriptDir}/emm-mysql-test-post-update.sql"
 } fi
 
+if [ -e "${scriptDir}/emm-mysql-update-test-aso.sql" ]; then {
+	sqlScriptsToDo+=" ${scriptDir}/emm-mysql-update-test-aso.sql"
+} fi
+
 for sqlfilename in ${sqlScriptsToDo}; do
 	echo "Executing ${sqlfilename}"
 	
 	MYSQL_PWD=${password} mysql -h ${hostname} -P 3306 -u ${username} --database=${dbname} --default-character-set=utf8 < ${sqlfilename}
 
 	if [ $? != 0 ]; then {
-		echo "Error in sql script"
+		echo "Error in sql script ${sqlfilename}"
 		exit 1
 	} fi
 done

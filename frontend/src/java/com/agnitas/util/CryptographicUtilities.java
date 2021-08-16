@@ -12,20 +12,22 @@ package com.agnitas.util;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.security.Key;
 import java.security.KeyFactory;
-import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -33,7 +35,6 @@ import javax.crypto.CipherOutputStream;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -45,8 +46,6 @@ import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PEMWriter;
 
 /**
  * May need installed "US_export_policy.jar" and "local_policy.jar" for unlimited key strength Download: http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html
@@ -110,29 +109,10 @@ public class CryptographicUtilities {
 
 	/**
 	 * Convert a Key to string encoded as BASE64
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public static String getStringFromKey(Key key) throws Exception {
-		return new String(Base64.encodeBase64(key.getEncoded()), "UTF-8");
-	}
-
-	public static String getStringFromKeyPair(AsymmetricCipherKeyPair keyPair) throws Exception {
-		PublicKey publicKey = getPublicKeyFromKeyPair(keyPair);
-		PrivateKey privateKey = getPrivateKeyFromKeyPair(keyPair);
-
-		return getStringFromKeyPair(privateKey, publicKey);
-	}
-
-	public static String getStringFromKeyPair(PrivateKey privateKey, PublicKey publicKey) throws Exception {
-		try (StringWriter stringWriter = new StringWriter()) {
-			try (PEMWriter pemWriter = new PEMWriter(stringWriter)) {
-				pemWriter.writeObject(privateKey);
-				pemWriter.writeObject(publicKey);
-			}
-			return stringWriter.toString();
-		} catch (Exception e) {
-			throw new Exception("Cannot create key string: " + e.getMessage(), e);
-		}
+		return Base64.getEncoder().encodeToString(key.getEncoded());
 	}
 
 	public static PublicKey getPublicKeyFromKeyPair(AsymmetricCipherKeyPair keyPair) throws Exception {
@@ -153,44 +133,62 @@ public class CryptographicUtilities {
 	}
 
 	/**
-	 * Generates Private Key from BASE64 encoded string
+	 * Generates Public Key from BASE64 encoded string
 	 */
-	public static PrivateKey getPrivateKeyFromString(String keyString) throws Exception {
-		Security.addProvider(new BouncyCastleProvider());
-
-		try (PEMReader pemReader = new PEMReader(new StringReader(keyString))) {
-			Object readObject = pemReader.readObject();
-			if (readObject instanceof KeyPair) {
-				KeyPair keyPair = (KeyPair)readObject;
-				return keyPair.getPrivate();
-			} else if (readObject instanceof PrivateKey) {
-				return (PrivateKey)readObject;
-			} else {
-				return null;
-			}
+	public static PublicKey getPublicKeyFromString(String key) throws Exception {
+		try {
+			Security.addProvider(new BouncyCastleProvider());
+		    String publicKeyPEM = key;
+		    publicKeyPEM = publicKeyPEM.replace("-----BEGIN PUBLIC KEY-----", "");
+		    publicKeyPEM = publicKeyPEM.replace("\r", "");
+		    publicKeyPEM = publicKeyPEM.replace("\n", "");
+		    publicKeyPEM = publicKeyPEM.replace("-----END PUBLIC KEY-----", "");
+		    byte[] publicKeyData = Base64.getDecoder().decode(publicKeyPEM);
+		    KeyFactory kf = KeyFactory.getInstance("RSA");
+		    RSAPublicKey pubKey = (RSAPublicKey) kf.generatePublic(new X509EncodedKeySpec(publicKeyData));
+		    return pubKey;
 		} catch (Exception e) {
-			throw new Exception("Cannot read private key", e);
+			throw new Exception("Cannot read public key", e);
 		}
 	}
 
 	/**
-	 * Generates Public Key from BASE64 encoded string
+	 * Generates Private Key from BASE64 encoded string
 	 */
-	public static PublicKey getPublicKeyFromString(String keyString) throws Exception {
-		Security.addProvider(new BouncyCastleProvider());
-
-		try (PEMReader pemReader = new PEMReader(new StringReader(keyString))) {
-			Object readObject = pemReader.readObject();
-			if (readObject instanceof KeyPair) {
-				KeyPair keyPair = (KeyPair)readObject;
-				return keyPair.getPublic();
-			} else if (readObject instanceof PublicKey) {
-				return (PublicKey)readObject;
-			} else {
-				return null;
-			}
+	public static PrivateKey getPrivateKeyFromString(String key) throws Exception {
+		try {
+			Security.addProvider(new BouncyCastleProvider());
+		    String privateKeyPEM = key;
+		    privateKeyPEM = privateKeyPEM.replace("-----BEGIN RSA PRIVATE KEY-----", "");
+		    privateKeyPEM = privateKeyPEM.replace("\r", "");
+		    privateKeyPEM = privateKeyPEM.replace("\n", "");
+		    privateKeyPEM = privateKeyPEM.replace("-----END RSA PRIVATE KEY-----", "");
+		    byte[] privateKeyData = Base64.getDecoder().decode(privateKeyPEM);
+		    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyData);
+	        KeyFactory kf = KeyFactory.getInstance("RSA");
+	        PrivateKey privKey = kf.generatePrivate(keySpec);
+	        return privKey;
 		} catch (Exception e) {
-			throw new Exception("Cannot read public key", e);
+			throw new Exception("Cannot read private key", e);
+		}
+	}
+	
+	public static RSAPrivateKey getPrivateRsaKeyPairFromString(String key) throws Exception {
+		try {
+			Security.addProvider(new BouncyCastleProvider());
+		    String privateKeyPEM = key.trim();
+		    final String pemBegin = "-----BEGIN PRIVATE KEY-----";
+		    final String pemEnd = "-----END PRIVATE KEY-----";
+			if (privateKeyPEM.startsWith(pemBegin) && privateKeyPEM.endsWith(pemEnd)) {
+		    	privateKeyPEM = privateKeyPEM.substring(pemBegin.length(), privateKeyPEM.length() - pemEnd.length()).trim();
+		    }
+		    privateKeyPEM = privateKeyPEM.replace("\r", "").replace("\n", "");
+		    byte[] privateKeyData = Base64.getDecoder().decode(privateKeyPEM);
+	        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+	        PrivateKey privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKeyData));
+	        return (RSAPrivateKey) privateKey;
+		} catch (Exception e) {
+			throw new Exception("Cannot read private key", e);
 		}
 	}
 
@@ -199,13 +197,6 @@ public class CryptographicUtilities {
 	 */
 	public static PublicKey readRSAPublicKey(InputStream inputStream) throws Exception {
 		return getPublicKeyFromString(IOUtils.toString(inputStream, "UTF-8"));
-	}
-
-	/**
-	 * Read a keyfile generated with 'openssl genrsa...'
-	 */
-	public static PrivateKey readRSAPrivateKey(InputStream inputStream) throws Exception {
-		return getPrivateKeyFromString(IOUtils.toString(inputStream, "UTF-8"));
 	}
 
 	public static void encryptSymmetric(InputStream dataStream, OutputStream encryptedOutputStream, char[] password, byte[] salt, byte[] initializationVector, String encryptionMethod) throws Exception {
@@ -292,6 +283,10 @@ public class CryptographicUtilities {
 
 	public static boolean verifyData(byte[] data, PublicKey publicKey, byte[] signatureData, String signatureMethod) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
+		
+		if (publicKey == null) {
+			throw new Exception("Cannot verify signature. PublicKey is missing");
+		}
 
 		try {
 			Signature signature = Signature.getInstance(signatureMethod, "BC");

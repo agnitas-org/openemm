@@ -22,18 +22,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import javax.imageio.ImageIO;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
-import com.agnitas.util.preview.PreviewImageGenerationQueue;
-import com.agnitas.util.preview.PreviewImageGenerationTask;
-import com.agnitas.util.preview.PreviewImageService;
-import com.agnitas.web.ComMailingBaseAction;
-import cz.vutbr.web.css.MediaSpec;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.impl.MailingComponentImpl;
@@ -41,6 +32,7 @@ import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.NetworkUtil;
 import org.agnitas.web.MailingSendAction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -54,6 +46,18 @@ import org.fit.cssbox.layout.BrowserCanvas;
 import org.springframework.beans.factory.annotation.Required;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
+import com.agnitas.util.preview.PreviewImageGenerationQueue;
+import com.agnitas.util.preview.PreviewImageGenerationTask;
+import com.agnitas.util.preview.PreviewImageService;
+import com.agnitas.web.ComMailingBaseAction;
+
+import cz.vutbr.web.css.MediaSpec;
 
 public class PreviewImageServiceImpl implements PreviewImageService {
     /** The logger */
@@ -126,6 +130,43 @@ public class PreviewImageServiceImpl implements PreviewImageService {
 		}
 		
 		File imageTempFile = File.createTempFile("preview_", ".png", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
+        
+        String proxyString = "None";
+		String proxyHost = System.getProperty("http.proxyHost");
+		if (StringUtils.isNotBlank(proxyHost)) {
+			boolean ignoreProxy = false;
+			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
+			if (StringUtils.isNotBlank(nonProxyHosts)) {
+				String urlDomain = NetworkUtil.getDomainFromUrl(url);
+				if (urlDomain != null) {
+					urlDomain = urlDomain.trim().toLowerCase();
+				}
+				
+				if (urlDomain != null) {
+	    			for (String nonProxyHost : nonProxyHosts.split("\\||,|;| ")) {
+						nonProxyHost = nonProxyHost.trim().toLowerCase();
+						if (urlDomain.equals(nonProxyHost) || urlDomain.endsWith("." + nonProxyHost)) {
+							ignoreProxy = true;
+							break;
+						}
+					}
+				}
+			}
+			
+			if (!ignoreProxy) {
+    			proxyString = proxyHost;
+    			if (!proxyString.contains("://")) {
+    				proxyString = "http://" + proxyString;
+    			}
+    			
+    			String proxyPort = System.getProperty("http.proxyPort");
+    			if (StringUtils.isNotBlank(proxyPort)) {
+    				proxyString = proxyString + ":" + proxyPort;
+    			} else {
+    				proxyString = proxyString + ":" + 8080;
+    			}
+			}
+		}
 		
 		String[] command = new String[] {
 			configService.getValue(ConfigValue.WkhtmlToImageToolPath),
@@ -135,6 +176,7 @@ public class PreviewImageServiceImpl implements PreviewImageService {
 //			"--crop-h", Integer.toString(maxHeight),
 //			"--format, png",
             "--quality", Integer.toString(50),
+			"--proxy", proxyString,
 			url,
 			imageTempFile.getAbsolutePath()};
 		
@@ -358,7 +400,7 @@ public class PreviewImageServiceImpl implements PreviewImageService {
                 Dimension maxSize = new Dimension(ComMailingBaseAction.MAILING_PREVIEW_WIDTH, ComMailingBaseAction.MAILING_PREVIEW_HEIGHT);
                 byte[] preview = generatePreview(getPreviewUrl(), maxSize, true);
 
-                List<MailingComponent> components = mailingComponentDao.getMailingComponents(mailingId, companyId, MailingComponentType.ThumbnailImage.getCode(), false);
+                List<MailingComponent> components = mailingComponentDao.getMailingComponents(mailingId, companyId, MailingComponentType.ThumbnailImage, false);
                 if (components.size() > 1) {
                 	// Clean up all thumbnails and create a single thumbnail afterwards
                 	mailingComponentDao.deleteMailingComponents(components);
@@ -370,7 +412,7 @@ public class PreviewImageServiceImpl implements PreviewImageService {
                     MailingComponent component = new MailingComponentImpl();
                     component.setCompanyID(companyId);
                     component.setMailingID(mailingId);
-                    component.setType(MailingComponentType.ThumbnailImage.getCode());
+                    component.setType(MailingComponentType.ThumbnailImage);
                     component.setDescription("Mailing preview Image");
                     component.setComponentName("THUMBNAIL.png");
                     component.setBinaryBlock(preview, "image/png");

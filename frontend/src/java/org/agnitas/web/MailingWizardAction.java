@@ -12,9 +12,7 @@ package org.agnitas.web;
 
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
 
-import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +26,10 @@ import javax.servlet.http.HttpSession;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.beans.Mediatype;
 import org.agnitas.beans.factory.DynamicTagContentFactory;
 import org.agnitas.beans.factory.MailingComponentFactory;
@@ -39,6 +38,7 @@ import org.agnitas.dao.EmmActionDao;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
@@ -59,14 +59,17 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingContentType;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComCampaignDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilder;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
@@ -90,21 +93,15 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
 	public static final String ACTION_TYPE = "type";
 
-	public static final String ACTION_TYPE_PREVIOUS = "type_previous";
-
 	public static final String ACTION_SENDADDRESS = "sendaddress";
 
 	public static final String ACTION_MAILTYPE = "mailtype";
 
 	public static final String ACTION_SUBJECT = "subject";
 
+	public static final String ACTION_TARGET_VIEW = "targetView";
+
 	public static final String ACTION_TARGET = "target";
-
-    public static final String ACTION_TARGET_FINISH = "target_finish";
-
-	public static final String ACTION_TEXTMODULES = "textmodules";
-
-	public static final String ACTION_TEXTMODULES_PREVIOUS = "textmodules_previous";
 
 	public static final String ACTION_TEXTMODULE = "textmodule";
 
@@ -146,10 +143,14 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	protected ComWorkflowService workflowService;
 	protected ComMailinglistService mailinglistService;
 	protected AgnTagService agnTagService;
-    private MailinglistApprovalService mailinglistApprovalService;
+    protected MailinglistApprovalService mailinglistApprovalService;
     protected PreviewImageService previewImageService;
 
 	private UserActivityLogService userActivityLogService;
+	
+	protected CopyMailingService copyMailingService;
+	protected QueryBuilderFilterListBuilder filterListBuilder;
+	protected AdminService adminService;
 
     // --------------------------------------------------------- Public Methods
 
@@ -172,22 +173,8 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		return mapping.getInputForward();
 	}
 
-    /**
-     * Forwards to mailing creation without wizard ("withoutWizard").
-     *
-     * @param mapping The ActionMapping used to select this instance
-     * @param form data for the action filled by the jsp
-     * @param req request from jsp
-     * @param res response
-     * @return destination specified in struts-config.xml to forward to next jsp
-     * @throws Exception if a exception occurs
-     */
-	public ActionForward withoutWizard(ActionMapping mapping, ActionForm form,
-			HttpServletRequest req, HttpServletResponse res) throws Exception {
-		return mapping.findForward("withoutWizard");
-	}
 
-    /**
+	/**
      * If the user is not logged in - forwards to login page<br>
      * Gets list of mailinglists for current company. If there are no mailinglists existing - adds error message and
      * forwards to input forward ("mwStart").<br>
@@ -199,19 +186,19 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
      * @param mapping The ActionMapping used to select this instance
      * @param form data for the action filled by the jsp
      * @param request request from jsp
-     * @param res response
+     * @param response response
      * @return destination specified in struts-config.xml to forward to next jsp
      * @throws Exception if a exception occurs
      */
 	public ActionForward start(ActionMapping mapping, ActionForm form,
-			HttpServletRequest request, HttpServletResponse res) throws Exception {
+			HttpServletRequest request, HttpServletResponse response) throws Exception {
 		if (!AgnUtils.isUserLoggedIn(request)) {
 			return mapping.findForward("logon");
 		}
 
 		List<Mailinglist> mlists = mailinglistApprovalService.getEnabledMailinglistsForAdmin(AgnUtils.getAdmin(request));
 
-		if(mlists.size() <= 0) {
+		if (mlists.size() <= 0) {
 			ActionMessages	errors = new ActionMessages();
 
 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.noMailinglist"));
@@ -223,7 +210,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		updateForwardParameters(request, true);
 
 		MailingWizardForm aForm = (MailingWizardForm) form;
-		ComMailing mailing = mailingFactory.newMailing();
+		Mailing mailing = mailingFactory.newMailing();
 
 		mailing.init(AgnUtils.getCompanyID(request), getApplicationContext(request));
         Map<String, String> map = AgnUtils.getReqParameters(request);
@@ -235,14 +222,14 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
 		setMailingWorkflowParameters(request, mailing);
 		aForm.setMailing(mailing);
-		aForm.setMailingContentType(ComMailing.MailingContentType.advertising);
-	
+		aForm.setMailingContentType(MailingContentType.advertising);
+
 		request.setAttribute("isEnableTrackingVeto", configService.getBooleanValue(ConfigValue.EnableTrackingVeto, AgnUtils.getCompanyID(request)));
-		
+
 		return mapping.findForward("next");
 	}
 
-	private void setMailingWorkflowParameters(HttpServletRequest req, ComMailing mailing) {
+	private void setMailingWorkflowParameters(HttpServletRequest req, Mailing mailing) {
 		HttpSession session = req.getSession();
 
 		Integer workflowId = (Integer) session.getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
@@ -273,7 +260,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		}
 
 		MailingWizardForm aForm = (MailingWizardForm) form;
-		ComMailing mailing = (ComMailing) aForm.getMailing();
+		Mailing mailing = aForm.getMailing();
 
 		if (mailing != null) {
 			mailing.setMailingContentType(aForm.getMailingContentType());
@@ -302,11 +289,10 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		if (!AgnUtils.isUserLoggedIn(req)) {
 			return mapping.findForward("logon");
 		}
-
 		final int companyId = AgnUtils.getCompanyID(req);
 
 		MailingWizardForm aForm = (MailingWizardForm) form;
-		ComMailing mailing = (ComMailing) aForm.getMailing();
+		Mailing mailing = aForm.getMailing();
 
 		Integer workflowId = (Integer) req.getSession().getAttribute("workflowId");
 		Date planDate = null;
@@ -322,7 +308,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
 			Mediatype type = mediatypes.get(0);
 			if (type != null) {
-				type.setStatus(Mediatype.STATUS_ACTIVE);
+				type.setStatus(MediaTypeStatus.Active.getCode());
 			} else {
 				// should not happen
 				MediatypeEmail paramEmail = mailing.getEmailParam();
@@ -331,49 +317,33 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 				paramEmail.setMailFormat(MailingModel.Format.ONLINE_HTML.getCode());
 				paramEmail.setLinefeed(0);
 				paramEmail.setPriority(1);
-				paramEmail.setStatus(Mediatype.STATUS_ACTIVE);
+				paramEmail.setStatus(MediaTypeStatus.Active.getCode());
 				mediatypes.put(0, paramEmail);
 			}
 			mailing.setPlanDate(planDate);
 			setMailingWorkflowParameters(req, mailing);
 			aForm.clearEmailData();
 		} else {
-			ComMailing template = mailingDao.getMailing(aForm.getMailing().getMailTemplateID(), companyId);
+			Mailing template = mailingDao.getMailing(aForm.getMailing().getMailTemplateID(), companyId);
 
 			if (template != null) {
-				ComMailing newMailing = (ComMailing) template
-						.clone(getApplicationContext(req));
-				newMailing.setId(0); // 0 for creating a new mailing and not
-				// changing the template
-				newMailing.setShortname(
-					aForm.getMailing().getShortname());
-				newMailing.setDescription(
-					aForm.getMailing().getDescription());
+				int newMailingID = copyMailingService.copyMailing(companyId, aForm.getMailing().getMailTemplateID(), companyId, aForm.getMailing().getShortname(), aForm.getMailing().getDescription());
+				Mailing newMailing = mailingDao.getMailing(newMailingID, companyId);
 				newMailing.setIsTemplate(false);
-				newMailing.setMediatypes(template.getMediatypes());
-				newMailing.setMailTemplateID(template.getId());
-				newMailing.setCompanyID(companyId);
-				newMailing.setMailinglistID(template.getMailinglistID());
-				newMailing.setArchived(template.getArchived());
+				newMailing.setPlanDate(planDate);
 				newMailing.setMailingContentType(aForm.getMailingContentType());
-
-                newMailing.setCampaignID(template.getCampaignID());
-                newMailing.setMailingType(template.getMailingType());
-                newMailing.setTargetID(template.getTargetID());
-                newMailing.setTargetGroups(template.getTargetGroups());
 				newMailing.setPlanDate(planDate);
 				setMailingWorkflowParameters(req, newMailing);
 
                 Map<Integer, Mediatype> mediatypes = newMailing.getMediatypes();
-
 				Mediatype type = mediatypes.get(0);
 				if (type != null) {
-					type.setStatus(Mediatype.STATUS_ACTIVE);
+					type.setStatus(MediaTypeStatus.Active.getCode());
 				}
 				aForm.setMailing(newMailing);
 
 				MediatypeEmail param = newMailing.getEmailParam();
-				// param.setStatus(Mediatype.STATUS_ACTIVE);
+				// param.setStatus(MediaTypeStatus.Active.getCode());
 				aForm.setEmailSubject(param.getSubject());
 				aForm.setEmailFormat(param.getMailFormat());
 				aForm.setEmailOnepixel(param.getOnepixel());
@@ -413,22 +383,6 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		return mapping.findForward("next");
 	}
 
-    /**
-     * Loads campaigns, mailinglists and target-groups to request. Forwards to "previous" (currently the page where user
-     * sets mailinglist, targets, campaign etc.)
-     *
-     * @param mapping The ActionMapping used to select this instance
-     * @param form data for the action filled by the jsp
-     * @param req request from jsp
-     * @param res response
-     * @return destination specified in struts-config.xml to forward to next jsp
-     * @throws Exception if a exception occurs
-     */
-	public ActionForward textmodules_previous(ActionMapping mapping, ActionForm form,
-			HttpServletRequest req, HttpServletResponse res) throws Exception {
-        prepareTargetPage(req);
-		return mapping.findForward("previous");
-	}
 
     /**
      * If the user is not logged in - forwards to login page.
@@ -478,15 +432,16 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 			return mapping.findForward("logon");
 		}
 		MailingWizardForm aForm = (MailingWizardForm) form;
-		MediatypeEmail param = aForm.getMailing().getEmailParam();
+		Mailing mailing = aForm.getMailing();
+		MediatypeEmail param = mailing.getEmailParam();
 
 		param.setSubject(aForm.getEmailSubject());
 		aForm.getMailing().buildDependencies(true,
 				getApplicationContext(req));
 
-        prepareTargetPage(req);
-		return mapping.findForward("next");
+		aForm.setTargetGroups(mailing.getTargetGroups());
 
+		return targetView(mapping, form, req, res);
 	}
 
     /**
@@ -506,9 +461,10 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		if (!AgnUtils.isUserLoggedIn(req)) {
 			return mapping.findForward("logon");
 		}
-        prepareTargetPage(req);
-		return mapping.findForward("targetView");
 
+        prepareTargetPage(req, form);
+
+		return mapping.findForward("targetView");
 	}
 
     /**
@@ -553,98 +509,25 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
     /**
      * Loads required data for target page (Mailinglists, Campaigns and Target groups) into request.
      *
-     * @param request request from jsp
-     */
-    public void prepareTargetPage(HttpServletRequest request) {
-    	final ComAdmin admin = AgnUtils.getAdmin(request);
+	 * @param request request from jsp
+	 * @param form
+	 */
+    public void prepareTargetPage(HttpServletRequest request, ActionForm form) {
+		final ComAdmin admin = AgnUtils.getAdmin(request);
 		final int companyId = admin.getCompanyID();
 		final boolean excludeHiddenTargets = !admin.permissionAllowed(Permission.MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS);
 
 		request.setAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
 		request.setAttribute("campaigns", campaignDao.getCampaignList(companyId, "LOWER(shortname)", 1));
 		request.setAttribute("targets", targetService.getTargetLights(admin, false, true, false, excludeHiddenTargets));
+		request.setAttribute("targetComplexities", targetService.getTargetComplexities(companyId));
+		configureTargetALTG(request, (MailingWizardForm) form);
 	}
 
-    /**
-     * If the user is not logged in - forwards to login page.
-     * Saves openrate-measure property to mailing email param. Loads campaigns, mailinglists and target-groups to
-     * request. Adds target to mailing targets list if needed. Removes target from mailing target list if needed.
-     * Updates target expression (re-generates String representing selected targets IDs of mailing). Forwards to
-     * "next" (currently the page for managing textmodules)
-     *
-     * @param mapping The ActionMapping used to select this instance
-     * @param form data for the action filled by the jsp
-     * @param req request from jsp
-     * @param res response
-     * @return destination specified in struts-config.xml to forward to next jsp
-     * @throws Exception if a exception occurs
-     */
-	public ActionForward target(ActionMapping mapping, ActionForm form,
-			HttpServletRequest req, HttpServletResponse res) throws Exception {
-		if (!AgnUtils.isUserLoggedIn(req)) {
-			return mapping.findForward("logon");
-		}
-		MailingWizardForm aForm = (MailingWizardForm) form;
-		Mailing mailing = aForm.getMailing();
-
-        // Do we really need to do that? This will have no effect
-		mailing.setMailinglistID(mailing.getMailinglistID());
-		mailing.setCampaignID(mailing.getCampaignID());
-        // --------------------------
-
-		MediatypeEmail param = mailing.getEmailParam();
-		param.setOnepixel(aForm.getEmailOnepixel());
-        prepareTargetPage(req);
-		if (aForm.getTargetID() != 0) {
-			Collection<Integer> aList = mailing.getTargetGroups();
-
-			if (aList == null) {
-				aList = new HashSet<>();
-			}
-			if (!aList.contains(aForm.getTargetID())) {
-				aList.add(aForm.getTargetID());
-			}
-			mailing.setTargetGroups(aList);
-			return mapping.getInputForward();
-		}
-
-		if (aForm.getRemoveTargetID() != 0) {
-			Collection<Integer> aList = aForm.getMailing().getTargetGroups();
-
-			if (aList != null) {
-				aList.remove(aForm.getRemoveTargetID());
-			}
-            aForm.getMailing().setTargetGroups(aList);
-			return mapping.getInputForward();
-		}
-        // for the case if the target mode was changed we need to re-generate target expression
-        updateTargetExpression(aForm);
-        return mapping.findForward("next");
+	public void configureTargetALTG(HttpServletRequest request, MailingWizardForm form) {
+		//altg is not supported
+		request.setAttribute("altgId", 0);
 	}
-
-    private void updateTargetExpression(MailingWizardForm aForm) {
-        if (aForm.getTargetID() == 0 && aForm.getRemoveTargetID() == 0 &&
-                aForm.getMailing().getTargetGroups() != null && aForm.getMailing().getTargetGroups().size() > 0) {
-            aForm.getMailing().updateTargetExpression();
-        }
-    }
-
-    /**
-     * Updates target expression (re-generates String representing selected targets IDs of mailing).
-     * Saves mailing to database. Forwards to finish page.
-     *
-     * @param mapping The ActionMapping used to select this instance
-     * @param form data for the action filled by the jsp
-     * @param req request from jsp
-     * @param res response
-     * @return destination specified in struts-config.xml to forward to next jsp
-     * @throws Exception if a exception occurs
-     */
-    public ActionForward target_finish(ActionMapping mapping, ActionForm form,
-			HttpServletRequest req, HttpServletResponse res) throws Exception {
-        this.updateTargetExpression((MailingWizardForm) form);
-        return this.finish(mapping, form, req, res);
-    }
 
     /**
      * If the user is not logged in - forwards to login page.<br>
@@ -781,12 +664,12 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
 		content.setCompanyID(mailing.getCompanyID());
 		content.setDynContent(aForm.getNewContent());
-		content.setTargetID(aForm.getTargetID());
+		content.setTargetID(aForm.getNewModuleTargetID());
 		content.setDynNameID(dynTag.getId());
 		content.setMailingID(dynTag.getMailingID());
 		content.setDynOrder(dynTag.getMaxOrder()+1);
 		dynTag.addContent(content);
-		aForm.setTargetID(0);
+		aForm.setNewModuleTargetID(0);
 		aForm.setNewContent("");
         prepareAttachmentPage(req);
 		return mapping.findForward("add");
@@ -1014,9 +897,9 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 				comp.setCompanyID(AgnUtils.getCompanyID(req));
 				comp.setMailingID(aForm.getMailing().getId());
 				if(aForm.getNewAttachmentType() == 0) {
-					comp.setType(MailingComponent.TYPE_ATTACHMENT);
+					comp.setType(MailingComponentType.Attachment);
 				} else {
-					comp.setType(MailingComponent.TYPE_PERSONALIZED_ATTACHMENT);
+					comp.setType(MailingComponentType.PersonalizedAttachment);
 				}
 				if(aForm.getNewAttachmentName().isEmpty()) {
 					aForm.setNewAttachmentName(aForm.getNewAttachment().getFileName());
@@ -1122,7 +1005,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		}
 
 		req.setAttribute("isEnableTrackingVeto", configService.getBooleanValue(ConfigValue.EnableTrackingVeto, AgnUtils.getCompanyID(req)));
-         
+
 		return mapping.findForward("previous");
 	}
 
@@ -1253,6 +1136,11 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	}
 
 	@Required
+	public void setCopyMailingService(CopyMailingService copyMailingService) {
+		this.copyMailingService = copyMailingService;
+	}
+
+	@Required
 	public void setMailingService(MailingService mailingService) {
 		this.mailingService = mailingService;
 	}
@@ -1260,5 +1148,15 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	@Required
 	public void setPreviewImageService(PreviewImageService previewImageService) {
     	this.previewImageService = previewImageService;
+	}
+
+	@Required
+	public void setFilterListBuilder(QueryBuilderFilterListBuilder filterListBuilder) {
+		this.filterListBuilder = filterListBuilder;
+	}
+
+	@Required
+	public void setAdminService(AdminService adminService) {
+		this.adminService = adminService;
 	}
 }

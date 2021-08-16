@@ -101,7 +101,8 @@ window.I18n = {
         relogin: '<agn:agnMessage key="logout.relogin"/>',
         remember: {
             choice: '<agn:agnMessage key="remember.choice"/>'
-        }
+        },
+        andMore: '<agn:agnMessage key="error.showNumberOfLeft" arg0="%s"/>'
     },
     selects: {
         noMatches: '<agn:agnMessage key="default.noMatchesFor" />',
@@ -151,13 +152,19 @@ window.I18n = {
             number_exceed_max: '<agn:agnMessage key="querybuilder.error.number_exceed_max" arg0="%s"/>',
             phone_number_invalid: '<agn:agnMessage key="error.phoneNumber.invalidFormat"/>',
             string_exceed_min_length: '<agn:agnMessage key="querybuilder.error.string_exceed_min_length" arg0="%s"/>',
-            string_exceed_max_length: '<agn:agnMessage key="querybuilder.error.string_exceed_max_length" arg0="%s"/>'
+            string_exceed_max_length: '<agn:agnMessage key="querybuilder.error.string_exceed_max_length" arg0="%s"/>',
+            illegal_script_element: '<agn:agnMessage key="error.mailing.content.illegal.script"/>'
         },
         mailing: {
             parameter: '<agn:agnMessage key="MailingParameter"/>',
             description: '<agn:agnMessage key="Description"/>',
             for_mailing: '<agn:agnMessage key="mailing.MailingParameter.forMailing"/>',
             change_date: '<agn:agnMessage key="default.changeDate"/>'
+        },
+        mediapool: {
+            errors: {
+                mobile_base_duplicate: '<agn:agnMessage key="error.mediapool.mobile.duplicate"/>'
+            }
         }
     },
     messages: {
@@ -193,7 +200,8 @@ window.I18n = {
             delete_rule: '<agn:agnMessage key="Delete"/>',
             delete_group: '<agn:agnMessage key="Delete"/>',
             invert: '<agn:agnMessage key="querybuilder.invent"/>',
-            anyLink: '<agn:agnMessage key="target.link.any" />'
+            anyLink: '<agn:agnMessage key="target.link.any" />',
+            include_empty: '<agn:agnMessage key="querybuilder.empty.include" />'
         },
         conditions: {
             AND: '<agn:agnMessage key="condition.and"/>',
@@ -225,6 +233,8 @@ window.I18n = {
         },
         errors: {
             general: '<agn:agnMessage key="error.target.saving"/>',
+            invalid_definition: '<agn:agnMessage key="error.target.definition"/>',
+            no_rule: '<agn:agnMessage key="error.target.norule"/>',
             no_filter: '<agn:agnMessage key="querybuilder.error.no_filter"/>',
             empty_group: '<agn:agnMessage key="querybuilder.error.empty_group"/>',
             radio_empty: '<agn:agnMessage key="querybuilder.error.select_empty"/>',
@@ -440,6 +450,23 @@ window.I18n = {
             invalid_name: '<agn:agnMessage key="error.form.invalid_name" />',
             illegal_directive: '<agn:agnMessage key="error.form.illegal_directive" arg0="%s" />',
             invalid_link: '<agn:agnMessage key="error.invalid_link" arg0="%s" arg1="%s" />'
+        },
+        formBuilder: {
+            success:{
+                htmlGenerated: '<agn:agnMessage key="userform.builder.success" />'
+            },
+            generateHtml: '<agn:agnMessage key="userform.builder.generateHtml" />',
+            tooltips: {
+                agnCI: '<agn:agnMessage key="userform.builder.tooltip.replace.cid" />',
+                agnUID: '<agn:agnMessage key="userform.builder.tooltip.agnUID" />'
+            },
+            mediapoolImage: '<agn:agnMessage key="mediapool.image" />',
+            imageWidth: '<agn:agnMessage key="default.image.width" />',
+            imageHeight: '<agn:agnMessage key="grid.mediapool.image.sizes.height" />',
+            imageAlt: '<agn:agnMessage key="default.text.alt" />',
+            nextForm: '<agn:agnMessage key="userform.builder.next" />',
+            formName: '<agn:agnMessage key="userform.name" />',
+            emmField: '<agn:agnMessage key="workflow.start.ProfileField" />'
         }
     },
 
@@ -527,12 +554,18 @@ window.I18n = {
     },
     facebook : {
     	leadAds: {
-    		renewedPageAccessTokens : '<agn:agnMessage key="facebook.leadAds.renewedPageAccessTokens" arg0="%s"/>'
+    		renewedPageAccessTokens : '<agn:agnMessage key="facebook.leadAds.renewedPageAccessTokens" arg0="%s"/>',
+    		error : {
+    			already_bound_to_other_company : '<agn:agnMessage key="facebook.leadAds.error.boundToOtherCompany"/>'
+    		}	
     	}
     },
     password : {
     	error : {
 	    	too_short 					: '<agn:agnMessage key="error.password.tooShort" />',
+	    	too_short_min8				: '<agn:agnMessage key="error.password.tooShort.min8" />',
+	    	too_short_min12				: '<agn:agnMessage key="error.password.tooShort.min12" />',
+	    	too_short_min32				: '<agn:agnMessage key="error.password.tooShort.min32" />',
 	    	no_digits 					: '<agn:agnMessage key="error.password_no_digits" />',
 	    	no_lower_case 				: '<agn:agnMessage key="error.password_no_lowercase_letters" />',
 	    	no_upper_case 				: '<agn:agnMessage key="error.password_no_uppercase_letters" />',

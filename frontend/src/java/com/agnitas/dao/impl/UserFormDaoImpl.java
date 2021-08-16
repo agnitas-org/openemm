@@ -17,7 +17,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
@@ -26,12 +25,10 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.UserFormDao;
-import com.agnitas.emm.core.commons.ActivenessStatus;
 import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.bean.impl.UserFormImpl;
@@ -48,7 +45,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	@Override
     public List<UserForm> getUserForms(@VelocityCheck int companyID) {
     	List<UserForm> comList = select(logger,
-				"SELECT form_id, company_id, formname, description, creation_date, change_date, active  " +
+				"SELECT form_id, company_id, formname, description, creation_date, change_date, active, startaction_id, endaction_id  " +
 				"FROM userform_tbl WHERE company_id = ? ORDER BY lower(formname)",
 				new UserForm_Light_RowMapper(), companyID);
     	return new ArrayList<>(comList);
@@ -70,14 +67,9 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 
 	@Override
 	public UserForm getUserForm(int formID, @VelocityCheck int companyID) {
-		String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active "
+		String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, success_builder_json, error_builder_json "
 				+ " FROM userform_tbl WHERE form_id = ? AND company_id = ?";
-		try {
-			return selectObject(logger, sql, new UserForm_RowMapper(), formID, companyID);
-		} catch (EmptyResultDataAccessException e) {
-            logger.error("User form not found", e);
-			return null;
-		}
+		return selectObjectDefaultNull(logger, sql, new UserForm_RowMapper(), formID, companyID);
 	}
 
 	@Override
@@ -85,7 +77,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 		if (name == null || companyID == 0) {
 			return null;
 		} else {
-			String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active FROM userform_tbl WHERE formname = ? AND company_id = ?";
+			String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, success_builder_json, error_builder_json FROM userform_tbl WHERE formname = ? AND company_id = ?";
 
 			List<UserForm> userFormList = select(logger, sql, new UserForm_RowMapper(), name, companyID);
 			if (userFormList == null || userFormList.size() < 1) {
@@ -188,8 +180,9 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 					+ "success_url, error_url, "
 					+ "success_use_url, "
 					+ "error_use_url, "
-					+ "active) "
-					+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+					+ "active, "
+					+ "success_builder_json, error_builder_json) "
+					+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 			update(logger, sql,
 					userFormId,
 					companyId,
@@ -201,7 +194,8 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 					userForm.getSuccessUrl(), userForm.getErrorUrl(),
 					BooleanUtils.toInteger(userForm.isSuccessUseUrl()),
 					BooleanUtils.toInteger(userForm.isErrorUseUrl()),
-					BooleanUtils.toInteger(userForm.isActive())
+					BooleanUtils.toInteger(userForm.isActive()),
+					userForm.getSuccessFormBuilderJson(), userForm.getErrorFormBuilderJson()
 			);
 		} else {
 			userFormId = insertIntoAutoincrementMysqlTable(logger, "form_id",
@@ -215,8 +209,9 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 							+ "success_url, error_url, "
 							+ "success_use_url, "
 							+ "error_use_url, "
-							+ "active) "
-							+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+							+ "active, "
+							+ "success_builder_json, error_builder_json) "
+							+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 				companyId,
 				userForm.getFormName(),
 				userForm.getDescription(),
@@ -226,7 +221,8 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 				userForm.getSuccessUrl(), userForm.getErrorUrl(),
 				BooleanUtils.toInteger(userForm.isSuccessUseUrl()),
 				BooleanUtils.toInteger(userForm.isErrorUseUrl()),
-				BooleanUtils.toInteger(userForm.isActive())
+				BooleanUtils.toInteger(userForm.isActive()),
+				userForm.getSuccessFormBuilderJson(), userForm.getErrorFormBuilderJson()
 			);
 		}
 		return userFormId;
@@ -241,6 +237,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 				+ "success_url = ?, error_url = ?, "
 				+ "success_use_url = ?, error_use_url = ?, "
 				+ "active = ?, "
+				+ "success_builder_json = ?, error_builder_json = ?, "
 				+ "change_date = CURRENT_TIMESTAMP WHERE form_id = ? AND company_id = ?";
 		update(logger, sql, userForm.getFormName(), userForm.getDescription(),
 					userForm.getSuccessTemplate(), userForm.getErrorTemplate(),
@@ -250,6 +247,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 					BooleanUtils.toInteger(userForm.isSuccessUseUrl()),
 					BooleanUtils.toInteger(userForm.isErrorUseUrl()),
 					BooleanUtils.toInteger(userForm.isActive()),
+					userForm.getSuccessFormBuilderJson(), userForm.getErrorFormBuilderJson(),
 					userForm.getId(), companyId);
 	}
 	
@@ -271,7 +269,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 			return Collections.emptyList();
 		}
 
-		String statement = "SELECT form_id, company_id, formname, description, creation_date, change_date, active" +
+		String statement = "SELECT form_id, company_id, formname, description, creation_date, change_date, active, startaction_id, endaction_id" +
 				" FROM userform_tbl" +
 				String.format(" WHERE company_id = ? AND form_id IN (%s)", StringUtils.join(formIds, ','));
 
@@ -311,7 +309,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 		}
 	}
 
-	private class UserForm_Light_RowMapper implements RowMapper<UserForm> {
+	private static class UserForm_Light_RowMapper implements RowMapper<UserForm> {
 		@Override
 		public UserForm mapRow(ResultSet resultSet, int row) throws SQLException {
 			UserForm readUserForm = new UserFormImpl();
@@ -322,21 +320,13 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 			readUserForm.setCreationDate(resultSet.getTimestamp("creation_date"));
 			readUserForm.setChangeDate(resultSet.getTimestamp("change_date"));
 			readUserForm.setActive(resultSet.getBoolean("active"));
-			return readUserForm;
-		}
-	}
-
-	private class UserForm_LightWithActionIDs_RowMapper extends UserForm_Light_RowMapper {
-		@Override
-		public UserForm mapRow(ResultSet resultSet, int row) throws SQLException {
-			UserForm readUserForm = super.mapRow(resultSet, row);
 			readUserForm.setStartActionID(resultSet.getInt("startaction_id"));
 			readUserForm.setEndActionID(resultSet.getInt("endaction_id"));
 			return readUserForm;
 		}
 	}
 
-	private class UserForm_RowMapper implements RowMapper<UserForm> {
+	private static class UserForm_RowMapper implements RowMapper<UserForm> {
 		@Override
 		public UserForm mapRow(ResultSet resultSet, int row) throws SQLException {
 			UserForm readUserForm = new UserFormImpl();
@@ -355,6 +345,8 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 			readUserForm.setSuccessUseUrl(resultSet.getInt("success_use_url") != 0);
 			readUserForm.setErrorUseUrl(resultSet.getInt("error_use_url") != 0);
 			readUserForm.setActive(resultSet.getBoolean("active"));
+			readUserForm.setSuccessFormBuilderJson(resultSet.getString("success_builder_json"));
+			readUserForm.setErrorFormBuilderJson(resultSet.getString("error_builder_json"));
 			return readUserForm;
 		}
 	}
@@ -368,40 +360,8 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	}
 
 	@Override
-	public PaginatedListImpl<UserForm> getUserFormsWithActionIdsNew(String sortColumn, String sortDirection,
-																	int pageNumber, int pageSize, ActivenessStatus filter, @VelocityCheck int companyID) {
-
-		String sortClause;
-		if (StringUtils.isBlank(sortColumn)) {
-			sortClause = "ORDER BY LOWER(formname)";
-		} else if ("changedate".equalsIgnoreCase(sortColumn)) {
-			sortClause = "ORDER BY change_date";
-		} else if ("creationdate".equalsIgnoreCase(sortColumn)) {
-			sortClause = "ORDER BY creation_date";
-		} else {
-			sortClause = "ORDER BY " + sortColumn;
-		}
-		boolean sortDirectionAscending = !"desc".equalsIgnoreCase(sortDirection) && !"descending".equalsIgnoreCase(sortDirection);
-		sortClause += (sortDirectionAscending ? " ASC" : " DESC");
-
-		List<Object> params = new ArrayList<>();
-		params.add(companyID);
-
-		String query = "SELECT form_id, company_id, formname, description, creation_date, change_date, startaction_id, endaction_id, active " +
-				"FROM userform_tbl WHERE company_id = ?";
-
-		if (filter != ActivenessStatus.NONE){
-			query += " AND active = ?";
-			params.add(BooleanUtils.toInteger(ActivenessStatus.ACTIVE == filter));
-		}
-
-		return selectPaginatedListWithSortClause(logger, query, sortClause, sortColumn, sortDirectionAscending,
-				pageNumber, pageSize, new UserForm_LightWithActionIDs_RowMapper(), params.toArray());
-	}
-	
-	@Override
-	public boolean existsUserForm(int copmanyId, int userFormId) {
-		return selectInt(logger, "SELECT COUNT(*) FROM userform_tbl WHERE company_id = ? AND form_id = ?", copmanyId, userFormId) > 0;
+	public boolean existsUserForm(int companyId, int userFormId) {
+		return selectInt(logger, "SELECT COUNT(*) FROM userform_tbl WHERE company_id = ? AND form_id = ?", companyId, userFormId) > 0;
 	}
 
 	@Required

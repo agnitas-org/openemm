@@ -28,7 +28,9 @@ import org.agnitas.emm.core.target.exception.TargetGroupException;
 import org.agnitas.emm.core.target.exception.TargetGroupIsInUseException;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.service.ColumnInfoService;
+import org.agnitas.service.TargetEqlQueryBuilder;
 import org.agnitas.service.WebStorage;
+import org.agnitas.target.PseudoColumn;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.GuiConstants;
@@ -69,12 +71,6 @@ public class ComTargetAction extends StrutsActionBase {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComTargetAction.class);
 
-	public static final int ACTION_BULK_CONFIRM_DELETE = ACTION_LAST + 6;
-	public static final int ACTION_BULK_DELETE = ACTION_LAST + 7;
-	public static final int ACTION_LOCK_TARGET_GROUP = ACTION_LAST + 8;
-	public static final int ACTION_UNLOCK_TARGET_GROUP = ACTION_LAST + 9;
-	public static final int ACTION_REBUILD_STRUCTURE_DATA = ACTION_LAST + 10;
-
     private ComBirtReportDao birtReportDao;
     
     private ComRecipientDao recipientDao;
@@ -82,6 +78,7 @@ public class ComTargetAction extends StrutsActionBase {
 	protected ConfigService configService;
 	protected MailingService mailingService;
 	protected TrackableLinkDao trackableLinkDao;
+	protected TargetEqlQueryBuilder targetEqlQueryBuilder;
 	private WebStorage webStorage;
 
     /** Facade providing full EQL functionality. */
@@ -99,8 +96,14 @@ public class ComTargetAction extends StrutsActionBase {
 	
 	public static final int ACTION_BACK_TO_MAILINGWIZARD = ACTION_LAST + 5;
 	
-	public static final int ACTION_DELETE_FROM_MAILINGWIZARD = ACTION_LAST + 6;
-    
+	public static final int ACTION_BULK_CONFIRM_DELETE = ACTION_LAST + 6;
+	public static final int ACTION_BULK_DELETE = ACTION_LAST + 7;
+	public static final int ACTION_LOCK_TARGET_GROUP = ACTION_LAST + 8;
+	public static final int ACTION_UNLOCK_TARGET_GROUP = ACTION_LAST + 9;
+	public static final int ACTION_REBUILD_STRUCTURE_DATA = ACTION_LAST + 10;
+
+	public static final int ACTION_CONFIRM_DELETE_FROM_MAILINGWIZARD = ACTION_LAST + 11;
+
     @Override
     public String subActionMethodName(int subAction) {
         switch (subAction) {
@@ -125,6 +128,8 @@ public class ComTargetAction extends StrutsActionBase {
             return "delete_recipients";
         case ACTION_BACK_TO_MAILINGWIZARD:
             return "back_to_mailingwizard";
+		case ACTION_CONFIRM_DELETE_FROM_MAILINGWIZARD:
+			return "confirm_delete";
 
         default:
             return super.subActionMethodName(subAction);
@@ -223,9 +228,16 @@ public class ComTargetAction extends StrutsActionBase {
         ActionMessages messages = new ActionMessages();
         ActionMessages rulesValidationErrors = new ActionMessages();
 
+        ComAdmin admin = AgnUtils.getAdmin(req);
+
+        assert admin != null;
+
 		try {
 			switch (targetForm.getAction()) {
+
+			case ACTION_CONFIRM_DELETE_FROM_MAILINGWIZARD:
             case ACTION_CONFIRM_DELETE:
+            	targetForm.setPreviousAction(targetForm.getAction());
                 loadTarget(targetForm, req);
                 loadDependentEntities(targetForm, req);
                 targetForm.setAction(ACTION_DELETE);
@@ -248,9 +260,8 @@ public class ComTargetAction extends StrutsActionBase {
 					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.delete"));
 				}
 				
-                if(targetForm.getPreviousAction() == ACTION_DELETE_FROM_MAILINGWIZARD){
-					targetForm.setTargetID(0);
-					destination = mapping.getInputForward();
+                if (targetForm.getPreviousAction() == ACTION_CONFIRM_DELETE_FROM_MAILINGWIZARD) {
+                	destination = mapping.findForward("mailing_wizard_new_target");
 					break;
                 }
                 
@@ -377,7 +388,7 @@ public class ComTargetAction extends StrutsActionBase {
 				}
 				destination = mapping.findForward("view");
 				break;
-				
+
 			// Here comes some actions, that have been replaced by the QueryBuilder action and are not longer supported by this action
         	case ACTION_REBUILD_STRUCTURE_DATA:
        		case ACTION_VIEW:
@@ -400,7 +411,6 @@ public class ComTargetAction extends StrutsActionBase {
 		
 		if (destination != null) {
 			if ("success".equals(destination.getName())) {
-				final ComAdmin admin = AgnUtils.getAdmin(req);
 				prepareListParameters(targetForm, admin);
 				req.setAttribute("targetlist", loadTargetList(admin, targetForm));
 				targetForm.setTargetComplexities(targetService.getTargetComplexities(AgnUtils.getCompanyID(req)));
@@ -410,7 +420,7 @@ public class ComTargetAction extends StrutsActionBase {
 		req.setAttribute("rulesValidationErrors", rulesValidationErrors);
 
 		// Report any errors we have discovered back to the original form
-		if (errors != null && !errors.isEmpty()) {
+		if (!errors.isEmpty()) {
 			saveErrors(req, errors);
             if (destination == null) {
                 return (new ActionForward(mapping.getInput()));
@@ -424,7 +434,7 @@ public class ComTargetAction extends StrutsActionBase {
 
 		return destination;
 	}
-	
+
 	private String listTargetGroups(ComTargetForm form, HttpServletRequest request) {
 		if (form.getColumnwidthsList() == null) {
         	form.setColumnwidthsList(getInitializedColumnWidthList(3));
@@ -439,7 +449,7 @@ public class ComTargetAction extends StrutsActionBase {
 		return "list";
 	}
 
-	private void prepareListParameters(final ComTargetForm form, final ComAdmin admin) {
+	private void prepareListParameters(ComTargetForm form, ComAdmin admin) {
 		synchronized (ComWebStorage.TARGET_OVERVIEW) {
 			final boolean isBundlePresented = webStorage.isPresented(ComWebStorage.TARGET_OVERVIEW);
 			webStorage.access(ComWebStorage.TARGET_OVERVIEW, storage -> {
@@ -573,7 +583,7 @@ public class ComTargetAction extends StrutsActionBase {
 
 		return newId;
 	}
-	
+
 	/**
 	 * Clone target.
 	 */
@@ -618,6 +628,11 @@ public class ComTargetAction extends StrutsActionBase {
         this.columnInfoService = columnInfoService;
     }
 
+    @Required
+	public void setTargetEqlQueryBuilder(TargetEqlQueryBuilder targetEqlQueryBuilder) {
+		this.targetEqlQueryBuilder = targetEqlQueryBuilder;
+	}
+
 	@Required
     public void setRecipientDao(ComRecipientDao recipientDao) {
         this.recipientDao = recipientDao;
@@ -646,5 +661,9 @@ public class ComTargetAction extends StrutsActionBase {
     @Required
 	public void setWebStorage(WebStorage webStorage) {
 		this.webStorage = webStorage;
+	}
+
+	protected void setPseudoRuleAttributes(HttpServletRequest request) {
+		request.setAttribute("COLUMN_INTERVAL_MAILING", PseudoColumn.INTERVAL_MAILING);
 	}
 }

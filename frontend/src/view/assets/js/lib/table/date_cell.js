@@ -1,7 +1,19 @@
 (function(){
 
   var DateCellRenderer = function () {};
-  
+
+  function getFormattedValue(params, format) {
+    if (params.value) {
+      if (!params.valueFormatted) {
+        params.valueFormatted = moment(params.value).format(format);
+      }
+
+      return params.valueFormatted;
+    } else {
+      return '';
+    }
+  }
+
   // gets called once before the renderer is used
   DateCellRenderer.prototype.init = function(params) {
     this.eGui = document.createElement('div');
@@ -19,14 +31,7 @@
         }
       }
     }
-
-    if (params.value) {
-      if (!params.valueFormatted) {
-        params.valueFormatted = moment(params.value).format(this.format);
-      }
-      this.eGui.innerHTML = params.valueFormatted;
-    }
-
+    this.eGui.innerHTML = getFormattedValue(params, this.format);
   };
 
   // gets called once when grid ready to insert the element
@@ -37,12 +42,7 @@
   // gets called whenever the user gets the cell to refresh
   DateCellRenderer.prototype.refresh = function(params) {
     // set value into cell again
-    if (params.value) {
-      params.valueFormatted = moment(params.value).format(this.format);
-      this.eGui.innerHTML = params.valueFormatted;
-    } else { 
-      this.eGui.innerHTML = '';
-    }
+    this.eGui.innerHTML = getFormattedValue(params, this.format);
     // return true to tell the grid we refreshed successfully
     return true;
   };

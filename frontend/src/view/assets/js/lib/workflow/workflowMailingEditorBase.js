@@ -916,7 +916,7 @@
 
                         if (contains(params, mailingEditorBase.PARAM_TARGET_GROUPS)) {
                             node.data.targets = mailingData.targetGroupIds;
-                            node.data.targetsOption = 'ONE_TARGET_REQUIRED';
+                            node.data.targetsOption = constants.accessLimitTargetId > 0 ? 'ALL_TARGETS_REQUIRED' : 'ONE_TARGET_REQUIRED';
                         }
                     }
                 );
@@ -1059,7 +1059,8 @@
 
                                     if (contains(params, mailingEditorBase.PARAM_TARGET_GROUPS)) {
                                         node.data.targets = mailingEditorBase.mailingData.targetGroupIds;
-                                        node.data.targetsOption = 'ONE_TARGET_REQUIRED';
+                                        node.data.targetsOption = constants.accessLimitTargetId > 0 ? 'ALL_TARGETS_REQUIRED' : 'ONE_TARGET_REQUIRED';;
+
                                         refreshNode(node);
                                     }
                                 }

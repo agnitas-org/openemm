@@ -32,9 +32,10 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.calendar.service.CalendarService;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
@@ -45,6 +46,7 @@ import net.sf.json.JSONObject;
 
 public class CalendarServiceImpl implements CalendarService {
     private ComMailingDao mailingDao;
+    private AdminService adminService;
 
     private static final String DATE_FORMAT = "dd-MM-yyyy";
     private static final String TIME_FORMAT = "HH:mm";
@@ -55,18 +57,23 @@ public class CalendarServiceImpl implements CalendarService {
         this.mailingDao = mailingDao;
     }
 
+    @Required
+    public void setAdminService(AdminService adminService) {
+        this.adminService = adminService;
+    }
+
     protected ComMailingDao getMailingDao() {
         return mailingDao;
     }
 
     @Override
     public PaginatedListImpl<Map<String, Object>> getUnsentMailings(ComAdmin admin, int listSize) {
-        return mailingDao.getUnsentMailings(admin.getCompanyID(), admin.getAdminID(), listSize);
+       return mailingDao.getUnsentMailings(admin.getCompanyID(), admin.getAdminID(), adminService.getAccessLimitTargetId(admin), listSize);
     }
 
     @Override
     public PaginatedListImpl<Map<String, Object>> getPlannedMailings(ComAdmin admin, int listSize) {
-        return mailingDao.getPlannedMailings(admin.getCompanyID(), admin.getAdminID(), listSize);
+        return mailingDao.getPlannedMailings(admin.getCompanyID(), admin.getAdminID(), adminService.getAccessLimitTargetId(admin), listSize);
     }
 
     @Override
@@ -97,7 +104,7 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     protected List<Map<String, Object>> getPlannedMailings(final ComAdmin admin, final Date startDate, final Date endDate) {
-        List<Map<String, Object>> plannedMailings = mailingDao.getPlannedMailings(admin.getCompanyID(), admin.getAdminID(), startDate, endDate);
+        List<Map<String, Object>> plannedMailings = mailingDao.getPlannedMailings(admin.getCompanyID(), admin.getAdminID(), startDate, endDate, adminService.getAccessLimitTargetId(admin));
         return addSomeFieldsToPlannedMailings(plannedMailings, AgnUtils.getZoneId(admin));
     }
 
@@ -113,7 +120,7 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     protected List<Map<String, Object>> getMailings(final ComAdmin admin, Date startDate, Date endDate) {
-        List<Map<String, Object>> mailings = mailingDao.getSentAndScheduled(admin.getCompanyID(), admin.getAdminID(), startDate, endDate);
+        List<Map<String, Object>> mailings = mailingDao.getSentAndScheduled(admin.getCompanyID(), admin.getAdminID(), startDate, endDate, adminService.getAccessLimitTargetId(admin));
 
         return addSomeFieldsToSentAndScheduledMailings(mailings);
     }
@@ -155,7 +162,7 @@ public class CalendarServiceImpl implements CalendarService {
 
     @Override
     public boolean moveMailing(ComAdmin admin, int mailingId, LocalDate date) {
-        ComMailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
+        Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
         // Avoid schedule in the past.
         if (mailing.getId() == mailingId && !date.isBefore(LocalDate.now())) {
             MaildropEntry drop = getMaildropForUpdate(mailing.getMaildropStatus());
@@ -169,7 +176,7 @@ public class CalendarServiceImpl implements CalendarService {
         return false;
     }
 
-    private boolean setMailingDate(ComAdmin admin, ComMailing mailing, MaildropEntry drop, LocalDate date) {
+    private boolean setMailingDate(ComAdmin admin, Mailing mailing, MaildropEntry drop, LocalDate date) {
         ZoneId zoneId = AgnUtils.getZoneId(admin);
         boolean success = false;
 
@@ -246,6 +253,7 @@ public class CalendarServiceImpl implements CalendarService {
             Date sendDate = (Date) mailing.get("senddate");
             int mailingId = getIntValue(mailing, "mailingId");
             boolean isSent = getIntValue(mailing, "genstatus") > MaildropGenerationStatus.SCHEDULED.getCode();
+            boolean isOnlyPostType = getIntValue(mailing, "isOnlyPostType") > 0;
 
             //hardcode because dao returns keys in different case (depends on db)
             object.element("shortname", getShortname(mailing));
@@ -263,6 +271,7 @@ public class CalendarServiceImpl implements CalendarService {
             object.element("sendDate", DateUtilities.format(sendDate, dateFormat));
             object.element("sendTime", DateUtilities.format(sendDate, timeFormat));
             object.element("sent", isSent);
+            object.element("isOnlyPostType", isOnlyPostType);
             object.element("openers", openers.getOrDefault(mailingId, 0));
             object.element("clickers", clickers.getOrDefault(mailingId, 0));
 

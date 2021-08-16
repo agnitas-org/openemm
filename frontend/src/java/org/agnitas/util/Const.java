@@ -15,21 +15,6 @@ package org.agnitas.util;
  * wide use.
  */
 public class Const {
-	public static class Mailtype {
-		public static final int
-			TEXT = 0,
-			HTML = 1,
-			HTML_OFFLINE = 2;
-	}
-	
-	public static class Mailing {
-		public static final String
-			TYPE_FOLLOWUP_NON_OPENER = "non-opener",
-			TYPE_FOLLOWUP_OPENER = "opener",
-			TYPE_FOLLOWUP_NON_CLICKER = "non-clicker",
-			TYPE_FOLLOWUP_CLICKER = "clicker";
-	}
-	
 	public static class Component {
 		public static final String
 			NAME_HEADER = "agnHead",
@@ -39,15 +24,6 @@ public class Const {
 			NAME_PRINT = "agnPRINT",
 			NAME_MMS = "agnMMS",
 			NAME_SMS = "agnSMS";
-		
-	}
-	
-	public static class Workstatus {
-		public static final String
-			MAILING_STATUS_TEST = "mailing.status.test",
-			MAILING_STATUS_IN_GENERATION = "mailing.status.in-generation",
-			MAILING_STATUS_GENERATION_FINISHED = "mailing.status.generation-finished",
-			MAILING_STATUS_NORECIPIENTS = "mailing.status.norecipients";
 	}
 	
 	public static class WorkflowDependencyType {

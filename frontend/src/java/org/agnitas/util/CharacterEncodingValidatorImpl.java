@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.exceptions.CharacterEncodingValidationException;
 import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;

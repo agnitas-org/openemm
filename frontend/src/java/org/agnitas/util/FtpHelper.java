@@ -363,4 +363,9 @@ public class FtpHelper implements RemoteFileHelper {
 		}
 		
 	}
+
+	@Override
+	public void deleteFile(String filePath) throws Exception {
+		ftpClient.deleteFile(filePath);
+	}
 }

@@ -19,7 +19,7 @@ public class LogonResetPasswordForm {
     private String password;
 
     public String getUsername() {
-        return username;
+        return StringUtils.trimToNull(username);
     }
 
     public void setUsername(String username) {
@@ -27,7 +27,7 @@ public class LogonResetPasswordForm {
     }
 
     public String getEmail() {
-        return email;
+        return StringUtils.trimToNull(email);
     }
 
     public void setEmail(String email) {

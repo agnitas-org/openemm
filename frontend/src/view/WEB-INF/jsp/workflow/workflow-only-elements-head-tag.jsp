@@ -45,16 +45,39 @@
     </c:choose>
 
     <link rel="shortcut icon" href="<c:url value="/favicon.ico"/>">
-    <c:if test="${isWkhtmltopdfUsage}">
-        <script type="application/javascript" src="${pageContext.request.contextPath}/js/lib/workflow/hacks-wkhtmltopdf-qt.js"></script>
-    </c:if>
+    <emm:ShowByPermission token="workflow.jsplumb2">
+        <!-- Polyfills for wkhtmltopdf -->
+        <script src="${pageContext.request.contextPath}/js/lib/workflow/hacks-wkhtmltopdf-qt.js"></script>
+        <script src="${pageContext.request.contextPath}/js/lib/workflow/es5-shim-4.5.15.min.js"></script>
+        <script src="${pageContext.request.contextPath}/js/lib/workflow/polyfill-7.12.1.min..js"></script>
+    </emm:ShowByPermission>
+    <emm:HideByPermission token="workflow.jsplumb2">
+        <c:if test="${isWkhtmltopdfUsage}">
+            <script src="${pageContext.request.contextPath}/js/lib/workflow/hacks-wkhtmltopdf-qt.js"></script>
+        </c:if>
+    </emm:HideByPermission>
+
     <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
 
     <%--here you should put extra css/js links needed for your page--%>
     <tiles:insert attribute="head-extra-links"/>
 
+    <emm:ShowByPermission token="workflow.jsplumb2">
+        <script>
+            jQuery.isFunction = function(obj) {
+              if (typeof obj === 'function') {
+                return true;
+              } else {
+                return false;
+              }
+            }
+        </script>
+    </emm:ShowByPermission>
+
     <%-- load this file always after loading jQuery lib--%>
-    <c:if test="${isWkhtmltopdfUsage}">
-        <script type="application/javascript" src="${pageContext.request.contextPath}/js/lib/workflow/hacks-wkhtmltopdf-jQuery.js"></script>
-    </c:if>
+    <emm:HideByPermission token="workflow.jsplumb2">
+        <c:if test="${isWkhtmltopdfUsage}">
+            <script type="application/javascript" src="${pageContext.request.contextPath}/js/lib/workflow/hacks-wkhtmltopdf-jQuery.js"></script>
+        </c:if>
+    </emm:HideByPermission>
 </head>

@@ -15,7 +15,6 @@ import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getGende
 import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMailingContentViewName;
 import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMailingLivePreviewPosition;
 import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMailingSettingsViewName;
-import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getNavigationLocationName;
 import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getStatisticLoadType;
 
 import java.util.ArrayList;
@@ -195,12 +194,10 @@ public class ComUserSelfServiceAction extends DispatchAction {
                 if (adminPreferences != null) {
                     //save preferences
                     adminPreferences.setAdminID(adminForm.getAdminID());
-                    adminPreferences.setNavigationLocation(adminForm.getNavigationLocation());
                     adminPreferences.setDashboardMailingsView(adminForm.getDashboardMailingsView());
                     adminPreferences.setLivePreviewPosition(adminForm.getLivePreviewPosition());
                     adminPreferences.setMailingContentView(adminForm.getMailingContentView());
                     adminPreferences.setMailingSettingsView(adminForm.getMailingSettingsView());
-                    adminPreferences.setStartPage(adminForm.getStartPage());
                     adminPreferences.setStatisticLoadType(adminForm.getStatisticLoadType());
                 }
 
@@ -386,7 +383,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
      * Loads the data of the admin from the database and stores it in the
      * form.
      *
-     * @param comAdminForm     the formula passed from the jsp
+     * @param comAdminForm     the form passed from the jsp
      * @param adminPreferences existed admin preferences data
      * @param admin            existed admin account data
      */
@@ -410,11 +407,9 @@ public class ComUserSelfServiceAction extends DispatchAction {
         comAdminForm.setEmail(admin.getEmail());
         comAdminForm.setLayoutBaseId(admin.getLayoutBaseID());
 		comAdminForm.setInitialCompanyName(companyDao.getCompany(admin.getCompanyID()).getShortname());
-        comAdminForm.setStartPage(adminPreferences.getStartPage());
         comAdminForm.setFirstname(admin.getFirstName());
         comAdminForm.setMailingContentView(adminPreferences.getMailingContentView());
         comAdminForm.setDashboardMailingsView(adminPreferences.getDashboardMailingsView());
-        comAdminForm.setNavigationLocation(adminPreferences.getNavigationLocation());
         comAdminForm.setMailingSettingsView(adminPreferences.getMailingSettingsView());
         comAdminForm.setLivePreviewPosition(adminPreferences.getLivePreviewPosition());
         comAdminForm.setStatisticLoadType(adminPreferences.getStatisticLoadType());
@@ -583,18 +578,6 @@ public class ComUserSelfServiceAction extends DispatchAction {
                                 " to " + getDashboardMailingsView(newDashboardMailingsView));
             }
 
-            //Log changes of startpage
-            if (adminPreferences.getStartPage() != adminForm.getStartPage()){
-                if ((adminPreferences.getStartPage() == 0)&& (adminForm.getStartPage() == 1)){
-                    writeUserActivityLog(admin, "edit user",
-                            userName + ". Startpage changed from Dashboard  to Calendar");
-                }
-                if ((adminPreferences.getStartPage() == 1)&& (adminForm.getStartPage() == 0)){
-                    writeUserActivityLog(admin, "edit user",
-                            userName + ". Startpage changed from Calendar to Dashboard");
-                }
-            }
-
             // Log changes of Statistic-Summary load type
             int oldStatisticLoadType = adminPreferences.getStatisticLoadType();
             int newStatisticLoadType = adminForm.getStatisticLoadType();
@@ -613,16 +596,6 @@ public class ComUserSelfServiceAction extends DispatchAction {
                 writeUserActivityLog(admin, "edit user",
                         userName + ". User mailing content view type changed from " + getMailingContentViewName(oldMailingContentView) +
                                 " to " + getMailingContentViewName(newMailingContentView));
-            }
-
-            // Log changes of default navigation location
-            int oldNavigationLocation = adminPreferences.getNavigationLocation();
-            int newNavigationLocation = adminForm.getNavigationLocation();
-
-            if (oldNavigationLocation != newNavigationLocation){
-                writeUserActivityLog(admin, "edit user",
-                        userName + ". Navigation location changed from " + getNavigationLocationName(oldNavigationLocation) +
-                                " to " + getNavigationLocationName(newNavigationLocation));
             }
 
             // Log changes of default mailing settings view (expanded ot collapsed)

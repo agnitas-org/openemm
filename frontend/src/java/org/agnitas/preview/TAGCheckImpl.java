@@ -13,6 +13,7 @@ package org.agnitas.preview;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,7 +21,11 @@ import org.agnitas.backend.BlockCollection;
 import org.agnitas.backend.BlockData;
 import org.agnitas.backend.Data;
 import org.agnitas.backend.EMMTag;
+import org.agnitas.backend.EMMTagException;
 import org.agnitas.util.Log;
+import org.apache.commons.lang3.StringUtils;
+
+import com.agnitas.messages.I18nString;
 
 public class TAGCheckImpl implements TAGCheck {
 	static class Seen {
@@ -34,33 +39,41 @@ public class TAGCheckImpl implements TAGCheck {
 	}
 
 	private Data data;
-	private Map<String, Seen> seen;
+	private final Map<String, Seen> seen;
 
-	public TAGCheckImpl(int mailingId) throws Exception {
+	private final Locale locale;
+
+	public TAGCheckImpl(int mailingId, Locale locale) throws Exception {
 		data = new Data("tagcheck", "preview:" + mailingId, "silent");
 
 		BlockCollection bc = new BlockCollection();
 		data.setBlocks(bc);
 		bc.setupBlockCollection(data, null);
 		seen = new HashMap<>();
+
+		this.locale = locale;
 	}
 
-	public TAGCheckImpl(int companyId, int mailinglistId) throws Exception {
+	public TAGCheckImpl(int companyId, int mailinglistId, Locale locale) throws Exception {
 		data = new Data("tagcheck", "preview:0," + companyId + "," + mailinglistId, "silent");
 
 		BlockCollection bc = new BlockCollection();
 		data.setBlocks(bc);
 		bc.setupBlockCollection(data, null);
 		seen = new HashMap<>();
+
+		this.locale = locale;
 	}
 
-	public TAGCheckImpl(int companyId, int mailingId, int mailinglistId) throws Exception {
+	public TAGCheckImpl(int companyId, int mailingId, int mailinglistId, Locale locale) throws Exception {
 		data = new Data("tagcheck", "preview:" + mailingId + "," + companyId + "," + mailinglistId, "silent");
 
 		BlockCollection bc = new BlockCollection();
 		data.setBlocks(bc);
 		bc.setupBlockCollection(data, null);
 		seen = new HashMap<>();
+
+		this.locale = locale;
 	}
 
 	@Override
@@ -88,6 +101,13 @@ public class TAGCheckImpl implements TAGCheck {
 				t.initialize(data, true);
 				t.requestFields(data, dummy);
 				s.status = true;
+			} catch (EMMTagException e) {
+				data.logging(Log.ERROR, "tc", "Failed to check \"" + tag + "\": " + e.toString(), e);
+				if(StringUtils.isBlank(e.getMessageKey())) {
+					s.report = tag + ": " + e.getMessage();
+				} else {
+					s.report = I18nString.getLocaleString(e.getMessageKey(), locale, (Object[]) e.getMessageArgs());
+				}
 			} catch (Exception e) {
 				data.logging(Log.ERROR, "tc", "Failed to check \"" + tag + "\": " + e.toString(), e);
 				s.report = tag + ": " + e.getMessage();

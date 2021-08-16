@@ -168,7 +168,7 @@
                     <div class="inline-tile-header">
                         <h2 class="headline-static"><bean:message key="target.Target"/> <button class="icon icon-help" data-help="help_${helplanguage}/mailingwizard/step_08/Target.xml" tabindex="-1" type="button"></button></h2>
 
-                        <html:select property="targetID" size="1" styleId="targetID" styleClass="form-control js-select">
+                        <html:select property="newModuleTargetID" size="1" styleId="targetID" styleClass="form-control js-select">
                             <html:option value="0"><bean:message key="statistic.all_subscribers"/></html:option>
                             <logic:notEmpty name="targets" scope="request">
                                 <c:forEach var="dbTarget" items="${targets}">

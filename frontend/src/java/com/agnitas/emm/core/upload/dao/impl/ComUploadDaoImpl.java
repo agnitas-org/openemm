@@ -42,7 +42,7 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 	private static final transient Logger logger = Logger.getLogger(ComUploadDaoImpl.class);
 	
 	// should be inserted by spring...
-	protected DefaultLobHandler lobhandler = new DefaultLobHandler(); 
+	protected DefaultLobHandler lobhandler = new DefaultLobHandler();
 	
 	// Rowmapper for the list view....
 	protected class UploadDataRowMapper implements RowMapper<UploadData> {
@@ -410,6 +410,16 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 	}
 
 	@Override
+	public DownloadData getDownloadData(int companyID, String filename) {
+		return selectObjectDefaultNull(
+			logger,
+			"SELECT admin_id, creation_date, upload_id, filename, filesize, contact_firstname, contact_name, contact_mail, contact_phone, sendto_mail, upload_id FROM upload_tbl WHERE company_id = ? AND filename = ?",
+			new NewDownloadDataRowMapper(),
+			companyID,
+			filename);
+	}
+
+	@Override
 	public void sendDataToStream(int uploadId, OutputStream stream) throws Exception {
 		try(final Connection connection = getDataSource().getConnection()) {
 			try(final PreparedStatement stmt = connection.prepareStatement("SELECT payload FROM upload_tbl WHERE upload_id = ?")) {
@@ -433,5 +443,20 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 				}
 			}
 		}
+	}
+
+    private Object getParentCompanyID(int companyId) {
+		return select(logger, "SELECT COALESCE(parent_company_id, 0) FROM company_tbl WHERE company_id = ?", Integer.class, companyId);
+	}
+
+	@Override
+	public long getCurrentUploadOverallSizeBytes(int companyID) {
+    	if (isOracleDB()) {
+    		Long mediapoolSize = select(logger, "SELECT COALESCE(SUM(DBMS_LOB.GETLENGTH(payload)), 0) FROM upload_tbl WHERE (company_id = ? OR company_id = ?)", Long.class, companyID, getParentCompanyID(companyID));
+    		return (mediapoolSize == null ? 0 : mediapoolSize);
+    	} else {
+    		Long mediapoolSize =  select(logger, "SELECT COALESCE(SUM(OCTET_LENGTH(payload)), 0) FROM upload_tbl WHERE (company_id = ? OR company_id = ?)", Long.class, companyID, getParentCompanyID(companyID));
+    		return (mediapoolSize == null ? 0 : mediapoolSize);
+    	}
 	}
 }

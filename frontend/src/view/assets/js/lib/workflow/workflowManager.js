@@ -18,7 +18,7 @@
             return constraint;
         }
 
-        if (typeof constraint === "function") {
+        if (_.isFunction(constraint)) {
             return constraint(source, target, nodesMap);
         }
 
@@ -380,7 +380,7 @@
         var boundNodesDOMId = "bounder";
         var boundNodesLeft = data.editorPositionLeft;
         var boundNodesTop = data.editorPositionTop;
-        var localeDateNTimePattern = data.localeDateNTimePattern;
+        var localeDateTimePattern = data.localeDateTimePattern;
         var boundNodesWidth = false;
         var boundNodesHeight = false;
         var noContextMenu = data.noContextMenu;
@@ -394,10 +394,7 @@
           .appendTo($('#' + editorCanvasDOMId));
 
         // setup navigator
-        var navigatorDOMId = "navigatorBody";
-        var navigatorJQ = $('<div></div>')
-            .attr('id', navigatorDOMId)
-            .insertAfter($('#' + viewPortDOMId));
+        var navigatorJQ = $('#navigator.js-navigation');
 
         // does not require initiation (yet?)
         var campaignManagerSettings = data.campaignManagerSettings;
@@ -409,7 +406,7 @@
 
         var campaignManagerNodes = new AGN.Lib.WM.CampaignManagerNodes({
             nodesContainerDOMId: boundNodesDOMId,
-            localeDateNTimePattern: localeDateNTimePattern,
+            localeDateTimePattern: localeDateTimePattern,
             campaignManagerScale: campaignManagerScale,
             campaignManager: self,
             nodeFactory: nodeFactory,
@@ -642,21 +639,28 @@
                 jsPlumbInstance = jsPlumb.getInstance();
 
                 jsPlumbInstance.bind("beforeDrop",
-                    function (connection) {
+                    function (params) {
                         if (self.checkActivation()) {
                             return;
                         }
-                        return self.connectIntermediateNodes(connection.sourceId, connection.targetId);
+
+                        var source = params.sourceId;
+                        var target = params.targetId;
+                        if (self.connectIntermediateNodes(source, target)) {
+                            return false;
+                        } else {
+                            return self.isConnectionAllowed(source, target)
+                        }
                     }
                 );
             }
 
             jsPlumbInstance.bind("ready", function () {
                 var anchors = [
-                    [0.5, 0.6, 0, 1],
-                    [0.5, 0.4, 0, -1],
-                    [0.6, 0.5, 1, 0],
-                    [0.4, 0.5, -1, 0]
+                        [0.5, 0.6, 0, 1],
+                        [0.5, 0.4, 0, -1],
+                        [0.6, 0.5, 1, 0],
+                        [0.4, 0.5, -1, 0]
                 ];
                 jsPlumbInstance.setRenderMode(campaignManagerSettings.renderMode);
                 jsPlumbInstance.importDefaults({
@@ -849,8 +853,6 @@
          * Initializations of node D&D
          */
         getJSPlumbDraggableProperties = function () {
-            var savedPageX;
-            var savedPageY;
             var selected;
             var selectedCache;
 
@@ -1201,6 +1203,7 @@
                 }
 
                 chainProcessor.updateParameterValueAfterDecision();
+                chainProcessor.updateRecipientNodesChains();
             }
         };
 
@@ -1268,10 +1271,9 @@
                 });
                 //return callback function
                 self.setConnectionNotAllowedCallback(curCallback);
+                return true;
+            } else {
                 return false;
-            }
-            else {
-                return self.isConnectionAllowed(sourceId, targetId);
             }
         };
 
@@ -1293,6 +1295,7 @@
             self.restoreCampaignActionsType();
 
             chainProcessor.updateParameterValueAfterDecision();
+            chainProcessor.updateRecipientNodesChains();
 
             this.callWorkflowManagerStateChangedCallback();
         };
@@ -1369,6 +1372,7 @@
 
             rearrangeStage();
             chainProcessor.updateParameterValueAfterDecision();
+            chainProcessor.updateRecipientNodesChains();
         };
 
         this.deleteConnectionByHtmlElement = function (htmlElement) {
@@ -1528,7 +1532,7 @@
                     }
                 }
             }
-        }
+        };
 
         this.updateLabelConnection = function (node) {
             if ((node.data.decisionType == constants.decisionTypeDecision) ||
@@ -1855,7 +1859,9 @@
                 "height": "100%"
             });
 
-            navigatorJQ.remove();
+            if (navigatorJQ.exists()) {
+                navigatorJQ.addClass('hidden');
+            }
 
             var sceneHeight = boundNodesJQ.height();
             var sceneWidth = boundNodesJQ.width();
@@ -1997,6 +2003,10 @@
 
         this.updateParameterValueAfterDecision = function () {
             chainProcessor.updateParameterValueAfterDecision();
+        };
+
+        this.updateRecipientNodesChains = function () {
+            chainProcessor.updateRecipientNodesChains();
         };
 
         /**
@@ -2204,68 +2214,67 @@
 
         // --- Setup navigator --- //
 
-        navigatorJQ.css({
-//            left: viewPortJQ.position().left + editorCanvasWidth - navigatorJQ.width() - 10,
-//            top: viewPortJQ.position().top + editorCanvasHeight - navigatorJQ.height() - 10
-            right: 20,
-            bottom: 20
-        });
-        var navigatorArrowTop = $('<div id="navigatorArrowTop"></div>');
-        var navigatorArrowRight = $('<div id="navigatorArrowRight"></div>');
-        var navigatorArrowBottom = $('<div id="navigatorArrowBottom"></div>');
-        var navigatorArrowLeft = $('<div id="navigatorArrowLeft"></div>');
+        if (navigatorJQ.exists()) {
+            var navigatorArrowTop = $('<div class="unselectable-text"></div>').addClass('js-navigation-top');
+            var navigatorArrowRight = $('<div class="unselectable-text"></div>').addClass('js-navigation-right');
+            var navigatorArrowBottom = $('<div class="unselectable-text"></div>').addClass('js-navigation-bottom');
+            var navigatorArrowLeft = $('<div class="unselectable-text"></div>').addClass('js-navigation-left');
 
-        navigatorJQ.append(navigatorArrowTop);
-        navigatorJQ.append(navigatorArrowRight);
-        navigatorJQ.append(navigatorArrowBottom);
-        navigatorJQ.append(navigatorArrowLeft);
-        navigatorArrowTop.on("click", function() {
-            editorCanvasJQ.animate({
-                top: campaignManagerSettings.navigatorStep
-            }, "fast", function() {
-                rearrangeStage();
+            navigatorJQ.append(navigatorArrowTop);
+            navigatorJQ.append(navigatorArrowRight);
+            navigatorJQ.append(navigatorArrowBottom);
+            navigatorJQ.append(navigatorArrowLeft);
+
+            navigatorJQ.removeClass('hidden');
+
+            navigatorArrowTop.on("click", function() {
+                editorCanvasJQ.animate({
+                    top: campaignManagerSettings.navigatorStep
+                }, "fast", function() {
+                    rearrangeStage();
+                });
             });
-        });
 
-        navigatorArrowRight.on("click", function () {
-            var keepScrollLeft = viewPortJQ.scrollLeft();
-            editorCanvasJQ.css({width: editorCanvasWidth + editorCanvasWidthGlobalIncrease + campaignManagerSettings.navigatorStep});
-            viewPortJQ.scrollLeft(keepScrollLeft);
-            editorCanvasJQ.animate(
-                {
-                    left: -campaignManagerSettings.navigatorStep
-                },
-                "fast",
-                function () {
-                    rearrangeStage();
-                }
-            )
-        });
-        navigatorArrowBottom.on("click", function () {
-            var keepScrollTop = viewPortJQ.scrollTop();
-            editorCanvasJQ.css({height: editorCanvasHeight + editorCanvasHeightGlobalIncrease + campaignManagerSettings.navigatorStep});
-            viewPortJQ.scrollTop(keepScrollTop);
-            editorCanvasJQ.animate(
-                {
-                    top: -campaignManagerSettings.navigatorStep
-                },
-                "fast",
-                function () {
-                    rearrangeStage();
-                }
-            )
-        });
-        navigatorArrowLeft.on("click", function () {
-            editorCanvasJQ.animate(
-                {
-                    left: campaignManagerSettings.navigatorStep
-                },
-                "fast",
-                function () {
-                    rearrangeStage();
-                }
-            )
-        });
+            navigatorArrowRight.on("click", function () {
+                var keepScrollLeft = viewPortJQ.scrollLeft();
+                editorCanvasJQ.css({width: editorCanvasWidth + editorCanvasWidthGlobalIncrease + campaignManagerSettings.navigatorStep});
+                viewPortJQ.scrollLeft(keepScrollLeft);
+                editorCanvasJQ.animate(
+                    {
+                        left: -campaignManagerSettings.navigatorStep
+                    },
+                    "fast",
+                    function () {
+                        rearrangeStage();
+                    }
+                )
+            });
+            navigatorArrowBottom.on("click", function () {
+                var keepScrollTop = viewPortJQ.scrollTop();
+                editorCanvasJQ.css({height: editorCanvasHeight + editorCanvasHeightGlobalIncrease + campaignManagerSettings.navigatorStep});
+                viewPortJQ.scrollTop(keepScrollTop);
+                editorCanvasJQ.animate(
+                    {
+                        top: -campaignManagerSettings.navigatorStep
+                    },
+                    "fast",
+                    function () {
+                        rearrangeStage();
+                    }
+                )
+            });
+            navigatorArrowLeft.on("click", function () {
+                editorCanvasJQ.animate(
+                    {
+                        left: campaignManagerSettings.navigatorStep
+                    },
+                    "fast",
+                    function () {
+                        rearrangeStage();
+                    }
+                )
+            });
+        }
 
         // --- EndOf Setup navigator --- //
 
@@ -2312,8 +2321,8 @@
         // initialize the stage
         rearrangeStage();
 
-        // event for draggable buttons from the toolbars (marked with "draggableButton" class)
-        $('.draggableButton')
+        // event for draggable buttons from the toolbars (marked with "js-draggable-button" class)
+        $('.js-draggable-button')
             .css({zIndex: self.Z_INDEX_DRAGGABLE_BUTTON})
             .draggable({
                 revert: true,
@@ -2331,8 +2340,9 @@
                     ui.helper.css({zIndex: self.Z_INDEX_DRAGGABLE_BUTTON});
                     ui.helper.parent().css({zIndex: self.Z_INDEX_ICON_PANEL});
                     var stagePosition = viewPortJQ.offset();
-                    var nodeType = ui.helper.attr('type');
+                    var nodeType = ui.helper.data('type');
                     var factor = 1;
+
 
                     switch (nodeType) {
                         case nodeFactory.NODE_TYPE_OWN_WORKFLOW:
@@ -2426,7 +2436,7 @@
                 }
             })
             .dblclick(function (e) {
-                var type = $(this).attr('type');
+                var type = $(this).data('type');
                 var nodes;
 
                 function place(x, y) {

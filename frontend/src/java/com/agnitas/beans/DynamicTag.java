@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface DynamicTag extends Cloneable {

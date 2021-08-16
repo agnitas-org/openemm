@@ -20,7 +20,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.dao.UserStatus;

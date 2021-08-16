@@ -18,17 +18,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.ComMailing.MailingContentType;
 import com.agnitas.beans.ComRdirMailingData;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingContentType;
 import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
 import com.agnitas.emm.core.mailing.bean.ComFollowUpStats;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -47,7 +46,7 @@ public interface ComMailingDao extends MailingDao {
 	// returns all Mailings in a linked List.
 	List<Integer> getAllMailings(@VelocityCheck int companyID);
 	// returns the given amount of mailings
-	List<ComMailing> getMailings(@VelocityCheck int companyID, int adminId, int count, String mailingStatus, boolean takeMailsForPeriod);
+	List<Mailing> getMailings(@VelocityCheck int companyID, int adminId, int count, String mailingStatus, boolean takeMailsForPeriod);
 
 	List<Map<String, Object>> getMailings(@VelocityCheck int companyId, String commaSeparatedMailingIds);
 	
@@ -55,7 +54,7 @@ public interface ComMailingDao extends MailingDao {
 
 	boolean hasMediaType(@VelocityCheck int companyId, int mailingId, MediaTypes type);
 
-    Map<Integer, Integer> getSendStats(ComMailing mailing, @VelocityCheck int companyId) throws Exception;
+    Map<Integer, Integer> getSendStats(Mailing mailing, @VelocityCheck int companyId) throws Exception;
 
 	boolean saveStatusmailRecipients(int mailingID, String statusmailRecipients);
 
@@ -115,7 +114,7 @@ public interface ComMailingDao extends MailingDao {
 
 	/**
 	 * returns the type of a Followup Mailing as String.
-	 * The String can be fount in the mailing-class (eg. Mailing.TYPE_FOLLOWUP_CLICKER)
+	 * The String can be fount in the mailing-class (eg. FollowUpType.TYPE_FOLLOWUP_CLICKER)
 	 * if no followup is found, null is the returnvalue!
 	 * @param mailingID
 	 * @return
@@ -185,7 +184,7 @@ public interface ComMailingDao extends MailingDao {
 
 	List<MailingBase> getSentWorldMailingsForReports(@VelocityCheck int companyID, int number, int targetId);
 
-	List<MailingBase> getPredefinedNormalMailingsForReports(@VelocityCheck int companyId, Date from, Date to, int filterType, int filterValue, String orderKey);
+	List<MailingBase> getPredefinedNormalMailingsForReports(@VelocityCheck int companyId, Date from, Date to, int filterType, int filterValue, String orderKey, int targetId);
 
 	//List<LightweightMailing> getTemplateOverview(@VelocityCheck int companyID);
 	
@@ -282,7 +281,7 @@ public interface ComMailingDao extends MailingDao {
         
     boolean deleteMailingsByCompanyIDReally(@VelocityCheck int companyID);
 
-    ComMailing copyMailing(int newCompanyId, int mailinglistID, ComMailing aTemplate, boolean isTemplate) throws Exception;
+    int copyMailing(int newCompanyId, int mailinglistID, int fromCompanyID, int fromMailingID, boolean isTemplate) throws Exception;
 
     int copyMailing(int mailingId, int companyId, String newMailingNamePrefix) throws Exception;
 
@@ -330,7 +329,7 @@ public interface ComMailingDao extends MailingDao {
 	void cleanTestDataInMailtrackTbl(int mailingId, int companyId);
 
 	/**
-	 * Retrieve an identifier of mailinglist (see {@link ComMailing#getMailinglistID()}) assigned to referenced mailing.
+	 * Retrieve an identifier of mailinglist (see {@link Mailing#getMailinglistID()}) assigned to referenced mailing.
 	 *
 	 * @param mailingId an identifier of the mailing whose mailinglistId should be retrieved.
 	 * @param companyId an identifier of a company that owns referenced mailing.
@@ -361,7 +360,11 @@ public interface ComMailingDao extends MailingDao {
 	 */
 	String getTargetExpression(int mailingId, @VelocityCheck int companyId, boolean appendListSplit);
 
-	/**
+    Map<Integer, String> getTargetExpressions(@VelocityCheck int companyId, Set<Integer> mailingIds);
+
+    Map<Integer, Set<Integer>> getTargetsUsedInContent(@VelocityCheck int companyId, Set<Integer> mailingIds);
+
+    /**
 	 * Set a target expression to a mailing.
 	 *
 	 * @param mailingId an identifier of a mailing to be updated.

@@ -45,6 +45,7 @@ import org.agnitas.beans.Campaign;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
@@ -64,12 +65,12 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComCampaignDao;
 import com.agnitas.dao.ComMailingDao;
@@ -188,7 +189,9 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     private ComReminderService reminderService;
     private ComWorkflowDataParser workflowDataParser;
     private ComCampaignDao campaignDao;
-    private AdminService adminService;
+    protected AdminService adminService;
+    
+    private ComWorkflowService selfReference;
 
     @Override
     @Transactional
@@ -271,12 +274,12 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
             oldMailingIds.removeAll(newMailingIds);
 
             for (int mailingId : oldMailingIds) {
-                ComMailing mailing = getMailingForUpdate(mailingId, companyId);
+                Mailing mailing = getMailingForUpdate(mailingId, companyId);
 
                 if (mailing != null) {
                     // Some hidden WM-driven target groups (list splits) could be assigned to a mailing.
                     // So we should reset related properties:
-                    mailing.setSplitID(ComMailing.NONE_SPLIT_ID);
+                    mailing.setSplitID(Mailing.NONE_SPLIT_ID);
                     mailing.setTargetExpression(null);
                     mailingDao.saveMailing(mailing, false);
                 }
@@ -568,7 +571,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     
     @Override
     public List<Workflow> getWorkflowsOverview(ComAdmin admin) {
-        return workflowDao.getWorkflowsOverview(admin.getCompanyID(), admin.getAdminID());
+        return workflowDao.getWorkflowsOverview(admin.getCompanyID(), admin.getAdminID(), adminService.getAccessLimitTargetId(admin));
     }
 
     @Override
@@ -652,7 +655,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
 	@Override
-    public ComMailing getMailing(int mailingId, int companyId) {
+    public Mailing getMailing(int mailingId, int companyId) {
         return mailingDao.getMailing(mailingId, companyId);
     }
 
@@ -703,7 +706,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                     WorkflowMailingAware mailingIcon = (WorkflowMailingAware) icon;
                     int mailingId = mailingIcon.getMailingId();
                     if (mailingId > 0) {
-                        ComMailing mailing = entitiesSupplier.getMailing(mailingId);
+                        Mailing mailing = entitiesSupplier.getMailing(mailingId);
                         if (mailing != null) {
                             assignWorkflowDrivenSettings(mailing, chains, mailingIcon, admin);
                         }
@@ -726,7 +729,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         }
     }
 
-    private void assignWorkflowDrivenSettings(ComMailing mailing, List<Chain> chains, WorkflowMailingAware mailingIcon, ComAdmin admin) {
+    private void assignWorkflowDrivenSettings(Mailing mailing, List<Chain> chains, WorkflowMailingAware mailingIcon, ComAdmin admin) {
         TimeZone timezone = AgnUtils.getTimeZone(admin);
         Date date = getMinDate(chains, timezone);
 
@@ -754,7 +757,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
             .filter(StringUtils::isNotBlank)
             .collect(Collectors.joining("|"));
 
-        mailing.setSplitID(ComMailing.NONE_SPLIT_ID);
+        mailing.setSplitID(Mailing.NONE_SPLIT_ID);
         mailing.setTargetExpression(targetExpression);
     }
 
@@ -874,12 +877,12 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
 	@Override
     public void updateMailings(Workflow workflow, ComAdmin admin) {
-        Map<Integer, ComMailing> mailingCacheMap = new HashMap<>();
+        Map<Integer, Mailing> mailingCacheMap = new HashMap<>();
 
         for (WorkflowIcon icon : workflow.getWorkflowIcons()) {
             if (WorkflowUtils.isMailingIcon(icon) && icon.isFilled()) {
                 WorkflowMailingAware mailingIcon = (WorkflowMailingAware) icon;
-                ComMailing mailing = mailingCacheMap.computeIfAbsent(mailingIcon.getMailingId(), id -> getMailingForUpdate(id, admin));
+                Mailing mailing = mailingCacheMap.computeIfAbsent(mailingIcon.getMailingId(), id -> getMailingForUpdate(id, admin));
 
                 if (mailing != null) {
                     updateMailing(admin, mailing, workflow.getWorkflowIcons(), mailingIcon);
@@ -888,7 +891,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         }
 
         // Store all the changes.
-        for (ComMailing mailing : mailingCacheMap.values()) {
+        for (Mailing mailing : mailingCacheMap.values()) {
             if (mailing != null) {
                 mailingDao.saveMailing(mailing, false);
             }
@@ -903,7 +906,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
      * @param icons a list of icons of a workflow that is being saved.
      * @param icon a workflow mailing icon that the data should be taken from.
      */
-    private void updateMailing(ComAdmin admin, ComMailing mailing, List<WorkflowIcon> icons, WorkflowMailingAware icon) {
+    private void updateMailing(ComAdmin admin, Mailing mailing, List<WorkflowIcon> icons, WorkflowMailingAware icon) {
         assignWorkflowDrivenSettings(admin, mailing, icons, icon);
 
         mailing.setMailingType(getMailingType(icon, mailing.getMailingType()));
@@ -928,13 +931,13 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         }
     }
 
-    private ComMailing getMailingForUpdate(int mailingId, ComAdmin admin) {
+    private Mailing getMailingForUpdate(int mailingId, ComAdmin admin) {
         return getMailingForUpdate(mailingId, admin.getCompanyID());
     }
 
-    private ComMailing getMailingForUpdate(int mailingId, @VelocityCheck int companyId) {
+    private Mailing getMailingForUpdate(int mailingId, @VelocityCheck int companyId) {
         if (mailingId > 0) {
-            ComMailing mailing = getMailing(mailingId, companyId);
+            Mailing mailing = getMailing(mailingId, companyId);
             if (mailing != null && mailing.getId() > 0) {
                 return mailing;
             }
@@ -942,7 +945,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         return null;
     }
 
-    private void populateMailingByDataFromFoundChain(String timeZone, boolean withOwnNodes, List<WorkflowNode> foundNodes, ComMailing mailing) {
+    private void populateMailingByDataFromFoundChain(String timeZone, boolean withOwnNodes, List<WorkflowNode> foundNodes, Mailing mailing) {
         TimeZone aZone = TimeZone.getTimeZone(timeZone);
         Calendar aCalendar = Calendar.getInstance();
         boolean haveStartingTime = false;
@@ -958,9 +961,9 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 case WorkflowIconType.Constants.PARAMETER_ID:
                     WorkflowParameter parameterIcon = (WorkflowParameter) workflowIcon;
                     if (parameterIcon.getValue() > 0) {
-                        mailing.setSplitID(ComMailing.YES_SPLIT_ID);
+                        mailing.setSplitID(Mailing.YES_SPLIT_ID);
                     } else {
-                        mailing.setSplitID(ComMailing.NONE_SPLIT_ID);
+                        mailing.setSplitID(Mailing.NONE_SPLIT_ID);
                     }
                     break;
 
@@ -1053,7 +1056,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         List<WorkflowIcon> icons = cloneIcons(admin, workflow.getWorkflowIcons(), isWithContent);
 
         // Store workflow and its structure.
-        saveWorkflow(admin, workflow, icons);
+        getSelfReference().saveWorkflow(admin, workflow, icons);
 
         return workflow;
     }
@@ -1197,7 +1200,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public boolean assignWorkflowDrivenSettings(ComAdmin admin, ComMailing mailing, int workflowId, int iconId) {
+    public boolean assignWorkflowDrivenSettings(ComAdmin admin, Mailing mailing, int workflowId, int iconId) {
         if (mailing == null || workflowId <= 0 || iconId <= 0) {
             return false;
         }
@@ -1224,7 +1227,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         return assignWorkflowDrivenSettings(admin, mailing, workflow.getWorkflowIcons(), mailingIcon);
     }
 
-    private boolean assignWorkflowDrivenSettings(ComAdmin admin, ComMailing mailing, List<WorkflowIcon> icons, WorkflowIcon mailingIcon) {
+    private boolean assignWorkflowDrivenSettings(ComAdmin admin, Mailing mailing, List<WorkflowIcon> icons, WorkflowIcon mailingIcon) {
         if (!WorkflowUtils.isMailingIcon(mailingIcon) || !workflowValidationService.noLoops(icons)) {
             return false;
         }
@@ -1391,8 +1394,8 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                             }
                             // get current date and time
                             GregorianCalendar nowCal = new GregorianCalendar(TimeZone.getDefault());
-                            if (!("mailing.status.sent".equals(mailingData.get("work_status"))
-                                    || "mailing.status.norecipients".equals(mailingData.get("work_status"))
+                            if (!(MailingStatus.SENT.getDbKey().equals(mailingData.get("work_status"))
+                                    || MailingStatus.NORECIPIENTS.getDbKey().equals(mailingData.get("work_status"))
                                     || (sendDate != null && nowCal.after(sendCalendar)))) {
                                 return ChangingWorkflowStatusResult.notChanged();
                             }
@@ -1423,7 +1426,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                     }
                 }
 
-                Map<Integer, ComMailing> mailings = new HashMap<>();
+                Map<Integer, Mailing> mailings = new HashMap<>();
                 Map<Integer, WorkflowMailingAware> mailingIcons = new HashMap<>();
                 for (WorkflowNode workflowNode : mailingNodes) {
                     WorkflowMailingAware icon = (WorkflowMailingAware) workflowNode.getNodeIcon();
@@ -1443,7 +1446,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
                     boolean sent = false;
                     if (mailingId != 0) {
-                        ComMailing mailing = mailingDao.getMailing(mailingId, companyId);
+                        Mailing mailing = mailingDao.getMailing(mailingId, companyId);
                         mailings.put(mailingId, mailing);
                         MaildropEntry maildropEntry = null;
                         Date maxSendDate = null;
@@ -1698,7 +1701,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         }
     }
 
-    private boolean isCampaignTestFinished(WorkflowGraph workflowGraph, List<Integer> mailingTypes, Map<Integer, WorkflowMailingAware> mailingIconsByMailingId, Map<Integer, ComMailing> mailings, Map<Integer, Boolean> sentMailings, int companyId) {
+    private boolean isCampaignTestFinished(WorkflowGraph workflowGraph, List<Integer> mailingTypes, Map<Integer, WorkflowMailingAware> mailingIconsByMailingId, Map<Integer, Mailing> mailings, Map<Integer, Boolean> sentMailings, int companyId) {
         Date now = new Date();
         Date startDate = getCampaignTestStartDate(workflowGraph, mailingTypes, mailings);
 
@@ -1706,7 +1709,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
             return false;
         }
 
-        for (ComMailing mailing: mailings.values()) {
+        for (Mailing mailing: mailings.values()) {
             Date maxPossibleDateOfMailing = getMaxPossibleDateForTestRun(workflowGraph.findChains(mailingIconsByMailingId.get(mailing.getId()), false), startDate);
             if (now.before(maxPossibleDateOfMailing)) {
                 return false;
@@ -1726,10 +1729,10 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         return true;
     }
 
-    private Date getCampaignTestStartDate(WorkflowGraph workflowGraph, List<Integer> mailingTypes, Map<Integer, ComMailing> mailings) {
+    private Date getCampaignTestStartDate(WorkflowGraph workflowGraph, List<Integer> mailingTypes, Map<Integer, Mailing> mailings) {
         WorkflowNode start = workflowGraph.getAllNodesByType(WorkflowIconType.START.getId()).get(0);
         WorkflowMailingAware mailingIcon = (WorkflowMailingAware) workflowGraph.getNextIconByType(start.getNodeIcon(), mailingTypes, Collections.emptySet(), false);
-        ComMailing mailing = mailings.get(mailingIcon.getMailingId());
+        Mailing mailing = mailings.get(mailingIcon.getMailingId());
 
         if (mailing == null) {
             return null;
@@ -2411,16 +2414,20 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     private void deactivateAutoImport(WorkflowImport icon, @VelocityCheck int companyId) throws Exception {
-        AutoImport autoImport = autoImportService.getAutoImport(icon.getImportexportId(), companyId);
-        if (autoImport.isDeactivateByCampaign()) {
-            autoImportService.deactivateAutoImport(companyId, icon.getImportexportId());
+        if (autoImportService != null) {
+            AutoImport autoImport = autoImportService.getAutoImport(icon.getImportexportId(), companyId);
+            if (autoImport.isDeactivateByCampaign()) {
+                autoImportService.deactivateAutoImport(companyId, icon.getImportexportId());
+            }
         }
     }
 
     private void deactivateAutoExport(WorkflowExport icon, @VelocityCheck int companyId) throws Exception {
-        AutoExport autoExport = autoExportService.getAutoExport(icon.getImportexportId(), companyId);
-        if (autoExport.isDeactivateByCampaign()) {
-            autoExportService.deactivateAutoExport(companyId, icon.getImportexportId());
+        if (autoImportService != null) {
+            AutoExport autoExport = autoExportService.getAutoExport(icon.getImportexportId(), companyId);
+            if (autoExport.isDeactivateByCampaign()) {
+                autoExportService.deactivateAutoExport(companyId, icon.getImportexportId());
+            }
         }
     }
 
@@ -2544,6 +2551,15 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     @Required
     public void setCampaignDao(ComCampaignDao campaignDao) {
         this.campaignDao = campaignDao;
+    }
+    
+    @Required
+    public final void setSelfReference(final ComWorkflowService service) {
+    	this.selfReference = Objects.requireNonNull(service, "Self reference is null");
+    }
+    
+    public final ComWorkflowService getSelfReference() {
+    	return this.selfReference;
     }
     
     private static class ReactionId {
@@ -2743,13 +2759,13 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     private interface EntitiesSupplier {
-        ComMailing getMailing(int mailingId);
+        Mailing getMailing(int mailingId);
         AutoImport getAutoImport(int autoImportId);
     }
 
     private class CachingEntitiesSupplier implements EntitiesSupplier, AutoCloseable {
         private final int companyId;
-        private Map<Integer, ComMailing> mailingMap = new HashMap<>();
+        private Map<Integer, Mailing> mailingMap = new HashMap<>();
         private Map<Integer, AutoImport> autoImportMap = new HashMap<>();
 
         public CachingEntitiesSupplier(@VelocityCheck int companyId) {
@@ -2757,12 +2773,12 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         }
 
         @Override
-        public ComMailing getMailing(int mailingId) {
+        public Mailing getMailing(int mailingId) {
             return mailingMap.computeIfAbsent(mailingId, this::loadMailing);
         }
 
-        private ComMailing loadMailing(int mailingId) {
-            ComMailing mailing = mailingDao.getMailing(mailingId, companyId);
+        private Mailing loadMailing(int mailingId) {
+            Mailing mailing = mailingDao.getMailing(mailingId, companyId);
 
             if (mailing != null && mailing.getId() > 0) {
                 return mailing;
@@ -2777,12 +2793,16 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         }
 
         private AutoImport loadAutoImport(int autoImportId) {
-            return autoImportService.getAutoImport(autoImportId, companyId);
+            if (autoImportService != null) {
+                return autoImportService.getAutoImport(autoImportId, companyId);
+            } else {
+                return null;
+            }
         }
 
         @Override
         public void close() throws Exception {
-            for (ComMailing mailing : mailingMap.values()) {
+            for (Mailing mailing : mailingMap.values()) {
                 if (mailing != null) {
                     mailingDao.saveMailing(mailing, false);
                 }

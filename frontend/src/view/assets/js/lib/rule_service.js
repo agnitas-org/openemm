@@ -57,6 +57,7 @@
       COLUMN_TYPE_DATETIME = "DATETIME",
       COLUMN_TYPE_INTEGER = "INTEGER",
       COLUMN_TYPE_DOUBLE = "DOUBLE",
+      COLUMN_TYPE_FLOAT = "FLOAT",
       COLUMN_TYPE_NUMBER = "NUMBER",
       COLUMN_TYPE_MAILING = "MAILING",
       COLUMN_TYPE_MAILING_LINKS = "MAILING_LINKS",
@@ -66,6 +67,7 @@
     switch (columnType) {
       case COLUMN_TYPE_INTEGER:
       case COLUMN_TYPE_DOUBLE:
+      case COLUMN_TYPE_FLOAT:
       case COLUMN_TYPE_NUMBER:
         return true;
 

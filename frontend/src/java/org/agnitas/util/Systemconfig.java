@@ -170,7 +170,7 @@ public class Systemconfig {
 					cfg.put (multiLineName, multiLineContent.trim ());
 					multiLineName = null;
 				} else {
-					multiLineContent += " " + line.trim ();
+					multiLineContent += "\n" + line.trim ();
 				}
 			} else if ((line.length () > 0) && (! line.startsWith ("#"))) {
 				String[]	parsed = line.trim ().split (" *= *", 2);

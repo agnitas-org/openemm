@@ -11,6 +11,10 @@
 package com.agnitas.emm.core.mailinglist.dto;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class MailinglistDto {
 	
@@ -27,6 +31,8 @@ public class MailinglistDto {
 	private int targetId;
 
 	private boolean frequencyCounterEnabled;
+	
+	private Set<MediaTypes> mediatypes = new HashSet<>();
 	
 	public int getId() {
 		return id;
@@ -82,5 +88,13 @@ public class MailinglistDto {
 
 	public void setFrequencyCounterEnabled(boolean frequencyCounterEnabled) {
 		this.frequencyCounterEnabled = frequencyCounterEnabled;
+	}
+
+	public Set<MediaTypes> getMediatypes() {
+		return mediatypes;
+	}
+
+	public void setMediatypes(Set<MediaTypes> mediatypes) {
+		this.mediatypes = mediatypes;
 	}
 }

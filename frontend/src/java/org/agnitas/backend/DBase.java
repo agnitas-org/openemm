@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
@@ -71,6 +73,7 @@ public class DBase {
 	 * name for current date in database
 	 */
 	private int dbType = DB_UNSET;
+	private int dbVersion = 0;
 	private String nullQuery = null;
 	/**
 	 * Reference to configuration
@@ -301,24 +304,19 @@ public class DBase {
 	public void setup() throws Exception {
 		String dbms = data.dbMS;
 
-		dbType = DB_MYSQL;
-		if (dbms != null) {
-			if (dbms.equals("oracle")) {
-				dbType = DB_ORACLE;
-			} else if (dbms.equals("mysql") || dbms.equals("mariadb")) {
-				dbType = DB_MYSQL;
-			} else {
-				throw new Exception("Unsupported dbms found: " + dbms);
-			}
-		} else if (DATASOURCE != null) {
+		dbType = DB_UNSET;
+		if (DATASOURCE != null) {
 			boolean found = false;
 
 			for (int retry = RETRY; (!found) && (retry > 0); --retry) {
-				try (Connection c = DATASOURCE.getConnection()) {
+				try (Connection c = getConnection()) {
 					String product = c.getMetaData().getDatabaseProductName();
 
 					if ((product != null) && (product.toLowerCase().indexOf("oracle") != -1)) {
+						data.logging (Log.INFO, "db", "Found oracle type database from product " + product);
 						dbType = DB_ORACLE;
+					} else {
+						dbType = DB_MYSQL;
 					}
 					found = true;
 				} catch (Exception e) {
@@ -335,12 +333,25 @@ public class DBase {
 			if (!found) {
 				throw new Exception("Failed to determinate database type");
 			}
-		} else {
-			if (data.dbDriver() == null) {
-				throw new Exception("No configured database driver found");
-			}
-			if ((data.dbDriver().toLowerCase().indexOf("mysql") == -1) && (data.dbDriver().toLowerCase().indexOf("mariadb") == -1)) {
-				dbType = DB_ORACLE;
+		}
+		if (dbType == DB_UNSET) {
+			if (dbms != null) {
+				if (dbms.equals("oracle")) {
+					dbType = DB_ORACLE;
+				} else if (dbms.equals("mysql") || dbms.equals("mariadb")) {
+					dbType = DB_MYSQL;
+				} else {
+					throw new Exception("Unsupported dbms found: " + dbms);
+				}
+			} else {
+				if (data.dbDriver() == null) {
+					throw new Exception("No configured database driver found");
+				}
+				if ((data.dbDriver().toLowerCase().indexOf("mysql") == -1) && (data.dbDriver().toLowerCase().indexOf("mariadb") == -1)) {
+					dbType = DB_ORACLE;
+				} else {
+					dbType = DB_MYSQL;
+				}
 			}
 		}
 
@@ -360,8 +371,25 @@ public class DBase {
 	 *
 	 * @throws Exception
 	 */
-	public void initialize() throws Exception {
+	public void initialize() throws SQLException {
 		jdbcTmpl = validateJdbc(null);
+		if (isOracle ()) {
+			Pattern	versionPattern = Pattern.compile ("Oracle Database.*Release ([0-9]+)");
+			
+			for (Map <String, Object> row : query ("SELECT banner FROM v$version")) {
+				String	banner = asString (row.get ("banner"));
+
+				if (banner != null) {
+					Matcher	m = versionPattern.matcher (banner);
+
+					if (m.find ()) {
+						dbVersion = StringOps.atoi (m.group (1));
+						data.logging (Log.DEBUG, "db", "Found Oracle major version " + dbVersion + " in banner " + banner);
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	/**
@@ -479,6 +507,38 @@ public class DBase {
 	 */
 	public boolean exists (String table) throws SQLException {
 		return tableExists (table) || viewExists (table) || synonymExists (table);
+	}
+	
+	/**
+	 * called after creation/filling of a temp. table to ensure
+	 * proper operation of the database
+	 * 
+	 * @param table name of the table
+	 * @param estimatePercent oracle specific value
+	 */
+	public void setupTableOptimizer (String table, int estimatePercent) {
+		try {
+			if (isOracle () && (dbVersion >= 19)) {
+				try (With with = with ()) {
+					execute (with.jdbc (),
+						 "begin\n" +
+						 "    dbms_stats.gather_table_stats(\n" +
+						 "        ownname => 'AGNITAS',\n" +
+						 "        tabname => '" + table + "',\n" +
+						 "        estimate_percent => " + estimatePercent + ",\n" +
+						 "        method_opt => 'for all columns size 254',\n" +
+						 "        cascade => true,\n" +
+						 "        no_invalidate => FALSE\n" +
+						 "    );\n" +
+						 "end;");
+				}
+			}
+		} catch (SQLException e) {
+			data.logging (Log.ERROR, "db", "Failed to setup newly create table \"" + table + "\": " + e);
+		}
+	}
+	public void setupTableOptimizer (String table) {
+		setupTableOptimizer (table, 30);
 	}
 
 	/**
@@ -665,11 +725,11 @@ public class DBase {
 		return doUpdate(jdbc, q, param);
 	}
 
-	public void execute(NamedParameterJdbcTemplate jdbc, String q) throws Exception {
+	public void execute(NamedParameterJdbcTemplate jdbc, String q) throws SQLException {
 		doExecute(jdbc, q);
 	}
 
-	public void execute(String q) throws Exception {
+	public void execute(String q) throws SQLException {
 		doExecute(jdbc(), q);
 	}
 
@@ -886,7 +946,14 @@ public class DBase {
 	 * the connection
 	 */
 	public Connection getConnection() throws SQLException {
-		return DATASOURCE.getConnection();
+		Connection	conn = DATASOURCE.getConnection();
+		
+		try {
+			conn.commit ();
+		} catch (SQLException e) {
+			// do nothing, some driver/version bailing out when commit() is called on autocommit enabled connection
+		}
+		return conn;
 	}
 
 	public Connection getConnection(String query, Object... param) throws SQLException {
@@ -1202,7 +1269,7 @@ public class DBase {
 		throw failure(q, r.error);
 	}
 
-	private void doExecute(NamedParameterJdbcTemplate jdbc, String q) throws Exception {
+	private void doExecute(NamedParameterJdbcTemplate jdbc, String q) throws SQLException {
 		show("EXE", q, null);
 
 		Retry<Object> r = new Retry<Object>("execute", this, jdbc) {

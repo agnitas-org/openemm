@@ -18,7 +18,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.TimeoutLRUMap;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComMailing.MailingContentType;
+import com.agnitas.beans.MailingContentType;
 import com.agnitas.dao.ComMailingDao;
 
 public final class MailingContentTypeCacheImpl extends AbstractCompanyBasedDaoCache<MailingContentType> implements MailingContentTypeCache {

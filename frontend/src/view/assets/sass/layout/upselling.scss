@@ -1,0 +1,76 @@
+
+$image-width: 55%;
+
+.upselling-content {
+  background-color: $c-blue-27;
+  background-repeat: no-repeat;
+  background-position: bottom left;
+  background-size: $image-width;
+
+  position: relative;
+
+  h1, h3, p {
+    color: $c-white;
+  }
+
+  .upselling-headline {
+    position: relative;
+    top: 7%;
+    left: 5%;
+    max-width: 95%;
+
+    .upselling-title {
+      font-size: 1.7em;
+    }
+
+    .upselling-header {
+      font-size: 4em;
+      font-weight: bold;
+    }
+  }
+
+
+
+  .upselling-desc {
+    $right-margin: 25px;
+    position: absolute;
+    max-width: calc(100% - #{$image-width} - #{$right-margin});
+    top: 50%;
+    right: $right-margin;
+
+    p {
+      font-size: 1.5em;
+      margin-bottom: 40px;
+    }
+  }
+
+  .more-info-btn {
+    @include button-variant($c-blue-27, $c-white);
+    @include button-size(8px, 16px, 1.5em, 26px, 0);
+    font-weight: bold;
+  }
+}
+
+.auto-export-upselling {
+  background-image: url('core/images/facelift/automation-upselling.jpg');
+}
+
+.auto-import-upselling {
+  background-image: url('core/images/facelift/automation-upselling.jpg');
+}
+
+.reference-tables-upselling {
+  background-image: url('core/images/facelift/reference-tables-upselling.jpg');
+}
+
+.notification-upselling {
+  background-image: url('core/images/facelift/notification-upselling.jpg');
+}
+
+.grid-upselling {
+  background-image: url('core/images/facelift/grid-upselling.jpg');
+}
+
+.mediapool-upselling {
+  background-image: url('core/images/facelift/mediapool-upselling.jpg');
+}

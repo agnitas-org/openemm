@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Ex&eacute;cution]]></title>
+	<content><![CDATA[Avec ce param&egrave;tre, vous d&eacute;finissez la fr&eacute;quence &agrave; laquelle un destinataire peut mener une campagne. S'il doit b&eacute;n&eacute;ficier chaque ann&eacute;e d'une campagne dont la date est contr&ocirc;l&eacute;e, comme une campagne d'anniversaire, vous avez besoin du cadre de fa&ccedil;on <b>permanent</b>. Si un destinataire ne doit recevoir une campagne qu'une seule fois, m&ecirc;me s'il remplit les crit&egrave;res plusieurs fois, par exemple en contr&ocirc;lant la r&eacute;action &agrave; l'ouverture d'un envoi particulier, il faut alors d&eacute;finir ce param&egrave;tre <b>unique</b> - sinon la campagne serait d&eacute;clench&eacute;e &agrave; nouveau pour ce destinataire &agrave; chaque ouverture.]]></content>
+</HelpBalloon>

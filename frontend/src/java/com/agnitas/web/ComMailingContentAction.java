@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.AdminPreferences;
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.factory.DynamicTagContentFactory;
 import org.agnitas.beans.factory.MailingFactory;
@@ -50,8 +49,8 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComMailingComponentDao;
@@ -292,7 +291,7 @@ public class ComMailingContentAction extends StrutsActionBase {
 
 	private Vector<String> getAgnTags(String content, HttpServletRequest req) {
 		WebApplicationContext context = getApplicationContext(req);
-		ComMailing mailing = mailingFactory.newMailing();
+		Mailing mailing = mailingFactory.newMailing();
 
 		mailing.init(AgnUtils.getCompanyID(req), context);
 		try {

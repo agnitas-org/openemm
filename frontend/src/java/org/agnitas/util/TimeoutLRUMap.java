@@ -171,34 +171,18 @@ public class TimeoutLRUMap<K, V> implements java.io.Serializable {
 	}
 
 	/**
-	 * Generates entry key for media pool background images.
-	 *
-	 * @param companyID - id of current company
-	 * @param backgroundImageId - id of current company
-	 * @return key for new entry
-	 */
-	public static String generateBackgroundImageKey(@VelocityCheck int companyID, int backgroundImageId) {
-		StringBuilder cacheKeyBuilder = new StringBuilder();
-		cacheKeyBuilder.append("back-");
-		cacheKeyBuilder.append(companyID);
-		cacheKeyBuilder.append("-");
-		cacheKeyBuilder.append(backgroundImageId);
-		return cacheKeyBuilder.toString();
-	}
-
-	/**
 	 * Generates entry key for media pool content images.
 	 *
 	 * @param companyID - id of current company
-	 * @param elementID - id of current company
+	 * @param imageName - name of requested image
 	 * @return key for new entry
 	 */
-	public static String generateContentImageKey(@VelocityCheck int companyID, int elementID) {
+	public static String generateContentImageKey(@VelocityCheck int companyID, String imageName) {
 		StringBuilder cacheKeyBuilder = new StringBuilder();
 		cacheKeyBuilder.append("media-");
 		cacheKeyBuilder.append(companyID);
 		cacheKeyBuilder.append("-");
-		cacheKeyBuilder.append(elementID);
+		cacheKeyBuilder.append(imageName);
 		return cacheKeyBuilder.toString();
 	}
 }

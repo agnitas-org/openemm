@@ -22,7 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-
+import gnu.trove.list.TLongList;
+import gnu.trove.list.array.TLongArrayList;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.util.Log;
 import org.springframework.dao.DataAccessException;
@@ -100,9 +101,7 @@ public class BC {
 		String partFromPrepare;
 
 		partFromPrepare = partExtend(customerTable + " cust INNER JOIN " + bindingTable + " bind ON (cust.customer_id = bind.customer_id)");
-		if ((data.maildropStatus.isAdminMailing() || data.maildropStatus.isTestMailing()) && data.maildropStatus.selectedTestRecipients()) {
-			partUserstatus = "bind.user_status IN (" + UserStatus.Active.getStatusCode() + ", " + UserStatus.Suspend.getStatusCode() + ")";
-		} else if ((data.defaultUserStatus != UserStatus.Active.getStatusCode()) && (data.maildropStatus.isAdminMailing() || data.maildropStatus.isTestMailing())) {
+		if ((data.defaultUserStatus != UserStatus.Active.getStatusCode()) && (data.maildropStatus.isAdminMailing() || data.maildropStatus.isTestMailing())) {
 			partUserstatus = "bind.user_status IN (" + data.defaultUserStatus + ", " + UserStatus.Active.getStatusCode() + ")";
 		} else {
 			partUserstatus = "bind.user_status = " + data.defaultUserStatus;
@@ -427,6 +426,9 @@ public class BC {
 				}
 			}
 		}
+		if (rc) {
+			data.dbase.setupTableOptimizer (tname);
+		}
 		return rc;
 	}
 
@@ -500,7 +502,7 @@ public class BC {
 			return "bind.user_type IN ('A', 'T', 'W')";
 		} else if (data.maildropStatus.isAdminMailing() || data.maildropStatus.isTestMailing()) {
 			if (data.maildropStatus.selectedTestRecipients()) {
-				return "EXISTS (SELECT 1 FROM test_recipients_tbl test WHERE test.maildrop_status_id = " + data.maildropStatus.id() + " AND test.customer_id = bind.customer_id)";
+				return "EXISTS (SELECT 1 FROM test_recipients_tbl test WHERE test.maildrop_status_id = " + data.maildropStatus.id() + " AND test.customer_id = cust.customer_id)";
 			}
 			if (data.maildropStatus.isAdminMailing()) {
 				return "bind.user_type = 'A'";
@@ -571,18 +573,23 @@ public class BC {
 
 		String partSelect;
 
-		partSelect = partUserstatus + " AND " + partMailinglist;
 		partCounter = partUserstatus + " AND " + partMailinglist;
-		if ((partUserstatusBounce != null) && data.ahvEnabled()) {
-			partReactivate = partUserstatusBounce + " AND " + partMailinglist;
-			if (data.ahvOldestEntryToReactivate() != null) {
-				partReactivate += " AND agn_ahv.reactivate >= :oldest AND bind.timestamp >= :oldest";
+		if (isSelectedTestMailing ()) {
+			partSelect = "bind.user_status != " + UserStatus.Blacklisted.getStatusCode ();
+		} else {
+			partSelect = partUserstatus + " AND " + partMailinglist;
+			if ((partUserstatusBounce != null) && data.ahvEnabled()) {
+				partReactivate = partUserstatusBounce + " AND " + partMailinglist;
+				if (data.ahvOldestEntryToReactivate() != null) {
+					partReactivate += " AND agn_ahv.reactivate >= :oldest AND bind.timestamp >= :oldest";
+				}
 			}
 		}
 		partUsertype = getPartUsertype();
 		if (partUsertype != null) {
 			partSelect += " AND " + partUsertype;
 		}
+		
 		List <String> collect = new ArrayList <> ();
 		boolean limitSelect = data.maildropStatus.isWorldMailing () ||
 				      data.maildropStatus.isOnDemandMailing () ||
@@ -671,10 +678,12 @@ public class BC {
 	}
 
 	static class Filler implements ResultSetExtractor<Object> {
+		private Data data;
 		private String fquery;
 		private long count;
 
-		public Filler(String nFquery) {
+		public Filler(Data nData, String nFquery) {
+			data = nData;
 			fquery = nFquery;
 			count = 0;
 		}
@@ -685,7 +694,7 @@ public class BC {
 
 		@Override
 		public Object extractData(ResultSet rset) throws SQLException, DataAccessException {
-			try (Connection conn = DBase.DATASOURCE.getConnection()) {
+			try (Connection conn = data.dbase.getConnection(fquery)) {
 				boolean autoCommit = conn.getAutoCommit();
 
 				try {
@@ -738,7 +747,7 @@ public class BC {
 				if (ctableCreated) {
 					try {
 						String fquery = "INSERT INTO " + ctable + " (customer_id) VALUES (?)";
-						Filler filler = new Filler(fquery);
+						Filler filler = new Filler(data, fquery);
 						String query = "SELECT customer_id, email FROM " + table + " WHERE user_type IN ('A', 'T', 'W') ORDER BY customer_id";
 						long cnt;
 
@@ -843,6 +852,7 @@ public class BC {
 							  ")";
 					}
 					data.dbase.execute (mktable);
+					data.dbase.setupTableOptimizer (limitTable);
 				}
 				upd = "UPDATE " + limitTable + " SET mailcount = mailcount + 1 " +
 				      "WHERE company_id = :companyID AND senddate = :senddate" +
@@ -1043,7 +1053,7 @@ public class BC {
 
 		@Override
 		public Object extractData(ResultSet rset) throws SQLException, DataAccessException {
-			try (Connection conn = DBase.DATASOURCE.getConnection()) {
+			try (Connection conn = data.dbase.getConnection(assignQuery)) {
 				boolean autoCommit = conn.getAutoCommit();
 
 				try {
@@ -1091,44 +1101,149 @@ public class BC {
 		boolean ok = true;
 
 		if (data.references != null) {
+			boolean legacy = StringOps.atob (data.company.info ("legacy-bulk-voucher-assign", data.mailing.id ()), false);
+			int	voucherChunkSize = StringOps.atoi (data.company.info ("voucher-assign-chunk-size", data.mailing.id ()), 50000);
+			
 			String stmt = "";
 			try {
 				for (Reference r : getReferences ()) {
 					if (r.isFullfilled () && r.isVoucher ()) {
-						Voucher	voucher;
-						String	assignQuery =
-							"UPDATE " + r.table () + " " +
-							"SET customer_id = ?, assign_date = CURRENT_TIMESTAMP, mailing_id = " + data.mailing.id () + " " +
-							"WHERE customer_id IS NULL " + (data.dbase.isOracle () ? "AND rownum = 1" : "LIMIT 1");
-						
-						if (voucherRenew (r)) {
-							voucher = new Voucher (data, r.name (),
-									       "SELECT customer_id FROM " + table,
-									       assignQuery,
-									       "SELECT voucher_code FROM " + r.table () + " WHERE customer_id = ?",
-									       "DELETE FROM " + r.table () + " WHERE voucher_code = ?");
-						} else {
-							voucher = new Voucher (data, r.name (),
-									       "SELECT bind.customer_id " +
-									       "FROM " + table + " bind " +
-									       "WHERE NOT EXISTS (SELECT 1 FROM " + r.table () + " vc WHERE vc.customer_id = bind.customer_id)",
-									       assignQuery,
-									       null,
-									       null);
-						}
+						long	cnt = 0;
 
-						long cnt;
-						DBase.Retry<Long> rt = data.dbase.new Retry<Long>("voucher", data.dbase, data.dbase.jdbc(voucher.query())) {
-							@Override
-							public void execute() throws SQLException {
-								jdbc.query(voucher.query(), voucher);
-								priv = voucher.getCount();
+						if (! legacy) {
+							boolean	renew = voucherRenew (r);
+							
+							if (renew) {
+								stmt = "SELECT customer_id FROM " + table;
+							} else {
+								stmt =
+									"SELECT bind.customer_id " +
+									"FROM " + table + " bind LEFT OUTER JOIN " + r.table () + " voucher ON voucher.customer_id = bind.customer_id " +
+									"WHERE voucher.customer_id IS NULL";
 							}
-						};
-						if (data.dbase.retry(rt)) {
-							cnt = rt.priv != null ? rt.priv : 0L;
+							
+							List <Map <String, Object>>	rc = data.dbase.query (stmt);
+							TLongList			customerIDs = new TLongArrayList (rc.size ());
+							
+							for (Map <String, Object> row : rc) {
+								long	customerID = data.dbase.asLong (row.get ("customer_id"));
+										
+								if (customerID > 0) {
+									customerIDs.add (customerID);
+								}
+							}
+
+							int		size = customerIDs.size ();
+							int		position = 0;
+							String		stmtFindOld =
+								"SELECT voucher_code FROM " + r.table () + " WHERE customer_id = ?";
+							String		stmtRemoveOld =
+								"DELETE FROM " + r.table () + " WHERE voucher_code = ?";
+							String		stmtAssign =
+								"UPDATE " + r.table () + " " +
+								"SET customer_id = ?, assign_date = current_timestamp, mailing_id = " + data.mailing.id () + " " +
+								"WHERE voucher_code = ? AND customer_id IS NULL";
+							
+							stmt = "SELECT voucher_code FROM " + r.table () + " WHERE customer_id IS NULL " +
+								(data.dbase.isOracle () ? "AND rownum <= :chunkSize" : "LIMIT :chunkSize");
+							while (position < size) {
+								int	remain = size - position;
+								int	chunk = remain < voucherChunkSize ? remain : voucherChunkSize;
+
+								List <String>	vouchers = new ArrayList <> ();
+
+								rc = data.dbase.query (stmt, "chunkSize", chunk);
+								for (Map <String, Object> row : rc) {
+									String	voucher = data.dbase.asString (row.get ("voucher_code"));
+											
+									if (voucher != null) {
+										vouchers.add (voucher);
+									}
+								}
+								
+								int		vsize = vouchers.size ();
+								int		vposition = 0;
+								if (vsize == 0) {
+									data.logging (Log.INFO, "bc", r.name () + ": no more free vouchers available, still expecting " + (size - position));
+									break;
+								}
+								
+								try (Connection conn = data.dbase.getConnection (stmtAssign)) {
+									boolean	autoCommit = conn.getAutoCommit ();
+									try {
+										conn.setAutoCommit (false);
+										try (PreparedStatement assignPrep = conn.prepareStatement (stmtAssign);
+										     PreparedStatement queryPrep = renew ? conn.prepareStatement (stmtFindOld) : null;
+										     PreparedStatement removePrep = renew ? conn.prepareStatement (stmtRemoveOld) : null) {
+											while ((position < size) && (vposition < vsize)) {
+												long	customerID = customerIDs.get (position++);
+												String	oldVoucher = null;
+									
+												if (renew && (queryPrep != null)) {
+													queryPrep.setLong (1, customerID);
+													try (ResultSet temp = queryPrep.executeQuery ()) {
+														while (temp.next ()) {
+															oldVoucher = temp.getString (1);
+														}
+													}
+												}
+												while (vposition < vsize) {
+													String	voucher = vouchers.get (vposition++);
+										
+													assignPrep.setLong (1, customerID);
+													assignPrep.setString (2, voucher);
+													if (assignPrep.executeUpdate () == 1) {
+														if (renew && (removePrep != null) && (oldVoucher != null)) {
+															removePrep.setString (1, oldVoucher);
+															removePrep.executeUpdate ();
+														}
+														++cnt;
+														break;
+													}
+												}
+											}
+											conn.commit ();
+										}
+									} finally {
+										conn.setAutoCommit (autoCommit);
+									}
+								}
+							}
 						} else {
-							throw rt.error;
+							Voucher	voucher;
+							String	assignQuery =
+								"UPDATE " + r.table () + " " +
+								"SET customer_id = ?, assign_date = CURRENT_TIMESTAMP, mailing_id = " + data.mailing.id () + " " +
+								"WHERE customer_id IS NULL " + (data.dbase.isOracle () ? "AND rownum = 1" : "LIMIT 1");
+							
+							if (voucherRenew (r)) {
+								voucher = new Voucher (data, r.name (),
+										       "SELECT customer_id FROM " + table,
+										       assignQuery,
+										       "SELECT voucher_code FROM " + r.table () + " WHERE customer_id = ?",
+										       "DELETE FROM " + r.table () + " WHERE voucher_code = ?");
+							} else {
+								voucher = new Voucher (data, r.name (),
+										       "SELECT bind.customer_id " +
+										       "FROM " + table + " bind " +
+										       "WHERE NOT EXISTS (SELECT 1 FROM " + r.table () + " vc WHERE vc.customer_id = bind.customer_id)",
+										       assignQuery,
+										       null,
+										       null);
+							}
+
+							DBase.Retry<Long> rt = data.dbase.new Retry<Long>("voucher", data.dbase, data.dbase.jdbc(voucher.query())) {
+								@Override
+								public void execute() throws SQLException {
+									jdbc.query(voucher.query(), voucher);
+									priv = voucher.getCount();
+								}
+							};
+							if (data.dbase.retry(rt)) {
+								cnt = rt.priv != null ? rt.priv : 0L;
+							} else {
+								throw rt.error;
+							}
 						}
 						data.logging(Log.INFO, "bc", r.name() + ": set " + cnt + " new vouchers in " + r.table());
 						stmt = "SELECT count(*) FROM " + table + " cust " + r.joinConditionFrom();
@@ -1369,7 +1484,7 @@ public class BC {
 		} else if (data.maildropStatus.isPreviewMailing()) {
 			rc = prefix + "customer_id = " + data.previewCustomerID;
 		}
-		if ((!data.maildropStatus.isPreviewMailing()) && (!data.campaignForceSending)) {
+		if ((!data.maildropStatus.isPreviewMailing()) && (!data.campaignForceSending) && (! isSelectedTestMailing ())) {
 			String more = partUserstatus + " AND " + partMailinglist;
 
 			if (rc != null) {
@@ -1473,5 +1588,9 @@ public class BC {
 			return "LEFT OUTER JOIN " + data.omgTable() + " agn_omg ON (cust.customer_id = agn_omg.customer_id)";
 		}
 		return null;
+	}
+	
+	private boolean isSelectedTestMailing () {
+		return data.maildropStatus.isTestMailing () && data.maildropStatus.selectedTestRecipients ();
 	}
 }

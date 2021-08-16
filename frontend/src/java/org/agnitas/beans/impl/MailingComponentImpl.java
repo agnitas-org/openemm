@@ -24,7 +24,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.agnitas.web.ShowImageServlet;
+import com.agnitas.util.ImageUtils;
 
 public class MailingComponentImpl implements MailingComponent {
 	private static final transient Logger logger = Logger.getLogger( MailingComponentImpl.class);
@@ -41,7 +41,7 @@ public class MailingComponentImpl implements MailingComponent {
 
 	protected int companyID;
 
-	protected int type;
+	protected MailingComponentType type;
 
 	protected String emmBlock;
 
@@ -59,8 +59,6 @@ public class MailingComponentImpl implements MailingComponent {
 
     protected Date endDate;
 
-	public static final int TYPE_FONT = 6;
-
 	private int present;
 
 	public MailingComponentImpl() {
@@ -69,7 +67,7 @@ public class MailingComponentImpl implements MailingComponent {
 		mimeType = " ";
 		mailingID = 0;
 		companyID = 0;
-		type = TYPE_IMAGE;
+		type = MailingComponentType.Image;
 		emmBlock = null;
 		targetID = 0;
 	}
@@ -84,16 +82,9 @@ public class MailingComponentImpl implements MailingComponent {
 	}
 
 	@Override
-	public void setType(int type) {
-		if (type != TYPE_IMAGE
-			&& type != TYPE_TEMPLATE
-			&& type != TYPE_ATTACHMENT
-			&& type != TYPE_PERSONALIZED_ATTACHMENT
-			&& type != TYPE_HOSTED_IMAGE
-			&& type != TYPE_FONT
-            && type != MailingComponentType.ThumbnailImage.getCode()
-			&& type != TYPE_PREC_ATTACHMENT) {
-			this.type = TYPE_IMAGE;
+	public void setType(MailingComponentType type) {
+		if (type == null) {
+			this.type = MailingComponentType.Image;
 		} else {
 			this.type = type;
 		}
@@ -140,11 +131,11 @@ public class MailingComponentImpl implements MailingComponent {
 
 	@Override
 	public void setEmmBlock(String emmBlock, String mimeType) {
-		// Wrong: Only store one of type of data: emmblock or binblock
-		// Correct: Personalized PDF attachments require emmblock and binblock to be filled with different files
+		// Only store one of type of data: emmblock or binblock
+		// Exemption: Personalized PDF attachments require emmblock and binblock to be filled with different files
 		// Clear datatype only if this is the only set datatype
 		// binblock sometimes contains an array "byte[1] = {0}", which also signals empty binary data
-		if (StringUtils.isNotEmpty(emmBlock) || (binaryBlock == null || binaryBlock.length <= 1)) {
+		if (StringUtils.isNotEmpty(emmBlock) || (binaryBlock == null || binaryBlock.length <= 1) || "application/pdf".equalsIgnoreCase(mimeType)) {
 			this.emmBlock = emmBlock;
 			// binaryBlock = null;
 			if (mimeType != null) {
@@ -164,11 +155,11 @@ public class MailingComponentImpl implements MailingComponent {
 
 	@Override
 	public void setBinaryBlock(byte[] binaryBlock, String mimeType) {
-		// Wrong: Only store one of type of data: emmblock or binblock
-		// Correct: Personalized PDF attachments require emmblock and binblock to be filled with different files
+		// Only store one of type of data: emmblock or binblock
+		// Exemption: Personalized PDF attachments require emmblock and binblock to be filled with different files
 		// Clear datatype only if this is the only set datatype
 		// binblock sometimes contains an array "byte[1] = {0}", which also signals empty binary data
-		if ((binaryBlock != null && binaryBlock.length > 1) || StringUtils.isEmpty(emmBlock)) {
+		if ((binaryBlock != null && binaryBlock.length > 1) || StringUtils.isEmpty(emmBlock) || "application/pdf".equalsIgnoreCase(mimeType)) {
 			this.binaryBlock = binaryBlock;
 			// emmBlock = null;
 			if (mimeType != null) {
@@ -192,7 +183,7 @@ public class MailingComponentImpl implements MailingComponent {
 
 		// return false;
 
-		if ((type != TYPE_IMAGE) && (type != TYPE_ATTACHMENT)) {
+		if ((type != MailingComponentType.Image) && (type != MailingComponentType.Attachment)) {
 			return false;
 		}
 		
@@ -255,7 +246,7 @@ public class MailingComponentImpl implements MailingComponent {
 	 */
 	@Override
 	public int getTargetID() {
-		return this.targetID;
+		return targetID;
 	}
 
 	/**
@@ -275,13 +266,13 @@ public class MailingComponentImpl implements MailingComponent {
 	 * @return Value of property type.
 	 */
 	@Override
-	public int getType() {
-		return this.type;
+	public MailingComponentType getType() {
+		return type;
 	}
 
 	@Override
 	public int getPresent() {
-		return this.present;
+		return present;
 	}
 
 	/**
@@ -292,7 +283,7 @@ public class MailingComponentImpl implements MailingComponent {
 	 */
 	@Override
 	public byte[] getBinaryBlock() {
-		return this.binaryBlock;
+		return binaryBlock;
 	}
 
 	/**
@@ -302,7 +293,7 @@ public class MailingComponentImpl implements MailingComponent {
 	 */
 	@Override
 	public int getMailingID() {
-		return this.mailingID;
+		return mailingID;
 	}
 
 	/**
@@ -312,7 +303,7 @@ public class MailingComponentImpl implements MailingComponent {
 	 */
 	@Override
 	public int getCompanyID() {
-		return this.companyID;
+		return companyID;
 	}
 
 	/**
@@ -382,14 +373,14 @@ public class MailingComponentImpl implements MailingComponent {
 	
 	@Override
 	public boolean isSourceComponent() {
-		return type == MailingComponent.TYPE_IMAGE ||
-				type == MailingComponent.TYPE_HOSTED_IMAGE &&
+		return type == MailingComponentType.Image ||
+				type == MailingComponentType.HostedImage &&
 						!isMobileImage();
 	}
 	
 	@Override
 	public boolean isMobileImage() {
-		return StringUtils.startsWith(componentName, ShowImageServlet.MOBILE_IMAGE_PREFIX);
+		return ImageUtils.isMobileImage(componentName);
 	}
 	
 	/**

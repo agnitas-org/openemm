@@ -20,34 +20,47 @@ import org.springframework.ws.soap.SoapHeaderElement;
 import org.springframework.ws.soap.SoapMessage;
 import org.springframework.ws.soap.server.SoapEndpointInterceptor;
 
+import com.agnitas.emm.springws.WebserviceUserDetails;
+import com.agnitas.emm.springws.common.EndpointClassUtil;
+import com.agnitas.emm.springws.throttling.service.ThrottlingService;
+
+/**
+ * Interceptor to limit WS API calls.
+ */
 public class ThrottlingInterceptor implements SoapEndpointInterceptor {
+	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ThrottlingInterceptor.class);
 	
+	/** Service for limiting WS calls. */
 	private ThrottlingService throttlingService;
 
+	/**
+	 * Sets {@link ThrottlingService}.
+	 * 
+	 * @param throttlingService {@link ThrottlingService}
+	 */
 	public void setThrottlingService(ThrottlingService throttlingService) {
 		this.throttlingService = throttlingService;
 	}
 
 	@Override
-	public boolean handleFault(MessageContext paramMessageContext,
-			Object paramObject) throws Exception {
-		
+	public boolean handleFault(MessageContext paramMessageContext, Object paramObject) throws Exception {
 		return true;
 	}
 
 	@Override
-	public boolean handleRequest(MessageContext messageContext,
-			Object paramObject) throws Exception {
-
-		String userName = Utils.getUserName();
-		String endpointName = paramObject.getClass().getName();
+	public boolean handleRequest(MessageContext messageContext, Object paramObject) throws Exception {
+		final WebserviceUserDetails webserviceUser = Utils.getWebserviceUserDetails();
+		final String endpointName = EndpointClassUtil.endpointNameFromInstance(paramObject);
 		
 		try {
-			if (!throttlingService.checkAndTrack(userName)) {
-				logger.debug("Intercepted! User: " + userName + " Endpoint: " + endpointName);
+			if (!throttlingService.checkAndTrack(webserviceUser, endpointName)) {
+				if(logger.isDebugEnabled()) {
+					logger.debug(String.format("Intercepted! User: '%s', Endpoint: '%s'", webserviceUser.getUsername(), endpointName));
+				}
+				
 				//TODO: exception resolver?
-				throw new Exception("Rate limit exceeded! User: " + userName + " Endpoint: " + endpointName);
+				throw new Exception("API call limit exceeded");
 			}
 		} catch(Exception ex) {
             SoapBody response = ((SoapMessage) messageContext.getResponse()).getSoapBody();
@@ -59,15 +72,12 @@ public class ThrottlingInterceptor implements SoapEndpointInterceptor {
 	}
 
 	@Override
-	public boolean handleResponse(MessageContext paramMessageContext,
-			Object paramObject) throws Exception {
-		
+	public boolean handleResponse(MessageContext paramMessageContext, Object paramObject) throws Exception {
 		return true;
 	}
 
 	@Override
 	public boolean understands(SoapHeaderElement header) {
-		
 		return true;
 	}
 

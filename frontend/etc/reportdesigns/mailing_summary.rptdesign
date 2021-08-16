@@ -6314,7 +6314,7 @@ function beforeDrawDataPointLabel( dph, label, icsc )
 	labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot; &quot; + message;
 	//labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot;\n&quot; + message;
 	label.getCaption().setValue(labelText);
-
+	
 	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
 		label.getCaption().getColor().set(255, 255, 255);
 	}
@@ -7005,7 +7005,7 @@ importPackage( Packages.java.text);
 
 /**
  * Called before rendering Series.
- *
+ * 
  * @param series
  *            Series
  * @param isr
@@ -7018,14 +7018,14 @@ importPackage( Packages.java.text);
 function beforeGeneration( chart, icsc )
 {
 	reportContext = icsc.getExternalContext().getObject();
-
+	
 	sd = chart.getSeriesDefinitions( ).get( 0 );
-	sd.getSeriesPalette( ).getEntries( ).clear( );
-
-	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-blue&quot;));
+	sd.getSeriesPalette( ).getEntries( ).clear( );	
+			
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-blue&quot;));		
 	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-petrol&quot;));
 	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-light-green&quot;));
-	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-dark-green&quot;));
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-dark-green&quot;));			
 	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-orange&quot;));
 }
 
@@ -7039,7 +7039,7 @@ function getColorDefinition( styleName ) {
 
 /**
  * Called before rendering the label for each datapoint.
- *
+ * 
  * @param dph
  *            DataPointHints
  * @param label
@@ -7064,8 +7064,8 @@ function beforeDrawDataPointLabel( dph, label, icsc )
 		messageKey = &quot;statistic.smarttv&quot;;
 	} else {
 		messageKey = &quot;report.opens.pc.and.mobile.chartLabel&quot;;
-	}
-	var reportContext =  icsc.getExternalContext().getObject();
+	} 
+	var reportContext =  icsc.getExternalContext().getObject();	
 	var message = Packages.com.agnitas.messages.I18nString.getLocaleString(messageKey, reportContext.getLocale());
 	labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot; &quot; + message;
 	//labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot;\n&quot; + message;

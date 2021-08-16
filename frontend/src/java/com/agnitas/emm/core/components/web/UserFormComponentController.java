@@ -143,7 +143,7 @@ public class UserFormComponentController {
         return ResponseEntity.ok()
                 .contentLength(zipFile.length())
                 .contentType(MediaType.parseMediaType("application/zip"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionHeaderContent(zipName))
+                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(zipName))
                 .body(new DeleteFileAfterSuccessReadResource(zipFile));
 	}
 

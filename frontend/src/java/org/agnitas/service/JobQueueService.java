@@ -329,4 +329,12 @@ public class JobQueueService implements ApplicationContextAware {
 	public boolean isReportOK() {
 		return birtReportDao.selectErrorneousReports().size() == 0;
 	}
+
+	public void acknowledgeErrorneousJob(int idToAcknowledge) {
+		jobQueueDao.acknowledgeErrorneousJob(idToAcknowledge);
+	}
+	
+	public JobDto getJob(int id) {
+		return jobQueueDao.getJob(id);
+	}
 }

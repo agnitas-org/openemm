@@ -10,9 +10,12 @@
 
 package com.agnitas.web;
 
+import static com.agnitas.beans.LinkProperty.PropertyType.LinkExtension;
+
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,6 +27,7 @@ import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMapping;
 
 import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.LinkProperty;
 
 public class ComTrackableLinkForm extends TrackableLinkForm {
 	
@@ -47,8 +51,12 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 
 	private ComTrackableLink linkToView;
 
-    private boolean keepExtensionsUnchanged;
+    private boolean bulkModifyLinkExtensions;
     
+    private boolean modifyExtensionsForAllLinks;
+
+    private Map<Integer, LinkProperty> commonExtensions = new HashMap<>();
+
     /** Flag, if IntelliAd link tracking is enabled. */
     private boolean intelliAdEnabled;
     
@@ -69,6 +77,12 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 	
 	private boolean staticLink;
 	
+	private int bulkLinkStatic;
+	
+    private String bulkDescription;
+	
+    private boolean modifyBulkDescription;
+    
 	/**
 	 * this variable is used for the following issue: if you have two or more
 	 * SAME Links in a Mailing, you can not them in the mailing statistic,
@@ -102,14 +116,6 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 			}
 		}
 	}
-	
-    public boolean isKeepExtensionsUnchanged() {
-        return keepExtensionsUnchanged;
-    }
-	
-    public void setKeepExtensionsUnchanged(boolean keepExtensionsUnchanged) {
-        this.keepExtensionsUnchanged = keepExtensionsUnchanged;
-    }
     
 	/**
 	 * if "true", no difference is made between same links. if "false", same
@@ -309,4 +315,74 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 	public final boolean isStaticLink() {
 		return this.staticLink;
 	}
+
+    public void setLinkItems(List<ComTrackableLink> trackableLinks) {
+        clearLinkItemActions();
+        clearLinkItemDeepTracking();
+        clearLinkItemTrackable();
+        clearLinkItemName();
+        clearAdminLinks();
+        clearBulkIDs();
+
+        for (ComTrackableLink link : trackableLinks) {
+            int id = link.getId();
+            setLinkItemAction(id, link.getActionID());
+            setLinkItemDeepTracking(id, link.getDeepTracking());
+            setLinkItemTrackable(id, link.getUsage());
+            setLinkItemName(id, link.getShortname());
+            setAdminLink(id, link.isAdminLink());
+        }
+    }
+
+    public LinkProperty getCommonExtension(int index) {
+	    return commonExtensions.computeIfAbsent(index, i -> new LinkProperty(LinkExtension, "", ""));
+    }
+
+    public Map<Integer, LinkProperty> getCommonExtensions() {
+        return commonExtensions;
+    }
+
+    public void setCommonExtensions(Map<Integer, LinkProperty> commonExtensions) {
+        this.commonExtensions = commonExtensions;
+    }
+
+    public int getBulkLinkStatic() {
+        return bulkLinkStatic;
+    }
+
+    public void setBulkLinkStatic(int bulkLinkStatic) {
+        this.bulkLinkStatic = bulkLinkStatic;
+    }
+
+    public String getBulkDescription() {
+        return bulkDescription;
+    }
+
+    public void setBulkDescription(String bulkDescription) {
+        this.bulkDescription = bulkDescription;
+    }
+
+    public boolean isModifyBulkDescription() {
+        return modifyBulkDescription;
+    }
+
+    public void setModifyBulkDescription(boolean modifyBulkDescription) {
+        this.modifyBulkDescription = modifyBulkDescription;
+    }
+    
+    public boolean isBulkModifyLinkExtensions() {
+        return bulkModifyLinkExtensions;
+    }
+
+    public void setBulkModifyLinkExtensions(boolean bulkModifyLinkExtensions) {
+        this.bulkModifyLinkExtensions = bulkModifyLinkExtensions;
+    }
+
+    public boolean isModifyExtensionsForAllLinks() {
+        return modifyExtensionsForAllLinks;
+    }
+
+    public void setModifyExtensionsForAllLinks(boolean modifyExtensionsForAllLinks) {
+        this.modifyExtensionsForAllLinks = modifyExtensionsForAllLinks;
+    }
 }

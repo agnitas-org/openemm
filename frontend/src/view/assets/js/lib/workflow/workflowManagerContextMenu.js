@@ -31,15 +31,16 @@
               name: t('workflow.connect'),
               icon: "connect",
               callback: function(key, options) {
-                if (campaignManagerSelection.selected.length == 2) {
-                  campaignManager.connectIntermediateNodes(campaignManagerSelection.selected);
+                var selected = campaignManagerSelection.selected;
+                if (selected.length === 2) {
+                  if (!campaignManager.connectIntermediateNodes(selected[0], selected[1])) {
+                    campaignManager.connectNodes(selected[0], selected[1], true)
+                  }
                 } else {
-                  var prev = null;
-                  jQuery.each(campaignManagerSelection.selected, function(index, current) {
-                    if (prev != null) {
-                      campaignManager.connectNodes(prev, current, true);
-                    }
-                    prev = current;
+                  var source = selected.shift();
+                  jQuery.each(selected, function(index, target) {
+                    campaignManager.connectNodes(source, target, true);
+                    source = target;
                   });
                 }
               }

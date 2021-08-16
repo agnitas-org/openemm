@@ -12,19 +12,17 @@ package com.agnitas.dao.impl;
 
 import java.io.InputStream;
 import java.sql.Blob;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 
-import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.ComUndoMailingComponent;
 import com.agnitas.beans.impl.ComUndoMailingComponentImpl;
@@ -44,7 +42,7 @@ public class ComUndoMailingComponentDaoImpl extends BaseDaoImpl implements ComUn
 		"(SELECT component_tbl.company_id, component_tbl.mailtemplate_id, component_tbl.mailing_id, " +
 		" component_tbl.component_id, component_tbl.mtype, component_tbl.required, component_tbl.comptype, component_tbl.comppresent, component_tbl.compname, " +
 		" component_tbl.emmblock, component_tbl.binblock, component_tbl.target_id, component_tbl.timestamp, url_id, ? " +
-        " FROM component_tbl WHERE mailing_id = ? AND component_tbl.comptype = " + MailingComponent.TYPE_TEMPLATE + ") ";
+        " FROM component_tbl WHERE mailing_id = ? AND component_tbl.comptype = ?) ";
 	
 	private static final String SELECT_COMPONENT_STATEMENT =
 		"SELECT * FROM undo_component_tbl WHERE mailing_id = ? AND component_id = ? AND undo_id = ?";
@@ -53,22 +51,18 @@ public class ComUndoMailingComponentDaoImpl extends BaseDaoImpl implements ComUn
 		"SELECT * FROM undo_component_tbl WHERE mailing_id = ? AND undo_id = ?";
 	
 	private static final String DELETE_COMPONENT_STATEMENT =
-		"DELETE FROM undo_component_tbl " +
-		"WHERE undo_id = ?";
+		"DELETE FROM undo_component_tbl WHERE undo_id = ?";
 	
 	private static final String DELETE_OUTDATED_COMPONENT_STATEMENT =
-		"DELETE FROM undo_component_tbl " +
-		"WHERE undo_id <= ?";
+		"DELETE FROM undo_component_tbl WHERE undo_id <= ?";
 	
 	private static final String DELETE_UNDODATA_FOR_MAILING_STATEMENT =
-		"DELETE FROM undo_component_tbl " +
-		"WHERE mailing_id = ?";
+		"DELETE FROM undo_component_tbl WHERE mailing_id = ?";
 	
 	private static final String DELETE_UNDODATA_OVER_LIMIT_FOR_MAILING_STATEMENT =
-		"DELETE FROM undo_component_tbl " +
-		"WHERE mailing_id = ? AND undo_id <= ?";
+		"DELETE FROM undo_component_tbl WHERE mailing_id = ? AND undo_id <= ?";
 	
-	// --------------------------------------------------------------------------------------------------------------------------------------- JDBC helper	
+	// --------------------------------------------------------------------------------------------------------------------------------------- JDBC helper
 
 	private final RowMapper<ComUndoMailingComponent> undoMailingComponentRowMapper = new RowMapper<ComUndoMailingComponent>() {
 		@Override
@@ -93,7 +87,11 @@ public class ComUndoMailingComponentDaoImpl extends BaseDaoImpl implements ComUn
 			undo.setMailingID(resultSet.getInt("mailing_id"));
 			undo.setTargetID(resultSet.getInt("target_id"));
 			undo.setTimestamp(resultSet.getTimestamp("timestamp"));
-			undo.setType(resultSet.getInt("comptype"));
+			try {
+				undo.setType(MailingComponentType.getMailingComponentTypeByCode(resultSet.getInt("comptype")));
+			} catch (Exception e) {
+				throw new SQLException("Invalid component type found: " + resultSet.getInt("comptype"), e);
+			}
 			undo.setUndoId(resultSet.getInt("undo_id"));
 			undo.setUrlID(resultSet.getInt("url_id"));
 
@@ -103,11 +101,29 @@ public class ComUndoMailingComponentDaoImpl extends BaseDaoImpl implements ComUn
 	
 	@Override
 	@DaoUpdateReturnValueCheck
+	@Transactional
+	public final void saveUndoData(final int mailingId, final int undoId) {
+		if(mailingId > 0) {
+			try {
+				// Perform a direct table-to-table copy
+				update(logger, ComUndoMailingComponentDaoImpl.INSERT_COMPONENT_STATEMENT, undoId, mailingId, MailingComponentType.Template.getCode());
+			} catch(final Exception e) {
+            	final String msg = String.format("Error while writing undo data for components of mailing %d", mailingId);
+            	
+            	logger.error(msg, e);
+			}
+		}
+	}
+
+	/*
+	@Override
+	@DaoUpdateReturnValueCheck
     public void saveUndoData(int mailingId, int undoId) {
-        if (mailingId == 0)
-            return;
+        if (mailingId == 0) {
+			return;
+		}
         if (isOracleDB()) {
-            update(logger, ComUndoMailingComponentDaoImpl.INSERT_COMPONENT_STATEMENT, undoId, mailingId);
+            update(logger, ComUndoMailingComponentDaoImpl.INSERT_COMPONENT_STATEMENT, undoId, mailingId, MailingComponentType.Template.getCode());
         } else {
             try(final Connection connection = getDataSource().getConnection()) {
             	final boolean previousAutoCommit = connection.getAutoCommit();
@@ -116,7 +132,7 @@ public class ComUndoMailingComponentDaoImpl extends BaseDaoImpl implements ComUn
             	try(final Statement statement = connection.createStatement()) {
             		final String query = "SELECT component_tbl.company_id, component_tbl.mailtemplate_id, component_tbl.mailing_id, " +
                             " component_tbl.component_id, component_tbl.mtype, component_tbl.required, component_tbl.comptype, component_tbl.comppresent, component_tbl.compname, " +
-                            " component_tbl.emmblock, component_tbl.binblock, component_tbl.target_id, component_tbl.timestamp, component_tbl.url_id FROM component_tbl WHERE mailing_id = " + mailingId + " AND component_tbl.comptype = " + MailingComponent.TYPE_TEMPLATE;
+                            " component_tbl.emmblock, component_tbl.binblock, component_tbl.target_id, component_tbl.timestamp, component_tbl.url_id FROM component_tbl WHERE mailing_id = " + mailingId + " AND component_tbl.comptype = " + MailingComponentType.Template.getCode();
             		
             		
                     try (final ResultSet resultSet = statement.executeQuery(query)) {
@@ -163,6 +179,7 @@ public class ComUndoMailingComponentDaoImpl extends BaseDaoImpl implements ComUn
          
         }
     }
+    */
 	
 	@Override
 	public ComUndoMailingComponent getUndoData(int mailingId, int componentId, int undoId) {
@@ -195,8 +212,9 @@ public class ComUndoMailingComponentDaoImpl extends BaseDaoImpl implements ComUn
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void deleteUndoDataOverLimit(int mailingId, int undoId) {
-		if( undoId == 0) 
+		if( undoId == 0) {
 			return;
+		}
 		
 		update(logger, DELETE_UNDODATA_OVER_LIMIT_FOR_MAILING_STATEMENT, mailingId , undoId);
 	}

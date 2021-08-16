@@ -1,0 +1,13 @@
+
+<a class="headline" href="#" data-toggle-tile="#tile-targetSearch">
+    <i class="icon tile-toggle icon-angle-up"></i>
+    <mvc:message code="Search"/>
+</a>
+<ul class="tile-header-actions">
+    <li>
+        <button class="btn btn-primary btn-regular" type="button" data-form-submit="">
+            <i class="icon icon-search"></i>
+            <span class="text"><mvc:message code="Search"/></span>
+        </button>
+    </li>
+</ul>

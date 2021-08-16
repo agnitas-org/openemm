@@ -1,0 +1,15 @@
+
+<div class="form-group">
+    <div class="col-sm-4">
+        <label class="control-label" for="bulkLinkStatic">
+            <bean:message key="TrackableLink.staticLink" />
+        </label>
+    </div>
+    <div class="col-sm-8">
+        <html:select property="bulkLinkStatic" styleId="bulkLinkStatic" styleClass="form-control" value="${KEEP_UNCHANGED}">
+            <html:option value="${KEEP_UNCHANGED}"><bean:message key="KeepUnchanged"/></html:option>
+            <html:option value="0"><bean:message key="default.No" /></html:option>
+            <html:option value="1"><bean:message key="default.Yes" /></html:option>
+        </html:select>
+    </div>
+</div>

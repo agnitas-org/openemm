@@ -14,6 +14,8 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
+<%--@elvariable id="helplanguage" type="java.lang.String"--%>
+
 <c:set var="TYPE_OPEN" value="<%= WorkflowStartType.OPEN %>"/>
 <c:set var="TYPE_DATE" value="<%= WorkflowStartType.DATE %>"/>
 <c:set var="TYPE_EVENT" value="<%= WorkflowStartType.EVENT %>"/>
@@ -266,6 +268,7 @@
                     <div class="col-sm-4">
                         <label class="control-label">
                             <bean:message key="workflow.start.execution"/>
+                            <button class="icon icon-help" data-help="help_${helplanguage}/workflow/start/Execution.xml" tabindex="-1" type="button"></button>
                         </label>
                     </div>
                     <div class="col-sm-8">
@@ -536,11 +539,11 @@
         <div class="col-xs-12">
             <div class="form-group">
                 <div class="btn-group">
-                    <a href="#" class="btn btn-regular" data-action="editor-cancel" data-close-campaign-editor-modal>
+                    <a href="#" class="btn btn-regular" data-action="editor-cancel">
                         <bean:message key="button.Cancel"/>
                     </a>
                     <a href="#" class="btn btn-regular btn-primary hide-for-active"
-                      data-action="start-editor-validate" data-close-campaign-editor-modal>
+                      data-action="start-editor-validate">
                         <bean:message key="button.Apply"/>
                     </a>
                 </div>
@@ -549,7 +552,7 @@
     </form>
 
 
-    <script id="start-editor-data" type="application/json">
+    <script id="config:start-editor-initializer" type="application/json">
         {
             "isBigData": "${isBigData}",
 

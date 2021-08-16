@@ -1,3 +1,4 @@
+<%@ page import="org.agnitas.dao.MailingStatus" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="java.text.DateFormat" %>
 <%@ page import="java.text.SimpleDateFormat" %>
@@ -5,7 +6,7 @@
 <%@ page import="com.agnitas.beans.DeliveryStat" %>
 <%@ page import="com.agnitas.emm.core.target.eql.codegen.resolver.MailingType" %>
 <%@ page import="com.agnitas.web.ComMailingSendActionBasic" %>
-<%@ page import="org.agnitas.beans.Mailing" %>
+<%@ page import="com.agnitas.beans.Mailing" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page import="org.agnitas.web.MailingSendAction" %>
@@ -47,7 +48,6 @@
 <c:set var="ACTION_UNLOCK_SEND" value="<%=ComMailingSendActionBasic.ACTION_UNLOCK_SEND%>" scope="page" />
 <c:set var="STATUS_SENT" value="<%=DeliveryStat.STATUS_SENT%>" scope="page" />
 <c:set var="ADMIN_TARGET_SINGLE_RECIPIENT" value="${-1}" scope="page" />
-<c:set var="ACTION_CREATE_EXTERNAL" value="<%=ComMailingSendActionBasic.ACTION_CREATE_EXTERNAL%>" scope="page" />
 
 <c:set var="ACTION_BASED_MAILING_TYPE" value="<%=MailingType.ACTION_BASED.getCode()%>" scope="page" />
 <c:set var="ACTION_PRIORITIZATION_SWITCHING" value="<%=ComMailingSendActionBasic.ACTION_PRIORITIZATION_SWITCHING%>" scope="page" />
@@ -88,211 +88,204 @@
 	</li>
 </c:set>
 
-<c:set var="checkLinksTile">
-	<div class="tile">
-		<div class="tile-header">
-			<h2 class="headline">
-				<i class="icon icon-chain"></i>
-				<bean:message key="link.check" />
-			</h2>
-		</div>
-		<div class="tile-content tile-content-forms">
-			<div class="well block vspace-bottom-10">
-				<bean:message key="mailing.link.check.hint" />
+<c:if test="${enableLinkCheck}">
+	<c:set var="checkLinksTile">
+		<div class="tile">
+			<div class="tile-header">
+				<h2 class="headline">
+					<i class="icon icon-chain"></i>
+					<bean:message key="link.check" />
+				</h2>
 			</div>
-
-			<a href="#" class="btn btn-regular btn-primary" data-action-value="${ACTION_CHECK_LINKS}" data-action="check-links">
-				<i class="icon icon-refresh"></i>
-				<span class="text"><bean:message key="button.check" /></span>
-			</a>
-		</div>
-	</div>
-</c:set>
-
-<c:set var="testRunTile">
-	<div class="tile">
-		<div class="tile-header">
-			<h2 class="headline">
-				<i class="icon icon-flask"></i>
-				<bean:message key="mailing.testrun" />
-			</h2>
-		</div>
-
-		<div class="tile-content tile-content-forms">
-			<c:set var="moveDelivery" value="${false}" />
-
-		<c:choose>
-			<c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
-				<div class="well block">
-					<c:choose>
-						<c:when test="${mailingSendForm.isTemplate}">
-							<bean:message key="template.send.test" />
-						</c:when>
-						<c:otherwise>
-							<bean:message key="mailing.send.test" />
-						</c:otherwise>
-					</c:choose>
+			<div class="tile-content tile-content-forms">
+				<div class="well block vspace-bottom-10">
+					<bean:message key="mailing.link.check.hint" />
 				</div>
+	
+				<a href="#" class="btn btn-regular btn-primary" data-action-value="${ACTION_CHECK_LINKS}" data-action="check-links">
+					<i class="icon icon-refresh"></i>
+					<span class="text"><bean:message key="button.check" /></span>
+				</a>
+			</div>
+		</div>
+	</c:set>
+</c:if>
 
-				<div id="test-send-controls-group" class="vspace-top-10"
-					 style="${mailingSendForm.transmissionRunning ? 'display: none;' : ''}">
-					<emm:ShowByPermission token="mailing.send.admin.target">
-						<div class="form-group">
-							<div class="col-sm-4">
-								<label class="control-label" for="adminTargetGroupSelect">
-									<bean:message key="mailing.send.admin.target.to" />
-								</label>
+<c:if test="${enableAdminTestDelivery}">
+	<c:set var="testRunTile">
+		<div class="tile">
+			<div class="tile-header">
+				<h2 class="headline">
+					<i class="icon icon-flask"></i>
+					<bean:message key="mailing.testrun" />
+				</h2>
+			</div>
+	
+			<div class="tile-content tile-content-forms">
+				<c:set var="moveDelivery" value="${false}" />
+	
+			<c:choose>
+				<c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
+					<div class="well block">
+						<c:choose>
+							<c:when test="${mailingSendForm.isTemplate}">
+								<bean:message key="template.send.test" />
+							</c:when>
+							<c:otherwise>
+								<bean:message key="mailing.send.test" />
+							</c:otherwise>
+						</c:choose>
+					</div>
+	
+					<div id="test-send-controls-group" class="vspace-top-10"
+						 style="${mailingSendForm.transmissionRunning ? 'display: none;' : ''}">
+						<emm:ShowByPermission token="mailing.send.admin.target">
+							<div class="form-group">
+								<div class="col-sm-4">
+									<label class="control-label" for="adminTargetGroupSelect">
+										<bean:message key="mailing.send.admin.target.to" />
+									</label>
+								</div>
+								<div class="col-sm-8">
+									<agn:agnSelect name="mailingSendForm" property="adminTargetGroupID" styleId="adminTargetGroupSelect"
+												   styleClass="form-control js-select" data-action="admin-target-group"
+												   data-initializer="test-run-recipients-select">
+										<html:option value="0"> <bean:message key="mailing.send.adminOrTest" /></html:option>
+	
+										<html:option value="${ADMIN_TARGET_SINGLE_RECIPIENT}">
+											<bean:message key="mailing.test.recipient.single" />
+										</html:option>
+	
+										<c:forEach var="targetGroup" items="${adminTargetGroupList}">
+											<html:option value="${targetGroup.id}">${targetGroup.targetName}</html:option>
+										</c:forEach>
+									</agn:agnSelect>
+								</div>
 							</div>
-							<div class="col-sm-8">
-								<agn:agnSelect name="mailingSendForm" property="adminTargetGroupID" styleId="adminTargetGroupSelect"
-											   styleClass="form-control js-select" data-action="admin-target-group"
-											   data-initializer="test-run-recipients-select">
-									<html:option value="0"> <bean:message key="mailing.send.adminOrTest" /></html:option>
-
-									<html:option value="${ADMIN_TARGET_SINGLE_RECIPIENT}">
-										<bean:message key="mailing.test.recipient.single" />
-									</html:option>
-
-									<c:forEach var="targetGroup" items="${adminTargetGroupList}">
-										<html:option value="${targetGroup.id}">${targetGroup.targetName}</html:option>
+						</emm:ShowByPermission>
+					</div>
+	
+					<div class="form-group ${mailingSendForm.adminTargetGroupID eq ADMIN_TARGET_SINGLE_RECIPIENT ? '' : 'hidden'}" id="test-recipients-table">
+						<div class="col-sm-push-4 col-sm-8">
+							<div class="table-responsive">
+								<table class="table table-bordered table-striped">
+									<thead>
+									<tr>
+										<th><bean:message key="settings.Admin.email" /></th>
+										<th></th>
+									</tr>
+									</thead>
+									<tbody>
+									<c:set var="lastAddress" value="" />
+	
+									<c:forEach var="address" items="${mailingSendForm.mailingTestRecipients}" varStatus="status">
+										<c:choose>
+											<c:when test="${status.last}">
+												<c:set var="lastAddress" value="${address}" />
+											</c:when>
+											<c:otherwise>
+												<tr>
+													<td>
+														<input type="text" name="mailingTestRecipients" class="form-control" value="${fn:escapeXml(address)}" data-action="edit-test-recipient" />
+													</td>
+													<td class="table-actions">
+														<button type="button" class="btn btn-regular btn-alert" data-tooltip="<bean:message key='button.Delete'/>" data-action="remove-test-recipient">
+															<i class="icon icon-trash-o"></i>
+														</button>
+													</td>
+												</tr>
+											</c:otherwise>
+										</c:choose>
 									</c:forEach>
-								</agn:agnSelect>
+	
+									<tr>
+										<td>
+											<input type="text" id="new-test-recipient" name="mailingTestRecipients" class="form-control" data-action="new-test-recipient" value="${fn:escapeXml(lastAddress)}" />
+										</td>
+										<td class="table-actions">
+											<button type="button" class="btn btn-regular btn-primary" data-tooltip="<bean:message key='button.Add'/>" data-action="add-test-recipient">
+												<i class="icon icon-plus"></i>
+											</button>
+										</td>
+									</tr>
+									</tbody>
+								</table>
 							</div>
-						</div>
-					</emm:ShowByPermission>
-				</div>
-
-				<div class="form-group ${mailingSendForm.adminTargetGroupID eq ADMIN_TARGET_SINGLE_RECIPIENT ? '' : 'hidden'}" id="test-recipients-table">
-					<div class="col-sm-push-4 col-sm-8">
-						<div class="table-responsive">
-							<table class="table table-bordered table-striped">
-								<thead>
-								<tr>
-									<th><bean:message key="settings.Admin.email" /></th>
-									<th></th>
-								</tr>
-								</thead>
-								<tbody>
-								<c:set var="lastAddress" value="" />
-
-								<c:forEach var="address" items="${mailingSendForm.mailingTestRecipients}" varStatus="status">
-									<c:choose>
-										<c:when test="${status.last}">
-											<c:set var="lastAddress" value="${address}" />
-										</c:when>
-										<c:otherwise>
-											<tr>
-												<td>
-													<input type="text" name="mailingTestRecipients" class="form-control" value="${fn:escapeXml(address)}" data-action="edit-test-recipient" />
-												</td>
-												<td class="table-actions">
-													<button type="button" class="btn btn-regular btn-alert" data-tooltip="<bean:message key='button.Delete'/>" data-action="remove-test-recipient">
-														<i class="icon icon-trash-o"></i>
-													</button>
-												</td>
-											</tr>
-										</c:otherwise>
-									</c:choose>
-								</c:forEach>
-
-								<tr>
-									<td>
-										<input type="text" id="new-test-recipient" name="mailingTestRecipients" class="form-control" data-action="new-test-recipient" value="${fn:escapeXml(lastAddress)}" />
-									</td>
-									<td class="table-actions">
-										<button type="button" class="btn btn-regular btn-primary" data-tooltip="<bean:message key='button.Add'/>" data-action="add-test-recipient">
-											<i class="icon icon-plus"></i>
-										</button>
-									</td>
-								</tr>
-								</tbody>
-							</table>
 						</div>
 					</div>
-				</div>
-
-				<div class="form-group">
-					<div class="col-sm-offset-1 col-sm-11">
-						<div class="btn-group">
-							<a href="#"
-							   id="adminSendButton"
-							   class="btn btn-regular btn-primary"
-							   data-action-value="${ACTION_SEND_ADMIN}"
-							   data-action="start-delivery">
-								<i class="icon icon-send-o"></i>
-								<span class="text">
-									<bean:message key="adminMail" />
-								</span>
-							</a>
-
-							<a href="#" class="btn btn-regular btn-primary"
-							   data-action-value="${ACTION_SEND_TEST}"
-							   data-action="start-delivery">
-								<i class="icon icon-send-o"></i>
-								<span class="text">
-									<bean:message key="testMail" />
-								</span>
-							</a>       
-
-							<c:if test="${mayCreateExternalMailing}">
-								<a href="#" class="btn btn-regular btn-primary"
-								   data-action-value="${ACTION_CREATE_EXTERNAL}"
+	
+					<div class="form-group">
+						<div class="col-sm-offset-1 col-sm-11">
+							<div class="btn-group">
+								<a href="#"
+								   id="adminSendButton"
+								   class="btn btn-regular btn-primary"
+								   data-action-value="${ACTION_SEND_ADMIN}"
 								   data-action="start-delivery">
 									<i class="icon icon-send-o"></i>
 									<span class="text">
-										<bean:message key="createExternalMailing" />
+										<bean:message key="adminMail" />
 									</span>
 								</a>
-							</c:if>
-
-							<c:if test="${not empty externalEditorLink}">
-								<a href="${externalEditorLink}" target="_POST_MailingTab" class="btn btn-regular btn-primary">
+	
+								<a href="#" class="btn btn-regular btn-primary"
+								   data-action-value="${ACTION_SEND_TEST}"
+								   data-action="start-delivery">
 									<i class="icon icon-send-o"></i>
 									<span class="text">
-										<bean:message key="openExternalEditor" />
+										<bean:message key="testMail" />
 									</span>
 								</a>
-							</c:if>
+	
+								<c:if test="${not empty externalEditorLink}">
+									<a href="${externalEditorLink}" target="_POST_MailingTab" class="btn btn-regular btn-primary">
+										<i class="icon icon-send-o"></i>
+										<span class="text">
+											<bean:message key="openExternalEditor" />
+										</span>
+									</a>
+								</c:if>
+							</div>
 						</div>
 					</div>
-				</div>
-			</c:when>
-			<c:otherwise>
-				<div class="form-group">
-					<div class="notification notification-warning">
-						<div class="notification-header">
-							<p class="headline">
-								<i class="icon icon-state-warning"></i>
-								<span class="text"><bean:message key="error.mailing.send" /></span>
-							</p>
+				</c:when>
+				<c:otherwise>
+					<div class="form-group">
+						<div class="notification notification-warning">
+							<div class="notification-header">
+								<p class="headline">
+									<i class="icon icon-state-warning"></i>
+									<span class="text"><bean:message key="error.mailing.send" /></span>
+								</p>
+							</div>
+	
+							<div class="notification-content">
+								<p><bean:message key="MailingTestAdmin.deleted_target_groups" /></p>
+							</div>
 						</div>
-
-						<div class="notification-content">
-							<p><bean:message key="MailingTestAdmin.deleted_target_groups" /></p>
+	
+					</div>
+	
+					<div class="form-group">
+						<div class="notification notification-warning">
+							<div class="notification-header">
+								<p class="headline">
+									<i class="icon icon-state-warning"></i>
+									<span class="text"><bean:message key="error.mailing.send" /></span>
+								</p>
+							</div>
+	
+							<div class="notification-content">
+								<p><bean:message key="MailingTestDistrib.deleted_target_groups" /></p>
+							</div>
 						</div>
 					</div>
-
-				</div>
-
-				<div class="form-group">
-					<div class="notification notification-warning">
-						<div class="notification-header">
-							<p class="headline">
-								<i class="icon icon-state-warning"></i>
-								<span class="text"><bean:message key="error.mailing.send" /></span>
-							</p>
-						</div>
-
-						<div class="notification-content">
-							<p><bean:message key="MailingTestDistrib.deleted_target_groups" /></p>
-						</div>
-					</div>
-				</div>
-			</c:otherwise>
-		</c:choose>
+				</c:otherwise>
+			</c:choose>
+			</div>
 		</div>
-	</div>
-</c:set>
+	</c:set>
+</c:if>
 
 <tiles:insert page="template.jsp">
 	<tiles:put name="header" type="string">
@@ -454,7 +447,7 @@
 								</logic:equal>
 
 								<logic:equal name="mailingSendForm" property="mailingtype" value="${TYPE_INTERVAL}">
-									<logic:equal name="mailingSendForm" property="workStatus" value="mailing.status.active">
+									<logic:equal name="mailingSendForm" property="workStatus" value="<%= MailingStatus.ACTIVE.getMessageKey() %>">
 										<emm:ShowByPermission token="mailing.send.world">
 											<div class="form-group">
 												<div class="col-sm-4">
@@ -563,7 +556,7 @@
 								</logic:equal>
 
 								<logic:equal name="mailingSendForm" property="mailingtype" value="${TYPE_INTERVAL}">
-									<logic:equal name="mailingSendForm" property="workStatus" value="mailing.status.disable">
+									<logic:equal name="mailingSendForm" property="workStatus" value="<%= MailingStatus.DISABLE.getDbKey() %>">
 										<emm:ShowByPermission token="mailing.send.world">
 											<c:choose>
 												<c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
@@ -594,7 +587,7 @@
 											</c:choose>
 										</emm:ShowByPermission>
 									</logic:equal>
-									<logic:equal name="mailingSendForm" property="workStatus" value="mailing.status.new">
+									<logic:equal name="mailingSendForm" property="workStatus" value="<%= MailingStatus.NEW.getDbKey() %>">
 										<emm:ShowByPermission token="mailing.send.world">
 											<c:choose>
 												<c:when test="${not mailingSendForm.hasDeletedTargetGroups}">

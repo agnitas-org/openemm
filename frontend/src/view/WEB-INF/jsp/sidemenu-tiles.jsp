@@ -67,7 +67,8 @@
             <emm:ShowNavigation navigation='${_navigation_submenu}Sub' highlightKey="${sidemenu_sub_active}" prefix="_sub">
                 <c:if test="${not isSubmenuAvailable}">
                     <emm:ShowByPermission token="${_sub_navigation_token}">
-                        <c:set var="isSubmenuAvailable" value="true"/>
+                        <%-- hide submenu if submenu contains only one item with the same link--%>
+                        <c:set var="isSubmenuAvailable" value="${_navigation_href ne _sub_navigation_href}"/>
                     </emm:ShowByPermission>
 
                     <c:if test="${not _sub_navigation_conditionSatisfied}">

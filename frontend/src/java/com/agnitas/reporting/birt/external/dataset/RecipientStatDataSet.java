@@ -26,6 +26,7 @@ import java.util.Objects;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -258,6 +259,11 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 				sql.append(" AND bind.mediatype = ?");
 				parameters.add(mediaType);
     		}
+		}
+		
+		if (DbUtilities.checkIfTableExists(getDataSource(), "ahv_" + companyID + "_tbl")) {
+			// Exclude bounced recipients that are included in AHV process
+			sql.append(" AND (bind.user_status != " + UserStatus.Bounce.getStatusCode() + " OR bind.customer_id NOT IN (SELECT customer_id FROM ahv_" + companyID + "_tbl WHERE bouncecount > 1))");
 		}
 
 		sql.append(" GROUP BY ").append(dateSelectPart).append(", bind.user_status");

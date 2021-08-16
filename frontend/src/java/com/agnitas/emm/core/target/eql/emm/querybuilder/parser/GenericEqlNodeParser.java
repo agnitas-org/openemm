@@ -10,11 +10,16 @@
 
 package com.agnitas.emm.core.target.eql.emm.querybuilder.parser;
 
+import java.util.List;
 import java.util.Set;
+
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.agnitas.emm.core.target.eql.ast.AbstractEqlNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConversionException;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderBaseNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderGroupNode;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 
 public abstract class GenericEqlNodeParser<T> implements EqlNodeParser<T> {
 
@@ -23,7 +28,9 @@ public abstract class GenericEqlNodeParser<T> implements EqlNodeParser<T> {
     @Override
     public QueryBuilderGroupNode parse(AbstractEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         T eqlNode = getEqlNode(node);
-        return parse(eqlNode, groupNode, profileFields);
+        final QueryBuilderGroupNode resultNode = parse(eqlNode, groupNode, profileFields);
+        processNodeAfterParse(resultNode);
+        return resultNode;
     }
 
     @Override
@@ -37,6 +44,44 @@ public abstract class GenericEqlNodeParser<T> implements EqlNodeParser<T> {
     }
 
     protected abstract QueryBuilderGroupNode parse(T node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException;
+
+    protected void processNodeAfterParse(final QueryBuilderGroupNode groupNode) {
+        final List<QueryBuilderBaseNode> rules = groupNode.getRules();
+        if(CollectionUtils.isEmpty(rules)) {
+            return;
+        }
+        QueryBuilderBaseNode lastNode = rules.get(rules.size() - 1);
+        if(lastNode instanceof QueryBuilderGroupNode) {
+            lastNode = refactorIfContainsIncludingEmptyRule((QueryBuilderGroupNode) lastNode);
+            rules.set(rules.size() - 1, lastNode);
+        }
+    }
+
+    private QueryBuilderBaseNode refactorIfContainsIncludingEmptyRule(final QueryBuilderGroupNode node) {
+        final List<QueryBuilderBaseNode> rules = node.getRules();
+        if(rules.size() != 2) {
+            return node;
+        }
+        final QueryBuilderBaseNode leftNode = rules.get(0),
+                rightNode = rules.get(1);
+        if(!(leftNode instanceof QueryBuilderRuleNode && rightNode instanceof QueryBuilderRuleNode)) {
+            return node;
+        }
+
+        final QueryBuilderRuleNode leftRule = (QueryBuilderRuleNode) leftNode,
+                rightRule = (QueryBuilderRuleNode) rightNode;
+
+        if(!leftRule.getId().equals(rightRule.getId())) {
+            return node;
+        }
+
+        if(!("not_equal".equals(leftRule.getOperator()) && "is_empty".equals(rightRule.getOperator()) && "OR".equals(node.getCondition()))) {
+            return node;
+        }
+
+        leftRule.setIncludeEmpty(true);
+        return leftRule;
+    }
 
     public void setConfiguration(EqlToQueryBuilderParserConfiguration configuration) {
         this.configuration = configuration;

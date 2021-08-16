@@ -17,6 +17,7 @@
 
     <mvc:hidden path="id"/>
     <mvc:hidden path="targetId"/>
+    <mvc:hidden path="mediatypes"/>
 
     <div class="tile">
         <div class="tile-header">

@@ -19,7 +19,6 @@ import java.util.Map;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.actions.impl.EmmActionImpl;
 import org.agnitas.beans.factory.ActionOperationFactory;
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -41,7 +40,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.action.dto.EmmActionDto;
@@ -57,12 +56,13 @@ import com.agnitas.emm.core.userform.service.ComUserformService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping("/action")
-@PermissionMapping("actionNew")
+@PermissionMapping("action")
 public class EmmActionController {
 
 	private static final Logger logger = Logger.getLogger(EmmActionController.class);
@@ -94,25 +94,22 @@ public class EmmActionController {
 	}
 
 	@RequestMapping("/list.action")
-	public String list(ComAdmin admin, @ModelAttribute("form") EmmActionsForm form, Model model, Popups popups) {
+	public String list(ComAdmin admin, EmmActionsForm form, Model model, Popups popups) {
 		try {
 			AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
-                FormUtils.syncNumberOfRows(webStorage, WebStorage.ACTION_OVERVIEW, form);
+			FormUtils.syncNumberOfRows(webStorage, WebStorage.ACTION_OVERVIEW, form);
 
-			PaginatedListImpl<EmmActionDto> userFormList = emmActionService
-					.getEmmActions(admin, form.getSort(), form.getOrder(), form.getPage(), form.getNumberOfRows(), form.getFilter());
-			model.addAttribute("emmActions", userFormList);
-			model.addAttribute("eventBasedMailings", mailingService.getMailingsByStatusE(admin.getCompanyID()));
+			model.addAttribute("actionListJson", emmActionService.getEmmActionsJson(admin));
 		} catch (Exception e) {
 			logger.error("Getting emm action list failed!", e);
 			popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
 		}
 
-		return "actions_list_new";
+		return "actions_list";
 	}
 
 	@PostMapping("/saveActiveness.action")
-	public String saveActiveness(ComAdmin admin, @ModelAttribute("form") EmmActionsForm form, RedirectAttributes model, Popups popups) {
+	public @ResponseBody BooleanResponseDto saveActiveness(ComAdmin admin, EmmActionsForm form, Popups popups) {
 		List<UserAction> userActions = new ArrayList<>();
 		boolean result = emmActionService.setActiveness(form.getActiveness(), admin.getCompanyID(), userActions);
 		if (result) {
@@ -120,11 +117,11 @@ public class EmmActionController {
 				writeUserActivityLog(admin, action);
 			}
 			popups.success("default.changes_saved");
+		} else {
+			popups.alert("Error");
 		}
 
-		model.addFlashAttribute("form", form);
-
-		return "redirect:/action/list.action";
+		return new BooleanResponseDto(popups, result);
 	}
 
 	@PostMapping("/confirmBulkDelete.action")
@@ -133,12 +130,12 @@ public class EmmActionController {
 			popups.alert("bulkAction.nothing.action");
 			return "messages";
 		}
-		return "action_bulk_delete_ajax_new";
+		return "action_bulk_delete_ajax";
 	}
 
 	@RequestMapping(value = "/bulkDelete.action", method = { RequestMethod.POST, RequestMethod.DELETE})
     public String bulkDelete(ComAdmin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
-        if(form.getBulkIds().isEmpty()) {
+        if (form.getBulkIds().isEmpty()) {
             popups.alert("bulkAction.nothing.action");
             return "messages";
         }
@@ -172,7 +169,7 @@ public class EmmActionController {
 			form.setId(emmAction.getId());
 			form.setShortname(emmAction.getShortname());
 
-			return "userform_delete_ajax_new";
+			return "action_delete_ajax";
 		}
 
 		popups.alert("Error");
@@ -198,7 +195,7 @@ public class EmmActionController {
 
 		loadViewData(admin, model);
 
-		return "actions_view_new";
+		return "actions_view";
 	}
 
 	@GetMapping("/{id:\\d+}/view.action")
@@ -212,7 +209,7 @@ public class EmmActionController {
 		model.addAttribute("form", conversionService.convert(emmAction, EmmActionForm.class));
 		loadViewData(admin, model);
 
-		return "actions_view_new";
+		return "actions_view";
 	}
 
 	@PostMapping("/save.action")
@@ -236,7 +233,7 @@ public class EmmActionController {
 				action.setActionOperations(parameters);
 
 				List<UserAction> userActions = new ArrayList<>();
-				int actionId = emmActionService.saveEmmAction(admin, action, userActions);
+				int actionId = emmActionService.saveEmmAction(admin.getCompanyID(), action, userActions);
 
 				for (UserAction userAction : userActions) {
 					writeUserActivityLog(admin, userAction);
@@ -289,7 +286,7 @@ public class EmmActionController {
 
 		loadViewData(admin, model);
 
-		return "actions_view_new";
+		return "actions_view";
 	}
 
 	@GetMapping("/{id:\\d+}/usage.action")
@@ -297,7 +294,7 @@ public class EmmActionController {
 		model.addAttribute("actionId", id);
 		model.addAttribute("shortname", emmActionService.getEmmActionName(id, admin.getCompanyID()));
 		model.addAttribute("webFormsByActionId", userFormService.getUserFormNamesByActionID(admin.getCompanyID(), id));
-		return "actions_view_forms_new";
+		return "actions_view_forms";
 	}
 
 	private void loadViewData(ComAdmin admin, Model model) {

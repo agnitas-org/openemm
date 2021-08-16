@@ -22,13 +22,11 @@ import com.agnitas.emm.core.sessionhijacking.beans.IpSettings;
  */
 public final class SessionHijackingPreventionDataDaoImpl extends BaseDaoImpl implements SessionHijackingPreventionDataDao {
 	
-	private static final transient IpSettingsRowMapper ROW_MAPPER = new IpSettingsRowMapper();
-	
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(SessionHijackingPreventionDataDaoImpl.class);
 
 	@Override
 	public final List<IpSettings> listIpSettings() {
-    	return select(logger, "SELECT * FROM sessionhijackingprevention_tbl", ROW_MAPPER);
+    	return select(logger, "SELECT ip, ip_group FROM sessionhijackingprevention_tbl", new IpSettingsRowMapper());
 	}
 }

@@ -10,7 +10,13 @@
 
 package com.agnitas.emm.core.mailinglist.form;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import org.agnitas.util.AgnUtils;
+
 import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class MailinglistForm {
 	
@@ -25,6 +31,8 @@ public class MailinglistForm {
 	private boolean frequencyCounterEnabled;
 	
 	private RecipientProgressStatisticDto statistic;
+	
+	private Set<Integer> mediatypes = new HashSet<>();
 	
 	public int getId() {
 		return id;
@@ -72,5 +80,32 @@ public class MailinglistForm {
 
 	public void setFrequencyCounterEnabled(boolean markedForFrequencyCounter) {
 		this.frequencyCounterEnabled = markedForFrequencyCounter;
+	}
+	
+	public void setMediatype(int mediatypeId, String value) {
+		if (AgnUtils.interpretAsBoolean(value)) {
+			mediatypes.add(mediatypeId);
+		} else {
+			mediatypes.remove(mediatypeId);
+		}
+	}
+
+	public String getMediatype(int mediatypeId) {
+		return mediatypes.contains(mediatypeId) ? "on" : "";
+	}
+
+	public Set<MediaTypes> getMediatypes() {
+		Set<MediaTypes> returnSet = new HashSet<>();
+		for (int mediatypeCode : mediatypes) {
+			returnSet.add(MediaTypes.getMediaTypeForCode(mediatypeCode));
+		}
+		return returnSet;
+	}
+
+	public void setMediatypes(Set<MediaTypes> mediatypes) {
+		this.mediatypes.clear();
+		for (MediaTypes mediatype : mediatypes) {
+			this.mediatypes.add(mediatype.getMediaCode());
+		}
 	}
 }

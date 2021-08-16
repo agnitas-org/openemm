@@ -10,6 +10,11 @@
 
 package com.agnitas.emm.core.target;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 
 public class TargetUtils {
@@ -44,4 +49,16 @@ public class TargetUtils {
             return complexityIndex;
         }
     }
+
+	public static List<Integer> getInvolvedTargetIds(String targetExpression) {
+		List<Integer> returnList = new ArrayList<>();
+		if (StringUtils.isNotBlank(targetExpression)) {
+			for (String targetPart : targetExpression.split("&|\\|")) {
+				if (StringUtils.isNotBlank(targetPart)) {
+					returnList.add(Integer.parseInt(targetPart));
+				}
+			}
+		}
+		return returnList;
+	}
 }

@@ -18,7 +18,6 @@ import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.context.ApplicationContext;
 
-import com.agnitas.beans.LinkProperty;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 
@@ -199,9 +198,7 @@ public interface UserForm {
 
 	void setErrorUseUrl(boolean errorUseUrl);
 
-	String getActionNames();
-
-	void setActionNames(String actionNames);
+	List<Integer> getUsedActionIds();
 
 	/**
 	 * getStartActionID() > 0 && getStartActionID() > 0
@@ -222,16 +219,6 @@ public interface UserForm {
      */
     void setTrackableLinks(Map<String, ComTrackableUserFormLink> trackableLinks);
 
-	
-	/**
-	 * Returns a list of link properties with are contained in all links of thi mailing.
-	 * Link properties contained in a link but not in all the others are not contained in this list,
-	 * but are contained in the link property list of the specific link additionally to the links of this list.
-	 * 
-	 * @return
-	 */
-	List<LinkProperty> getCommonLinkExtensions();
-	
 	Date getCreationDate();
 
 	void setCreationDate(Date creationDate);
@@ -255,4 +242,12 @@ public interface UserForm {
 	boolean getIsActive();
 
 	void setIsActive(boolean active);
+
+	String getSuccessFormBuilderJson();
+
+	void setSuccessFormBuilderJson(String json);
+
+	String getErrorFormBuilderJson();
+
+	void setErrorFormBuilderJson(String json);
 }

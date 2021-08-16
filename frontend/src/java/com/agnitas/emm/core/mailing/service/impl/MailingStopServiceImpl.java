@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -177,17 +178,22 @@ public final class MailingStopServiceImpl implements MailingStopService {
 				&& !this.mailingService.isDeliveryComplete(mailing);
 		
 		return inProgress
-				&& !canResumeMailing(mailing);
+				&& !isStopped(mailing);
 	}
 	
 	@Override
-	public final boolean canResumeMailing(final int companyID, final int mailingID) {
+	public final boolean isStopped(final int companyID, final int mailingID) {
 		final LightweightMailing mailing = this.mailingService.getLightweightMailing(companyID, mailingID);
 
-		return canResumeMailing(mailing);
+		return isStopped(mailing);
 	}
-	
-	private final boolean canResumeMailing(final LightweightMailing mailing) {
+
+	@Override
+	public Date getDeliveryPauseDate(int companyId, int mailingId) {
+		return serverPrioService.getDeliveryPauseDate(companyId, mailingId);
+	}
+
+	private final boolean isStopped(final LightweightMailing mailing) {
 		return isStopped(mailing.getMailingID());
 	}
 	
@@ -204,7 +210,7 @@ public final class MailingStopServiceImpl implements MailingStopService {
 	}
 	
 	private final void requireResumableMailing(final LightweightMailing mailing) throws MailingStopServiceException {
-		if(!canResumeMailing(mailing)) {
+		if(!isStopped(mailing)) {
 			final String msg = String.format("Mailing %d cannot be resumed", mailing.getMailingID());
 			
 			if(LOGGER.isInfoEnabled()) {

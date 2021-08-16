@@ -33,6 +33,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -364,7 +365,6 @@ public class ComRecipientAction extends RecipientAction {
                 getErrors(req).add(errors);
             }
         }
-        aForm.setSaveTargetVisible(false);
 
         return destination;
     }
@@ -478,50 +478,55 @@ public class ComRecipientAction extends RecipientAction {
      * @param req
      */
     private void convertMailinglistData(List<ComRecipientHistory> recipientChangesHistory, HttpServletRequest req) {
-        String mailinglistPrefix = I18nString.getLocaleString("Mailinglist", AgnUtils.getLocale(req));
+        Locale locale = AgnUtils.getLocale(req);
+        String mailinglistPrefix = I18nString.getLocaleString("Mailinglist", locale);
+        String mediatypeDesc = "";
+        String fieldPrefix = I18nString.getLocaleString("Field", locale);
         for (ComRecipientHistory comRecipientHistory : recipientChangesHistory) {
             String fieldName = comRecipientHistory.getFieldName();
-            StringBuilder mailinglist = new StringBuilder(mailinglistPrefix);
-            mailinglist.append(" ").append(comRecipientHistory.getMailingList());
+
+            Number mediaType = comRecipientHistory.getMediaType();
             if (comRecipientHistory.getMediaType() != null) {
-                mailinglist.append(" Medium: ").append(I18nString.getLocaleString("mailing.MediaType." + comRecipientHistory.getMediaType(), AgnUtils.getLocale(req)));
+                mediatypeDesc = "Medium: " + I18nString.getLocaleString("mailing.MediaType." + mediaType, locale);
             }
-            mailinglist.append(" ").append(I18nString.getLocaleString("Field", AgnUtils.getLocale(req))).append(": ");
+
+            String mailinglist = String.format("%s %s %s %s: ", mailinglistPrefix, comRecipientHistory.getMailingList(), mediatypeDesc, fieldPrefix);
+
             switch(fieldName){
                 case ComRecipientHistory.USER_TYPE:
-                    comRecipientHistory.setFieldName(mailinglist.append(I18nString.getLocaleString("recipient.history.usertype", AgnUtils.getLocale(req))).toString());
+                    comRecipientHistory.setFieldName(mailinglist + I18nString.getLocaleString("recipient.history.usertype", locale));
                     String oldType = ((String) comRecipientHistory.getOldValue());
                     comRecipientHistory.setOldValue(getRecipientTypeByLetter(oldType));
                     String newType = ((String) comRecipientHistory.getNewValue());
                     comRecipientHistory.setNewValue(getRecipientTypeByLetter(newType));
                     break;
                 case ComRecipientHistory.EXIT_MAILING_ID:
-                    comRecipientHistory.setFieldName(mailinglist.append(I18nString.getLocaleString("recipient.history.mailingid", AgnUtils.getLocale(req))).toString());
+                    comRecipientHistory.setFieldName(mailinglist + I18nString.getLocaleString("recipient.history.mailingid", locale));
                     break;
                 case ComRecipientHistory.USER_REMARK:
-                    comRecipientHistory.setFieldName(mailinglist.append(I18nString.getLocaleString("recipient.Remark", AgnUtils.getLocale(req))).toString());
+                    comRecipientHistory.setFieldName(mailinglist + I18nString.getLocaleString("recipient.Remark", locale));
                     break;
                 case ComRecipientHistory.USER_STATUS:
-                    comRecipientHistory.setFieldName(mailinglist.append(I18nString.getLocaleString("recipient.Status", AgnUtils.getLocale(req))).toString());
+                    comRecipientHistory.setFieldName(mailinglist + I18nString.getLocaleString("recipient.Status", locale));
                     Number oldStatus = ((Number) comRecipientHistory.getOldValue());
                     if (oldStatus.intValue() == 0) {
-                    	comRecipientHistory.setOldValue(I18nString.getLocaleString("recipient.NewRecipient", AgnUtils.getLocale(req)));
+                    	comRecipientHistory.setOldValue(I18nString.getLocaleString("recipient.NewRecipient", locale));
                     } else {
-                    	comRecipientHistory.setOldValue(I18nString.getLocaleString("recipient.MailingState" + oldStatus, AgnUtils.getLocale(req)));
+                    	comRecipientHistory.setOldValue(I18nString.getLocaleString("recipient.MailingState" + oldStatus, locale));
                     }
                     Number newStatus = ((Number) comRecipientHistory.getNewValue());
-                    comRecipientHistory.setNewValue(I18nString.getLocaleString("recipient.MailingState" + newStatus, AgnUtils.getLocale(req)));
+                    comRecipientHistory.setNewValue(I18nString.getLocaleString("recipient.MailingState" + newStatus, locale));
                     break;
                 case ComRecipientHistory.EMAIL:
-                    comRecipientHistory.setFieldName(mailinglist.append(I18nString.getLocaleString("mailing.MediaType.0", AgnUtils.getLocale(req))).toString());
+                    comRecipientHistory.setFieldName(mailinglist + I18nString.getLocaleString("mailing.MediaType.0", locale));
                     break;
                 case ComRecipientHistory.MAILINGLIST_DELETED:
                     comRecipientHistory.setFieldName(mailinglistPrefix + " " + comRecipientHistory.getMailingList());
-                    comRecipientHistory.setNewValue(I18nString.getLocaleString("Mailinglist", AgnUtils.getLocale(req)) + " " + I18nString.getLocaleString("target.Deleted", AgnUtils.getLocale(req)).toUpperCase());
+                    comRecipientHistory.setNewValue(I18nString.getLocaleString("Mailinglist", locale) + " " + I18nString.getLocaleString("target.Deleted", locale).toUpperCase());
                     break;
                 case ComRecipientHistory.CUSTOMER_BINDING_DELETED:
                     comRecipientHistory.setFieldName(mailinglistPrefix + " " + comRecipientHistory.getMailingList());
-                    comRecipientHistory.setNewValue(I18nString.getLocaleString("Binding", AgnUtils.getLocale(req)) + " " + I18nString.getLocaleString("target.Deleted", AgnUtils.getLocale(req)).toUpperCase());
+                    comRecipientHistory.setNewValue(I18nString.getLocaleString("Binding", locale) + " " + I18nString.getLocaleString("target.Deleted", locale).toUpperCase());
                     break;
 				default:
 					break;
@@ -739,7 +744,8 @@ public class ComRecipientAction extends RecipientAction {
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, newDateValue.get(Calendar.DAY_OF_MONTH));
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, newDateValue.get(Calendar.MONTH) + 1);
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, newDateValue.get(Calendar.YEAR));
-                	} else {
+                	} else if (!data.containsKey(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY) && !data.containsKey(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH) && !data.containsKey(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR)) {
+                		// Only put empty default data in map, if there was no default value in customer_field_tbl
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, "");
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, "");
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, "");
@@ -754,7 +760,9 @@ public class ComRecipientAction extends RecipientAction {
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR, newDateValue.get(Calendar.HOUR_OF_DAY));
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE, newDateValue.get(Calendar.MINUTE));
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND, newDateValue.get(Calendar.SECOND));
-                	} else {
+                	} else if (!data.containsKey(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY) && !data.containsKey(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH) && !data.containsKey(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR)
+                			 && !data.containsKey(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR) && !data.containsKey(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE) && !data.containsKey(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND)) {
+                		// Only put empty default data in map, if there was no default value in customer_field_tbl
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, "");
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, "");
 	            		data.put(entry.getKey() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, "");
@@ -789,6 +797,11 @@ public class ComRecipientAction extends RecipientAction {
             }
 
 			cust.setCustomerID(recipientDao.insertNewCust(cust));
+			
+			if (cust.getCustomerID() <= 0) {
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.recipient.create"));
+			}
+			
 			aForm.setRecipientID(cust.getCustomerID());
 
             writeUserActivityLog(admin, "create recipient", getRecipientDescription(cust));
@@ -806,13 +819,13 @@ public class ComRecipientAction extends RecipientAction {
 			return true;
 		}
 
-        if(logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             logger.debug("Recipient with id: " + recipientId + " has to be checked for ALTG: " + altgId);
         }
 
         final boolean isMatch = targetService.isRecipientMatchTarget(admin, altgId, recipientId);
 
-        if(!isMatch) {
+        if (!isMatch) {
             logger.warn("Recipient with id: " + recipientId + " is not allowed for ALTG: " + altgId);
         }
 

@@ -180,6 +180,8 @@
         case "recipient":
           //this attribute will be true if recipient icon is supplemented in that sequence "...->mailing->deadline->recipient->....->mailing"
           node.isDependent = false;
+          //this attribute will be true if recipient icon is supplemented in that sequence " ...->recipient->...->recipient->..."
+          node.isRecipientDependent = false;
           node.data = {
             mailinglistId: 0,
             targets: [],
@@ -222,7 +224,7 @@
         case "mailing":
         	node.data = {
         	  mailingId: 0,
-        	  skipEmptyBlocks: true,
+        	  skipEmptyBlocks: false,
         	  doubleCheck: true
         	};
         	break;

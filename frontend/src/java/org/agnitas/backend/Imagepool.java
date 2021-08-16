@@ -1,5 +1,7 @@
 package org.agnitas.backend;
 
+import static com.agnitas.util.ImageUtils.MOBILE_IMAGE_PREFIX;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,8 +46,19 @@ public class Imagepool {
 		return MAILING;
 	}
 
-	public Image findMediapoolImage (String name) {
-	        data.logging(Log.DEBUG, "imagepool", "Default implementation, ignore name parameter!");
+	public Image findImage(String name, boolean isMobile) {
+		if (isMobile) {
+			String mobileName = MOBILE_IMAGE_PREFIX + name;
+			if (imageNames.contains(mobileName)) {
+				return new Image(0, mobileName, mobileName, null);
+			}
+		}
+
+		return new Image(0, name, name, null);
+	}
+
+	public Image findMediapoolImage (String name, boolean isMobile) {
+	        data.logging(Log.DEBUG, "imagepool", "Default implementation, ignore 'name' and 'isMobile' parameter!");
 		return null;
 	}
 

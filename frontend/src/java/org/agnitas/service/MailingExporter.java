@@ -12,6 +12,12 @@ package org.agnitas.service;
 
 import java.io.OutputStream;
 
+import com.agnitas.util.TimingLogger;
+
 public interface MailingExporter {
+	
+	@Deprecated // Not for common use. Used by EMM-8126 only to measure timings.
+	void exportMailingToJson(final TimingLogger timingLogger, int companyID, int mailingID, OutputStream output, boolean exportUnusedImages) throws Exception;
+	
 	void exportMailingToJson(int companyID, int mailingID, OutputStream output, boolean exportUnusedImages) throws Exception;
 }

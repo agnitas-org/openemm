@@ -11,6 +11,8 @@
 package org.agnitas.util;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,6 +24,11 @@ import java.io.InputStream;
 public class TempFileInputStream extends FilterInputStream {
 	private File tempFile;
 	
+	public TempFileInputStream(File tempFile) throws FileNotFoundException {
+		super(new FileInputStream(tempFile));
+		this.tempFile = tempFile;
+	}
+	
 	public TempFileInputStream(InputStream inputStream, File tempFile) {
 		super(inputStream);
 		this.tempFile = tempFile;
@@ -30,8 +37,11 @@ public class TempFileInputStream extends FilterInputStream {
 	@Override
 	public void close() throws IOException {
 		super.close();
-		if (tempFile != null && tempFile.exists()) {
-			FileUtils.removeRecursively(tempFile);
+		if (tempFile != null) {
+			if (tempFile.exists()) {
+				FileUtils.removeRecursively(tempFile);
+			}
+			tempFile = null;
 		}
 	}
 }

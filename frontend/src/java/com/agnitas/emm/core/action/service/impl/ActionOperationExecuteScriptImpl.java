@@ -15,7 +15,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.Recipient;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.velocity.VelocityResult;

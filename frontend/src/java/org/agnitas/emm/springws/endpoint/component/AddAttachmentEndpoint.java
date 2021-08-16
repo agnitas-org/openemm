@@ -10,7 +10,7 @@
 
 package org.agnitas.emm.springws.endpoint.component;
 
-import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
@@ -39,7 +39,7 @@ public class AddAttachmentEndpoint extends BaseEndpoint {
 		model.setCompanyId(Utils.getUserCompany());
 		model.setMailingId(request.getMailingID());
 		model.setMimeType(request.getMimeType());
-		model.setComponentType(MailingComponent.TYPE_ATTACHMENT);
+		model.setComponentType(MailingComponentType.Attachment);
 		model.setComponentName(request.getComponentName());
 		model.setData(request.getData());
 

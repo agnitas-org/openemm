@@ -181,8 +181,8 @@ public class MailingRecipientExportWorker extends GenericExportWorker {
 				"SELECT cust.customer_id,"
 					+ " " + StringUtils.join(sqlColumns, ", ") + ","
 					+ " MAX(succ.timestamp) AS receive_time,"
-					+ " MIN(opl.creation) AS open_time,"
-					+ " COUNT(DISTINCT opl.creation) AS openings,"
+					+ " MIN(opl.first_open) AS open_time,"
+					+ " COALESCE(MAX(opl.open_count), 0) AS openings,"
 					+ " MIN(rlog.timestamp) AS click_time,"
 					+ " COUNT(DISTINCT rlog.timestamp) AS clicks,"
 					+ " MAX(bind1.timestamp) AS bounce_time,"
@@ -190,14 +190,13 @@ public class MailingRecipientExportWorker extends GenericExportWorker {
 				+ " FROM customer_" + companyID + "_tbl cust"
 					+ " JOIN mailtrack_" + companyID + "_tbl track ON track.customer_id = cust.customer_id AND track.mailing_id = ?"
 					+ " LEFT OUTER JOIN success_" + companyID + "_tbl succ ON succ.customer_id = cust.customer_id AND succ.mailing_id = ?"
-					+ " LEFT OUTER JOIN onepixellog_device_" + companyID + "_tbl opl ON opl.customer_id = cust.customer_id AND opl.mailing_id = ?"
+					+ " LEFT OUTER JOIN onepixellog_" + companyID + "_tbl opl ON opl.customer_id = cust.customer_id AND opl.mailing_id = ?"
 					+ " LEFT OUTER JOIN rdirlog_" + companyID + "_tbl rlog ON rlog.customer_id = cust.customer_id AND rlog.mailing_id = ?"
 					+ " LEFT OUTER JOIN customer_" + companyID + "_binding_tbl bind1 ON bind1.customer_id = cust.customer_id AND bind1.exit_mailing_id = ? AND bind1.user_status = ? AND bind1.user_type NOT IN (?, ?, ?)"
 					+ " LEFT OUTER JOIN customer_" + companyID + "_binding_tbl bind2 ON bind2.customer_id = cust.customer_id AND bind2.exit_mailing_id = ? AND bind2.user_status IN (?, ?) AND bind2.user_type IN (?, ?)"
 				+ " WHERE EXISTS"
-					+ " (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.customer_id = cust.customer_id AND bind.mailinglist_id = ? AND bind.user_type NOT IN (?, ?, ?))";
-			
-			selectSql += " GROUP BY cust.customer_id, " + StringUtils.join(sqlColumns, ", ");
+					+ " (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.customer_id = cust.customer_id AND bind.mailinglist_id = ? AND bind.user_type NOT IN (?, ?, ?))"
+				+ " GROUP BY cust.customer_id, " + StringUtils.join(sqlColumns, ", ");
 
 			switch (filterType) {
 				case MAILING_RECIPIENTS_OPENED:

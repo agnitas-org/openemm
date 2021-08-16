@@ -103,17 +103,17 @@
             this.commentPopover.destroy();
         }
 
-        var commentControlsNew = this;
-        this.commentPopover = Popover.new(node.elementJQ, CommentControls.popoverOptions(commentControlsNew, node));
+        var self = this;
+        this.commentPopover = Popover.new(node.elementJQ, CommentControls.popoverOptions(self, node));
 
         var $tip = this.commentPopover.tip();
 
         $tip.on('mouseenter', function() {
-             commentControlsNew.showPopover(node);
+             self.showPopover(node);
         });
 
         $tip.on('mouseleave', function() {
-            commentControlsNew.hidePopover(true);
+            self.hidePopover(true);
         });
     };
 

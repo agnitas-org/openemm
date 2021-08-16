@@ -17,36 +17,39 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 
-import org.agnitas.beans.Mailing;
+import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.ApplicationContext;
 
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TrackableLinkListItem;
 import com.agnitas.beans.TrackableLinkModel;
 import com.agnitas.beans.TrackableLinkSettings;
+import com.agnitas.beans.impl.MailingImpl;
 import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.trackablelinks.exceptions.MailingNotSentException;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkUnknownLinkIdException;
 import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
+import com.agnitas.web.exception.ClearLinkExtensionsException;
 
 /**
  * Service class dealing with trackable links.
@@ -66,81 +69,33 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     private MailingService mailingService;
 
     @Override
-    public void addExtensions(ComMailing aMailing, Set<Integer> linksIds, List<LinkProperty> passedLinkProperties) {
-		Collection<ComTrackableLink> trackableLinkList = aMailing.getTrackableLinks().values();
-		if ((trackableLinkList.size() > 0) && (linksIds.size() > 0)) {
-			if (passedLinkProperties.size() > 0) {
-				List<LinkProperty> commonLinkExtensions = aMailing.getCommonLinkExtensions();
-				for (TrackableLink link : trackableLinkList) {
-					if (linksIds.contains(link.getId())) {
-						List<LinkProperty> updatedProperties = new ArrayList<>(link.getProperties());
-						
-						// Remove the old common link extensions, but keep the links specific ones
-						for (LinkProperty oldCommonLinkExtension : commonLinkExtensions) {
-							List<LinkProperty> toRemove = new ArrayList<>();
-							for (LinkProperty linkExtension : updatedProperties) {
-								if (oldCommonLinkExtension.getPropertyName().equals(linkExtension.getPropertyName()) && oldCommonLinkExtension.getPropertyValue().equals(linkExtension.getPropertyValue())) {
-									toRemove.add(linkExtension);
-								}
-							}
-							updatedProperties.removeAll(toRemove);
-						}
-						
-						// Add new common link extensions
-						updatedProperties.addAll(passedLinkProperties);
-						
-						link.setProperties(updatedProperties);
-					}
-				}
-			}
-		}
+    public void addExtensions(Mailing aMailing, Set<Integer> bulkIds, List<LinkProperty> extensions, List<UserAction> userActions) {
+		Collection<ComTrackableLink> bulkLinks = aMailing.getTrackableLinks().values()
+                .stream().filter(l -> bulkIds.contains(l.getId()) && (l.getShortname() == null 
+                                || !l.getShortname().startsWith(MailingImpl.LINK_SWYN_PREFIX)))
+                .collect(Collectors.toList());
+        List<LinkProperty> commonExtensions = getCommonExtensions(aMailing.getId(), aMailing.getCompanyID(), bulkIds);
+
+        for (ComTrackableLink link : bulkLinks) {
+            Set<LinkProperty> extensionsToSet = new HashSet<>(link.getProperties());
+            extensionsToSet.removeAll(commonExtensions);
+            extensionsToSet.addAll(extensions);
+            link.setProperties(new ArrayList<>(extensionsToSet));
+            userActionLogLinksCreated(userActions, aMailing, extensions, commonExtensions, link);
+        }
     }
 
     @Override
-    public void replaceCommonExtensions(ComMailing aMailing, List<LinkProperty> passedLinkProperties, Set<Integer> bulkLinkIds, List<UserAction> userActions) {
-        List<LinkProperty> commonLinkProperties = aMailing.getCommonLinkExtensions();
-
-        for (TrackableLink link : aMailing.getTrackableLinks().values()) {
-            if(bulkLinkIds.contains(link.getId())) {
-                ComTrackableLink comLink = (ComTrackableLink) link;
-                Set<LinkProperty> linkProperties = new HashSet<>(comLink.getProperties());
-
-                // Remove all old commonLinkProperties
-                Set<LinkProperty> linkPropertiesToRemove = new HashSet<>();
-                for (LinkProperty commonLinkProperty : commonLinkProperties) {
-                    for (LinkProperty linkProperty : linkProperties) {
-                        if (linkProperty.equals(commonLinkProperty)) {
-                            linkPropertiesToRemove.add(linkProperty);
-                        }
-                    }
-                }
-                for (LinkProperty linkProperty : linkPropertiesToRemove) {
-                    if (!passedLinkProperties.contains(linkProperty)) {
-                        userActionLogLinkDeleted(userActions, aMailing, comLink, linkProperty);
-                    }
-                    linkProperties.remove(linkProperty);
-                }
-
-                userActionLogLinksCreated(userActions, aMailing, passedLinkProperties, commonLinkProperties, comLink);
-
-                linkProperties.addAll(passedLinkProperties);
-
-                comLink.setProperties(new ArrayList<>(linkProperties));
+    public void removeLegacyMailingLinkExtension(Mailing aMailing, Set<Integer> bulkLinkIds) {
+        for (ComTrackableLink link : aMailing.getTrackableLinks().values()) {
+            if (bulkLinkIds.contains(link.getId())) {
+                link.setExtendByMailingExtensions(false);
             }
         }
     }
 
     @Override
-    public void removeLegacyMailingLinkExtension(ComMailing aMailing, Set<Integer> bulkLinkIds) {
-        for (TrackableLink link : aMailing.getTrackableLinks().values()) {
-            if(bulkLinkIds.contains(link.getId())) {
-                ((ComTrackableLink) link).setExtendByMailingExtensions(false);
-            }
-        }
-    }
-
-    @Override
-    public void setMailingLinkExtension(ComMailing aMailing, String linkExtension) {
+    public void setMailingLinkExtension(Mailing aMailing, String linkExtension) {
         ComTrackableLink aLink;
         for (TrackableLink link : aMailing.getTrackableLinks().values()) {
             aLink = (ComTrackableLink) link;
@@ -150,7 +105,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     @Override
-    public void setLegacyLinkExtensionMarker(ComMailing aMailing, Map<Integer, Boolean> linksToExtends) {
+    public void setLegacyLinkExtensionMarker(Mailing aMailing, Map<Integer, Boolean> linksToExtends) {
         for (TrackableLink link : aMailing.getTrackableLinks().values()) {
             Boolean extendLinkByMailingLinkExtension = linksToExtends.get(link.getId());
             if (extendLinkByMailingLinkExtension != null) {
@@ -160,21 +115,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     @Override
-    public boolean saveEveryPositionLinks(ComMailing aMailing, ApplicationContext aContext, Set<Integer> bulkLinkIds) throws Exception {
-        List<String> links = aMailing.getTrackableLinks().values().stream()
-                .filter(Objects::nonNull)
-                .filter((link) -> bulkLinkIds.contains(link.getId()))
-                .map(TrackableLink::getFullUrl)
-                .collect(Collectors.toList());
-
-        boolean modified = aMailing.replaceDuplicatedLinks(links, aContext);
-
-        aMailing.buildDependencies(true, aContext);
-        return modified;
-    }
-
-    @Override
-    public void setStandardDeeptracking(ComMailing aMailing, Set<Integer> bulkLinkIds, int deepTracking, Map<Integer, Integer> getLinkItemsDeepTracking) {
+    public void setStandardDeeptracking(Mailing aMailing, Set<Integer> bulkLinkIds, int deepTracking, Map<Integer, Integer> getLinkItemsDeepTracking) {
         for (TrackableLink aLink : aMailing.getTrackableLinks().values()) {
             int id = aLink.getId();
             int linkItemDeepTracking = getLinkItemsDeepTracking.getOrDefault(id, 0);
@@ -187,7 +128,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     @Override
-    public void setShortname(ComMailing aMailing, Map<Integer, String> linkItemNames) {
+    public void setShortname(Mailing aMailing, Map<Integer, String> linkItemNames) {
         try {
             for (TrackableLink trackableLink : aMailing.getTrackableLinks().values()) {
                 int id = trackableLink.getId();
@@ -204,9 +145,18 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     @Override
-    public List<TrackableLinkListItem> getTrackableLinks(int mailingID, @VelocityCheck int companyId) {
+    public List<TrackableLinkListItem> getTrackableLinkItems(int mailingID, @VelocityCheck int companyId) {
         checkMailing(mailingID, companyId);
         return trackableLinkDao.listTrackableLinksForMailing(companyId, mailingID);
+    }
+
+    @Override
+    public List<ComTrackableLink> getTrackableLinks(int mailingId, @VelocityCheck int companyId) {
+        if (companyId < 0) {
+            return new ArrayList<>();
+        }
+
+        return trackableLinkDao.getTrackableLinks(companyId, mailingId);
     }
     
     @Override
@@ -217,6 +167,16 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     
         List<Integer> filteredUrlIds = urlIds.stream().filter(id -> id != 0).collect(Collectors.toList());
         return trackableLinkDao.getTrackableLinks(companyId, filteredUrlIds);
+    }
+
+    @Override
+    public int saveTrackableLink(ComTrackableLink trackableLink) {
+        return trackableLinkDao.saveTrackableLink(trackableLink);
+    }
+
+    @Override
+    public ComTrackableLink getTrackableLink(@VelocityCheck int companyId, int linkId) {
+        return trackableLinkDao.getTrackableLink(linkId, companyId);
     }
     
     @Override
@@ -293,22 +253,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
 		}
     }
 
-    private void userActionLogLinkDeleted(List<UserAction> userActions, ComMailing aMailing, ComTrackableLink comLink, LinkProperty linkProperty) {
-        String description = "ID = " +
-                aMailing.getId() +
-                ". " +
-                "Trackable link " +
-                comLink.getFullUrl() +
-                ". Link extension " +
-                linkProperty.getPropertyName() +
-                "=" +
-                linkProperty.getPropertyValue() +
-                " deleted.";
-
-        userActions.add(new UserAction("edit mailing links", description));
-    }
-
-    private void userActionLogLinksCreated(List<UserAction> userActions, ComMailing aMailing, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, ComTrackableLink comLink) {
+    private void userActionLogLinksCreated(List<UserAction> userActions, Mailing aMailing, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, ComTrackableLink comLink) {
         StringBuilder description = new StringBuilder();
 
         for (LinkProperty passedLinkProperty : passedLinkProperties) {
@@ -331,25 +276,50 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     @Override
-    public boolean isUrlEditingAllowed(int mailingID, @VelocityCheck int companyId) {
-    	try {
-    		checkUrlEditingAllowed(mailingID, companyId);
-    		return true;
-    	} catch (TrackableLinkException | MailingNotExistException e) {
-    		return false;
-    	}
+    public boolean isUrlEditingAllowed(ComAdmin admin, int mailingID) {
+        if (!admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_URL_CHANGE)) {
+            return false;
+        }
+
+        try {
+            checkUrlEditingAllowed(mailingID, admin.getCompanyID());
+            return true;
+        } catch (TrackableLinkException | MailingNotExistException e) {
+            return false;
+        }
     }
 
-	@Override
-	public void removeGlobalAndIndividualLinkExtensions(@VelocityCheck int companyId, int mailingId) throws Exception {
-		trackableLinkDao.removeGlobalAndIndividualLinkExtensions(companyId, mailingId);
-	}
+    @Override
+    public void bulkClearExtensions(final int mailingId, final int companyId, final Set<Integer> bulkIds) 
+            throws ClearLinkExtensionsException {
+        trackableLinkDao.bulkClearExtensions(mailingId, companyId, bulkIds);
+    }
+
+    @Override
+    public List<LinkProperty> getCommonExtensions(final int mailingId, final int companyId, final Set<Integer> bulkIds) {
+        if (CollectionUtils.isEmpty(bulkIds)) {
+            return new ArrayList<>();
+        }
+        Mailing mailing = mailingDao.getMailing(mailingId, companyId);
+        return mailing.getTrackableLinks().values().stream()
+                .filter(comTrackableLink -> bulkIds.contains(comTrackableLink.getId()))
+                .map(BaseTrackableLink::getProperties)
+                .reduce((p1, p2) -> {
+                    p1.retainAll(p2);
+                    return p1;
+                }).orElseGet(ArrayList::new);
+    }
 
     @Override
     public void updateTrackableLinkSettings(TrackableLinkModel trackableLinkModel) {
         ComTrackableLink mergedTrackableLinkSettingsData = mergeTrackableLinkData(trackableLinkModel);
 
         trackableLinkDao.saveTrackableLink(mergedTrackableLinkSettingsData);
+    }
+
+    @Override
+    public boolean isTrackingOnEveryPositionAvailable(@VelocityCheck int companyId, int mailingId) {
+        return trackableLinkDao.isTrackingOnEveryPositionAvailable(companyId, mailingId);
     }
 
     private ComTrackableLink mergeTrackableLinkData(TrackableLinkModel trackableLinkModel) {

@@ -260,4 +260,20 @@ public class TargetLightImpl implements TargetLight {
 	public void setAccessLimitation(boolean accessLimitation) {
 		this.accessLimitation = accessLimitation;
 	}
+	
+	@Override
+	public final int hashCode() {
+		return this.id;
+	}
+	
+	@Override
+	public final boolean equals(final Object obj) {
+		if(obj instanceof TargetLight) {
+			final TargetLight target = (TargetLight) obj;
+			
+			return target.getId() == this.id;
+		} else {
+			return false;
+		}
+	}
 }

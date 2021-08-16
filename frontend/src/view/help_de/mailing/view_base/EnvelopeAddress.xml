@@ -1,7 +1,8 @@
 <HelpBalloon>
+<!-- -*- scope: openemm -*- -->
 	<title><![CDATA[Envelope-E-Mail]]></title>
-	<content><![CDATA[Die Envelope-Adresse ist die Absenderadresse eines E-Mail-Servers und wird standardm&auml;ßig von AGNITAS gesetzt.<br><br>
-	<b>Wichtig:</b> Sollten Sie eine eigene Envelope-Adresse verwenden wollen, dann muss f&uuml;r die Domain der Envelope-Adresse ein g&uuml;ltiger A-Record im Domain Name System (DNS) vorhanden sein und die Domain muss im SPF-Eintrag agnitas.de inkludiert haben. Den SPF-Eintrag erhalten Sie von AGNITAS. Zudem muss AGNITAS die Verwendung einer eigenen Envelope-Adresse im Backend aktivieren. Setzen Sie sich bei Interesse mit <a href="mailto:support@agnitas.de">support@agnitas.de</a> in Verbindung.
+	<content><![CDATA[Die Envelope-Adresse ist die Absenderadresse eines E-Mail-Servers und wird standardm&auml;ßig von der Systemadministration gesetzt.<br><br>
+	<b>Wichtig:</b> Sollten Sie eine eigene Envelope-Adresse verwenden wollen, dann muss f&uuml;r die Domain der Envelope-Adresse ein g&uuml;ltiger A-Record im Domain Name System (DNS) vorhanden sein.
 	<br><br>
 	<b>Hinweis:</b> Soll die Envelope-From-Adresse direkt vom Bounce-Filter verarbeitet werden, so muss zus&auml;tzlich zu dem A-Record ein MX-Record im DNS hinterlegt werden, der auf <b>den Namen des Filter Dienstes</b> verweist. Hierbei muss auch sichergestellt sein, dass f&uuml;r die Absenderadresse ein Bounce-Filter im EMM hinterlegt ist.]]></content>
 </HelpBalloon>

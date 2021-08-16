@@ -40,25 +40,25 @@ public interface MaildropService {		// TODO: Complete JavaDoc
 	/**
 	 * Schedules mailing for worlds delivery.
 	 */
-	void scheduleWorldMailing(final int mailingID, final int companyID, final Date sendDate, final int stepping, final int blocksize) throws MaildropException;
+	void scheduleWorldMailing(final int mailingID, final int companyID, final Date sendDate, final int stepping, final int blocksize) throws Exception;
 	
 	// TODO: Modify code to use this method
 	/**
 	 * Schedules mailing for worlds delivery.
 	 */
-	void scheduleWorldMailing(final int mailingID, final int companyID, final Date sendDate, final int mailsPerHour) throws MaildropException;
+	void scheduleWorldMailing(final int mailingID, final int companyID, final Date sendDate, final int mailsPerHour) throws Exception;
 
 	// TODO: Modify code to use this method
 	/**
 	 * Activates date-based mailing.
 	 */
-	void activateDatebasedMailing(final int mailingID, final int companyID, final int hour, final int stepping, final int blocksize) throws MaildropException;
+	void activateDatebasedMailing(final int mailingID, final int companyID, final int hour, final int stepping, final int blocksize) throws Exception;
 
 	// TODO: Modify code to use this method
 	/**
 	 * Activates date-based mailing.
 	 */
-	void activateDatebasedMailing(final int mailingID, final int companyID, final int hour, final int mailsPerHour) throws MaildropException;
+	void activateDatebasedMailing(final int mailingID, final int companyID, final int hour, final int mailsPerHour) throws Exception;
 
 	// TODO: Modify code to use this method
 	/**
@@ -70,7 +70,7 @@ public interface MaildropService {		// TODO: Complete JavaDoc
 	/**
 	 * Activates action-based mailing.
 	 */
-	void activateActionbasedMailing(final int mailingID, final int companyID) throws MaildropException;
+	void activateActionbasedMailing(final int mailingID, final int companyID) throws Exception;
 	
 	// TODO: Modify code to use this method
 	/**

@@ -13,11 +13,9 @@ package com.agnitas.dao;
 import java.util.Collection;
 import java.util.List;
 
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 
-import com.agnitas.emm.core.commons.ActivenessStatus;
 import com.agnitas.userform.bean.UserForm;
 
 /**
@@ -89,8 +87,5 @@ public interface UserFormDao {
 
 	String getUserFormName(int formId, @VelocityCheck int companyId);
 
-	PaginatedListImpl<UserForm> getUserFormsWithActionIdsNew(String sortColumn, String sortDirection, int pageNumber,
-															 int pageSize, ActivenessStatus filter, @VelocityCheck int companyID);
-	
-	boolean existsUserForm(@VelocityCheck int copmanyId, int userFormId);
+	boolean existsUserForm(@VelocityCheck int companyId, int userFormId);
 }

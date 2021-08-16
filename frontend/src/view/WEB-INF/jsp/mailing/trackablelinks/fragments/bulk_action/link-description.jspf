@@ -1,0 +1,24 @@
+
+<div class="form-group">
+    <div class="col-sm-4">
+        <label for="modifyBulkDescription" class="control-label">
+            <bean:message key="GWUA.mailing.trackablelinks.description.change"/>
+        </label>
+    </div>
+    <div class="col-sm-8">
+        <label class="toggle">
+            <input type="checkbox" name="modifyBulkDescription" id="modifyBulkDescription"/>
+            <div class="toggle-control"></div>
+        </label>
+    </div>
+    <div data-show-by-checkbox="#modifyBulkDescription">
+        <div class="col-sm-4">
+            <label class="control-label" for="bulkDescription">
+                <bean:message key="Description" />
+            </label>
+        </div>
+        <div class="col-sm-8">
+            <input type="text" name="bulkDescription" id="bulkDescription" class="form-control" data-action="description-enterdown"/>
+        </div>
+    </div>
+</div>

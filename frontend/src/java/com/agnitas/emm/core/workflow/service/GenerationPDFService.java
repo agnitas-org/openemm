@@ -15,11 +15,20 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.HttpUtils;
+import org.agnitas.util.NetworkUtil;
+import org.agnitas.util.SafeString;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
 import com.lowagie.text.DocumentException;
@@ -29,14 +38,6 @@ import com.lowagie.text.pdf.BaseFont;
 import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.PdfStamper;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.SafeString;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-
-import static org.apache.http.HttpStatus.SC_OK;
 
 public class GenerationPDFService {
 
@@ -63,7 +64,7 @@ public class GenerationPDFService {
 
 		try {
 			int responseStatusCode = HttpUtils.getResponseStatusCode(url);
-			if (responseStatusCode != SC_OK) {
+			if (responseStatusCode != HttpURLConnection.HTTP_OK) {
 				throw new Exception("Missing or wrong url for generating PDF: " + url + ", response code: " + responseStatusCode);
 			}
 			// render workflow into PDF
@@ -77,6 +78,43 @@ public class GenerationPDFService {
 	            // wkhtmltopdf doesn't support an http:// URLs for user stylesheets
 	            stylesheetFileWriter.write(StringUtils.defaultIfEmpty(customCssStyle, USER_STYLESHEET_CONTENT));
             }
+            
+            String proxyString = "None";
+    		String proxyHost = System.getProperty("http.proxyHost");
+    		if (StringUtils.isNotBlank(proxyHost)) {
+    			boolean ignoreProxy = false;
+    			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
+    			if (StringUtils.isNotBlank(nonProxyHosts)) {
+    				String urlDomain = NetworkUtil.getDomainFromUrl(url);
+    				if (urlDomain != null) {
+    					urlDomain = urlDomain.trim().toLowerCase();
+    				}
+    				
+    				if (urlDomain != null) {
+		    			for (String nonProxyHost : nonProxyHosts.split("\\||,|;| ")) {
+							nonProxyHost = nonProxyHost.trim().toLowerCase();
+							if (urlDomain.equals(nonProxyHost) || urlDomain.endsWith("." + nonProxyHost)) {
+								ignoreProxy = true;
+								break;
+							}
+						}
+    				}
+    			}
+    			
+    			if (!ignoreProxy) {
+	    			proxyString = proxyHost;
+	    			if (!proxyString.contains("://")) {
+	    				proxyString = "http://" + proxyString;
+	    			}
+	    			
+	    			String proxyPort = System.getProperty("http.proxyPort");
+	    			if (StringUtils.isNotBlank(proxyPort)) {
+	    				proxyString = proxyString + ":" + proxyPort;
+	    			} else {
+	    				proxyString = proxyString + ":" + 8080;
+	    			}
+    			}
+    		}
 
             String[] command;
             if ("".equals(windowStatusForWaiting)) {
@@ -89,6 +127,7 @@ public class GenerationPDFService {
 						"--enable-smart-shrinking",
 						"--user-style-sheet",
 						stylesheetName,                      // use an additional external stylesheet
+						"--proxy", proxyString,
 						url,                                 // url - source for generation
                         pdfName                              // file path of pdf to generate
                 };
@@ -105,6 +144,7 @@ public class GenerationPDFService {
                         windowStatusForWaiting,              // wait until WM is loaded
                         "--user-style-sheet",
                         stylesheetName,                      // use an additional external stylesheet
+                        "--proxy", proxyString,
                         url,                                 // url - source for generation
                         pdfName                              // file path of pdf to generate
                 };

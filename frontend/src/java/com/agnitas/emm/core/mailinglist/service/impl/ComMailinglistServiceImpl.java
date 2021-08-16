@@ -17,21 +17,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
-import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
-import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
-import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.service.ExtendedConversionService;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -42,6 +27,23 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.Mailing;
+import com.agnitas.dao.ComBindingEntryDao;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
+import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
+import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
+import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
+import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.service.ExtendedConversionService;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 public class ComMailinglistServiceImpl implements ComMailinglistService {
 
@@ -217,14 +219,14 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
 		mailinglistForSave.setDescription(mailinglist.getDescription());
 		mailinglistForSave.setFrequencyCounterEnabled(mailinglist.isFrequencyCounterEnabled());
 		int mailinglistId;
-		if(mailinglist.getId() == 0) {
+		if (mailinglist.getId() == 0) {
 			mailinglistId = mailinglistDao.createMailinglist(companyId, mailinglistForSave);
 			int targetId = mailinglist.getTargetId();
             ComTarget target = targetDao.getTarget(targetId, companyId);
             
             // Add recipients from a target group (if specified)
             if (target != null) {
-                bindingEntryDao.addTargetsToMailinglist(companyId, mailinglistId, target);
+                bindingEntryDao.addTargetsToMailinglist(companyId, mailinglistId, target, mailinglist.getMediatypes());
             }
 		} else {
 			mailinglistId = mailinglistDao.updateMailinglist(companyId, mailinglistForSave);

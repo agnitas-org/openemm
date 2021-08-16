@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.Predicate;
 import org.apache.commons.lang3.StringUtils;
@@ -71,19 +70,15 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
 		}
 		pagetagsBuilder = pagetagsBuilder.delete(pagetagsBuilder.lastIndexOf(","), pagetagsBuilder.lastIndexOf(",") + 1);
 
-		Connection totalQueryconnection = null;
-        Statement totalStatement = null;
-        ResultSet totalResultSet = null;
         if (StringUtils.isBlank(language)) {
 			language = "EN";
 		}
 		String totalQuery = getTrackingPointsStatTotalQuery(companyID, tableFragment, type, mailingID, pagetagsBuilder.toString(), language);
 
 		int currentcolumnIndex = 0;
-		try {
-			totalQueryconnection = getDataSource().getConnection();
-			totalStatement = totalQueryconnection.createStatement();
-			totalResultSet = totalStatement.executeQuery( totalQuery );
+		try (Connection totalQueryconnection = getDataSource().getConnection();
+				Statement totalStatement = totalQueryconnection.createStatement();
+				ResultSet totalResultSet = totalStatement.executeQuery( totalQuery )) {
 			while (totalResultSet.next()) {
                 TrackingPointStatRow row = null;
                 if (type == VAL_NUM_TYPE) {
@@ -97,10 +92,6 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
 			}
 		} catch (SQLException e) {
 			logger.error("SQL Execption while trying to get total stat for tracking points of type num ! ",e);
-		} finally {
-            DbUtilities.closeQuietly(totalQueryconnection, "could not close total query connection !");
-            DbUtilities.closeQuietly(totalStatement, "Could not close DB-statement !");
-            DbUtilities.closeQuietly(totalResultSet, "Could not close result set !");
 		}
 
 		StringBuilder queryBuilder = new StringBuilder();
@@ -114,9 +105,6 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
 			}
 
 			List<LightTarget> targetList = null;
-			Connection targetQueryConnection = null;
-            Statement statement = null;
-            ResultSet resultSet = null;
             try {
 				targetList = getTargets(targetIDs, Integer.parseInt(companyID));
                 Map<String, Integer> targetIndexes = new HashMap<>();
@@ -131,52 +119,49 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
 
 				queryBuilder.delete(queryBuilder.lastIndexOf(" UNION "),queryBuilder.lastIndexOf(" UNION ") +  " UNION ".length());
 
-				targetQueryConnection = getDataSource().getConnection();
-				statement = targetQueryConnection.createStatement();
-				resultSet = statement.executeQuery(queryBuilder.toString());
-				String currentTargetGroup = "__DUMMY__";
-
-				while (resultSet.next()) {
-					if (!currentTargetGroup.equals(resultSet.getString("targetgroup"))) {
-						currentTargetGroup = resultSet.getString("targetgroup");
-						currentcolumnIndex = targetIndexes.get(currentTargetGroup);
+				try (Connection targetQueryConnection = getDataSource().getConnection();
+						Statement statement = targetQueryConnection.createStatement();
+						ResultSet resultSet = statement.executeQuery(queryBuilder.toString())) {
+					String currentTargetGroup = "__DUMMY__";
+	
+					while (resultSet.next()) {
+						if (!currentTargetGroup.equals(resultSet.getString("targetgroup"))) {
+							currentTargetGroup = resultSet.getString("targetgroup");
+							currentcolumnIndex = targetIndexes.get(currentTargetGroup);
+						}
+	                    TrackingPointStatRow row = null;
+	                    if (type == VAL_NUM_TYPE) {
+	                        row = getTrackingPointStatRowNumeric(resultSet,currentcolumnIndex);
+	                    } else if (type == VAL_ALPHA_TYPE) {
+	                        row = getTrackingPointStatRowAlpha(resultSet,currentcolumnIndex);
+	                    } else {
+	                        row = getTrackingPointStatRowSimple(resultSet,currentcolumnIndex);
+	                    }
+	                    statList.add(row);
 					}
-                    TrackingPointStatRow row = null;
-                    if (type == VAL_NUM_TYPE) {
-                        row = getTrackingPointStatRowNumeric(resultSet,currentcolumnIndex);
-                    } else if (type == VAL_ALPHA_TYPE) {
-                        row = getTrackingPointStatRowAlpha(resultSet,currentcolumnIndex);
-                    } else {
-                        row = getTrackingPointStatRowSimple(resultSet,currentcolumnIndex);
-                    }
-                    statList.add(row);
+	                List<TrackingPointStatRow> rowsToAdd = new ArrayList<>();
+	                for (TrackingPointDef trackPoint : numTrackPoints) {
+	                    String allSubsTarget = I18nString.getLocaleString(ALL_SUBSCRIBERS, language);
+	                    Object allSubsRow = findStatRow(trackPoint, allSubsTarget, statList);
+	                    if (allSubsRow != null) {
+	                        for (LightTarget target : targetList) {
+	                            if (findStatRow(trackPoint, target.getName(), statList) == null) {
+	                                TrackingPointStatRow row = new TrackingPointStatRow();
+	                                row.setTrackingPoint(trackPoint.getShortname());
+	                                row.setTargetGroup(target.getName());
+	                                row.setClicks_gros(0);
+	                                row.setClicks_net(0);
+	                                row.setPagetag(trackPoint.getPagetag());
+	                                row.setColumn_index(targetIndexes.get(target.getName()));
+	                                rowsToAdd.add(row);
+	                            }
+	                        }
+	                    }
+	                }
+	                statList.addAll(rowsToAdd);
 				}
-                List<TrackingPointStatRow> rowsToAdd = new ArrayList<>();
-                for (TrackingPointDef trackPoint : numTrackPoints) {
-                    String allSubsTarget = I18nString.getLocaleString(ALL_SUBSCRIBERS, language);
-                    Object allSubsRow = findStatRow(trackPoint, allSubsTarget, statList);
-                    if (allSubsRow != null) {
-                        for (LightTarget target : targetList) {
-                            if (findStatRow(trackPoint, target.getName(), statList) == null) {
-                                TrackingPointStatRow row = new TrackingPointStatRow();
-                                row.setTrackingPoint(trackPoint.getShortname());
-                                row.setTargetGroup(target.getName());
-                                row.setClicks_gros(0);
-                                row.setClicks_net(0);
-                                row.setPagetag(trackPoint.getPagetag());
-                                row.setColumn_index(targetIndexes.get(target.getName()));
-                                rowsToAdd.add(row);
-                            }
-                        }
-                    }
-                }
-                statList.addAll(rowsToAdd);
 			} catch (NumberFormatException e) {
 				logger.error("Check your parameters ! mailingID =" +mailingID +" , companyID=" +companyID , e);
-			} finally {
-                DbUtilities.closeQuietly(targetQueryConnection, "could not close targetQueryConnection ");
-                DbUtilities.closeQuietly(statement, "Could not close DB-statement !");
-                DbUtilities.closeQuietly(resultSet, "Could not close result set !");
 			}
 
 		}
@@ -192,7 +177,7 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
         return null;
     }
 
-    public List<TrackingPointStatRow> getAlphaTrackingPointsClicks(String mailingID, String companyID, String targetIDsSeparated , String language) throws SQLException {		
+    public List<TrackingPointStatRow> getAlphaTrackingPointsClicks(String mailingID, String companyID, String targetIDsSeparated , String language) throws SQLException {
     	// TODO: Company ID is not checkable. Change to "int"
 		List<TrackingPointDef> trackingPointsDefList = getTrackingPoints(companyID, getPageTags(mailingID, companyID));
 		return getTrackingPointsClicks(mailingID, companyID, targetIDsSeparated, language, trackingPointsDefList,
@@ -259,13 +244,9 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
 			template = template.replace("<COMPANYID>", companyID);
 			template = template.replace("<PAGETAGS>", pageTagsStr);
 
-			Connection connection = null;
-            Statement statement = null;
-            ResultSet resultSet = null;
-            try {
-				connection = getDataSource().getConnection();
-				statement = connection.createStatement();
-				resultSet = statement.executeQuery(template);
+            try (Connection connection = getDataSource().getConnection();
+            		Statement statement = connection.createStatement();
+            		ResultSet resultSet = statement.executeQuery(template)) {
 				while (resultSet.next()) {
 					TrackingPointDef trackingPointDef = new TrackingPointDef();
 					trackingPointDef.setShortname(resultSet.getString("shortname"));
@@ -276,10 +257,6 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
 				}
 			} catch (SQLException e) {
 				logger.error("Error while trying to get tracking point definitions :" +template, e);
-			} finally {
-                DbUtilities.closeQuietly(connection, "Couldn't close SQL-connection!");
-                DbUtilities.closeQuietly(statement, "Could not close DB-statement !");
-                DbUtilities.closeQuietly(resultSet, "Could not close result set !");
 			}
 		}
 		return trackingPoints;
@@ -297,7 +274,7 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
 	}
 
 	private String getTrackingPointsStatPerTargetQueryTemplate(int trackingPointType) {
-		String template = null; 
+		String template = null;
 		if (trackingPointType == VAL_NUM_TYPE) {
 			template = "SELECT '<TARGETGROUP>' as TARGETGROUP, PAGETAG, SHORTNAME, count(DISTINCT rdirlog.customer_id) as clicks_net, count(rdirlog.customer_id) as clicks_gros, sum(num_parameter) as num_value, currency "
 				+ " from trackpoint_def_tbl trdef join (rdirlog_<COMPANYID>_<TABLE_NAME_FRAGMENT>_tbl rdirlog "
@@ -339,10 +316,10 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
 		String template = null;
 		
 		if (trackingPointType == VAL_ALPHA_TYPE) {
-			template = "SELECT '<TOTAL>' as TARGETGROUP, PAGETAG, SHORTNAME, ALPHA_PARAMETER, count(DISTINCT  customer_id) as clicks_net, count(customer_id) as clicks_gros "  + 
+			template = "SELECT '<TOTAL>' as TARGETGROUP, PAGETAG, SHORTNAME, ALPHA_PARAMETER, count(DISTINCT  customer_id) as clicks_net, count(customer_id) as clicks_gros "  +
 			" from trackpoint_def_tbl trdef join rdirlog_<COMPANYID>_<TABLE_NAME_FRAGMENT>_tbl rdirlog on " +
 			" (trdef.pagetag = rdirlog.page_tag and rdirlog.mailing_id=<MAILINGID> ) " +
-			" where pagetag in (<PAGETAGS>) " +    
+			" where pagetag in (<PAGETAGS>) " +
 			"	group by pagetag, shortname , ALPHA_PARAMETER";
 			
 		}
@@ -351,7 +328,7 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
 			template = "SELECT '<TOTAL>' as TARGETGROUP, PAGETAG, SHORTNAME, count(DISTINCT  customer_id) as clicks_net, count(customer_id) as clicks_gros, sum(num_parameter) as num_value , currency "  +
 			" from trackpoint_def_tbl trdef join rdirlog_<COMPANYID>_<TABLE_NAME_FRAGMENT>_tbl rdirlog on " +
 			" (trdef.pagetag = rdirlog.page_tag and rdirlog.mailing_id=<MAILINGID> ) " +
-			" where pagetag in (<PAGETAGS>) " +    
+			" where pagetag in (<PAGETAGS>) " +
 			"	group by pagetag, shortname, currency ";
 		}
 
@@ -374,23 +351,14 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
 
 		List<String> pageTags = new ArrayList<>();
 
-		Connection connection = null;
-        Statement statement = null;
-        ResultSet resultSet = null;
-        try {
-			connection = getDataSource().getConnection();
-			statement = connection.createStatement();
-			resultSet = statement.executeQuery(template);
-
+        try (Connection connection = getDataSource().getConnection();
+        		Statement statement = connection.createStatement();
+        		ResultSet resultSet = statement.executeQuery(template)) {
 			while (resultSet.next()) {
 				pageTags.add(resultSet.getString("page_tag"));
 			}
 		} catch (SQLException e) {
 			logger.error("SQL-Execption while trying to get page-tags for mailingID="+ mailingID + " companyID=" + companyID, e);
-		} finally {
-            DbUtilities.closeQuietly(connection, "Could not close SQL-Connection");
-            DbUtilities.closeQuietly(statement, "Could not close DB-statement !");
-            DbUtilities.closeQuietly(resultSet, "Could not close result set !");
 		}
 		return pageTags;
 	}
@@ -425,53 +393,39 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
             query = "select count(table_name) as exist from user_tables where lower(table_name) in "
                      +" (lower('rdirlog_<COMPANYID>_ext_link_tbl') , lower('rdirlog_<COMPANYID>_val_alpha_tbl'), lower('rdirlog_<COMPANYID>_val_num_tbl') )";
             query = query.replace("<COMPANYID>", Integer.toString(companyID));
-            Connection connection = null;
-            Statement statement = null;
-            ResultSet resultSet = null;
-            try {
-                 connection = getDataSource().getConnection();
-                 statement = connection.createStatement();
-                 resultSet = statement.executeQuery(query);
+            try (Connection connection = getDataSource().getConnection();
+            	Statement statement = connection.createStatement();
+            	ResultSet resultSet = statement.executeQuery(query)) {
                  if( resultSet.next()) {
                      numberOfTables = resultSet.getInt("exist");
                  }
             } catch (SQLException e) {
                 logger.error("Could not execute statement: " + query , e);
-            } finally {
-                DbUtilities.closeQuietly(connection, "Could not close DB connection ");
-                DbUtilities.closeQuietly(statement, "Could not close DB-statement !");
-                DbUtilities.closeQuietly(resultSet, "Could not close result set !");
             }
         } else {
             String dbname_query = "SELECT SCHEMA() dbname";
             String dbname = "";
             query = "show tables where tables_in_<DBNAME> in ('rdirlog_<COMPANYID>_ext_link_tbl', 'rdirlog_<COMPANYID>_val_alpha_tbl', 'rdirlog_<COMPANYID>_val_num_tbl')";
             query = query.replace("<COMPANYID>", Integer.toString(companyID));
-            Connection connection = null;
-            Statement statement = null;
-            ResultSet resultSet = null;
-            try {
-                 connection = getDataSource().getConnection();
-                 statement = connection.createStatement();
-                 resultSet = statement.executeQuery(dbname_query);
-                 if (resultSet.next()) {
-                     dbname = resultSet.getString("dbname");
-                 }
-                 resultSet.close();
-                 
-                 query = query.replace("<DBNAME>", dbname);
-                 resultSet = statement.executeQuery(query);
-                 if (resultSet.next()) {
-                     resultSet.last();
-                     numberOfTables = resultSet.getRow();
-                 }
-            } catch (SQLException e) {
-                logger.error("Could not execute statement: " + query , e);
-            } finally {
-                DbUtilities.closeQuietly(resultSet, "Could not close result set !");
-                DbUtilities.closeQuietly(statement, "Could not close DB-statement !");
-                DbUtilities.closeQuietly(connection, "Could not close DB connection ");
-            }
+			try (Connection connection = getDataSource().getConnection(); Statement statement = connection.createStatement()) {
+				try (ResultSet resultSet = statement.executeQuery(dbname_query)) {
+					if (resultSet.next()) {
+						dbname = resultSet.getString("dbname");
+					}
+					
+				}
+
+				query = query.replace("<DBNAME>", dbname);
+
+				try (ResultSet resultSet = statement.executeQuery(query)) {
+					if (resultSet.next()) {
+						resultSet.last();
+						numberOfTables = resultSet.getRow();
+					}
+				}
+			} catch (SQLException e) {
+				logger.error("Could not execute statement: " + query, e);
+			}
         }
 		return numberOfTables == 3;
 	}

@@ -12,6 +12,7 @@ package org.agnitas.util.importvalues;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Resource;
 
@@ -63,7 +64,7 @@ public class ImportModeBlacklistExclusiveHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, MediaTypes mediatype) throws Exception {
+	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
 		// Mark customers as blacklisted in binding table
 		int emailsMarkedAsBlacklisted = importRecipientsDao.importInBlackList(temporaryImportTableName, importProfile.getCompanyId());
 		status.setBlacklisted(emailsMarkedAsBlacklisted);
@@ -73,11 +74,16 @@ public class ImportModeBlacklistExclusiveHandler implements ImportModeHandler {
 		
 		for (Mailinglist mailinglist : mailinglistDao.getMailinglists(importProfile.getCompanyId())) {
 			for (UserStatus userStatus : UserStatus.values()) {
-				if (userStatus != UserStatus.Blacklisted) {
-					importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailinglist.getId(), mediatype, userStatus.getStatusCode(), UserStatus.Blacklisted.getStatusCode(), "Blacklisted by import datasourceid: " + datasourceId);
-				}
+	    		for (MediaTypes mediatype : mediatypes) {
+					if (userStatus != UserStatus.Blacklisted) {
+						importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailinglist.getId(), mediatype, userStatus.getStatusCode(), UserStatus.Blacklisted.getStatusCode(), "Blacklisted by import datasourceid: " + datasourceId);
+					}
+	    		}
 			}
-			importRecipientsDao.changeStatusInMailingListNotIncludedInTempData(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailinglist.getId(), mediatype, UserStatus.Blacklisted.getStatusCode(), UserStatus.AdminOut.getStatusCode(), "Admin-out caused by former blacklisted, import datasourceid: " + datasourceId);
+
+    		for (MediaTypes mediatype : mediatypes) {
+    			importRecipientsDao.changeStatusInMailingListNotIncludedInTempData(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailinglist.getId(), mediatype, UserStatus.Blacklisted.getStatusCode(), UserStatus.AdminOut.getStatusCode(), "Admin-out caused by former blacklisted, import datasourceid: " + datasourceId);
+    		}
 		}
 		
 		return null;

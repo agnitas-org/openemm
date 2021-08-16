@@ -13,7 +13,7 @@ package com.agnitas.emm.core.mailtracking.service;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 
-import com.agnitas.beans.ComMailing.MailingContentType;
+import com.agnitas.beans.MailingContentType;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID.NamedUidBit;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;

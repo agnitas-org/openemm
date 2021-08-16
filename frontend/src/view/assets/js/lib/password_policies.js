@@ -16,7 +16,7 @@ Password policies are rules for checking validity of new user / supervisor passw
 		var errors = [];
 		
 		if(password.length < 8) {
-			errors.push('password.error.too_short');
+			errors.push('password.error.too_short_min8');
 		} 
 
 		if (!password.match("[a-z]")) {
@@ -40,7 +40,7 @@ Password policies are rules for checking validity of new user / supervisor passw
 	
 	var policy_LENGTH_12_SIMPLE = function(password) {
 		if(password.length < 12) {
-			return ['password.error.too_short'];
+			return ['password.error.too_short_min12'];
 		} else {
 			return null;
 		}
@@ -48,7 +48,7 @@ Password policies are rules for checking validity of new user / supervisor passw
 	
 	var policy_WEBSERVICE = function(password) {
 		if(password.length < 32) {
-			return ['password.error.too_short'];
+			return ['password.error.too_short_min32'];
 		} else {
 			return null;
 		}

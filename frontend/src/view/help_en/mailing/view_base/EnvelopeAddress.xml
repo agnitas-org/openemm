@@ -1,8 +1,9 @@
 <HelpBalloon>
+<!-- -*- scope: openemm -*- -->
 	<title><![CDATA[Envelope e-mail]]></title>
-	<content><![CDATA[The envelope address is the sender address of an e-mail server and is set by AGNITAS by default.
+	<content><![CDATA[The envelope address is the sender address of an e-mail server and is set by system admnistration by default.
 	<br><br>
-	<b>Important:</b> If you want to use your own envelope address, there must be a valid A-record in the Domain Name System (DNS) for the domain of the envelope address and the domain must have agnitas.de included in the SPF record. You can get the SPF record from AGNITAS. AGNITAS must also activate the use of an own envelope address in the backend. If you are interested, please contact <a href="mailto:support@agnitas.de">support@agnitas.de</a>.
+	<b>Important:</b> If you want to use your own envelope address, there must be a valid A-record in the Domain Name System (DNS) for the domain of the envelope address.
 	<br><br>
 	<b>Note:</b> If the Envelope-From address is to be processed directly by the bounce filter, an MX record must be stored in the DNS in addition to the A record, which refers to <b>the name of the filter service</b>. It must also be ensured that a bounce filter is stored in the EMM for the sender address.]]></content>
 </HelpBalloon>

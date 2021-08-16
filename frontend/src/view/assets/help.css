@@ -8667,9 +8667,6 @@ body.dark-theme {
   background-color: #222222;
   color: #fff; }
 
-body.dark-theme h2, h3, h4, h5, h6 {
-  color: #fff; }
-
 img {
   outline: none;
   text-decoration: none;
@@ -8723,7 +8720,7 @@ h3, h4, h5, h6 {
   color: #222326;
   margin: 0; }
 
-body.dark-theme h3, body.dark-theme h4, body.dark-theme h5, body.dark-theme h6 {
+body.dark-theme .l-header h2, body.dark-theme .l-header h3, body.dark-theme .l-header h4, body.dark-theme .l-header h5, body.dark-theme .l-header h6, body.dark-theme .l-sidebar h2, body.dark-theme .l-sidebar h3, body.dark-theme .l-sidebar h4, body.dark-theme .l-sidebar h5, body.dark-theme .l-sidebar h6, body.dark-theme .l-main-view h2, body.dark-theme .l-main-view h3, body.dark-theme .l-main-view h4, body.dark-theme .l-main-view h5, body.dark-theme .l-main-view h6 {
   color: #fff; }
 
 small, .small {
@@ -9682,6 +9679,13 @@ button {
   border-color: #fa6861 !important; }
 
 .text-state-alert {
+  color: #fa6861 !important; }
+
+.state-danger {
+  background-color: #fa6861 !important;
+  border-color: #fa6861 !important; }
+
+.text-state-danger {
   color: #fa6861 !important; }
 
 @media (max-width: 480px) {

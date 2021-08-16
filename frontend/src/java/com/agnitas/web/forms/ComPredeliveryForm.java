@@ -20,6 +20,7 @@ import org.apache.struts.action.ActionMapping;
 
 import com.agnitas.beans.ComPredeliveryProvider;
 
+// TODO Not longer used?
 public class ComPredeliveryForm extends StrutsFormBase {
 
 	private static final long serialVersionUID = -7395594021916269872L;

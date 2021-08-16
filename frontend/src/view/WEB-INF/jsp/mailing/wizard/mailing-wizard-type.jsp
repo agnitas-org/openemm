@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
-<%@ page import="org.agnitas.beans.Mailing" %>
+<%@ page import="com.agnitas.beans.Mailing" %>
 <%@ page import="org.agnitas.web.MailingWizardAction" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -10,7 +10,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="ACTION_TYPE" value="<%= MailingWizardAction.ACTION_TYPE %>"/>
-<c:set var="ACTION_TYPE_PREVIOUS" value="<%= MailingWizardAction.ACTION_TYPE_PREVIOUS %>"/>
 
 <agn:agnForm action="/mwType" id="wizard-step-3" data-form-focus="mailing.mailingType" data-form="resource">
     <html:hidden property="action" value="${ACTION_TYPE}"/>

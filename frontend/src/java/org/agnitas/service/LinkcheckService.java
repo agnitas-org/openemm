@@ -50,7 +50,7 @@ public class LinkcheckService {
 		
 		// .. and remove links that have been found.
 		List<LinkReachability> filteredResults = new Vector<>();
-		checkResults.stream().filter(result -> result.getReachability() != LinkReachability.Reachability.OK).forEach(result -> filteredResults.add(result));
+		checkResults.stream().filter(result -> result.getReachability() != LinkReachability.Reachability.OK).forEach(result -> filteredResults.add(result)); 
 
 		return filteredResults;
 	}
@@ -72,7 +72,7 @@ public class LinkcheckService {
 		return checkRechability(checkList);
 	}
 	
-	/**
+	/**	 
 	 * Checks the availability of a list of URLs.
 	 * 
 	 * @param linkList list of URLs to check
@@ -107,7 +107,7 @@ public class LinkcheckService {
 		}
 		
 		return resultList;
-	}
+	}	
 	
 
 	/**

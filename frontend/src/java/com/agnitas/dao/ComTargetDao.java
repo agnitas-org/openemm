@@ -181,7 +181,9 @@ public interface ComTargetDao {
 	 */
 	int createSampleTargetGroups(int companyID);
 
-	void updateTargetLockState(int targetID, @VelocityCheck int companyID, boolean locked);
+    boolean isTargetGroupLocked(int targetID, @VelocityCheck int companyID);
+
+    void updateTargetLockState(int targetID, @VelocityCheck int companyID, boolean locked);
 
     boolean deleteTargetReally(int targetID, @VelocityCheck int companyId);
 
@@ -216,8 +218,10 @@ public interface ComTargetDao {
     // -------------------------------------------------------------------------------------- Deprecated API
 
 	Map<Integer, TargetLight> getAllowedTargetLights(int companyID);
-	
-	boolean isOracle();
+
+    Set<Integer> getInvalidTargets(@VelocityCheck int companyId, Set<Integer> targets);
+
+    boolean isOracle();
 
 	/**
 	 * Lists all (non-deleted) of a company with ID, name and EQL.

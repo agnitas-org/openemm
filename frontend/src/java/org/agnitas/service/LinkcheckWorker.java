@@ -64,16 +64,16 @@ public class LinkcheckWorker implements Runnable {
 	/** URL to check. */
 	private final String linkToCheck;
 	
-	/** List to add result of check. */
+	/** List to add result of check. */ 
 	private final List<LinkReachability> resultList;
 	
 	/** User agent string. */
 	private final String userAgentString;
 	
-	/**
+	/** 
 	 * @param timeout timeout value for connection
 	 * @param linkToCheck URL to check
-	 * @param resultList list to add result of link check
+	 * @param resultList list to add result of link check 
 	 */
 	public LinkcheckWorker(final int timeout, final String linkToCheck, final List<LinkReachability> resultList, final String userAgentString) {
 		this.timeout = timeout;
@@ -118,8 +118,8 @@ public class LinkcheckWorker implements Runnable {
 		if (aMatch.find() ) {
 			// found dynamic content
 			return true;
-		}
-		return dynamic;
+		} 
+		return dynamic;		
 	}
 	
 	/**
@@ -129,7 +129,7 @@ public class LinkcheckWorker implements Runnable {
 	 * @return availability of checked link
 	 */
 	private LinkReachability netBasedTest() {
-		try {
+		try {						
 			if( logger.isInfoEnabled()) {
 				logger.info( "Checking link: " + linkToCheck);
 			}
@@ -149,7 +149,7 @@ public class LinkcheckWorker implements Runnable {
 					
 					if (OneOf.oneIntOf(statusCode, HttpURLConnection.HTTP_NOT_FOUND, HttpURLConnection.HTTP_GONE))  {
 						return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.NOT_FOUND);
-					}
+					}			
 					
 					return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.OK);
 				}
@@ -157,14 +157,14 @@ public class LinkcheckWorker implements Runnable {
 		} catch (final MalformedURLException e) {
 			// This is no "real error", this is a test result for the link. So we can log this at INFO level
 			if( logger.isInfoEnabled()) {
-				logger.info( "Link URL malformed: " + linkToCheck);
+				logger.info( "Link URL malformed: " + linkToCheck);				
 			}
 			
 			return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.NOT_FOUND);
 		} catch (final UnknownHostException e) {
 			// This is no "real error", this is a test result for the link. So we can log this at INFO level
 			if( logger.isInfoEnabled()) {
-				logger.info( "Unknown host: " + linkToCheck);
+				logger.info( "Unknown host: " + linkToCheck);					
 			}
 			
 			return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.NOT_FOUND);
@@ -185,7 +185,7 @@ public class LinkcheckWorker implements Runnable {
 			
 			return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.NOT_FOUND);
 		}
-	}
+	}	
 	
 	/**
 	 * Creates a fully configured HTTP client.
@@ -206,7 +206,7 @@ public class LinkcheckWorker implements Runnable {
 				.build();
 		
 		final HttpClientBuilder builder = HttpClientBuilder.create();
-	    builder.setSSLContext(sslContext);
+	    builder.setSSLContext(sslContext);	
 	    builder.setConnectionManager(new PoolingHttpClientConnectionManager(socketFactoryRegistry));
 	    builder.setDefaultRequestConfig(createRequestConfig());
 	    

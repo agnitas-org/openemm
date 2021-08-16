@@ -143,4 +143,12 @@ public interface AdminService {
 	ComAdmin getAdminByLogin(String name, String password);
 
     int getAccessLimitTargetId(ComAdmin admin);
+    
+	int getAdminWelcomeMailingId(String language);
+	
+	int getPasswordResetMailingId(String language);
+	
+	int getPasswordChangedMailingId(String language);
+	
+	void updateLoginDate(final int adminID);
 }

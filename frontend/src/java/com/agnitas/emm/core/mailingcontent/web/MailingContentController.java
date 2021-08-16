@@ -15,7 +15,7 @@ import java.util.List;
 import javax.servlet.http.HttpSession;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
 import org.apache.log4j.Logger;

@@ -14,33 +14,42 @@ public class MailinglistException extends Exception {
 	private static final long serialVersionUID = 2425424172301124279L;
 	
 	private final int mailinglistID;
+	private final int companyID;
 	
-	public MailinglistException(final int mailinglistID) {
+	public MailinglistException(final int mailinglistID, final int companyID) {
 		super();
 		
 		this.mailinglistID = mailinglistID;
+		this.companyID = companyID;
 	}
 	
-	public MailinglistException(final int mailinglistID, final String message) {
+	public MailinglistException(final int mailinglistID, final int companyID, final String message) {
 		super(message);
 		
 		this.mailinglistID = mailinglistID;
+		this.companyID = companyID;
 	}
 	
 	
-	public MailinglistException(final int mailinglistID, final String message, final Throwable cause) {
+	public MailinglistException(final int mailinglistID, final int companyID, final String message, final Throwable cause) {
 		super(message, cause);
 		
 		this.mailinglistID = mailinglistID;
+		this.companyID = companyID;
 	}
 	
-	public MailinglistException(final int mailinglistID, final Throwable cause) {
+	public MailinglistException(final int mailinglistID, final int companyID, final Throwable cause) {
 		super(cause);
 		
 		this.mailinglistID = mailinglistID;
+		this.companyID = companyID;
 	}
 
 	public int getMailinglistID() {
 		return mailinglistID;
+	}
+	
+	public final int getCompanyID() {
+		return this.companyID;
 	}
 }

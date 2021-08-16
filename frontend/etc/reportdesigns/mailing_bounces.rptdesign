@@ -291,7 +291,6 @@ return false;]]></method>
             <property name="dataSource">DummyDataSource</property>
             <method name="open"><![CDATA[importPackage ( Packages.com.agnitas.reporting.birt.external.dataset );
 bouncesDataSet = new MailingBouncesDataSet();
-encoder = new Packages.com.agnitas.reporting.birt.util.URLUtils();
 statList = bouncesDataSet.getBouncesWithDetail(params["companyID"], params["mailingID"],params["language"],params["selectedTargets"], MailingBouncesDataSet.BounceType.getByName(params["bouncetype"]));
 currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if( currentrow < statList.size() ) {

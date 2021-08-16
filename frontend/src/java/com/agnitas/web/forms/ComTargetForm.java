@@ -33,11 +33,13 @@ public class ComTargetForm extends TargetForm {
 	/**
 	 * Type code of "mailing revenue" rule node.
 	 */
+	@Deprecated
 	public static final int COLUMN_TYPE_MAILING_REVENUE = 7;
 
 	/**
 	 * Type code of "clicked specific link in mailing" rule node
 	 */
+	@Deprecated
 	public static final int COLUMN_TYPE_MAILING_CLICKED_SPECIFIC_LINK = 8;
 	
 	/**
@@ -67,8 +69,6 @@ public class ComTargetForm extends TargetForm {
 		clearBulkIds();
 		
 		this.useForAdminAndTestDelivery = false;
-		this.showTestAdminDelivery = false;
-		this.showWorldDelivery = true;
 		this.setMailingId(0);
 		this.setLocked(false);
 

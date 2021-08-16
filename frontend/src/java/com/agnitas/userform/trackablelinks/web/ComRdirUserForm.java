@@ -47,7 +47,7 @@ import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 import com.agnitas.util.LinkUtils;
 
 /**
- * redirect servlet for links within a user formula
+ * redirect servlet for links within a user form
  */
 public class ComRdirUserForm extends HttpServlet {
 	private static final transient Logger logger = Logger.getLogger(ComRdirUserForm.class);

@@ -2,9 +2,15 @@ AGN.Lib.Controller.new('mailing-preview', function() {
   var Form = AGN.Lib.Form,
       Storage = AGN.Lib.Storage;
 
+  var RECIPIENT_MODE, TARGET_MODE;
+
   var needReload = false;
 
   this.addDomInitializer('mailing-preview', function($frame) {
+    var config = this.config;
+    RECIPIENT_MODE = config.RECIPIENT_MODE;
+    TARGET_MODE = config.TARGET_MODE;
+
     restoreFields();
     var form = Form.get($('#container-preview'));
     if (form.getValue('previewForm.reload') == 'false') {
@@ -41,11 +47,11 @@ AGN.Lib.Controller.new('mailing-preview', function() {
   });
 
   this.addAction({'click': 'toggle-tab-recipientMode'}, function() {
-    changePreviewMode(1);
+    changePreviewMode(RECIPIENT_MODE);
   });
 
   this.addAction({'click': 'toggle-tab-targetGroupMode'}, function(){
-    changePreviewMode(2);
+    changePreviewMode(TARGET_MODE);
   });
 
   function changePreviewMode(value) {
@@ -80,10 +86,27 @@ AGN.Lib.Controller.new('mailing-preview', function() {
       }
     });
 
+    synchronizeModeWithActiveTab();
+
     Storage.restoreChosenFields($("[name='previewForm.modeTypeId']"));
     Storage.restoreChosenFields($("[name='previewForm.customerATID']"));
     Storage.restoreChosenFields($("[name='previewForm.customerEmail']"));
     Storage.restoreChosenFields($("[name='previewForm.targetGroupId']"));
+  }
+
+  function synchronizeModeWithActiveTab() {
+    // Restore value by active tab
+    var targetMode = Storage.get('toggle_tab#preview-targetModeContent');
+    if (targetMode && !targetMode.hidden) {
+      $("[name='previewForm.modeTypeId']").val(TARGET_MODE);
+      Storage.saveChosenFields($("[name='previewForm.modeTypeId']"));
+    }
+
+    var recipientMode = Storage.get('toggle_tab#preview-recipientModeContent');
+    if (recipientMode && !recipientMode.hidden) {
+      $("[name='previewForm.modeTypeId']").val(RECIPIENT_MODE);
+      Storage.saveChosenFields($("[name='previewForm.modeTypeId']"));
+    }
   }
 
   function isTriggeredField(fieldName) {

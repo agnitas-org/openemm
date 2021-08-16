@@ -7,11 +7,11 @@
 <emm:Permission token="mailing.import|forms.import"/>
 
 <c:set var="agnNavigationKey" 		value="subscriber_import" 			scope="request" />
-<c:set var="agnTitleKey" 			value="import.UploadSubscribers"	scope="request" />
-<c:set var="agnSubtitleKey" 		value="import.UploadSubscribers" 	scope="request" />
+<c:set var="agnTitleKey" 			value="ImportExport"				scope="request" />
+<c:set var="agnSubtitleKey" 		value="import.templates.div" 		scope="request" />
 <c:set var="sidemenu_active" 		value="ImportExport" 				scope="request" />
 <c:set var="sidemenu_sub_active" 	value="import.templates.div" 		scope="request" />
-<c:set var="agnHighlightKey" 		value="import.Wizard" 				scope="request" />
+<c:set var="agnHighlightKey" 		value="import.templates.div" 		scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 						scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="ImportExport" 				scope="request" />
 <c:set var="agnHelpKey" 			value="import" 						scope="request" />

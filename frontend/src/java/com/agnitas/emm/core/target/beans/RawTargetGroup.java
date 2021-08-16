@@ -10,6 +10,9 @@
 
 package com.agnitas.emm.core.target.beans;
 
+import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.impl.TargetLightImpl;
+
 /**
  * The class represents raw target group data.
  * 
@@ -84,6 +87,15 @@ public final class RawTargetGroup {
 	 */
 	public final String getEql() {
 		return eql;
+	}
+	
+	public final TargetLight toTargetLight() {
+		final TargetLight light = new TargetLightImpl();
+
+		light.setId(this.getId());
+		light.setTargetName(this.getName());
+
+		return light;
 	}
 	 
 }

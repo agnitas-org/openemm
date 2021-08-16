@@ -29,12 +29,13 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
-import com.agnitas.emm.core.LinkService;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.emm.core.trackablelinks.dto.BaseTrackableLinkDto;
 import com.agnitas.emm.core.trackablelinks.dto.FormTrackableLinkDto;
 import com.agnitas.emm.core.trackablelinks.service.FormTrackableLinkService;
+import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToMessage;
 import com.agnitas.emm.core.userform.dto.ResultSettings;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.messages.I18nString;
@@ -54,13 +55,13 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 	private ExtendedConversionService conversionService;
 
 	@Override
-	public void saveTrackableLinks(ComAdmin admin, UserFormDto userFormDto, List<Message> errors) {
+	public void saveTrackableLinks(ComAdmin admin, UserFormDto userFormDto, List<Message> errors, final List<Message> warnings) {
 		int companyId = admin.getCompanyID();
 		int userFormId = userFormDto.getId();
 
         try {
 			if (userFormId > 0) {
-				List<ComTrackableUserFormLink> trackableLinks = getValidTrackableLinks(admin, userFormId, userFormDto, errors);
+				List<ComTrackableUserFormLink> trackableLinks = getValidTrackableLinks(admin, userFormId, userFormDto, errors, warnings);
 				if (!trackableLinkDao.existsDummyFormLink(companyId, userFormId)) {
 					ComTrackableUserFormLink dummyStatisticLinks = new ComTrackableUserFormLinkImpl();
 					dummyStatisticLinks.setFormID(userFormId);
@@ -175,11 +176,11 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 		return true;
 	}
 
-	private List<ComTrackableUserFormLink> getValidTrackableLinks(ComAdmin admin, int userFormId, UserFormDto userFormDto, List<Message> errors)
+	private List<ComTrackableUserFormLink> getValidTrackableLinks(ComAdmin admin, int userFormId, UserFormDto userFormDto, List<Message> errors, final List<Message> warnings)
             throws Exception {
         int companyId = admin.getCompanyID();
-        LinkService.LinkScanResult successSettingsLinkResult = validateLinks(userFormDto.getSuccessSettings(), admin, errors);
-        LinkService.LinkScanResult errorSettingsLinkResult = validateLinks(userFormDto.getErrorSettings(), admin, errors);
+        LinkService.LinkScanResult successSettingsLinkResult = validateLinks(userFormDto.getSuccessSettings(), admin, errors, warnings);
+        LinkService.LinkScanResult errorSettingsLinkResult = validateLinks(userFormDto.getErrorSettings(), admin, errors, warnings);
 
         Map<String, ComTrackableUserFormLink> existingLinks = trackableLinkDao.getUserFormTrackableLinks(userFormId, companyId);
 
@@ -210,7 +211,7 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
         return userFormLinks;
     }
 
-    private LinkService.LinkScanResult validateLinks(ResultSettings settings, ComAdmin admin, List<Message> errors) throws Exception {
+    private LinkService.LinkScanResult validateLinks(ResultSettings settings, ComAdmin admin, List<Message> errors, List<Message> warnings) throws Exception {
 		String type = settings.isSuccess() ? "SUCCESS" : "ERROR";
 		LinkService.LinkScanResult links = linkService.scanForLinks(settings.getTemplate(), admin.getCompanyID());
 
@@ -230,6 +231,9 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 							I18nString.getLocaleString(firstErroneousLink.getErrorMessageKey(), admin.getLocale())
 					}));
 		}
+
+		LinkScanResultToMessage.linkWarningsToMessage(links, warnings);
+		
 		return links;
 	}
 

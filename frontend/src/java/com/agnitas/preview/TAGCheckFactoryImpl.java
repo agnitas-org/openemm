@@ -10,6 +10,8 @@
 
 package com.agnitas.preview;
 
+import java.util.Locale;
+
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.preview.TAGCheck;
 import org.agnitas.preview.TAGCheckFactory;
@@ -17,17 +19,17 @@ import org.agnitas.preview.TAGCheckImpl;
 
 public class TAGCheckFactoryImpl implements TAGCheckFactory {
 	@Override
-	public TAGCheck createTAGCheck(int mailingId) throws Exception {
-		return new TAGCheckImpl(mailingId);
+	public TAGCheck createTAGCheck(int mailingId, Locale locale) throws Exception {
+		return new TAGCheckImpl(mailingId, locale);
 	}
 
 	@Override
-	public TAGCheck createTAGCheck(@VelocityCheck int companyId, int mailinglistId) throws Exception {
-		return new TAGCheckImpl(companyId, mailinglistId);
+	public TAGCheck createTAGCheck(@VelocityCheck int companyId, int mailinglistId, Locale locale) throws Exception {
+		return new TAGCheckImpl(companyId, mailinglistId, locale);
 	}
 
 	@Override
-	public TAGCheck createTAGCheck(@VelocityCheck int companyId, int mailingId, int mailinglistId) throws Exception {
-		return new TAGCheckImpl(companyId, mailingId, mailinglistId);
+	public TAGCheck createTAGCheck(@VelocityCheck int companyId, int mailingId, int mailinglistId, Locale locale) throws Exception {
+		return new TAGCheckImpl(companyId, mailingId, mailinglistId, locale);
 	}
 }

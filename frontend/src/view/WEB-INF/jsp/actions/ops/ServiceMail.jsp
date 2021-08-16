@@ -1,106 +1,107 @@
-<%@ page language="java" import="com.agnitas.util.*, java.util.*, org.agnitas.web.EmmActionAction" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<% int index=((Integer)request.getAttribute("opIndex")).intValue(); %>
+<script id="module-ServiceMail" type="text/x-mustache-template">
+    <div class="inline-tile-content" data-module-content="{{- index}}">
+        <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="ServiceMail"/>
+        <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
 
-<div class="inline-tile-content">
-    <div class="form-group">
-        <div class="col-sm-4">
-            <label class="control-label"><bean:message key="To"/></label>
-        </div>
-        <div class="col-sm-8">
-            <html:text styleClass="form-control" property='<%= "actions[" + index + "].toAddress" %>'/>
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-sm-4">
-            <label class="control-label"><bean:message key="From"/></label>
-        </div>
-        <div class="col-sm-8">
-            <html:text styleClass="form-control" property='<%= "actions[" + index + "].fromAddress" %>'/>
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-sm-4">
-            <label class="control-label"><bean:message key="mailing.ReplyEmail"/></label>
-        </div>
-        <div class="col-sm-8">
-            <html:text styleClass="form-control" property='<%= "actions[" + index + "].replyAddress" %>'/>
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-sm-4">
-            <label class="control-label"><bean:message key="mailing.Subject"/></label>
-        </div>
-        <div class="col-sm-8">
-            <html:text styleClass="form-control" property='<%= "actions[" + index + "].subjectLine" %>'/>
-        </div>
-    </div>
-    <div>
         <div class="form-group">
             <div class="col-sm-4">
-                <label class="control-label"><bean:message key="action.Format"/></label>
+                <label class="control-label" for="module_{{- index}}.toAddress"><mvc:message code="To"/></label>
             </div>
             <div class="col-sm-8">
-                <c:set var="HTMLVersion" value='<%= "#HTMLVersion_" + index %>'/>
-                <c:set var="TextVersion" value='<%= "#TextVersion_" + index %>'/>
-
-                <agn:agnSelect styleId='<%= "selectFormat_" + index %>' styleClass="form-control" property='<%= "actions[" + index + "].mailtype" %>' size="1" >
-                    <agn:agnOption value="0"><bean:message key="Text"/></agn:agnOption>
-                    <agn:agnOption value="1"><bean:message key="mailing.Text_HTML"/></agn:agnOption>
-                </agn:agnSelect>
+                <input type="text" name="modules[].toAddress" id="module_{{- index}}.toAddress" class="form-control" value="{{- toAddress}}">
             </div>
         </div>
-        <div id='<%= "TextVersion_" + index %>' class="inline-tile">
-            <div class="inline-tile-header">
-                <h2 class="headline"><bean:message key="Text_Version"/></h2>
-                <ul class="inline-tile-header-actions">
-                    <li>
-                        <a href="#" data-modal="modal-editor" data-modal-set="title: <bean:message key="Text_Version"/>, target: <%= "textMail" + index %>, id: textTemplateLarge, type: text" data-tooltip="<bean:message key='editor.enlargeEditor'/>">
-                           <i class="icon icon-arrows-alt"></i>
-                        </a>
-                    </li>
-                </ul>
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label" for="module_{{- index}}.fromAddress"><mvc:message code="From"/></label>
             </div>
-            <div class="inline-tile-content">
-                <div class="row">
-                    <div class="col-sm-12">
-                        <html:textarea property='<%= "actions[" + index + "].textMail" %>' styleId='<%= "textMail" + index %>' rows="14" cols="70" styleClass="form-control js-editor-text"/>
+            <div class="col-sm-8">
+                <input type="text" name="modules[].fromAddress" id="module_{{- index}}.fromAddress" class="form-control" value="{{- fromAddress}}">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label" for="module_{{- index}}.replyAddress"><mvc:message code="mailing.ReplyEmail"/></label>
+            </div>
+            <div class="col-sm-8">
+                <input type="text" name="modules[].replyAddress" id="module_{{- index}}.replyAddress" class="form-control" value="{{- replyAddress}}"/>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label" for="module_{{- index}}.subjectLine"><mvc:message code="mailing.Subject"/></label>
+            </div>
+            <div class="col-sm-8">
+                <input type="text" name="modules[].subjectLine" id="module_{{- index}}.subjectLine" class="form-control" value="{{- subjectLine}}"/>
+            </div>
+        </div>
+        <div>
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label class="control-label" for="module_{{- index}}.mailtype"><mvc:message code="action.Format"/></label>
+                </div>
+                <div class="col-sm-8">
+                    <select name="modules[].mailtype" id="module_{{- index}}.mailtype" class="form-control" size="1">
+                        <option value="0" {{ mailtype == 0 ? print('selected="selected"') : print('') }}><mvc:message code="Text"/></option>
+                        <option value="1" {{ mailtype == 1 ? print('selected="selected"') : print('') }}><mvc:message code="mailing.Text_HTML"/></option>
+                    </select>
+                </div>
+            </div>
+            <div id="TextVersion_{{-index}}" class="inline-tile form-group" data-field="validator">
+                <div class="inline-tile-header">
+                    <h2 class="headline"><mvc:message code="Text_Version"/></h2>
+                    <ul class="inline-tile-header-actions">
+                        <li>
+                            <a href="#" data-modal="action-modal-editor"
+                               data-modal-set="title: <mvc:message code="Text_Version"/>,
+                                                target: module_{{- index}}.textMail, id: textTemplateLarge, type: text"
+                               data-tooltip="<mvc:message code='editor.enlargeEditor'/>">
+                               <i class="icon icon-arrows-alt"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="inline-tile-content">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <textarea name="modules[].textMail" id="module_{{- index}}.textMail" rows="14" cols="70"
+                                      data-field-validator="reject-script-element" class="form-control js-editor-text">{{- textMail}}</textarea>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div id='<%= "HTMLVersion_" + index %>' class="inline-tile">
-            <div class="inline-tile-header">
-                <h2 class="headline"><bean:message key="mailing.HTML_Version"/></h2>
-                <ul class="inline-tile-header-actions">
-                    <li>
-                        <a href="#" data-modal="modal-editor" data-modal-set="title: <bean:message key="mailing.HTML_Version"/>, target: <%= "htmlMail" + index %>, id: htmlTemplateLarge" data-tooltip="<bean:message key='editor.enlargeEditor'/>">
-                           <i class="icon icon-arrows-alt"></i>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            <div class="inline-tile-content">
-                <div class="row">
-                    <div class="col-sm-12">
-                        <html:textarea property='<%= "actions[" + index + "].htmlMail" %>' styleId='<%= "htmlMail" + index %>' rows="14" cols="70" styleClass="form-control js-editor" />
+            <div id="HTMLVersion{{-index}}" class="inline-tile form-group" data-field="validator">
+                <div class="inline-tile-header">
+                    <h2 class="headline"><mvc:message code="mailing.HTML_Version"/></h2>
+                    <ul class="inline-tile-header-actions">
+                        <li>
+                            <a href="#" data-modal="action-modal-editor"
+                               data-modal-set="title: <mvc:message code="mailing.HTML_Version"/>,
+                                                target: module_{{- index}}.htmlMail, id: htmlTemplateLarge"
+                               data-tooltip="<mvc:message code='editor.enlargeEditor'/>">
+                               <i class="icon icon-arrows-alt"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="inline-tile-content">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <textarea name="modules[].htmlMail" id="module_{{- index}}.htmlMail" rows="14" cols="70"
+                                      data-field-validator="reject-script-element" class="form-control js-editor">{{- htmlMail}}</textarea>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<div class="inline-tile-footer">
-    <emm:ShowByPermission token="actions.change">
-        <a class="btn btn-regular" href="#" data-form-set="action: <%= EmmActionAction.ACTION_REMOVE_MODULE %>, deleteModule: <%= index %>" data-form-submit>
-            <i class="icon icon-trash-o"></i>
-            <span class="text"><bean:message key="button.Delete"/></span>
-        </a>
-    </emm:ShowByPermission>
-</div>
+    <div class="inline-tile-footer">
+        <emm:ShowByPermission token="actions.change">
+            <a class="btn btn-regular" href="#" data-action="action-delete-module" data-property-id="{{- index}}">
+                <i class="icon icon-trash-o"></i>
+                <span class="text"><mvc:message code="button.Delete"/></span>
+            </a>
+        </emm:ShowByPermission>
+    </div>
+</script>

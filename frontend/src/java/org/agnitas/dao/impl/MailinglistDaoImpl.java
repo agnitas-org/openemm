@@ -154,7 +154,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean deleteMailinglist(int listID, @VelocityCheck int companyId) {
-		// Always keep the mailinglist with the lowest mailinglist_id. Should be the "Standard ... NICHT LÖSCHEN!!!" mailinglist
+		// Always keep the mailinglist with the lowest mailinglist_id. Should be the "Default, please do not delete!" mailinglist
 		// This must be done in two steps because mysql doesn't allow to update same table as used in a subquery
 		Integer alwaysKeepMailinglistID = select(logger, "SELECT MIN(mailinglist_id) FROM mailinglist_tbl WHERE company_id = ? AND deleted = 0", Integer.class, companyId);
 		if (alwaysKeepMailinglistID != null && alwaysKeepMailinglistID != listID) {

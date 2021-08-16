@@ -18,6 +18,7 @@ import org.agnitas.beans.BindingEntry;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComTarget;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
 import com.agnitas.emm.core.report.bean.PlainBindingEntry;
 
@@ -102,7 +103,7 @@ public interface ComBindingEntryDao {
      * @param target The target describing the recipients that shall be added.
      * @return true on success.
      */
-    boolean addTargetsToMailinglist(@VelocityCheck int companyID, int mailinglistID, ComTarget target);
+    boolean addTargetsToMailinglist(@VelocityCheck int companyID, int mailinglistID, ComTarget target, Set<MediaTypes> mediaTypes);
 
     /* moved form BindingEntry */
 	/**

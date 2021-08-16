@@ -39,36 +39,6 @@ public final class EditorContentSynchronizer {
 	
 	/** Builder for QueryBuilder filters. */
 	private QueryBuilderFilterListBuilder filterListBuilder;
-
-	/**
-	 * Synchronizes all target group editors depending on requested editor view and submitted data from JSP.
-	 *
-	 * @param admin company admin
-	 * @param form form bean
-	 *
-	 *
-	 * @throws EditorContentSynchronizationException on errors synchronizing the editors data.
-	 */
-	@Deprecated // TODO Removed without replacement. Not used.
-	public final TargetgroupViewFormat synchronizeEditors(final ComAdmin admin, final QueryBuilderTargetGroupForm form) throws EditorContentSynchronizationException {
-		final TargetgroupViewFormat currentFormat = TargetgroupViewFormat.fromCode(form.getFormat());
-		
-		if(currentFormat == null) {
-			if(logger.isDebugEnabled()) {
-				logger.debug(String.format("Current format ('%s') is unknown", form.getFormat()));
-			}
-
-			throw new EditorContentSynchronizationException(String.format("Current format ('%s') is unknown", form.getFormat()));
-		}
-		
-		TargetgroupViewFormat newFormat = TargetgroupViewFormat.EQL;
-		if(currentFormat == TargetgroupViewFormat.EQL) {
-			newFormat = TargetgroupViewFormat.QUERY_BUILDER;
-		}
-
-		// Call synchronization method
-		return callSynchronizationMethod(admin, currentFormat, newFormat, form);
-	}
 	
 	/**
 	 * Synchronizes all target group editors depending on requested editor view and submitted data from JSP.

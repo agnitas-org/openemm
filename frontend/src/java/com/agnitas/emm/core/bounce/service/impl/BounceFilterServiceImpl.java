@@ -12,6 +12,7 @@ package com.agnitas.emm.core.bounce.service.impl;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.agnitas.beans.Mailloop;
 import org.agnitas.beans.MailloopEntry;
@@ -43,14 +44,18 @@ public class BounceFilterServiceImpl implements BounceFilterService {
         this.blacklistService = blacklistService;
     }
 
+	@Override
+	public int saveBounceFilter(ComAdmin admin, BounceFilterDto bounceFilter, boolean isNew) throws Exception {
+		return saveBounceFilter(admin.getCompanyID(), AgnUtils.getTimeZone(admin), bounceFilter, isNew);
+	}
+    
     @Override
-    public int saveBounceFilter(ComAdmin admin, BounceFilterDto bounceFilter, boolean isNew) throws Exception {
-        bounceFilter.setChangeDate(DateUtilities.midnight(AgnUtils.getTimeZone(admin)));
-        if(StringUtils.isEmpty(bounceFilter.getSecurityToken())) {
+    public int saveBounceFilter(int companyId, TimeZone adminTimeZone, BounceFilterDto bounceFilter, boolean isNew) throws Exception {
+        bounceFilter.setChangeDate(DateUtilities.midnight(adminTimeZone));
+        if (StringUtils.isEmpty(bounceFilter.getSecurityToken())) {
             bounceFilter.setSecurityToken(SecurityTokenGenerator.generateSecurityToken());
         }
         Mailloop mailloop = conversionService.convert(bounceFilter, Mailloop.class);
-        int companyId = admin.getCompanyID();
         mailloop.setCompanyID(companyId);
         
         if (StringUtils.isNotEmpty(mailloop.getFilterEmail())) {

@@ -59,21 +59,21 @@ public enum MailingType {
 		return messagekey;
 	}
 	
-	public static MailingType fromCode(final int code) {
+	public static MailingType fromCode(final int code) throws Exception {
 		for (final MailingType mailingType : values()) {
 			if (mailingType.code == code) {
 				return mailingType;
 			}
 		}
-		return null;
+		throw new Exception("Invalid MailingType code: " + code);
 	}
 
-	public static MailingType fromName(final String name) {
+	public static MailingType fromName(final String name) throws Exception {
 		for (final MailingType mailingType : values()) {
 			if (mailingType.name().equalsIgnoreCase(name)) {
 				return mailingType;
 			}
 		}
-		return null;
+		throw new Exception("Invalid MailingType name: " + name);
 	}
 }

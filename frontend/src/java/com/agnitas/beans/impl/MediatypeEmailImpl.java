@@ -17,7 +17,7 @@ import javax.mail.internet.InternetAddress;
 
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.impl.MediatypeImpl;
 import org.agnitas.util.AgnUtils;

@@ -58,6 +58,7 @@ import com.agnitas.beans.ComCompany;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import com.agnitas.messages.I18nString;
@@ -289,7 +290,7 @@ public class ProfileImportReporter {
 			
 			if (admin.permissionAllowed(Permission.IMPORT_MEDIATYPE)) {
 				try {
-					profileContent += I18nString.getLocaleString("mediatype", admin.getLocale()) + ": " + I18nString.getLocaleString("mailing.MediaType." + profileImportWorker.getImportProfile().getMediatype().getMediaCode(), admin.getLocale()) + "\n";
+					profileContent += I18nString.getLocaleString("mediatype", admin.getLocale()) + ": " + getMediaTypesText(profileImportWorker.getImportProfile().getMediatypes(), admin.getLocale()) + "\n";
 				} catch (Exception e) {
 					profileContent += I18nString.getLocaleString("mediatype", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
 				}
@@ -362,6 +363,9 @@ public class ProfileImportReporter {
 		
 		if (profileImportWorker.getAutoImport() != null) {
 			reportContent += I18nString.getLocaleString("autoImport.fileServer", admin.getLocale()) + ": " + profileImportWorker.getAutoImport().getFileServerWithoutCredentials();
+			reportContent += I18nString.getLocaleString("autoImport.filePath", admin.getLocale()) + ": " + profileImportWorker.getAutoImport().getFilePath();
+			reportContent += I18nString.getLocaleString("autoImport.importMultipleFiles", admin.getLocale()) + ": " + I18nString.getLocaleString(profileImportWorker.getAutoImport().isImportMultipleFiles() ? "default.Yes" : "No", admin.getLocale());
+			reportContent += I18nString.getLocaleString("autoImport.removeImportedFiles", admin.getLocale()) + ": " + I18nString.getLocaleString(profileImportWorker.getAutoImport().isRemoveImportedFiles() ? "default.Yes" : "No", admin.getLocale());
 		}
 		reportContent += I18nString.getLocaleString("settings.FileName", admin.getLocale()) + ": " + (StringUtils.isBlank(profileImportWorker.getImportFile().getRemoteFilePath()) ? I18nString.getLocaleString("Unknown", admin.getLocale()) : profileImportWorker.getImportFile().getRemoteFilePath()) + "\n";
 		if (profileImportWorker.getImportFile().getDownloadDurationMillis() > -1) {
@@ -461,7 +465,7 @@ public class ProfileImportReporter {
 			
 			if (admin.permissionAllowed(Permission.IMPORT_MEDIATYPE)) {
 				try {
-					profileContent += I18nString.getLocaleString("mediatype", admin.getLocale()) + ": " + I18nString.getLocaleString("mailing.MediaType." + importProfile.getMediatype().getMediaCode(), admin.getLocale()) + "\n";
+					profileContent += I18nString.getLocaleString("mediatype", admin.getLocale()) + ": " + getMediaTypesText(importProfile.getMediatypes(), admin.getLocale()) + "\n";
 				} catch (Exception e) {
 					profileContent += I18nString.getLocaleString("mediatype", admin.getLocale()) + ": Invalid (\"" + e.getMessage() + "\")\n";
 				}
@@ -533,6 +537,9 @@ public class ProfileImportReporter {
 		
 		if (autoImport != null) {
 			reportContent += I18nString.getLocaleString("autoImport.fileServer", admin.getLocale()) + ": " + autoImport.getFileServerWithoutCredentials();
+			reportContent += I18nString.getLocaleString("autoImport.filePath", admin.getLocale()) + ": " + autoImport.getFilePath();
+			reportContent += I18nString.getLocaleString("autoImport.importMultipleFiles", admin.getLocale()) + ": " + I18nString.getLocaleString(autoImport.isImportMultipleFiles() ? "default.Yes" : "No", admin.getLocale());
+			reportContent += I18nString.getLocaleString("autoImport.removeImportedFiles", admin.getLocale()) + ": " + I18nString.getLocaleString(autoImport.isRemoveImportedFiles() ? "default.Yes" : "No", admin.getLocale());
 		}
 		reportContent += I18nString.getLocaleString("settings.FileName", admin.getLocale()) + ": " + (StringUtils.isBlank(alreadyImportedFile.getRemoteFileName()) ? I18nString.getLocaleString("Unknown", admin.getLocale()) : alreadyImportedFile.getRemoteFileName()) + "\n";
 		
@@ -754,7 +761,7 @@ public class ProfileImportReporter {
 			
 			if (admin.permissionAllowed(Permission.IMPORT_MEDIATYPE)) {
 				try {
-					htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("mediatype", locale), I18nString.getLocaleString("mailing.MediaType." + importWorker.getImportProfile().getMediatype().getMediaCode(), admin.getLocale())));
+					htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("mediatype", locale), getMediaTypesText(importWorker.getImportProfile().getMediatypes(), admin.getLocale())));
 				} catch (Exception e) {
 					htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("mediatype", locale), "Invalid (\"" + e.getMessage() + "\")"));
 				}
@@ -821,6 +828,9 @@ public class ProfileImportReporter {
 
 		if (importWorker.getAutoImport() != null) {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.fileServer", locale), importWorker.getAutoImport().getFileServerWithoutCredentials()));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.filePath", locale), importWorker.getAutoImport().getFilePath()));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.importMultipleFiles", locale), I18nString.getLocaleString(importWorker.getAutoImport().isImportMultipleFiles() ? "default.Yes" : "No", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.removeImportedFiles", locale), I18nString.getLocaleString(importWorker.getAutoImport().isRemoveImportedFiles() ? "default.Yes" : "No", locale)));
 		}
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("settings.FileName", locale), StringUtils.isBlank(importWorker.getImportFile().getRemoteFilePath()) ? I18nString.getLocaleString("Unknown", locale) : importWorker.getImportFile().getRemoteFilePath()));
 		if (importWorker.getImportFile().getDownloadDurationMillis() > -1) {
@@ -929,7 +939,7 @@ public class ProfileImportReporter {
 			
 			if (admin.permissionAllowed(Permission.IMPORT_MEDIATYPE)) {
 				try {
-					htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("mediatype", locale), I18nString.getLocaleString("mailing.MediaType." + importProfile.getMediatype().getMediaCode(), admin.getLocale())));
+					htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("mediatype", locale), getMediaTypesText(importProfile.getMediatypes(), admin.getLocale())));
 				} catch (Exception e) {
 					htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("mediatype", locale), "Invalid (\"" + e.getMessage() + "\")"));
 				}
@@ -995,6 +1005,9 @@ public class ProfileImportReporter {
 
 		if (autoImport != null) {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.fileServer", locale), autoImport.getFileServerWithoutCredentials()));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.filePath", locale), autoImport.getFilePath()));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.importMultipleFiles", locale), I18nString.getLocaleString(autoImport.isImportMultipleFiles() ? "default.Yes" : "No", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.removeImportedFiles", locale), I18nString.getLocaleString(autoImport.isRemoveImportedFiles() ? "default.Yes" : "No", locale)));
 		}
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("settings.FileName", locale), StringUtils.isBlank(alreadyImportedFile.getRemoteFileName()) ? I18nString.getLocaleString("Unknown", locale) : alreadyImportedFile.getRemoteFileName()));
 
@@ -1004,6 +1017,17 @@ public class ProfileImportReporter {
 		htmlContent.append(HtmlReporterHelper.getFooter(AgnUtils.getHostName(), configService.getValue(ConfigValue.ApplicationVersion)));
 		
 		return htmlContent.toString();
+	}
+
+	private String getMediaTypesText(Set<MediaTypes> mediatypes, Locale locale) {
+		StringBuilder result = new StringBuilder();
+		for (MediaTypes mediaType : mediatypes) {
+			if (result.length() > 0) {
+				result.append(", ");
+			}
+			result.append(I18nString.getLocaleString("mailing.MediaType." + mediaType.getMediaCode(), locale));
+		}
+		return result.toString();
 	}
 
 	private List<ImportReportEntry> generateImportStatusEntries(ProfileImportWorker importWorker, int companyID, Locale locale, boolean noHeaders) {
@@ -1093,6 +1117,8 @@ public class ProfileImportReporter {
 			resultFileContent += "AutoImport: " + profileImportWorker.getAutoImport().toString() + "\n";
 			resultFileContent += "Remote file server: " + profileImportWorker.getAutoImport().getFileServerWithoutCredentials() + "\n";
 			resultFileContent += "Remote file pattern: " + profileImportWorker.getAutoImport().getFilePath() + "\n";
+			resultFileContent += "Import multiple files: " + profileImportWorker.getAutoImport().isImportMultipleFiles() + "\n";
+			resultFileContent += "Remove imported files: " + profileImportWorker.getAutoImport().isRemoveImportedFiles() + "\n";
 		}
 		
 		if (profileImportWorker.getUsername() != null) {

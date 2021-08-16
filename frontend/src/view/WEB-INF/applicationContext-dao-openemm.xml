@@ -58,6 +58,7 @@
 		<property name="fulltextSearchQueryGenerator" ref="fulltextSearchQueryGenerator" />
         <property name="dynamicTagContentDao" ref="DynamicTagContentDao"/>
         <property name="dynamicTagDao" ref="DynamicTagDao"/>
+		<property name="copyMailingService" ref="CopyMailingService" />
     </bean>
 
     <bean id="SupervisorDao" class="com.agnitas.emm.core.supervisor.dao.impl.DefaultSupervisorDaoImpl"/>
@@ -71,7 +72,6 @@
 		<property name="adminGroupDao" ref="AdminGroupDao" />
 		<property name="companyDao" ref="CompanyDao" />
 		<property name="mailinglistApprovalDao" ref="MailinglistApprovalDao" />
-		<property name="configService" ref="ConfigService" />
 		
 		<!-- For RDIR: Set "passwordEncryptor" and "supervisorDao" to null -->
 		<property name="passwordEncryptor" ref="passwordEncryptor" />

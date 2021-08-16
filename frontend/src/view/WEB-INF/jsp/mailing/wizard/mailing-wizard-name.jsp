@@ -10,7 +10,7 @@
 <%--@elvariable id="ACTION_NAME" type="java.lang.Boolean"--%>
 
 <c:set var="ACTION_NAME" value="<%= MailingWizardAction.ACTION_NAME %>"/>
-
+<c:url var="previous" value="/mwStart.do?action=init"/>
 <agn:agnForm action="/mwName" id="wizard-step-1" data-form-focus="mailing.shortname" data-form="resource">
     <html:hidden property="action" value="${ACTION_NAME}"/>
 
@@ -25,7 +25,7 @@
                     <li class="">
                         <ul class="pagination">
                             <li>
-                                <a href="#" data-form-action="previous">
+                                <a href="${previous}">
                                     <i class="icon icon-angle-left"></i>
                                     <bean:message key="button.Back" />
                                 </a>
@@ -96,7 +96,7 @@
                 </c:if>
             </div>
             <div class="tile-footer">
-                <a href="#" class="btn btn-large pull-left" data-form-action="previous">
+                <a href="${previous}" class="btn btn-large pull-left">
                     <i class="icon icon-angle-left"></i>
                     <span class="text"><bean:message key="button.Back"/></span>
                 </a>

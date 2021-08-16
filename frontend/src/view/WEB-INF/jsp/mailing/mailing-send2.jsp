@@ -1,6 +1,7 @@
+<%@page import="org.agnitas.dao.FollowUpType"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
 <%@ page import="com.agnitas.web.ComMailingSendActionBasic"%>
-<%@ page import="org.agnitas.beans.Mailing"%>
+<%@ page import="com.agnitas.beans.Mailing"%>
 <%@ page import="org.agnitas.util.AgnUtils"%>
 <%@ page import="org.agnitas.web.MailingSendAction"%>
 <%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
@@ -112,17 +113,11 @@
 																<bean:message key="mailing.send.emailsNum.offileHtml" />
 															</p>
 														</li>
-														<li class="list-group-item" style="border: none; border-top: 1px solid #cccdcd;">
-															<p class="commaNumber">	
-																<span class="commaNumber" style="font-weight: 700;"><bean:write name="mailingSendForm" property="sendTotal" scope="request" /></span>
-																<bean:message key="Recipients" /><span style="text-transform: lowercase;"> <bean:message key="report.total" /></span>
-															</p>
-														</li>
 														<c:forEach var="sendStatKey" items="${mailingSendForm.sendStats.keySet()}">
 															<c:if test="${sendStatKey gt 0}">
 																<c:set var="sendStat" value="${mailingSendForm.getSendStat(sendStatKey)}" />
 																<c:if test="${sendStat gt 0}">
-																	<li class="list-group-item" style="border: none; padding-top: 20px;">
+																	<li class="list-group-item" style="border: none;">
 																		<p class="commaNumber">	
 																			<span class="commaNumber" style="font-weight: 700;">${sendStat}</span>
 																			<bean:message key="mailing.MediaType.${sendStatKey}" />
@@ -131,6 +126,12 @@
 																</c:if>
 															</c:if>
 														</c:forEach>
+														<li class="list-group-item" style="border: none; border-top: 1px solid #cccdcd;">
+															<p class="commaNumber">	
+																<span class="commaNumber" style="font-weight: 700;"><bean:write name="mailingSendForm" property="sendTotal" scope="request" /></span>
+																<bean:message key="Recipients" /><span style="text-transform: lowercase;"> <bean:message key="report.total" /></span>
+															</p>
+														</li>
 													</ul>
 												</div>
 											</div>
@@ -184,16 +185,16 @@
 															<p>
 																<bean:message key="mailing.RecipientsRecieved" />
 																<strong>
-																<logic:equal name="mailingSendForm" property="followUpType" value="<%=Mailing.TYPE_FOLLOWUP_NON_OPENER%>">
+																<logic:equal name="mailingSendForm" property="followUpType" value="<%= FollowUpType.TYPE_FOLLOWUP_NON_OPENER.getKey() %>">
 																	<bean:message key="noneOpeners" />.
 																</logic:equal>
-																<logic:equal name="mailingSendForm" property="followUpType" value="<%=Mailing.TYPE_FOLLOWUP_NON_CLICKER%>">
+																<logic:equal name="mailingSendForm" property="followUpType" value="<%= FollowUpType.TYPE_FOLLOWUP_NON_CLICKER.getKey() %>">
 																	<bean:message key="noneClickers" />
 																</logic:equal>
-																<logic:equal name="mailingSendForm" property="followUpType" value="<%=Mailing.TYPE_FOLLOWUP_OPENER%>">
+																<logic:equal name="mailingSendForm" property="followUpType" value="<%= FollowUpType.TYPE_FOLLOWUP_OPENER.getKey() %>">
 																	<bean:message key="openers" />.
 																</logic:equal>
-																<logic:equal name="mailingSendForm" property="followUpType" value="<%=Mailing.TYPE_FOLLOWUP_CLICKER%>">
+																<logic:equal name="mailingSendForm" property="followUpType" value="<%= FollowUpType.TYPE_FOLLOWUP_CLICKER.getKey() %>">
 																	<bean:message key="clickers" />.
 																</logic:equal>
 																</strong>
@@ -367,15 +368,17 @@
 														</label>
 													</div>
 												</li>
-												<li class="list-group-item" style="border: none;">
-													<div class="checkbox">
-														<label> 
-															<input type="hidden" name="__STRUTS_CHECKBOX_skipempty" value="0" /> 
-															<html:checkbox property="skipempty" /> 
-															<bean:message key="skipempty.email" />
-														</label>
-													</div>
-												</li>
+                                                <c:if test="${isMailtrackExtended}">
+                                                    <li class="list-group-item" style="border: none;">
+                                                        <div class="checkbox">
+                                                            <label>
+                                                                <input type="hidden" name="__STRUTS_CHECKBOX_skipempty" value="0" />
+                                                                <html:checkbox property="skipempty" />
+                                                                <bean:message key="skipempty.email" />
+                                                            </label>
+                                                        </div>
+                                                    </li>
+                                                </c:if>
 											</ul>
 									</div>
 								</div>

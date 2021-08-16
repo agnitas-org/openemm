@@ -12,6 +12,8 @@ package com.agnitas.emm.util.html.xssprevention;
 
 import java.util.Objects;
 
+import com.agnitas.messages.Message;
+
 public final class ForbiddenTagAttributeError extends AbstractTagError {
 	
 	private final String attributeName;
@@ -40,6 +42,11 @@ public final class ForbiddenTagAttributeError extends AbstractTagError {
 	@Override
 	public final int hashCode() {
 		return this.getTagName().hashCode() + this.attributeName.hashCode();
+	}
+
+	@Override
+	public Message toMessage() {
+		return Message.of("error.html.forbiddenAttribute", getTagName(), getAttributeName());
 	}
 
 }

@@ -1,12 +1,20 @@
 /**
-* Override prototype methods because of wkhtml2pdf 12.5 (patched qt) issues
+* Override prototype methods because of wkhtml2pdf version >=12.5 (patched qt) issues
 */
 if (window.Prototype) {
     delete Array.prototype.toJSON;
 }
 
+if (typeof Object.values !== 'function') {
+  Object.values = function(obj) {
+    return Object.keys(obj).map(function (e) {
+      return obj[e];
+    });
+  };
+}
+
 Object.isUndefined = Object.isUndefined || function(object) {
-    return typeof object === "undefined"
+    return typeof object === 'undefined';
 };
 Array.prototype.merge =  Array.prototype.merge || function(array, args) {
     array = Array.prototype.slice.call(array, 0);
@@ -38,3 +46,11 @@ Function.prototype.bind = function (thisp) {
        }
    }
 }(JSON));
+
+if (typeof window.requestAnimationFrame !== 'function') {
+  window.requestAnimationFrame = setTimeout;
+}
+
+if (typeof window.cancelAnimationFrame !== 'function') {
+  window.cancelAnimationFrame = clearTimeout;
+}

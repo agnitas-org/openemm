@@ -284,8 +284,8 @@ currentrow = 0;
 	row["TARGETGROUP"] = data.getTargetgroup();
 		
 	// do some i18n stuff
-	if(row["TARGETGROUP"] == "statistic.All_Subscribers" || row["TARGETGROUP"] == "All_Subscribers") {
-		row["TARGETGROUP"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.All_Subscribers", reportContext.getLocale());
+	if(row["TARGETGROUP"] == "statistic.all_subscribers" || row["TARGETGROUP"] == "All_Subscribers") {
+		row["TARGETGROUP"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
 	}
 
 	row["COLUMN_INDEX"] = data.getColumn_index();

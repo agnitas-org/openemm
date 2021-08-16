@@ -39,7 +39,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import net.lingala.zip4j.model.ZipParameters;
-import net.lingala.zip4j.util.Zip4jConstants;
+import net.lingala.zip4j.model.enums.CompressionLevel;
+import net.lingala.zip4j.model.enums.CompressionMethod;
+import net.lingala.zip4j.model.enums.EncryptionMethod;
 
 public class ZipUtilities {
 	/**
@@ -503,23 +505,23 @@ public class ZipUtilities {
 	}
 	
 	public static void compressToEncryptedZipFile(File destinationZipFile, File fileToZip, String fileNameInZip, String zipPassword) throws Exception {
-		net.lingala.zip4j.core.ZipFile zipFile = new net.lingala.zip4j.core.ZipFile(destinationZipFile);
+		net.lingala.zip4j.ZipFile zipFile = new net.lingala.zip4j.ZipFile(destinationZipFile);
 		ZipParameters parameters = new ZipParameters();
-		parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
-		parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_NORMAL);
+		parameters.setCompressionMethod(CompressionMethod.DEFLATE);
+		parameters.setCompressionLevel(CompressionLevel.NORMAL);
 		parameters.setEncryptFiles(true);
-		parameters.setEncryptionMethod(Zip4jConstants.ENC_METHOD_STANDARD);
+		parameters.setEncryptionMethod(EncryptionMethod.ZIP_STANDARD);
 		if (StringUtils.isNotBlank(fileNameInZip)) {
 			parameters.setFileNameInZip(fileNameInZip);
 		}
-		parameters.setPassword(zipPassword.toCharArray());
+		zipFile.setPassword(zipPassword.toCharArray());
 		zipFile.addFile(fileToZip, parameters);
 	}
 	
 	public static void decompressFromEncryptedZipFile(File encryptedZipFile, File decompressToPath, String zipPassword) throws Exception {
 		try {
-			net.lingala.zip4j.core.ZipFile zipFile = new net.lingala.zip4j.core.ZipFile(encryptedZipFile);
-			zipFile.setPassword(zipPassword);
+			net.lingala.zip4j.ZipFile zipFile = new net.lingala.zip4j.ZipFile(encryptedZipFile);
+			zipFile.setPassword(zipPassword.toCharArray());
 			zipFile.extractAll(decompressToPath.getAbsolutePath());
 		} catch (Exception e) {
 			throw new ZipDataException("Cannot unzip data: " + e.getMessage(), e);
@@ -528,7 +530,7 @@ public class ZipUtilities {
 	
 	public static void decompress(File zipFileToDecompress, File decompressToPath) throws Exception {
 		try {
-			net.lingala.zip4j.core.ZipFile zipFile = new net.lingala.zip4j.core.ZipFile(zipFileToDecompress);
+			net.lingala.zip4j.ZipFile zipFile = new net.lingala.zip4j.ZipFile(zipFileToDecompress);
 			zipFile.extractAll(decompressToPath.getAbsolutePath());
 		} catch (Exception e) {
 			throw new ZipDataException("Cannot unzip data: " + e.getMessage(), e);

@@ -34,8 +34,9 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -238,7 +239,7 @@ public class ComMailingComponentsAction extends StrutsActionBase {
                     
                 case ACTION_BULK_DELETE:
                     try {
-                        if (mailingComponentService.deleteHostedImages(companyId, aForm.getMailingID(), aForm.getBulkIds())) {
+                        if (mailingComponentService.deleteImages(companyId, aForm.getMailingID(), aForm.getBulkIds())) {
                             previewImageService.generateMailingPreview(admin, request.getSession().getId(), aForm.getMailingID(), true);
                         }
 
@@ -331,7 +332,7 @@ public class ComMailingComponentsAction extends StrutsActionBase {
 
                 case ACTION_DELETE:
                     MailingComponent mailingComponent = mailingComponentService.getComponent(aForm.getComponentId(), companyId);
-                    if (mailingComponent != null && mailingComponent.getType() == MailingComponent.TYPE_HOSTED_IMAGE) {
+                    if (mailingComponent != null && (mailingComponent.getType() == MailingComponentType.HostedImage || mailingComponent.getType() == MailingComponentType.Image)) {
                         mailingComponentService.deleteComponent(mailingComponent);
                         previewImageService.generateMailingPreview(admin, request.getSession().getId(), aForm.getMailingID(), true);
 
@@ -625,7 +626,7 @@ public class ComMailingComponentsAction extends StrutsActionBase {
 
     protected List<MailingComponent> loadComponents(ComMailingComponentsForm form, HttpServletRequest request) {
         List<MailingComponent> components = mailingComponentService.getComponentsByType(AgnUtils.getCompanyID(request),
-                form.getMailingID(), Arrays.asList(MailingComponent.TYPE_HOSTED_IMAGE, MailingComponent.TYPE_IMAGE));
+                form.getMailingID(), Arrays.asList(MailingComponentType.HostedImage, MailingComponentType.Image));
         request.setAttribute("components", components);
         return components;
     }

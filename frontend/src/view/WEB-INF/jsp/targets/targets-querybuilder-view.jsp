@@ -23,10 +23,6 @@
 <c:set var="ACTION_LOCK" 						value="<%= ComTargetAction.ACTION_LOCK_TARGET_GROUP %>" 		scope="page" />
 <c:set var="ACTION_UNLOCK" 						value="<%= ComTargetAction.ACTION_UNLOCK_TARGET_GROUP %>" 		scope="page" />
 
-<c:set var="COLUMN_TYPE_DATE" value="<%= TargetForm.COLUMN_TYPE_DATE %>" scope="page" />
-<c:set var="COLUMN_TYPE_NUMERIC" value="<%= TargetForm.COLUMN_TYPE_NUMERIC %>" scope="page" />
-<c:set var="COLUMN_TYPE_INTERVAL_MAILING" value="<%= TargetForm.COLUMN_TYPE_INTERVAL_MAILING %>" scope="page" />
-<c:set var="COLUMN_TYPE_STRING" value="<%= TargetForm.COLUMN_TYPE_STRING %>" scope="page" />
 
 <c:set var="OPERATOR_IS" value="<%= ConditionalOperator.IS.getOperatorCode() %>" scope="page" />
 <c:set var="OPERATOR_MOD" value="<%= ConditionalOperator.MOD.getOperatorCode() %>" scope="page" />
@@ -64,7 +60,7 @@
 
 <%--@elvariable id="QueryBuilderTargetGroupForm"--%>
 
-<agn:agnForm action="/targetQB" id="targetForm" data-form="resource" data-initializer="target-group-query-builder">
+<agn:agnForm action="/targetQB" id="targetForm" data-form="resource" data-controller="target-group-view" data-initializer="target-group-view">
 	<html:hidden property="targetID" />
 	<html:hidden property="format" />
 	<html:hidden property="workflowForwardParams" />
@@ -72,12 +68,6 @@
 	<html:hidden property="locked" />
 	<html:hidden property="method" value="save" />
 
-	<script id="config:target-group-query-builder" type="application/json">
-		{
-			"mailTrackingAvailable": ${not empty mailTrackingAvailable ? mailTrackingAvailable : false},
-			"isTargetGroupLocked": ${editTargetForm.locked}
-		}
-	</script>
 
 	<div class="tile">
 		<div class="tile-header">
@@ -165,7 +155,17 @@
 
 		<div class="tile-content tile-content-forms">
 			<c:if test="${editTargetForm.format == 'qb'}">
-				<div id="tab-targetgroupQueryBuilderEditor" ${QB_EDITOR_DIV_SHOW_STATE}>
+				<div id="tab-targetgroupQueryBuilderEditor" ${QB_EDITOR_DIV_SHOW_STATE} data-initializer="target-group-query-builder">
+					<script id="config:target-group-query-builder" type="application/json">
+						{
+							"mailTrackingAvailable": ${not empty mailTrackingAvailable ? mailTrackingAvailable : false},
+							"isTargetGroupLocked": ${editTargetForm.locked},
+							"helpLanguage": "${helplanguage}",
+							"queryBuilderRules": ${emm:toJson(editTargetForm.queryBuilderRules)},
+							"queryBuilderFilters": ${editTargetForm.queryBuilderFilters}
+
+						}
+					</script>
 					<div class="row">
 						<div class="col-md-12">
 							<div class="form-group">
@@ -175,7 +175,6 @@
 								<div class="col-md-12">
 									<div id="targetgroup-querybuilder">
 										<html:hidden property="queryBuilderRules" styleId="queryBuilderRules"/>
-										<html:hidden property="queryBuilderFilters" styleId="queryBuilderFilters"/>
 									</div>
 								</div>
 							</div>

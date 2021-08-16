@@ -13,17 +13,19 @@ package com.agnitas.post;
 import java.util.Date;
 import java.util.List;
 
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.DeliveryStat;
+import com.agnitas.beans.Mailing;
 
 public interface TriggerdialogService {
 	public static final String MASCAMPAIGNID_PREFIX = "EMM_Mailing_";
 	
-	boolean isPostMailing(ComMailing mailing);
+	boolean isPostMailing(Mailing mailing);
 	boolean existsCampaign(int companyID, int mailingID, String shortname) throws Exception;
-	void createExternalMailing(ComMailing mailing) throws Exception;
-	void updateExternalMailing(ComMailing mailing) throws Exception;
-	void createTriggerdialogDelivery(int companyID, int mailingID, Date sendDate);
+	void createExternalMailing(Mailing mailing) throws Exception;
+	void updateExternalMailing(Mailing mailing) throws Exception;
+	void createTriggerdialogDelivery(int companyID, int mailingID, Date sendDate) throws Exception;
 	String createSsoUrl(String triggerDialogBasicUrl, String ssoSharedSecret, int triggerDialogMasId, String triggerDialogMasClientId, String ssoUsername, String ssoEmail, String ssoFirstname, String ssoLastname, int validityInMinutes) throws Exception;
-	List<String> getExternalMailingFields(int companyID, int mailingID);
-	void storeExternalMailingFields(int companyID, int mailingID, List<String> fields);
+	List<TriggerdialogField> getExternalMailingFields(int companyID, int mailingID);
+	void storeExternalMailingFields(int companyID, int mailingID, List<TriggerdialogField> fields);
+	DeliveryStat getTriggerdialogDeliveryStatus(int mailingID) throws Exception;
 }

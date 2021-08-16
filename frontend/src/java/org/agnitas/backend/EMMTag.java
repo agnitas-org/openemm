@@ -1193,7 +1193,7 @@ public class EMMTag {
 				} else {
 					data.logging(Log.WARNING, "emmtag", mTagFullname + ": unknown column referenced for " + internalTagName() + ": " + orig);
 					if (strict) {
-						throw new EMMTagException(data, this, "paramter \"column\" tries to referemce unknown database column " + orig);
+						throw new EMMTagException(data, this, "paramater \"column\" tries to reference unknown database column " + orig, "error.mailing.tag.column.unknown", orig);
 					}
 				}
 			}
@@ -1289,7 +1289,7 @@ public class EMMTag {
 					} else {
 						data.logging(Log.WARNING, "emmtag", mTagFullname + ": invalid code: " + encode);
 						if (strict) {
-							throw new EMMTagException(data, this, "invalid value for paramter \"code\"");
+							throw new EMMTagException(data, this, "invalid value for parameter \"code\"");
 						}
 					}
 				}
@@ -1419,7 +1419,7 @@ public class EMMTag {
 							} else {
 								data.logging(Log.WARNING, "emmtag", mTagFullname + ": no format in date_tbl found for " + mTagFullname);
 								if (strict) {
-									throw new EMMTagException(data, this, "No format in database found for paramter \"type\" " + type);
+									throw new EMMTagException(data, this, "No format in database found for parameter \"type\" " + type);
 								}
 							}
 						} catch (Exception e) {

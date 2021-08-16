@@ -22,6 +22,7 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
@@ -47,18 +48,28 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 	}
 
 	public int prepareReport(int mailingID, @VelocityCheck int companyID, String selectedTargets, String recipientsType) throws Exception {
-		return prepareReport(mailingID, companyID, selectedTargets, recipientsType, new DateFormats());
+		return prepareReport(mailingID, companyID, selectedTargets, null, recipientsType, new DateFormats());
 	}
 
 	public int prepareReport(int mailingID, @VelocityCheck int companyID, String selectedTargets, String recipientsType, DateFormats dateFormats) throws Exception {
+		return prepareReport(mailingID, companyID, selectedTargets, null, recipientsType, dateFormats);
+	}
+
+	public int prepareReport(int mailingID, @VelocityCheck int companyID, String selectedTargets, String hiddenTargetIdStr, String recipientsType, DateFormats dateFormats) throws Exception {
 		int tempTableID = createTempTable();
 
 		insertTargetGroup(CommonKeys.ALL_SUBSCRIBERS, null, mailingID, companyID, tempTableID, CommonKeys.ALL_SUBSCRIBERS_INDEX, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
 		List<LightTarget> targetsList = getTargets(selectedTargets, companyID);
+		final int hiddenTargetId = NumberUtils.toInt(hiddenTargetIdStr, -1);
+		final LightTarget hiddenTarget = hiddenTargetId > 0 ? getTarget(hiddenTargetId, companyID) : null;
+
+		final String hiddenTargetSql = hiddenTarget == null ? null : hiddenTarget.getTargetSQL();
+
 		if (CollectionUtils.isNotEmpty(targetsList)) {
 			int columnIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
 			for (LightTarget target : targetsList) {
-				insertTargetGroup(target.getName(), target.getTargetSQL(), mailingID, companyID, tempTableID, ++columnIndex, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
+				final String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
+				insertTargetGroup(target.getName(), resultTargetSql, mailingID, companyID, tempTableID, ++columnIndex, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
 			}
 		}
 		updateRates(tempTableID);

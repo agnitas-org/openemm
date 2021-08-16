@@ -77,4 +77,6 @@ public interface ComLogonService {
 	boolean isValidPasswordResetTokenHash(String username, String token);
 
 	void riseErrorCount(String username);
+
+	void updateSessionsLanguagesAttributes(ComAdmin admin);
 }

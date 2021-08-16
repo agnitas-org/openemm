@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="org.agnitas.beans.Mailing" %>
+<%@ page import="com.agnitas.beans.Mailing" %>
 <%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>

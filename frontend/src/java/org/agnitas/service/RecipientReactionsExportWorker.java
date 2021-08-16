@@ -11,21 +11,36 @@
 package org.agnitas.service;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.CsvReader;
+import org.agnitas.util.CsvWriter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+
+import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.LinkProperty;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.util.LinkUtils;
 
 /**
  * Event Code 1=Linkklick, 2=Opening, 3=Unsubscribtion, 4=Mail-Delivery, 5=Softbounce, 6=Hardbounce, 7=Blacklist 8=Revenue
  */
 public class RecipientReactionsExportWorker extends GenericExportWorker {
-	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(RecipientReactionsExportWorker.class);
+
+	private ComRecipientDao recipientDao;
+	private ComTrackableLinkDao trackableLinkDao;
 	
 	public static final int MAILING_RECIPIENTS_ALL = 0;
 	public static final int MAILING_RECIPIENTS_OPENED = 1;
@@ -79,8 +94,11 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 		return exportDataEndDate;
 	}
 
-	public RecipientReactionsExportWorker(AutoExport autoExport, Date exportDataStartDate, Date exportDataEndDate, List<String> additionalCustomerFields) {
+	public RecipientReactionsExportWorker(ComRecipientDao recipientDao, ComTrackableLinkDao trackableLinkDao, AutoExport autoExport, Date exportDataStartDate, Date exportDataEndDate, List<String> additionalCustomerFields) {
 		super();
+
+		this.recipientDao = recipientDao;
+		this.trackableLinkDao = trackableLinkDao;
 		
 		this.autoExport = autoExport;
 		this.exportDataStartDate = exportDataStartDate;
@@ -191,7 +209,7 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Clicks
-			sqlSelectStatement.append("SELECT rlog.mailing_id, mail.shortname, rlog.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 1, rlog.timestamp, url.full_url, NULL"
+			sqlSelectStatement.append("SELECT rlog.mailing_id, mail.shortname, rlog.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 1, rlog.timestamp, url.url_id, NULL"
 				+ " FROM rdirlog_" + autoExport.getCompanyId() + "_tbl rlog, customer_" + autoExport.getCompanyId() + "_tbl cust, rdir_url_tbl url, mailing_tbl mail"
 				+ " WHERE rlog.customer_id = cust.customer_id"
 				+ " AND rlog.mailing_id = mail.mailing_id"
@@ -221,6 +239,28 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			// Execute export
 			super.call();
 			
+			// Add link extensions
+			File extendedExportFile = File.createTempFile("ReactionsExtendedExportFile", "");
+			try (CsvReader reader = new CsvReader(new FileInputStream(new File(exportFile)), encoding, delimiter, stringQuote);
+					CsvWriter writer = new CsvWriter(new FileOutputStream(extendedExportFile), encoding, delimiter, stringQuote)) {
+				// skip headers
+				writer.writeValues(reader.readNextCsvLine());
+				List<String> nextLine;
+				while ((nextLine = reader.readNextCsvLine()) != null) {
+					int mailingID = Integer.parseInt(nextLine.get(0));
+					int customerID = Integer.parseInt(nextLine.get(2));
+					String urlIdString = nextLine.get(nextLine.size() - 2);
+					if (StringUtils.isNotEmpty(urlIdString)) {
+						int urlId = Integer.parseInt(urlIdString);
+						String fullUrlWithLinkextensions = createDirectLinkWithOptionalExtensions(autoExport.getCompanyId(), mailingID, customerID, urlId);
+						nextLine.set(nextLine.size() - 2, fullUrlWithLinkextensions);
+					}
+					writer.writeValues(nextLine);
+				}
+			}
+			new File(exportFile).delete();
+			extendedExportFile.renameTo(new File(exportFile));
+			
 			if (error != null) {
 				throw error;
 			}
@@ -233,5 +273,38 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 		}
 		
 		return this;
+	}
+
+	private String createDirectLinkWithOptionalExtensions(int companyID, int mailingID, int customerID, int linkID) throws Exception {
+		ComTrackableLink trackableLink = trackableLinkDao.getTrackableLink(linkID, companyID, true);
+		if (trackableLink != null) {
+			String linkString = trackableLink.getFullUrl();
+			Map<String, Object> cachedRecipientData = null;
+			for (LinkProperty linkProperty : trackableLink.getProperties()) {
+				if (LinkUtils.isExtension(linkProperty)) {
+					String propertyValue = linkProperty.getPropertyValue();
+					if (propertyValue != null && propertyValue.contains("##")) {
+						if (cachedRecipientData == null) {
+							try {
+								cachedRecipientData = recipientDao.getCustomerDataFromDb(companyID, customerID);
+								cachedRecipientData.put("mailing_id", mailingID);
+							} catch (Throwable e) {
+								logger.error("Error occured: " + e.getMessage(), e);
+							}
+						}
+						
+						// Replace customer and form placeholders
+						@SuppressWarnings("unchecked")
+						String replacedPropertyValue = AgnUtils.replaceHashTags(propertyValue, cachedRecipientData);
+						propertyValue = replacedPropertyValue;
+					}
+					// Extend link properly (watch out for html-anchors etc.)
+					linkString = AgnUtils.addUrlParameter(linkString, linkProperty.getPropertyName(), propertyValue == null ? "" : propertyValue, "UTF-8");
+				}
+			}
+			return linkString;
+		} else {
+			return "Link not found";
+		}
 	}
 }

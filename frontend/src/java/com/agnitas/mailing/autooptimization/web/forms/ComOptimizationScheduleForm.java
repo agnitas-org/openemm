@@ -10,12 +10,15 @@
 
 package com.agnitas.mailing.autooptimization.web.forms;
 
+import static org.agnitas.emm.core.commons.util.Constants.DATE_PATTERN_FULL;
+
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.agnitas.emm.core.commons.util.Constants;
-import org.agnitas.emm.core.commons.util.DateUtil;
 import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
@@ -23,7 +26,6 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-import static org.agnitas.emm.core.commons.util.Constants.DATE_PATTERN_FULL;
 
 /**
  * Form for starting an 'autooptimization'.
@@ -101,8 +103,8 @@ public class ComOptimizationScheduleForm extends ActionForm {
 		Date testmailingsSenddate = null;
 		Date resultSenddate = null;
 		try {
-			testmailingsSenddate = DateUtil.parseFullDate(testMailingsSendDateAsString);
-			resultSenddate = DateUtil.parseFullDate(resultSendDateAsString);
+			testmailingsSenddate = new SimpleDateFormat(Constants.DATE_PATTERN_FULL).parse(testMailingsSendDateAsString);
+			resultSenddate = new SimpleDateFormat(Constants.DATE_PATTERN_FULL).parse(resultSendDateAsString);
 		} catch (ParseException e) {
 			logger.error("Error occured: " + e.getMessage(), e);
 		}

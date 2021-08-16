@@ -6,7 +6,8 @@
 @mixin button-variant(
   $color,
   $background,
-  $border: rgba(0,0,0,0)
+  $border: rgba(0,0,0,0),
+  $greyed: true
 ) {
   color: $color;
   background-color: $background;
@@ -38,8 +39,16 @@
     &:active,
     &.active,
     &.is-active {
-      background-color: $background;
-          border-color: $border;
+
+      @if $greyed {
+        color: darken($c-gray-20, 30%);
+        background-color: darken($c-gray-11, 10%);
+        border-color: darken($c-gray-11, 12%);
+      } @else {
+        color: $color;
+        background-color: $background;
+        border-color: $border;
+      }
     }
   }
 

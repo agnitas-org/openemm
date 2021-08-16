@@ -12,18 +12,14 @@ package com.agnitas.web;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+
 import javax.servlet.http.HttpServletRequest;
 
-import com.agnitas.beans.ComContentSource;
-import com.agnitas.beans.ProfileField;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.impl.DynamicTagContentImpl;
 import org.agnitas.util.AgnUtils;
@@ -33,6 +29,13 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
+
+import com.agnitas.beans.ComContentSource;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
 
 public class ComMailingContentForm extends StrutsFormBase {
     private static final long serialVersionUID = -2580120975819583381L;
@@ -51,6 +54,8 @@ public class ComMailingContentForm extends StrutsFormBase {
     private List<TargetLight> availableTargetGroups;
     private List<ProfileField> availableInterestGroups;
     private List<ComContentSource> availableContentSources;
+    
+    private Map<String, String[]> variabletypes = new HashMap<>();
 
     /**
      * A content can be sorted by an interestgroup, which the name of a column in customer_field_tbl.
@@ -98,6 +103,10 @@ public class ComMailingContentForm extends StrutsFormBase {
 	private String externalCustomerFieldRemove = "";
 	private String externalReferenceFieldAdd = "";
 	private String externalReferenceFieldRemove = "";
+	
+	private String salutationTagType = "";
+	private String salutationType = "";
+	private String genderLanguage = "";
     
     /**
      * Validate the properties that have been set from this HTTP request,
@@ -581,6 +590,8 @@ public class ComMailingContentForm extends StrutsFormBase {
 		externalCustomerFieldRemove = "";
 		externalReferenceFieldAdd = "";
 		externalReferenceFieldRemove = "";
+		
+		variabletypes = new HashMap<>();
     }
 
     public int getWorkflowId() {
@@ -669,5 +680,33 @@ public class ComMailingContentForm extends StrutsFormBase {
 
 	public void setExternalReferenceFieldRemove(String externalReferenceFieldRemove) {
 		this.externalReferenceFieldRemove = externalReferenceFieldRemove;
+	}
+
+	public String getSalutationTagType() {
+		return salutationTagType;
+	}
+
+	public void setSalutationTagType(String salutationTagType) {
+		this.salutationTagType = salutationTagType;
+	}
+
+	public String getSalutationType() {
+		return salutationType;
+	}
+
+	public void setSalutationType(String salutationType) {
+		this.salutationType = salutationType;
+	}
+
+	public String getGenderLanguage() {
+		return genderLanguage;
+	}
+
+	public void setGenderLanguage(String genderLanguage) {
+		this.genderLanguage = genderLanguage;
+	}
+
+	public Map<String, String[]> getVariabletypes() {
+		return variabletypes;
 	}
 }

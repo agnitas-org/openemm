@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.preview.Page;
 import org.agnitas.preview.Preview;
@@ -96,7 +97,7 @@ public class DownloadComponent extends HttpServlet {
 	            byte[] attachment = null;
 	            int mailingID = comp.getMailingID();
 	
-	            if( comp.getType() == MailingComponent.TYPE_PERSONALIZED_ATTACHMENT) {
+	            if( comp.getType() == MailingComponentType.PersonalizedAttachment) {
 	                Page page = null;
 	                if( customerID == 0 ){ // no customerID is available, take the 1st available test recipient
 	                	ComRecipientDao recipientDao = (ComRecipientDao) applicationContext.getBean("RecipientDao");

@@ -10,7 +10,7 @@ public class OpenemmRecipientExportWorkerFactory implements RecipientExportWorke
 	private ComTargetService targetService;
 
 	@Override
-	public RecipientExportWorker newWorker(ExportPredef exportProfile, ComAdmin admin) {
+	public RecipientExportWorker newWorker(ExportPredef exportProfile, ComAdmin admin) throws Exception {
 		return new RecipientExportWorker(exportProfile, admin, targetService);
 	}
 

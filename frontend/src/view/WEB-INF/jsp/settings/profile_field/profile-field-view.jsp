@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page import="org.agnitas.util.DbColumnType" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
@@ -8,6 +9,10 @@
 
 <%--@elvariable id="profileForm" type="com.agnitas.emm.core.profilefields.form.ProfileFieldForm"--%>
 <%--@elvariable id="isNewField" type="java.lang.Boolean"--%>
+
+<c:set var="GENERIC_TYPE_INTEGER" value="<%= DbColumnType.GENERIC_TYPE_INTEGER %>"/>
+<c:set var="GENERIC_TYPE_FLOAT" value="<%= DbColumnType.GENERIC_TYPE_FLOAT %>"/>
+<c:set var="GENERIC_TYPE_VARCHAR" value="<%= DbColumnType.GENERIC_TYPE_VARCHAR %>"/>
 
 <mvc:form servletRelativeAction="/profiledb/save.action" data-form="resource" id="profileFieldForm" method="POST"
 		  data-controller="profile-field-view" modelAttribute="profileForm">
@@ -120,7 +125,7 @@
 				</c:if>
 
 				<c:if test="${not isNewField}">
-					<c:if test="${profileForm.fieldType == 'VARCHAR'}">
+					<c:if test="${profileForm.fieldType == GENERIC_TYPE_VARCHAR}">
 						<div class="form-group">
 							<div class="col-sm-4">
 								<label class="control-label"><bean:message key="settings.Length"/></label>
@@ -198,7 +203,7 @@
 						</label>
 					</div>
 				</div>
-				<c:if test="${profileForm.fieldType == 'INTEGER' || profileForm.fieldType == 'DOUBLE'}">
+				<c:if test="${profileForm.fieldType == GENERIC_TYPE_INTEGER || profileForm.fieldType == GENERIC_TYPE_FLOAT}">
 					<div id="interestDiv" class="form-group">
 						<div class="col-sm-4">
 							<label class="control-label" for="interest"><bean:message key="FieldIsInterest"/></label>

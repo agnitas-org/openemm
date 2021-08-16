@@ -70,10 +70,9 @@ public class DeepTrackingToken {
 			String tokenHashValue = tokenString.substring(32);
 			
 			DeepTrackingToken deepTrackingToken = new DeepTrackingToken(companyID, mailingID, customerID, linkID);
-			String validHashValueMD5 = deepTrackingToken.createDataHashWithXorKeyMD5();
 			String validHashValueSHA512 = deepTrackingToken.createDataHashWithXorKeySHA512();
 			
-			if (tokenHashValue.equals(validHashValueMD5) || tokenHashValue.equals(validHashValueSHA512)) {
+			if (tokenHashValue.equals(validHashValueSHA512)) {
 				return deepTrackingToken;
 			} else {
 				throw new Exception("Invalid DeepTrackingToken verification: " + tokenString);
@@ -92,10 +91,9 @@ public class DeepTrackingToken {
 			String tokenHashValue = tokenString.substring(32);
 			
 			DeepTrackingToken deepTrackingToken = new DeepTrackingToken(companyID, mailingID, customerID, linkID);
-			String validHashValueMD5 = deepTrackingToken.createNewDataHashWithXorKeyMD5();
 			String validHashValueSHA512 = deepTrackingToken.createNewDataHashWithXorKeySHA512();
 
-			if (tokenHashValue.equals(validHashValueMD5) || tokenHashValue.equals(validHashValueSHA512)) {
+			if (tokenHashValue.equals(validHashValueSHA512)) {
 				return deepTrackingToken;
 			} else {
 				throw new Exception("Invalid DeepTrackingToken verification: " + tokenString);
@@ -184,80 +182,6 @@ public class DeepTrackingToken {
 			.append(createNewDataHashWithXorKeySHA512())
 			.append("g");
 		return tokenBuilder.toString();
-	}
-	
-	/**
-	 * Create the verification hash key for this DeepTrackingToken
-	 * 
-	 * @deprecated To be removed after full introducion of SHA512
-	 */
-	@Deprecated
-	private String createDataHashWithXorKeyMD5() throws Exception {
-		try {
-			StringBuilder hashBase = new StringBuilder("agn")
-				.append(mailingID)
-				.append("a")
-				.append(linkID)
-				.append("g")
-				.append(customerID)
-				.append("n")
-				.append(XOR_KEY)
-				.append("i")
-				.append(companyID)
-				.append("t");
-			StringBuilder hashResult = new StringBuilder();
-			
-			MessageDigest md5Digest = MessageDigest.getInstance("MD5");
-			md5Digest.reset();
-			md5Digest.update(hashBase.toString().getBytes("US-ASCII"));
-			byte[] hashBytes = md5Digest.digest();
-			
-			for (int i = 0; i < hashBytes.length; i = i + 4) {
-				Byte hashByte = hashBytes[i];
-				hashResult.append(leftPadWithZeros(Integer.toHexString(hashByte.intValue() & 255), 2));
-			}
-			return hashResult.toString();
-		} catch (Exception e) {
-			throw new Exception("Couldn't make digest of partial content: " + e.getMessage(), e);
-		}
-	}
-	
-	/**
-	 * Create the verification hash key for this DeepTrackingToken
-	 * This is the same algorithm as "createDataHashWithXorKey", but sum of customerID and linkID is used as customerID -value in hashBase
-	 * This seems to be some legacy bug
-	 * 
-	 * @deprecated To be removed after full introducion of SHA512
-	 */
-	@Deprecated
-	private String createNewDataHashWithXorKeyMD5() throws Exception {
-		try {
-			StringBuilder hashBase = new StringBuilder("agn")
-				.append(mailingID)
-				.append("a")
-				.append(linkID)
-				.append("g")
-				.append(customerID + linkID)
-				.append("n")
-				.append(XOR_KEY)
-				.append("i")
-				.append(companyID)
-				.append("t");
-			StringBuilder hashResult = new StringBuilder();
-			
-			MessageDigest md5Digest = MessageDigest.getInstance("MD5");
-			md5Digest.reset();
-			md5Digest.update(hashBase.toString().getBytes("US-ASCII"));
-			byte[] hashBytes = md5Digest.digest();
-			
-			for (int i = 0; i < hashBytes.length; i = i + 4) {
-				Byte hashByte = hashBytes[i];
-				hashResult.append(leftPadWithZeros(Integer.toHexString(hashByte.intValue() & 255), 2));
-			}
-			return hashResult.toString();
-		} catch (Exception e) {
-			throw new Exception("Couldn't make digest of partial content: " + e.getMessage(), e);
-		}
 	}
 	
 	/**

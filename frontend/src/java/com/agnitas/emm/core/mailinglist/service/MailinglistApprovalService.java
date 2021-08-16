@@ -60,9 +60,13 @@ public interface MailinglistApprovalService {
 	 * Check is admin have any disabled mailing lists.
 	 */
 	boolean hasAnyDisabledMailingListsForAdmin(ComAdmin admin);
-	
+
+	boolean hasAnyDisabledRecipientBindingsForAdmin(ComAdmin admin, int recipientId);
+
 	boolean hasAnyDisabledMailingListsForAdmin(@VelocityCheck int companyId, int adminId);
 
 	boolean editUsersApprovalPermissions(int companyId, int mailinglistId, Set<Integer> allowedUserIds, List<UserAction> userActions);
+
+	List<Integer> getMailinglistsWithMailinglistApproval(int companyId);
 
 }

@@ -22,6 +22,7 @@ public class MailingBaseImpl implements MailingBase {
 	protected int id;
 	protected int companyID;
 	protected int campaignID;
+	protected boolean onlyPostType;
 	private Mailinglist mailinglist;
 	private Date sendDate;
 	private boolean hasActions;
@@ -156,4 +157,13 @@ public class MailingBaseImpl implements MailingBase {
 		this.useDynamicTemplate = useDynamicTemplate;
 	}
 
+	@Override
+	public boolean isOnlyPostType() {
+		return onlyPostType;
+	}
+
+	@Override
+	public void setOnlyPostType(boolean isOnlyPostType) {
+		this.onlyPostType = isOnlyPostType;
+	}
 }

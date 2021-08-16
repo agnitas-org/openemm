@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.TargetLight;
@@ -106,7 +106,7 @@ public interface ComWorkflowService {
 
     List<UserForm> getAllUserForms(int companyId);
 
-    ComMailing getMailing(int mailingId, int companyId);
+    Mailing getMailing(int mailingId, int companyId);
 
     Map<String, Object> getMailingWithWorkStatus(int mailingId, int companyId);
 
@@ -146,7 +146,7 @@ public interface ComWorkflowService {
      * @return {@code true} if data was collected or {@code false} if some arguments were invalid
      *  or workflow has invalid structure so settings can't be collected.
      */
-    boolean assignWorkflowDrivenSettings(ComAdmin admin, ComMailing mailing, int workflowId, int iconId);
+    boolean assignWorkflowDrivenSettings(ComAdmin admin, Mailing mailing, int workflowId, int iconId);
 
     List<List<WorkflowNode>> getChains(WorkflowIcon icon, List<WorkflowIcon> icons, boolean isForwardDirection);
 

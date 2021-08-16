@@ -1,17 +1,14 @@
 AGN.Lib.Controller.new('recipient-list', function () {
   var self = this;
 
-
   function checkAndRedirect(link, recipientId, checkLimitAccessUrl, viewUrl) {
     checkLimitAccessUrl = checkLimitAccessUrl.replace("{RECIPIENT_ID}", recipientId);
     $.ajax({
         url: checkLimitAccessUrl,
         type: "POST"
-    }).always(function(response) {
-        var accessible = false;
-        if (!!response) {
-            accessible = response.accessAllowed;
-        }
+    }).done(function(response) {
+      if (response && response.hasOwnProperty('accessAllowed')) {
+        var accessible = response.accessAllowed;
 
         if (accessible) {
           AGN.Lib.JsonMessages({}, true);
@@ -19,6 +16,9 @@ AGN.Lib.Controller.new('recipient-list', function () {
         } else {
           AGN.Lib.Messages(t("Error"), t("error.recipient.restricted"), "alert");
         }
+      } else {
+        console.error("Could not check access for recipient with id: " + recipientId);
+      }
     }).fail(function () {
         console.error("Could not check access for recipient with id: " + recipientId);
     });
@@ -149,8 +149,12 @@ AGN.Lib.Controller.new('recipient-list', function () {
     'click': 'choose-advanced-search'
   }, function () {
     if ($('#search_first_name').val().trim() ||
-        $('#search_name').val().trim() || $('#search_email').val().trim()) {
-      $('#recipientForm').submit();
+        $('#search_name').val().trim() ||
+      $('#search_email').val().trim()) {
+
+      var form = AGN.Lib.Form.get($('#recipientForm'));
+      form.setValueOnce("changeToAdvancedSearch", true);
+      form.submit();
     }
   });
 

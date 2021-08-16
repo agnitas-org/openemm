@@ -20,6 +20,7 @@ import org.agnitas.backend.BlockData;
 import org.agnitas.backend.DBase;
 import org.agnitas.backend.Media;
 import org.agnitas.backend.StringOps;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.util.Const;
 import org.agnitas.util.Log;
 
@@ -35,16 +36,16 @@ public class ComponentDAO {
 		mailingID = forMailingID;
 	}
 
-	public List<BlockData> retrieve(DBase dbase, int[] componentTypes) throws SQLException {
+	public List<BlockData> retrieve(DBase dbase, MailingComponentType[] componentTypes) throws SQLException {
 		List<BlockData> rc = new ArrayList<>();
 		String reduceClause = null;
 
 		if ((componentTypes != null) && (componentTypes.length > 0)) {
 			reduceClause = " AND comptype ";
 			if (componentTypes.length > 1) {
-				reduceClause += "IN (" + Arrays.stream(componentTypes).boxed().map(e -> e.toString()).reduce((s, e) -> s + "," + e).orElse(null) + ")";
+				reduceClause += "IN (" + Arrays.stream(componentTypes).map(e -> Integer.toString(e.getCode())).reduce((s, e) -> s + "," + e).orElse(null) + ")";
 			} else {
-				reduceClause += "= " + componentTypes[0];
+				reduceClause += "= " + componentTypes[0].getCode();
 			}
 		}
 		

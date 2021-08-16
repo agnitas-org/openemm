@@ -13,7 +13,6 @@ package com.agnitas.emm.core.admin.web;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,23 +102,25 @@ public class PermissionsOverviewData {
 	            } else {
 	            	permissionsCategories = collectPermissionsByCategory(groupToEdit, filtered);
 	            }
-	            sortPermissionsMap(permissionsCategories);
 	            
 	            options.permissionsCategories.putAll(permissionsCategories);
 	            return options;
             }
         }
     
-        private void sortPermissionsMap(Map<String, PermissionCategoryEntry> permissionsCategories) {
-            for (PermissionCategoryEntry categoryEntry : permissionsCategories.values()) {
-                for (PermissionSubCategoryEntry subCategoryEntry : categoryEntry.subCategories.values()) {
-                    subCategoryEntry.permissions.sort(Comparator.comparing(o -> o.name));
-                }
-            }
-        }
-    
         private Map<String, PermissionCategoryEntry> collectPermissionsByCategory(ComAdmin adminToCollectPermissionsFor, Set<Permission> filteredVisiblePermissions) {
 			Map<String, PermissionCategoryEntry> permissionsCategories = new TreeMap<>();
+			for (String orderedCategory : Permission.CATEGORY_DISPLAY_ORDER) {
+				permissionsCategories.put(orderedCategory, new PermissionCategoryEntry(orderedCategory));
+				if (Permission.SUBCATEGORY_DISPLAY_ORDER.containsKey(orderedCategory)) {
+					PermissionCategoryEntry permissionCategoryEntry = permissionsCategories.get(orderedCategory);
+					permissionCategoryEntry.subCategories.put("", new PermissionSubCategoryEntry(""));
+					for (String orderedSubCategory : Permission.SUBCATEGORY_DISPLAY_ORDER.get(orderedCategory)) {
+						permissionCategoryEntry.subCategories.put(orderedSubCategory, new PermissionSubCategoryEntry(orderedSubCategory));
+					}
+				}
+			}
+			
 			List<Permission> filteredAndSortedVisiblePermissions = new ArrayList<>(filteredVisiblePermissions);
 			Collections.sort(filteredAndSortedVisiblePermissions);
 			for (Permission permission : filteredAndSortedVisiblePermissions) {
@@ -161,6 +162,17 @@ public class PermissionsOverviewData {
     
         private Map<String, PermissionCategoryEntry> collectPermissionsByCategory(AdminGroup groupToCollectPermissionsFor, Set<Permission> filteredVisiblePermissions) {
 			Map<String, PermissionCategoryEntry> permissionsCategories = new TreeMap<>();
+			for (String orderedCategory : Permission.CATEGORY_DISPLAY_ORDER) {
+				permissionsCategories.put(orderedCategory, new PermissionCategoryEntry(orderedCategory));
+				if (Permission.SUBCATEGORY_DISPLAY_ORDER.containsKey(orderedCategory)) {
+					PermissionCategoryEntry permissionCategoryEntry = permissionsCategories.get(orderedCategory);
+					permissionCategoryEntry.subCategories.put("", new PermissionSubCategoryEntry(""));
+					for (String orderedSubCategory : Permission.SUBCATEGORY_DISPLAY_ORDER.get(orderedCategory)) {
+						permissionCategoryEntry.subCategories.put(orderedSubCategory, new PermissionSubCategoryEntry(orderedSubCategory));
+					}
+				}
+			}
+			
 			List<Permission> filteredAndSortedVisiblePermissions = new ArrayList<>(filteredVisiblePermissions);
 			Collections.sort(filteredAndSortedVisiblePermissions);
 			for (Permission permission : filteredAndSortedVisiblePermissions) {
@@ -274,7 +286,8 @@ public class PermissionsOverviewData {
         
         public PermissionCategoryEntry(String name) {
             this.name = name;
-            this.subCategories = new TreeMap<>();
+            // Using LinkedHashMap to keep the sorted order
+            subCategories = new LinkedHashMap<>();
         }
     
         public String getName() {

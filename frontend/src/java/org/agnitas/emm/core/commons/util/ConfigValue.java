@@ -44,20 +44,13 @@ public class ConfigValue {
 
 	public static final ConfigValue SystemSaltFile = new ConfigValue("system.salt.file", "${HOME}/conf/keys/emm.salt");
 
-	/** Path of private key file for secured statistics calls (public-private-key method) **/
+	/** Private key for secured statistics calls (public-private-key method) **/
 	public static final ConfigValue BirtPrivateKey = new ConfigValue("birt.privatekey");
-	/** Path of public key file for secured statistics calls (public-private-key method) **/
+	/** Public key for secured statistics calls (public-private-key method) **/
 	public static final ConfigValue BirtPublicKey = new ConfigValue("birt.publickey");
-	
-	/** To be removed in near future, replaced by BirtPrivateKey **/
-	public static final ConfigValue BirtPrivateKeyFile = new ConfigValue("birt.privatekeyfile", "${HOME}/conf/keys/birt_private.pem");
-	/** To be removed in near future, replaced by BirtPublicKey **/
-	public static final ConfigValue BirtPublicKeyFile = new ConfigValue("birt.publickeyfile", "${HOME}/conf/keys/birt_public.pem");
-	
+		
 	public static final ConfigValue BirtErrorPage = new ConfigValue("birt.errorPage", "/webcontent/birt/pages/common/Error.jsp");
 	public static final ConfigValue BirtHostUser = new ConfigValue("birt.host.user", "console");
-	/** Url of the birt application to go deeper in some statistic values **/
-	public static final ConfigValue BirtDrilldownUrl = new ConfigValue("birt.drilldownurl");
 
 	public static final ConfigValue IgnoreDeletedI18NMessagesHosts = new ConfigValue("system.ignoreDeletedMessagesHosts");
 	
@@ -87,9 +80,7 @@ public class ConfigValue {
 	/** The mailing size (in Bytes) that should trigger an error message (Default 10 MB) **/
 	public static final ConfigValue MailingSizeErrorThresholdBytes = new ConfigValue("company.mailingSizeErrorThresholdBytes", "10485760");
 	
-	public static final ConfigValue GridTemplateImportAllowed = new ConfigValue("import.gridTemplateAllowed", "false");
-
-	public static final ConfigValue UseNewCssLibForStylesEmbedding = new ConfigValue("company.useNewCssLibForStylesEmbedding", "false");
+	public static final ConfigValue CampaignEnableTargetGroups = new ConfigValue("campaign-enable-target-groups", "false");
 
 	/** Installation path of html to pdf converter application **/
 	public static final ConfigValue WkhtmlToPdfToolPath = new ConfigValue("system.wkhtmltopdf", "/usr/bin/wkhtmltopdf");
@@ -119,7 +110,6 @@ public class ConfigValue {
 
 	public static final ConfigValue Linkchecker_Linktimeout = new ConfigValue("linkchecker.linktimeout", "30000");
 	public static final ConfigValue Linkchecker_Threadcount = new ConfigValue("linkchecker.threadcount", "25");
-	public static final ConfigValue Linkchecker_LocalUrlDetection = new ConfigValue("linkchecker.detectLocalUrls", "true");
 	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0");
 
 	public static final ConfigValue Predelivery_Litmusapikey = new ConfigValue("predelivery.litmusapikey");
@@ -129,12 +119,11 @@ public class ConfigValue {
 	public static final ConfigValue Predelivery_LitmusStatusUrl = new ConfigValue("predelivery.litmusstatusurl", "https://status.litmus.com/");
 	public static final ConfigValue Predelivery_RetentionDays = new ConfigValue("predelivery.retentationDays", "90");
 	public static final ConfigValue Predelivery_PollingTimeoutSeconds = new ConfigValue("predelivery.timeout.polling.seconds", "7200");
+	public static final ConfigValue Predelivery_MaximumParallelTests = new ConfigValue("predelivery.maximum_parallel_tests", "25");
+	public static final ConfigValue Predelivery_MaximumExecutorShutdownSeconds = new ConfigValue("predelivery.maximum_executor_shutdown_seconds", "300");
 	
 	public static final ConfigValue RdirUndecodableLinkUrl = new ConfigValue("rdir.undecodableLink.url", "/assets/rdir/404/404.html");
 	
-	public static final ConfigValue Thumbnail_Generate = new ConfigValue("thumbnail.generate");
-	public static final ConfigValue Thumbnail_Scalex = new ConfigValue("thumbnail.scalex");
-	public static final ConfigValue Thumbnail_Scaley = new ConfigValue("thumbnail.scaley");
 	public static final ConfigValue Thumbnail_Sizex = new ConfigValue("thumbnail.sizex", "119");
 	public static final ConfigValue Thumbnail_Sizey = new ConfigValue("thumbnail.sizey", "84");
 	public static final ConfigValue Thumbnail_Treshold = new ConfigValue("thumbnail.treshold");
@@ -166,14 +155,10 @@ public class ConfigValue {
 	public static final ConfigValue UserActivityLog_Expire = new ConfigValue("system.UserActivityLog.Expire", "180");
 	public static final ConfigValue SupervisorBinding_Expire = new ConfigValue("system.SupervisorBinding.Expire", "365");
 	public static final ConfigValue SupervisorGrant_Expire = new ConfigValue("system.SupervisorGrant.Expire", "180");
+	public static final ConfigValue Report_Expire = new ConfigValue("system.Report.Expire", "365");
+	public static final ConfigValue ExportReport_Expire = new ConfigValue("system.ExportReport.Expire", "90");
 
 	public static final ConfigValue DontWriteLatestDatasourceId = new ConfigValue("system.DontWriteLatestDatasourceId");
-
-	/* TODO (EMM-6234) Remove after complete migration. */
-	public static final ConfigValue MigrateTargetGroupsOnStartup = new ConfigValue("targetgroups.migrateOnStartup", "false");
-
-	// TODO: remove when all evaluations are complete.
-	public static final ConfigValue InitializeTargetGroupComplexityIndicesOnStartup = new ConfigValue("targetgroups.evaluateComplexityOnStartup", "false");
 
 	/** Default SFTP Server and credentials (encrypted) */
 	public static final ConfigValue DefaultSftpServerAndCredentials = new ConfigValue("company.default_sftp_server_and_credentials");
@@ -260,7 +245,9 @@ public class ConfigValue {
 	
 	/** Password policy for supervisors to use. */
 	public static final ConfigValue SupervisorPasswordPolicy = new ConfigValue("password.policy.supervisor", PasswordPolicies.DEFAULT_POLICY.getPolicyName());
-	
+
+	/** Activation of delivery-tracking */
+	public static final ConfigValue DeliveryTracking = new ConfigValue("delivery-tracking");
 	
 	/** Default expiration of delivery-tracking */
 	public static final ConfigValue ExpireDeliveryTracking = new ConfigValue("expire.deliverytracking", "30");
@@ -279,9 +266,6 @@ public class ConfigValue {
 
 	/** Default value for age of entries in success tables **/
 	public static final ConfigValue ExpireSuccessDefault = new ConfigValue("expire.SuccessDef", "180");
-
-	/** Default value for age of entries in recipients_report_tbl **/
-	public static final ConfigValue ExpireRecipientsReport = new ConfigValue("expire-recipients-report", "90");
 
 	/** Maximum time in seconds for statictic values cache (restart summary if requested after that time) **/
 	public static final ConfigValue ExpireStatisticSummary = new ConfigValue("statistic.summary.expiredAfterSeconds", "900");
@@ -415,6 +399,9 @@ public class ConfigValue {
 	public static final ConfigValue SkipLogonIframeUrlCheck = new ConfigValue("logon.iframe.url.skipCheck", "false");
 
 	public static final ConfigValue CleanupBindingsOfDeletedMailinglists = new ConfigValue("cleanup.bindings_of_deleted_mailinglists");
+	
+	//Hold data of deactivated feature for 60 days
+	public static final ConfigValue FeatureDataCleanupPeriod = new ConfigValue("cleanup.feature_data", "60");
 
 	/** Fill the fields "lastopen_date" and "lastclick_date" in customer table. Watchout: These fields may not exist **/
 	public static final ConfigValue WriteCustomerOpenOrClickField = new ConfigValue("measure.writecustomeropenorclickfield");
@@ -458,8 +445,6 @@ public class ConfigValue {
 	public static final ConfigValue LocaleCountry = new ConfigValue("locale-country");
 	public static final ConfigValue LocaleTimezone = new ConfigValue("locale-timezone");
 
-	public static final ConfigValue MessengerDeliveryMessageNSecondsBeforeSendTime = new ConfigValue("messenger.deliverMessageNSecondsBeforeSendTime", "300");
-
 	public static final ConfigValue EnabledUIDVersion = new ConfigValue("company.enabledUIDVersion", "3");
 
 	public static final ConfigValue EnableTrackingVeto = new ConfigValue("recipients.enableTrackingVeto", "true");
@@ -500,6 +485,16 @@ public class ConfigValue {
 	 * Maximum overall size of mediapool per company in bytes (1610612736 = 1,5 GB)
 	 */
 	public static final ConfigValue MediapoolMaximumSizeBytes = new ConfigValue("MediapoolMaximumSizeBytes", "1610612736");
+	
+	/**
+	 * Maximum overall size of Uploads per company in bytes (1610612736 = 1,5 GB)
+	 */
+	public static final ConfigValue UploadMaximumOverallSizeBytes = new ConfigValue("UploadMaximumOverallSizeBytes", "1610612736");
+	
+	/**
+	 * Maximum size of a single upload in bytes (67108864 = 64MB)
+	 */
+	public static final ConfigValue UploadMaximumSizeBytes = new ConfigValue("UploadMaximumSizeBytes", "67108864");
 
 	public static final ConfigValue ImageTrafficMeasuring = new ConfigValue("ImageTrafficMeasuring", "true");
 
@@ -515,6 +510,11 @@ public class ConfigValue {
 	public static final ConfigValue AdvancedHardbounceActivationStatus = new ConfigValue("ahv:is-enabled");
 	
 	public static final ConfigValue OptimzedMailingGenerationStatus = new ConfigValue("omg:is-enabled");
+
+	public static final ConfigValue UserFormCssLocation = new ConfigValue("userform.css.url", "https://rdir.de/content/1/basic/forms");
+	
+	/** Do not read this value by configservice, so it is not cached **/
+	public static final ConfigValue JobQueueExecute = new ConfigValue("jobqueue.execute", "0");
 	
 	/** All config values related to Facebook. */
 	public static final class Facebook {
@@ -560,6 +560,31 @@ public class ConfigValue {
 		public static final ConfigValue WebserviceBulkDataSizeLimit = new ConfigValue("webservice.bulk_data_size_limit", "0");		// Total size of requested data in bytes, 0: unlimited
 
 		public static final ConfigValue WebservicesUrl = new ConfigValue("webservices.url");
+
+		/** Default settings for API call limits. Current: 1.000 per hour and 10 per seconds. */
+		public static final ConfigValue DefaultApiCallLimits = new ConfigValue("webservice.default_api_call_limits", "1000/PT1H;10/PT1S");
+
+		public static final ConfigValue WebserviceCostsCacheRetentionSeconds = new ConfigValue("webservice.costs_cache_retention_seconds", "300");
+	}
+	
+	public static final class Webhooks {
+
+		/** Switch to enable webhook interface. */
+		public static final ConfigValue WebhooksEnabled = new ConfigValue("webhooks.enabled", "false");
+
+		/** Maximum number of retry attempts. */
+		public static final ConfigValue MaximumRetryCount = new ConfigValue("webhooks.retries.maxCount", "10");
+		
+		/** Number of seconds between this send attempt and next retry. */
+		public static final ConfigValue RetryDelaySeconds = new ConfigValue("webhooks.retries.delaySeconds", "600");
+		
+		/** Socket timeout in milliseconds. */
+		public static final ConfigValue SocketTimeoutMillis = new ConfigValue("webhooks.transport.socketTimeoutMillis", "10000");
+		
+		/** Connect timeout in milliseconds. */
+		public static final ConfigValue ConnectTimeoutMillis = new ConfigValue("webhooks.transport.connectTimeoutMillis", "10000");
+
+		public static final ConfigValue MessageRetentionTimeSeconds = new ConfigValue("webhooks.messages.retentionSeconds", "86400");
 		
 	}
 	
@@ -567,10 +592,20 @@ public class ConfigValue {
 	 * Collection of config value for development purpose only.
 	 */
 	public static final class Development {
+		// TODO Remove after rollout EMM-3332
+		public static final ConfigValue UseBackendMailingPreview = new ConfigValue("development.use_backend_mailing_preview", "true");
+		
 		// TODO Remove after rollout EMM-7992
-		public static final ConfigValue UseNewBlacklistWildcards = new ConfigValue("development.use_new_blacklist_wildcards", "false");
-	}
+		public static final ConfigValue UseNewBlacklistWildcards = new ConfigValue("development.use_new_blacklist_wildcards", "true");
+		
+		// TODO Remove after rollout EMM-7975
+		public static final ConfigValue UseNewLitmusPolling = new ConfigValue("development.use_new_litmus_polling", "false");
 
+		public static final ConfigValue CopyMailingMeasureTiming = new ConfigValue("development.CopyMailing.measureTiming", "false");
+		
+		public static final ConfigValue UseNewWebserviceRateLimiting = new ConfigValue("development.useNewWebserviceRateLimiting", "false");
+	}
+	
 	// Fallback values for backend
 	public static final ConfigValue MailOut_Loglevel = new ConfigValue("mailout.ini.loglevel");
 	public static final ConfigValue MailOut_MailDir = new ConfigValue("mailout.ini.maildir");
@@ -615,6 +650,8 @@ public class ConfigValue {
 	public static final ConfigValue MaximumMailinglistsPerReport = new ConfigValue("report.MaximumMailinglistsPerReport", "60");
 
 	public static final ConfigValue LoginIframe_Show = new ConfigValue("login.iframe.show", "true");
+	
+	public static final ConfigValue ProviderDeliveryLastExpire = new ConfigValue("provider-delivery.last-expire");
 
 	/** Languages for help balloons. This is not the language list for online help / manual, but for GUI help balloons **/
 	public static final ConfigValue OnlineHelpLanguages = new ConfigValue("onlinehelp.languages", "de;en;fr");
@@ -635,11 +672,22 @@ public class ConfigValue {
 	public static final ConfigValue TriggerDialogSsoEmail = new ConfigValue("triggerdialog.ssoEmail");
 	public static final ConfigValue TriggerDialogSsoFirstname = new ConfigValue("triggerdialog.ssoFirstname");
 	public static final ConfigValue TriggerDialogSsoLastname = new ConfigValue("triggerdialog.ssoLastname");
+	
+	public static final ConfigValue TriggerDialogDryRun = new ConfigValue("triggerdialog.dryRun");
 
 	public static final ConfigValue SsoLoginHeaderType = new ConfigValue("system.SsoLoginHeaderType");
 
-	public static final ConfigValue UseSpringMvcFormController = new ConfigValue("UseSpringMvcFormController", "false");
+	public static final ConfigValue UpsellingInfoUrlEnglish = new ConfigValue("upselling.moreInfo.url.en");
+	public static final ConfigValue UpsellingInfoUrlGerman = new ConfigValue("upselling.moreInfo.url.de");
 
+	public static final ConfigValue MaximumContentLinesForUnindexedImport = new ConfigValue("import.maximumContentLinesForUnindexedImport", "-1");
+
+	public static final ConfigValue SendPasswordChangedNotification = new ConfigValue("notifications.sendPasswordChanged", "true");
+
+	public static final ConfigValue MaxmiumMailinglistApproval = new ConfigValue("mailinglist.maxmiumMailinglistApproval", "-1");
+	
+	public static final ConfigValue MailtrackExtended = new ConfigValue("mailtrack-extended", "false");
+	
 	private final String name;
 	private final String defaultValue;
 

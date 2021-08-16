@@ -51,7 +51,7 @@ import com.agnitas.beans.FormComponent.FormComponentType;
  *   http://<rdir-domain>/formImage/nc/<licenseID>/<companyID>/<formID>/<imageFileName>
  * 
  * Example form image htmllink:
- *   <img src="http://rdir.de/formImage/1/610/105141/logo.jpg" />
+ *   <img src="https://rdir.de/formImage/1/610/105141/logo.jpg" />
  */
 public class ShowFormImageServlet extends HttpServlet {
 	

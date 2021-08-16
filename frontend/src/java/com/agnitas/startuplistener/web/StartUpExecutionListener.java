@@ -10,6 +10,8 @@
 
 package com.agnitas.startuplistener.web;
 
+import java.io.File;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
@@ -19,6 +21,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.startuplistener.service.ExecutionResult;
 import com.agnitas.startuplistener.service.StartupJobExecutionService;
+import com.agnitas.util.web.WebAppFileUtil;
 
 /**
  * Implementation of {@link ServletContextListener} running startup jobs.
@@ -34,11 +37,12 @@ public final class StartUpExecutionListener implements ServletContextListener {
 			final WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContextEvent.getServletContext());
 			final StartupJobExecutionService executionService = webApplicationContext.getBean("StartupJobExecutionService", StartupJobExecutionService.class);
 			
-			if(LOGGER.isInfoEnabled()) {
+			if (LOGGER.isInfoEnabled()) {
 				LOGGER.info("Starting execution of startup jobs");
 			}
 			
-			final ExecutionResult result = executionService.executeAllPendingJobs();
+			final File whitelistFile = new File(WebAppFileUtil.getWebInfDirectoryFile(servletContextEvent.getServletContext()), "startup-jobs.whitelist");
+			final ExecutionResult result = executionService.executeAllPendingJobs(whitelistFile);
 			
 			logResult(result);
 		} catch (final Exception e) {
@@ -60,11 +64,9 @@ public final class StartUpExecutionListener implements ServletContextListener {
 	private final void logResult(final ExecutionResult result) {
 		final String msg = String.format("Executed %d startup jobs (%d success, %d failures)", result.getTotalCount(), result.getSuccessCount(), result.getFailureCount());
 		
-		if(result.getFailureCount() > 0) {
+		if (result.getFailureCount() > 0) {
 			LOGGER.error(msg);
 		} else {
 			LOGGER.info(msg);
 		}
-	}
-
-}
+	}}

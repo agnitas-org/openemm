@@ -22,6 +22,8 @@ public class DeliveryStat {
     public static final int STATUS_SENDING = 4;
     public static final int STATUS_SENT = 5;
     public static final int STATUS_CANCELLED = 6;
+    public static final int STATUS_PAUSED_GENERATION = 7;
+    public static final int STATUS_PAUSED_DELIVERY = 8;
     
     private int totalMails = 0;
     private int generatedMails = 0;
@@ -41,6 +43,7 @@ public class DeliveryStat {
     private int lastGenerated;
     private Date lastDate;
     private String optimizeMailGeneration;
+    private boolean stopped;
     private boolean resumable;
 
     public int getTotalMails() {
@@ -168,11 +171,20 @@ public class DeliveryStat {
     public void setOptimizeMailGeneration(String optimizeMailGeneration) {
         this.optimizeMailGeneration = optimizeMailGeneration;
     }
-	public void setResumable(boolean resumable) {
-		this.resumable = resumable;
-	}
-	
-	public boolean isResumable() {
-		return this.resumable;
-	}
+
+    public void setStopped(boolean stopped) {
+        this.stopped = stopped;
+    }
+
+    public boolean isStopped() {
+        return stopped;
+    }
+
+    public void setResumable(boolean resumable) {
+        this.resumable = resumable;
+    }
+
+    public boolean isResumable() {
+        return this.resumable;
+    }
 }

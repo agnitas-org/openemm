@@ -283,7 +283,7 @@ This approach is typical for controllers that are using `data-initializer` to re
   }
 
   function register(name, handler) {
-    if ($.isFunction(handler)) {
+    if (_.isFunction(handler)) {
       map['key#' + name] = handler;
     } else {
       console.error('Handler must be a function');

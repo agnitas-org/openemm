@@ -89,10 +89,13 @@
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
 		<property name="mailingService" ref="MailingService" />
 		<property name="previewImageService" ref="PreviewImageService" />
+        <property name="copyMailingService" ref="CopyMailingService"/>
+		<property name="filterListBuilder" ref="TargetGroupQueryBuilderFilterListBuilder"/>
+		<property name="adminService" ref="AdminService"/>
 	</bean>
 
 	<!-- Same type, same setup as "/target"-->
-	<bean name="/mwNewTarget" parent="/target" />
+	<bean name="/mwNewTarget" parent="/targetQB" />
 
 	<bean name="/targetQB" class="com.agnitas.emm.core.target.web.QueryBuilderTargetGroupAction">
 		<property name="targetService" ref="targetService" />
@@ -206,8 +209,8 @@
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="configService" ref="ConfigService" />
 		<property name="actionDao" ref="EmmActionDao" />
-		<property name="linkDao" ref="TrackableLinkDao" />
-		<property name="trackeableLinkService" ref="TrackeableLinkService" />
+		<property name="linkService" ref="LinkService" />
+		<property name="trackableLinkService" ref="TrackeableLinkService" />
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="mailingBaseService" ref="MailingBaseService" />
 		<property name="gridService" ref="GridServiceWrapper"/>
@@ -247,6 +250,7 @@
         <property name="agnTagService" ref="AgnTagService"/>
         <property name="agnDynTagGroupResolverFactory" ref="AgnDynTagGroupResolverFactory"/>
 		<property name="mailingService" ref="MailingService"/>
+		<property name="objectUsageService" ref="ObjectUsageService" />
     </bean>
 
 	<bean name="/mailingcontent" class="com.agnitas.web.ComMailingContentAction">
@@ -272,13 +276,6 @@
         <property name="gridServiceWrapper" ref="GridServiceWrapper"/>
     </bean>
 
-    <bean name="/form" class="com.agnitas.web.ComUserFormExecuteAction">
-        <property name="configService" ref="ConfigService" />
-        <property name="userActivityLogService" ref="UserActivityLogService" />
-        <property name="companyDao" ref="CompanyDao" />
-        <property name="userFormExecutionService" ref="UserFormExecutionService" />
-    </bean>
-
     <bean name="/optimize" class="com.agnitas.mailing.autooptimization.web.ComOptimizationAction">
         <property name="optimizationService" ref="optimizationService" />
         <property name="optimizationScheduleService" ref="optimizationScheduleService" />
@@ -297,4 +294,7 @@
         <property name="optimizationScheduleService" ref="optimizationScheduleService" />
     </bean>
 
+    <bean name="/form" class="com.agnitas.web.ComUserFormExecuteAction">
+    	<!-- Legacy form.do for redirection to form.action -->
+    </bean>
 </beans>

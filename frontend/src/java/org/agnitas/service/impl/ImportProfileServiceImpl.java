@@ -12,6 +12,7 @@ package org.agnitas.service.impl;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.ColumnMapping;
@@ -19,6 +20,7 @@ import org.agnitas.beans.ImportProfile;
 import org.agnitas.dao.ImportProfileDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.ImportProfileService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,4 +92,38 @@ public class ImportProfileServiceImpl implements ImportProfileService {
     public void setImportProfileDao(ImportProfileDao importProfileDao) {
         this.importProfileDao = importProfileDao;
     }
+
+	@Override
+	public Map<String, Integer> getImportProfileGenderMapping(int id) {
+		return importProfileDao.getImportProfileGenderMapping(id);
+	}
+
+	@Override
+	public void saveImportProfileGenderMapping(int id, Map<String, Integer> genderMapping) {
+		importProfileDao.saveImportProfileGenderMapping(id, genderMapping);
+	}
+
+	@Override
+	public boolean addImportProfileGenderMapping(int profileId, String addedGender, int addedGenderInt) {
+		Map<String, Integer> genderMapping = getImportProfileGenderMapping(profileId);
+		String[] genderTokens = addedGender.split(",");
+		boolean alreadyContained = false;
+		for (String genderToken : genderTokens) {
+			if (StringUtils.isNotBlank(genderToken) && genderMapping.containsKey(genderToken.trim())) {
+				alreadyContained = true;
+				break;
+			}
+		}
+		if (!alreadyContained) {
+			for (String genderToken : genderTokens) {
+				if (StringUtils.isNotBlank(genderToken)) {
+					genderMapping.put(genderToken.trim(), addedGenderInt);
+				}
+			}
+			saveImportProfileGenderMapping(profileId, genderMapping);
+        	return true;
+		} else {
+			return false;
+		}
+	}
 }

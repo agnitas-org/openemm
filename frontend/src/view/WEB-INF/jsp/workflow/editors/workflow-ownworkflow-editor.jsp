@@ -1,12 +1,15 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common" prefix="emm" %>
 
 <div id="ownWorkflow-editor" data-initializer="ownworkflow-editor-initializer">
     <div class="status_error editor-error-messages well" style="display: none;"></div>
 
+    <emm:HideByPermission token="workflow.jsplumb2">
     <form action="" id="ownWorkflowForm" name="ownWorkflowForm">
         <input name="id" type="hidden">
+    </emm:HideByPermission>
 
         <div class="form-group">
             <div class="col-sm-4">
@@ -51,5 +54,7 @@
                 </div>
             </div>
         </div>
+    <emm:HideByPermission token="workflow.jsplumb2">
     </form>
+    </emm:HideByPermission>
 </div>

@@ -14,20 +14,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.beans.Mediatype;
 import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
-import org.agnitas.preview.Preview;
 
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.web.PreviewForm;
-import com.agnitas.web.ShowImageServlet;
 
 /**
  * Helper class to find the proper preselected preview format.
@@ -67,9 +64,9 @@ public class MailingPreviewHelper {
 	 * @return preview format to select
 	 */
 	private static int computeActivePreviewFormat(int currentFormat, int mailingID, int companyID, ComMailingDao dao) {
-		ComMailing mailing = dao.getMailing(mailingID, companyID);
+		Mailing mailing = dao.getMailing(mailingID, companyID);
 		
-		// No mailing found? 
+		// No mailing found?
 		if(mailing.getId() == 0) {
 			return UNDEFINED_PREVIEW_FORMAT;
 		}
@@ -93,17 +90,17 @@ public class MailingPreviewHelper {
 		Mediatype mt = mediaTypes.get(currentMediaType);
 		
 		// Check, that mailing has this media type and media type is used
-		if(mt != null && mt.getStatus() == Mediatype.STATUS_ACTIVE) {
+		if(mt != null && mt.getStatus() == MediaTypeStatus.Active.getCode()) {
 			return currentFormat;  // If so, keep this format as active
 		}
 		
 		Collections.sort(orderedTypeCodes);
 		for(int code : orderedTypeCodes) {
-			if(mediaTypes.get(code).getStatus() == Mediatype.STATUS_ACTIVE) {
+			if(mediaTypes.get(code).getStatus() == MediaTypeStatus.Active.getCode()) {
 				/*
 				 * Here, we have to do same mapping as above, but reverse now:
 				 * 
-				 * Media type 0 maps to preview format 0, 
+				 * Media type 0 maps to preview format 0,
 				 * media type 1 maps to preview format 2,
 				 * media type 2 maps to preview format 3,
 				 * and so on
@@ -127,32 +124,4 @@ public class MailingPreviewHelper {
 		}
 		return null;
 	}
-	
-	/**
-     * Replacing the standard images with mobile images if present
-     * @param components - mailing dynamic components
-     * @param previewSize - size of preview choosen by user
-     * @param previewAsString - mailing preview  @return - resulting mailing preview.
-     */
-    public static String replaceImagesWithMobileComponents(Map<String, MailingComponent> components, int previewSize, String previewAsString) {
-    	Preview.Size screenSize = Preview.Size.getSizeById(previewSize);
-        if (screenSize == Preview.Size.MOBILE_PORTRAIT || screenSize == Preview.Size.MOBILE_LANDSCAPE) {
-            final Set<Map.Entry<String, MailingComponent>> componentEntries = components.entrySet();
-            for (Map.Entry<String, MailingComponent> component : componentEntries) {
-                int componentType = component.getValue().getType();
-                if (componentType == MailingComponent.TYPE_HOSTED_IMAGE ||
-                        componentType == MailingComponent.TYPE_IMAGE) {
-                    final String componentName = component.getKey();
-                    final String replacementName = ShowImageServlet.MOBILE_IMAGE_PREFIX + componentName;
-                    final MailingComponent replacementComponent = components.get(replacementName);
-                    if (replacementComponent != null &&
-                            (replacementComponent.getType() == MailingComponent.TYPE_HOSTED_IMAGE ||
-									replacementComponent.getType() == MailingComponent.TYPE_IMAGE)){
-                        previewAsString = previewAsString.replaceAll(componentName, replacementName);
-                    }
-                }
-            }
-        }
-        return previewAsString;
-    }
 }

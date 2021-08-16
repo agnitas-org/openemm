@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.userform.service.impl;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -227,7 +228,16 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	}
 	
 	private void populateRequestParametersAsVelocityParameters(final HttpServletRequest request, final CaseInsensitiveMap<String, Object> params) {
-		params.put("requestParameters", AgnUtils.getReqParameters(request));
+		// "requestParameters" must be a casesensitive map, for some locations check the keys in entrySet() in a casesensitive way
+		Map<String, Object> requestParameters = new HashMap<>();
+		requestParameters.putAll(AgnUtils.getReqParameters(request));
+		if (params.containsKey("file")) {
+			requestParameters.put("file_name", params.get("file_name"));
+			requestParameters.put("file_type", params.get("file_type"));
+			requestParameters.put("file_size", params.get("file_size"));
+			requestParameters.put("file", params.get("file"));
+		}
+		params.put("requestParameters", requestParameters);
 		params.put("_request", request);
 
 		if ((request.getParameter("requestURL") != null) && (request.getParameter("queryString") != null)) {
@@ -268,9 +278,9 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	}
 
 	/**
-	 * Creates the redirect link to the formula content
+	 * Creates the redirect link to the form content
 	 * 
-	 * @param content formula content
+	 * @param content form content
 	 * @return
 	 * @throws Exception
 	 */

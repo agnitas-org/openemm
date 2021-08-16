@@ -30,7 +30,8 @@
                         list="${exportWizardForm.exportPredefList}"
                         requestURI="/exportwizard.do?action=${ACTION_LIST}"
                         excludedParams="*"
-                        length="${exportWizardForm.exportPredefCount}">
+                        length="${exportWizardForm.exportPredefCount}"
+                        sort="list">
 
                     <display:column headerClass="js-table-sort" sortable="true" titleKey="default.Name"
                                     property="shortname"/>

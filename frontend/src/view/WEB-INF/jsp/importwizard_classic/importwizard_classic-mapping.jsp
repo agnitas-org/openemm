@@ -105,7 +105,7 @@
                                     <option value="<%= colName %>"
                                             <% if ((columnMapping != null && columnMapping.containsKey(aCsvColInfo.getName().trim())
                                                     && colName.trim().equalsIgnoreCase((columnMapping.get(aCsvColInfo.getName().trim())).getName().trim()))
-                                                    || (columnMapping == null && colName.trim().equalsIgnoreCase(aCsvColInfo.getName().trim()))) { %>
+                                                    || (columnMapping == null && colName.trim().replace("-", "").replace("_", "").equalsIgnoreCase(aCsvColInfo.getName().replace("-", "").replace("_", "").trim()))) { %>
                                             selected
                                             <% } %>><%= aliasName %>
                                     </option>
@@ -114,7 +114,7 @@
                                     <option value="<%= colName %>"
                                             <%if ((columnMapping != null && columnMapping.containsKey(aCsvColInfo.getName().trim())
                                                     && colName.trim().equalsIgnoreCase((columnMapping.get(aCsvColInfo.getName().trim())).getName().trim()))
-                                                    || (columnMapping == null && colName.trim().equalsIgnoreCase(aCsvColInfo.getName().trim()))) { %>
+                                                    || (columnMapping == null && colName.trim().replace("-", "").replace("_", "").equalsIgnoreCase(aCsvColInfo.getName().replace("-", "").replace("_", "").trim()))) { %>
                                             selected
                                             <% } %>><%= aliasName %>
                                     </option>

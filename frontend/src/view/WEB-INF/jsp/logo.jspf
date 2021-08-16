@@ -9,22 +9,12 @@
 <c:url var="agnitasEmmLogoPngLink" value="/layout/${companyID}/logo.png" />
 
 <div class="l-logo">
-    <c:if test="${sessionScope['emm.adminPreferences'].startPage == START_PAGE_DASHBOARD}">
-        <html:link page="/dashboard.action" styleClass="logo">
-            <img class="logo-image" src="${agnitasEmmLogoSvgLink}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngLink}'">
+    <html:link page="/dashboard.action" styleClass="logo">
+        <img class="logo-image" src="${agnitasEmmLogoSvgLink}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngLink}'">
 
-            <p class="headline"><bean:message key="default.EMM" /></p>
-            <p class="version"><bean:message key="default.version" /></p>
-        </html:link>
-    </c:if>
-    <c:if test="${sessionScope['emm.adminPreferences'].startPage == START_PAGE_CALENDAR}">
-        <html:link page="/calendar.action" styleClass="logo">
-            <img class="logo-image" src="${agnitasEmmLogoSvgLink}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngLink}'">
-
-            <p class="headline"><bean:message key="default.EMM" /></p>
-            <p class="version"><bean:message key="default.version" /></p>
-        </html:link>
-    </c:if>
+        <p class="headline"><bean:message key="default.EMM" /></p>
+        <p class="version"><bean:message key="default.version" /></p>
+    </html:link>
     <a href="#" class="menu-close">
         <i class="icon icon-close"></i>
     </a>

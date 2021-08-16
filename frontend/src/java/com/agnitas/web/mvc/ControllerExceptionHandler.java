@@ -10,6 +10,8 @@
 
 package com.agnitas.web.mvc;
 
+import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
+import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
 import org.agnitas.util.HttpUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -43,4 +45,13 @@ public class ControllerExceptionHandler {
         }
         return "messages";
     }
+
+	@ExceptionHandler(XSSHtmlException.class)
+	public String onXSSHtmlException(final XSSHtmlException e, final Popups popups) {
+		for (HtmlCheckError error : e.getErrors()) {
+			popups.alert(error.toMessage());
+		}
+
+		return "messages";
+	}
 }

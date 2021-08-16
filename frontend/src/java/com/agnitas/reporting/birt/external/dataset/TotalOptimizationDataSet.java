@@ -427,12 +427,12 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 	
 	private int getTempTableValuesByCategoryAndMailingId(int tempTableID, String category, int mailingId) throws Exception {
 		String query = "SELECT value FROM tmp_report_aggregation_" + tempTableID + "_tbl WHERE category = ? AND mailing_id = ?";
-        int value = 0;
+        int value;
         try {
             value = selectEmbedded(logger, query, Integer.class, category, mailingId);
-        }
-        catch (EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             logger.error("No data found for category: " + category + ", mailingId: " + mailingId);
+            value = 0;
         }
 		return value;
 	}

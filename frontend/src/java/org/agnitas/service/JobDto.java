@@ -29,6 +29,8 @@ public class JobDto {
 	private String emailOnError;
 	private boolean deleted;
 	private Map<String, String> parameters; // e.g.: ZipAttachement, SendWhenEmpty, SqlStatement, CompanyID
+	private int criticality;
+	private boolean acknowledged;
 	
 	public int getId() {
 		return id;
@@ -148,6 +150,22 @@ public class JobDto {
 	
 	public void setEmailOnError(String emailOnError) {
 		this.emailOnError = emailOnError;
+	}
+
+	public int getCriticality() {
+		return criticality;
+	}
+
+	public void setCriticality(int criticality) {
+		this.criticality = criticality;
+	}
+
+	public boolean isAcknowledged() {
+		return acknowledged;
+	}
+
+	public void setAcknowledged(boolean acknowledged) {
+		this.acknowledged = acknowledged;
 	}
 	
 	/**

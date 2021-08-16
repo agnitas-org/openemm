@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">Data Cube1.RecipientsForPieChart.x</property>
@@ -81,6 +81,8 @@
 importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.com.agnitas.reporting.birt.external.utils);
 
+importPackage(Packages.com.agnitas.emm.core.mobile.bean);
+
 //If you want to change something:
 //Looks like BIRT can't deserialize boolean value correctly in some cases.
 //So if you want to change some visibility expression or existed code which looks like:
@@ -97,6 +99,15 @@ importPackage(Packages.com.agnitas.reporting.birt.external.utils);
 targetGroups = null;
 if (params["targetGroups"] != null) {
 	targetGroups = params["targetGroups"].value
+}
+
+hiddenTargetGroup = null;
+if (params["hiddenTargetId"] != null) {
+	hiddenTargetGroup = params["hiddenTargetId"].value
+}
+
+function tr(key) {
+	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
 }
 
 showSoftbounces = BirtReporUtils.isOptionAllowed("softbounces", params["figures"]);
@@ -117,9 +128,15 @@ if(!(showHardbounces == true)){
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("Hardbounces footer 100").drop();
 }
 
+if (!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.ACTIVATE_LINK_STATISTICS.value, params["figures"].value)) {
+	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("LinkClicksHeader").drop();
+	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("LinkClicksContent").drop();
+	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("LinkClicksTotals").drop();
+}
+
 if(showSoftbounces || showHardbounces){
 	bouncesDataSet = new MailingBouncesDataSet();
-	 mailingBounceDataContainer = bouncesDataSet.getBouncesWithDetailByMailings(params["companyID"], params["selectedMailings"], params["language"], params["targetGroups"], MailingBouncesDataSet.BounceType.getByName("BOTH"));
+	 mailingBounceDataContainer = bouncesDataSet.getBouncesWithDetailByMailings(params["companyID"], params["selectedMailings"], params["language"], params["targetGroups"], MailingBouncesDataSet.BounceType.getByName("BOTH"), hiddenTargetGroup);
 	mailingBounceData = mailingBounceDataContainer.getAllBounces();
 	successTableActivated = bouncesDataSet.successTableActivated(params["companyID"]);
 	reportContext.setPersistentGlobalVariable("successTableActivated", new Boolean(successTableActivated));
@@ -127,17 +144,27 @@ if(showSoftbounces || showHardbounces){
 }
 
 mailingStatisticDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingStatisticDataSet();
+devicesStatDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.DevicesStatDataSet();
 
 dateFormats = mailingStatisticDataSet.getDateFormatsInstance(new Packages.java.lang.String(), new Packages.java.lang.String(), false);
 if (params["startDate"] != null) {
 	dateFormats = mailingStatisticDataSet.getDateFormatsInstance(params["startDate"], params["stopDate"], false);
 }
-mailingSummaryData = mailingStatisticDataSet.getSummaryData(params["companyID"], params["selectedMailings"], targetGroups, params["figures"], dateFormats);
-mailingClicksData = mailingStatisticDataSet.getLinkClicksData(params["companyID"], params["selectedMailings"], targetGroups, dateFormats);
+mailingSummaryData = mailingStatisticDataSet.getSummaryData(params["companyID"], params["selectedMailings"], targetGroups, hiddenTargetGroup, params["figures"], dateFormats);
+mailingClicksData = mailingStatisticDataSet.getLinkClicksData(params["companyID"], params["selectedMailings"], targetGroups, hiddenTargetGroup, dateFormats);
+
+deviceStatistic = devicesStatDataSet.getMailingReportDevicesStat(params["companyID"], targetGroups, hiddenTargetGroup, params["selectedMailings"], params["figures"], 10, params["language"]);
 
 reportContext.setPersistentGlobalVariable("accountName", mailingStatisticDataSet.getAccountName(params["accountId"]));
 reportContext.setPersistentGlobalVariable("reportName", mailingStatisticDataSet.getReportName(params["reportId"]));
 
+reportContext.setGlobalVariable("tr", tr);
+
+function hasPercentageRepresentation(categoryKey) {
+	return categoryKey != CommonKeys.REVENUE_SHIFTED_INDEX &amp;&amp;
+			categoryKey != CommonKeys.OPENINGS_ANONYMOUS_INDEX &amp;&amp;
+			categoryKey != CommonKeys.CLICKS_ANONYMOUS_INDEX;
+}
 ]]></method>
     <property name="iconFile">/templates/blank_report.gif</property>
     <property name="layoutPreference">auto layout</property>
@@ -276,6 +303,21 @@ reportContext.setPersistentGlobalVariable("reportName", mailingStatisticDataSet.
             </structure>
         </scalar-parameter>
         <scalar-parameter name="scheduledDate" id="3839">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="hiddenTargetId" id="4557">
             <property name="valueType">static</property>
             <property name="isRequired">false</property>
             <property name="dataType">string</property>
@@ -1095,6 +1137,224 @@ return false;]]></method>
 } 
 return false;]]></method>
         </script-data-set>
+        <script-data-set name="DevicesStatDataSet" id="578">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">device_name</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">device_openings</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">device_clicks</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">device_openings_rate</property>
+                    <property name="dataType">float</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">device_clicks_rate</property>
+                    <property name="dataType">float</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">target_index</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">target_name</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">device_class_id</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">category_index</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">category</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">mailing_id</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">device_class_label</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">device_name</property>
+                    <text-property name="displayName">Device Name</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">device_openings</property>
+                    <text-property name="displayName">Openings Count</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">device_clicks</property>
+                    <text-property name="displayName">Clicks Count</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">device_openings_rate</property>
+                    <text-property name="displayName">Openings Rate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">device_clicks_rate</property>
+                    <text-property name="displayName">Clicks Rate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">target_index</property>
+                    <text-property name="displayName">Target Index</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">target_name</property>
+                    <text-property name="displayName">Target Name</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">device_class_id</property>
+                    <text-property name="displayName">Device Class ID</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">category_index</property>
+                    <text-property name="displayName">Category Index</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">category</property>
+                    <text-property name="displayName">CategoryNameKey</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">mailing_id</property>
+                    <text-property name="displayName">MailingID</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">device_class_label</property>
+                    <text-property name="displayName">Device Class Name</text-property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">device_name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">device_openings</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">device_clicks</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">device_openings_rate</property>
+                        <property name="dataType">float</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">device_clicks_rate</property>
+                        <property name="dataType">float</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">target_index</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">target_name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">device_class_id</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">category_index</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">category</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">mailing_id</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">device_class_label</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">DummyDataSource</property>
+            <method name="open"><![CDATA[currentrow = 0;]]></method>
+            <method name="fetch"><![CDATA[if (currentrow < deviceStatistic.size()) {
+
+	row["device_name"] = deviceStatistic.get(currentrow).getDeviceName();
+
+	row["device_openings"] = deviceStatistic.get(currentrow).getOpeningsCount();
+	row["device_clicks"] = deviceStatistic.get(currentrow).getClicksCount();
+	row["device_openings_rate"] = deviceStatistic.get(currentrow).getOpeningsRate();
+	row["device_clicks_rate"] = deviceStatistic.get(currentrow).getClicksRate();
+
+	row["category_index"] = deviceStatistic.get(currentrow).getCategoryIndex();
+
+	row["target_index"] = deviceStatistic.get(currentrow).getTargetIndex();
+	row["target_name"] = deviceStatistic.get(currentrow).getTargetName();
+
+	var deviceClassId = parseInt(deviceStatistic.get(currentrow).getDeviceClassId());
+	row["device_class_id"] = deviceClassId;
+	
+	var deviceClassLabelKey = "predelivery.desktop";
+	if (deviceClassId == DeviceClass.MOBILE.getId()) {
+		deviceClassLabelKey = "report.openers.mobile.shortname";
+	} else 	if (deviceClassId == DeviceClass.TABLET.getId()) {
+		deviceClassLabelKey = "report.openers.tablet.shortname";
+	} else if (deviceClassId == DeviceClass.SMARTTV.getId()) {
+		deviceClassLabelKey = "report.openers.smarttv.shortname";
+	}
+	row["device_class_label"] = tr(deviceClassLabelKey);
+	
+	row["category_index"] = deviceStatistic.get(currentrow).getCategoryIndex();
+	row["category"] = deviceStatistic.get(currentrow).getCategory();
+	
+	row["mailing_id"] = deviceStatistic.get(currentrow).getMailingId();
+	
+
+	currentrow++;
+	return true;
+}
+return false;
+]]></method>
+        </script-data-set>
     </data-sets>
     <cubes>
         <tabular-cube name="MailingSummaryDataCube" id="2976">
@@ -1168,6 +1428,113 @@ return false;]]></method>
                 </tabular-measure-group>
             </property>
             <property name="dataSet">MailingSummaryDataSet</property>
+        </tabular-cube>
+        <tabular-cube name="DeviceStatDataCube" id="3568">
+            <property name="dimensions">
+                <tabular-dimension name="TargetGroup" id="3569">
+                    <property name="defaultHierarchy">NewTabularHierarchy1</property>
+                    <property name="hierarchies">
+                        <tabular-hierarchy name="NewTabularHierarchy1" id="3570">
+                            <property name="levels">
+                                <tabular-level name="Target Index" id="3571">
+                                    <property name="dataType">integer</property>
+                                    <property name="columnName">target_index</property>
+                                </tabular-level>
+                                <tabular-level name="tagetgroup" id="3572">
+                                    <property name="dataType">integer</property>
+                                    <property name="levelType">dynamic</property>
+                                    <list-property name="attributes">
+                                        <structure>
+                                            <property name="name">target_index</property>
+                                            <property name="dataType">integer</property>
+                                        </structure>
+                                        <structure>
+                                            <property name="name">target_name</property>
+                                            <property name="dataType">string</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="columnName">target_index</property>
+                                </tabular-level>
+                            </property>
+                        </tabular-hierarchy>
+                    </property>
+                </tabular-dimension>
+                <tabular-dimension name="CategoryGroup" id="3575">
+                    <property name="defaultHierarchy">NewTabularHierarchy5</property>
+                    <property name="hierarchies">
+                        <tabular-hierarchy name="NewTabularHierarchy5" id="3576">
+                            <property name="levels">
+                                <tabular-level name="Category Index" id="3577">
+                                    <property name="dataType">integer</property>
+                                    <property name="columnName">category_index</property>
+                                </tabular-level>
+                            </property>
+                        </tabular-hierarchy>
+                    </property>
+                </tabular-dimension>
+                <tabular-dimension name="DeviceGroup" id="4361">
+                    <property name="defaultHierarchy">NewTabularHierarchy4</property>
+                    <property name="hierarchies">
+                        <tabular-hierarchy name="NewTabularHierarchy4" id="4093">
+                            <property name="levels">
+                                <tabular-level name="Device Name" id="4094">
+                                    <property name="dataType">string</property>
+                                    <property name="columnName">device_name</property>
+                                </tabular-level>
+                            </property>
+                        </tabular-hierarchy>
+                    </property>
+                </tabular-dimension>
+                <tabular-dimension name="DeviceClassGroup" id="4095">
+                    <property name="defaultHierarchy">NewTabularHierarchy6</property>
+                    <property name="hierarchies">
+                        <tabular-hierarchy name="NewTabularHierarchy6" id="4096">
+                            <property name="levels">
+                                <tabular-level name="Device Class ID" id="4097">
+                                    <property name="dataType">integer</property>
+                                    <property name="columnName">device_class_id</property>
+                                </tabular-level>
+                            </property>
+                        </tabular-hierarchy>
+                    </property>
+                </tabular-dimension>
+                <tabular-dimension name="MailingGroup" id="4246">
+                    <property name="defaultHierarchy">NewTabularHierarchy7</property>
+                    <property name="hierarchies">
+                        <tabular-hierarchy name="NewTabularHierarchy7" id="4247">
+                            <property name="levels">
+                                <tabular-level name="MailingID" id="4248">
+                                    <property name="dataType">integer</property>
+                                    <property name="columnName">mailing_id</property>
+                                </tabular-level>
+                            </property>
+                        </tabular-hierarchy>
+                    </property>
+                </tabular-dimension>
+            </property>
+            <property name="measureGroups">
+                <tabular-measure-group name="Summary Field1" id="3582">
+                    <property name="measures">
+                        <tabular-measure name="Openings Count" id="3583">
+                            <expression name="measureExpression" type="javascript">dataSetRow["device_openings"]</expression>
+                            <property name="dataType">integer</property>
+                        </tabular-measure>
+                        <tabular-measure name="Clicks Count" id="3584">
+                            <expression name="measureExpression" type="javascript">dataSetRow["device_clicks"]</expression>
+                            <property name="dataType">integer</property>
+                        </tabular-measure>
+                        <tabular-measure name="Openings Rate" id="3585">
+                            <expression name="measureExpression" type="javascript">dataSetRow["device_openings_rate"]</expression>
+                            <property name="dataType">float</property>
+                        </tabular-measure>
+                        <tabular-measure name="Clicks Rate" id="3586">
+                            <expression name="measureExpression" type="javascript">dataSetRow["device_clicks_rate"]</expression>
+                            <property name="dataType">float</property>
+                        </tabular-measure>
+                    </property>
+                </tabular-measure-group>
+            </property>
+            <property name="dataSet">DevicesStatDataSet</property>
         </tabular-cube>
     </cubes>
     <styles>
@@ -2059,7 +2426,7 @@ return false;]]></method>
                                             <list-property name="visibility">
                                                 <structure>
                                                     <property name="format">all</property>
-                                                    <expression name="valueExpr" type="javascript">data["category_index"] == CommonKeys.REVENUE_SHIFTED_INDEX || data["rate_CategoryIndexGroup/category_index_TargetgroupGroup/targetgroup"] &lt; 0</expression>
+                                                    <expression name="valueExpr" type="javascript">!hasPercentageRepresentation(data["category_index"]) || data["rate_CategoryIndexGroup/category_index_TargetgroupGroup/targetgroup"] &lt; 0</expression>
                                                 </structure>
                                             </list-property>
                                             <structure name="toc"/>
@@ -2070,7 +2437,7 @@ return false;]]></method>
                                             <list-property name="visibility">
                                                 <structure>
                                                     <property name="format">all</property>
-                                                    <expression name="valueExpr" type="javascript">data["category_index"] == CommonKeys.REVENUE_SHIFTED_INDEX || data["rate_CategoryIndexGroup/category_index_TargetgroupGroup/targetgroup"] >= 0</expression>
+                                                    <expression name="valueExpr" type="javascript">!hasPercentageRepresentation(data["category_index"]) || data["rate_CategoryIndexGroup/category_index_TargetgroupGroup/targetgroup"] >= 0</expression>
                                                 </structure>
                                             </list-property>
                                             <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
@@ -2304,6 +2671,12 @@ return false;]]></method>
                                                 <property name="category">Custom</property>
                                                 <property name="pattern">0.0%</property>
                                             </structure>
+                                            <list-property name="visibility">
+                                                <structure>
+                                                    <property name="format">all</property>
+                                                    <expression name="valueExpr" type="javascript">!hasPercentageRepresentation(data["category_index"])</expression>
+                                                </structure>
+                                            </list-property>
                                             <property name="resultSetColumn">rate_CategoryIndexGroup/category_index_TargetgroupGroup/targetgroup</property>
                                         </data>
                                     </property>
@@ -2485,7 +2858,902 @@ return false;]]></method>
                         <cell id="3806"/>
                     </row>
                 </grid>
-                <table id="3784">
+                <table name="OpenerDevices" id="4485">
+                    <property name="dataSet">DevicesStatDataSet</property>
+                    <list-property name="boundDataColumns">
+                        <structure>
+                            <property name="name">device_name</property>
+                            <text-property name="displayName">Device Name</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_name"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                        <structure>
+                            <property name="name">device_openings</property>
+                            <text-property name="displayName">Openings Count</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_openings"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">device_clicks</property>
+                            <text-property name="displayName">Clicks Count</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_clicks"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">device_openings_rate</property>
+                            <text-property name="displayName">Openings Rate</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_openings_rate"]</expression>
+                            <property name="dataType">float</property>
+                        </structure>
+                        <structure>
+                            <property name="name">device_clicks_rate</property>
+                            <text-property name="displayName">Clicks Rate</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_clicks_rate"]</expression>
+                            <property name="dataType">float</property>
+                        </structure>
+                        <structure>
+                            <property name="name">target_index</property>
+                            <text-property name="displayName">Target Index</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["target_index"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">target_name</property>
+                            <text-property name="displayName">Target Name</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["target_name"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                        <structure>
+                            <property name="name">device_class_id</property>
+                            <text-property name="displayName">Device Class ID</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_class_id"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">category_index</property>
+                            <text-property name="displayName">Category Index</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["category_index"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">category</property>
+                            <text-property name="displayName">CategoryNameKey</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["category"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                        <structure>
+                            <property name="name">mailing_id</property>
+                            <text-property name="displayName">MailingID</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["mailing_id"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">device_class_label</property>
+                            <text-property name="displayName">Device Class Name</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_class_label"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                    </list-property>
+                    <list-property name="filter">
+                        <structure>
+                            <property name="operator">eq</property>
+                            <expression name="expr" type="javascript">row["mailing_id"]</expression>
+                            <simple-property-list name="value1">
+                                <value>row._outer["mailingId"]</value>
+                            </simple-property-list>
+                            <property name="updateAggregation">true</property>
+                        </structure>
+                        <structure>
+                            <property name="operator">eq</property>
+                            <expression name="expr" type="javascript">row["category_index"]</expression>
+                            <simple-property-list name="value1">
+                                <value>3</value>
+                            </simple-property-list>
+                            <property name="updateAggregation">true</property>
+                        </structure>
+                    </list-property>
+                    <column id="4492"/>
+                    <group id="4498">
+                        <property name="groupName">DeviceClassGroup</property>
+                        <expression name="keyExpr" type="javascript">row["device_class_id"]</expression>
+                        <structure name="toc">
+                            <expression name="expressionValue" type="javascript">tr("report.devices.opener") + " " + row["device_class_label"]</expression>
+                        </structure>
+                        <property name="repeatHeader">false</property>
+                        <property name="hideDetail">false</property>
+                        <header>
+                            <row id="4499">
+                                <cell id="4500">
+                                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="4098">
+                                        <property name="cube">DeviceStatDataCube</property>
+                                        <property name="measureDirection">horizontal</property>
+                                        <property name="measures">
+                                            <extended-item extensionName="MeasureView" id="4111">
+                                                <property name="measure">Openings Count</property>
+                                                <property name="detail">
+                                                    <extended-item extensionName="AggregationCell" id="4112">
+                                                        <property name="aggregationOnRow">DeviceGroup/Device Name</property>
+                                                        <property name="aggregationOnColumn">TargetGroup/tagetgroup</property>
+                                                        <property name="textAlign">right</property>
+                                                        <property name="content">
+                                                            <data id="4113">
+                                                                <property name="resultSetColumn">Openings Count_DeviceGroup/Device Name_TargetGroup/tagetgroup</property>
+                                                            </data>
+                                                        </property>
+                                                    </extended-item>
+                                                </property>
+                                                <property name="header">
+                                                    <extended-item extensionName="CrosstabCell" id="4114">
+                                                        <property name="content">
+                                                            <data name="targetgroup2" id="4548">
+                                                                <property name="backgroundAttachment">scroll</property>
+                                                                <property name="backgroundPositionX">0%</property>
+                                                                <property name="backgroundPositionY">0%</property>
+                                                                <property name="backgroundRepeat">repeat</property>
+                                                                <property name="fontFamily">serif</property>
+                                                                <property name="fontSize">10pt</property>
+                                                                <property name="fontWeight">bold</property>
+                                                                <property name="fontStyle">normal</property>
+                                                                <property name="fontVariant">normal</property>
+                                                                <property name="color">white</property>
+                                                                <property name="textLineThrough">none</property>
+                                                                <property name="textOverline">none</property>
+                                                                <property name="textUnderline">none</property>
+                                                                <property name="borderBottomColor">black</property>
+                                                                <property name="borderBottomStyle">none</property>
+                                                                <property name="borderBottomWidth">medium</property>
+                                                                <property name="borderLeftColor">black</property>
+                                                                <property name="borderLeftStyle">none</property>
+                                                                <property name="borderLeftWidth">medium</property>
+                                                                <property name="borderRightColor">black</property>
+                                                                <property name="borderRightStyle">none</property>
+                                                                <property name="borderRightWidth">medium</property>
+                                                                <property name="borderTopColor">black</property>
+                                                                <property name="borderTopStyle">none</property>
+                                                                <property name="borderTopWidth">medium</property>
+                                                                <property name="marginTop">0pt</property>
+                                                                <property name="marginLeft">0pt</property>
+                                                                <property name="marginBottom">0pt</property>
+                                                                <property name="marginRight">0pt</property>
+                                                                <property name="paddingTop">1pt</property>
+                                                                <property name="paddingLeft">1pt</property>
+                                                                <property name="paddingBottom">1pt</property>
+                                                                <property name="paddingRight">1pt</property>
+                                                                <property name="textAlign">center</property>
+                                                                <property name="letterSpacing">normal</property>
+                                                                <property name="lineHeight">normal</property>
+                                                                <property name="orphans">2</property>
+                                                                <property name="textTransform">none</property>
+                                                                <property name="whiteSpace">normal</property>
+                                                                <property name="widows">2</property>
+                                                                <property name="wordSpacing">normal</property>
+                                                                <property name="display">block</property>
+                                                                <property name="pageBreakAfter">auto</property>
+                                                                <property name="pageBreakBefore">auto</property>
+                                                                <property name="pageBreakInside">auto</property>
+                                                                <property name="showIfBlank">false</property>
+                                                                <property name="canShrink">false</property>
+                                                                <property name="overflow">hidden</property>
+                                                                <property name="resultSetColumn">Target Name</property>
+                                                            </data>
+                                                        </property>
+                                                        <property name="fontWeight">normal</property>
+                                                        <property name="backgroundColor">#0071B9</property>
+                                                        <property name="borderBottomStyle">solid</property>
+                                                        <property name="borderBottomWidth">thin</property>
+                                                        <property name="borderBottomColor">#7E7E7E</property>
+                                                        <property name="style">to-hide</property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                            <extended-item extensionName="MeasureView" id="4118">
+                                                <property name="measure">Openings Rate</property>
+                                                <property name="detail">
+                                                    <extended-item extensionName="AggregationCell" id="4119">
+                                                        <property name="aggregationOnRow">DeviceGroup/Device Name</property>
+                                                        <property name="aggregationOnColumn">TargetGroup/tagetgroup</property>
+                                                        <property name="textAlign">right</property>
+                                                        <property name="whiteSpace">normal</property>
+                                                        <property name="borderRightStyle">solid</property>
+                                                        <property name="borderRightWidth">thin</property>
+                                                        <property name="borderRightColor">#7E7E7E</property>
+                                                        <property name="content">
+                                                            <data id="4120">
+                                                                <structure name="numberFormat">
+                                                                    <property name="category">Custom</property>
+                                                                    <property name="pattern">(0.00%)</property>
+                                                                </structure>
+                                                                <property name="resultSetColumn">Openings Rate_DeviceGroup/Device Name_TargetGroup/tagetgroup</property>
+                                                            </data>
+                                                        </property>
+                                                    </extended-item>
+                                                </property>
+                                                <property name="header">
+                                                    <extended-item extensionName="CrosstabCell" id="4121">
+                                                        <property name="content">
+                                                            <text-data id="4550">
+                                                                <property name="backgroundAttachment">scroll</property>
+                                                                <property name="backgroundPositionX">0%</property>
+                                                                <property name="backgroundPositionY">0%</property>
+                                                                <property name="backgroundRepeat">repeat</property>
+                                                                <property name="fontFamily">serif</property>
+                                                                <property name="fontSize">10pt</property>
+                                                                <property name="fontWeight">bold</property>
+                                                                <property name="fontStyle">normal</property>
+                                                                <property name="fontVariant">normal</property>
+                                                                <property name="color">white</property>
+                                                                <property name="textLineThrough">none</property>
+                                                                <property name="textOverline">none</property>
+                                                                <property name="textUnderline">none</property>
+                                                                <property name="borderBottomColor">black</property>
+                                                                <property name="borderBottomStyle">none</property>
+                                                                <property name="borderBottomWidth">medium</property>
+                                                                <property name="borderLeftColor">black</property>
+                                                                <property name="borderLeftStyle">none</property>
+                                                                <property name="borderLeftWidth">medium</property>
+                                                                <property name="borderRightColor">black</property>
+                                                                <property name="borderRightStyle">none</property>
+                                                                <property name="borderRightWidth">medium</property>
+                                                                <property name="borderTopColor">black</property>
+                                                                <property name="borderTopStyle">none</property>
+                                                                <property name="borderTopWidth">medium</property>
+                                                                <property name="marginTop">0pt</property>
+                                                                <property name="marginLeft">0pt</property>
+                                                                <property name="marginBottom">0pt</property>
+                                                                <property name="marginRight">0pt</property>
+                                                                <property name="paddingTop">1pt</property>
+                                                                <property name="paddingLeft">1pt</property>
+                                                                <property name="paddingBottom">1pt</property>
+                                                                <property name="paddingRight">1pt</property>
+                                                                <property name="textAlign">center</property>
+                                                                <property name="letterSpacing">normal</property>
+                                                                <property name="lineHeight">normal</property>
+                                                                <property name="orphans">2</property>
+                                                                <property name="textTransform">none</property>
+                                                                <property name="whiteSpace">normal</property>
+                                                                <property name="widows">2</property>
+                                                                <property name="wordSpacing">normal</property>
+                                                                <property name="display">block</property>
+                                                                <property name="pageBreakAfter">auto</property>
+                                                                <property name="pageBreakBefore">auto</property>
+                                                                <property name="pageBreakInside">auto</property>
+                                                                <property name="showIfBlank">false</property>
+                                                                <property name="canShrink">false</property>
+                                                                <property name="overflow">hidden</property>
+                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mailing.statistics.share", reportContext.getLocale())</expression>
+                                                            </text-data>
+                                                        </property>
+                                                        <property name="backgroundColor">#0071B9</property>
+                                                        <property name="borderBottomStyle">solid</property>
+                                                        <property name="borderBottomWidth">thin</property>
+                                                        <property name="borderBottomColor">#7E7E7E</property>
+                                                        <property name="style">to-hide</property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                        <property name="rows">
+                                            <extended-item extensionName="CrosstabView" id="4100">
+                                                <property name="views">
+                                                    <extended-item extensionName="DimensionView" id="4504">
+                                                        <property name="dimension">DeviceGroup</property>
+                                                        <property name="levels">
+                                                            <extended-item extensionName="LevelView" name="NewLevel View5" id="4505">
+                                                                <property name="level">DeviceGroup/Device Name</property>
+                                                                <property name="sort">
+                                                                    <sort-element>
+                                                                        <expression name="key" type="javascript">data["Openings Count_DeviceGroup/Device Name_TargetGroup/tagetgroup"]</expression>
+                                                                        <property name="direction">desc</property>
+                                                                        <property name="strength">-1</property>
+                                                                        <property name="member">
+                                                                            <member-value>
+                                                                                <property name="value">0</property>
+                                                                                <property name="level">TargetGroup/tagetgroup</property>
+                                                                            </member-value>
+                                                                        </property>
+                                                                    </sort-element>
+                                                                </property>
+                                                                <property name="member">
+                                                                    <extended-item extensionName="CrosstabCell" id="4506">
+                                                                        <property name="content">
+                                                                            <data name="Device Name" id="4104">
+                                                                                <property name="fontWeight">normal</property>
+                                                                                <property name="textAlign">left</property>
+                                                                                <property name="resultSetColumn">Device Name</property>
+                                                                            </data>
+                                                                        </property>
+                                                                        <property name="fontWeight">normal</property>
+                                                                        <property name="textAlign">left</property>
+                                                                        <property name="borderRightStyle">solid</property>
+                                                                        <property name="borderRightWidth">thin</property>
+                                                                        <property name="borderRightColor">#7E7E7E</property>
+                                                                    </extended-item>
+                                                                </property>
+                                                                <property name="pageBreakInside">avoid</property>
+                                                            </extended-item>
+                                                        </property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                        <property name="columns">
+                                            <extended-item extensionName="CrosstabView" id="4106">
+                                                <property name="views">
+                                                    <extended-item extensionName="DimensionView" id="4107">
+                                                        <property name="dimension">TargetGroup</property>
+                                                        <property name="levels">
+                                                            <extended-item extensionName="LevelView" name="NewLevel View6" id="4108">
+                                                                <property name="level">TargetGroup/tagetgroup</property>
+                                                                <property name="member">
+                                                                    <extended-item extensionName="CrosstabCell" id="4109">
+                                                                        <property name="fontWeight">bold</property>
+                                                                        <property name="color">white</property>
+                                                                        <property name="backgroundColor">#0071B9</property>
+                                                                        <property name="textAlign">center</property>
+                                                                        <property name="borderBottomStyle">solid</property>
+                                                                        <property name="borderBottomWidth">thin</property>
+                                                                        <property name="borderBottomColor">#7E7E7E</property>
+                                                                        <property name="borderRightStyle">solid</property>
+                                                                        <property name="borderRightWidth">thin</property>
+                                                                        <property name="borderRightColor">#7E7E7E</property>
+                                                                        <property name="style">table-head crosstab-header</property>
+                                                                    </extended-item>
+                                                                </property>
+                                                            </extended-item>
+                                                        </property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                        <property name="header">
+                                            <extended-item extensionName="CrosstabCell" id="4546">
+                                                <property name="content">
+                                                    <data id="4200">
+                                                        <property name="resultSetColumn">device_class_label</property>
+                                                    </data>
+                                                </property>
+                                            </extended-item>
+                                            <extended-item extensionName="CrosstabCell" id="4551">
+                                                <property name="content">
+                                                    <text-data id="4553">
+                                                        <property name="contentType">html</property>
+                                                    </text-data>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                        <property name="repeatRowHeader">true</property>
+                                        <property name="hideMeasureHeader">false</property>
+                                        <property name="filter">
+                                            <filter-condition-element>
+                                                <expression name="expr" type="javascript">dimension["MailingGroup"]["MailingID"]</expression>
+                                                <property name="operator">eq</property>
+                                                <simple-property-list name="value1">
+                                                    <value type="javascript">row._outer._outer["mailingId"]</value>
+                                                </simple-property-list>
+                                            </filter-condition-element>
+                                            <filter-condition-element>
+                                                <expression name="expr" type="javascript">dimension["DeviceClassGroup"]["Device Class ID"] == row._outer["device_class_id"]</expression>
+                                                <property name="operator">is-true</property>
+                                            </filter-condition-element>
+                                        </property>
+                                        <property name="display">block</property>
+                                        <property name="borderTopStyle">solid</property>
+                                        <property name="borderTopWidth">thin</property>
+                                        <property name="borderTopColor">#7E7E7E</property>
+                                        <property name="borderLeftStyle">solid</property>
+                                        <property name="borderLeftWidth">thin</property>
+                                        <property name="borderLeftColor">#7E7E7E</property>
+                                        <property name="borderBottomStyle">solid</property>
+                                        <property name="borderBottomWidth">thin</property>
+                                        <property name="borderBottomColor">#7E7E7E</property>
+                                        <property name="borderRightStyle">solid</property>
+                                        <property name="borderRightWidth">thin</property>
+                                        <property name="borderRightColor">#7E7E7E</property>
+                                        <list-property name="boundDataColumns">
+                                            <structure>
+                                                <property name="name">Device Name</property>
+                                                <expression name="expression">dimension["DeviceGroup"]["Device Name"]</expression>
+                                                <property name="dataType">string</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">device_class_label</property>
+                                                <expression name="expression" type="javascript">tr("report.devices.opener") + " " + row._outer["device_class_label"]</expression>
+                                                <property name="dataType">string</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">tagetgroup</property>
+                                                <expression name="expression">dimension["TargetGroup"]["tagetgroup"]</expression>
+                                                <property name="dataType">integer</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">Openings Count_DeviceGroup/Device Name_TargetGroup/tagetgroup</property>
+                                                <expression name="expression">measure["Openings Count"]</expression>
+                                                <property name="dataType">integer</property>
+                                                <simple-property-list name="aggregateOn">
+                                                    <value>DeviceGroup/Device Name</value>
+                                                    <value>TargetGroup/tagetgroup</value>
+                                                </simple-property-list>
+                                                <property name="aggregateFunction">SUM</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">Openings Rate_DeviceGroup/Device Name_TargetGroup/tagetgroup</property>
+                                                <expression name="expression">measure["Openings Rate"]</expression>
+                                                <property name="dataType">float</property>
+                                                <simple-property-list name="aggregateOn">
+                                                    <value>DeviceGroup/Device Name</value>
+                                                    <value>TargetGroup/tagetgroup</value>
+                                                </simple-property-list>
+                                                <property name="aggregateFunction">SUM</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">Target Name</property>
+                                                <expression name="expression" type="javascript">dimension["TargetGroup"]["tagetgroup"]["target_name"]</expression>
+                                                <property name="dataType">string</property>
+                                            </structure>
+                                        </list-property>
+                                    </extended-item>
+                                </cell>
+                            </row>
+                        </header>
+                        <footer>
+                            <row id="4501">
+                                <cell id="4502"/>
+                            </row>
+                        </footer>
+                    </group>
+                </table>
+                <table name="ClickerDevices" id="4507">
+                    <property name="dataSet">DevicesStatDataSet</property>
+                    <list-property name="boundDataColumns">
+                        <structure>
+                            <property name="name">device_name</property>
+                            <text-property name="displayName">Device Name</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_name"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                        <structure>
+                            <property name="name">device_openings</property>
+                            <text-property name="displayName">Openings Count</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_openings"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">device_clicks</property>
+                            <text-property name="displayName">Clicks Count</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_clicks"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">device_openings_rate</property>
+                            <text-property name="displayName">Openings Rate</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_openings_rate"]</expression>
+                            <property name="dataType">float</property>
+                        </structure>
+                        <structure>
+                            <property name="name">device_clicks_rate</property>
+                            <text-property name="displayName">Clicks Rate</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_clicks_rate"]</expression>
+                            <property name="dataType">float</property>
+                        </structure>
+                        <structure>
+                            <property name="name">target_index</property>
+                            <text-property name="displayName">Target Index</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["target_index"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">target_name</property>
+                            <text-property name="displayName">Target Name</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["target_name"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                        <structure>
+                            <property name="name">device_class_id</property>
+                            <text-property name="displayName">Device Class ID</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_class_id"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">category_index</property>
+                            <text-property name="displayName">Category Index</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["category_index"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">category</property>
+                            <text-property name="displayName">CategoryNameKey</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["category"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                        <structure>
+                            <property name="name">mailing_id</property>
+                            <text-property name="displayName">MailingID</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["mailing_id"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">device_class_label</property>
+                            <text-property name="displayName">Device Class Name</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["device_class_label"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                    </list-property>
+                    <list-property name="filter">
+                        <structure>
+                            <property name="operator">eq</property>
+                            <expression name="expr" type="javascript">row["category_index"]</expression>
+                            <simple-property-list name="value1">
+                                <value>6</value>
+                            </simple-property-list>
+                            <property name="updateAggregation">true</property>
+                        </structure>
+                        <structure>
+                            <property name="operator">eq</property>
+                            <expression name="expr" type="javascript">row["mailing_id"]</expression>
+                            <simple-property-list name="value1">
+                                <value>row._outer["mailingId"]</value>
+                            </simple-property-list>
+                            <property name="updateAggregation">true</property>
+                        </structure>
+                    </list-property>
+                    <column id="4534"/>
+                    <group id="4508">
+                        <property name="groupName">DeviceClassGroup</property>
+                        <expression name="keyExpr" type="javascript">row["device_class_id"]</expression>
+                        <structure name="toc">
+                            <expression name="expressionValue" type="javascript">tr("report.devices.opener") + " " + row["device_class_label"]</expression>
+                        </structure>
+                        <property name="repeatHeader">false</property>
+                        <property name="hideDetail">false</property>
+                        <header>
+                            <row id="4509">
+                                <cell id="4510">
+                                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="4211">
+                                        <property name="cube">DeviceStatDataCube</property>
+                                        <property name="measureDirection">horizontal</property>
+                                        <property name="measures">
+                                            <extended-item extensionName="MeasureView" id="4236">
+                                                <property name="measure">Clicks Count</property>
+                                                <property name="detail">
+                                                    <extended-item extensionName="AggregationCell" id="4237">
+                                                        <property name="aggregationOnRow">DeviceGroup/Device Name</property>
+                                                        <property name="aggregationOnColumn">TargetGroup/tagetgroup</property>
+                                                        <property name="textAlign">right</property>
+                                                        <property name="content">
+                                                            <data id="4238">
+                                                                <property name="resultSetColumn">Clicks Count_DeviceGroup/Device Name_TargetGroup/tagetgroup</property>
+                                                            </data>
+                                                        </property>
+                                                    </extended-item>
+                                                </property>
+                                                <property name="header">
+                                                    <extended-item extensionName="CrosstabCell" id="4239">
+                                                        <property name="content">
+                                                            <data name="Target Name1" id="4229">
+                                                                <property name="backgroundAttachment">scroll</property>
+                                                                <property name="backgroundPositionX">0%</property>
+                                                                <property name="backgroundPositionY">0%</property>
+                                                                <property name="backgroundRepeat">repeat</property>
+                                                                <property name="fontFamily">serif</property>
+                                                                <property name="fontSize">10pt</property>
+                                                                <property name="fontWeight">bold</property>
+                                                                <property name="fontStyle">normal</property>
+                                                                <property name="fontVariant">normal</property>
+                                                                <property name="color">white</property>
+                                                                <property name="textLineThrough">none</property>
+                                                                <property name="textOverline">none</property>
+                                                                <property name="textUnderline">none</property>
+                                                                <property name="borderBottomColor">black</property>
+                                                                <property name="borderBottomStyle">none</property>
+                                                                <property name="borderBottomWidth">medium</property>
+                                                                <property name="borderLeftColor">black</property>
+                                                                <property name="borderLeftStyle">none</property>
+                                                                <property name="borderLeftWidth">medium</property>
+                                                                <property name="borderRightColor">black</property>
+                                                                <property name="borderRightStyle">none</property>
+                                                                <property name="borderRightWidth">medium</property>
+                                                                <property name="borderTopColor">black</property>
+                                                                <property name="borderTopStyle">none</property>
+                                                                <property name="borderTopWidth">medium</property>
+                                                                <property name="marginTop">0pt</property>
+                                                                <property name="marginLeft">0pt</property>
+                                                                <property name="marginBottom">0pt</property>
+                                                                <property name="marginRight">0pt</property>
+                                                                <property name="paddingTop">1pt</property>
+                                                                <property name="paddingLeft">1pt</property>
+                                                                <property name="paddingBottom">1pt</property>
+                                                                <property name="paddingRight">1pt</property>
+                                                                <property name="textAlign">center</property>
+                                                                <property name="letterSpacing">normal</property>
+                                                                <property name="lineHeight">normal</property>
+                                                                <property name="orphans">2</property>
+                                                                <property name="textTransform">none</property>
+                                                                <property name="whiteSpace">normal</property>
+                                                                <property name="widows">2</property>
+                                                                <property name="wordSpacing">normal</property>
+                                                                <property name="display">block</property>
+                                                                <property name="pageBreakAfter">auto</property>
+                                                                <property name="pageBreakBefore">auto</property>
+                                                                <property name="pageBreakInside">auto</property>
+                                                                <property name="showIfBlank">false</property>
+                                                                <property name="canShrink">false</property>
+                                                                <property name="overflow">hidden</property>
+                                                                <property name="resultSetColumn">Target Name</property>
+                                                            </data>
+                                                        </property>
+                                                        <property name="backgroundColor">#0071B9</property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                            <extended-item extensionName="MeasureView" id="4241">
+                                                <property name="measure">Clicks Rate</property>
+                                                <property name="detail">
+                                                    <extended-item extensionName="AggregationCell" id="4242">
+                                                        <property name="aggregationOnRow">DeviceGroup/Device Name</property>
+                                                        <property name="aggregationOnColumn">TargetGroup/tagetgroup</property>
+                                                        <property name="textAlign">right</property>
+                                                        <property name="borderRightStyle">solid</property>
+                                                        <property name="borderRightWidth">thin</property>
+                                                        <property name="borderRightColor">#7E7E7E</property>
+                                                        <property name="content">
+                                                            <data id="4243">
+                                                                <structure name="numberFormat">
+                                                                    <property name="category">Custom</property>
+                                                                    <property name="pattern">(0.00%)</property>
+                                                                </structure>
+                                                                <property name="resultSetColumn">Clicks Rate_DeviceGroup/Device Name_TargetGroup/tagetgroup</property>
+                                                            </data>
+                                                        </property>
+                                                    </extended-item>
+                                                </property>
+                                                <property name="header">
+                                                    <extended-item extensionName="CrosstabCell" id="4244">
+                                                        <property name="content">
+                                                            <text-data id="4542">
+                                                                <property name="backgroundAttachment">scroll</property>
+                                                                <property name="backgroundPositionX">0%</property>
+                                                                <property name="backgroundPositionY">0%</property>
+                                                                <property name="backgroundRepeat">repeat</property>
+                                                                <property name="fontFamily">serif</property>
+                                                                <property name="fontSize">10pt</property>
+                                                                <property name="fontWeight">bold</property>
+                                                                <property name="fontStyle">normal</property>
+                                                                <property name="fontVariant">normal</property>
+                                                                <property name="color">white</property>
+                                                                <property name="textLineThrough">none</property>
+                                                                <property name="textOverline">none</property>
+                                                                <property name="textUnderline">none</property>
+                                                                <property name="borderBottomColor">black</property>
+                                                                <property name="borderBottomStyle">none</property>
+                                                                <property name="borderBottomWidth">medium</property>
+                                                                <property name="borderLeftColor">black</property>
+                                                                <property name="borderLeftStyle">none</property>
+                                                                <property name="borderLeftWidth">medium</property>
+                                                                <property name="borderRightColor">black</property>
+                                                                <property name="borderRightStyle">none</property>
+                                                                <property name="borderRightWidth">medium</property>
+                                                                <property name="borderTopColor">black</property>
+                                                                <property name="borderTopStyle">none</property>
+                                                                <property name="borderTopWidth">medium</property>
+                                                                <property name="marginTop">0pt</property>
+                                                                <property name="marginLeft">0pt</property>
+                                                                <property name="marginBottom">0pt</property>
+                                                                <property name="marginRight">0pt</property>
+                                                                <property name="paddingTop">1pt</property>
+                                                                <property name="paddingLeft">1pt</property>
+                                                                <property name="paddingBottom">1pt</property>
+                                                                <property name="paddingRight">1pt</property>
+                                                                <property name="textAlign">center</property>
+                                                                <property name="textIndent">0em</property>
+                                                                <property name="letterSpacing">normal</property>
+                                                                <property name="lineHeight">normal</property>
+                                                                <property name="orphans">2</property>
+                                                                <property name="textTransform">none</property>
+                                                                <property name="whiteSpace">normal</property>
+                                                                <property name="widows">2</property>
+                                                                <property name="wordSpacing">normal</property>
+                                                                <property name="display">block</property>
+                                                                <property name="pageBreakAfter">auto</property>
+                                                                <property name="pageBreakBefore">auto</property>
+                                                                <property name="pageBreakInside">auto</property>
+                                                                <property name="showIfBlank">false</property>
+                                                                <property name="canShrink">false</property>
+                                                                <property name="overflow">hidden</property>
+                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mailing.statistics.share", reportContext.getLocale())</expression>
+                                                                <property name="contentType">html</property>
+                                                            </text-data>
+                                                        </property>
+                                                        <property name="backgroundColor">#0071B9</property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                        <property name="rows">
+                                            <extended-item extensionName="CrosstabView" id="4220">
+                                                <property name="views">
+                                                    <extended-item extensionName="DimensionView" id="4221">
+                                                        <property name="dimension">DeviceGroup</property>
+                                                        <property name="levels">
+                                                            <extended-item extensionName="LevelView" name="NewLevel View51" id="4222">
+                                                                <property name="level">DeviceGroup/Device Name</property>
+                                                                <property name="sort">
+                                                                    <sort-element>
+                                                                        <expression name="key" type="javascript">data["Clicks Count_DeviceGroup/Device Name_TargetGroup/tagetgroup"]</expression>
+                                                                        <property name="direction">desc</property>
+                                                                        <property name="strength">-1</property>
+                                                                        <property name="member">
+                                                                            <member-value>
+                                                                                <property name="value">0</property>
+                                                                                <property name="level">TargetGroup/tagetgroup</property>
+                                                                            </member-value>
+                                                                        </property>
+                                                                    </sort-element>
+                                                                </property>
+                                                                <property name="member">
+                                                                    <extended-item extensionName="CrosstabCell" id="4223">
+                                                                        <property name="content">
+                                                                            <data name="Device Name1" id="4224">
+                                                                                <property name="fontWeight">normal</property>
+                                                                                <property name="textAlign">left</property>
+                                                                                <property name="resultSetColumn">Device Name</property>
+                                                                            </data>
+                                                                        </property>
+                                                                        <property name="fontWeight">normal</property>
+                                                                        <property name="textAlign">left</property>
+                                                                        <property name="borderRightStyle">solid</property>
+                                                                        <property name="borderRightWidth">thin</property>
+                                                                        <property name="borderRightColor">#7E7E7E</property>
+                                                                    </extended-item>
+                                                                </property>
+                                                                <property name="pageBreakInside">avoid</property>
+                                                            </extended-item>
+                                                        </property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                        <property name="columns">
+                                            <extended-item extensionName="CrosstabView" id="4225">
+                                                <property name="views">
+                                                    <extended-item extensionName="DimensionView" id="4226">
+                                                        <property name="dimension">TargetGroup</property>
+                                                        <property name="levels">
+                                                            <extended-item extensionName="LevelView" name="NewLevel View61" id="4227">
+                                                                <property name="level">TargetGroup/tagetgroup</property>
+                                                                <property name="member">
+                                                                    <extended-item extensionName="CrosstabCell" id="4228">
+                                                                        <property name="fontWeight">bold</property>
+                                                                        <property name="color">white</property>
+                                                                        <property name="backgroundColor">#0071B9</property>
+                                                                        <property name="textAlign">center</property>
+                                                                        <property name="borderBottomStyle">solid</property>
+                                                                        <property name="borderBottomWidth">thin</property>
+                                                                        <property name="borderBottomColor">#7E7E7E</property>
+                                                                        <property name="borderRightStyle">solid</property>
+                                                                        <property name="borderRightWidth">thin</property>
+                                                                        <property name="borderRightColor">#7E7E7E</property>
+                                                                        <property name="style">table-head crosstab-header</property>
+                                                                    </extended-item>
+                                                                </property>
+                                                            </extended-item>
+                                                        </property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                        <property name="header">
+                                            <extended-item extensionName="CrosstabCell" id="4554">
+                                                <property name="content">
+                                                    <data id="4231">
+                                                        <property name="resultSetColumn">device_class_label</property>
+                                                    </data>
+                                                </property>
+                                            </extended-item>
+                                            <extended-item extensionName="CrosstabCell" id="4230">
+                                                <property name="content">
+                                                    <text-data id="4556">
+                                                        <property name="contentType">html</property>
+                                                    </text-data>
+                                                </property>
+                                                <property name="fontWeight">bold</property>
+                                                <property name="color">white</property>
+                                                <property name="backgroundColor">#0071B9</property>
+                                                <property name="borderBottomStyle">solid</property>
+                                                <property name="borderBottomWidth">thin</property>
+                                                <property name="borderBottomColor">#7E7E7E</property>
+                                                <property name="borderRightStyle">solid</property>
+                                                <property name="borderRightWidth">thin</property>
+                                                <property name="borderRightColor">#7E7E7E</property>
+                                            </extended-item>
+                                        </property>
+                                        <property name="repeatRowHeader">true</property>
+                                        <property name="hideMeasureHeader">false</property>
+                                        <property name="filter">
+                                            <filter-condition-element>
+                                                <expression name="expr" type="javascript">dimension["DeviceClassGroup"]["Device Class ID"] == row._outer["device_class_id"]</expression>
+                                                <property name="operator">is-true</property>
+                                            </filter-condition-element>
+                                            <filter-condition-element>
+                                                <expression name="expr" type="javascript">dimension["MailingGroup"]["MailingID"]</expression>
+                                                <property name="operator">eq</property>
+                                                <simple-property-list name="value1">
+                                                    <value type="javascript">row._outer._outer["mailingId"]</value>
+                                                </simple-property-list>
+                                            </filter-condition-element>
+                                        </property>
+                                        <property name="display">block</property>
+                                        <property name="borderTopStyle">solid</property>
+                                        <property name="borderTopWidth">thin</property>
+                                        <property name="borderTopColor">#7E7E7E</property>
+                                        <property name="borderLeftStyle">solid</property>
+                                        <property name="borderLeftWidth">thin</property>
+                                        <property name="borderLeftColor">#7E7E7E</property>
+                                        <property name="borderBottomStyle">solid</property>
+                                        <property name="borderBottomWidth">thin</property>
+                                        <property name="borderBottomColor">#7E7E7E</property>
+                                        <property name="borderRightStyle">solid</property>
+                                        <property name="borderRightWidth">thin</property>
+                                        <property name="borderRightColor">#7E7E7E</property>
+                                        <list-property name="boundDataColumns">
+                                            <structure>
+                                                <property name="name">Device Name</property>
+                                                <expression name="expression">dimension["DeviceGroup"]["Device Name"]</expression>
+                                                <property name="dataType">string</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">device_class_label</property>
+                                                <expression name="expression" type="javascript">tr("report.devices.clicker") + " " + row._outer["device_class_label"]</expression>
+                                                <property name="dataType">string</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">tagetgroup</property>
+                                                <expression name="expression">dimension["TargetGroup"]["tagetgroup"]</expression>
+                                                <property name="dataType">integer</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">Clicks Count_DeviceGroup/Device Name_TargetGroup/tagetgroup</property>
+                                                <expression name="expression">measure["Clicks Count"]</expression>
+                                                <property name="dataType">integer</property>
+                                                <simple-property-list name="aggregateOn">
+                                                    <value>DeviceGroup/Device Name</value>
+                                                    <value>TargetGroup/tagetgroup</value>
+                                                </simple-property-list>
+                                                <property name="aggregateFunction">SUM</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">Clicks Rate_DeviceGroup/Device Name_TargetGroup/tagetgroup</property>
+                                                <expression name="expression">measure["Clicks Rate"]</expression>
+                                                <property name="dataType">float</property>
+                                                <simple-property-list name="aggregateOn">
+                                                    <value>DeviceGroup/Device Name</value>
+                                                    <value>TargetGroup/tagetgroup</value>
+                                                </simple-property-list>
+                                                <property name="aggregateFunction">SUM</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">Target Name</property>
+                                                <expression name="expression" type="javascript">dimension["TargetGroup"]["tagetgroup"]["target_name"]</expression>
+                                                <property name="dataType">string</property>
+                                            </structure>
+                                        </list-property>
+                                    </extended-item>
+                                </cell>
+                            </row>
+                        </header>
+                        <footer>
+                            <row id="4532">
+                                <cell id="4533"/>
+                            </row>
+                        </footer>
+                    </group>
+                </table>
+                <grid id="4357">
+                    <column id="4358"/>
+                    <row id="4359">
+                        <cell id="4360"/>
+                    </row>
+                </grid>
+                <table name="LinkClicksHeader" id="3784">
                     <property name="dataSet">UrlClicksDataSet</property>
                     <list-property name="visibility">
                         <structure>
@@ -2575,6 +3843,7 @@ return false;]]></method>
                             </list-property>
                         </structure>
                     </list-property>
+                    <structure name="toc"/>
                     <list-property name="filter">
                         <structure>
                             <property name="operator">eq</property>
@@ -2614,7 +3883,7 @@ return false;]]></method>
                         </header>
                     </group>
                 </table>
-                <table id="3622">
+                <table name="LinkClicksContent" id="3622">
                     <property name="pageBreakAfter">avoid</property>
                     <property name="pageBreakBefore">avoid</property>
                     <property name="pageBreakInside">avoid</property>
@@ -2909,7 +4178,7 @@ isShowLink = true;	]]></method>
                         </row>
                     </footer>
                 </table>
-                <table id="3695">
+                <table name="LinkClicksTotals" id="3695">
                     <property name="dataSet">UrlClicksDataSet</property>
                     <list-property name="visibility">
                         <structure>

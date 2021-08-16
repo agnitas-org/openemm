@@ -30,6 +30,7 @@
 		<property name="eqlFacade" ref="EqlFacade" />
 		<property name="webStorage" ref="WebStorage" />
 		<property name="mailingService" ref="MailingService" />
+		<property name="targetEqlQueryBuilder" ref="TargetEqlQueryBuilder" />
 	</bean>
 
 	<bean name="/mailingsend" class="com.agnitas.web.ComMailingSendActionBasic">
@@ -70,6 +71,7 @@
 		<property name="bounceFilterService" ref="BounceFilterService"/>
 		<property name="mailingStopService" ref="MailingStopService" />
 		<property name="mediatypeFactory" ref="MediatypeFactory"/>
+		<property name="mailingPreviewService" ref="MailingPreviewService" />
 	</bean>
 
 	<bean name="/importprofile" class="org.agnitas.web.ImportProfileAction">
@@ -104,7 +106,6 @@
 		<property name="recipientDao" ref="RecipientDao" />
 		<property name="futureHolder" ref="futureHolder" />
 		<property name="workerExecutorService" ref="WorkerExecutorService" />
-		<property name="recipientQueryBuilder" ref="RecipientQueryBuilder" />
 		<property name="columnInfoService" ref="ColumnInfoService" />
 		<property name="recipientFactory" ref="RecipientFactory" />
 		<property name="bindingEntryFactory" ref="BindingEntryFactory" />
@@ -119,8 +120,12 @@
 		<property name="deliveryService" ref="deliveryService"/>
 		<property name="adminService" ref="AdminService"/>
 		<property name="mailingService" ref="MailingService" />
+		<property name="filterListBuilder" ref="TargetGroupQueryBuilderFilterListBuilder" />
+		<property name="queryBuilderToEqlConverter" ref="QueryBuilderToEqlConverter" />
+		<property name="targetEqlQueryBuilder" ref="TargetEqlQueryBuilder" />
+		<property name="eqlToQueryBuilderConverter" ref="EqlToQueryBuilderConverter" />
     </bean>
-    
+
 	<bean name="/importprofile_columns" class="com.agnitas.web.ImportProfileColumnsAction">
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="importProfileService" ref="ImportProfileService" />
@@ -129,7 +134,7 @@
 		<property name="configService" ref="ConfigService" />
 		<property name="importRecipientsDao" ref="ImportRecipientsDao" />
 	</bean>
-    
+
 	<bean name="/newimportwizard" class="org.agnitas.web.ProfileImportAction">
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="configService" ref="ConfigService" />
@@ -146,20 +151,5 @@
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
 		<property name="profileImportWorkerFactory" ref="ProfileImportWorkerFactory" />
     </bean>
-    
-	<bean name="/action" class="com.agnitas.web.ComEmmActionAction">
-		<property name="campaignDao" ref="CampaignDao" />
-		<property name="mailingDao" ref="MailingDao" />
-		<property name="emmActionDao" ref="EmmActionDao" />
-		<property name="emmActionService" ref="EmmActionService" />
-		<property name="emmActionFactory" ref="EmmActionFactory" />
-		<property name="actionOperationFactory" ref="ActionOperationFactory" />
-		<property name="velocityDirectiveScriptValidator" ref="VelocityDirectiveScriptValidator" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="configService" ref="ConfigService" />
-		<property name="userFormDao" ref="UserFormDao"/>
-		<property name="recipientDao" ref="RecipientDao" />
-        <property name="webStorage" ref="WebStorage" />
-		<property name="blacklistService" ref="BlacklistService"/>
-	</bean>
+
 </beans>

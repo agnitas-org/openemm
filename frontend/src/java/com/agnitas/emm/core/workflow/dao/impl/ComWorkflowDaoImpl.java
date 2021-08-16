@@ -36,7 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.Mailing;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
@@ -268,26 +268,42 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 
     @Override
     public List<Workflow> getWorkflowsOverview(@VelocityCheck int companyId, int adminId) {
+        return getWorkflowsOverview(companyId, adminId, 0);
+    }
+
+    @Override
+    public List<Workflow> getWorkflowsOverview(@VelocityCheck int companyId, int adminId, int altgId) {
         List<Object> parameters = new ArrayList<>();
-        String query = "SELECT wf.workflow_id, wf.company_id, wf.shortname, wf.description, wf.status, wf.editor_position_left," +
-                " wf.editor_position_top, wf.is_inner, wf.general_start_date, wf.general_end_date, wf.end_type, wf.general_start_reaction, " +
-                " wf.general_start_event, wf.workflow_schema FROM workflow_tbl wf " +
-                " LEFT JOIN workflow_dependency_tbl dep ON wf.workflow_id = dep.workflow_id AND wf.company_id = dep.company_id AND dep.type = ? " +
-                " WHERE wf.company_id = ? AND  wf.is_inner = 0 ";
-        
-        parameters.add(WorkflowDependencyType.MAILINGLIST.getId());
-        parameters.add(companyId);
-        
-        if (adminId > 0 && isDisabledMailingListsSupported()) {
-            query += "AND dep.entity_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?) ";
-            parameters.add(adminId);
-        }
-        
-        query += " ORDER BY CASE WHEN  wf.status = 2 THEN 3 WHEN  wf.status = 3 THEN 2 WHEN  wf.status = 1 OR  wf.status = 4 THEN  wf.status END, " +
-                " CASE WHEN  wf.status = 2 OR  wf.status = 3 OR  wf.status = 4 THEN  wf.general_start_date WHEN  wf.status = 1 THEN  wf.created END DESC";
-        
-        
-    	return select(logger, query, new WorkflowRowMapper(), parameters.toArray());
+		String query = "SELECT wf.workflow_id, wf.company_id, wf.shortname, wf.description, wf.status, wf.editor_position_left," +
+				" wf.editor_position_top, wf.is_inner, wf.general_start_date, wf.general_end_date, wf.end_type, wf.general_start_reaction, " +
+				" wf.general_start_event, wf.workflow_schema FROM workflow_tbl wf" +
+				" WHERE wf.company_id = ? AND  wf.is_inner = 0 ";
+		parameters.add(companyId);
+
+		if (adminId > 0 && isDisabledMailingListsSupported()) {
+			query += "AND wf.workflow_id NOT IN (SELECT workflow_id FROM workflow_dependency_tbl WHERE company_id = wf.company_id AND type = ? AND " +
+					" entity_id IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?))";
+			parameters.add(WorkflowDependencyType.MAILINGLIST.getId());
+			parameters.add(adminId);
+		}
+
+		if(altgId > 0) {
+			query += "AND wf.workflow_id NOT IN "
+					+ "(SELECT DISTINCT idep.workflow_id "
+					+ "FROM workflow_dependency_tbl idep JOIN mailing_tbl im ON idep.entity_id = im.mailing_id AND im.company_id = idep.company_id "
+					+ "WHERE idep.type IN (?, ?, ?) AND im.company_id = ? AND (im.target_expression IS NULL OR NOT " + DbUtilities.createTargetExpressionRestriction(isOracleDB(), "im") + ")) ";
+			parameters.add(WorkflowDependencyType.MAILING_DELIVERY.getId());
+			parameters.add(WorkflowDependencyType.MAILING_LINK.getId());
+			parameters.add(WorkflowDependencyType.MAILING_REFERENCE.getId());
+			parameters.add(companyId);
+			parameters.add(altgId);
+		}
+
+		query += " ORDER BY CASE WHEN  wf.status = 2 THEN 3 WHEN  wf.status = 3 THEN 2 WHEN  wf.status = 1 OR  wf.status = 4 THEN  wf.status END, " +
+				" CASE WHEN  wf.status = 2 OR  wf.status = 3 OR  wf.status = 4 THEN  wf.general_start_date WHEN  wf.status = 1 THEN  wf.created END DESC";
+
+
+		return select(logger, query, new WorkflowRowMapper(), parameters.toArray());
     }
 
     @Override
@@ -559,7 +575,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
         if (CollectionUtils.isNotEmpty(mailingIds)) {
             String sql = "UPDATE mailing_tbl SET target_expression = '', split_id = ? WHERE company_id = ? AND " +
                      makeBulkInClauseForInteger("mailing_id", mailingIds);
-            update(logger, sql, ComMailing.NONE_SPLIT_ID, companyId);
+            update(logger, sql, Mailing.NONE_SPLIT_ID, companyId);
         }
     }
     

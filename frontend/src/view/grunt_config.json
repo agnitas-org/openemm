@@ -5,5 +5,6 @@
   "jsp": ".",
   "webinf": "WEB-INF",
   "tomcat": "/opt/emm/tomcat/webapps/css",
-  "docs": "../../docs"
+  "docs": "../../docs",
+  "runtimeLibs": "js/lib"
 }

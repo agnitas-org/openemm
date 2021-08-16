@@ -122,4 +122,8 @@ public interface ProfileField extends LightProfileField {
 	int getMaxDataSize();
 
 	void setMaxDataSize(int maxDataSize);
+
+	SimpleDataType getOverrideSimpleDataType();
+
+	void setOverrideSimpleDataType(SimpleDataType overrideSimpleDataType);
 }

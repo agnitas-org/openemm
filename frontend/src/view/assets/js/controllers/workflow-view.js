@@ -118,48 +118,6 @@ AGN.Lib.Controller.new('workflow-view', function () {
         constants.setup(this.config);
     });
 
-    function changeViewProperties() {
-        var $viewPort = $("#viewPort");
-        $viewPort.css("overflow", "inherit");
-        $viewPort.css("float", "none");
-        $viewPort.css("border", "none");
-        $viewPort.css("sceneHeight", "100%");
-        $viewPort.css("width", "100%");
-        $viewPort.css("height", "100%");
-        $("#navigatorBody").remove();
-    }
-
-    function updateWideAndHigh(campaignManager) {
-
-        var sceneHeight = $("#bounder").height();
-        var sceneWidth = $("#bounder").width();
-        // max width and height which can fit into PDF single page
-        var maxWidth = 1360; // TODO: figure out from what was gotten such restriction
-        var maxHeight = 800;
-        if (sceneHeight > maxHeight || sceneWidth > maxWidth) {
-            var newScale = 1.0;
-            if (sceneWidth / sceneHeight < maxWidth / maxHeight) {
-                newScale = maxHeight / sceneHeight;
-            }
-            else {
-                newScale = maxWidth / sceneWidth;
-            }
-            campaignManager.setScale(newScale);
-            campaignManager.relayout();
-        }
-    }
-
-    function resetScrolling() {
-        var $bounder = $("#bounder");
-        var $editorCanvas = $("#editorCanvas");
-
-        // reset all scrolling, we don't need it for PDF
-        $bounder.css("left", "15px");
-        $bounder.css("top", $("div.icon-extra-info").css("top"));
-        $editorCanvas.css("left", "0");
-        $editorCanvas.css("top", "0");
-    }
-
     this.addDomInitializer('workflow-pdf-initialize', function () {
         var data = this.config,
             WorkflowManagerStatistics,
@@ -181,7 +139,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
             restoreSpaceFields: ["name", "workflow_description"],
             editorPositionLeft: parseInt(data.editorPositionLeft),
             editorPositionTop: parseInt(data.editorPositionTop),
-            localeDateNTimePattern: data.localeDateNTimePattern,
+            localeDateTimePattern: data.localeDateTimePattern,
             noContextMenu: data.noContextMenu,
             pageContextSessionId: sessionId,
             allUsedEntity:allUsedEntity,
@@ -226,7 +184,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
             restoreSpaceFields: ["name", "workflow_description"],
             editorPositionLeft: parseInt(data.editorPositionLeft),
             editorPositionTop: parseInt(data.editorPositionTop),
-            localeDateNTimePattern: data.localeDateNTimePattern,
+            localeDateTimePattern: data.localeDateTimePattern,
             pageContextSessionId: data.pageContextSessionId,
             campaignManagerScale: campaignManagerScale,
             campaignManagerSettings: campaignManagerSettings,
@@ -317,7 +275,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
     });
 
     this.addDomInitializer('start-editor-initializer', function ($e) {
-        var startData = $e.find("#start-editor-data").json();
+        var startData = this.config;
 
         startMailingSelector = new AGN.Lib.WM.MailingSelectorBase(startData.form, startData.container, startData.sessionId, startData.selectedName, startData.noMailingOption, editorsHelper);
 
@@ -1098,8 +1056,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
         editorsHelper.editors["stop"] = editorsHelper.editors["start"];
     });
 
-    this.addDomInitializer('decision-editor-initializer', function ($e) {
-        var decisionData = $e.find("#decision-editor-data").json();
+    this.addDomInitializer('decision-editor-initializer', function() {
+        var decisionData = this.config;
         var decisionProfileFieldsTypes = decisionData.profileFields;
         decisionMailingSelector = new AGN.Lib.WM.MailingSelectorBase(decisionData.form, decisionData.container, decisionData.sessionId, decisionData.selectName, decisionData.noMailingOption, editorsHelper);
 
@@ -1644,15 +1602,31 @@ AGN.Lib.Controller.new('workflow-view', function () {
         editorsHelper.editors["recipient"] = {
 
             formName: "recipientForm",
+            targetSelector: '#recipientTargetSelect',
             safeToSave: true,
 
+            getTargetFieldSelect: function() {
+                return new AGN.Lib.Select(
+                  $(this.targetSelector).select2({
+                    formatSelection: function (target) {
+                      var isEditable = $(target.element).data('editable');
+
+                      return isEditable ? '<a href="#" class="btn-link-light" ' +
+                                'data-action="recipient-editor-target-edit" data-config="targetId: ' + target.id + '">' +
+                                target.text +
+                             '</a>' : target.text;
+                    }
+                  })
+                );
+            },
+
             createNewTarget: function () {
-                editorsHelper.processForward(constants.forwardTargetGroupCreate, "#recipientTargetSelector", [], submitWorkflowForm);
+                editorsHelper.processForward(constants.forwardTargetGroupCreate, this.targetSelector, [], submitWorkflowForm);
             },
 
             editTarget: function (targetId) {
-                jQuery("#forwardTargetItemId").val(targetId);
-                editorsHelper.processForward(constants.forwardTargetGroupEdit, "#recipientTargetSelector", [], submitWorkflowForm);
+                $("#forwardTargetItemId").val(targetId);
+                editorsHelper.processForward(constants.forwardTargetGroupEdit, this.targetSelector, [], submitWorkflowForm);
             },
 
             getTitle: function () {
@@ -1662,22 +1636,22 @@ AGN.Lib.Controller.new('workflow-view', function () {
             fillEditor: function (node) {
                 var data = node.data;
 
+                if (constants.accessLimitTargetId > 0) {
+                    data.targets = _.union([constants.accessLimitTargetId], data.targets);
+                    data.targetsOption = 'ALL_TARGETS_REQUIRED';
+                }
+
                 var $form = $("form[name='" + this.formName + "']");
                 $form.submit(false);
                 $form.get(0).reset();
                 editorsHelper.fillFormFromObject(this.formName, data, "");
-                $('#recipientTargetSelect').select2('val', data.targets);
 
-                $('#recipientTargetSelect').select2({
-                    formatSelection: function (target) {
-                        return '<a href="#" class="btn-link-light" data-action="recipient-editor-target-edit" data-config="targetId: ' + target.id + '">' + target.text + '</a>';
-                    }
-                });
+                this.getTargetFieldSelect().selectValue(data.targets);
             },
 
             saveEditor: function () {
                 var data = editorsHelper.formToObject(this.formName);
-                data.targets = $('#recipientTargetSelect').val();
+                data.targets = this.getTargetFieldSelect().getSelectedValue();
                 return data;
             }
         };
@@ -1785,9 +1759,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
         ownWorkflowEditor = editorsHelper.editors["ownWorkflow"];
     });
 
-    this.addDomInitializer('mailing-editor-initializer', function ($e) {
-
-        var mailingData = $e.find("#mailing-editor-data").json();
+    this.addDomInitializer('mailing-editor-initializer', function() {
+        var mailingData = this.config;
 
         mailingEditorBase = new AGN.Lib.WM.MailingEditorBase(mailingData, campaignManager, submitWorkflowForm);
 
@@ -2003,9 +1976,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
         iconCommentEditor = editorsHelper.editors["icon-comment"];
     });
 
-    this.addDomInitializer('export-editor-initializer', function ($e) {
-
-        var exportData = $e.find("#export-editor-data").json();
+    this.addDomInitializer('export-editor-initializer', function() {
+        var exportData = this.config;
 
         editorsHelper.editors["export"] = {
 
@@ -2322,9 +2294,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
         deadlineEditor = editorsHelper.editors["deadline"];
     });
 
-    this.addDomInitializer('import-editor-initializer', function ($e) {
-
-        var importData = $e.find("#import-editor-data").json();
+    this.addDomInitializer('import-editor-initializer', function() {
+        var importData = this.config;
 
         editorsHelper.editors["import"] = {
 
@@ -2449,9 +2420,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
     });
 
-    this.addDomInitializer('action-mailing-editor-initializer', function ($e) {
-
-        var actionMailingData = $e.find("#action-mailing-editor-data").json();
+    this.addDomInitializer('action-mailing-editor-initializer', function () {
+        var actionMailingData = this.config;
 
         actionbasedMailingEditorBase = new AGN.Lib.WM.MailingEditorBase(actionMailingData, campaignManager, submitWorkflowForm);
 
@@ -2502,9 +2472,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
         actionbasedMailingEditor = editorsHelper.editors["actionbased_mailing"];
     });
 
-    this.addDomInitializer('date-mailing-initializer', function ($e) {
-
-        var dateMailingData = $e.find("#date-mailing-editor-data").json();
+    this.addDomInitializer('date-mailing-initializer', function () {
+        var dateMailingData = this.config;
 
         datebasedMailingEditorBase = new AGN.Lib.WM.MailingEditorBase(dateMailingData, campaignManager, submitWorkflowForm);
 
@@ -2555,9 +2524,9 @@ AGN.Lib.Controller.new('workflow-view', function () {
         datebasedMailingEditor = editorsHelper.editors["datebased_mailing"];
     });
 
-    this.addDomInitializer('followup-mailing-editor-initializer', function ($e) {
-        var baseMailingData = $e.find("#followup-mailing-base-data").json();
-        var followupMailingData = $e.find("#followup-mailing-data").json();
+    this.addDomInitializer('followup-mailing-editor-initializer', function () {
+        var baseMailingData = this.config.baseMailingData;
+        var followupMailingData = this.config.followupMailingData;
         baseMailingData.dropDownEl = jQuery("#followup-m-editor");
 
         baseMailingEditorBase = new AGN.Lib.WM.MailingEditorBase(baseMailingData, campaignManager, submitWorkflowForm);
@@ -2891,7 +2860,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
         data.workflowTestingDialogHandler.closeDialog();
     });
 
-    this.addAction({'click': 'workflowTestBtn'}, function () {
+    this.addAction({'click': 'workflow-dry-run'}, function () {
         data.workflowTestingDialogHandler.showDialog(function () {
             // Un-check "active" checkbox
             var checkbox = $('input#workflow_active');
@@ -3224,16 +3193,15 @@ AGN.Lib.Controller.new('workflow-view', function () {
         submitWorkflowForm(true);
     });
 
-    this.addAction({'click': 'workflowSaveBtnModal'}, function () {
-        submitWorkflowForm(true);
-    });
-
-    this.addAction({'click': 'campaignEditorEnlarge'}, function () {
+    this.addAction({'click': 'create-workflow-enlarged-editor-modal'}, function () {
+        var promise = Confirm.createFromTemplate({}, 'enlarged-editor-template');
         moveCampaignEditorBodyToModal();
-    });
 
-    Action.new({'click': '[data-close-campaign-editor-modal]'}, function () {
-        moveCampaignEditorBodyToPage();
+        promise.done(function(){
+            submitWorkflowForm(true);
+        }).always(function() {
+            moveCampaignEditorBodyToPage();
+        });
     });
 
     this.addAction({'change': 'workflow-view-change-status'}, function () {
@@ -3538,6 +3506,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
         this.workflowURL = data.workflowURL;
         this.componentURL = data.componentURL;
+
+        this.accessLimitTargetId = data.accessLimitTargetId;
     };
 
     BeanConstants.prototype.reactionRegistry = function () {

@@ -12,11 +12,8 @@ package org.agnitas.util;
 
 import java.beans.BeanInfo;
 import java.beans.PropertyDescriptor;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.sql.BatchUpdateException;
 import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -37,7 +34,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -59,8 +55,6 @@ import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.CollectionUtils;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.commons.encrypt.ProfileFieldEncryptor;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonWriter;
@@ -335,406 +329,6 @@ public class DbUtilities {
 		}
 	}
 
-	/**
-	 *	Requests own dataSource connection and commits DB changes.
-	 */
-	@DaoUpdateReturnValueCheck
-	public static Map<Integer, Object[]> importDataInTable(DataSource dataSource, String tableName, String[] tableColumns, List<Object[]> dataSets, boolean commitOnFullSuccessOnly) throws Exception {
-		Connection connection = null;
-		PreparedStatement preparedStatement = null;
-		ResultSet resultSet = null;
-        boolean previousAutoCommit = true;
-
-		try {
-			connection = dataSource.getConnection();
-        	previousAutoCommit = connection.getAutoCommit();
-			connection.setAutoCommit(false);
-
-			try {
-				checkTableAndColumnsExist(connection, tableName, tableColumns, true);
-
-				// Insert data
-				Map<Integer, Object[]> notInsertedData = new HashMap<>();
-				String insertStatementString = "INSERT INTO " + tableName + " (" + StringUtils.join(tableColumns, ", ") + ") VALUES (" + AgnUtils.repeatString("?", tableColumns.length, ", ") + ")";
-				preparedStatement = connection.prepareStatement(insertStatementString);
-				boolean hasOpenData = false;
-				List<Object[]> currentUncommitedLines = new ArrayList<>();
-				int datasetIndex;
-				for (datasetIndex = 0; datasetIndex < dataSets.size(); datasetIndex++) {
-					Object[] dataSet = dataSets.get(datasetIndex);
-					currentUncommitedLines.add(dataSet);
-					hasOpenData = true;
-
-					if (dataSet.length != tableColumns.length) {
-						if (!commitOnFullSuccessOnly) {
-							notInsertedData.put(datasetIndex, dataSet);
-						} else {
-							connection.rollback();
-							throw new Exception("Error on insert of dataset at index " + datasetIndex + ": invalid number of dataitems");
-						}
-					} else {
-						preparedStatement.clearParameters();
-						for (int parameterIndex = 0; parameterIndex < dataSet.length; parameterIndex++) {
-							if (dataSet[parameterIndex] instanceof Date) {
-								preparedStatement.setTimestamp(parameterIndex + 1, new java.sql.Timestamp(((Date) dataSet[parameterIndex]).getTime()));
-							} else {
-								preparedStatement.setObject(parameterIndex + 1, dataSet[parameterIndex]);
-							}
-						}
-						preparedStatement.addBatch();
-
-						if ((datasetIndex + 1) % 1000 == 0) {
-							hasOpenData = false;
-							try {
-								preparedStatement.executeBatch();
-								if (!commitOnFullSuccessOnly) {
-									connection.commit();
-								}
-								currentUncommitedLines.clear();
-							} catch (BatchUpdateException bue) {
-								if (commitOnFullSuccessOnly) {
-									connection.rollback();
-									throw new Exception("Error on insert of dataset between index " + (datasetIndex - currentUncommitedLines.size()) + " and index " + datasetIndex + ": " + bue.getMessage());
-								} else {
-									connection.rollback();
-									importDataInTable(datasetIndex - currentUncommitedLines.size(), connection, preparedStatement, tableColumns, currentUncommitedLines, notInsertedData);
-								}
-							} catch (Exception e) {
-								connection.rollback();
-								throw new Exception("Error on insert of dataset between index " + (datasetIndex - currentUncommitedLines.size()) + " and index " + datasetIndex + ": " + e.getMessage());
-							}
-						}
-					}
-				}
-
-				if (hasOpenData) {
-					hasOpenData = false;
-					try {
-						preparedStatement.executeBatch();
-						if (!commitOnFullSuccessOnly) {
-							connection.commit();
-						}
-						currentUncommitedLines.clear();
-					} catch (BatchUpdateException bue) {
-						if (commitOnFullSuccessOnly) {
-							connection.rollback();
-							throw new Exception("Error on insert of dataset between index " + (datasetIndex - currentUncommitedLines.size()) + " and index " + datasetIndex + ": " + bue.getMessage());
-						} else {
-							connection.rollback();
-							importDataInTable(datasetIndex - currentUncommitedLines.size(), connection, preparedStatement, tableColumns, currentUncommitedLines, notInsertedData);
-						}
-					} catch (Exception e) {
-						connection.rollback();
-						throw new Exception("Error on insert of dataset between index " + (datasetIndex - currentUncommitedLines.size()) + " and index " + datasetIndex + ": " + e.getMessage());
-					}
-				}
-
-				if (commitOnFullSuccessOnly) {
-					connection.commit();
-				}
-
-				return notInsertedData;
-			} finally {
-				connection.setAutoCommit(previousAutoCommit);
-
-			}
-		} catch (Exception e){
-			throw e;
-		} finally {
-			if (connection != null) {
-				connection.rollback();
-			}
-
-			DbUtilities.closeQuietly(resultSet);
-			DbUtilities.closeQuietly(preparedStatement);
-			DbUtilities.closeQuietly(connection);
-		}
-	}
-
-	private static void importDataInTable(int offsetIndex, Connection connection, PreparedStatement preparedStatement, String[] columnMapping, List<Object[]> data, Map<Integer, Object[]> notInsertedData) throws Exception {
-		int dataLineIndex = offsetIndex;
-		for (Object[] dataLine : data) {
-			dataLineIndex++;
-			if (dataLine.length != columnMapping.length) {
-				notInsertedData.put(dataLineIndex, dataLine);
-			} else {
-				int parameterIndex = 1;
-				for (int csvValueIndex = 0; csvValueIndex < dataLine.length; csvValueIndex++) {
-					if (columnMapping[csvValueIndex] != null) {
-						if (dataLine[csvValueIndex] instanceof Date) {
-							preparedStatement.setTimestamp(parameterIndex++, new java.sql.Timestamp(((Date) dataLine[csvValueIndex]).getTime()));
-						} else {
-							preparedStatement.setObject(parameterIndex++, dataLine[csvValueIndex]);
-						}
-					}
-				}
-
-				try {
-					preparedStatement.execute();
-					connection.commit();
-				} catch (Exception e) {
-					notInsertedData.put(dataLineIndex, dataLine);
-					connection.rollback();
-				}
-			}
-		}
-	}
-
-	public static Map<Integer, Tuple<List<String>, String>> importCsvFileInTable(DataSource dataSource, String tableName, String[] columnMapping, String[] columnFormats, File csvFile, String encoding, boolean commitOnFullSuccessOnly) throws Exception {
-		try (InputStream fileInputStream = new FileInputStream(csvFile)) {
-			return importCsvFileInTable(dataSource, tableName, columnMapping, columnFormats, fileInputStream, encoding, false, commitOnFullSuccessOnly);
-		}
-	}
-
-	public static Map<Integer, Tuple<List<String>, String>> importCsvFileInTable(DataSource dataSource, String tableName, String[] columnMapping, File csvFile, String encoding, boolean commitOnFullSuccessOnly) throws Exception {
-		try (InputStream fileInputStream = new FileInputStream(csvFile)) {
-			return importCsvFileInTable(dataSource, tableName, columnMapping, fileInputStream, encoding, false, commitOnFullSuccessOnly);
-		}
-	}
-
-	public static Map<Integer, Tuple<List<String>, String>> importCsvFileInTable(DataSource dataSource, String tableName, String[] columnMapping, File csvFile, String encoding, boolean fillMissingTrailingColumnsWithNull, boolean commitOnFullSuccessOnly, boolean containsHeadersInFirstRow) throws Exception {
-		try (InputStream fileInputStream = new FileInputStream(csvFile)) {
-			return importCsvFileInTable(dataSource, tableName, columnMapping, fileInputStream, encoding, fillMissingTrailingColumnsWithNull, commitOnFullSuccessOnly, containsHeadersInFirstRow);
-		}
-	}
-
-	public static Map<Integer, Tuple<List<String>, String>> importCsvFileInTable(DataSource dataSource, String tableName, String[] columnMapping, String[] columnFormats, InputStream csvFileInputStream, String encoding, boolean commitOnFullSuccessOnly, boolean containsHeadersInFirstRow) throws Exception {
-		return importCsvFileInTable(dataSource, tableName, columnMapping, columnFormats, csvFileInputStream, encoding, false, commitOnFullSuccessOnly, containsHeadersInFirstRow);
-	}
-
-	public static Map<Integer, Tuple<List<String>, String>> importCsvFileInTable(DataSource dataSource, String tableName, String[] columnMapping, InputStream csvFileInputStream, String encoding, boolean commitOnFullSuccessOnly, boolean containsHeadersInFirstRow) throws Exception {
-		return importCsvFileInTable(dataSource, tableName, columnMapping, csvFileInputStream, encoding, false, commitOnFullSuccessOnly, containsHeadersInFirstRow);
-	}
-
-	public static Map<Integer, Tuple<List<String>, String>> importCsvFileInTable(DataSource dataSource, String tableName, String[] columnMapping, InputStream csvFileInputStream, String encoding, boolean fillMissingTrailingColumnsWithNull, boolean commitOnFullSuccessOnly, boolean containsHeadersInFirstRow) throws Exception {
-		return importCsvFileInTable(dataSource, tableName, columnMapping, null, csvFileInputStream, encoding, fillMissingTrailingColumnsWithNull, commitOnFullSuccessOnly, containsHeadersInFirstRow);
-	}
-
-	public static Map<Integer, Tuple<List<String>, String>> importCsvFileInTable(DataSource dataSource, String tableName, String[] columnMapping, String[] columnFormats, InputStream csvFileInputStream, String encoding, boolean fillMissingTrailingColumnsWithNull, boolean commitOnFullSuccessOnly, boolean containsHeadersInFirstRow) throws Exception {
-		return importCsvFileInTable(dataSource, tableName, columnMapping, columnFormats, csvFileInputStream, encoding, ';', null, fillMissingTrailingColumnsWithNull, commitOnFullSuccessOnly, containsHeadersInFirstRow);
-	}
-
-	/**
-	 *	Requests own dataSource connection and commits DB changes.
-	 */
-	@DaoUpdateReturnValueCheck
-	public static Map<Integer, Tuple<List<String>, String>> importCsvFileInTable(DataSource dataSource, String tableName, String[] columnMapping, String[] columnFormats, InputStream csvFileInputStream, String encoding, char separatorChar, Character stringQuoteChar, boolean fillMissingTrailingColumnsWithNull, boolean commitOnFullSuccessOnly, boolean containsHeadersInFirstRow) throws Exception {
-		return importCsvFileInTable(dataSource, null, -1, tableName, columnMapping, new HashSet<>(), columnFormats, csvFileInputStream, encoding, separatorChar, stringQuoteChar, fillMissingTrailingColumnsWithNull, commitOnFullSuccessOnly, containsHeadersInFirstRow);
-	}
-
-	/**
-	 *	Requests own dataSource connection and commits DB changes.
-	 */
-	@DaoUpdateReturnValueCheck
-	public static Map<Integer, Tuple<List<String>, String>> importCsvFileInTable(DataSource dataSource, ProfileFieldEncryptor profileFieldEncryptor, int companyId, String tableName, String[] columnMapping, Set<Integer> encryptedColumnIndexes, String[] columnFormats, InputStream csvFileInputStream, String encoding, char separatorChar, Character stringQuoteChar, boolean fillMissingTrailingColumnsWithNull, boolean commitOnFullSuccessOnly, boolean containsHeadersInFirstRow) throws Exception {
-		if (StringUtils.isBlank(tableName)) {
-			throw new Exception("Missing parameter tableName for dataimport");
-		}
-
-		Connection connection = null;
-		PreparedStatement preparedStatement = null;
-        boolean previousAutoCommit = true;
-
-		try {
-			connection = dataSource.getConnection();
-        	previousAutoCommit = connection.getAutoCommit();
-			connection.setAutoCommit(false);
-
-			try (CsvReader csvReader = new CsvReader(csvFileInputStream, encoding, separatorChar, stringQuoteChar)) {
-				csvReader.setFillMissingTrailingColumnsWithNull(fillMissingTrailingColumnsWithNull);
-
-				// First line may contain headers
-				List<String> csvLine;
-				if (containsHeadersInFirstRow) {
-					csvLine = csvReader.readNextCsvLine();
-
-					String duplicateCsvColumn = CsvReader.checkForDuplicateCsvHeader(csvLine, false);
-					if (duplicateCsvColumn != null) {
-						throw new Exception("Invalid duplicate csvcolumn: " + duplicateCsvColumn);
-					}
-
-					if (columnMapping == null) {
-						columnMapping = csvLine.toArray(new String[0]);
-					}
-				}
-
-				checkTableAndColumnsExist(connection, tableName, columnMapping, true);
-
-				List<String> dbColumns = new ArrayList<>();
-				for (String column : columnMapping) {
-					if (column != null) {
-						dbColumns.add(column);
-					}
-				}
-
-				Map<Integer, Tuple<List<String>, String>> notInsertedData = new HashMap<>();
-				String insertStatementString = "INSERT INTO " + tableName + " (" + StringUtils.join(dbColumns, ", ") + ") VALUES (" + AgnUtils.repeatString("?", dbColumns.size(), ", ") + ")";
-				preparedStatement = connection.prepareStatement(insertStatementString);
-
-				// Read and insert data
-				int csvLineIndex = 1; // index obeys headerline => real lineindex in csv-file
-				boolean hasOpenData = false;
-				List<List<String>> currentUncommitedLines = new ArrayList<>();
-				while ((csvLine = csvReader.readNextCsvLine()) != null) {
-					csvLineIndex++;
-					currentUncommitedLines.add(csvLine);
-					hasOpenData = true;
-
-					if (csvLine.size() != columnMapping.length) {
-						if (!commitOnFullSuccessOnly) {
-							notInsertedData.put(csvLineIndex, new Tuple<>(csvLine, "Not enough values"));
-						} else {
-							connection.rollback();
-							throw new Exception("Error on insert of dataset at line " + csvLineIndex + ": invalid number of dataitems");
-						}
-					} else {
-						int parameterIndex = 1;
-						CaseInsensitiveMap<String, DbColumnType> columnDataTypes = getColumnDataTypes(dataSource, tableName);
-						for (int csvValueIndex = 0; csvValueIndex < csvLine.size(); csvValueIndex++) {
-							if (columnMapping[csvValueIndex] != null) {
-								String value = csvLine.get(csvValueIndex);
-
-								// Decrypt encrypted csv values
-								if (profileFieldEncryptor != null && companyId > 0 && encryptedColumnIndexes != null && encryptedColumnIndexes.contains(csvValueIndex)) {
-									value = profileFieldEncryptor.decryptFromBase64(value, companyId);
-								}
-
-								if (columnFormats != null && StringUtils.isNotBlank(columnFormats[csvValueIndex])) {
-									if (".".equalsIgnoreCase(columnFormats[csvValueIndex])) {
-										value = value.replace(",", "");
-										preparedStatement.setObject(parameterIndex++, value);
-									} else if (",".equalsIgnoreCase(columnFormats[csvValueIndex])) {
-										value = value.replace(".", "");
-										value = value.replace(",", ".");
-										preparedStatement.setObject(parameterIndex++, value);
-									} else {
-										preparedStatement.setTimestamp(parameterIndex++, new java.sql.Timestamp(new SimpleDateFormat(columnFormats[csvValueIndex]).parse(value).getTime()));
-									}
-								} else {
-									if (columnDataTypes.get(dbColumns.get(parameterIndex - 1)).getSimpleDataType() == SimpleDataType.Blob) {
-										preparedStatement.setBytes(parameterIndex++, Base64.getDecoder().decode(value));
-									} else {
-										preparedStatement.setString(parameterIndex++, value);
-									}
-								}
-							}
-						}
-						preparedStatement.addBatch();
-
-						if (csvLineIndex % 1000 == 0) {
-							hasOpenData = false;
-							try {
-								preparedStatement.executeBatch();
-								if (!commitOnFullSuccessOnly) {
-									connection.commit();
-								}
-								currentUncommitedLines.clear();
-							} catch (BatchUpdateException bue) {
-								if (commitOnFullSuccessOnly) {
-									connection.rollback();
-									throw new Exception("Error on insert of dataset between line " + (csvLineIndex - currentUncommitedLines.size()) + " and line " + csvLineIndex + ": " + bue.getMessage());
-								} else {
-									connection.rollback();
-									importCsvDataInTable(csvLineIndex - currentUncommitedLines.size(), connection, preparedStatement, columnMapping, columnFormats, currentUncommitedLines, notInsertedData);
-								}
-							} catch (Exception e) {
-								if (!commitOnFullSuccessOnly) {
-									notInsertedData.put(csvLineIndex, new Tuple<>(csvLine, e.getMessage()));
-									connection.rollback();
-								} else {
-									connection.rollback();
-									throw new Exception("Error on insert of dataset at line " + csvLineIndex + ": " + e.getMessage());
-								}
-							}
-						}
-					}
-				}
-
-				if (hasOpenData) {
-					hasOpenData = false;
-					try {
-						preparedStatement.executeBatch();
-						if (!commitOnFullSuccessOnly) {
-							connection.commit();
-						}
-						currentUncommitedLines.clear();
-					} catch (BatchUpdateException bue) {
-						if (commitOnFullSuccessOnly) {
-							connection.rollback();
-							throw new Exception("Error on insert of dataset between line " + (csvLineIndex - currentUncommitedLines.size()) + " and line " + csvLineIndex + ": " + bue.getMessage());
-						} else {
-							connection.rollback();
-							importCsvDataInTable(csvLineIndex - currentUncommitedLines.size(), connection, preparedStatement, columnMapping, columnFormats, currentUncommitedLines, notInsertedData);
-						}
-					} catch (Exception e) {
-						connection.rollback();
-						throw new Exception("Error on insert of dataset between line " + (csvLineIndex - currentUncommitedLines.size()) + " and line " + csvLineIndex + ": " + e.getMessage());
-					}
-				}
-
-				if (commitOnFullSuccessOnly) {
-					connection.commit();
-				}
-
-				return notInsertedData;
-			} finally {
-				connection.setAutoCommit(previousAutoCommit);
-
-			}
-		} finally {
-			try {
-				if (connection != null) {
-					connection.rollback();
-				}
-
-	        	DbUtilities.closeQuietly(preparedStatement);
-			} catch (Exception e) {
-				logger.error("Cannot close db resources: " + e.getMessage(), e);
-			} finally {
-	            DbUtilities.closeQuietly(connection);
-			}
-		}
-	}
-
-	private static void importCsvDataInTable(int offsetIndex, Connection connection, PreparedStatement preparedStatement, String[] columnMapping, String[] columnFormats, List<List<String>> data, Map<Integer, Tuple<List<String>, String>> notInsertedData) throws Exception {
-		int csvLineIndex = offsetIndex;
-		for (List<String> csvLine : data) {
-			csvLineIndex++;
-			if (csvLine.size() != columnMapping.length) {
-				notInsertedData.put(csvLineIndex, new Tuple<>(csvLine, "Not enough values"));
-			} else {
-				int parameterIndex = 1;
-				for (int csvValueIndex = 0; csvValueIndex < csvLine.size(); csvValueIndex++) {
-					if (columnMapping[csvValueIndex] != null) {
-						String value = csvLine.get(csvValueIndex);
-						if (columnFormats != null && StringUtils.isNotBlank(columnFormats[csvValueIndex])) {
-							if (".".equalsIgnoreCase(columnFormats[csvValueIndex])) {
-								value = value.replace(",", "");
-								preparedStatement.setObject(parameterIndex++, value);
-							} else if (",".equalsIgnoreCase(columnFormats[csvValueIndex])) {
-								value = value.replace(".", "");
-								value = value.replace(",", ".");
-								preparedStatement.setObject(parameterIndex++, value);
-							} else {
-								preparedStatement.setObject(parameterIndex++, new java.sql.Timestamp(new SimpleDateFormat(columnFormats[csvValueIndex]).parse(value).getTime()));
-							}
-						} else {
-							preparedStatement.setString(parameterIndex++, value);
-						}
-					}
-				}
-
-				try {
-					preparedStatement.execute();
-					connection.commit();
-				} catch (Exception e) {
-					notInsertedData.put(csvLineIndex, new Tuple<>(csvLine, e.getMessage()));
-					connection.rollback();
-				}
-			}
-		}
-	}
-
 	public static boolean checkDbVendorIsOracle(DataSource dataSource) {
 		if (dataSource == null) {
 			throw new RuntimeException("Cannot detect db vendor: dataSource is null");
@@ -948,16 +542,13 @@ public class DbUtilities {
 	}
 
 	public static String callStoredProcedureWithDbmsOutput(Connection connection, String procedureName, Object... parameters) throws SQLException {
-		CallableStatement callableStatement = null;
-		try {
-			callableStatement = connection.prepareCall("begin dbms_output.enable(:1); end;");
+		try (CallableStatement callableStatement = connection.prepareCall("begin dbms_output.enable(:1); end;")) {
 			callableStatement.setLong(1, 10000);
 			callableStatement.executeUpdate();
-			callableStatement.close();
-			callableStatement = null;
+		}
 
-			if (parameters != null) {
-				callableStatement = connection.prepareCall("{call " + procedureName + "(" + AgnUtils.repeatString("?", parameters.length, ", ") + ")}");
+		if (parameters != null) {
+			try (CallableStatement callableStatement = connection.prepareCall("{call " + procedureName + "(" + AgnUtils.repeatString("?", parameters.length, ", ") + ")}")) {
 				for (int i = 0; i < parameters.length; i++) {
 					if (parameters[i] instanceof Date) {
 						callableStatement.setTimestamp(i + 1, new java.sql.Timestamp(((Date) parameters[i]).getTime()));
@@ -965,31 +556,33 @@ public class DbUtilities {
 						callableStatement.setObject(i + 1, parameters[i]);
 					}
 				}
-			} else {
-				callableStatement = connection.prepareCall("{call " + procedureName + "()}");
+				callableStatement.execute();
 			}
-			callableStatement.execute();
-			callableStatement.close();
-			callableStatement = null;
+		} else {
+			try (CallableStatement callableStatement = connection.prepareCall("{call " + procedureName + "()}")) {
+				callableStatement.execute();
+			}
+		}
 
-			callableStatement = connection
-				.prepareCall(
-					"declare "
-					+ "    l_line varchar2(255); "
-					+ "    l_done number; "
-					+ "    l_buffer long; "
-					+ "begin "
-					+ "  loop "
-					+ "    exit when length(l_buffer)+255 > :maxbytes OR l_done = 1; "
-					+ "    dbms_output.get_line( l_line, l_done ); "
-					+ "    l_buffer := l_buffer || l_line || chr(10); "
-					+ "  end loop; " + " :done := l_done; "
-					+ " :buffer := l_buffer; "
-					+ "end;");
-
+		StringBuffer dbmsOutput = new StringBuffer(1024);
+		
+		try (CallableStatement callableStatement = connection
+			.prepareCall(
+				"declare "
+				+ "    l_line varchar2(255); "
+				+ "    l_done number; "
+				+ "    l_buffer long; "
+				+ "begin "
+				+ "  loop "
+				+ "    exit when length(l_buffer)+255 > :maxbytes OR l_done = 1; "
+				+ "    dbms_output.get_line( l_line, l_done ); "
+				+ "    l_buffer := l_buffer || l_line || chr(10); "
+				+ "  end loop; " + " :done := l_done; "
+				+ " :buffer := l_buffer; "
+				+ "end;")) {
+	
 			callableStatement.registerOutParameter(2, Types.INTEGER);
 			callableStatement.registerOutParameter(3, Types.VARCHAR);
-			StringBuffer dbmsOutput = new StringBuffer(1024);
 			while (true) {
 				callableStatement.setInt(1, 32000);
 				callableStatement.executeUpdate();
@@ -998,66 +591,13 @@ public class DbUtilities {
 					break;
 				}
 			}
-			callableStatement.close();
-			callableStatement = null;
+		}
 
-			callableStatement = connection.prepareCall("begin dbms_output.disable; end;");
+		try (CallableStatement callableStatement = connection.prepareCall("begin dbms_output.disable; end;")) {
 			callableStatement.executeUpdate();
-			callableStatement.close();
-			callableStatement = null;
-
-			return dbmsOutput.toString();
-		} finally {
-			closeQuietly(callableStatement);
 		}
-	}
 
-	public static void closeQuietly(Connection connection) {
-        closeQuietly(connection, null);
-	}
-
-	public static void closeQuietly(Connection connection, String unsuccessfulClosingMessage) {
-		if (connection != null) {
-			try {
-				connection.close();
-			} catch (SQLException e) {
-                if (StringUtils.isNotEmpty(unsuccessfulClosingMessage)) {
-                    logger.error(unsuccessfulClosingMessage, e);
-                }
-			}
-		}
-	}
-
-	public static void closeQuietly(Statement statement) {
-        closeQuietly(statement, null);
-	}
-
-	public static void closeQuietly(Statement statement, String unsuccessfulClosingMessage) {
-		if (statement != null) {
-			try {
-				statement.close();
-			} catch (SQLException e) {
-                if (StringUtils.isNotEmpty(unsuccessfulClosingMessage)) {
-				    logger.error(unsuccessfulClosingMessage, e);
-                }
-			}
-		}
-	}
-
-	public static void closeQuietly(ResultSet resultSet) {
-        closeQuietly(resultSet, null);
-	}
-
-	public static void closeQuietly(ResultSet resultSet, String unsuccessfulClosingMessage) {
-		if (resultSet != null) {
-			try {
-				resultSet.close();
-			} catch (SQLException e) {
-                if (StringUtils.isNotEmpty(unsuccessfulClosingMessage)) {
-                    logger.error(unsuccessfulClosingMessage, e);
-                }
-			}
-		}
+		return dbmsOutput.toString();
 	}
 
 	public static TextTable getResultAsTextTable(DataSource datasource, String selectString) throws Exception {

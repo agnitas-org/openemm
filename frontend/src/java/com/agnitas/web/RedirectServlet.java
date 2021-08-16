@@ -11,16 +11,18 @@
 package com.agnitas.web;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.agnitas.beans.Recipient;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
@@ -31,6 +33,7 @@ import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.PunycodeCodec;
 import org.agnitas.util.TimeoutLRUMap;
@@ -48,7 +51,6 @@ import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTrackableLinkDao;
-import com.agnitas.emm.core.LinkService;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.intelliad.IntelliAdMailingSettings;
@@ -58,6 +60,8 @@ import com.agnitas.emm.core.commons.intelliad.IntelliAdTrackingStringParser;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID.NamedUidBit;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.deeptracking.web.DeepTrackingCookieUtil;
+import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.mailing.cache.SnowflakeMailingCache;
 import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
@@ -97,6 +101,7 @@ public class RedirectServlet extends HttpServlet {
 	private IntelliAdMailingSettingsCache intelliAdMailingSettingsCache;
 	private SnowflakeMailingCache snowflakeMailingCache;
 	private Optional<PushRedirectTokenService> pushRedirectTokenServiceCache;
+	private RecipientService recipientService;
 	
 	private ClickTrackingService clickTrackingService;
 
@@ -105,7 +110,13 @@ public class RedirectServlet extends HttpServlet {
 	 */
 	@Override
 	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-		doResolveLink(request, response);
+		try {
+			doResolveLink(request, response);
+		} catch(final Exception e) {
+			logger.error("Error resolving RDIR link", e);
+			
+			throw e;
+		}
 	}
 		
 	private final void doResolveLink(final HttpServletRequest request, final HttpServletResponse response) throws IOException, ServletException {
@@ -146,46 +157,14 @@ public class RedirectServlet extends HttpServlet {
 			final ComCompany company = getCompanyDao().getCompany(uid.getCompanyID());
 			final String referenceTableRecordSelector = referenceTableRecordSelector(request, company, uid.getCustomerID());
 			final String encryptedStaticValueMapOrNull = request.getParameter("stc");
+			final Recipient recipientForUid = getRecipientService().getRecipient(uid.getCompanyID(), uid.getCustomerID());
 			
 			String fullUrl = getLinkService().personalizeLink(trackableLink, agnUidString, uid.getCustomerID(), referenceTableRecordSelector, !NamedUidBit.isBitSet(uid.getBitField(), NamedUidBit.NO_LINK_EXTENSION), encryptedStaticValueMapOrNull);
 			if (fullUrl == null) {
 				logger.error("service: could not personalize link");
 				throw new RedirectException("service: could not personalize link");
 			} else {
-				
-				String deepTrackingUID = null;
-				String deepTrackingSession = null;
-				if (trackableLink.getDeepTracking() != TrackableLink.DEEPTRACKING_NONE) {
-					deepTrackingSession = Long.toHexString((long) (Math.random() * 10000000.0));
-					deepTrackingUID = getLinkService().createDeepTrackingUID(uid.getCompanyID(), uid.getMailingID(), uid.getUrlID(), uid.getCustomerID());
-				}
-
-				switch (trackableLink.getDeepTracking()) {
-					case TrackableLink.DEEPTRACKING_NONE:
-						// Do nothing
-						break;
-					
-					case TrackableLink.DEEPTRACKING_ONLY_COOKIE:
-						if (deepTrackingUID != null) {
-							setDeepTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.CookieExpire, company.getId()), trackableLink.getCompanyID(), deepTrackingSession, deepTrackingUID);
-						}
-						break;
-
-					case TrackableLink.DEEPTRACKING_ONLY_URL:
-						if (deepTrackingUID != null) {
-							fullUrl = AgnUtils.addUrlParameter(fullUrl, "agnPar", deepTrackingSession + "_" + deepTrackingUID, "UTF-8");
-						}
-						break;
-
-					case TrackableLink.DEEPTRACKING_BOTH:
-						if (deepTrackingUID != null) {
-							setDeepTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.CookieExpire, company.getId()), trackableLink.getCompanyID(), deepTrackingSession, deepTrackingUID);
-							fullUrl = AgnUtils.addUrlParameter(fullUrl, "agnPar", deepTrackingSession + "_" + deepTrackingUID, "UTF-8");
-						}
-						break;
-
-					default: // do nothing
-				}
+				fullUrl = emitDeeptrackingToken(trackableLink, recipientForUid, uid, fullUrl, response, company);
 				
 				// Check for company-specific configuration to embed links in other measure system links like metalyzer
 				String externalMeasureSystemBaseLink = getConfigService().getValue(ConfigValue.ExternalMeasureSystemBaseLinkMailing, trackableLink.getCompanyID());
@@ -257,6 +236,36 @@ public class RedirectServlet extends HttpServlet {
 			
 			sendRedirect(response, redirectionUrl, 0);
 		}
+	}
+	
+	private final String emitDeeptrackingToken(final TrackableLink trackableLink, final Recipient recipient, final ComExtensibleUID uid, final String fullUrl, final HttpServletResponse response, final ComCompany company) throws UnsupportedEncodingException {
+		String newFullUrl = fullUrl;
+		
+		if(!recipient.isDoNotTrackMe()) {
+			if (trackableLink.getDeepTracking() != TrackableLink.DEEPTRACKING_NONE) {
+				final int deepTrackingSessionID = (int) (Math.random() * 10000000.0);
+				final String deepTrackingUID = getLinkService().createDeepTrackingUID(uid.getCompanyID(), uid.getMailingID(), uid.getUrlID(), uid.getCustomerID());
+
+				switch (trackableLink.getDeepTracking()) {
+					case TrackableLink.DEEPTRACKING_NONE:
+						// Do nothing
+						break;
+					
+					case TrackableLink.DEEPTRACKING_ONLY_COOKIE:
+						if (deepTrackingUID != null) {
+							setDeepTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.CookieExpire, company.getId()), trackableLink.getCompanyID(), deepTrackingSessionID, deepTrackingUID);
+						}
+						break;
+		
+					default: // do nothing
+				}
+			}
+		} else {
+			// Remove tracking cookie
+			DeepTrackingCookieUtil.removeTrackingCookie(response, company.getId());
+		}
+		
+		return newFullUrl;
 	}
 	
 	private final ComExtensibleUID decodeUid(final String uid, final HttpServletRequest request ) throws Exception {
@@ -349,19 +358,21 @@ public class RedirectServlet extends HttpServlet {
 		
 	}
 	
-	private void setDeepTrackingCookie(HttpServletResponse response, int maximumAge, int companyID, String deepTrackingSession, String deepTrackingUID) {
-		// cookie expire time load from company
-		Cookie cok = new Cookie("agnTrk" + companyID, deepTrackingSession + "_" + deepTrackingUID);
+	// TODO Remove setting max-age? According to EMM-8086, the cookie is session-based. (-> max-age < 0)
+	private void setDeepTrackingCookie(HttpServletResponse response, int maximumAge, int companyID, long deepTrackingSession, String deepTrackingUID) {
 		if (maximumAge != 0) {
-			// set max age in seconds
-			cok.setMaxAge(maximumAge);
+			// Persist cookie for given period of time
+			DeepTrackingCookieUtil.addTrackingCookie(response, maximumAge, companyID, deepTrackingSession, deepTrackingUID);
 		} else if (getConfigService().getIntegerValue(ConfigValue.CookieExpire) != 0) {
-			cok.setMaxAge(getConfigService().getIntegerValue(ConfigValue.CookieExpire));
+			// Persist cookie for configured period of time
+			DeepTrackingCookieUtil.addTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.CookieExpire), companyID, deepTrackingSession, deepTrackingUID);
 		} else {
-			cok.setMaxAge(-1);
+			// Do not persist cookie
+			DeepTrackingCookieUtil.addTrackingCookie(response, -1, companyID, deepTrackingSession, deepTrackingUID);
 		}
-		response.addCookie(cok);
 	}
+	
+	
 
 	private TimeoutLRUMap<Integer, TrackableLink> getUrlCache() {
 		if (urlCache == null) {
@@ -527,6 +538,19 @@ public class RedirectServlet extends HttpServlet {
 		return mailingDao;
 	}
 
+	@Required
+	public final void setRecipientService(final RecipientService service) {
+		this.recipientService = Objects.requireNonNull(service, "Recipient service is null");
+	}
+	
+	private RecipientService getRecipientService() {
+		if(recipientService == null) {
+			this.recipientService = getApplicationContext().getBean(RecipientService.class, "RecipientService");
+		}
+		
+		return this.recipientService;
+	}
+	
 	public void setIntelliAdMailingSettingsCache(IntelliAdMailingSettingsCache intelliAdMailingSettingsCache) {
 		this.intelliAdMailingSettingsCache = intelliAdMailingSettingsCache;
 	}

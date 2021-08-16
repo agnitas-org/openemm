@@ -10,29 +10,40 @@
 
 package com.agnitas.emm.core.commons.database.fulltext.impl;
 
-import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang.StringUtils;
 
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchReservedLiteralsConfig;
 
 public class OracleFulltextSearchReservedLiteralsConfig implements FulltextSearchReservedLiteralsConfig {
 
-    private List<Character> specialLiterals;
+    private List<Character> specialChars;
+    private List<String> specialWords;
 
-    private Character escapeSymbol;
-
-    public OracleFulltextSearchReservedLiteralsConfig(List<Character> specialLiterals, Character escapeSymbol) {
-        this.specialLiterals = specialLiterals;
-        this.escapeSymbol = escapeSymbol;
-    }
-
-	@Override
-    public List<Character> getSpecialSymbols() {
-        return specialLiterals != null ? specialLiterals : new ArrayList<>();
+    public OracleFulltextSearchReservedLiteralsConfig(List<Character> specialCharacters, List<String> specialWords) {
+        this.specialChars = specialCharacters;
+        this.specialWords = specialWords;
     }
 
     @Override
-    public Character getEscapeSymbol() {
-        return escapeSymbol;
+    public List<Character> getSpecialCharacters() {
+        return ListUtils.emptyIfNull(specialChars);
+    }
+
+    @Override
+    public List<String> getSpecialWords() {
+        return ListUtils.emptyIfNull(specialWords);
+    }
+
+    @Override
+    public boolean isReservedWord(String word) {
+        return getSpecialWords().contains(StringUtils.upperCase(word));
+    }
+
+    @Override
+    public String escapeWord(String word) {
+        return "{" + word + "}";
     }
 }

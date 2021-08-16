@@ -13,7 +13,7 @@
 <%--@elvariable id="emmActions" type="java.util.List<org.agnitas.actions.EmmAction>"--%>
 <%--@elvariable id="workflowParameters" type="org.agnitas.web.forms.WorkflowParameters"--%>
 
-<c:url var="actionEditUrlPattern" value="/action.do?action=2&actionID={action-ID}"/>
+<c:url var="actionEditUrlPattern" value="/action/{action-ID}/view.action"/>
 
 <mvc:form servletRelativeAction="/webform/save.action" id="userFormForm" modelAttribute="form" data-form="resource"
           data-autosave-scope="action-form/${form.formId}"
@@ -74,7 +74,9 @@
                                            value="${fn:replace(userFormURLPattern, "{user-form-name}", form.formName)}">
                                 </div>
                                 <div class="input-group-btn">
-                                  <a href="${fn:replace(userFormFullURLPattern, "{user-form-name}", form.formName)}" class="btn btn-regular btn-primary">
+                                  <a href="${fn:replace(userFormFullURLPattern, "{user-form-name}", form.formName)}"
+                                     data-tooltip="<mvc:message code='userform.test'/>"
+                                     class="btn btn-regular btn-primary" target="_blank">
                                       <i class="icon icon-arrow-right"></i>
                                   </a>
                                 </div>
@@ -149,13 +151,13 @@
                     <div class="col-sm-8">
                         <div class="inline-tile">
                             <div class="inline-tile-header">
-                                <c:if test="${not form.successSettings.useVelocity}">
-                                    <ul class="inline-tile-header-nav">
-                                        <li class="active">
-                                            <a href="#" data-toggle-tab="#tab-success-template-html">
-                                                <mvc:message code="HTML"/>
-                                            </a>
-                                        </li>
+                                <ul class="inline-tile-header-nav">
+                                    <li class="active">
+                                        <a href="#" data-toggle-tab="#tab-success-template-html">
+                                            <mvc:message code="HTML"/>
+                                        </a>
+                                    </li>
+                                    <c:if test="${not form.successSettings.useVelocity}">
                                         <li>
                                             <a href="#" data-toggle-tab="#tab-success-template-wysiwyg"
                                                data-action="check-velocity-script"
@@ -163,9 +165,19 @@
                                                 <mvc:message code="mailingContentHTMLEditor"/>
                                             </a>
                                         </li>
-                                    </ul>
-                                </c:if>
+                                    </c:if>
+                                    <emm:ShowByPermission token="forms.creator">
+                                        <li>
+                                            <a href="#" data-toggle-tab="#tab-success-template-form-builder">
+                                                <mvc:message code="userform.builder"/>
+                                            </a>
+                                        </li>
+                                    </emm:ShowByPermission>
+                                </ul>
                                 <ul class="inline-tile-header-actions">
+                                    <li>
+                                        <a href="#" id="successFormUndoButton" style="display: none"><mvc:message code="button.Undo" /></a>
+                                    </li>
                                     <li>
                                         <a href="#" data-modal="modal-editor"
                                            data-modal-set="title: <mvc:message code="settings.form.success"/>, target: '#successTemplate', type: success, useVelocity: '${form.successSettings.useVelocity}'"
@@ -192,6 +204,30 @@
                                                       id="successTemplate"/>
                                     </div>
                                 </div>
+
+                                <emm:ShowByPermission token="forms.creator">
+                                    <!-- FORM BUILDER -->
+                                    <div id="tab-success-template-form-builder" class="hidden" data-initializer="formbuilder">
+                                        <script id="config:formbuilder" type="application/json">
+                                            {
+                                                "cssUrl": "${formCssLocation}/css/bootstrap.min.css",
+                                                "template": "formbuilder-template",
+                                                "confirmationModal": "warning-html-generation-modal",
+                                                "formName": "${empty form.formName ? "new form" : form.formName}${'(success)'}",
+                                                "undoButton": "#successFormUndoButton",
+                                                "data": ${empty form.successSettings.formBuilderJson ? "\"\"" : form.successSettings.formBuilderJson},
+                                                "namesJson": ${emm:toJson(names)},
+                                                "mediapoolImages": ${emm:toJson(mediapoolImages)},
+                                                "textProfileFields": ${emm:toJson(textProfileFields)},
+                                                "dateProfileFields": ${emm:toJson(dateProfileFields)},
+                                                "numberProfileFields": ${emm:toJson(numberProfileFields)}
+                                            }
+                                        </script>
+                                        <div class="row">
+                                            <div id="successFormBuilder" class="js-form-builder" data-target="#successTemplate"></div>
+                                        </div>
+                                    </div>
+                                </emm:ShowByPermission>
                             </div>
                         </div>
                     </div>
@@ -264,13 +300,13 @@
                     <div class="col-sm-8">
                         <div class="inline-tile">
                             <div class="inline-tile-header">
-                                <c:if test="${not form.errorSettings.useVelocity}">
-                                    <ul class="inline-tile-header-nav">
-                                        <li class="active">
-                                            <a href="#" data-toggle-tab="#tab-error-template-html">
-                                                <mvc:message code="HTML"/>
-                                            </a>
-                                        </li>
+                                <ul class="inline-tile-header-nav">
+                                    <li class="active">
+                                        <a href="#" data-toggle-tab="#tab-error-template-html">
+                                            <mvc:message code="HTML"/>
+                                        </a>
+                                    </li>
+                                    <c:if test="${not form.errorSettings.useVelocity}">
                                         <li>
                                             <a href="#" data-toggle-tab="#tab-error-template-wysiwyg"
                                                data-action="check-velocity-script"
@@ -278,9 +314,19 @@
                                                 <mvc:message code="mailingContentHTMLEditor"/>
                                             </a>
                                         </li>
-                                    </ul>
-                                </c:if>
+                                    </c:if>
+                                    <emm:ShowByPermission token="forms.creator">
+                                        <li>
+                                            <a href="#" data-toggle-tab="#tab-error-template-form-builder">
+                                                <mvc:message code="userform.builder"/>
+                                            </a>
+                                        </li>
+                                    </emm:ShowByPermission>
+                                </ul>
                                 <ul class="inline-tile-header-actions">
+                                    <li>
+                                        <a href="#" id="errorFormUndoButton" style="display: none"><mvc:message code="button.Undo" /></a>
+                                    </li>
                                     <li>
                                         <a href="#" data-modal="modal-editor"
                                            data-modal-set="title: <mvc:message code="settings.form.error"/>, target: '#errorTemplate', type: error,
@@ -308,6 +354,30 @@
                                                       id="errorTemplate"/>
                                     </div>
                                 </div>
+
+                                <emm:ShowByPermission token="forms.creator">
+                                    <!-- FORM BUILDER -->
+                                    <div id="tab-error-template-form-builder" class="hidden"  data-initializer="formbuilder">
+                                        <script id="config:formbuilder" type="application/json">
+                                            {
+                                                "cssUrl": "${formCssLocation}/css/bootstrap.min.css",
+                                                "template": "formbuilder-template",
+                                                "confirmationModal": "warning-html-generation-modal",
+                                                "formName": "${empty form.formName ? "new form" : form.formName}${'(error)'}",
+                                                "undoButton": "#errorFormUndoButton",
+                                                "dlinksata": ${empty form.errorSettings.formBuilderJson ? "\"\"" : form.errorSettings.formBuilderJson},
+                                                "namesJson": ${emm:toJson(names)},
+                                                "mediapoolImages": ${emm:toJson(mediapoolImages)},
+                                                "textProfileFields": ${emm:toJson(textProfileFields)},
+                                                "dateProfileFields": ${emm:toJson(dateProfileFields)},
+                                                "numberProfileFields": ${emm:toJson(numberProfileFields)}
+                                            }
+                                        </script>
+                                        <div class="row">
+                                            <div id="errorFormBuilder" class="js-form-builder" data-target="#errorTemplate"></div>
+                                        </div>
+                                    </div>
+                                </emm:ShowByPermission>
                             </div>
                         </div>
                     </div>
@@ -384,4 +454,59 @@
             </div>
         </div>
     </div>
+</script>
+
+<script id="warning-html-generation-modal" type="text/x-mustache-template">
+    <div class="modal modal-wide">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal"><i aria-hidden="true" class="icon icon-times-circle"></i></button>
+                    <h4 class="modal-title text-state-warning">
+                        <i class="icon icon-state-warning"></i>
+                        <mvc:message code="warning" />
+                    </h4>
+                </div>
+
+                <div class="modal-body">
+                    <p><mvc:message code="userform.builder.generateHtml.question" /></p>
+                </div>
+
+                <div class="modal-footer">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal">
+                            <i class="icon icon-times"></i>
+                            <span class="text">
+                                <mvc:message code="button.Cancel" />
+                            </span>
+                        </button>
+
+                        <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal">
+                            <i class="icon icon-check"></i>
+                            <span class="text">
+                                <mvc:message code="button.Proceed" />
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script id="formbuilder-template" type="text/x-mustache-template">
+<html>
+    <head>
+        {{ if (cssUrl) { }}
+        <link rel="stylesheet" href="{{- cssUrl }}">
+        {{ } }}
+    </head>
+    <body>
+        <div class="container" style="margin-top: 50px;">
+            <form action="form.action">
+                {{= generatedHTML}}
+            </form>
+        </div>
+    </body>
+</html>
 </script>

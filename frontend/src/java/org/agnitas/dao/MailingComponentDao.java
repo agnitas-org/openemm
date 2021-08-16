@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface MailingComponentDao {
@@ -60,7 +61,7 @@ public interface MailingComponentDao {
      *
      * @param comp
      *          The mailing component that should be saved.
-     * @throws Exception 
+     * @throws Exception
      */
     void saveMailingComponent(MailingComponent comp) throws Exception;
 
@@ -85,7 +86,7 @@ public interface MailingComponentDao {
      *          The type for mailing component.
      * @return Vector of MailingComponents.
      */
-    List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID, int componentType);
+    List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID, MailingComponentType componentType);
 
     /**
      * Loads all components identified by mailing id, company id and component type.
@@ -100,7 +101,7 @@ public interface MailingComponentDao {
      *          Whether ({@code true}) or not ({@code false}) a content data (see {@link MailingComponent#getEmmBlock()} and {@link MailingComponent#getBinaryBlock()}) should be loaded.
      * @return Vector of MailingComponents.
      */
-    List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID, int componentType, boolean includeContent);
+    List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID, MailingComponentType componentType, boolean includeContent);
 
     /**
      * Loads all components identified by mailing id and company id.
@@ -137,11 +138,11 @@ public interface MailingComponentDao {
      */
     List<MailingComponent> getMailingComponents(@VelocityCheck int companyID, int mailingID, Set<Integer> componentIds);
     
-    List<MailingComponent> getMailingComponentsByType(@VelocityCheck int companyID, int mailingID, List<Integer> type);
+    List<MailingComponent> getMailingComponentsByType(@VelocityCheck int companyID, int mailingID, List<MailingComponentType> types);
 
     /**
      * Loads all components identified by mailing id, company id.
-     * And type for these components should be MailingComponent.TYPE_ATTACHMENT or MailingComponent.TYPE_PERSONALIZED_ATTACHMENT.
+     * And type for these components should be MailingComponentType.Attachment or MailingComponentType.PersonalizedAttachment.
      *
      * @param mailingID
      *          The id of the mailing for mailing component.

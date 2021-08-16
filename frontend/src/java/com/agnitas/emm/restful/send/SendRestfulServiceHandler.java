@@ -13,10 +13,15 @@ package com.agnitas.emm.restful.send;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.TimeZone;
 
 import javax.servlet.ServletContext;
@@ -25,6 +30,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.MailinglistDao;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.DateUtil;
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.util.AgnUtils;
@@ -40,15 +48,18 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
@@ -62,30 +73,45 @@ import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
+import com.agnitas.mailing.preview.service.MailingPreviewService;
 import com.agnitas.util.ClassicTemplateGenerator;
 
 /**
  * This restful service is available at:
- * https:/<system.url>/restful/send
+ * https://<system.url>/restful/send
  */
 public class SendRestfulServiceHandler implements RestfulServiceHandler, ApplicationContextAware {
-	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(SendRestfulServiceHandler.class);
 	
 	public static final String NAMESPACE = "send";
 
-	private UserActivityLogDao userActivityLogDao;
-	private MailingService mailingService;
-	private ComMailingDao mailingDao;
-	private MailinglistDao mailinglistDao;
-	private MaildropService maildropService;
-	private ClassicTemplateGenerator classicTemplateGenerator;
+	protected UserActivityLogDao userActivityLogDao;
+	protected MailingService mailingService;
+	protected ComMailingDao mailingDao;
+	protected ComRecipientDao recipientDao;
+	protected MailinglistDao mailinglistDao;
+	protected MaildropService maildropService;
+	protected ClassicTemplateGenerator classicTemplateGenerator;
+	protected SendActionbasedMailingService sendActionbasedMailingService;
+	protected ConfigService configService;
+	protected MailingPreviewService mailingPreviewService;
+	
 	/**
 	 * @deprecated Replace this general dependency by specific bean references
 	 */
 	@Deprecated
 	private ApplicationContext applicationContext;
 
+	@Required
+	public final void setConfigService(final ConfigService service) {
+		this.configService = Objects.requireNonNull(service, "ConfigService is null");
+	}
+	
+	@Required
+	public final void setMailingPreviewService(final MailingPreviewService service) {
+		this.mailingPreviewService = Objects.requireNonNull(service, "MailingPreviewService is null");
+	}
+	
 	@Required
 	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
@@ -102,6 +128,11 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 	}
 	
 	@Required
+	public void setRecipientDao(ComRecipientDao recipientDao) {
+		this.recipientDao = recipientDao;
+	}
+	
+	@Required
 	public void setMailinglistDao(MailinglistDao mailinglistDao) {
 		this.mailinglistDao = mailinglistDao;
 	}
@@ -114,6 +145,11 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 	@Required
 	public void setClassicTemplateGenerator(ClassicTemplateGenerator classicTemplateGenerator) {
 		this.classicTemplateGenerator = classicTemplateGenerator;
+	}
+	
+	@Required
+	public void setSendActionbasedMailingService(SendActionbasedMailingService sendActionbasedMailingService) {
+		this.sendActionbasedMailingService = sendActionbasedMailingService;
 	}
 
 	@Override
@@ -152,7 +188,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 	 * @return
 	 * @throws Exception
 	 */
-	private Object sendMailing(HttpServletRequest request, File requestDataFile, ComAdmin admin) throws Exception {
+	protected Object sendMailing(HttpServletRequest request, File requestDataFile, ComAdmin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_SEND_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_SEND_SHOW.toString() + "'");
 		}
@@ -175,6 +211,11 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 		Date sendDate = new Date();
 		int stepping = 0;
 		int blockSize = 0;
+		int customerID = 0;
+		String customerEmail = null;
+		int userStatus = 0;
+		
+		Map<String, String> profileDataOverrides = null;
 		
 		try (InputStream inputStream = new FileInputStream(requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
@@ -214,6 +255,34 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 							} else {
 								throw new RestfulClientException("Invalid data type for 'block_size'. Integer expected");
 							}
+						} else if ("customer_id".equals(entry.getKey())) {
+							if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+								customerID = (Integer) entry.getValue();
+							} else {
+								throw new RestfulClientException("Invalid data type for 'customer_id'. Integer expected");
+							}
+						} else if ("email".equals(entry.getKey())) {
+							if (entry.getValue() != null && entry.getValue() instanceof String && AgnUtils.isEmailValid((String) entry.getValue())) {
+								customerEmail = AgnUtils.normalizeEmail((String) entry.getValue());
+							} else {
+								throw new RestfulClientException("Invalid data type for 'email'. Email address expected");
+							}
+						} else if ("user_status".equals(entry.getKey())) {
+							if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+								userStatus = (Integer) entry.getValue();
+							} else {
+								throw new RestfulClientException("Invalid data type for 'user_status'. Integer expected");
+							}
+						} else if ("data".equals(entry.getKey())) {
+							if (entry.getValue() != null && entry.getValue() instanceof JsonObject) {
+								JsonObject profileData = (JsonObject) entry.getValue();
+								profileDataOverrides = new HashMap<>();
+								for (Entry<String, Object> item : profileData.entrySet()) {
+									profileDataOverrides.put(item.getKey(), item.getValue() == null ? "" : item.getValue().toString());
+								}
+							} else {
+								throw new RestfulClientException("Invalid data type for 'data'. JsonObject expected");
+							}
 						} else {
 							throw new RestfulClientException("Invalid property '" + entry.getKey() + "' for 'send'");
 						}
@@ -224,18 +293,25 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 		
 		if (maildropStatus == null) {
 			throw new RestfulClientException("Missing property value for 'send_type'. String 'W', 'A', 'T', 'E' or 'R' expected");
+		} else if (customerID != 0 && StringUtils.isNotBlank(customerEmail)) {
+			throw new RestfulClientException("Colliding parameters customer_id and email detected. Only one of both is allowed");
 		}
 		
-		sendMailing(admin, maildropStatus, mailingID, sendDate, stepping, blockSize);
-		
-		if (maildropStatus == MaildropStatus.WORLD || maildropStatus == MaildropStatus.ADMIN || maildropStatus == MaildropStatus.TEST) {
-			return "Mailing started";
-		} else {
-			return "Mailing activated";
+		if (customerID == 0 && StringUtils.isNotBlank(customerEmail)) {
+			List<Integer> result = recipientDao.getRecipientIDs(admin.getCompanyID(), "email", customerEmail);
+			if (result.size() > 1) {
+				throw new RestfulClientException("More than one recipient found for this email address");
+			} else if (result.size() < 1) {
+				throw new RestfulClientException("No recipient found for this email address");
+			} else {
+				customerID = result.get(0);
+			}
 		}
+		
+		return sendMailing(admin, maildropStatus, mailingID, sendDate, stepping, blockSize, customerID, userStatus, profileDataOverrides);
 	}
 	
-    protected void sendMailing(ComAdmin admin, MaildropStatus maildropStatus, int mailingID, Date sendDate, int stepping, int blockSize) throws Exception {
+    protected String sendMailing(ComAdmin admin, MaildropStatus maildropStatus, int mailingID, Date sendDate, int stepping, int blockSize, int customerID, int userStatus, Map<String, String> profileDataOverrides) throws Exception {
 		boolean adminSend = false;
 		boolean testSend = false;
 		boolean worldSend = false;
@@ -243,6 +319,8 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 		java.util.Date genDate = new java.util.Date();
 		int startGen = 1;
 		MaildropEntry maildropEntry = new MaildropEntryImpl();
+		
+		final boolean useBackendPreview = configService.getBooleanValue(ConfigValue.Development.UseBackendMailingPreview, admin.getCompanyID());
 
 		switch (maildropStatus) {
 			case ADMIN:
@@ -290,16 +368,10 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 				break;
 		}
 
-		if (sendDate != null) {
-			GregorianCalendar aCal = new GregorianCalendar(TimeZone.getTimeZone(admin.getAdminTimezone()));
-			aCal.setTime(sendDate);
-			sendDate = aCal.getTime();
-		}
-
-		ComMailing mailing = mailingDao.getMailing(mailingID, admin.getCompanyID());
+		Mailing mailing = mailingDao.getMailing(mailingID, admin.getCompanyID());
 
 		if (mailing == null) {
-			return;
+			throw new RestfulClientException("This mailing not found. MailingID: " + mailingID);
 		}
 
 		Mailinglist aList = mailinglistDao.getMailinglist(mailing.getMailinglistID(), admin.getCompanyID());
@@ -310,13 +382,17 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 		}
 
 		// check syntax of mailing by generating dummy preview
-		preview = mailing.getPreview(mailing.getTextTemplate().getEmmBlock(), MailingPreviewHelper.INPUT_TYPE_HTML, 0, applicationContext);
+		preview = useBackendPreview
+				? this.mailingPreviewService.renderTextPreview(mailing.getId(), customerID)
+				: mailing.getPreview(mailing.getTextTemplate().getEmmBlock(), MailingPreviewHelper.INPUT_TYPE_HTML, 0, applicationContext);
 		if (StringUtils.isBlank(preview)) {
 			if (mailingService.isTextVersionRequired(admin.getCompanyID(), mailingID)) {
 				throw new RestfulClientException("Mandatory TEXT version is missing in mailing");
 			}
 		}
-		preview = mailing.getPreview(mailing.getHtmlTemplate().getEmmBlock(), MailingPreviewHelper.INPUT_TYPE_HTML, 0, applicationContext);
+		preview = useBackendPreview
+				? this.mailingPreviewService.renderHtmlPreview(mailing.getId(), customerID)
+				: mailing.getPreview(mailing.getHtmlTemplate().getEmmBlock(), MailingPreviewHelper.INPUT_TYPE_HTML, 0, applicationContext);
 		boolean isHtmlMailing = false;
 		MediatypeEmail emailMediaType = (MediatypeEmail) mailing.getMediatypes().get(MediaTypes.EMAIL.getMediaCode());
 		if (emailMediaType != null && (emailMediaType.getMailFormat() == MailType.HTML.getIntValue() || emailMediaType.getMailFormat() == MailType.HTML_OFFLINE.getIntValue())) {
@@ -325,55 +401,126 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 		if (isHtmlMailing && preview.trim().length() == 0) {
 			throw new RestfulClientException("Mandatory HTML version is missing in mailing");
 		}
-		preview = mailing.getPreview(mailing.getEmailParam().getSubject(), MailingPreviewHelper.INPUT_TYPE_HTML, 0, applicationContext);
+		
+		preview = useBackendPreview
+				? this.mailingPreviewService.renderPreviewFor(mailing.getId(), customerID, mailing.getEmailParam().getSubject())
+				: mailing.getPreview(mailing.getEmailParam().getSubject(), MailingPreviewHelper.INPUT_TYPE_HTML, 0, applicationContext);
 		if (StringUtils.isBlank(mailing.getEmailParam().getSubject())) {
 			throw new RestfulClientException("Mailing subject is too short");
 		}
-		preview = mailing.getPreview(mailing.getEmailParam().getFromAdr(), MailingPreviewHelper.INPUT_TYPE_HTML, 0, applicationContext);
+		
+		preview = useBackendPreview
+				? this.mailingPreviewService.renderPreviewFor(mailing.getId(), customerID, mailing.getEmailParam().getFromAdr())
+				: mailing.getPreview(mailing.getEmailParam().getFromAdr(), MailingPreviewHelper.INPUT_TYPE_HTML, 0, applicationContext);
 		if (preview.trim().length() == 0) {
 			throw new RestfulClientException("Mandatory mailing sender address is missing");
 		}
 
-		maildropEntry.setSendDate(sendDate);
-
-		if (!DateUtil.isSendDateForImmediateDelivery(sendDate)) {
-			// sent gendate if senddate is in future
-			GregorianCalendar tmpGen = new GregorianCalendar();
-			GregorianCalendar now = new GregorianCalendar();
-
-			tmpGen.setTime(sendDate);
-			tmpGen.add(Calendar.MINUTE, -mailingService.getMailGenerationMinutes(mailing.getCompanyID()));
-			if (tmpGen.before(now)) {
-				tmpGen = now;
+		if (maildropStatus == MaildropStatus.ACTION_BASED) {
+			if (!maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
+				maildropEntry.setGenStatus(startGen);
+				maildropEntry.setGenDate(genDate);
+				maildropEntry.setGenChangeDate(new java.util.Date());
+				maildropEntry.setMailingID(mailing.getId());
+				maildropEntry.setCompanyID(mailing.getCompanyID());
+				maildropEntry.setStepping(stepping);
+				maildropEntry.setBlocksize(blockSize);
+	
+				mailing.getMaildropStatus().add(maildropEntry);
+	
+				mailingDao.saveMailing(mailing, isPreserveTrackableLinks);
 			}
-			genDate = tmpGen.getTime();
-		}
-
-		if (!DateUtil.isDateForImmediateGeneration(genDate)
-				&& ((mailing.getMailingType() == MailingTypes.NORMAL.getCode()) || (mailing.getMailingType() == MailingTypes.FOLLOW_UP.getCode()))) {
-			startGen = 0;
-		}
-
-		if (worldSend && maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
-			return;
-		}
-
-		maildropEntry.setGenStatus(startGen);
-		maildropEntry.setGenDate(genDate);
-		maildropEntry.setGenChangeDate(new java.util.Date());
-		maildropEntry.setMailingID(mailing.getId());
-		maildropEntry.setCompanyID(mailing.getCompanyID());
-		maildropEntry.setStepping(stepping);
-		maildropEntry.setBlocksize(blockSize);
-
-		mailing.getMaildropStatus().add(maildropEntry);
-
-		mailingDao.saveMailing(mailing, isPreserveTrackableLinks);
-		if (startGen == 1 && maildropEntry.getStatus() != MaildropStatus.ACTION_BASED.getCode() && maildropEntry.getStatus() != MaildropStatus.DATE_BASED.getCode()) {
-			classicTemplateGenerator.generate(mailingID, admin.getAdminID(), admin.getCompanyID(), true, true);
 			
-			MailoutClient aClient = new MailoutClient();
-			aClient.invoke("fire", Integer.toString(maildropEntry.getId()));
+			if (customerID > 0) {
+				try {
+					List<Integer> userStatusList = null;
+					if (userStatus > 0) {
+						userStatusList = new ArrayList<>();
+	
+						if (userStatus == UserStatus.Active.getStatusCode() || userStatus == UserStatus.WaitForConfirm.getStatusCode()) {
+							// This block is for backward compatibility only!
+							userStatusList.add(UserStatus.Active.getStatusCode());
+							userStatusList.add(UserStatus.WaitForConfirm.getStatusCode());
+						} else {
+							userStatusList.add(userStatus);
+						}
+					}
+					
+					final MailgunOptions mailgunOptions = new MailgunOptions();
+					if (userStatusList != null) {
+						mailgunOptions.withAllowedUserStatus(userStatusList);
+					}
+					
+					if (profileDataOverrides != null && profileDataOverrides.size() > 0) {
+						mailgunOptions.withProfileFieldValues(profileDataOverrides);
+					}
+	
+					try {
+						sendActionbasedMailingService.sendActionbasedMailing(mailing.getCompanyID(), mailing.getId(), customerID, 0, mailgunOptions);
+						return "Mailing sent";
+					} catch(final Exception e) {
+						logger.error("Cannot fire campaign-/event-mail", e);
+						throw new RestfulClientException("Error sending action-based mailing: " + mailing.getId() + "/" + customerID, e);
+					}
+				} catch(final Exception e) {
+					logger.error("Error sending action-based mailing", e);
+					throw new RestfulClientException("Error sending action-based mailing: " + mailing.getId() + "/" + customerID, e);
+				}
+			} else {
+				return "Mailing activated";
+			}
+		} else {
+			if (sendDate != null) {
+				GregorianCalendar aCal = new GregorianCalendar(TimeZone.getTimeZone(admin.getAdminTimezone()));
+				aCal.setTime(sendDate);
+				sendDate = aCal.getTime();
+			}
+			
+			maildropEntry.setSendDate(sendDate);
+
+			if (!DateUtil.isSendDateForImmediateDelivery(sendDate)) {
+				// sent gendate if senddate is in future
+				GregorianCalendar tmpGen = new GregorianCalendar();
+				GregorianCalendar now = new GregorianCalendar();
+
+				tmpGen.setTime(sendDate);
+				tmpGen.add(Calendar.MINUTE, -mailingService.getMailGenerationMinutes(mailing.getCompanyID()));
+				if (tmpGen.before(now)) {
+					tmpGen = now;
+				}
+				genDate = tmpGen.getTime();
+			}
+
+			if (!DateUtil.isDateForImmediateGeneration(genDate)
+					&& ((mailing.getMailingType() == MailingTypes.NORMAL.getCode()) || (mailing.getMailingType() == MailingTypes.FOLLOW_UP.getCode()))) {
+				startGen = 0;
+			}
+			
+			if (!worldSend || !maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
+				maildropEntry.setGenStatus(startGen);
+				maildropEntry.setGenDate(genDate);
+				maildropEntry.setGenChangeDate(new java.util.Date());
+				maildropEntry.setMailingID(mailing.getId());
+				maildropEntry.setCompanyID(mailing.getCompanyID());
+				maildropEntry.setStepping(stepping);
+				maildropEntry.setBlocksize(blockSize);
+	
+				mailing.getMaildropStatus().add(maildropEntry);
+	
+				mailingDao.saveMailing(mailing, isPreserveTrackableLinks);
+				if (startGen == 1 && maildropEntry.getStatus() != MaildropStatus.ACTION_BASED.getCode() && maildropEntry.getStatus() != MaildropStatus.DATE_BASED.getCode()) {
+					classicTemplateGenerator.generate(mailingID, admin.getAdminID(), admin.getCompanyID(), true, true);
+					
+					MailoutClient aClient = new MailoutClient();
+					aClient.invoke("fire", Integer.toString(maildropEntry.getId()));
+				}
+			}
+			
+			if (maildropStatus == MaildropStatus.WORLD || maildropStatus == MaildropStatus.ADMIN || maildropStatus == MaildropStatus.TEST) {
+				return "Mailing started";
+			} else {
+				return "Mailing activated";
+			}
 		}
     }
 

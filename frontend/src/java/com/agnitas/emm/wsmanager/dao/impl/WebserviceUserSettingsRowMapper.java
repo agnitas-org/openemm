@@ -26,8 +26,9 @@ final class WebserviceUserSettingsRowMapper implements RowMapper<WebserviceUserS
 		final Integer requestRateLimitOrNull = readNullableInt(rs, "req_rate_limit");
 		final Integer bulkSizeLimitOrNull = readNullableInt(rs, "bulk_size_limit");
 		final Integer maxResultListSizeOrNull = readNullableInt(rs, "max_result_list_size");
+		final String apiCallLimitsOrNull = rs.getString("api_call_limits");
 		
-		return new WebserviceUserSettings(defaultDataSourceID, requestRateLimitOrNull, bulkSizeLimitOrNull, maxResultListSizeOrNull);
+		return new WebserviceUserSettings(defaultDataSourceID, requestRateLimitOrNull, bulkSizeLimitOrNull, maxResultListSizeOrNull, apiCallLimitsOrNull);
 	}
 	
 	private static final Integer readNullableInt(final ResultSet rs, final String column) throws SQLException {

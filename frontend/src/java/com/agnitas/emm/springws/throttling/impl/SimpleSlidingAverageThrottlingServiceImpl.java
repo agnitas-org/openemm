@@ -17,7 +17,9 @@ import java.util.concurrent.ExecutionException;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.emm.springws.throttling.ThrottlingService;
+import com.agnitas.emm.springws.WebserviceUserDetails;
+import com.agnitas.emm.springws.throttling.service.ThrottlingService;
+import com.agnitas.emm.springws.throttling.service.ThrottlingServiceException;
 import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 
@@ -26,6 +28,10 @@ import net.sf.ehcache.CacheException;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 
+/**
+ * Simple implementatinon of {@link ThrottlingService}.
+ */
+@Deprecated // Replaced by Bucket4jThrottlingService (remove after rollout EMM-8146)
 public class SimpleSlidingAverageThrottlingServiceImpl implements ThrottlingService {
 	private static final transient Logger logger = Logger.getLogger(SimpleSlidingAverageThrottlingServiceImpl.class);
 	
@@ -54,7 +60,15 @@ public class SimpleSlidingAverageThrottlingServiceImpl implements ThrottlingServ
 	}
 	
 	@Override
-	public synchronized boolean checkAndTrack(String user) throws ExecutionException, IllegalStateException, CacheException {
+	public synchronized boolean checkAndTrack(final WebserviceUserDetails user, final String endpointName) throws ThrottlingServiceException {
+		try {
+			return checkAndTrack(user.getUsername());
+		} catch (final IllegalStateException | ExecutionException | CacheException e) {
+			throw new ThrottlingServiceException(e);
+		}
+	}
+	
+	private final boolean checkAndTrack(String user) throws ExecutionException, IllegalStateException, CacheException {
 		LimitMeter limitMeter = getMeter(user);
 		if (limitMeter.limit != null && limitMeter.limit > 0 && !limitMeter.checkAndTrack()) {
 			//TODO: log limit exceeded event for statistic

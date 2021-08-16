@@ -28,7 +28,7 @@
                 <entry key="admin.exportPdf" value="admin.show" />
                 <entry key="admin.confirmDelete" value="admin.delete" />
                 <entry key="admin.delete" value="admin.delete" />
-                <entry key="admin.sendWelcome" value="temp.beta" />
+                <entry key="admin.sendWelcome" value="admin.sendWelcome" />
 
                 <entry key="user.group.list" value="role.show" />
                 <entry key="user.group.save" value="role.change" />
@@ -92,35 +92,17 @@
                 <entry key="userform.trackablelink.view" value="forms.change" />
                 <entry key="userform.trackablelink.statistic" value="forms.change" />
 
-                <!-- GWUA-4517: Struts action permissions-->
-                <entry key="action.bulk_confirm_delete" value="actions.delete" />
-                <entry key="action.bulk_delete" value="actions.delete" />
-                <entry key="action.clone" value="actions.change" />
                 <entry key="action.list" value="actions.show" />
                 <entry key="action.view" value="actions.show" />
                 <entry key="action.save" value="actions.change" />
-                <entry key="action.confirm_delete" value="actions.delete" />
+                <entry key="action.create" value="actions.show" />
+                <entry key="action.clone" value="actions.change" />
+                <entry key="action.confirmBulkDelete" value="actions.delete" />
+                <entry key="action.bulkDelete" value="actions.delete" />
+                <entry key="action.confirmDelete" value="actions.delete" />
                 <entry key="action.delete" value="actions.delete" />
-                <entry key="action.add_module" value="actions.change" />
-                <entry key="action.remove_module" value="actions.change" />
-                <entry key="action.new" value="actions.show" />
-                <entry key="action.view_forms" value="actions.show"/>
-                <entry key="action.save_activeness" value="actions.change"/>
-                <entry key="action.unspecified" value="actions.show" />
-
-                <entry key="actionNew.list" value="actions.migration" />
-                <entry key="actionNew.view" value="actions.migration" />
-                <entry key="actionNew.save" value="actions.migration" />
-                <entry key="actionNew.create" value="actions.migration" />
-                <entry key="actionNew.addModule" value="actions.migration" />
-                <entry key="actionNew.clone" value="actions.migration" />
-                <entry key="actionNew.confirmBulkDelete" value="actions.migration" />
-                <entry key="actionNew.bulkDelete" value="actions.migration" />
-                <entry key="actionNew.confirmDelete" value="actions.migration" />
-                <entry key="actionNew.delete" value="actions.migration" />
-                <entry key="actionNew.removeModule" value="actions.migration" />
-                <entry key="actionNew.webformsView" value="actions.migration"/>
-                <entry key="actionNew.saveActiveness" value="actions.migration"/>
+                <entry key="action.webformsView" value="actions.show"/>
+                <entry key="action.saveActiveness" value="actions.change"/>
 
                 <!--Mailinglist permission-->
                 <entry key="mailinglist.list" value="mailinglist.show" />
@@ -153,6 +135,15 @@
                 <entry key="target.delete_recipients" value="recipient.delete" />
                 <entry key="target.view_mailings" value="targets.show" />
                 <entry key="target.unspecified" value="targets.show" />
+
+                <entry key="targetNew.list" value="targets.migration" />
+                <entry key="targetNew.confirmDelete" value="targets.migration" />
+                <entry key="targetNew.confirmBulkDelete" value="targets.migration" />
+                <entry key="targetNew.confirmDeleteRecipients" value="targets.migration" />
+                <entry key="targetNew.bulkDelete" value="targets.migration" />
+                <entry key="targetNew.delete" value="targets.migration" />
+                <entry key="targetNew.deleteRecipients" value="targets.migration" />
+                <entry key="targetNew.createMailingList" value="targets.migration" />
 
                 <entry key="targetQB.show" value="targets.show" />
                 <entry key="targetQB.viewQB" value="targets.show" />
@@ -334,19 +325,15 @@
                 <entry key="mwStart.newField" value="profileField.show" />
                 <entry key="mwStart.mailtype" value="mailing.change" />
                 <entry key="mwStart.init" value="mailing.change" />
-                <entry key="mwStart.withoutWizard" value="mailing.change" />
                 <entry key="mwStart.start" value="mailing.change" />
                 <entry key="mwStart.name" value="mailing.change" />
                 <entry key="mwStart.template" value="mailing.change" />
                 <entry key="mwStart.type" value="mailing.change" />
-                <entry key="mwStart.textmodules_previous" value="mailing.change" />
                 <entry key="mwStart.sendaddress" value="mailing.change" />
                 <entry key="mwStart.subject" value="mailing.change" />
                 <entry key="mwStart.targetView" value="targets.show" />
-                <entry key="mwStart.target_finish" value="targets.change" />
                 <entry key="mwStart.textmodule" value="mailing.content.show" />
-                <entry key="mwStart.type_previous" value="mailing.change" />
-                <entry key="mwStart.textmodule_add" value="mailing.content.show" />             
+                <entry key="mwStart.textmodule_add" value="mailing.content.show" />
                 <entry key="mwStart.textmodule_save" value="mailing.content.show" />
                 <entry key="mwStart.textmodule_move_up" value="mailing.content.show" />             
                 <entry key="mwStart.textmodule_move_down" value="mailing.content.show" />
@@ -360,6 +347,7 @@
                 <entry key="mwStart.previous" value="mailing.change" />
                 <entry key="mwStart.next" value="mailing.change" />
                 <entry key="mwStart.skip" value="mailing.change" />
+                <entry key="mwNewTarget.save" value="targets.change" />
 
 				<!-- workflow permissions-->
 				<entry key="workflow.list" value="workflow.show"/>
@@ -471,8 +459,10 @@
                 <entry key="tracklink.save" value="mailing.content.show" />
                 <entry key="tracklink.save_all" value="mailing.content.show" />
                 <entry key="tracklink.unspecified" value="mailing.content.show" />
-                <entry key="tracklink.delete_global_and_individual_link_extensions" value="mailing.content.show" />
-                
+                <entry key="tracklink.bulk_clear_extension" value="mailing.content.show" />
+                <entry key="tracklink.confirm_bulk_clear_extensions" value="mailing.content.show" />
+                <entry key="tracklink.show_bulk_actions" value="mailing.content.show" />
+
                 <entry key="campaign.unspecified" value="campaign.show" />
                 <entry key="campaign.list" value="campaign.show" />
                 <entry key="campaign.view" value="campaign.show" />
@@ -510,8 +500,11 @@
                 <entry key="server.status.jobQueueView" value="server.status"/>
                 <entry key="server.status.licenseFileUpload" value="server.status"/>
                 <entry key="server.status.updateCheck" value="server.status"/>
-            
-			</map>
+                <entry key="targetgroup.list" value="targetgroup.show"/>
+                <entry key="targetgroup.confirmDelete" value="targetgroup.delete"/>
+                <!--				<entry key="targetgroups.view" value="targetgroups.show"/>-->
+
+            </map>
 		</property>
 		<!-- Below is a configuration of tokens in case of permission depends on several tokens
 			 If there are more than one permissions are needed for an action use aggregation AND,

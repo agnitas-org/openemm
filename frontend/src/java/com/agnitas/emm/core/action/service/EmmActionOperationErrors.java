@@ -20,10 +20,8 @@ import java.util.Set;
  * Each error code is listed once, even if added more than once.
  */
 public final class EmmActionOperationErrors {
-	
 	/**
 	 * Enumeration of error codes.
-	 *
 	 */
 	public enum ErrorCode {
 		/** Indicator for general errors. */
@@ -39,7 +37,7 @@ public final class EmmActionOperationErrors {
 		EMAIL_ADDRESS_INVALID,
 		
 		/** Email address not allowed (blacklisted, ...) */
-		EMAIL_ADDRESS_NOT_ALLOWED, 
+		EMAIL_ADDRESS_NOT_ALLOWED,
 		
 		/** Malformed mobile phone number. */
 		MALFORMED_MOBILEPHONE_NUMBER,
@@ -61,7 +59,7 @@ public final class EmmActionOperationErrors {
 	 * Creates a new empty set of error codes.
 	 */
 	public EmmActionOperationErrors() {
-		this.errorCodes = new HashSet<>();
+		errorCodes = new HashSet<>();
 	}
 	
 	/**
@@ -70,11 +68,11 @@ public final class EmmActionOperationErrors {
 	 * @return <code>true</code> if no error code was added
 	 */
 	public final boolean isEmpty() {
-		return this.errorCodes.isEmpty();
+		return errorCodes.isEmpty();
 	}
 	
 	/**
-	 * Checks, if this instance contains the given error token. 
+	 * Checks, if this instance contains the given error token.
 	 * 
 	 * The token must match one of the constants defined in {@link ErrorCode}. If not, the token
 	 * is considered as be not contained in this instance.
@@ -89,7 +87,7 @@ public final class EmmActionOperationErrors {
 		final ErrorCode errorCode = ErrorCode.valueOf(token);
 
 		return errorCode != null
-				? this.errorCodes.contains(errorCode)
+				? errorCodes.contains(errorCode)
 				: false;		// By definition, undefined error codes can never occur in set
 	}
 	
@@ -101,12 +99,11 @@ public final class EmmActionOperationErrors {
 	 * @throws NullPointerException if errorCode is <code>null</code>
 	 */
 	public final void addErrorCode(final ErrorCode errorCode) {
-		this.errorCodes.add(Objects.requireNonNull(errorCode, "Error code is null"));
+		errorCodes.add(Objects.requireNonNull(errorCode, "Error code is null"));
 	}
 	
 	@Override
 	public String toString() {
-		return this.errorCodes.toString();
+		return errorCodes.toString();
 	}
-	
 }

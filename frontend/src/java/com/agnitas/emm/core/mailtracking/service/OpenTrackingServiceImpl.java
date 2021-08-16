@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.mailtracking.service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import org.agnitas.beans.Recipient;
@@ -24,6 +26,7 @@ import com.agnitas.emm.core.commons.uid.ComExtensibleUID.NamedUidBit;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
+import com.agnitas.emm.core.mailtracking.service.event.OnMailingOpenedHandler;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 
 /**
@@ -45,7 +48,13 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 	
 	/** Cache for content types of mailings. */
 	private MailingContentTypeCache mailingContentTypeCache;
+	
+	private final List<OnMailingOpenedHandler> mailingOpenedHandlerList;
 
+	public OpenTrackingServiceImpl() {
+		this.mailingOpenedHandlerList = new ArrayList<>();
+	}
+	
 	@Override
 	public final void trackOpening(final int companyID, final int customerID, final int mailingID, final String remoteAddr, final DeviceClass deviceClass, final int deviceID, final int clientID) {
 		final Recipient recipient = this.recipientFactory.newRecipient(companyID);
@@ -72,10 +81,33 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 				}
 			}
 			
-			final boolean result = onepixelDao.writePixel(uid.getCompanyID(), ((trackingLevel == TrackingLevel.ANONYMOUS) ? 0 : uid.getCustomerID()), uid.getMailingID(), ((trackingLevel == TrackingLevel.ANONYMOUS) ? null : remoteAddr), deviceClass, deviceID, clientID);
+			final int trackedRecipientID = (trackingLevel == TrackingLevel.ANONYMOUS) ? 0 : uid.getCustomerID();
+			
+			final boolean result = onepixelDao.writePixel(uid.getCompanyID(), trackedRecipientID, uid.getMailingID(), ((trackingLevel == TrackingLevel.ANONYMOUS) ? null : remoteAddr), deviceClass, deviceID, clientID);
 			
 			if(!result) {
 				logger.warn(String.format("Could not track opening of mailing %d for customer %d (company ID %d)", uid.getMailingID(), uid.getCustomerID(), uid.getCompanyID()));
+			}
+			
+			notifyOnMailingOpenedHandlers(uid.getCompanyID(), uid.getMailingID(), trackedRecipientID);
+		}
+	}
+	
+	private final void notifyOnMailingOpenedHandlers(final int companyID, final int mailingID, final int customerID) {
+		assert this.mailingOpenedHandlerList != null; // Ensured by constructor and "final" modifier
+		
+		for(final OnMailingOpenedHandler handler : this.mailingOpenedHandlerList) {
+			try {
+				handler.handleMailingOpened(companyID, mailingID, customerID);
+			} catch(final Exception e) {
+				logger.warn(
+						String.format(
+								"OnMailingOpenedHandler of type '%s' threw an exception (company ID %d, mailing ID %d, customer ID %d)",
+								handler.getClass().getCanonicalName(),
+								companyID,
+								mailingID,
+								customerID), 
+						e);
 			}
 		}
 	}
@@ -110,14 +142,27 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 		this.recipientFactory = Objects.requireNonNull(factory, "Recipient factory cannot be null");
 	}
 	
-	
 	/**
 	 * Set cache for mailing content types.
 	 * 
 	 * @param cache cache for mailing content types
 	 */
 	@Required
-	public final void setMailingContentTypeCache(final MailingContentTypeCache mailingContentTypeCache) {
-		this.mailingContentTypeCache = Objects.requireNonNull(mailingContentTypeCache, "Content type cache cannot be null");
+	public final void setMailingContentTypeCache(final MailingContentTypeCache cache) {
+		this.mailingContentTypeCache = Objects.requireNonNull(cache, "Content type cache cannot be null");
+	}
+	
+	/**
+	 * Set list of handlers for "mailingOpened" event.
+	 * 
+	 * @param handlers list of event handlers
+	 */
+	// Not @Required. List is initialized as empty list by default and this list can be left empty.
+	public final void setOnMailingOpenedHandlers(final List<OnMailingOpenedHandler> handlers) {
+		this.mailingOpenedHandlerList.clear();
+		
+		if(handlers != null) {
+			this.mailingOpenedHandlerList.addAll(handlers);
+		}
 	}
 }

@@ -12,13 +12,13 @@ package org.agnitas.web;
 
 import java.io.IOException;
 import java.util.Map;
+
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.agnitas.dao.ComRecipientDao;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.dao.MailingComponentDao;
@@ -30,6 +30,8 @@ import org.agnitas.util.HttpUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import com.agnitas.dao.ComRecipientDao;
 
 public class ShowComponent extends HttpServlet {
 
@@ -100,7 +102,7 @@ public class ShowComponent extends HttpServlet {
         
 		if (comp != null) {
             try {
-				switch (MailingComponentType.getMailingComponentTypeByCode(comp.getType())) {
+				switch (comp.getType()) {
 					case Image:
 				    case HostedImage:
 					case ThumbnailImage:
@@ -119,7 +121,7 @@ public class ShowComponent extends HttpServlet {
 				        out=response.getOutputStream();
 				       
 				        byte[] attachment;
-				        if (MailingComponentType.PersonalizedAttachment.getCode() == comp.getType()) {
+				        if (MailingComponentType.PersonalizedAttachment == comp.getType()) {
 				        	attachment = getPersonalizedAttachment(comp, customerID, targetGroupID);
 				        } else {
 				        	attachment = comp.getBinaryBlock();

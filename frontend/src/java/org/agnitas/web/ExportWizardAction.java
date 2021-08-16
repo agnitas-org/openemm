@@ -234,7 +234,17 @@ public class ExportWizardAction extends StrutsActionBase {
                 	// Show the selected export profile or start a new export profile
                     if (aForm.getExportPredefID() != 0) {
                         loadPredefExportFromDB(aForm, req);
+                    } else {
+                    	aForm.setDateFormat("de".equalsIgnoreCase(admin.getAdminLang()) ? org.agnitas.util.importvalues.DateFormat.ddMMyyyy.getIntValue() : org.agnitas.util.importvalues.DateFormat.MMddyyyy.getIntValue());
+                    	aForm.setDateTimeFormat("de".equalsIgnoreCase(admin.getAdminLang()) ? org.agnitas.util.importvalues.DateFormat.ddMMyyyyHHmmss.getIntValue() : org.agnitas.util.importvalues.DateFormat.MMddyyyyhhmmss.getIntValue());
+                    	aForm.setDecimalSeparator("de".equalsIgnoreCase(admin.getAdminLang()) ? "," : ".");
+                    	aForm.setTimezone(admin.getAdminTimezone());
+                    	aForm.setTimeLimitsLinkedByAnd(true);
                     }
+                    
+                    req.setAttribute("availableDateFormats", org.agnitas.util.importvalues.DateFormat.values());
+                    req.setAttribute("availableDateTimeFormats", org.agnitas.util.importvalues.DateFormat.values());
+                    req.setAttribute("availableTimeZones", TimeZone.getAvailableIDs());
 
                     aForm.setTargetGroups(targetService.getTargetLights(admin));
                     aForm.setMailinglistObjects(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
@@ -286,6 +296,11 @@ public class ExportWizardAction extends StrutsActionBase {
 						messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
 						destination = mapping.findForward("view");
 					}
+                    
+                    req.setAttribute("availableDateFormats", org.agnitas.util.importvalues.DateFormat.values());
+                    req.setAttribute("availableDateTimeFormats", org.agnitas.util.importvalues.DateFormat.values());
+                    req.setAttribute("availableTimeZones", TimeZone.getAvailableIDs());
+                    
                     aForm.setTargetGroups(targetService.getTargetLights(admin));
                     aForm.setMailinglistObjects(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
 
@@ -336,17 +351,14 @@ public class ExportWizardAction extends StrutsActionBase {
                     if (!futureHolder.containsKey(futureKey) || futureHolder.get(futureKey) == null) {
                     	// Start a new potentially long running process
                     	File exportFile = getTempRecipientExportFile(companyID);
-                    	RecipientExportWorker exportWorker = this.recipientExportWorkerFactory.newWorker(getExportProfileFromForm(aForm, req, companyID), admin);
+                    	RecipientExportWorker exportWorker = recipientExportWorkerFactory.newWorker(getExportProfileFromForm(aForm, req, companyID), admin);
                     	exportWorker.setDataSource(dataSource);
                     	exportWorker.setExportFile(exportFile.getAbsolutePath());
                     	exportWorker.setZipped(true);
                     	exportWorker.setZippedFileName(getExportFileBasename(req) + ".zip");
                     	exportWorker.setUsername(admin.getUsername() + " (ID: " + admin.getAdminID() + ")");
                     	exportWorker.setRemoteFile(new RemoteFile("", exportFile, -1));
-            			exportWorker.setDateFormat(admin.getDateFormat());
-            			exportWorker.setDateTimeFormat(admin.getDateTimeFormatWithSeconds());
             			exportWorker.setMaximumExportLineLimit(configService.getIntegerValue(ConfigValue.ProfileRecipientExportMaxRows, companyID));
-            			exportWorker.setExportTimezone(TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId());
                     	Future<GenericExportWorker> future = workerExecutorService.submit(exportWorker);
                     	futureHolder.put(futureKey, future);
                     }
@@ -493,6 +505,7 @@ public class ExportWizardAction extends StrutsActionBase {
 			aForm.setUserType(exportPredef.getUserType());
 
 			SimpleDateFormat inputDateFormat = AgnUtils.getAdmin(request).getDateFormat();
+			
 			Date timestampStart = exportPredef.getTimestampStart();
 			if (timestampStart != null) {
 				aForm.setTimestampStart(inputDateFormat.format(timestampStart));
@@ -507,6 +520,8 @@ public class ExportWizardAction extends StrutsActionBase {
 			} else {
 				aForm.setTimestampLastDays(null);
 			}
+			aForm.setTimestampIncludeCurrentDay(exportPredef.isTimestampIncludeCurrentDay());
+			
 			Date creationDateStart = exportPredef.getCreationDateStart();
 			if (creationDateStart != null) {
 				aForm.setCreationDateStart(inputDateFormat.format(creationDateStart));
@@ -521,6 +536,8 @@ public class ExportWizardAction extends StrutsActionBase {
 			} else {
 				aForm.setCreationDateLastDays(null);
 			}
+			aForm.setCreationDateIncludeCurrentDay(exportPredef.isCreationDateIncludeCurrentDay());
+			
 			Date mailinglistBindStart = exportPredef.getMailinglistBindStart();
 			if (mailinglistBindStart != null) {
 				aForm.setMailinglistBindStart(inputDateFormat.format(mailinglistBindStart));
@@ -535,6 +552,14 @@ public class ExportWizardAction extends StrutsActionBase {
 			} else {
 				aForm.setMailinglistBindLastDays(null);
 			}
+			aForm.setMailinglistBindIncludeCurrentDay(exportPredef.isMailinglistBindIncludeCurrentDay());
+			
+			aForm.setDateFormat(exportPredef.getDateFormat());
+			aForm.setDateTimeFormat(exportPredef.getDateTimeFormat());
+			aForm.setTimezone(exportPredef.getTimezone());
+			aForm.setDecimalSeparator(exportPredef.getDecimalSeparator());
+			
+			aForm.setTimeLimitsLinkedByAnd(exportPredef.isTimeLimitsLinkedByAnd());
 
 			// process columns:
 			try {
@@ -589,6 +614,12 @@ public class ExportWizardAction extends StrutsActionBase {
         exportPredef.setMailinglistID(aForm.getMailinglistID());
         exportPredef.setDelimiter(aForm.getDelimiter());
         exportPredef.setAlwaysQuote(aForm.getAlwaysQuote() > 0);
+
+        exportPredef.setDateFormat(aForm.getDateFormat());
+        exportPredef.setDateTimeFormat(aForm.getDateTimeFormat());
+        exportPredef.setTimezone(aForm.getTimezone());
+        exportPredef.setDecimalSeparator(aForm.getDecimalSeparator());
+        
         String separator = aForm.getSeparator();
 		exportPredef.setSeparator("\t".equals(separator) ? "t" : separator);
         exportPredef.setTargetID(aForm.getTargetID());
@@ -673,6 +704,8 @@ public class ExportWizardAction extends StrutsActionBase {
 		} else {
 			exportPredef.setTimestampLastDays(0);
 		}
+		exportPredef.setTimestampIncludeCurrentDay(aForm.isTimestampIncludeCurrentDay());
+		
 		String creationDateStart = aForm.getCreationDateStart();
 		if (StringUtils.isNotEmpty(creationDateStart)) {
 			exportPredef.setCreationDateStart(inputDateFormat.parse(creationDateStart));
@@ -691,6 +724,8 @@ public class ExportWizardAction extends StrutsActionBase {
 		} else {
 			exportPredef.setCreationDateLastDays(0);
 		}
+		exportPredef.setCreationDateIncludeCurrentDay(aForm.isCreationDateIncludeCurrentDay());
+		
 		String mailinglistBindStart = aForm.getMailinglistBindStart();
 		if (StringUtils.isNotEmpty(mailinglistBindStart)) {
 			exportPredef.setMailinglistBindStart(inputDateFormat.parse(mailinglistBindStart));
@@ -709,6 +744,9 @@ public class ExportWizardAction extends StrutsActionBase {
 		} else {
 			exportPredef.setMailinglistBindLastDays(0);
 		}
+		exportPredef.setMailinglistBindIncludeCurrentDay(aForm.isMailinglistBindIncludeCurrentDay());
+		
+		exportPredef.setTimeLimitsLinkedByAnd(aForm.isTimeLimitsLinkedByAnd());
 	}
 
     protected ExportPredef getExportProfileFromForm(ExportWizardForm form, HttpServletRequest request, int companyID) {
@@ -722,6 +760,7 @@ public class ExportWizardAction extends StrutsActionBase {
 		exportProfile.setCreationDateLastDays(AgnUtils.isNumber(form.getCreationDateLastDays()) ? Integer.parseInt(form.getCreationDateLastDays()) : 0);
 		exportProfile.setCreationDateEnd(parseDate(form.getCreationDateEnd(), format));
 		exportProfile.setCreationDateStart(parseDate(form.getCreationDateStart(),format));
+		exportProfile.setCreationDateIncludeCurrentDay(form.isCreationDateIncludeCurrentDay());
 		exportProfile.setDeleted(0);
 		exportProfile.setDelimiter(form.getDelimiter());
 		exportProfile.setAlwaysQuote(form.getAlwaysQuote() > 0);
@@ -732,14 +771,21 @@ public class ExportWizardAction extends StrutsActionBase {
 		exportProfile.setMailinglistBindStart(parseDate(form.getMailinglistBindStart(), format));
 		exportProfile.setMailinglistID(form.getMailinglistID());
 		exportProfile.setMailinglists(StringUtils.join(form.getMailinglists(), ";"));
+		exportProfile.setMailinglistBindIncludeCurrentDay(form.isMailinglistBindIncludeCurrentDay());
 		exportProfile.setSeparator(form.getSeparator());
 		exportProfile.setShortname(form.getShortname());
 		exportProfile.setTargetID(form.getTargetID());
 		exportProfile.setTimestampLastDays(AgnUtils.isNumber(form.getTimestampLastDays()) ? Integer.parseInt(form.getTimestampLastDays()) : 0);
 		exportProfile.setTimestampEnd(parseDate(form.getTimestampEnd(), format));
 		exportProfile.setTimestampStart(parseDate(form.getTimestampStart(), format));
+		exportProfile.setTimestampIncludeCurrentDay(form.isTimestampIncludeCurrentDay());
 		exportProfile.setUserStatus(form.getUserStatus());
 		exportProfile.setUserType(form.getUserType());
+		exportProfile.setDateFormat(form.getDateFormat());
+		exportProfile.setDateTimeFormat(form.getDateTimeFormat());
+		exportProfile.setTimezone(form.getTimezone());
+        exportProfile.setDecimalSeparator(form.getDecimalSeparator());
+        exportProfile.setTimeLimitsLinkedByAnd(form.isTimeLimitsLinkedByAnd());
 		
 		return exportProfile;
 	}

@@ -98,10 +98,11 @@ public interface Preview {
 	 * @param ecsUIDs         if set we should use ecs (extended click statistics) style UIDs
 	 * @param createAll       if set create all displayable parts of the mailing
 	 * @param cachable        if the result should be cached
-	 * @param each            targetID is considered as true during text block creation for previewing
+	 * @param targetIDs       targetID is considered as true during text block creation for previewing
+	 * @param isMobile        parameter for preview purpose to resolve image url
 	 * @return the preview
 	 */
-	Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs);
+	Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs, boolean isMobile);
 
 	Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable);
 
@@ -113,7 +114,19 @@ public interface Preview {
 
 	Page makePreview(long mailingID, long customerID, boolean cachable);
 
-	Page makePreview(long mailingID, long customerID, long targetID);
+    Page makePreview(long mailingID, long customerID, boolean cachable, boolean isMobile);
+
+    Page makePreview(long mailingID, long customerID, long targetID);
+
+    Page makePreview(long mailingID, long customerID, long targetID, boolean isMobile);
+
+	String makePreview(long mailingID, long customerID, String text, boolean cachable);
+
+	String makePreview(long mailingID, long customerID, String text);
+
+	String makePreview(long mailingID, long customerID, String text, String proxy, boolean encode);
+
+	String makePreview(long mailingID, long customerID, String text, String proxy);
 
 	/* Wrapper for heatmap generation
 	 * @param mailingID the mailing to generate the heatmap for
@@ -121,6 +134,10 @@ public interface Preview {
 	 * @return the preview
 	 */
 	String makePreviewForHeatmap(long mailingID, long customerID);
+
+	String makePreviewForHeatmap(long mailingID, long customerID, String proxy, boolean encode);
+
+	String makePreviewForHeatmap(long mailingID, long customerID, String proxy);
 
 	@Deprecated
 	Map<String, Object> createPreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable);

@@ -77,4 +77,6 @@ public interface ComCompanyService {
 	public PasswordPolicies getPasswordPolicy(@VelocityCheck final int companyID);
 
 	boolean reactivateCompany(int companyIdForDeactivation);
+
+	int getCompanyDatasource(@VelocityCheck int companyId);
 }

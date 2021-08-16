@@ -41,6 +41,10 @@ public class UserFormDtoToUserFormConverter implements Converter<UserFormDto, Us
 		form.setErrorTemplate(errorSettings.getTemplate());
 		form.setErrorUrl(errorSettings.getUrl());
 		form.setErrorUseUrl(errorSettings.isUseUrl());
+
+		form.setSuccessFormBuilderJson(successSettings.getFormBuilderJson());
+		form.setErrorFormBuilderJson(errorSettings.getFormBuilderJson());
+
 		return form;
 	}
 }

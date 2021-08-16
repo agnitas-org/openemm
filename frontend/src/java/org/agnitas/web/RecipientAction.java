@@ -17,9 +17,15 @@ import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_EMAIL;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LATEST_DATASOURCE_ID;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_MAILTYPE;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_TITLE;
 import static org.agnitas.emm.core.recipient.RecipientUtils.MAX_SELECTED_FIELDS_COUNT;
+import static org.agnitas.util.DbColumnType.GENERIC_TYPE_DATE;
+import static org.agnitas.util.DbColumnType.GENERIC_TYPE_DATETIME;
+import static org.agnitas.util.DbColumnType.GENERIC_TYPE_FLOAT;
+import static org.agnitas.util.DbColumnType.GENERIC_TYPE_INTEGER;
+import static org.agnitas.util.DbColumnType.GENERIC_TYPE_VARCHAR;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -59,14 +65,13 @@ import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.service.ColumnInfoService;
-import org.agnitas.service.RecipientQueryBuilder;
-import org.agnitas.service.RecipientSqlOptions;
+import org.agnitas.service.TargetEqlQueryBuilder;
 import org.agnitas.service.WebStorage;
+import org.agnitas.target.ChainOperator;
 import org.agnitas.target.ConditionalOperator;
 import org.agnitas.target.PseudoColumn;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.web.forms.FormSearchParams;
@@ -75,7 +80,6 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -95,6 +99,13 @@ import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.DateValueFormatFaultyCodeException;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConversionException;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilder;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilderException;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConverter;
+import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.util.html.xssprevention.HtmlXSSPreventer;
 import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
@@ -126,7 +137,7 @@ public class RecipientAction extends StrutsActionBase {
 	protected ComRecipientDao recipientDao;
 	protected BlacklistService blacklistService;
 	protected ExecutorService workerExecutorService;
-	protected RecipientQueryBuilder recipientQueryBuilder;
+	protected TargetEqlQueryBuilder targetEqlQueryBuilder;
 	protected ColumnInfoService columnInfoService;
 	protected RecipientFactory recipientFactory;
 	protected BindingEntryFactory bindingEntryFactory;
@@ -137,6 +148,10 @@ public class RecipientAction extends StrutsActionBase {
     /** Facade providing full EQL functionality. */
     protected EqlFacade eqlFacade;
     protected WebStorage webStorage;
+
+	private QueryBuilderFilterListBuilder filterListBuilder;
+	private QueryBuilderToEqlConverter queryBuilderToEqlConverter;
+	private EqlToQueryBuilderConverter eqlToQueryBuilderConverter;
 
 	/**
 	 * Process the specified HTTP request, and create the corresponding HTTP response (or forward to another web component that will create it). Return an <code>ActionForward</code> instance
@@ -197,23 +212,11 @@ public class RecipientAction extends StrutsActionBase {
 		} else {
 			aForm = new RecipientForm();
 		}
-		if (AgnUtils.parameterNotEmpty(request, "resetSearch")) {
-			session.removeAttribute(SEARCH_PARAMS);
-			aForm.resetSearch();
-		} else if(BooleanUtils.toBoolean(request.getParameter(FormSearchParams.RESTORE_PARAM_NAME))){
-			final RecipientSearchParams searchParams = (RecipientSearchParams) session.getAttribute(SEARCH_PARAMS);
-			if(searchParams != null) {
-				aForm.restoreSearchParams(searchParams);
-			}
-		}
-		this.updateRecipientFormProperties(request, aForm);
 
-		if (aForm.getDelete().isSelected()) {
-			aForm.setAction(ACTION_CONFIRM_DELETE);
-		}
-		
 		ComAdmin admin = AgnUtils.getAdmin(request);
 		Objects.requireNonNull(admin);
+
+		this.updateRecipientFormProperties(request, aForm);
 
 		try {
 			switch (aForm.getAction()) {
@@ -285,17 +288,26 @@ public class RecipientAction extends StrutsActionBase {
 				break;
 
 			case ACTION_CONFIRM_DELETE:
-				loadRecipient(aForm, admin);
-				destination = mapping.findForward("delete");
+				if (checkMailinglistAccessLimitation(admin, aForm.getRecipientID())) {
+					loadRecipient(aForm, admin);
+					destination = mapping.findForward("delete");
+				} else {
+					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.access.limit.mailinglist"));
+					destination = mapping.findForward("messages");
+				}
 				break;
-
 			case ACTION_DELETE:
 				if (request.getParameter("kill") != null) {
-					deleteRecipient(aForm, admin);
-					aForm.setAction(RecipientAction.ACTION_LIST);
-                	AgnUtils.setAdminDateTimeFormatPatterns(request);
-					destination = mapping.findForward("list");
-					messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.selection.deleted"));
+					if (checkMailinglistAccessLimitation(admin, aForm.getRecipientID())) {
+						deleteRecipient(aForm, admin);
+						aForm.setAction(RecipientAction.ACTION_LIST);
+						AgnUtils.setAdminDateTimeFormatPatterns(request);
+						destination = mapping.findForward("list");
+						messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.selection.deleted"));
+					} else {
+						errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.access.limit.mailinglist"));
+						destination = mapping.findForward("messages");
+					}
 				}
 				break;
 			case ACTION_VIEW_WITHOUT_LOAD:
@@ -334,12 +346,30 @@ public class RecipientAction extends StrutsActionBase {
 
 		// this is a hack for the recipient-search / recipient overview.
 		if (destination != null && "list".equals(destination.getName())) {
+			try {
+				request.setAttribute("queryBuilderFilters", filterListBuilder.buildFilterListJson(admin));
+			} catch (QueryBuilderFilterListBuilderException e) {
+				logger.warn("Could not load rule filters", e);
+			}
+			request.setAttribute("mailTrackingAvailable", AgnUtils.isMailTrackingAvailable(admin));
+
 			// check if we are in search-mode
 			if (!aForm.isOverview()) {
 				// check if it is the last element in filter
-				if (aForm.getNumTargetNodes() == 0 && aForm.getListID() == 0 && aForm.getTargetID() == 0 &&
-						aForm.isDefaultUserType() && aForm.getUser_status() == 0) {
-					
+				boolean isTheLastElementInFilter = aForm.getListID() == 0 && aForm.getTargetID() == 0 &&
+						aForm.isDefaultUserType() && aForm.getUser_status() == 0;
+				if (admin.permissionAllowed(Permission.RECIPIENT_ADVANCED_SEARCH_MIGRATION)) {
+					String eql = null;
+					try {
+						eql = queryBuilderToEqlConverter.convertQueryBuilderJsonToEql(aForm.getQueryBuilderRules(), admin.getCompanyID());
+					} catch (QueryBuilderToEqlConversionException e) {
+						logger.warn("Could not load rule filters", e);
+					}
+					isTheLastElementInFilter &= StringUtils.isBlank(eql);
+				}
+
+
+				if (isTheLastElementInFilter) {
 					aForm.setAction(7);
                 	
                 	AgnUtils.setAdminDateTimeFormatPatterns(request);
@@ -369,11 +399,15 @@ public class RecipientAction extends StrutsActionBase {
 			saveMessages(request, messages);
 		}
 
-        aForm.setSaveTargetVisible(false);
 
         return destination;
 	}
-	
+
+	protected boolean checkMailinglistAccessLimitation(ComAdmin admin, int recipientId) {
+		return true;
+	}
+
+	@Deprecated
 	protected void setPseudoRuleAttributes(final HttpServletRequest request) {
 		request.setAttribute("COLUMN_INTERVAL_MAILING", PseudoColumn.INTERVAL_MAILING);
 	}
@@ -401,7 +435,7 @@ public class RecipientAction extends StrutsActionBase {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED)) {
 			List<ProfileField> columnInfos = columnInfoService.getColumnInfos(admin.getCompanyID(), admin.getAdminID());
 			//validate profile fields with string type
-			List<String> columnNames = getEditableColumnNames(columnInfos, DbColumnType.GENERIC_TYPE_VARCHAR);
+			List<String> columnNames = getEditableColumnNames(columnInfos, GENERIC_TYPE_VARCHAR);
 			return validateIfFieldsDoesNotContainHtmlTags(form, columnNames, errors);
 		}
 		return true;
@@ -453,7 +487,7 @@ public class RecipientAction extends StrutsActionBase {
 		if (destination != null && ("list".equals(destination.getName()))) {
 			try {
 				destination = processListOverviewLoading(aForm, mapping, request, errors, messages);
-				aForm.setDatePickerFormat(AgnUtils.getAdmin(request).getDateFormat().toPattern());
+				request.setAttribute("datePickerFormat", AgnUtils.getAdmin(request).getDateFormat().toPattern());
 			} catch (Exception e) {
 				logger.error("recipientList: " + e, e);
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
@@ -551,6 +585,7 @@ public class RecipientAction extends StrutsActionBase {
 			} finally {
 				aForm.setRefreshMillis(RecipientForm.DEFAULT_REFRESH_MILLIS);
 				futureHolder.remove(key);
+				aForm.setLatestDataSourceId(0);
 			}
 		} else {
 			if (aForm.getRefreshMillis() < 1000) { // raise the refresh time
@@ -570,7 +605,7 @@ public class RecipientAction extends StrutsActionBase {
 			} else if (targetService.checkIfTargetNameAlreadyExists(admin.getCompanyID(), aForm.getTargetShortname(), 0)) {
 				errors.clear();
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.namealreadyexists"));
-			} else if (saveTargetGroup(aForm, admin, errors, rulesValidationErrors) > 0) {
+			} else if (saveTargetGroup(aForm, admin, errors, rulesValidationErrors)) {
 			   messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
 			} else {
 			   errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.saving"));
@@ -660,7 +695,7 @@ public class RecipientAction extends StrutsActionBase {
 			LocalDate now = LocalDate.now();
 
 			for (ProfileField field : fields) {
-				boolean isDateField = DbColumnType.GENERIC_TYPE_DATE.equalsIgnoreCase(field.getDataType()) || DbColumnType.GENERIC_TYPE_DATETIME.equalsIgnoreCase(field.getDataType());
+				boolean isDateField = GENERIC_TYPE_DATE.equalsIgnoreCase(field.getDataType()) || GENERIC_TYPE_DATETIME.equalsIgnoreCase(field.getDataType());
 				if (isDateField && DbUtilities.isNowKeyword(field.getDefaultValue())) {
 					aForm.setColumn(field.getColumn() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, Integer.toString(now.getDayOfMonth()));
 					aForm.setColumn(field.getColumn() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, Integer.toString(now.getMonthValue()));
@@ -956,105 +991,41 @@ public class RecipientAction extends StrutsActionBase {
 
 		return workerExecutorService.submit(recipientService.getRecipientWorker(request, aForm, recipientDbColumns, sort, direction, pageNumber, rownums));
 	}
-
-	protected RecipientSqlOptions.Builder prepareBuilder(HttpServletRequest request, RecipientForm form) {
-		RecipientSqlOptions.Builder builder = RecipientSqlOptions.builder();
-		builder.setCheckParenthesisBalance(form.checkParenthesisBalance());
-
-		String sort = request.getParameter("sort");
-		if (sort == null) {
-			sort = form.getSort();
-
-			if (logger.isDebugEnabled()) {
-				logger.debug("request parameter sort = null");
-				logger.debug("using form parameter sort = " + sort);
-			}
-		}
-
-		String direction = request.getParameter("dir");
-		if (direction == null) {
-			direction = form.getOrder();
-
-			if (logger.isDebugEnabled()) {
-				logger.debug("request parameter dir = null");
-				logger.debug("using form parameter order = " + direction);
-			}
-		}
-
-		builder.setSort(sort)
-				.setDirection(direction)
-				.setUseAdvancedSearch(true, form);
-
-		if (request.getParameter("listID") != null) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("parameter listID = " + request.getParameter("listID"));
-			}
-
-			form.setListID(NumberUtils.toInt(request.getParameter("listID")));
-		}
-		builder.setListId(form.getListID());
-
-
-		if (request.getParameter("targetID") != null) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("parameter targetID = " + request.getParameter("targetID"));
-			}
-
-			form.setTargetID(Integer.parseInt(request.getParameter("targetID")));
-		}
-		builder.setTargetId(form.getTargetID());
-
-		if (request.getParameter("user_type") != null) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("parameter user_type = " + request.getParameter("user_type"));
-			}
-			form.setUser_type(request.getParameter("user_type"));
-		}
-		builder.setUserType(form.getUser_type());
-
-		if (request.getParameter("searchFirstName") != null) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("parameter searchFirstName = " + request.getParameter("searchFirstName"));
-			}
-
-			form.setSearchFirstName(request.getParameter("searchFirstName"));
-		}
-		builder.setSearchFirstName(form.getSearchFirstName());
-
-		if (request.getParameter("searchLastName") != null) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("parameter searchLastName = " + request.getParameter("searchLastName"));
-			}
-
-			form.setSearchLastName(request.getParameter("searchLastName"));
-		}
-		builder.setSearchLastName(form.getSearchLastName());
-
-		if (request.getParameter("searchEmail") != null) {
-			form.setSearchEmail(request.getParameter("searchEmail"));
-		}
-		builder.setSearchEmail(form.getSearchEmail());
-
-		if (request.getParameter("user_status") != null) {
-			form.setUser_status(Integer.parseInt(request.getParameter("user_status")));
-		}
-		builder.setUserStatus(form.getUser_status());
-
-		return builder;
-	}
-
-	protected RecipientSqlOptions getOptions(HttpServletRequest request, RecipientForm form) {
-		return prepareBuilder(request, form).build();
-	}
 	
 	private boolean updateRecipientFormProperties(HttpServletRequest request, RecipientForm form) {
-		form.cleanRulesForBasicSearch();
+		ComAdmin admin = AgnUtils.getAdmin(request);
+		HttpSession session = request.getSession(false);
+		if (AgnUtils.parameterNotEmpty(request, "resetSearch")) {
+			session.removeAttribute(SEARCH_PARAMS);
+			form.resetSearch();
+		} else if (BooleanUtils.toBoolean(request.getParameter(FormSearchParams.RESTORE_PARAM_NAME))){
+			final RecipientSearchParams searchParams = (RecipientSearchParams) session.getAttribute(SEARCH_PARAMS);
+			if (searchParams != null) {
+				form.restoreSearchParams(searchParams);
+			}
+		}
+
+		if (admin.permissionAllowed(Permission.RECIPIENT_ADVANCED_SEARCH_MIGRATION)) {
+			form.setChangeToAdvancedSearch(false);
+			updateDataSourceParams(form, request);
+			return true;
+		}
+
+		//TODO: GWUA-4678: delete after migrate successfully
+		if (!form.isAdvancedSearch() || form.isChangeToAdvancedSearch()) {
+			form.cleanRulesForBasicSearch();
+		} else {
+			form.updateBasicSearchFromRules();
+		}
+
+		updateDataSourceParamsOld(form, request);
 
 		int lastIndex = form.getNumTargetNodes();
 		int removeIndex = -1;
 
 		// If "add" was clicked, add new rule
-		if (AgnUtils.parameterNotEmpty(request, "addTargetNode")  || (AgnUtils.parameterNotEmpty(request, "Update") && !StringUtils.isEmpty(form.getPrimaryValueNew()))) {
+		if (AgnUtils.parameterNotEmpty(request, "addTargetNode")  ||
+				(AgnUtils.parameterNotEmpty(request, "Update") && !StringUtils.isEmpty(form.getPrimaryValueNew()))) {
 			form.setColumnAndType(lastIndex, form.getColumnAndTypeNew());
 			form.setChainOperator(lastIndex, form.getChainOperatorNew());
 			form.setParenthesisOpened(lastIndex, form.getParenthesisOpenedNew());
@@ -1085,9 +1056,10 @@ public class RecipientAction extends StrutsActionBase {
 				if (column.contains("#")) {
 					column = column.substring(0, column.indexOf('#'));
 				}
+
 				String type = "unknownType";
 				if ("CURRENT_TIMESTAMP".equalsIgnoreCase(column)) {
-        			type = DbColumnType.GENERIC_TYPE_DATE;
+        			type = GENERIC_TYPE_DATE;
 				} else if (PseudoColumn.INTERVAL_MAILING.isThisPseudoColumn(column)) {
         			type = "INTERVAL_MAILING";
         		} else {
@@ -1100,18 +1072,28 @@ public class RecipientAction extends StrutsActionBase {
 
 				form.setColumnName(index, column);
 
-				if (type.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_VARCHAR) || type.equalsIgnoreCase("VARCHAR2") || type.equalsIgnoreCase("CHAR")) {
-					form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForString());
-					form.setColumnType(index, TargetForm.COLUMN_TYPE_STRING);
-				} else if (type.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_INTEGER) || type.equalsIgnoreCase("DOUBLE") || type.equalsIgnoreCase("NUMBER")) {
-					form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForNumber());
-					form.setColumnType(index, TargetForm.COLUMN_TYPE_NUMERIC);
-				} else if (type.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATE) || type.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATETIME)) {
-					form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForDate());
-					form.setColumnType(index, TargetForm.COLUMN_TYPE_DATE);
-				} else if (type.equalsIgnoreCase("INTERVAL_MAILING")) {
-					form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForMailingOperators());
-					form.setColumnType(index, TargetForm.COLUMN_TYPE_INTERVAL_MAILING);
+				switch (type) {
+					case GENERIC_TYPE_VARCHAR:
+						form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForString());
+						form.setColumnType(index, TargetForm.COLUMN_TYPE_STRING);
+						break;
+					case GENERIC_TYPE_INTEGER:
+					case GENERIC_TYPE_FLOAT:
+						form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForNumber());
+						form.setColumnType(index, TargetForm.COLUMN_TYPE_NUMERIC);
+						break;
+					case GENERIC_TYPE_DATE:
+					case GENERIC_TYPE_DATETIME:
+						form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForDate());
+						form.setColumnType(index, TargetForm.COLUMN_TYPE_DATE);
+						break;
+					case "INTERVAL_MAILING":
+						form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForMailingOperators());
+						form.setColumnType(index, TargetForm.COLUMN_TYPE_INTERVAL_MAILING);
+						break;
+					default:
+						form.setValidTargetOperators(index, new ConditionalOperator[0]);
+						logger.error("Unknown type: " + type + " for column " + column);
 				}
 			} else {
 				if (removeIndex != -1) {
@@ -1129,72 +1111,47 @@ public class RecipientAction extends StrutsActionBase {
 		}
 	}
 
-	private int createRulesFromBasicSearch(RecipientForm form, int lastIndex) {
-		if(!form.isAdvancedSearch()) {	// User is doing basic search
-			final int firstnameConditionIndex = form.findConditionalIndex("FIRSTNAME");
-			if(firstnameConditionIndex != -1) {
-				form.removeRule(firstnameConditionIndex);
-				lastIndex--;
-			}
-			
-			if (StringUtils.isNotBlank(form.getSearchFirstName())) {
-				form.setColumnAndType(lastIndex, "FIRSTNAME");
-				form.setChainOperator(lastIndex, form.getChainOperatorNew());
-				form.setParenthesisOpened(lastIndex, form.getParenthesisOpenedNew());
-				form.setPrimaryOperator(lastIndex, 5);
-				form.setPrimaryValue(lastIndex, StringUtils.trim(form.getSearchFirstName()));
-				form.setParenthesisClosed(lastIndex, form.getParenthesisClosedNew());
-				form.setDateFormat(lastIndex, form.getDateFormatNew());
-				form.setSecondaryOperator(lastIndex, form.getSecondaryOperatorNew());
-				form.setSecondaryValue(lastIndex, form.getSecondaryValueNew());
-				lastIndex++;
-			}
-			
-	
-			
-			final int lastnameConditionIndex = form.findConditionalIndex("LASTNAME");
-			if(lastnameConditionIndex != -1) {
-				form.removeRule(lastnameConditionIndex);
-				lastIndex--;
-			}
-			
-			if (StringUtils.isNotBlank(form.getSearchLastName())) {
-				form.setColumnAndType(lastIndex, "LASTNAME");
-				form.setChainOperator(lastIndex, form.getChainOperatorNew());
-				form.setParenthesisOpened(lastIndex, form.getParenthesisOpenedNew());
-				form.setPrimaryOperator(lastIndex, 5);
-				form.setPrimaryValue(lastIndex, StringUtils.trim(form.getSearchLastName()));
-				form.setParenthesisClosed(lastIndex, form.getParenthesisClosedNew());
-				form.setDateFormat(lastIndex, form.getDateFormatNew());
-				form.setSecondaryOperator(lastIndex, form.getSecondaryOperatorNew());
-				form.setSecondaryValue(lastIndex, form.getSecondaryValueNew());
-				lastIndex++;
-			}
-	
-			
-			final int emailConditionIndex = form.findConditionalIndex("EMAIL");
-			if(emailConditionIndex != -1) {
-				form.removeRule(emailConditionIndex);
-				lastIndex--;
-			}
-
-			if(StringUtils.isNotBlank(form.getSearchEmail())) {
-				form.setColumnAndType(lastIndex, "EMAIL");
-				form.setChainOperator(lastIndex, form.getChainOperatorNew());
-				form.setParenthesisOpened(lastIndex, form.getParenthesisOpenedNew());
-				form.setPrimaryOperator(lastIndex, 5);
-				form.setPrimaryValue(lastIndex, StringUtils.trim(form.getSearchEmail()));
-				form.setParenthesisClosed(lastIndex, form.getParenthesisClosedNew());
-				form.setDateFormat(lastIndex, form.getDateFormatNew());
-				form.setSecondaryOperator(lastIndex, form.getSecondaryOperatorNew());
-				form.setSecondaryValue(lastIndex, form.getSecondaryValueNew());
-				lastIndex++;
+	private void updateDataSourceParamsOld(final RecipientForm form, final HttpServletRequest request) {
+		if (form.getLatestDataSourceId() > 0) {
+			if (!configService.getBooleanValue(ConfigValue.DontWriteLatestDatasourceId, AgnUtils.getCompanyID(request))) {
+				form.resetSearch();
+				request.setAttribute("forceShowAdvancedSearchTab", true);
+				form.setColumnAndType(0, COLUMN_LATEST_DATASOURCE_ID);
+				form.setChainOperator(0, ChainOperator.AND.getOperatorCode());
+				form.setPrimaryOperator(0, ConditionalOperator.EQ.getOperatorCode());
+				form.setPrimaryValue(0, Integer.toString(form.getLatestDataSourceId()));
 			}
 		}
-		
+	}
+
+	private void updateDataSourceParams(final RecipientForm form, final HttpServletRequest request) {
+		int latestDataSourceId = form.getLatestDataSourceId();
+		if (latestDataSourceId > 0) {
+			if (!configService.getBooleanValue(ConfigValue.DontWriteLatestDatasourceId, AgnUtils.getCompanyID(request))) {
+				String lastImportRuleEql =
+						COLUMN_LATEST_DATASOURCE_ID + ConditionalOperator.EQ.getEqlSymbol() + latestDataSourceId;
+				try {
+					String lastImportRuleJson = eqlToQueryBuilderConverter
+							.convertEqlToQueryBuilderJson(lastImportRuleEql, AgnUtils.getCompanyID(request));
+					form.setQueryBuilderRules(lastImportRuleJson);
+					request.setAttribute("forceShowAdvancedSearchTab", true);
+				} catch (EqlParserException | EqlToQueryBuilderConversionException e) {
+					logger.error("Could not convert query builder rule.", e);
+				}
+			}
+		}
+	}
+
+	@Deprecated
+	private int createRulesFromBasicSearch(RecipientForm form, int lastIndex) {
+		if (!form.isAdvancedSearch() || form.isChangeToAdvancedSearch()) {
+			lastIndex = form.createRuleFromBasicSearch(lastIndex, "FIRSTNAME", form.getSearchFirstName());
+			lastIndex = form.createRuleFromBasicSearch(lastIndex, "LASTNAME", form.getSearchLastName());
+			lastIndex = form.createRuleFromBasicSearch(lastIndex, "EMAIL", form.getSearchEmail());
+		}
+		form.setChangeToAdvancedSearch(false);
 		return lastIndex;
 	}
-	
 
     /**
      * Compare existed and new recipient data and write changes in user log
@@ -1376,35 +1333,71 @@ public class RecipientAction extends StrutsActionBase {
         }
     }
 
-    private int saveTargetGroup(RecipientForm aForm, ComAdmin admin, ActionMessages errors, ActionMessages validationErrors) throws Exception {
-        final int errorCount = errors.size();
-        if (!aForm.checkParenthesisBalance()) {
-            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.bracketbalance"));
-        }
-        if (aForm.getTargetShortname() != null && aForm.getTargetShortname().length() < 1 ) {
-            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.name.too.short"));
-        }
-        if (aForm.getNumTargetNodes() == 0) {
-            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.norule"));
-        }
-        if (errorCount != errors.size()) {
-            return 0;
-        }
-        
-        final ComTarget newTarget = targetFactory.newTarget();
-        newTarget.setId(0);
-        newTarget.setTargetName(aForm.getTargetShortname());
-        newTarget.setTargetDescription(aForm.getTargetDescription());
-        newTarget.setCompanyID(admin.getCompanyID());
-        
-    	final String eqlFromForm = recipientQueryBuilder.createEqlFromForm(aForm, admin.getCompanyID());
-    	newTarget.setEQL(eqlFromForm);
+    private boolean saveTargetGroup(RecipientForm aForm, ComAdmin admin, ActionMessages errors, ActionMessages validationErrors) throws Exception {
+		if (admin.permissionAllowed(Permission.RECIPIENT_ADVANCED_SEARCH_MIGRATION)) {
+			if (StringUtils.length(aForm.getTargetShortname()) < 3) {
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.name.too.short"));
+				return false;
+			}
 
-		final ComTarget target = loadTargetGroupOrNull(aForm.getTargetID(), admin.getCompanyID());
-		return targetService.saveTarget(admin, newTarget, target, validationErrors, this::writeUserActivityLog);
+			return saveTargetGroupFromQueryBuilder(aForm, admin, errors) > 0;
+		} else {
+			//todo: GWUA-4678: delete after migrate successfully
+			final int errorCount = errors.size();
+			if (!aForm.checkParenthesisBalance()) {
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.bracketbalance"));
+			}
+			if (aForm.getTargetShortname() != null && aForm.getTargetShortname().length() < 1 ) {
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.name.too.short"));
+			}
+			if (aForm.getNumTargetNodes() == 0) {
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.norule"));
+			}
+			if (errorCount != errors.size()) {
+				return false;
+			}
+
+			final ComTarget newTarget = targetFactory.newTarget();
+			newTarget.setId(0);
+			newTarget.setTargetName(aForm.getTargetShortname());
+			newTarget.setTargetDescription(aForm.getTargetDescription());
+			newTarget.setCompanyID(admin.getCompanyID());
+
+			final String eqlFromForm = targetEqlQueryBuilder.createEqlFromForm(aForm.getTargetEqlBuilder(), admin.getCompanyID());
+			newTarget.setEQL(eqlFromForm);
+
+			final ComTarget target = loadTargetGroupOrNull(aForm.getTargetID(), admin.getCompanyID());
+			return targetService.saveTarget(admin, newTarget, target, validationErrors, this::writeUserActivityLog) > 0;
+		}
     }
-    
-    private final ComTarget loadTargetGroupOrNull(final int targetId, final int companyId) {
+
+	private int saveTargetGroupFromQueryBuilder(RecipientForm aForm, ComAdmin admin, ActionMessages errors) {
+    	int newTargetId = 0;
+		try {
+			final ComTarget oldTarget = loadTargetGroupOrNull(aForm.getTargetID(), admin.getCompanyID());
+
+			final ComTarget newTarget = targetFactory.newTarget();
+			newTarget.setId(0);
+			newTarget.setTargetName(aForm.getTargetShortname());
+			newTarget.setTargetDescription(aForm.getTargetDescription());
+
+			newTarget.setEQL(queryBuilderToEqlConverter.convertQueryBuilderJsonToEql(aForm.getQueryBuilderRules(), admin.getCompanyID()));
+			newTarget.setCompanyID(admin.getCompanyID());
+
+			newTargetId = targetService.saveTarget(admin, newTarget, oldTarget, errors, this::writeUserActivityLog);
+
+			aForm.setTargetID(newTargetId);
+
+		} catch (QueryBuilderToEqlConversionException e) {
+			logger.error("Could not convert query builder rule.", e);
+		} catch (Exception e) {
+			logger.error("Could not save target group.");
+		}
+
+		return newTargetId;
+	}
+
+	private final ComTarget loadTargetGroupOrNull(final int targetId, final int companyId) {
     	try {
     		return targetService.getTargetGroup(targetId, companyId);
     	} catch(final UnknownTargetGroupIdException e) {
@@ -1466,8 +1459,8 @@ public class RecipientAction extends StrutsActionBase {
 	}
 
 	@Required
-	public void setRecipientQueryBuilder(RecipientQueryBuilder recipientQueryBuilder) {
-		this.recipientQueryBuilder = recipientQueryBuilder;
+	public void setTargetEqlQueryBuilder(TargetEqlQueryBuilder targetEqlQueryBuilder) {
+		this.targetEqlQueryBuilder = targetEqlQueryBuilder;
 	}
 
     @Required
@@ -1529,4 +1522,19 @@ public class RecipientAction extends StrutsActionBase {
     private interface GetSuccessfulDestinationFunction {
         ActionForward apply(HttpServletRequest request, ActionMapping actionMapping, RecipientForm recipientForm);
     }
+
+    @Required
+	public void setFilterListBuilder(QueryBuilderFilterListBuilder filterListBuilder) {
+		this.filterListBuilder = filterListBuilder;
+	}
+
+	@Required
+	public void setQueryBuilderToEqlConverter(QueryBuilderToEqlConverter queryBuilderToEqlConverter) {
+		this.queryBuilderToEqlConverter = queryBuilderToEqlConverter;
+	}
+
+	@Required
+	public void setEqlToQueryBuilderConverter(EqlToQueryBuilderConverter eqlToQueryBuilderConverter) {
+		this.eqlToQueryBuilderConverter = eqlToQueryBuilderConverter;
+	}
 }

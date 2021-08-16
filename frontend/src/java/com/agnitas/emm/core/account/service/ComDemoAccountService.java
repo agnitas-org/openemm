@@ -20,13 +20,15 @@ public interface ComDemoAccountService {
     
     Map<String, Integer> deleteAccount(@VelocityCheck int companyId);
        
-    boolean fillAccountfromMaster(@VelocityCheck int companyId) throws Exception;
+    boolean fillAccountFromMaster(@VelocityCheck int companyId) throws Exception;
     
-    boolean fillAccountfromCompany(@VelocityCheck int companyId, @VelocityCheck int fromCompanyID) throws Exception;
+    boolean fillAccountFromCompany(@VelocityCheck int companyId, @VelocityCheck int fromCompanyID) throws Exception;
 
     int checkDB();
     
     boolean checkPassword(String user, String password);
     
     boolean deleteUser(int companyID);
+    
+    boolean sendAthenticationData(int companyID, int adminID, String clientIp);
 }

@@ -130,7 +130,9 @@
                             <c:set var="actionsDelete">
                                 <bean:message key="settings.profile.ProfileDelete"/>
                             </c:set>
-                            <c:url var="deleteProfileLink" value="/profiledb/${fields.column}/confirmDelete.action"/>
+                            <c:url var="deleteProfileLink" value="/profiledb/${fields.column}/confirmDelete.action">
+                            	<c:param name="from_list_page" value="true" />
+                            </c:url>
 
                             <a href="${deleteProfileLink}" class="btn btn-regular btn-alert js-row-delete" title="${actionsDelete}" data-tooltip="${actionsDelete}">
                                 <i class="icon icon-trash-o"></i>

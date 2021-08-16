@@ -28,6 +28,8 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.beans.ComCompany;
 import com.agnitas.dao.ComCompanyDao;
@@ -60,9 +62,15 @@ public class UserFormExecuteController {
 	 * @throws IOException
 	 */
 	@RequestMapping("/form.action")
-	public String executeForm(HttpServletRequest request, HttpServletResponse response) throws IOException {
+	public String executeForm(HttpServletRequest request, @RequestParam(value = "file", required = false) MultipartFile file, HttpServletResponse response) throws IOException {
 		// Validate the request parameters specified by the user
 		final CaseInsensitiveMap<String, Object> params = new CaseInsensitiveMap<>();
+		if (file != null) {
+			params.put("file_name", file.getOriginalFilename());
+			params.put("file_type", file.getContentType());
+			params.put("file_size", file.getSize());
+			params.put("file", file);
+		}
 
 		try {
 			response.setBufferSize(65535);

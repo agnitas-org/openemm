@@ -39,6 +39,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -80,11 +81,11 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
     private String zipPassword = null;
     private String zippedFileName = null;
 	
-	private String encoding = "UTF-8";
-	private char delimiter = ';';
-	private boolean alwaysQuote = false;
-	private Character stringQuote = '"';
-	private String nullValueText = "";
+    protected String encoding = "UTF-8";
+    protected char delimiter = ';';
+    protected boolean alwaysQuote = false;
+    protected Character stringQuote = '"';
+    protected String nullValueText = "";
 	
 	protected DateFormat dateFormat = null;
 	protected DateFormat dateTimeFormat = null;
@@ -253,9 +254,29 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 		this.dateTimeFormat = null;
 		this.dateTimeFormatter = dateFormatter;
 	}
+	
+	public DateTimeFormatter getDateTimeFormatter() {
+		return dateTimeFormatter;
+	}
+	
+	public DateFormat getDateTimeFormat() {
+		return dateTimeFormat;
+	}
+	
+	public DateTimeFormatter getDateFormatter() {
+		return dateTimeFormatter;
+	}
+	
+	public DateFormat getDateFormat() {
+		return dateFormat;
+	}
 
 	public void setDecimalFormat(NumberFormat decimalFormat) {
 		this.decimalFormat = decimalFormat;
+	}
+
+	public NumberFormat getDecimalFormat() {
+		return decimalFormat;
 	}
 
 	public void setMaximumExportLineLimit(long maximumExportLineLimit) {
@@ -282,6 +303,10 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 
 	public void setExportTimezone(ZoneId exportTimezone) {
 		this.exportTimezone = exportTimezone;
+	}
+
+	public ZoneId getExportTimezone() {
+		return exportTimezone;
 	}
 
 	@Override
@@ -418,7 +443,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 											values.add(nullValueText);
 										} else if (value instanceof String) {
 											values.add((String) value);
-										} else if (value instanceof Number) {
+										} else if (value instanceof Number && decimalFormat != null) {
 											values.add(decimalFormat.format(value));
 										} else {
 											values.add(value.toString());
@@ -517,6 +542,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 						if (dateTimeFormatter != null)  {
 							return dateTimeFormatter.format(exportZonedDateTime);
 						} else if (dateTimeFormat != null) {
+							dateTimeFormat.setTimeZone(TimeZone.getTimeZone(exportTimezone));
 							return dateTimeFormat.format(Date.from(exportZonedDateTime.toInstant()));
 						} else {
 							return exportZonedDateTime;
@@ -585,6 +611,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 						if (dateTimeFormatter != null)  {
 							return dateTimeFormatter.format(exportZonedDateTime);
 						} else if (dateTimeFormat != null) {
+							dateTimeFormat.setTimeZone(TimeZone.getTimeZone(exportTimezone));
 							return dateTimeFormat.format(Date.from(exportZonedDateTime.toInstant()));
 						} else {
 							return exportZonedDateTime;
@@ -612,6 +639,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 					if (dateTimeFormatter != null)  {
 						return dateTimeFormatter.format(exportZonedDateTime);
 					} else if (dateTimeFormat != null) {
+						dateTimeFormat.setTimeZone(TimeZone.getTimeZone(exportTimezone));
 						return dateTimeFormat.format(Date.from(exportZonedDateTime.toInstant()));
 					} else {
 						return exportZonedDateTime;

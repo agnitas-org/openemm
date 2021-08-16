@@ -21,8 +21,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.factory.MailingComponentFactory;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -345,11 +346,11 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
                     aComp.setMailingID(aForm.getMailingID());
                     uploadData = uploadDao.loadData(aForm.getAttachmentPdfFileID());
                     if (aForm.getNewAttachmentType() == 0) {
-                        aComp.setType(MailingComponent.TYPE_ATTACHMENT);
+                        aComp.setType(MailingComponentType.Attachment);
                         aComp.setComponentName(uploadData.getFilename());
                         aComp.setBinaryBlock(uploadData.getData(), "application/pdf");
                     } else {
-                        aComp.setType(MailingComponent.TYPE_PERSONALIZED_ATTACHMENT);
+                        aComp.setType(MailingComponentType.PersonalizedAttachment);
                         aComp.setComponentName(uploadData.getFilename());
                         aComp.setBinaryBlock(background.getFileData(), "application/pdf");
                         aMailing.findDynTagsInTemplates(new String(uploadData.getData(), "UTF-8"), getApplicationContext(req));
@@ -364,11 +365,11 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
                     aComp.setCompanyID(AgnUtils.getCompanyID(req));
                     aComp.setMailingID(aForm.getMailingID());
                     if (aForm.getNewAttachmentType() == 0) {
-                        aComp.setType(MailingComponent.TYPE_ATTACHMENT);
+                        aComp.setType(MailingComponentType.Attachment);
                         aComp.setComponentName(aForm.getNewAttachmentName());
                         aComp.setBinaryBlock(newAttachment.getFileData(), newAttachment.getContentType());
                    } else {
-                        aComp.setType(MailingComponent.TYPE_PERSONALIZED_ATTACHMENT);
+                        aComp.setType(MailingComponentType.PersonalizedAttachment);
                         aComp.setComponentName(aForm.getNewAttachmentName());
                         aComp.setBinaryBlock(background.getFileData(), "application/pdf");
                         try {
@@ -390,8 +391,8 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
 
         for (MailingComponent component : aMailing.getComponents().values()) {
             switch (component.getType()) {
-                case MailingComponent.TYPE_PERSONALIZED_ATTACHMENT:
-                case MailingComponent.TYPE_ATTACHMENT:
+                case PersonalizedAttachment:
+                case Attachment:
                     aParam = req.getParameter("delete" + component.getId());
                     if (aParam != null && aParam.equals("delete")) {
                         deleteEm.add(component);

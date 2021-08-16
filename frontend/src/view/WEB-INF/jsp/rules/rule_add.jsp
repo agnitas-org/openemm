@@ -29,8 +29,6 @@
 
 <bean:define id="index" name="${FORM_NAME}" property="numTargetNodes" toScope="page" />
 
-<c:set var="ACTION_SAVE" value="<%= ComTargetAction.ACTION_SAVE %>" scope="page" />
-
 <c:if test="${empty TARGET_LOCKED}">
 	<c:set var="TARGET_LOCKED" value="false" scope="page" />
 </c:if>

@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.CustomerImportStatus;
@@ -128,7 +129,7 @@ public class ImportModeAddAndUpdateHandler implements ImportModeHandler {
 		int invalidNullValueEntries = importRecipientsDao.removeNewCustomersWithInvalidNullValues(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, importProfile.getColumnMapping());
 		status.setInvalidNullValues(invalidNullValueEntries);
 		
-		int insertedEntries = importRecipientsDao.insertNewCustomers(temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, datasourceId, importProfile.getDefaultMailType(), importProfile.getColumnMapping());
+		int insertedEntries = importRecipientsDao.insertNewCustomers(temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, datasourceId, importProfile.getDefaultMailType(), importProfile.getColumnMapping(), importProfile.getCompanyId());
 		status.setInserted(insertedEntries);
 	}
 
@@ -147,7 +148,7 @@ public class ImportModeAddAndUpdateHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, MediaTypes mediatype) throws Exception {
+	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
 		if (mailingListIdsToAssign != null && mailingListIdsToAssign.size() > 0) {
 			Map<Integer, Integer> mailinglistAssignStatistics = new HashMap<>();
 			if (importProfile.getActionForNewRecipients() > 0) {
@@ -186,9 +187,13 @@ public class ImportModeAddAndUpdateHandler implements ImportModeHandler {
 			} else  {
 				// Insert bindings for new and existing customers (subscribe to mailinglists)
 		    	for (int mailingListId : mailingListIdsToAssign) {
-		    		int newCustomerSubscribed = importRecipientsDao.assignNewCustomerToMailingList(importProfile.getCompanyId(), datasourceId, mailingListId, mediatype, UserStatus.Active);
-
-		    		int existingCustomerSubscribed = importRecipientsDao.assignExistingCustomerWithoutBindingToMailingList(temporaryImportTableName, importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Active);
+		    		int newCustomerSubscribed = 0;
+		    		int existingCustomerSubscribed = 0;
+		    		for (MediaTypes mediatype : mediatypes) {
+			    		newCustomerSubscribed += importRecipientsDao.assignNewCustomerToMailingList(importProfile.getCompanyId(), datasourceId, mailingListId, mediatype, UserStatus.Active);
+	
+			    		existingCustomerSubscribed += importRecipientsDao.assignExistingCustomerWithoutBindingToMailingList(temporaryImportTableName, importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Active);
+		    		}
 		    		
 		    		mailinglistAssignStatistics.put(mailingListId, newCustomerSubscribed + existingCustomerSubscribed);
 		    	}

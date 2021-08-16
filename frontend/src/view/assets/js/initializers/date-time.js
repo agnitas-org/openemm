@@ -149,6 +149,11 @@ A documentation of the underlying jquery plugin can be found under <a href="http
 
             options = _.merge({}, baseOptions, Helpers.objFromString($input.data('datepicker-options')));
 
+            $picker = $input.pickadate('picker');
+            if ($picker && $picker.get('start')) {
+                // prevent double initializing
+                return;
+            }
             $(input).pickadate(options);
             $picker = $input.pickadate('picker');
 

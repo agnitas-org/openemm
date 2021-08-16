@@ -1,4 +1,4 @@
-<%@ page import="org.agnitas.beans.Mailing" %>
+<%@ page import="com.agnitas.beans.Mailing" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
 <%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
@@ -51,7 +51,7 @@
         <jsp:param name="baseMailingEditor" value="date-mailing-editor-base"/>
     </jsp:include>
 
-    <script id="date-mailing-editor-data" type="application/json">
+    <script id="config:date-mailing-initializer" type="application/json">
         {
             "form":"datebasedMailingForm",
             "container": "#datebased_mailing-editor",

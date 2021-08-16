@@ -17,9 +17,6 @@ body.dark-theme {
   background-color: $c-dt-main-background;
   color: $c-dt-primary-text;
 }
-body.dark-theme h2, h3, h4, h5, h6 {
-  color: $c-dt-primary-text;
-}
 
 img {
   outline: none;
@@ -89,8 +86,10 @@ h3, h4, h5, h6 {
 }
 
 body.dark-theme {
-  h3, h4, h5, h6 {
-    color: $c-dt-primary-text;
+  .l-header, .l-sidebar, .l-main-view {
+    h2, h3, h4, h5, h6 {
+      color: $c-dt-primary-text;
+    }
   }
 }
 

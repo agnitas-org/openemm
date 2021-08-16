@@ -33,7 +33,6 @@ import java.util.TimeZone;
 
 import javax.servlet.http.HttpSession;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
@@ -55,6 +54,7 @@ import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
 import org.agnitas.web.forms.WorkflowParameters;
 import org.agnitas.web.forms.WorkflowParametersHelper;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -80,16 +80,18 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.DeliveryStat;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComCampaignDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingComponentDao;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
@@ -173,6 +175,8 @@ public class WorkflowController {
     private ConversionService conversionService;
     private MailingService mailingService;
     private ComOptimizationService optimizationService;
+    private AdminService adminService;
+    private final ComTargetService targetService;
 
 
     public WorkflowController(ComWorkflowService workflowService, ComWorkflowValidationService validationService,
@@ -181,7 +185,8 @@ public class WorkflowController {
                               ComCampaignDao campaignDao, ComMailingDeliveryStatService deliveryStatService, ComMailingComponentDao componentDao,
                               GenerationPDFService generationPDFService, ComCompanyDao companyDao, ConfigService configService,
                               WebStorage webStorage, MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService,
-                              ConversionService conversionService, MailingService mailingService, ComOptimizationService optimizationService) {
+                              ConversionService conversionService, MailingService mailingService, ComOptimizationService optimizationService, AdminService adminService,
+                              ComTargetService targetService) {
         this.workflowService = workflowService;
         this.validationService = validationService;
         this.workflowActivationService = workflowActivationService;
@@ -201,6 +206,8 @@ public class WorkflowController {
         this.conversionService = conversionService;
         this.mailingService = mailingService;
         this.optimizationService = optimizationService;
+        this.adminService = adminService;
+        this.targetService = targetService;
     }
 
     @InitBinder
@@ -239,7 +246,7 @@ public class WorkflowController {
             }
         }
 
-        if(form == null) {
+        if (form == null) {
             form = new WorkflowForm();
         } else {
             writeUserActivityLog(admin, "mailing list view", getWorkflowDescription(form));
@@ -277,33 +284,43 @@ public class WorkflowController {
     @GetMapping("/{id:\\d+}/confirmDelete.action")
     public String confirmDelete(ComAdmin admin, @PathVariable("id") int workflowId, WorkflowForm workflowForm, Popups popups) {
         Workflow workflow = workflowService.getWorkflow(workflowId, admin.getCompanyID());
+
         if (workflow == null) {
             popups.alert("Error");
-        } else {
-            workflowForm.setWorkflowId(workflow.getWorkflowId());
-            workflowForm.setShortname(workflow.getShortname());
+            return "messages";
         }
+
+        workflowForm.setWorkflowId(workflow.getWorkflowId());
+        workflowForm.setShortname(workflow.getShortname());
         return "workflow_delete_ajax";
     }
 
     @RequestMapping("/{id:\\d+}/delete.action")
     public String delete(ComAdmin admin, @PathVariable("id") int workflowId, Popups popups) {
         Workflow workflow = workflowService.getWorkflow(workflowId, admin.getCompanyID());
-        if (workflow.getStatus() != Workflow.WorkflowStatus.STATUS_ACTIVE && workflow.getStatus() != Workflow.WorkflowStatus.STATUS_TESTING) {
-            workflowService.deleteWorkflow(workflowId, admin.getCompanyID());
+        try {
+            if (workflow.getStatus() != Workflow.WorkflowStatus.STATUS_ACTIVE && workflow.getStatus() != Workflow.WorkflowStatus.STATUS_TESTING) {
+                workflowService.deleteWorkflow(workflowId, admin.getCompanyID());
 
-            popups.success("default.selection.deleted");
-            writeUserActivityLog(admin, "delete campaign", getWorkflowDescription(workflow));
-        } else {
-            popups.alert("error.workflow.nodesShouldBeDisabledBeforeDeleting");
+                popups.success("default.selection.deleted");
+                writeUserActivityLog(admin, "delete campaign", getWorkflowDescription(workflow));
+                return "redirect:/workflow/list.action";
+            } else {
+                popups.alert("error.workflow.nodesShouldBeDisabledBeforeDeleting");
+            }
+        } catch (Exception e) {
+            logger.error("Workflow deletion error", e);
+            popups.alert("Error");
         }
-        return "redirect:/workflow/list.action";
+
+        return "messages";
     }
 
     @PostMapping("/confirmBulkDelete.action")
     public String confirmBulkDelete(@ModelAttribute("bulkForm") BulkActionForm form, Popups popups) {
         if (form.getBulkIds().size() == 0) {
             popups.alert("bulkAction.nothing.workflow");
+            return "messages";
         }
 
         return "workflow_bulkDeleteConfirm_ajax";
@@ -311,29 +328,36 @@ public class WorkflowController {
 
     @PostMapping("/bulkDelete.action")
     public String bulkDelete(ComAdmin admin, BulkActionForm form, Popups popups) {
-        Set<Integer> workflowIdsToDelete = new HashSet<>();
-        List<Workflow> workflows = workflowService.getWorkflowsByIds(new HashSet<>(form.getBulkIds()), admin.getCompanyID());
-
-        for (Workflow workflow : workflows) {
-            if (workflow.getStatus() != Workflow.WorkflowStatus.STATUS_ACTIVE && workflow.getStatus() != Workflow.WorkflowStatus.STATUS_TESTING) {
-                workflowIdsToDelete.add(workflow.getWorkflowId());
-            }
-        }
-
-        if (workflowIdsToDelete.size() != form.getBulkIds().size()) {
-            popups.alert("error.workflow.nodesShouldBeDisabledBeforeDeleting");
-        } else {
-            workflowService.bulkDelete(workflowIdsToDelete, admin.getCompanyID());
-            popups.success("default.selection.deleted");
+        try {
+            Set<Integer> workflowIdsToDelete = new HashSet<>();
+            List<Workflow> workflows = workflowService.getWorkflowsByIds(new HashSet<>(form.getBulkIds()), admin.getCompanyID());
 
             for (Workflow workflow : workflows) {
-                if (workflowIdsToDelete.contains(workflow.getWorkflowId())) {
-                    writeUserActivityLog(admin, "delete campaign", getWorkflowDescription(workflow));
+                if (workflow.getStatus() != Workflow.WorkflowStatus.STATUS_ACTIVE && workflow.getStatus() != Workflow.WorkflowStatus.STATUS_TESTING) {
+                    workflowIdsToDelete.add(workflow.getWorkflowId());
                 }
             }
+
+            if (workflowIdsToDelete.size() == form.getBulkIds().size()) {
+                workflowService.bulkDelete(workflowIdsToDelete, admin.getCompanyID());
+                popups.success("default.selection.deleted");
+
+                for (Workflow workflow : workflows) {
+                    if (workflowIdsToDelete.contains(workflow.getWorkflowId())) {
+                        writeUserActivityLog(admin, "delete campaign", getWorkflowDescription(workflow));
+                    }
+                }
+
+                return "redirect:/workflow/list.action";
+            } else {
+                popups.alert("error.workflow.nodesShouldBeDisabledBeforeDeleting");
+            }
+        } catch (Exception e) {
+            logger.error("Workflow Bulk deletion error", e);
+            popups.alert("Error");
         }
 
-        return "redirect:/workflow/list.action";
+        return "message";
     }
 
     @PostMapping("/confirmBulkDeactivate.action")
@@ -356,7 +380,8 @@ public class WorkflowController {
                 case STATUS_TESTING:
                     workflowIdsToDeactivate.add(workflow.getWorkflowId());
                     break;
-                default:break;
+                default:
+                    break;
             }
         }
 
@@ -441,8 +466,6 @@ public class WorkflowController {
 
             workflowForm.setWorkflowId(newWorkflow.getWorkflowId());
         } else {
-            assert (existingWorkflow != null);
-            
             if (existingWorkflow == null) {
             	throw new Exception("Unexpected empty existingWorkflow");
             }
@@ -635,14 +658,20 @@ public class WorkflowController {
 
     @PostMapping("/loadStatistics.action")
     public ResponseEntity<Map<Integer, List<String>>> loadStatistics(ComAdmin admin, @RequestParam int workflowId) {
-        Map<Integer, List<String>> stats = workflowStatisticsService.getWorkflowStats(workflowId, admin.getCompanyID(), admin.getLocale());
-        return new ResponseEntity<>(stats, HttpStatus.OK);
+        try {
+            Map<Integer, List<String>> stats = workflowStatisticsService.getWorkflowStats(workflowId, admin.getCompanyID(), admin.getLocale());
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            logger.error("Could not load workflow statistic", e);
+        }
+
+        return ResponseEntity.badRequest().build();
     }
 
     @PostMapping("/getMailingContent.action")
     public @ResponseBody Map<String, Object> getMailingContent(ComAdmin admin, @RequestParam int mailingId) {
         int companyId = admin.getCompanyID();
-        ComMailing mailing = workflowService.getMailing(mailingId, companyId);
+        Mailing mailing = workflowService.getMailing(mailingId, companyId);
 
         Map<String, Object> mailingData = new HashMap<>();
         if(mailing.getId() > 0) {
@@ -745,7 +774,7 @@ public class WorkflowController {
     @PostMapping("/getMailingThumbnail.action")
     public ResponseEntity<Integer> getMailingThumbnail(ComAdmin admin, @RequestParam int mailingId) {
         int companyId = admin.getCompanyID();
-        int componentId = componentDao.getImageComponent(companyId, mailingId, MailingComponentType.ThumbnailImage.getCode());
+        int componentId = componentDao.getImageComponent(companyId, mailingId, MailingComponentType.ThumbnailImage);
 
         return ResponseEntity.ok(componentId);
     }
@@ -823,10 +852,8 @@ public class WorkflowController {
             case STATUS_COMPLETE:
                 workflowForm.setStatusMaybeChangedTo(STATUS_NONE);
                 break;
-			case STATUS_FAILED:
-				break;
-			case STATUS_TESTING_FAILED:
-				break;
+			case STATUS_FAILED: //$FALL-THROUGH$
+			case STATUS_TESTING_FAILED: //$FALL-THROUGH$
 			default:
 				break;
         }
@@ -902,7 +929,7 @@ public class WorkflowController {
         model.addAttribute("campaigns", campaignDao.getCampaignList(companyId, "lower(shortname)", 1));
         model.addAttribute("allMailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
         model.addAttribute("allUserForms", workflowService.getAllUserForms(companyId));
-        model.addAttribute("localeDateNTimePattern", admin.getDateTimeFormat().toPattern());
+        model.addAttribute("localeDateTimePattern", admin.getDateTimeFormat().toPattern());
         model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
         model.addAttribute("adminTimezone", admin.getAdminTimezone());
         model.addAttribute("allWorkflows", workflowService.getWorkflowsOverview(admin));
@@ -911,6 +938,7 @@ public class WorkflowController {
         model.addAttribute("allAutoExports", autoExportService == null ? new ArrayList<AutoExport>() : autoExportService.getAutoExportsOverview(admin));
         model.addAttribute("allMailings", workflowService.getAllMailings(admin));
         model.addAttribute("isEnableTrackingVeto", configService.getBooleanValue(ConfigValue.EnableTrackingVeto, companyId));
+        model.addAttribute("accessLimitTargetId", adminService.getAccessLimitTargetId(admin));
     }
 
     private boolean validateStatusTransition(Workflow.WorkflowStatus currentStatus, Workflow.WorkflowStatus newStatus, List<Message> errors) {
@@ -1264,9 +1292,6 @@ public class WorkflowController {
         } else {
             messages.add(Message.of("error.workflow.decisionsShouldHaveTwoOutgoingConnections"));
         }
-        if (!validationService.noParallelBranches(icons)) {
-            messages.add(Message.of("error.workflow.ParallelBranches"));
-        }
         if (!validationService.parametersSumNotHigher100(icons)) {
             messages.add(Message.of("error.workflow.ParametersSumNotHigher100"));
         }
@@ -1331,12 +1356,23 @@ public class WorkflowController {
             messages.add(Message.of("error.workflow.connection.notAllowed"));
         }
 
+        validateInvalidTargetGroups(companyId, icons, messages);
+
         messages.addAll(validationService.validateStartTrigger(icons, companyId));
         messages.addAll(validateMailingTrackingUsage(icons, companyId, mailingTrackingDataExpirationPeriod));
         messages.addAll(validateReferencedProfileFields(icons, companyId));
         messages.addAll(validateOperatorsInDecisions(icons, companyId));
 
         return messages;
+    }
+
+    private void validateInvalidTargetGroups(final int companyId, final List<WorkflowIcon> icons,
+                                             final List<Message> messages) {
+        final Set<Integer> invalidTargets = validationService.getInvalidTargetGroups(companyId, icons);
+        if(CollectionUtils.isNotEmpty(invalidTargets)) {
+            final List<String> names = targetService.getTargetNamesByIds(companyId, invalidTargets);
+            messages.add(Message.of("error.workflow.targets.invalid", StringUtils.join(names, ", ")));
+        }
     }
 
     private List<Message> validateOperatorsInDecisions(List<WorkflowIcon> icons, int companyId) {

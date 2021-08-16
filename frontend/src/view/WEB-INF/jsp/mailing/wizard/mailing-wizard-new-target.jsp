@@ -1,23 +1,41 @@
-<%@ page language="java" import="com.agnitas.web.*" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.web.ComTargetAction" %>
+<%@ page import="com.agnitas.web.ComMailingWizardAction" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<%--@elvariable id="targetForm" type="com.agnitas.web.forms.ComTargetForm"--%>
+<%--@elvariable id="editTargetForm" type="com.agnitas.emm.core.target.web.QueryBuilderTargetGroupForm"--%>
+<%--@elvariable id="mailTrackingAvailable" type="java.lang.Boolean"--%>
+<%--@elvariable id="helplanguage" type="java.lang.String"--%>
+<%--@elvariable id="queryBuilderFilters" type="java.lang.String"--%>
 
 <c:set var="ACTION_BACK_TO_MAILINGWIZARD" value="<%= ComTargetAction.ACTION_BACK_TO_MAILINGWIZARD %>" scope="page" />
-<c:set var="ACTION_SAVE" value="<%= ComTargetAction.ACTION_SAVE %>" scope="page" />
-<c:set var="ACTION_CONFIRM_DELETE" value="<%= ComTargetAction.ACTION_CONFIRM_DELETE %>" scope="page" />
+<c:set var="ACTION_CONFIRM_DELETE_FROM_MAILINGWIZARD" value="<%= ComTargetAction.ACTION_CONFIRM_DELETE_FROM_MAILINGWIZARD %>" scope="page" />
 <c:set var="ACTION_ADD_TARGET" value="<%= ComMailingWizardAction.ACTION_ADD_TARGET %>"/>
+<c:set var="ACTION_TARGET_VIEW" value="<%= ComMailingWizardAction.ACTION_TARGET_VIEW %>"/>
+<c:set var="ACTION_MAILTYPE" value="<%= ComMailingWizardAction.ACTION_MAILTYPE %>"/>
 
 <emm:ShowColumnInfo id="colsel" table="<%= AgnUtils.getCompanyID(request) %>" />
 
-<agn:agnForm action="/mwNewTarget" data-form-focus="mailing_name" id="wizard-step-7" data-form="resource">
+<c:if test="${empty queryBuilderFilters}">
+    <c:set var="queryBuilderFilters" value="${editTargetForm.queryBuilderFilters}" scope="request"/>
+</c:if>
+
+<c:set var="queryBuilderRules" value="${editTargetForm.queryBuilderRules}" scope="request"/>
+<c:if test="${empty queryBuilderRules}">
+    <c:set var="queryBuilderRules" value="[]" scope="request"/>
+</c:if>
+
+<c:url var="previous" value="/mwMailtype.do?action=${ACTION_MAILTYPE}"/>
+
+<agn:agnForm action="/mwNewTarget.do" data-form-focus="target_name" id="wizard-step-7" data-form="resource" data-controller="target-group-view">
 	<html:hidden property="targetID"/>
-    <html:hidden property="action" />
-    <html:hidden property="eql"/>
+    <html:hidden property="format" value="qb"/>
+    <html:hidden property="method" value="save"/>
 
     <div class="col-md-10 col-md-push-1 col-lg-8 col-lg-push-2">
         <div class="tile">
@@ -30,10 +48,10 @@
                     <li class="">
                         <ul class="pagination">
                             <li>
-                                <html:link page="/mwMailtype.do?action=mailtype">
+                                <a href="${previous}">
                                     <i class="icon icon-angle-left"></i>
                                     <bean:message key="button.Back" />
-                                </html:link>
+                                </a>
                             </li>
                             <li class="disabled"><span>1</span></li>
                             <li class="disabled"><span>2</span></li>
@@ -47,7 +65,7 @@
                             <li class="disabled"><span>10</span></li>
                             <li class="disabled"><span>11</span></li>
                             <li>
-                                <html:link page="/mwTarget.do?action=targetView">
+                                <html:link page="/mwTarget.do?action=${ACTION_TARGET_VIEW}">
                                     <bean:message key="button.Proceed" />
                                     <i class="icon icon-angle-right"></i>
                                 </html:link>
@@ -59,18 +77,20 @@
             <div class="tile-content tile-content-forms">
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label" for="mailing_name"><bean:message key="Name"/></label>
+                        <label class="control-label" for="target_name"><bean:message key="Name"/></label>
                     </div>
                     <div class="col-sm-8">
-                        <html:text styleId="mailing_name" styleClass="form-control" property="shortname" maxlength="99" size="42"/>
+					    <html:text styleId="target_name" styleClass="form-control" property="shortname" maxlength="99" size="42"/>
                     </div>
                 </div>
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label" for="mailing_name"><bean:message key="default.description"/></label>
+                        <label class="control-label" for="target_description">
+                            <bean:message key="default.description"/>
+                        </label>
                     </div>
                     <div class="col-sm-8">
-                        <html:textarea styleId="mailing_description" styleClass="form-control" property="description" rows="5" cols="32"/>
+                        <html:textarea styleId="target_description" styleClass="form-control" property="description" rows="5" cols="32"/>
                     </div>
                 </div>
                 <div class="tile-separator"></div>
@@ -79,27 +99,25 @@
                         <h2 class="headline"><bean:message key="target.TargetDefinition"/></h2>
                     </div>
                     <div class="inline-tile-content">
-                        <div class="row">
+                        <div class="row" data-initializer="target-group-query-builder">
+                            <script id="config:target-group-query-builder" type="application/json">
+                                {
+                                    "mailTrackingAvailable": ${not empty mailTrackingAvailable ? mailTrackingAvailable : false},
+                                    "helpLanguage": "${helplanguage}",
+                                    "queryBuilderRules": ${emm:toJson(queryBuilderRules)},
+                                    "queryBuilderFilters": ${queryBuilderFilters}
+                                }
+                            </script>
+
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <div class="col-md-12">
                                         <label class="control-label"></label>
                                     </div>
                                     <div class="col-md-12">
-                                        <c:set var="FORM_NAME" value="targetForm" scope="page"/>
-                                        <%@include file="/WEB-INF/jsp/rules/rules_list.jsp" %>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label class="control-label"></label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <%@include file="/WEB-INF/jsp/rules/rule_add.jsp" %>
+                                        <div id="targetgroup-querybuilder">
+                                            <html:hidden property="queryBuilderRules" styleId="queryBuilderRules"/>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -107,15 +125,19 @@
                     </div>
                     <div class="inline-tile-footer">
                         <div class="btn-group">
-                            <c:if test="${not empty targetForm.targetID and targetForm.targetID != 0}">
-                                <input type="hidden" id="delete" name="delete" value=""/>
-                                <button class="btn btn-regular btn-alert" type="button" data-form-set="delete:true" data-form-action="${ACTION_CONFIRM_DELETE}">
+                            <c:if test="${not empty editTargetForm.targetID and editTargetForm.targetID gt 0}">
+                                <emm:ShowByPermission token="targets.migration">
+                                    <c:url var="targetDeleteUrl" value="/target/${editTargetForm.targetID}/confirm/delete.action?isWizard=true"/>
+                                </emm:ShowByPermission>
+                                <emm:HideByPermission token="targets.migration">
+                                    <c:url var="targetDeleteUrl" value="/target.do?action=${ACTION_CONFIRM_DELETE_FROM_MAILINGWIZARD}&targetID=${editTargetForm.targetID}"/>
+                                </emm:HideByPermission>
+                                <button class="btn btn-regular btn-alert" type="button" data-form-confirm="" data-form-url="${targetDeleteUrl}">
                                     <i class="icon icon-trash-o"></i>
                                     <bean:message key="button.Delete"/>
                                 </button>
                             </c:if>
-                            <input type="hidden" id="save" name="save" value=""/>
-                            <button class="btn btn-regular btn-primary" type="button" data-form-set="save:true" data-form-action="${ACTION_SAVE}">
+                            <button class="btn btn-regular btn-primary" type="button" data-action="save-wizard-target">
                                 <bean:message key="button.Save"/>
                             </button>
                         </div>
@@ -129,14 +151,23 @@
                 </a>
 
                 <c:choose>
-                    <c:when test="${targetForm.targetID eq 0}">
-                        <html:link styleClass="btn btn-large btn-primary pull-right" page="/target.do?action=${ACTION_BACK_TO_MAILINGWIZARD}">
-                            <bean:message key="button.Proceed"/>
-                            <i class="icon icon-angle-right"></i>
-                        </html:link>
+                    <c:when test="${editTargetForm.targetID eq 0}">
+                        <emm:ShowByPermission token="targets.migration">
+                            <a href="<c:url value='/mwSubject.do?action=subject'/>" class="btn btn-large btn-primary pull-right">
+                                <bean:message key="button.Proceed"/>
+                                <i class="icon icon-angle-right"></i>
+                            </a>
+                        </emm:ShowByPermission>
+
+                        <emm:HideByPermission token="targets.migration">
+                            <html:link styleClass="btn btn-large btn-primary pull-right" page="/target.do?action=${ACTION_BACK_TO_MAILINGWIZARD}">
+                                <bean:message key="button.Proceed"/>
+                                <i class="icon icon-angle-right"></i>
+                            </html:link>
+                        </emm:HideByPermission>
                     </c:when>
                     <c:otherwise>
-                        <html:link styleClass="btn btn-large btn-primary pull-right" page="/mwTarget.do?action=${ACTION_ADD_TARGET}&targetID=${targetForm.targetID}">
+                        <html:link styleClass="btn btn-large btn-primary pull-right" page="/mwTarget.do?action=${ACTION_ADD_TARGET}&addTargetID=${editTargetForm.targetID}">
                             <bean:message key="button.Proceed"/>
                             <i class="icon icon-angle-right"></i>
                         </html:link>

@@ -1,14 +1,11 @@
 <%--checked --%>
-<%@ page language="java" contentType="text/html; charset=utf-8"
-         import="org.agnitas.web.EmmActionAction"
-         errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-
-<c:set var="ACTION_VIEW" value="<%= EmmActionAction.ACTION_VIEW %>" scope="page" />
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <html:form action="/mailingbase" styleClass="top_10">
     <html:hidden property="mailingID"/>
@@ -36,9 +33,12 @@
                         <span class="ie7hack">
                                 ${action["url"]}
                         </span>
-                        <html:link styleClass="hidden js-row-show"
-                                   page='/action.do?action=${ACTION_VIEW}&actionID=${action["action_id"]}" title="${action["url"]}'>
-                        </html:link>
+
+                        <c:url var="actionUrl" value="/action/${action['action_id']}/view.action"/>
+
+                        <a href="${actionUrl}" class="hidden js-row-show">
+                            ${action["url"]}
+                        </a>
                     </display:column>
 
                 </display:table>

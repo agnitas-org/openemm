@@ -39,7 +39,7 @@
         <div class="form-group">
             <div class="col-sm-8 col-sm-push-4">
                 <label class="checkbox-inline">
-                    <input id="dontDeliverMailing_${param.editorId}" type="checkbox" value="true" class="mailing-send-settings-checkbox" name="skipEmptyBlocks"/>
+                    <input id="dontDeliverMailing_${param.editorId}" type="checkbox" class="mailing-send-settings-checkbox" name="skipEmptyBlocks"/>
                     <bean:message key="skipempty.email"/>
                 </label>
             </div>

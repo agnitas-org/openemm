@@ -29,19 +29,21 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.beans.Mediatype;
+import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.factory.DynamicTagContentFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.DynamicTagContentDao;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.exception.UnknownMailingIdException;
 import org.agnitas.emm.core.mailing.service.MailingModel;
@@ -52,7 +54,6 @@ import org.agnitas.util.DynTagException;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.util.SafeString;
 import org.agnitas.util.Tuple;
-import org.agnitas.web.StrutsActionBase;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -63,14 +64,13 @@ import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComUndoDynContent;
 import com.agnitas.beans.ComUndoMailing;
 import com.agnitas.beans.ComUndoMailingComponent;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComMailingDao;
@@ -79,8 +79,9 @@ import com.agnitas.dao.ComUndoDynContentDao;
 import com.agnitas.dao.ComUndoMailingComponentDao;
 import com.agnitas.dao.ComUndoMailingDao;
 import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.emm.core.LinkService;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.components.service.ComMailingComponentsService;
+import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
@@ -101,7 +102,6 @@ import com.agnitas.util.Span;
 public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 	private static final Logger logger = Logger.getLogger(ComMailingBaseServiceImpl.class);
     
-    private static final String ACTIVE_MAILING_STATUS = "mailing.status.active";
     private static final String AGN_TAG_IMAGE = "agnIMAGE";
     private static final String AGN_TAG_IMGLINK = "agnIMGLINK";
 
@@ -109,6 +109,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     private static final double BASE64_OVERHEAD_RATIO = 8.f / 6.f;  // Base64 uses 6 bit out of 8 (padding is neglectable)
 
 	private ComMailingDao mailingDao;
+	private AdminService adminService;
     private GridServiceWrapper gridServiceWrapper;
     protected ComRecipientDao recipientDao;
     protected ExecutorService workerExecutorService;
@@ -184,7 +185,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 
     @Override
     public void restoreMailingUndo(ApplicationContext ctx, int mailingId, @VelocityCheck int companyId) throws Exception {
-        ComMailing mailing = (ComMailing) mailingDao.getMailingWithDeletedDynTags(mailingId, companyId);
+        Mailing mailing = mailingDao.getMailingWithDeletedDynTags(mailingId, companyId);
         ComUndoMailing undoMailing = undoMailingDao.getLastUndoData(mailingId);
         List<ComUndoMailingComponent> undoMailingComponentList = undoMailingComponentDao.getAllUndoDataForMailing(mailingId, undoMailing.getUndoId());
         List<ComUndoDynContent> undoDynContentList = undoDynContentDao.getAllUndoDataForMailing(mailingId, undoMailing.getUndoId());
@@ -209,7 +210,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         undoMailingDao.deleteUndoData(undoMailing.getUndoId());
     }
 
-    private void removeContentFromMailingNotListed(ComMailing mailing, List<ComUndoDynContent> listedContent) {
+    private void removeContentFromMailingNotListed(Mailing mailing, List<ComUndoDynContent> listedContent) {
         // Create a set of content ID's for all listed contents
         Set<Integer> listedContentIds = new HashSet<>();
         for (ComUndoDynContent content : listedContent) {
@@ -375,7 +376,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 		
 		if (mailing.getMailingType() == MailingTypes.INTERVAL.getCode()) {
 			String workStatus = mailingDao.getWorkStatus(companyId, mailingId);
-            isSentStatus = StringUtils.equals(workStatus, ACTIVE_MAILING_STATUS);
+            isSentStatus = StringUtils.equals(workStatus, MailingStatus.ACTIVE.getDbKey());
 		} else {
             isSentStatus = maildropService.isActiveMailing(mailingId, companyId);
 		}
@@ -407,7 +408,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 
     @Override
     public int calculateRecipients(@VelocityCheck int companyId, int mailingId) throws Exception {
-        ComMailing mailing = mailingDao.getMailing(mailingId, companyId);
+        Mailing mailing = mailingDao.getMailing(mailingId, companyId);
 
         if (mailing == null || mailing.getId() <= 0) {
             throw new UnknownMailingIdException("Mailing #" + mailingId + " doesn't exist");
@@ -418,7 +419,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public Tuple<Long, Long> calculateMaxSize(ComMailing mailing) {
+    public Tuple<Long, Long> calculateMaxSize(Mailing mailing) {
         return new MailingSizeCalculation(mailing).calculate();
     }
 
@@ -504,7 +505,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
     
     @Override
-    public ComMailing getMailing(@VelocityCheck int companyId, int mailingId) {
+    public Mailing getMailing(@VelocityCheck int companyId, int mailingId) {
         if (mailingId > 0 && companyId > 0) {
             return mailingDao.getMailing(mailingId, companyId);
         }
@@ -514,7 +515,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     
     @Override
     public List<MailingBase> getMailingsForComparison(ComAdmin admin) {
-        return mailingDao.getMailingsForComparation(admin.getCompanyID(), admin.getAdminID());
+        return mailingDao.getMailingsForComparation(admin.getCompanyID(), admin.getAdminID(), adminService.getAccessLimitTargetId(admin));
     }
     
     @Override
@@ -627,7 +628,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         List<ImageLinkSpan> imageLinks = new ArrayList<>();
 
         try {
-            linkService.findAllLinks(0, content, (begin, end) -> {
+            linkService.findAllLinks(content, (begin, end) -> {
                 String url = content.substring(begin, end);
 
                 if (AgnUtils.checkPreviousTextEquals(content, begin, "src=", ' ', '\'', '"', '\n', '\r', '\t')
@@ -655,8 +656,9 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         this.mailingDao = mailingDao;
     }
 
-    protected ComMailingDao getMailingDao() {
-        return mailingDao;
+    @Required
+    public void setAdminService(AdminService adminService) {
+        this.adminService = adminService;
     }
 
     @Required
@@ -854,11 +856,11 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     private class MailingSizeCalculation {
-        private ComMailing mailing;
+        private Mailing mailing;
         private Map<String, List<Block>> blockMap;
         private Map<String, Integer> imageSizeMap;
 
-        public MailingSizeCalculation(ComMailing mailing) {
+        public MailingSizeCalculation(Mailing mailing) {
             this.mailing = mailing;
             this.blockMap = getBlockMap(mailing.getDynTags().values());
         }
@@ -1190,15 +1192,6 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     public int getMailingType(int mailingId) {
         return mailingDao.getMailingType(mailingId);
     }
-
-    @Override
-    public String toViewUri(int mailingId) {
-        return UriComponentsBuilder.fromPath("/mailingbase.do")
-                .queryParam("action", StrutsActionBase.ACTION_VIEW)
-                .queryParam("mailingID", mailingId)
-                .queryParam("init", true)
-                .toUriString();
-    }
     
     @Override
     public Timestamp getMailingLastSendDate(int mailingId) {
@@ -1206,7 +1199,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public SimpleServiceResult checkContentNotBlank(ComMailing mailing) {
+    public SimpleServiceResult checkContentNotBlank(Mailing mailing) {
         MediatypeEmail emailMediaType = mailing.getEmailParam();
 
         // Check if email media type is selected at all.
@@ -1255,5 +1248,28 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         }
 
         return isContentBlank(template.getEmmBlock(), contentMap);
+    }
+
+    @Override
+    public boolean activateTrackingLinksOnEveryPosition(ComAdmin admin, Mailing mailing, Set<Integer> bulkLinkIds, ApplicationContext context) throws Exception {
+        List<String> links = mailing.getTrackableLinks().values().stream()
+                .filter(Objects::nonNull)
+                .filter((link) -> bulkLinkIds.contains(link.getId()))
+                .map(TrackableLink::getFullUrl)
+                .collect(Collectors.toList());
+
+        List<String> measuredSeparatelyLinks = mailing.replaceAndGetMeasuredSeparatelyLinks(links, context);
+        mailing.buildDependencies(true, context);
+        AtomicBoolean changed = new AtomicBoolean(false);
+        mailing.getTrackableLinks().forEach((key, link) -> {
+            if (measuredSeparatelyLinks.contains(link.getFullUrl()) ||
+                    links.contains(link.getFullUrl())) {
+                link.setMeasureSeparately(true);
+                changed.set(true);
+            }
+        });
+        saveMailingWithUndo(mailing, admin.getAdminID(), false);
+
+        return changed.get();
     }
 }

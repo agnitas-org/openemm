@@ -102,24 +102,6 @@ public interface AdminChangesLogService {
     }
 
     /**
-     * Return navigation location text representation by id
-     *
-     * @param location Navigation location id
-     * @return Navigation location text representation
-     */
-    static String getNavigationLocationName(int location) {
-
-        switch (location) {
-            case 0:
-                return "left side";
-            case 1:
-                return "top";
-            default:
-                return "unknown type";
-        }
-    }
-
-    /**
      * Return mailing settings view type text representation by id
      *
      * @param type Mailing settings view type id

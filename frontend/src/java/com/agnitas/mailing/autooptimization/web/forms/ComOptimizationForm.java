@@ -17,12 +17,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.servlet.http.HttpServletRequest;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
-import com.agnitas.mailing.autooptimization.beans.ComOptimization;
-import com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HtmlUtils;
@@ -33,6 +30,11 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
+import com.agnitas.mailing.autooptimization.beans.ComOptimization;
+import com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl;
 
 public class ComOptimizationForm extends ActionForm {
 	private static final transient Logger logger = Logger.getLogger(ComOptimizationForm.class);
@@ -135,12 +137,17 @@ public class ComOptimizationForm extends ActionForm {
 		
 		if( "schedule".equals(action)) {
 			ComAdmin admin = AgnUtils.getAdmin(request);
-			if (!AgnUtils.isDateValid(resultSendDateAsString, admin.getDateTimeFormat().toPattern())) {
-				errors.add( ActionMessages.GLOBAL_MESSAGE,  new ActionMessage("mailing.autooptimization.errors.resultsenddate", admin.getDateTimeFormat().toPattern()));
-			}
 
-			if (!AgnUtils.isDateValid(testMailingsSendDateAsString, admin.getDateTimeFormat().toPattern())) {
-				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.autooptimization.errors.resultsenddate", admin.getDateTimeFormat().toPattern()));
+			if (StringUtils.isBlank(testMailingsSendDateAsString)) {
+				errors.add( ActionMessages.GLOBAL_MESSAGE,  new ActionMessage("mailing.autooptimization.errors.testmailingssenddate.empty", admin.getDateTimeFormat().toPattern()));
+			} else if (!AgnUtils.isDateValid(testMailingsSendDateAsString, admin.getDateTimeFormat().toPattern())) {
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.autooptimization.errors.testmailingssenddate", admin.getDateTimeFormat().toPattern()));
+			}
+			
+			if (StringUtils.isBlank(resultSendDateAsString)) {
+				errors.add( ActionMessages.GLOBAL_MESSAGE,  new ActionMessage("mailing.autooptimization.errors.resultsenddate.empty", admin.getDateTimeFormat().toPattern()));
+			} else if (!AgnUtils.isDateValid(resultSendDateAsString, admin.getDateTimeFormat().toPattern())) {
+				errors.add( ActionMessages.GLOBAL_MESSAGE,  new ActionMessage("mailing.autooptimization.errors.resultsenddate", admin.getDateTimeFormat().toPattern()));
 			}
 
 			if (!errors.isEmpty()) { // something is wrong with the supplied 'dates' , it doesn't make sense to parse dates from them.
@@ -163,19 +170,15 @@ public class ComOptimizationForm extends ActionForm {
 			}
 
 			if (!resultSenddate.after(testmailingsSenddate)) {
-				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(
-						"mailing.autooptimization.errors.result_is_not_after_test"));
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.autooptimization.errors.result_is_not_after_test"));
 			}
 
 			if (now.after(resultSenddate)) {
-				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(
-						"mailing.autooptimization.errors.resultsenddate_is_not_in_future"));
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.autooptimization.errors.resultsenddate_is_not_in_future"));
 			}
 
 			if (now.after(testmailingsSenddate)) {
-				errors
-						.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(
-						"mailing.autooptimization.errors.testmailingssenddate_is_not_infuture"));
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.autooptimization.errors.testmailingssenddate_is_not_infuture"));
 			}
 		}
 

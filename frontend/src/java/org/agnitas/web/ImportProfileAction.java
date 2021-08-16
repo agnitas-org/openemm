@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -278,7 +280,7 @@ public class ImportProfileAction extends StrutsActionBase {
                     if (importProcessActionDao != null) {
                     	aForm.setImportProcessActions(importProcessActionDao.getAvailableImportProcessActions(companyId));
                     }
-                    request.setAttribute("mediatypes", MediaTypes.valuesSortedByCode());
+
                     loadImportProfile(aForm);
                     setAvailableImportModes(aForm, request);
                     if (emmActionDao != null) {
@@ -294,32 +296,37 @@ public class ImportProfileAction extends StrutsActionBase {
                 	if (StringUtils.isEmpty(aForm.getAddedGender())) {
                 		errors.add("newGender", new ActionMessage("error.import.gender.empty"));
                 	} else {
-	                	boolean success = aForm.getProfile().addGenderMappingSequence(aForm.getAddedGender(), aForm.getAddedGenderInt());
-	                    if (success) {
-	                    	aForm.setAddedGender("");
-	                    	aForm.setAddedGenderInt(0);
-	                    } else {
-	                    	errors.add("newGender", new ActionMessage("error.import.gender.number.duplicate"));
-	                    }
+                		if (!StringUtils.isEmpty(aForm.getAddedGender())) {
+                			if (!importProfileService.addImportProfileGenderMapping(aForm.getProfileId(), aForm.getAddedGender(), aForm.getAddedGenderInt())) {
+                				errors.add("newGender", new ActionMessage("error.import.gender.number.duplicate"));
+                			}
+                		} else {
+            				errors.add("newGender", new ActionMessage("error.import.gender.number.duplicate"));
+            			}
                 	}
+                	
+                    aForm.getProfile().setGenderMapping(importProfileService.getImportProfileGenderMapping(aForm.getProfileId()));
+                	aForm.setAddedGender("");
+                	aForm.setAddedGenderInt(0);
                     
                     aForm.setAction(ImportProfileAction.ACTION_SAVE);
                     destination = mapping.findForward("view");
+                    request.setAttribute("isGenderSectionFocused", true);
                     break;
 
                 case ImportProfileAction.ACTION_REMOVE_GENDER:
                     String gender = ImportUtils.getNotEmptyValueFromParameter(request, "removeGender_");
-                    int genderValue = 0;
                     StringTokenizer stringTokenizerNewGender = new StringTokenizer(gender, ",");
+                    Map<String, Integer> genderMapping = importProfileService.getImportProfileGenderMapping(aForm.getProfileId());
                     while (stringTokenizerNewGender.hasMoreTokens()) {
                     	String genderToken = stringTokenizerNewGender.nextToken().trim();
-                    	genderValue = aForm.getProfile().getGenderMapping().get(genderToken);
-                        aForm.getProfile().getGenderMapping().remove(genderToken);
+                    	genderMapping.remove(genderToken);
                     }
-                	aForm.setAddedGender(gender);
-                	aForm.setAddedGenderInt(genderValue);
+                    importProfileService.saveImportProfileGenderMapping(aForm.getProfileId(), genderMapping);
+                    aForm.getProfile().setGenderMapping(genderMapping);
                     aForm.setAction(ImportProfileAction.ACTION_SAVE);
                     destination = mapping.findForward("view");
+                    request.setAttribute("isGenderSectionFocused", true);
                     break;
 
                 case ImportProfileAction.ACTION_SAVE:
@@ -335,19 +342,19 @@ public class ImportProfileAction extends StrutsActionBase {
 		                    if (!checkErrorsOnSave(aForm, request, errors)) {
 		                        saveImportProfile(aForm, request);
 		                        loadImportProfile(aForm);
+		                        setAvailableImportModes(aForm, request);
 		                        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
 		                        if (aForm.getProfile().getImportMode() == ImportMode.REACTIVATE_BOUNCED.getIntValue()) {
 		                        	messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage(I18nString.getLocaleString("warning.import.mode.bounceractivation", AgnUtils.getLocale(request)), false));
 		                        }
 		                        
-		                        checkProfileKeyColumnIndexed(messages, aForm.getProfile());
+		                        checkProfileKeyColumnIndexed(messages, errors, aForm.getProfile());
 		                    }
                 		}
                 	}
                 	if (emmActionDao != null) {
                 		aForm.setActionsForNewRecipients(emmActionDao.getEmmActionsByOperationType(companyId, false, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING));
                 	}
-                    request.setAttribute("mediatypes", MediaTypes.valuesSortedByCode());
                     aForm.setAction(ImportProfileAction.ACTION_SAVE);
                     destination = mapping.findForward("view");
                     break;
@@ -360,7 +367,6 @@ public class ImportProfileAction extends StrutsActionBase {
                     if (importProcessActionDao != null) {
                     	aForm.setImportProcessActions(importProcessActionDao.getAvailableImportProcessActions(companyId));
                     }
-                    request.setAttribute("mediatypes", MediaTypes.valuesSortedByCode());
                     destination = mapping.findForward("view");
                     break;
 
@@ -419,7 +425,7 @@ public class ImportProfileAction extends StrutsActionBase {
         }
         
         if(destination != null && StringUtils.equalsIgnoreCase("view", destination.getName())) {
-        	setUpPageVariables(request, aForm, admin);
+        	setUpViewPageVariables(request, aForm, admin);
         }
 
         // Report any errors we have discovered back to the original form
@@ -433,13 +439,28 @@ public class ImportProfileAction extends StrutsActionBase {
 
         return destination;
     }
-	
-	private void setUpPageVariables(HttpServletRequest request, ImportProfileForm form, ComAdmin admin) throws Exception {
+
+    private List<Integer> getAllowedModesForAllMailinglists() {
+        return Stream.of(
+                    ImportMode.ADD,
+                    ImportMode.ADD_AND_UPDATE,
+                    ImportMode.UPDATE,
+                    ImportMode.MARK_OPT_OUT,
+                    ImportMode.MARK_BOUNCED,
+                    ImportMode.REACTIVATE_BOUNCED,
+                    ImportMode.MARK_SUSPENDED,
+                    ImportMode.ADD_AND_UPDATE_FORCED,
+                    ImportMode.REACTIVATE_SUSPENDED)
+                .map(ImportMode::getIntValue)
+                .collect(Collectors.toList());
+    }
+
+    private void setUpViewPageVariables(HttpServletRequest request, ImportProfileForm form, ComAdmin admin) throws Exception {
 		form.setAvailableImportProfileFields(getAvailableImportProfileFields(admin));
 		form.setAvailableMailinglists(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
 		
 		request.setAttribute("isCustomerIdImportNotAllowed", !admin.permissionAllowed(Permission.IMPORT_CUSTOMERID));
-        
+
         List<Integer> genders = new ArrayList<>();
     		
         int maxGenderValue;
@@ -454,6 +475,8 @@ public class ImportProfileAction extends StrutsActionBase {
         }
         
         request.setAttribute("availableGenderIntValues", genders);
+        request.setAttribute("allowedModesForAllMailinglists", getAllowedModesForAllMailinglists());
+        request.setAttribute("mediatypes", MediaTypes.valuesSortedByCode());
     }
 
 	protected boolean checkErrorsOnSave(ImportProfileForm aForm, HttpServletRequest request, ActionMessages errors) throws InstantiationException, IllegalAccessException {
@@ -594,13 +617,17 @@ public class ImportProfileAction extends StrutsActionBase {
     	ComAdmin admin = AgnUtils.getAdmin(request);
     	
         ImportProfile importProfile = aForm.getProfile();
+        importProfile.setId(aForm.getProfileId());
         importProfile.setCompanyId(AgnUtils.getCompanyID(request));
+        importProfile.setAdminId(AgnUtils.getAdminId(request));
         importProfile.setMailinglists(new ArrayList<>(aForm.getMailinglists()));
-        if (importProfile.getMediatype() != MediaTypes.EMAIL && !admin.permissionAllowed(Permission.IMPORT_MEDIATYPE)) {
-        	importProfile.setMediatype(MediaTypes.EMAIL);
-        }
+        
+        importProfile.setMediatypes(aForm.getMediatypes());
+        
         if (aForm.getProfileId() != 0) {
             ImportProfile oldImportProfile = importProfileService.getImportProfileById(aForm.getProfileId());
+            // Gendermapping is handled separately
+            importProfile.setGenderMapping(oldImportProfile.getGenderMapping());
             importProfileService.saveImportProfileWithoutColumnMappings(importProfile);
 
             writeImportChangeLog(oldImportProfile, importProfile, aForm, admin);
@@ -713,13 +740,20 @@ public class ImportProfileAction extends StrutsActionBase {
         form.setProfile(profile);
         form.clearLists();
 
-        if (profile.getActionForNewRecipients() != 0) {
-            form.getMailinglists().addAll(importProfileService.getSelectedMailingListIds(profile.getId(), profile.getCompanyId()));
-            form.setMailinglistsToShow(new HashSet<>(profile.getMailinglistIds()));
-        } else {
-            form.getMailinglists().addAll(profile.getMailinglistIds());
+        if (profile.isMailinglistsAll()) {
+        	form.getMailinglists().clear();
             form.setMailinglistsToShow(null);
+        } else {
+	        if (profile.getActionForNewRecipients() != 0) {
+	            form.getMailinglists().addAll(importProfileService.getSelectedMailingListIds(profile.getId(), profile.getCompanyId()));
+	            form.setMailinglistsToShow(new HashSet<>(profile.getMailinglistIds()));
+	        } else {
+	            form.getMailinglists().addAll(profile.getMailinglistIds());
+	            form.setMailinglistsToShow(null);
+	        }
         }
+        
+        form.setMediatypes(profile.getMediatypes());
     }
 
     private String formatBoolean(boolean value) {
@@ -761,11 +795,16 @@ public class ImportProfileAction extends StrutsActionBase {
 	 *            messages to add warning to if key column is not indexed
 	 * @throws Exception
 	 */
-	private void checkProfileKeyColumnIndexed(ActionMessages messages, ImportProfile importProfile) throws Exception {
+	private void checkProfileKeyColumnIndexed(ActionMessages messages, ActionMessages errors, ImportProfile importProfile) throws Exception {
 		List<String> columnsToCheck = importProfile.getKeyColumns();
 		if (CollectionUtils.isNotEmpty(columnsToCheck)) {
 			if (!importRecipientsDao.isKeyColumnIndexed(importProfile.getCompanyId(), columnsToCheck)) {
-				messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.import.keyColumn.index"));
+				int unindexedLimit = configService.getIntegerValue(ConfigValue.MaximumContentLinesForUnindexedImport, importProfile.getCompanyId());
+				if (unindexedLimit >= 0 && importRecipientsDao.getResultEntriesCount("SELECT COUNT(*) FROM customer_" + importProfile.getCompanyId() + "_tbl") > unindexedLimit) {
+					errors.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.import.keyColumn.index"));
+				} else {
+					messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.import.keyColumn.index"));
+				}
 			}
 		}
 	}

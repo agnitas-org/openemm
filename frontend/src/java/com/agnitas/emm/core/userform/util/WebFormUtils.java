@@ -10,10 +10,10 @@
 
 package com.agnitas.emm.core.userform.util;
 
+import static org.agnitas.util.AgnUtils.getNormalizedRdirDomain;
+
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-
-import static org.agnitas.util.AgnUtils.getNormalizedRdirDomain;
 
 public class WebFormUtils {
 
@@ -21,7 +21,7 @@ public class WebFormUtils {
     private static final String IMAGE_SRC_PATTERN_NO_CACHE = "{rdir-domain}formImage/nc/{license-id}/{company-id}/{form-id}/{name}";
     private static final String IMAGE_THUMBNAIL_PATTERN = "{rdir-domain}formImage/thb/{company-id}/{form-id}/{name}";
 
-    private static final String FORM_FULL_VIEW_PATTERN = "{rdir-domain}form.do?agnCI={company-id}&agnFN={user-form-name}&agnUID={uid}";
+    private static final String FORM_FULL_VIEW_PATTERN = "{rdir-domain}form.action?agnCI={company-id}&agnFN={user-form-name}&agnUID={uid}";
 
 	/**
 	 * Gets the form image link.

@@ -12,7 +12,7 @@
       handler = arguments[1];
     }
 
-    if ($.isFunction(handler)) {
+    if (_.isFunction(handler)) {
       map['key#' + name] = {name: name, handler: handler, dependencies: dependencies};
     } else {
       console.error('Handler must be a function');
@@ -26,7 +26,7 @@
       return;
     }
 
-    if ($.isArray(initializer.dependencies) && initializer.dependencies.length) {
+    if (Array.isArray(initializer.dependencies) && initializer.dependencies.length) {
       pending.push(initializer.name);
 
       initializer.dependencies.forEach(function(dependencyName) {
@@ -67,7 +67,7 @@
   }
 
   function run(name, $scope) {
-    if ($.isArray(name)) {
+    if (Array.isArray(name)) {
       name.forEach(function(nm) {
         run(nm, $scope);
       });

@@ -13,7 +13,6 @@ package org.agnitas.service;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -30,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -59,7 +59,6 @@ import org.agnitas.util.DbUtilities;
 import org.agnitas.util.FileUtils;
 import org.agnitas.util.ImportUtils;
 import org.agnitas.util.ImportUtils.ImportErrorType;
-import org.agnitas.util.TempFileInputStream;
 import org.agnitas.util.ZipUtilities;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.CheckForDuplicates;
@@ -71,6 +70,7 @@ import org.agnitas.util.importvalues.NullValuesAction;
 import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.agnitas.web.ProfileImportReporter;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -87,6 +87,9 @@ import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader;
 import com.agnitas.json.JsonReader.JsonToken;
+
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.FileHeader;
 
 public class ProfileImportWorker implements Callable<ProfileImportWorker> {
     private static final transient Logger logger = Logger.getLogger(ProfileImportWorker.class);
@@ -116,7 +119,8 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	private AutoImport autoImport = null;
 	private File resultFile;
 	private ImportProfile importProfile;
-	private SimpleDateFormat importDateFormat;
+	private SimpleDateFormat importDateFormat = new SimpleDateFormat(DateUtilities.DD_MM_YYYY);
+	private TimeZone importTimeZone = TimeZone.getDefault();
 	private ComAdmin admin;
 	private int datasourceId;
 	private CustomerImportStatus status;
@@ -216,13 +220,19 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		this.importProfile = importProfile;
 		if (importProfile != null) {
 			importDateFormat = new SimpleDateFormat(DateFormat.getDateFormatById(importProfile.getDateFormat()).getValue());
-		} else {
-			importDateFormat = null;
+		}
+		
+		if (importTimeZone != null) {
+			importDateFormat.setTimeZone(importTimeZone);
 		}
 	}
 
 	public void setAdmin(ComAdmin admin) {
 		this.admin = admin;
+		if (admin != null) {
+			importTimeZone = TimeZone.getTimeZone(admin.getAdminTimezone());
+			importDateFormat.setTimeZone(importTimeZone);
+		}
 	}
 
 	public void setSessionId(String sessionId) {
@@ -402,7 +412,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 					    		&& status.getInserted() == 0
 					    		&& status.getUpdated() == 0
 					    		&& status.getErrors().size() > 0) {
-				    		error = new ImportException(true, "error.import.data.invalid");
+				    		error = new ImportException(false, "error.import.data.invalid");
 				    		status.setFatalError("All import data was invalid");
 				    	}
 				    	
@@ -560,20 +570,19 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 					ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
 					if (zipEntry == null) {
 						throw new ImportException(false, "error.unzip.noEntry");
+					} else {
+						return dataInputStream;
 					}
-					return dataInputStream;
 				} else {
-					File unzipPath = new File(importFile.getLocalFile().getAbsolutePath() + ".unzipped");
-					unzipPath.mkdir();
-					ZipUtilities.decompressFromEncryptedZipFile(importFile.getLocalFile(), unzipPath, importProfile.getZipPassword());
-					
-					// Check if there was only one file within the zip file and use it for import
-					String[] filesToImport = unzipPath.list(); // Returns null if no files found
-					if (filesToImport ==  null || filesToImport.length != 1) {
+					ZipFile zipFile = new ZipFile(importFile.getLocalFile());
+					zipFile.setPassword(importProfile.getZipPassword().toCharArray());
+					List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+					// Check if there is only one file within the zip file
+					if (fileHeaders == null || fileHeaders.size() != 1) {
 						throw new Exception("Invalid number of files included in zip file");
+					} else {
+						return zipFile.getInputStream(fileHeaders.get(0));
 					}
-					InputStream dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
-					return new TempFileInputStream(dataInputStream, unzipPath);
 				}
 			} catch (ImportException e) {
 				throw e;
@@ -599,6 +608,16 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		}
 
 		ImportModeHandler importModeHandler = importModeHandlerFactory.getImportModeHandler(ImportMode.getFromInt(importProfile.getImportMode()).getImportModeHandlerName());
+		
+		List<String> columnsToCheck = importProfile.getKeyColumns();
+		if (CollectionUtils.isNotEmpty(columnsToCheck)) {
+			if (!importRecipientsDao.isKeyColumnIndexed(importProfile.getCompanyId(), columnsToCheck)) {
+				int unindexedLimit = configService.getIntegerValue(ConfigValue.MaximumContentLinesForUnindexedImport, importProfile.getCompanyId());
+				if (unindexedLimit >= 0 && importRecipientsDao.getResultEntriesCount("SELECT COUNT(*) FROM customer_" + importProfile.getCompanyId() + "_tbl") > unindexedLimit) {
+					throw new ImportException(false, "warning.import.keyColumn.index");
+				}
+			}
+		}
 		
 		importModeHandler.checkPreconditions(importProfile);
 	}
@@ -633,7 +652,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		
 		importModeHandler.handleExistingCustomers(status, importProfile, temporaryImportTableName, importIndexColumn, transferDbColumns, datasourceId);
 
-		mailinglistAssignStatistics = importModeHandler.handlePostProcessing(emmActionService, status, importProfile, temporaryImportTableName, datasourceId, mailingListIdsToAssign, importProfile.getMediatype());
+		mailinglistAssignStatistics = importModeHandler.handlePostProcessing(emmActionService, status, importProfile, temporaryImportTableName, datasourceId, mailingListIdsToAssign, importProfile.getMediatypes());
 
 		setStatusValues();
 	}
@@ -644,7 +663,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		temporaryImportTableName = importRecipientsDao.createTemporaryCustomerImportTable(admin.getCompanyID(), "customer_" + importProfile.getCompanyId() + "_tbl", admin.getAdminID(), datasourceId, importProfile.getKeyColumns(), sessionId, description);
 		importIndexColumn = importRecipientsDao.addIndexedIntegerColumn(temporaryImportTableName, "csvindex", temporaryImportTableName + "csvix");
 		duplicateIndexColumn = importRecipientsDao.addIndexedIntegerColumn(temporaryImportTableName, "dbl", temporaryImportTableName + "dblix");
-
+		
 		if (!isOracleDB() && (ImportMode.getFromInt(importProfile.getImportMode()) == ImportMode.BLACKLIST_EXCLUSIVE || ImportMode.getFromInt(importProfile.getImportMode()) == ImportMode.TO_BLACKLIST)) {
 			// Change collation of email column for blacklist import on mysql and mariadb
 			importRecipientsDao.changeEmailColumnCollation(temporaryImportTableName, "utf8mb4_bin");
@@ -703,6 +722,8 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			status.addError(ImportErrorType.STRUCTURE_ERROR);
 			throw e;
 		}
+		
+		importRecipientsDao.gatherTableStats(temporaryImportTableName);
 		
 		setStatusValues();
 	}
@@ -796,70 +817,20 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	private final int importCsvDataInTemporaryTable() throws Exception {
 		setCompletedPercent(0);
 		
-		try(final Connection connection = importRecipientsDao.getDataSource().getConnection()) {
+		try (final Connection connection = importRecipientsDao.getDataSource().getConnection()) {
 			final boolean previousAutoCommit = connection.getAutoCommit();
 			
 			try {
 				connection.setAutoCommit(false);
 
-				try {
-					if(importProfile.isZipped()) {
-						return importZippedCsvDataInTemporaryTable(connection);
-					} else {
-						return importCsvDataInTemporaryTable(connection);
-					}
-					
+				try (InputStream inputStream = getImportInputStream()) {
+					return importCsvDataInTemporaryTable(inputStream, connection);
 				} finally {
 					connection.commit();
 				}
-				
 			} finally {
 				connection.setAutoCommit(previousAutoCommit);
 			}
-		}
-	}
-	
-	private final int importZippedCsvDataInTemporaryTable(final Connection connection) {
-		try {
-			if (importProfile.getZipPassword() == null) {
-				return importZipCsv(connection);
-			} else {
-				final File unzipPath = new File(importFile.getLocalFile().getAbsolutePath() + ".unzipped");
-				unzipPath.mkdir();
-				ZipUtilities.decompressFromEncryptedZipFile(importFile.getLocalFile(), unzipPath, importProfile.getZipPassword());
-				
-				// Check if there was only one file within the zip file and use it for import
-				final String[] filesToImport = unzipPath.list(); // Returns null if no files found
-				if (filesToImport == null || filesToImport.length != 1) {
-					throw new Exception("Invalid number of files included in zip file");
-				}
-				try(final FileInputStream dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0])) {
-					return importCsvDataInTemporaryTable(dataInputStream, connection);
-				} finally {
-					FileUtils.removeRecursively(unzipPath);
-				}
-			}
-		} catch (ImportException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new ImportException(false, "error.unzip", e.getMessage(), e);
-		}
-	}
-
-	private int importZipCsv(final Connection connection) throws IOException, Exception, FileNotFoundException {
-		try(final ZipInputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile.getLocalFile()))) {
-			final ZipEntry zipEntry = dataInputStream.getNextEntry();
-			if (zipEntry == null) {
-				throw new ImportException(false, "error.unzip.noEntry");
-			}
-			
-			return importCsvDataInTemporaryTable(dataInputStream, connection);
-		}
-	}
-	
-	private final int importCsvDataInTemporaryTable(final Connection connection) throws Exception {
-		try(final FileInputStream stream = new FileInputStream(importFile.getLocalFile())) {
-			return importCsvDataInTemporaryTable(stream, connection);
 		}
 	}
 	
@@ -1145,10 +1116,8 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				connection.setAutoCommit(false);
 				
 				try {
-					if(importProfile.isZipped()) {
-						return importedZippedJsonDataInTemporaryTable(connection);
-					} else {
-						return importJsonDataInTemporaryTable(connection);
+					try (final InputStream inputStream = getImportInputStream()) {
+						return importJsonDataInTemporaryTable(inputStream, connection);
 					}
 				} finally {
 					connection.commit();
@@ -1156,42 +1125,6 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			} finally {
 				connection.setAutoCommit(previousAutoCommit);
 			}
-		}
-	}
-	
-	private final int importedZippedJsonDataInTemporaryTable(final Connection connection) throws Exception {
-		if (importProfile.getZipPassword() == null) {
-			return importZipJson(connection);
-		} else {
-			final File unzipPath = new File(importFile.getLocalFile().getAbsolutePath() + ".unzipped");
-			unzipPath.mkdir();
-			ZipUtilities.decompressFromEncryptedZipFile(importFile.getLocalFile(), unzipPath, importProfile.getZipPassword());
-			
-			// Check if there was only one file within the zip file and use it for import
-			final String[] filesToImport = unzipPath.list(); // Returns null if no files found
-			if (filesToImport == null || filesToImport.length != 1) {
-				throw new Exception("Invalid number of files included in zip file");
-			}
-			try(final FileInputStream dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0])) {
-				return importJsonDataInTemporaryTable(dataInputStream, connection);
-			}
-		}
-	}
-
-	private int importZipJson(final Connection connection) throws IOException, Exception, FileNotFoundException {
-		try(final ZipInputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile.getLocalFile()))) {
-			final ZipEntry zipEntry = dataInputStream.getNextEntry();
-			if (zipEntry == null) {
-				throw new ImportException(false, "error.unzip.noEntry");
-			}
-			
-			return importJsonDataInTemporaryTable(dataInputStream, connection);
-		}
-	}
-	
-	private final int importJsonDataInTemporaryTable(final Connection connection) throws Exception {
-		try(final InputStream inputStream = new FileInputStream(importFile.getLocalFile())) {
-			return importJsonDataInTemporaryTable(inputStream, connection);
 		}
 	}
 	
@@ -1397,11 +1330,8 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	private void revalidateTemporaryErrorTable(List<Integer> revalidateCsvIndexes) throws Exception {
 		setCompletedPercent(0);
 
-		Connection connection = importRecipientsDao.getDataSource().getConnection();
-		PreparedStatement preparedStatement = null;
-		try {
-			preparedStatement = connection.prepareStatement(insertIntoTemporaryImportTableSqlString);
-
+		try (Connection connection = importRecipientsDao.getDataSource().getConnection();
+				PreparedStatement preparedStatement = connection.prepareStatement(insertIntoTemporaryImportTableSqlString)) {
 			CaseInsensitiveMap<String, DbColumnType> columnDataTypes = DbUtilities.getColumnDataTypes(importRecipientsDao.getDataSource(), temporaryImportTableName);
 			
 			ImportModeHandler importModeHandler = importModeHandlerFactory.getImportModeHandler(ImportMode.getFromInt(importProfile.getImportMode()).getImportModeHandlerName());
@@ -1449,9 +1379,6 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				doneLines++;
 				setCompletedPercent(Math.round(doneLines * 100f / revalidateCsvIndexes.size()));
 			}
-		} finally {
-			DbUtilities.closeQuietly(connection);
-			DbUtilities.closeQuietly(preparedStatement);
 		}
 	}
 
@@ -1530,7 +1457,20 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			throw new ProfileImportCsvException(ReasonCode.MissingMandatory, columnMapping.getFileColumn(), "Invalid NULL or empty value");
 		}
 		SimpleDataType simpleColumnDataType = columnType.getSimpleDataType();
-		if (simpleColumnDataType == SimpleDataType.Date || simpleColumnDataType == SimpleDataType.DateTime) {
+		if (simpleColumnDataType == SimpleDataType.Date) {
+			if (StringUtils.isBlank(dataValue)) {
+				preparedStatement.setNull(columnIndex + 1, Types.TIMESTAMP);
+			} else if (DbUtilities.isNowKeyword(dataValue)) {
+				preparedStatement.setTimestamp(columnIndex + 1, new Timestamp(new Date().getTime()));
+			} else {
+				try {
+					preparedStatement.setTimestamp(columnIndex + 1, new Timestamp(importDateFormat.parse(dataValue).getTime()));
+				} catch (ParseException e) {
+					status.addErrorColumn(columnMapping.getFileColumn());
+					throw new ProfileImportCsvException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValue);
+				}
+			}
+		} else if (simpleColumnDataType == SimpleDataType.DateTime) {
 			if (StringUtils.isBlank(dataValue)) {
 				preparedStatement.setNull(columnIndex + 1, Types.TIMESTAMP);
 			} else if (DbUtilities.isNowKeyword(dataValue)) {

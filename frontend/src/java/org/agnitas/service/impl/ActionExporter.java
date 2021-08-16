@@ -12,7 +12,16 @@ package org.agnitas.service.impl;
 
 import java.util.List;
 import java.util.Set;
+
 import javax.annotation.Resource;
+
+import org.agnitas.actions.EmmAction;
+import org.agnitas.dao.EmmActionDao;
+import org.agnitas.dao.EmmActionOperationDao;
+import org.agnitas.dao.EmmActionType;
+import org.agnitas.util.importvalues.MailType;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
@@ -26,17 +35,8 @@ import com.agnitas.emm.core.action.operations.ActionOperationIdentifyCustomerPar
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationServiceMailParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationType;
-import com.agnitas.emm.core.action.operations.ActionOperationUnsubscribeCustomerParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
 import com.agnitas.json.JsonWriter;
-import org.agnitas.actions.EmmAction;
-import org.agnitas.dao.EmmActionDao;
-import org.agnitas.dao.EmmActionOperationDao;
-import org.agnitas.dao.EmmActionType;
-import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
 public class ActionExporter extends BaseImporterExporter {
 	@Resource(name="EmmActionDao")
@@ -73,63 +73,74 @@ public class ActionExporter extends BaseImporterExporter {
 			
 			writeJsonObjectAttribute(writer, "id", actionOperation.getId());
 			writeJsonObjectAttribute(writer, "type", actionOperation.getOperationType().getName());
-			
-			if (ActionOperationType.ACTIVATE_DOUBLE_OPT_IN.equals(actionOperation.getOperationType())) {
-				ActionOperationActivateDoubleOptInParameters actionOperationActivateDoubleOptIn = (ActionOperationActivateDoubleOptInParameters) actionOperation;
-				writeJsonObjectAttribute(writer, "forAllLists", actionOperationActivateDoubleOptIn.isForAllLists());
-			} else if (ActionOperationType.CONTENT_VIEW.equals(actionOperation.getOperationType())) {
-				ActionOperationContentViewParameters actionOperationContentView = (ActionOperationContentViewParameters) actionOperation;
-				writeJsonObjectAttribute(writer, "tagName", actionOperationContentView.getTagName());
-			} else if (ActionOperationType.EXECUTE_SCRIPT.equals(actionOperation.getOperationType())) {
-				ActionOperationExecuteScriptParameters actionOperationExecuteScript = (ActionOperationExecuteScriptParameters) actionOperation;
-				writeJsonObjectAttribute(writer, "script", actionOperationExecuteScript.getScript());
-			} else if (ActionOperationType.GET_ARCHIVE_LIST.equals(actionOperation.getOperationType())) {
-				ActionOperationGetArchiveListParameters actionOperationGetArchiveList = (ActionOperationGetArchiveListParameters) actionOperation;
-				writeJsonObjectAttribute(writer, "campaign_id", actionOperationGetArchiveList.getCampaignID());
-			} else if (ActionOperationType.GET_ARCHIVE_MAILING.equals(actionOperation.getOperationType())) {
-				ActionOperationGetArchiveMailingParameters actionOperationGetArchiveMailing = (ActionOperationGetArchiveMailingParameters) actionOperation;
-				writeJsonObjectAttribute(writer, "expiration", actionOperationGetArchiveMailing.getExpireYear() + "-" + actionOperationGetArchiveMailing.getExpireMonth() + "-" + actionOperationGetArchiveMailing.getExpireDay());
-			} else if (ActionOperationType.GET_CUSTOMER.equals(actionOperation.getOperationType())) {
-				ActionOperationGetCustomerParameters actionOperationGetCustomer = (ActionOperationGetCustomerParameters) actionOperation;
-				writeJsonObjectAttribute(writer, "loadAlways", actionOperationGetCustomer.isLoadAlways());
-			} else if (ActionOperationType.IDENTIFY_CUSTOMER.equals(actionOperation.getOperationType())) {
-				ActionOperationIdentifyCustomerParameters actionOperationIdentifyCustomer = (ActionOperationIdentifyCustomerParameters) actionOperation;
-				writeJsonObjectAttribute(writer, "keyColumn", actionOperationIdentifyCustomer.getKeyColumn());
-				writeJsonObjectAttribute(writer, "passColumn", actionOperationIdentifyCustomer.getPassColumn());
-			} else if (ActionOperationType.SEND_MAILING.equals(actionOperation.getOperationType())) {
-				ActionOperationSendMailingParameters actionOperationSendMailing = (ActionOperationSendMailingParameters) actionOperation;
-				writeJsonObjectAttribute(writer, "mailing_id", actionOperationSendMailing.getMailingID());
-				writeJsonObjectAttribute(writer, "delayMinutes", actionOperationSendMailing.getDelayMinutes());
-				writeJsonObjectAttribute(writer, "bccAddress", actionOperationSendMailing.getBcc());
-			} else if (ActionOperationType.SERVICE_MAIL.equals(actionOperation.getOperationType())) {
-				ActionOperationServiceMailParameters actionOperationServiceMail = (ActionOperationServiceMailParameters) actionOperation;
-				writeJsonObjectAttribute(writer, "mailtype", MailType.getFromInt(actionOperationServiceMail.getMailtype()).name());
-				writeJsonObjectAttribute(writer, "toAddress", actionOperationServiceMail.getToAddress());
-				writeJsonObjectAttribute(writer, "fromAddress", actionOperationServiceMail.getFromAddress());
-				writeJsonObjectAttribute(writer, "replyAddress", actionOperationServiceMail.getReplyAddress());
-				writeJsonObjectAttribute(writer, "subject", actionOperationServiceMail.getSubjectLine());
-				writeJsonObjectAttribute(writer, "textMail", actionOperationServiceMail.getTextMail());
-				writeJsonObjectAttribute(writer, "htmlMail", actionOperationServiceMail.getHtmlMail());
-			} else if (ActionOperationType.SUBSCRIBE_CUSTOMER.equals(actionOperation.getOperationType())) {
-				ActionOperationSubscribeCustomerParameters actionOperationSubscribeCustomer = (ActionOperationSubscribeCustomerParameters) actionOperation;
-				writeJsonObjectAttribute(writer, "keyColumn", actionOperationSubscribeCustomer.getKeyColumn());
-				writeJsonObjectAttribute(writer, "doubleCheck", actionOperationSubscribeCustomer.isDoubleCheck());
-				writeJsonObjectAttribute(writer, "doubleOptIn", actionOperationSubscribeCustomer.isDoubleOptIn());
-			} else if (ActionOperationType.UNSUBSCRIBE_CUSTOMER.equals(actionOperation.getOperationType())) {
-				@SuppressWarnings("unused")
-				ActionOperationUnsubscribeCustomerParameters actionOperationUnsubscribeCustomer = (ActionOperationUnsubscribeCustomerParameters) actionOperation;
-				// ActionOperationUnsubscribeCustomer has no additional data
-			} else if (ActionOperationType.UPDATE_CUSTOMER.equals(actionOperation.getOperationType())) {
-				ActionOperationUpdateCustomerParameters actionOperationUpdateCustomer = (ActionOperationUpdateCustomerParameters) actionOperation;
-				writeJsonObjectAttribute(writer, "columnName", actionOperationUpdateCustomer.getColumnName());
-				writeJsonObjectAttribute(writer, "updateType", actionOperationUpdateCustomer.getUpdateType());
-				writeJsonObjectAttribute(writer, "updateValue", actionOperationUpdateCustomer.getUpdateValue());
-				writeJsonObjectAttribute(writer, "trackingPoint_id", actionOperationUpdateCustomer.getTrackingPointId());
-				writeJsonObjectAttribute(writer, "useTrack", actionOperationUpdateCustomer.isUseTrack());
-			} else {
-				throw new Exception("Invalid actionoperation type: " + actionOperation.getOperationType());
+
+			switch (actionOperation.getOperationType()) {
+				case ACTIVATE_DOUBLE_OPT_IN:
+					ActionOperationActivateDoubleOptInParameters actionOperationActivateDoubleOptIn = (ActionOperationActivateDoubleOptInParameters) actionOperation;
+					writeJsonObjectAttribute(writer, "forAllLists", actionOperationActivateDoubleOptIn.isForAllLists());
+					break;
+				case CONTENT_VIEW:
+					ActionOperationContentViewParameters actionOperationContentView = (ActionOperationContentViewParameters) actionOperation;
+					writeJsonObjectAttribute(writer, "tagName", actionOperationContentView.getTagName());
+					break;
+				case EXECUTE_SCRIPT:
+					ActionOperationExecuteScriptParameters actionOperationExecuteScript = (ActionOperationExecuteScriptParameters) actionOperation;
+					writeJsonObjectAttribute(writer, "script", actionOperationExecuteScript.getScript());
+					break;
+				case GET_ARCHIVE_LIST:
+					ActionOperationGetArchiveListParameters actionOperationGetArchiveList = (ActionOperationGetArchiveListParameters) actionOperation;
+					writeJsonObjectAttribute(writer, "campaign_id", actionOperationGetArchiveList.getCampaignID());
+					break;
+				case GET_ARCHIVE_MAILING:
+					ActionOperationGetArchiveMailingParameters actionOperationGetArchiveMailing = (ActionOperationGetArchiveMailingParameters) actionOperation;
+					writeJsonObjectAttribute(writer, "expiration", actionOperationGetArchiveMailing.getExpireYear() + "-" + actionOperationGetArchiveMailing.getExpireMonth() + "-" + actionOperationGetArchiveMailing.getExpireDay());
+					break;
+				case GET_CUSTOMER:
+					ActionOperationGetCustomerParameters actionOperationGetCustomer = (ActionOperationGetCustomerParameters) actionOperation;
+					writeJsonObjectAttribute(writer, "loadAlways", actionOperationGetCustomer.isLoadAlways());
+					break;
+				case IDENTIFY_CUSTOMER:
+					ActionOperationIdentifyCustomerParameters actionOperationIdentifyCustomer = (ActionOperationIdentifyCustomerParameters) actionOperation;
+					writeJsonObjectAttribute(writer, "keyColumn", actionOperationIdentifyCustomer.getKeyColumn());
+					writeJsonObjectAttribute(writer, "passColumn", actionOperationIdentifyCustomer.getPassColumn());
+					break;
+				case SEND_MAILING:
+					ActionOperationSendMailingParameters actionOperationSendMailing = (ActionOperationSendMailingParameters) actionOperation;
+					writeJsonObjectAttribute(writer, "mailing_id", actionOperationSendMailing.getMailingID());
+					writeJsonObjectAttribute(writer, "delayMinutes", actionOperationSendMailing.getDelayMinutes());
+					writeJsonObjectAttribute(writer, "bccAddress", actionOperationSendMailing.getBcc());
+					break;
+				case SERVICE_MAIL:
+					ActionOperationServiceMailParameters actionOperationServiceMail = (ActionOperationServiceMailParameters) actionOperation;
+					writeJsonObjectAttribute(writer, "mailtype", MailType.getFromInt(actionOperationServiceMail.getMailtype()).name());
+					writeJsonObjectAttribute(writer, "toAddress", actionOperationServiceMail.getToAddress());
+					writeJsonObjectAttribute(writer, "fromAddress", actionOperationServiceMail.getFromAddress());
+					writeJsonObjectAttribute(writer, "replyAddress", actionOperationServiceMail.getReplyAddress());
+					writeJsonObjectAttribute(writer, "subject", actionOperationServiceMail.getSubjectLine());
+					writeJsonObjectAttribute(writer, "textMail", actionOperationServiceMail.getTextMail());
+					writeJsonObjectAttribute(writer, "htmlMail", actionOperationServiceMail.getHtmlMail());
+					break;
+				case SUBSCRIBE_CUSTOMER:
+					ActionOperationSubscribeCustomerParameters actionOperationSubscribeCustomer = (ActionOperationSubscribeCustomerParameters) actionOperation;
+					writeJsonObjectAttribute(writer, "keyColumn", actionOperationSubscribeCustomer.getKeyColumn());
+					writeJsonObjectAttribute(writer, "doubleCheck", actionOperationSubscribeCustomer.isDoubleCheck());
+					writeJsonObjectAttribute(writer, "doubleOptIn", actionOperationSubscribeCustomer.isDoubleOptIn());
+					break;
+				case UNSUBSCRIBE_CUSTOMER:
+					// ActionOperationUnsubscribeCustomer has no additional data
+					break;
+				case UPDATE_CUSTOMER:
+					ActionOperationUpdateCustomerParameters actionOperationUpdateCustomer = (ActionOperationUpdateCustomerParameters) actionOperation;
+					writeJsonObjectAttribute(writer, "columnName", actionOperationUpdateCustomer.getColumnName());
+					writeJsonObjectAttribute(writer, "updateType", actionOperationUpdateCustomer.getUpdateType());
+					writeJsonObjectAttribute(writer, "updateValue", actionOperationUpdateCustomer.getUpdateValue());
+					writeJsonObjectAttribute(writer, "trackingPoint_id", actionOperationUpdateCustomer.getTrackingPointId());
+					writeJsonObjectAttribute(writer, "useTrack", actionOperationUpdateCustomer.isUseTrack());
+					break;
+				default:
+					throw new Exception("Invalid actionoperation type: " + actionOperation.getOperationType());
 			}
-			
+
 			writer.closeJsonObject();
 		}
 		writer.closeJsonArray();

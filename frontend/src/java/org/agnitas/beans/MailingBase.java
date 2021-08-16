@@ -54,4 +54,7 @@ public interface MailingBase {
 
 	boolean getUseDynamicTemplate();
 	void setUseDynamicTemplate(boolean useDynamicTemplate);
+
+	void setOnlyPostType(boolean isOnlyPostType);
+	boolean isOnlyPostType();
 }

@@ -12,7 +12,6 @@ package org.agnitas.util;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -34,6 +33,9 @@ import org.apache.log4j.Logger;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.Permission;
+
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.FileHeader;
 
 public class ImportUtils {
 	private static final transient Logger logger = Logger.getLogger(ImportUtils.class);
@@ -182,23 +184,32 @@ public class ImportUtils {
             return false;
         } else if (isZipped) {
 			try {
-				if (optionalZipPassword == null) {
-					return importZip(importFile);
-				} else {
-					File unzipPath = new File(importFile.getAbsolutePath() + ".unzipped");
-					unzipPath.mkdir();
-					ZipUtilities.decompressFromEncryptedZipFile(importFile, unzipPath, optionalZipPassword);
-					
-					// Check if there was only one file within the zip file and use it for import
-					String[] filesToImport = unzipPath.list(); // Returns null if no files found
-					if (filesToImport == null || filesToImport.length != 1) {
+				if (optionalZipPassword != null) {
+					ZipFile zipFile = new ZipFile(importFile);
+					zipFile.setPassword(optionalZipPassword.toCharArray());
+					List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+					// Check if there is only one file within the zip file
+					if (fileHeaders == null || fileHeaders.size() != 1) {
 						throw new Exception("Invalid number of files included in zip file");
 					} else {
-						boolean fileHasData = new File(unzipPath.getAbsolutePath() + "/" + filesToImport[0]).length() > 0;
-						try (InputStream dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0])) {
+						boolean fileHasData = fileHeaders.get(0).getUncompressedSize() > 0;
+						try (InputStream dataInputStream = zipFile.getInputStream(fileHeaders.get(0))) {
 							// do nothing
 						}
 						return fileHasData;
+					}
+				} else {
+					try (InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile))) {
+						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
+						if (zipEntry == null) {
+							throw new ImportException(false, "error.unzip.noEntry");
+						} else {
+							if (zipEntry.getSize() == -1) {
+								return dataInputStream.read(new byte[5]) > -1;
+							} else {
+								return zipEntry.getSize() > 0;
+							}
+						}
 					}
 				}
 			} catch (ImportException e) {
@@ -212,21 +223,6 @@ public class ImportUtils {
 				// do nothing
 			}
 			return fileHasData;
-		}
-	}
-
-	private static boolean importZip(File importFile) throws IOException, FileNotFoundException {
-		try (InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile))) {
-			ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-			if (zipEntry == null) {
-				throw new ImportException(false, "error.unzip.noEntry");
-			} else {
-				if (zipEntry.getSize() == -1) {
-					return dataInputStream.read(new byte[5]) > -1;
-				} else {
-					return zipEntry.getSize() > 0;
-				}
-			}
 		}
 	}
 }

@@ -12,6 +12,8 @@ package com.agnitas.emm.core.stat.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
@@ -52,7 +54,7 @@ public class MailingStatJobDaoImpl extends BaseDaoImpl implements MailingStatJob
 
 	@Override
 	public MailingStatJobDescriptor getMailingStatJob(int id) {
-		return selectObject(logger, "SELECT * FROM mailing_statistic_job_tbl WHERE mailing_stat_job_id = ?", 
+		return selectObject(logger, "SELECT * FROM mailing_statistic_job_tbl WHERE mailing_stat_job_id = ?",
 				new MailingStatJobRowMapper(), id);
 	}
 
@@ -74,19 +76,16 @@ public class MailingStatJobDaoImpl extends BaseDaoImpl implements MailingStatJob
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void removeExpiredMailingStatJobs(int maxAgeSeconds) {
+	public final void removeExpiredMailingStatJobs(final ZonedDateTime threshold) {
+		final Date thresholdDate = Date.from(threshold.toInstant());
 		
-		if (isOracleDB()) {
-			update(logger, "DELETE FROM mailing_statistic_job_tbl WHERE creation_date < SYSDATE - ?/24/60/60", maxAgeSeconds);
-		} else {
-			update(logger, "DELETE FROM mailing_statistic_job_tbl WHERE creation_date < (NOW() - INTERVAL ? SECOND)", maxAgeSeconds);
-		}
+		update(logger, "DELETE FROM mailing_statistic_job_tbl WHERE creation_date < ?", thresholdDate);
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void deleteMailingStatJob(int id) {
-		update(logger, "delete from mailing_statistic_job_tbl where mailing_stat_job_id=?", id);
+		update(logger, "DELETE FROM mailing_statistic_job_tbl WHERE mailing_stat_job_id = ?", id);
 	}
 
     private class MailingStatJobRowMapper implements RowMapper<MailingStatJobDescriptor> {

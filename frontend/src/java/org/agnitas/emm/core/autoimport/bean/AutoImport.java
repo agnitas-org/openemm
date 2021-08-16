@@ -91,6 +91,7 @@ public class AutoImport extends AutoImportLight {
 	private String emailOnError;
 	private boolean alwaysImportFile = false;
 	private boolean importMultipleFiles = false;
+	private boolean removeImportedFiles = false;
 	private String timeZone;
 
 	private List<Integer> mailinglists = new ArrayList<>();
@@ -366,6 +367,14 @@ public class AutoImport extends AutoImportLight {
 		return importMultipleFiles;
 	}
 	
+	public boolean isRemoveImportedFiles() {
+		return removeImportedFiles;
+	}
+
+	public void setRemoveImportedFiles(boolean removeImportedFiles) {
+		this.removeImportedFiles = removeImportedFiles;
+	}
+
 	public int getRetryCount() {
 		return retryCount;
 	}

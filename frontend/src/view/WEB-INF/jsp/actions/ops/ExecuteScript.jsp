@@ -1,32 +1,32 @@
-<%@ page language="java" import="org.agnitas.web.EmmActionAction" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<% int index=((Integer)request.getAttribute("opIndex")).intValue(); %>
-<div class="inline-tile-content">
-    <div class="inline-tile">
-        <div class="inline-tile-header">
-            <h2 class="headline"><bean:message key="Script"/></h2>
-            <ul class="inline-tile-header-actions">
-                <li>
-                    <a href="#" data-modal="modal-editor" data-modal-set="title: <bean:message key="Script"/>, target: <%= "script" + index %>, id: textTemplateLarge, type: text" data-tooltip="<bean:message key='editor.enlargeEditor'/>">
-                       <i class="icon icon-arrows-alt"></i>
-                    </a>
-                </li>
-            </ul>
-        </div>
-        <div class="inline-tile-content">
-            <html:textarea styleClass="form-control js-editor" property='<%= "actions[" + index+"].script" %>' styleId='<%= "script" + index %>' rows="25" cols="75"/>
+<script id="module-ExecuteScript" type="text/x-mustache-template">
+    <div class="inline-tile-content" data-module-content="{{- index}}">
+        <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="ExecuteScript"/>
+        <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
+        <div class="inline-tile form-group" data-field="validator">
+            <div class="inline-tile-header">
+                <h2 class="headline"><mvc:message code="Script"/></h2>
+                <ul class="inline-tile-header-actions">
+                    <li>
+                        <a href="#" data-modal="action-modal-editor" data-modal-set="title: <mvc:message code="Script"/>,
+                                target: module_{{-index}}_script, id: textTemplateLarge, type: text" data-tooltip="<mvc:message code='editor.enlargeEditor'/>">
+                           <i class="icon icon-arrows-alt"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="inline-tile-content">
+                <textarea name="modules[].script" id="module_{{-index}}_script" data-field-validator="reject-script-element"
+                       class="form-control js-editor" rows="25" cols="75">{{- script}}</textarea>
+            </div>
         </div>
     </div>
-</div>
-<div class="inline-tile-footer">
-    <emm:ShowByPermission token="actions.change">
-        <a class="btn btn-regular" href="#" data-form-set="action: <%= EmmActionAction.ACTION_REMOVE_MODULE %>, deleteModule: <%= index %>" data-form-submit>
-            <i class="icon icon-trash-o"></i>
-            <span class="text"><bean:message key="button.Delete"/></span>
-        </a>
-    </emm:ShowByPermission>
-</div>
+    <div class="inline-tile-footer">
+        <emm:ShowByPermission token="actions.change">
+            <a class="btn btn-regular" href="#" data-action="action-delete-module" data-property-id="{{- index}}">
+                <i class="icon icon-trash-o"></i>
+                <span class="text"><mvc:message code="button.Delete"/></span>
+            </a>
+        </emm:ShowByPermission>
+    </div>
+</script>

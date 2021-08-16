@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.TrackableLink;
@@ -48,6 +49,7 @@ import com.agnitas.dao.ComTrackableLinkDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.web.exception.ClearLinkExtensionsException;
 
 public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackableLinkDao {
 	
@@ -66,6 +68,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 		if (linkID <= 0 || companyID <= 0) {
 			return null;
 		} else {
+			//keep SELECT * because "usage" is a reserved word on mariaDB
 			final String sql = includeDeleted
 					? "SELECT * FROM rdir_url_tbl WHERE url_id = ? AND company_id = ?"
 					: "SELECT * FROM rdir_url_tbl WHERE url_id = ? AND company_id = ? AND deleted <= 0";
@@ -87,6 +90,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 		if (linkID <= 0 || companyID <= 0) {
 			return null;
 		} else {
+			//keep SELECT * because "usage" is a reserved word on mariaDB
 			String sql = "SELECT * FROM rdir_url_tbl WHERE url_id = ? AND company_id = ? AND deleted <= 0";
 			List<ComTrackableLink> linkList = select(logger, sql, new ComTrackableLink_RowMapper(), linkID, companyID);
 			if (linkList == null || linkList.size() < 1) {
@@ -104,6 +108,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 		if (StringUtils.isBlank(url) || companyID <= 0 || mailingID <= 0) {
 			return null;
 		} else {
+			//keep SELECT * because "usage" is a reserved word on mariaDB
 			String sql = "SELECT * FROM rdir_url_tbl WHERE full_url = ? AND company_id = ? AND mailing_id = ? AND deleted <= 0";
 			List<ComTrackableLink> linkList = select(logger, sql, new ComTrackableLink_RowMapper(), url, companyID, mailingID);
 			if (linkList == null || linkList.size() < 1) {
@@ -121,6 +126,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
     	if (companyID <= 0 || mailingID <= 0) {
 			return Collections.emptyList();
 		} else {
+			//keep SELECT * because "usage" is a reserved word on mariaDB
 	    	String sql = "SELECT * FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ? AND deleted <= 0";
 	    	List<ComTrackableLink> trackableLinks = select(logger, sql, new ComTrackableLink_RowMapper(), companyID, mailingID);
 	    	for (ComTrackableLink trackableLink : trackableLinks) {
@@ -135,7 +141,8 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
         if (CollectionUtils.isEmpty(urlIds)) {
 			return new ArrayList<>();
 		}
-		
+        
+        //keep SELECT * because "usage" is a reserved word on mariaDB
 		String sql = "SELECT * FROM rdir_url_tbl WHERE " + makeBulkInClauseForInteger("url_id", urlIds) + " AND company_id = ? AND deleted <= 0";
 		List<ComTrackableLink> links = select(logger, sql, new ComTrackableLink_RowMapper(), companyID);
 		links.forEach(link -> link.setProperties(getLinkProperties(link)));
@@ -154,7 +161,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 			// if link exist in db - update it, else we set it's id=0 that means link not saved
 			String usage = isOracleDB() ? "usage" : "`usage`";
 			if (existingLinkCount > 0) {
-				String sql = "UPDATE rdir_url_tbl SET action_id = ?, " + usage + " = ?, deep_tracking = ?, shortname = ?, full_url = ?, original_url = ?, alt_text = ?, admin_link = ?, extend_url = ?, static_value=? WHERE company_id = ? AND mailing_id = ? AND url_id = ?";
+				String sql = "UPDATE rdir_url_tbl SET action_id = ?, " + usage + " = ?, deep_tracking = ?, shortname = ?, full_url = ?, original_url = ?, alt_text = ?, admin_link = ?, extend_url = ?, static_value=?, measured_separately = ? WHERE company_id = ? AND mailing_id = ? AND url_id = ?";
 				int linkId = comLink.getId();
 				update(logger, sql,
 						comLink.getActionID(),
@@ -167,6 +174,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 						comLink.isAdminLink() ? 1 : 0,
 						comLink.isExtendByMailingExtensions() ? 1 : 0,
 						comLink.isStaticValue() ? 1 : 0,
+						comLink.isMeasureSeparately() ? 1 : 0,
 						comLink.getCompanyID(),
 						comLink.getMailingID(),
 						linkId);
@@ -179,13 +187,13 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 			// Try to reactivate an existing link that was signed as deleted
 			if (!reactivateDeletedLink(comLink)) {
 				if (comLink.getFullUrl() != null) {
-					comLink.setAdminLink(comLink.getFullUrl().contains("form.do"));
+					comLink.setAdminLink(comLink.getFullUrl().contains("form.do") || comLink.getFullUrl().contains("form.action"));
 				} else {
 					comLink.setAdminLink(false);
 				}
 				if (isOracleDB()) {
 					comLink.setId(selectInt(logger, "SELECT rdir_url_tbl_seq.NEXTVAL FROM DUAL"));
-					String sql = "INSERT INTO rdir_url_tbl (url_id, company_id, mailing_id, action_id, usage, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
+					String sql = "INSERT INTO rdir_url_tbl (url_id, company_id, mailing_id, action_id, usage, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value, measured_separately) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)";
 					int touchedLines = update(logger, sql,
 							comLink.getId(),
 							comLink.getCompanyID(),
@@ -198,14 +206,16 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 							comLink.getAltText(),
 							comLink.isAdminLink() ? 1 : 0,
 							comLink.isExtendByMailingExtensions(),
-							comLink.isStaticValue() ? 1 : 0);
+							comLink.isStaticValue() ? 1 : 0,
+							comLink.isMeasureSeparately() ? 1 : 0
+							);
 					if (touchedLines != 1) {
 						logger.error("Invalid update result in ComTrackableLinkDaoImpl.saveTrackableLink: " + touchedLines);
 					}
 				} else {
-					String insertStatement = "INSERT INTO rdir_url_tbl (company_id, mailing_id, action_id, `usage`, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
+					String insertStatement = "INSERT INTO rdir_url_tbl (company_id, mailing_id, action_id, `usage`, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value, measured_separately) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)";
 					
-					Object[] paramsWithNext = new Object[11];
+					Object[] paramsWithNext = new Object[12];
 					paramsWithNext[0] = comLink.getCompanyID();
 					paramsWithNext[1] = comLink.getMailingID();
 					paramsWithNext[2] = comLink.getActionID();
@@ -217,6 +227,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 					paramsWithNext[8] = comLink.isAdminLink() ? 1 : 0;
 					paramsWithNext[9] = comLink.isExtendByMailingExtensions() ? 1 : 0;
 					paramsWithNext[10] = comLink.isStaticValue() ? 1 : 0;
+					paramsWithNext[11] = comLink.isMeasureSeparately() ? 1 : 0;
 
 					int linkID = insertIntoAutoincrementMysqlTable(logger, "url_id", insertStatement, paramsWithNext);
 					comLink.setId(linkID);
@@ -235,16 +246,11 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 				.filter(Objects::nonNull)
 				.collect(Collectors.toList());
 
-		if (trackableLinks.isEmpty()) {
-			return;
-		}
-		
 		Set<Integer> trackableLinkIdsInUse = batchSaveTrackableLinks(companyID, mailingId, trackableLinks);
-		
+
 		if (removeUnusedLinks) {
 			deleteTrackableLinksExceptIds(companyID, mailingId, trackableLinkIdsInUse);
 		}
-		
 	}
 
 	@DaoUpdateReturnValueCheck
@@ -295,6 +301,11 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 				+ "(customer_id, url_id, company_id, timestamp, ip_adr, mailing_id, device_class_id, device_id, client_id) "
 				+ "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)";
 		try {
+        	if (customerID == 0) {
+        		// Fallback for anonymous recipients
+        		remoteAddr = null;
+        	}
+        	
 			update(logger, sql, customerID, link.getId(), link.getCompanyID(), remoteAddr, link.getMailingID(), deviceClass.getId(), deviceID, clientID);
 
 			// Update customer entry
@@ -309,12 +320,12 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 	}
 	
 	private void updateCustomerForClick(int companyID, int customerID) {
-		if(customerID != 0) {
+		if (customerID != 0) {
 			try {
 				String updateLastOpenAndClickStatement = "UPDATE customer_" + companyID + "_tbl SET lastopen_date = CURRENT_TIMESTAMP, lastclick_date = CURRENT_TIMESTAMP WHERE customer_id = ?";
 				update(logger, updateLastOpenAndClickStatement, customerID);
 			} catch (Exception e) {
-				if(logger.isInfoEnabled()) {
+				if (logger.isInfoEnabled()) {
 					logger.info(String.format("Error updating last click date for customer %d of company %d", customerID, companyID), e);
 				}
 			}
@@ -423,7 +434,8 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 			trackableLink.setAdminLink(resultSet.getInt("admin_link") > 0);
 			trackableLink.setDeleted(resultSet.getInt("deleted") > 0);
 			trackableLink.setExtendByMailingExtensions(resultSet.getInt("extend_url") > 0);
-			
+			trackableLink.setMeasureSeparately(resultSet.getInt("measured_separately") > 0);
+
 			final int staticValueFlag = resultSet.getInt("static_value");
 			trackableLink.setStaticValue(!resultSet.wasNull() && staticValueFlag == 1);
 			
@@ -475,7 +487,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 					logger.debug("Found a deleted link to reactivate for mailing " + link.getMailingID() + " with URL " + link.getFullUrl() + ". Reactivating link ID " + existingLinkID);
 				}
 
-				update(logger, "UPDATE rdir_url_tbl SET deleted = 0 WHERE company_id = ? AND mailing_id = ? AND url_id = ?", link.getCompanyID(), link.getMailingID(), existingLinkID);
+				update(logger, "UPDATE rdir_url_tbl SET deleted = 0, measured_separately = 0 WHERE company_id = ? AND mailing_id = ? AND url_id = ?", link.getCompanyID(), link.getMailingID(), existingLinkID);
 
 				link.setId(existingLinkID);
 				return true;
@@ -508,6 +520,12 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 	}
 
 	@Override
+	public boolean isTrackingOnEveryPositionAvailable(@VelocityCheck int companyId, int mailingId) {
+		return selectInt(logger, "SELECT COUNT(url_id) FROM rdir_url_tbl WHERE measured_separately = 0 AND deleted = 0 " +
+				" AND mailing_id = ? AND company_id = ?", mailingId, companyId) > 0;
+	}
+
+	@Override
 	public void removeGlobalAndIndividualLinkExtensions(@VelocityCheck int companyId, int mailingId) throws Exception {
 		String sqlDeleteParams = "DELETE FROM rdir_url_param_tbl WHERE url_id IN (SELECT url_id FROM rdir_url_tbl WHERE mailing_id = ? AND company_id = ?)";
 		try {
@@ -517,6 +535,19 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 			throw new Exception("Error deleting link extensions for mailing " + mailingId, e);
 		}
 	}
+
+    @Override
+    public void bulkClearExtensions(final int mailingId, final int companyId, final Set<Integer> bulkIds)
+            throws ClearLinkExtensionsException {
+        try {
+            update(logger,
+                    getBulkClearExtensionsSqlQuery(bulkIds),
+                    getBulkClearExtensionsSqlParams(mailingId, companyId, bulkIds));
+        } catch (Exception e) {
+            logger.error("Error deleting link extensions for mailing " + mailingId, e);
+            throw new ClearLinkExtensionsException("Can't clear trackablelink extensions of links: " + bulkIds, e);
+        }
+    }
 
 	@Override
 	public void removeLinkExtensionsByCompany(int companyID) {
@@ -536,6 +567,10 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 	private Set<Integer> batchSaveTrackableLinks(int companyId, int mailingId, List<ComTrackableLink> trackableLinks) {
 		Set<Integer> trackableLinkIdsInUse = new HashSet<>();
 
+		if (trackableLinks.isEmpty()) {
+			return trackableLinkIdsInUse;
+		}
+
 		List<Integer> existingLinkIds = select(logger,
 				"SELECT DISTINCT url_id FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ?", new IntegerRowMapper(), companyId, mailingId);
 		
@@ -549,7 +584,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 					if (comLink.getId() > 0 && existingLinkIds.contains(comLink.getId())) {
 						update.add(comLink);
 					} else {
-						comLink.setAdminLink(comLink.isAdminLink() || StringUtils.contains(comLink.getFullUrl(), "/form.do") || StringUtils.contains(comLink.getFullUrl(), "/form.action"));
+						comLink.setAdminLink(comLink.isAdminLink() || StringUtils.contains(comLink.getFullUrl(), "/form.action"));
 						create.add(comLink);
 					}
 				});
@@ -568,7 +603,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 		String usage = isOracleDB() ? "usage" : "`usage`";
 		String sql = "UPDATE rdir_url_tbl SET action_id = ?, " + usage + " = ?, " +
 			"deep_tracking = ?, shortname = ?, full_url = ?, original_url = ?, alt_text = ?, " +
-			"admin_link = ?, extend_url = ?, static_value= ? WHERE company_id = ? AND mailing_id = ? AND url_id = ?";
+			"admin_link = ?, extend_url = ?, static_value= ?, measured_separately = ? WHERE company_id = ? AND mailing_id = ? AND url_id = ?";
 
 		List<Object[]> paramsList = trackableLinks.stream().map(comLink -> new Object[] {
 				comLink.getActionID(),
@@ -581,6 +616,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 				comLink.isAdminLink() ? 1 : 0,
 				comLink.isExtendByMailingExtensions() ? 1 : 0,
 				comLink.isStaticValue() ? 1 : 0,
+				comLink.isMeasureSeparately() ? 1 : 0,
 				companyId,
 				mailingId,
 				comLink.getId()
@@ -615,7 +651,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 		
 		
 		if (isOracleDB()) {
-			String sql = "INSERT INTO rdir_url_tbl (url_id, company_id, mailing_id, action_id, usage, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
+			String sql = "INSERT INTO rdir_url_tbl (url_id, company_id, mailing_id, action_id, usage, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value, measured_separately) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)";
 			for (ComTrackableLink comLink: linksForInsertion) {
 				int linkId = selectInt(logger, "SELECT rdir_url_tbl_seq.NEXTVAL FROM DUAL");
 				comLink.setId(linkId);
@@ -634,12 +670,13 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 						comLink.getAltText(),
 						comLink.isAdminLink() ? 1 : 0,
 						comLink.isExtendByMailingExtensions(),
-						comLink.isStaticValue() ? 1 : 0
+						comLink.isStaticValue() ? 1 : 0,
+						comLink.isMeasureSeparately() ? 1 : 0
 				}).collect(Collectors.toList());
 			
 			batchupdate(logger, sql, paramsList);
 		} else {
-			String insertStatement = "INSERT INTO rdir_url_tbl (company_id, mailing_id, action_id, `usage`, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
+			String insertStatement = "INSERT INTO rdir_url_tbl (company_id, mailing_id, action_id, `usage`, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value, measured_separately) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)";
 			for (ComTrackableLink comLink: linksForInsertion) {
 				Object[] paramsWithNext = new Object[] {
 						companyId,
@@ -652,7 +689,8 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 						AgnUtils.emptyToNull(comLink.getAltText()),
 						comLink.isAdminLink() ? 1 : 0,
 						comLink.isExtendByMailingExtensions() ? 1 : 0,
-						comLink.isStaticValue() ? 1 : 0
+						comLink.isStaticValue() ? 1 : 0,
+						comLink.isMeasureSeparately() ? 1 : 0
 				};
 				int linkID = insertIntoAutoincrementMysqlTable(logger, "url_id", insertStatement, paramsWithNext);
 				comLink.setId(linkID);
@@ -723,4 +761,20 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 			linksMap.put(rs.getInt("url_id"), rs.getString("full_url"));
 		}
 	}
+
+    private Object[] getBulkClearExtensionsSqlParams(final int mailingId, final int companyId, final Set<Integer> ids) {
+        List<Object> params = new ArrayList<>();
+        params.add(mailingId);
+        params.add(companyId);
+        params.addAll(ids);
+        return params.toArray();
+    }
+
+    private String getBulkClearExtensionsSqlQuery(final Set<Integer> bulkIds) {
+        return String.format("DELETE FROM rdir_url_param_tbl " +
+                        "WHERE url_id IN " +
+                        "(SELECT url_id FROM rdir_url_tbl WHERE mailing_id = ? AND company_id = ? AND url_id IN (%s))",
+                IntStream.range(0, bulkIds.size()).mapToObj(e -> "?").collect(Collectors.joining(", "))
+        );
+    }
 }

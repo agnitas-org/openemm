@@ -389,5 +389,11 @@ public class Company {
 				}
 			}
 		}
+		if ((rdirDomain == null) || ("".equals (rdirDomain))) {
+			rdirDomain = Data.syscfg.get ("rdir-domain");
+		}
+		if ((mailloopDomain == null) || "".equals (mailloopDomain)) {
+			mailloopDomain = Data.syscfg.get ("filter-name");
+		}
 	}
 }

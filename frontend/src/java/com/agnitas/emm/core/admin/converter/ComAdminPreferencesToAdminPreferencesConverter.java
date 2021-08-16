@@ -21,10 +21,8 @@ public final class ComAdminPreferencesToAdminPreferencesConverter implements Con
     @Override
     public AdminPreferences convert(final ComAdminPreferences preferences) {
         final AdminPreferences adminPreferences = new AdminPreferences();
-        adminPreferences.setStartPage(preferences.getStartPage());
         adminPreferences.setMailingContentView(preferences.getMailingContentView());
         adminPreferences.setDashboardMailingsView(preferences.getDashboardMailingsView());
-        adminPreferences.setNavigationLocation(preferences.getNavigationLocation());
         adminPreferences.setMailingSettingsView(preferences.getMailingSettingsView());
         adminPreferences.setLivePreviewPosition(preferences.getLivePreviewPosition());
         adminPreferences.setStatisticLoadType(preferences.getStatisticLoadType());

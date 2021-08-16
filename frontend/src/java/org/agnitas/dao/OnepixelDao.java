@@ -10,30 +10,15 @@
 
 package org.agnitas.dao;
 
-import com.agnitas.emm.core.mailtracking.service.OpenTrackingService;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+import com.agnitas.emm.core.mailtracking.service.OpenTrackingService;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+
 public interface OnepixelDao	{
-
-    /**
-     *  Increases count of mailing openings.
-     *
-     * @param companyID
-     *          The id of mailing company.
-     * @param recipientID
-     *          The id of opener.
-     * @param mailingID
-     *          The id of opened mailing.
-     * @param remoteAddr
-     *          The ip address of opener.
-     * @return  true on success.
-     */
-
-	boolean	writePixel( @VelocityCheck int companyID, int recipientID, int mailingID, String remoteAddr);
-	
+ 	
 	/**
-	 * Do not call this method directly. User {@link OpenTrackingService#trackOpening(com.agnitas.emm.core.commons.uid.ComExtensibleUID, String, DeviceClass, int, int)} instead.
+	 * Do not call this method directly. Use {@link OpenTrackingService#trackOpening(com.agnitas.emm.core.commons.uid.ComExtensibleUID, String, DeviceClass, int, int)} instead.
 	 *
 	 * @see OpenTrackingService#trackOpening(com.agnitas.emm.core.commons.uid.ComExtensibleUID, String, DeviceClass, int, int)
 	 */

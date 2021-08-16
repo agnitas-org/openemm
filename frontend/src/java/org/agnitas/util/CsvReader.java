@@ -370,17 +370,21 @@ public class CsvReader extends BasicReader {
 							return returnList;
 						} else if (numberOfColumns == returnList.size()) {
 							return returnList;
-						} else if (numberOfColumns > returnList.size() && fillMissingTrailingColumnsWithNull) {
-							while (returnList.size() < numberOfColumns) {
-								returnList.add(null);
+						} else if (numberOfColumns > returnList.size()) {
+							if (fillMissingTrailingColumnsWithNull) {
+								while (returnList.size() < numberOfColumns) {
+									returnList.add(null);
+								}
+								return returnList;
+							} else {
+								throw new CsvDataInvalidItemCountException("Inconsistent number of values (expected: " + numberOfColumns + " actually: " + returnList.size() + ")", readCsvLines, numberOfColumns, returnList.size());
 							}
-							return returnList;
 						} else {
 							// Too many values found, so check if the trailing values are only empty items
 							while (returnList.size() > numberOfColumns) {
 								String lastItem = returnList.remove(returnList.size() - 1);
 								if (!"".equals(lastItem)) {
-									throw new CsvDataInvalidItemCountException("Inconsistent number of values (expected: " + numberOfColumns + " actually: " + returnList.size() + ")", readCsvLines, numberOfColumns, returnList.size());
+									throw new CsvDataInvalidItemCountException("Inconsistent number of values (expected: " + numberOfColumns + " actually: " + returnList.size() + 1 + ")", readCsvLines, numberOfColumns, returnList.size());
 								}
 							}
 							return returnList;
@@ -424,13 +428,24 @@ public class CsvReader extends BasicReader {
 					return returnList;
 				} else if (numberOfColumns == returnList.size()) {
 					return returnList;
-				} else if (numberOfColumns > returnList.size() && fillMissingTrailingColumnsWithNull) {
-					while (returnList.size() < numberOfColumns) {
-						returnList.add(null);
+				} else if (numberOfColumns > returnList.size()) {
+					if (fillMissingTrailingColumnsWithNull) {
+						while (returnList.size() < numberOfColumns) {
+							returnList.add(null);
+						}
+						return returnList;
+					} else {
+						throw new CsvDataInvalidItemCountException("Inconsistent number of values (expected: " + numberOfColumns + " actually: " + returnList.size() + ")", readCsvLines, numberOfColumns, returnList.size());
+					}
+				} else {
+					// Too many values found, so check if the trailing values are only empty items
+					while (returnList.size() > numberOfColumns) {
+						String lastItem = returnList.remove(returnList.size() - 1);
+						if (!"".equals(lastItem)) {
+							throw new CsvDataInvalidItemCountException("Inconsistent number of values (expected: " + numberOfColumns + " actually: " + returnList.size() + 1 + ")", readCsvLines, numberOfColumns, returnList.size());
+						}
 					}
 					return returnList;
-				} else {
-					throw new CsvDataInvalidItemCountException("Inconsistent number of values (expected: " + numberOfColumns + " actually: " + returnList.size() + ")", readCsvLines, numberOfColumns, returnList.size());
 				}
 			} else {
 				close();

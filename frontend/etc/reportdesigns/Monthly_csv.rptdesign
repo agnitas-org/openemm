@@ -109,6 +109,11 @@
                     <property name="name">mailtype</property>
                     <property name="dataType">string</property>
                 </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">total</property>
+                    <property name="dataType">integer</property>
+                </structure>
             </list-property>
             <list-property name="columnHints">
                 <structure>
@@ -125,6 +130,9 @@
                 </structure>
                 <structure>
                     <property name="columnName">mailtype</property>
+                </structure>
+                <structure>
+                    <property name="columnName">total</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -154,11 +162,16 @@
                         <property name="name">mailtype</property>
                         <property name="dataType">string</property>
                     </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">total</property>
+                        <property name="dataType">integer</property>
+                    </structure>
                 </list-property>
             </structure>
             <property name="dataSource">Scripted Data Source</property>
             <method name="open"><![CDATA[monthStatDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MonthStatDataSet();
-mailDetails = monthStatDataSet.getMonthDetails(params["companyID"], params["adminID"], params["startdate"] , params["enddate"]);
+mailDetails = monthStatDataSet.getMonthDetails(params["companyID"], params["adminID"], params["startdate"] , params["enddate"], params["top10metrics"]);
 currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if( currentrow < mailDetails.size() ) {
 	row["date"] = mailDetails.get(currentrow).getDate();
@@ -166,6 +179,8 @@ currentrow = 0;]]></method>
 	row["kilobyte"] = mailDetails.get(currentrow).getKiloByte();
 	row["mailing_count"] = mailDetails.get(currentrow).getMailingCount();
 	row["mailtype"] = mailDetails.get(currentrow).getMailtype();
+	row["total"] = mailDetails.get(currentrow).getTotal();		
+	
 	currentrow++;
 	return true;
 }
@@ -242,12 +257,38 @@ return false;]]></method>
                     <expression name="expression">dataSetRow["mailtype"]</expression>
                     <property name="dataType">string</property>
                 </structure>
+                <structure>
+                    <property name="name">total</property>
+                    <expression name="expression" type="javascript">dataSetRow["total"]</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
             </list-property>
             <property name="pageBreakInterval">1410065408</property>
             <list-property name="sort">
                 <structure>
+                    <expression name="key" type="javascript">row["total"]</expression>
+                    <property name="direction">desc</property>
+                    <property name="strength">-1</property>
+                </structure>
+                <structure>
                     <expression name="key">new Date(dataSetRow["date"].substr(6,4),dataSetRow["date"].substr(3,2),dataSetRow["date"].substr(0,2))</expression>
                     <property name="direction">asc</property>
+                </structure>
+                <structure>
+                    <expression name="key" type="javascript">row["shortname"]</expression>
+                    <property name="direction">asc</property>
+                    <property name="strength">-1</property>
+                </structure>
+            </list-property>
+            <list-property name="filter">
+                <structure>
+                    <property name="operator">top-n</property>
+                    <expression name="expr" type="javascript">row["total"]</expression>
+                    <simple-property-list name="value1">
+                        <value>10</value>
+                    </simple-property-list>
+                    <property name="updateAggregation">true</property>
                 </structure>
             </list-property>
             <column id="170">

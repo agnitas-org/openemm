@@ -24,7 +24,7 @@ public class ComponentModelValidator extends BaseValidator {
         assertPositive(model.getMailingId(), "mailing.id");
         assertIsNotBlank(model.getMimeType(), "mimeType");
         assertMaxLength(model.getMimeType(), "mimeType", 100);
-        assertPositive(model.getComponentType(), "componentType");
+        assertPositive(model.getComponentType().getCode(), "componentType");
         assertIsNotBlank(model.getComponentName(), "componentName");
         assertMaxLength(model.getComponentName(), "componentName", 100);
         assertIsNotEmpty(model.getData(), "data");
@@ -40,7 +40,7 @@ public class ComponentModelValidator extends BaseValidator {
         assertPositive(model.getComponentId(), "component.id");
         assertIsNotBlank(model.getMimeType(), "mimeType");
         assertMaxLength(model.getMimeType(), "mimeType", 100);
-        assertPositive(model.getComponentType(), "componentType");
+        assertPositive(model.getComponentType().getCode(), "componentType");
         assertIsNotBlank(model.getComponentName(), "componentName");
         assertMaxLength(model.getComponentName(), "componentName", 100);
     }

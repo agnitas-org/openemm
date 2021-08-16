@@ -17,6 +17,7 @@ public final class QueryBuilderRuleNode extends QueryBuilderBaseNode {
 	private Object value;
 	private String type;
 	private boolean negated;
+	private boolean includeEmpty;
 	
 	public QueryBuilderRuleNode() {
 		// Ctor required by JSON deserialization
@@ -73,5 +74,13 @@ public final class QueryBuilderRuleNode extends QueryBuilderBaseNode {
 
 	public void setNegated(boolean negated) {
 		this.negated = negated;
+	}
+
+	public boolean isIncludeEmpty() {
+		return includeEmpty;
+	}
+
+	public void setIncludeEmpty(boolean includeEmpty) {
+		this.includeEmpty = includeEmpty;
 	}
 }

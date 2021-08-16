@@ -24,7 +24,7 @@ import org.agnitas.emm.core.binding.service.BindingServiceException;
 import org.agnitas.emm.core.blacklist.service.BlacklistAlreadyExistException;
 import org.agnitas.emm.core.blacklist.service.BlacklistModel;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
-import org.agnitas.emm.core.validator.annotation.Validate;
+import org.agnitas.emm.core.blacklist.service.validation.BlacklistModelValidator;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -44,6 +44,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 	/** DAO for blacklists. */
 	private ComBlacklistDao blacklistDao;
 	protected ComRecipientDao recipientDao;
+	private BlacklistModelValidator blacklistModelValidator;
 	
 	/** Binding service to update binding status when blacklisting mail address. */
 	private BindingService bindingService;
@@ -51,7 +52,6 @@ public class BlacklistServiceImpl implements BlacklistService {
 	private ExtendedConversionService conversionService;
 	
 	@Override
-	@Validate
 	public boolean insertBlacklist(BlacklistModel model) {
 		if (checkBlacklist(model)) {
 			throw new BlacklistAlreadyExistException();
@@ -66,19 +66,19 @@ public class BlacklistServiceImpl implements BlacklistService {
 				logger.error( "Unable to update binding status for blacklisted email: " + model.getEmail(), e);
 			}
 		}
-		
+
 		return result;
 	}
 
 	@Override
-	@Validate
 	public boolean deleteBlacklist(BlacklistModel model) {
+		blacklistModelValidator.assertIsValidToCheck(model);
 		return blacklistDao.delete(model.getCompanyId(), model.getEmail());
 	}
 
 	@Override
-	@Validate
 	public boolean checkBlacklist(BlacklistModel model) {
+		blacklistModelValidator.assertIsValidToCheck(model);
 		List<String> list = blacklistDao.getBlacklist(model.getCompanyId());
 		for (String regex : list) {
 			// Do pattern transformation. It is important to check, that a replacement is not affected by a previous replacement!
@@ -245,5 +245,10 @@ public class BlacklistServiceImpl implements BlacklistService {
 	@Required
 	public void setRecipientDao(ComRecipientDao recipientDao) {
 		this.recipientDao = recipientDao;
+	}
+	
+	@Required
+	public void setBlacklistModelValidator(final BlacklistModelValidator blacklistModelValidator) {
+		this.blacklistModelValidator = blacklistModelValidator;
 	}
 }

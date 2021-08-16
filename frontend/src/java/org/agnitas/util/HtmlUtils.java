@@ -27,15 +27,16 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
-import cz.vutbr.web.css.RuleFontFace;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xerces.parsers.DOMParser;
 import org.cyberneko.html.HTMLConfiguration;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attributes;
 import org.jsoup.parser.SaxParser;
 import org.jsoup.parser.SaxParsingHandler;
+import org.jsoup.select.Elements;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.Element;
@@ -108,48 +109,6 @@ public class HtmlUtils {
         parser.parse(source);
 
         return parser.getDocument();
-    }
-
-    private static List<RuleBlock<?>> getAtRuleBlocks(String css, StylesEmbeddingOptions options) {
-        try {
-            return getAtRuleBlocks(CSSFactory.parseString(css, options.getBaseUrl()), options);
-        } catch (IOException | CSSException e) {
-            logger.error("Style sheets parsing failed", e);
-        }
-        return Collections.emptyList();
-    }
-
-    private static List<RuleBlock<?>> getAtRuleBlocks(URL source, StylesEmbeddingOptions options) {
-        try {
-            return getAtRuleBlocks(CSSFactory.parse(source, options.getEncodingName()), options);
-        } catch (IOException | CSSException e) {
-            logger.error("Remote style sheets parsing failed", e);
-        }
-        return Collections.emptyList();
-    }
-
-    private static List<RuleBlock<?>> getAtRuleBlocks(StyleSheet styles, StylesEmbeddingOptions options) {
-        List<RuleBlock<?>> rules = new ArrayList<>();
-
-        if (styles != null) {
-            for (RuleBlock<?> ruleBlock : styles) {
-                if (ruleBlock instanceof RuleMedia) {
-                    RuleMedia block = (RuleMedia) ruleBlock;
-
-                    for (RuleSet set : block) {
-                        set.forEach(HtmlUtils::resolveUris);
-                    }
-
-                    resolveMediaType(block.getMediaQueries(), options.getMediaType());
-
-                    rules.add(block);
-                } else if (ruleBlock instanceof RuleFontFace) {
-                    rules.add(ruleBlock);
-                }
-            }
-        }
-
-        return rules;
     }
 
     /**
@@ -410,12 +369,7 @@ public class HtmlUtils {
                                     builder.append('\n');
                                 }
                             } else {
-                                // Strip all the styles except non-embeddable ones (like @media, @font-face etc)
-                                if (options.isUseNewLib()) {
-                                    appendStyleTag(builder, CssUtils.stripEmbeddableStyles(node.getTextContent(), options.getMediaType(), options.isPrettyPrint()), styleMap, element, options);
-                                } else {
-                                    appendStyleTag(builder, getAtRuleBlocks(node.getTextContent(), options), styleMap, element, options);
-                                }
+                            	appendStyleTag(builder, CssUtils.stripEmbeddableStyles(node.getTextContent(), options.getMediaType(), options.isPrettyPrint()), styleMap, element, options);
                             }
                         }
                         break;
@@ -430,12 +384,7 @@ public class HtmlUtils {
 
                                 try {
                                     URL remoteResource = new URL(address);
-
-                                    if (options.isUseNewLib()) {
-                                        appendStyleTag(builder, CssUtils.stripEmbeddableStyles(remoteResource, options.getMediaType(), options.isPrettyPrint()), options);
-                                    } else {
-                                        appendStyleTag(builder, getAtRuleBlocks(remoteResource, options), options);
-                                    }
+                                    appendStyleTag(builder, CssUtils.stripEmbeddableStyles(remoteResource, options.getMediaType(), options.isPrettyPrint()), options);
                                 } catch (MalformedURLException e) {
                                     logger.error("Unable to resolve a URL: " + address);
                                 }
@@ -509,28 +458,6 @@ public class HtmlUtils {
         }
     }
 
-    private static void appendStyleTag(StringBuilder builder, List<RuleBlock<?>> rules, DeclarationMap styleMap, Element element, StylesEmbeddingOptions options) {
-        if (!rules.isEmpty()) {
-            builder.append("<style");
-            appendAttributes(builder, styleMap, element, options);
-            builder.append('>');
-
-            if (options.isPrettyPrint()) {
-                builder.append('\n');
-            }
-
-            for (RuleBlock<?> rule : rules) {
-                builder.append(rule.toString());
-            }
-
-            builder.append("</style>");
-
-            if (options.isPrettyPrint()) {
-                builder.append('\n');
-            }
-        }
-    }
-
     private static void appendStyleTag(StringBuilder builder, String css, DeclarationMap styleMap, Element element, StylesEmbeddingOptions options) {
         if (StringUtils.isNotBlank(css)) {
             builder.append("<style");
@@ -542,26 +469,6 @@ public class HtmlUtils {
             }
 
             builder.append(css);
-
-            builder.append("</style>");
-
-            if (options.isPrettyPrint()) {
-                builder.append('\n');
-            }
-        }
-    }
-
-    private static void appendStyleTag(StringBuilder builder, List<RuleBlock<?>> rules, StylesEmbeddingOptions options) {
-        if (!rules.isEmpty()) {
-            builder.append("<style type=\"text/css\">");
-
-            if (options.isPrettyPrint()) {
-                builder.append('\n');
-            }
-
-            for (RuleBlock<?> rule : rules) {
-                builder.append(rule.toString());
-            }
 
             builder.append("</style>");
 
@@ -736,6 +643,17 @@ public class HtmlUtils {
         return Optional.empty();
     }
 
+    public static boolean containsElementByTag(String html, String tagName) {
+        org.jsoup.nodes.Document document = Jsoup.parse(StringUtils.defaultString(html));
+        if (document != null) {
+            Elements tags = document.getElementsByTag(tagName);
+
+            return tags.size() > 0;
+        }
+
+        return false;
+    }
+
     public static StylesEmbeddingOptionsBuilder stylesEmbeddingOptionsBuilder() {
         return new StylesEmbeddingOptionsBuilder();
     }
@@ -746,7 +664,6 @@ public class HtmlUtils {
         private String mediaType;
         private boolean escapeAgnTags;
         private boolean prettyPrint;
-        private boolean useNewLib;
 
         private StylesEmbeddingOptions(StylesEmbeddingOptionsBuilder builder) {
             this.encoding = builder.encoding;
@@ -754,7 +671,6 @@ public class HtmlUtils {
             this.mediaType = builder.mediaType;
             this.escapeAgnTags = builder.escapeAgnTags;
             this.prettyPrint = builder.prettyPrint;
-            this.useNewLib = builder.useNewLib;
         }
 
         public Charset getEncoding() {
@@ -780,10 +696,6 @@ public class HtmlUtils {
         public boolean isPrettyPrint() {
             return prettyPrint;
         }
-
-        public boolean isUseNewLib() {
-            return useNewLib;
-        }
     }
 
     public static class StylesEmbeddingOptionsBuilder {
@@ -792,7 +704,6 @@ public class HtmlUtils {
         private String mediaType;
         private boolean escapeAgnTags;
         private boolean prettyPrint;
-        private boolean useNewLib;
 
         public StylesEmbeddingOptionsBuilder setEncoding(Charset encoding) {
             this.encoding = Objects.requireNonNull(encoding, "encoding == null");
@@ -816,11 +727,6 @@ public class HtmlUtils {
 
         public StylesEmbeddingOptionsBuilder setPrettyPrint(boolean prettyPrint) {
             this.prettyPrint = prettyPrint;
-            return this;
-        }
-
-        public StylesEmbeddingOptionsBuilder setUseNewLib(boolean useNewLib) {
-            this.useNewLib = useNewLib;
             return this;
         }
 

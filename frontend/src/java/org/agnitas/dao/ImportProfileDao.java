@@ -11,6 +11,7 @@
 package org.agnitas.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
@@ -25,7 +26,7 @@ public interface ImportProfileDao {
      * @param item
      *          ImportProfile entry to insert.
      * @return ID of inserted import profile.
-     * @throws Exception 
+     * @throws Exception
      */
 	int insertImportProfile(ImportProfile item) throws Exception;
 
@@ -89,4 +90,8 @@ public interface ImportProfileDao {
 	void deleteColumnMappings(List<Integer> ids);
 
 	List<Integer> getSelectedMailingListIds(int id, @VelocityCheck int companyId);
+
+	Map<String, Integer> getImportProfileGenderMapping(int id);
+
+	void saveImportProfileGenderMapping(int id, Map<String, Integer> genderMapping);
 }

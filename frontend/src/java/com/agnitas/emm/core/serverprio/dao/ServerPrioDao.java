@@ -10,15 +10,16 @@
 
 package com.agnitas.emm.core.serverprio.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import com.agnitas.emm.core.serverprio.bean.ServerPrio;
 
 public interface ServerPrioDao {
 
-	public boolean insertServerPrio(final ServerPrio serverPrio);
-	public boolean updateServerPrioByMailingAndCompany(final ServerPrio serverPrio);
-	public boolean deleteServerPrioByMailingAndCompany(final int companyID, final int mailingID);
-	public List<ServerPrio> listServerPriosByMailingAndCompany(final int companyID, final int mailingID);
-	
+    boolean insertServerPrio(final ServerPrio serverPrio);
+    boolean updateServerPrioByMailingAndCompany(final ServerPrio serverPrio);
+    boolean deleteServerPrioByMailingAndCompany(final int companyID, final int mailingID);
+    List<ServerPrio> listServerPriosByMailingAndCompany(final int companyID, final int mailingID);
+    Date getDeliveryPauseDate(int companyId, int mailingId);
 }

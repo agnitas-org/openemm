@@ -65,7 +65,7 @@ public class MaildropServiceImpl implements MaildropService {
 	}
 
 	@Override
-	public final void scheduleWorldMailing(final int mailingID, final int companyID, final Date sendDate, final int stepping, final int blocksize) throws MaildropException {
+	public final void scheduleWorldMailing(final int mailingID, final int companyID, final Date sendDate, final int stepping, final int blocksize) throws Exception {
 		checkMailtype(mailingID, MailingType.NORMAL);
 		
 		if(hasMaildropStatus(mailingID, companyID, MaildropStatus.WORLD)) {
@@ -80,19 +80,19 @@ public class MaildropServiceImpl implements MaildropService {
 	}
 
 	@Override
-	public final void scheduleWorldMailing(final int mailingID, final int companyID, final Date sendDate, final int mailsPerHour) throws MaildropException {
+	public final void scheduleWorldMailing(final int mailingID, final int companyID, final Date sendDate, final int mailsPerHour) throws Exception {
 		final SteppingAndBlocksize sab = this.steppingAndBlocksizeComputer.computeFromMailingsPerHour(mailsPerHour);
 		
 		scheduleWorldMailing(mailingID, companyID, sendDate, sab.getStepping(), sab.getBlocksize());
 	}
 
 	@Override
-	public final void activateDatebasedMailing(final int mailingID, final int companyID, final int hour, final int stepping, final int blocksize) throws MaildropException {
+	public final void activateDatebasedMailing(final int mailingID, final int companyID, final int hour, final int stepping, final int blocksize) throws Exception {
 		checkMailtype(mailingID, MailingType.DATE_BASED);
 	}
 
 	@Override
-	public final void activateDatebasedMailing(final int mailingID, final int companyID, final int hour, final int mailsPerHour) throws MaildropException {
+	public final void activateDatebasedMailing(final int mailingID, final int companyID, final int hour, final int mailsPerHour) throws Exception {
 		final SteppingAndBlocksize sab = this.steppingAndBlocksizeComputer.computeFromMailingsPerHour(mailsPerHour);
 
 		activateDatebasedMailing(mailingID, companyID, hour, sab.getStepping(), sab.getBlocksize());
@@ -104,7 +104,7 @@ public class MaildropServiceImpl implements MaildropService {
 	}
 
 	@Override
-	public void activateActionbasedMailing(final int mailingID, final int companyID) throws MaildropException {
+	public void activateActionbasedMailing(final int mailingID, final int companyID) throws Exception {
 		checkMailtype(mailingID, MailingType.ACTION_BASED);
 	}
 
@@ -148,20 +148,18 @@ public class MaildropServiceImpl implements MaildropService {
 	 * 
 	 * @param mailingID ID of mailing
 	 * @param expectedMailingType expected mailing type
-	 * 
-	 * @throws UnknownMailingException if mailing ID is unknown
-	 * @throws InvalidMailingTypeException if mailing type does not match
+	 * @throws Exception
 	 */
-	private final void checkMailtype(final int mailingID, final MailingType expectedMailingType) throws UnknownMailingException, InvalidMailingTypeException {
+	private final void checkMailtype(final int mailingID, final MailingType expectedMailingType) throws Exception {
 		final int currentMailingTypeCode = this.mailingDao.getMailingType(mailingID);
 		
-		if(currentMailingTypeCode == -1) {
+		if (currentMailingTypeCode == -1) {
 			throw new UnknownMailingException(mailingID);
 		}
 		
-		final MailingType currentMailingType = MailingType.fromCode(currentMailingTypeCode);
+		MailingType currentMailingType = MailingType.fromCode(currentMailingTypeCode);
 		
-		if(!expectedMailingType.equals(currentMailingType)) {
+		if (!expectedMailingType.equals(currentMailingType)) {
 			throw new InvalidMailingTypeException(expectedMailingType, currentMailingType);
 		}
 	}

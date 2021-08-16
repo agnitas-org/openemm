@@ -10,6 +10,9 @@
 
 package com.agnitas.emm.core.components.service.impl;
 
+import static com.agnitas.util.ImageUtils.makeMobileDescriptionIfNecessary;
+import static com.agnitas.util.ImageUtils.makeMobileFilenameIfNecessary;
+
 import java.io.IOException;
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -26,6 +29,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.factory.MailingComponentFactory;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -54,7 +58,6 @@ import com.agnitas.service.ComSftpService;
 import com.agnitas.service.MimeTypeService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.util.ImageUtils;
-import com.agnitas.web.ShowImageServlet;
 
 public class ComMailingComponentsServiceImpl implements	ComMailingComponentsService {
 	private static final transient Logger logger = Logger.getLogger(ComMailingComponentsServiceImpl.class);
@@ -128,7 +131,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
     }
     
     @Override
-    public List<MailingComponent> getComponentsByType(@VelocityCheck int companyID, int mailingId, List<Integer> types) {
+    public List<MailingComponent> getComponentsByType(@VelocityCheck int companyID, int mailingId, List<MailingComponentType> types) {
 		if (CollectionUtils.isEmpty(types)) {
 			return mailingComponentDao.getMailingComponents(mailingId, companyID);
 		}
@@ -144,15 +147,15 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 	}
 
 	@Override
-	public boolean deleteHostedImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds) {
-    	return mailingComponentDao.deleteHostedImages(companyId, mailingId, bulkIds);
+	public boolean deleteImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds) {
+    	return mailingComponentDao.deleteImages(companyId, mailingId, bulkIds);
 	}
 
 	@Override
 	public ServiceResult<Boolean> reloadImage(ComAdmin admin, int mailingId, int componentId) {
     	MailingComponent component = mailingComponentDao.getMailingComponent(mailingId, componentId, admin.getCompanyID());
 
-    	if (component == null || component.getType() != MailingComponent.TYPE_IMAGE) {
+    	if (component == null || component.getType() != MailingComponentType.Image) {
     		return new ServiceResult<>(false, false, Message.of("Error"));
 		}
 
@@ -180,7 +183,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 	public boolean updateHostImage(int mailingId, int companyId, int componentId, byte[] imageBytes) {
 		MailingComponent component = mailingComponentDao.getMailingComponent(mailingId, componentId, companyId);
 
-		if (component == null || component.getType() != MailingComponent.TYPE_HOSTED_IMAGE) {
+		if (component == null || component.getType() != MailingComponentType.HostedImage) {
 			return false;
 		}
 
@@ -298,7 +301,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 			MailingComponent existingComponent = existingComponentsMap.get(name);
 
 			// Prevent overwriting of existing components of other types (other than hosted image).
-			if (existingComponent == null || existingComponent.getType() == MailingComponent.TYPE_HOSTED_IMAGE) {
+			if (existingComponent == null || existingComponent.getType() == MailingComponentType.HostedImage) {
 				if (existingComponent != null) {
 					mailingComponentDao.deleteMailingComponent(existingComponent);
 				}
@@ -518,33 +521,13 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 
 			MailingComponent component = mailingComponentFactory.newMailingComponent();
 
-			component.setComponentName(makeComponentName(filename, mobileComponentBase));
-			component.setType(MailingComponent.TYPE_HOSTED_IMAGE);
-			component.setDescription(makeComponentDescription(description, mobileComponentBase));
+			component.setComponentName(makeMobileFilenameIfNecessary(filename, mobileComponentBase));
+			component.setType(MailingComponentType.HostedImage);
+			component.setDescription(makeMobileDescriptionIfNecessary(description, mobileComponentBase));
 			component.setBinaryBlock(content, mimeType);
 			component.setLink(link);
 
 			componentsMap.put(component.getComponentName(), component);
-		}
-
-		private String makeComponentName(String filename, String mobileComponentBase) {
-			if (StringUtils.isBlank(mobileComponentBase)) {
-				return filename;
-			} else {
-				return ShowImageServlet.MOBILE_IMAGE_PREFIX + mobileComponentBase;
-			}
-		}
-
-		private String makeComponentDescription(String userDescription, String mobileComponentBase) {
-			if (StringUtils.isBlank(mobileComponentBase)) {
-				return userDescription;
-			}
-
-			if (StringUtils.isBlank(userDescription)) {
-				return  "Mobile component for " + mobileComponentBase;
-			} else {
-				return  userDescription + " / Mobile component for " + mobileComponentBase;
-			}
 		}
 
 		private boolean validateFileSize(String filename, long size) {

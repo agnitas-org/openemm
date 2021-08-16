@@ -352,7 +352,8 @@ $states: (
   success $c-state-success,
   info    $c-state-info,
   warning $c-state-warning,
-  alert   $c-state-alert
+  alert   $c-state-alert,
+  danger   $c-state-alert
 );
 
 $shadow-soft    : 0 1px 5px 0 rgba(0, 23, 39, 0.3);

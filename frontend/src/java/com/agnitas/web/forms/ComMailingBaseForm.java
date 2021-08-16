@@ -11,25 +11,32 @@
 package com.agnitas.web.forms;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 
+import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.beans.Mediatype;
 import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
-import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.web.MailingBaseAction;
 import org.agnitas.web.forms.MailingBaseForm;
 import org.agnitas.web.forms.WorkflowParametersHelper;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -37,14 +44,16 @@ import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
 import org.apache.struts.upload.FormFile;
 
-import com.agnitas.beans.ComMailing.MailingContentType;
+import com.agnitas.beans.MailingContentType;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.service.ComMailingLightService;
 import com.agnitas.web.ComMailingBaseAction;
@@ -69,8 +78,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 	/** Serial version UID. */
 	private static final long serialVersionUID = -2251490405906769187L;
 	
-	private int numOfMediaTypes = 0;
-	private int defaultMediaType = 0;
 	private String followUpMailingType = ""; // contains which followUp we have (if any).
 	private int parentMailing;
 	private int companyID; // holds the company Id.
@@ -98,13 +105,9 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
     private String ownerName = "";
 
-    private String notes = "";
-
     private boolean isMailingGrid = false;
 
 	private Map<Integer, ComMailingParameter> parameterMap = new HashMap<>();
-
-	private boolean addParameter;
 
     private int workflowId;
     private int splitId;
@@ -168,7 +171,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 	/** Holds value of property showMtypeOptions. */
 	private int activeMedia = 0;
-	private String[] mediaTypeLabelsLowerCase = null;	// TODO Remove that from FormBean
 
 	private boolean wmSplit;
 
@@ -187,11 +189,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 	 * Holds value of property splitPart.
 	 */
 	private String splitPart;
-
-	/**
-	 * Holds value of property archived.
-	 */
-	private boolean archived;
 
 	private boolean locked;
 
@@ -215,7 +212,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		setAction(ComMailingBaseAction.ACTION_LIST);
 
 		dynamicTemplate = false;
-		archived = false;
 		super.reset(map, request);
 		clearBulkIds();
 
@@ -223,7 +219,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		if (actionID == ComMailingBaseAction.ACTION_SAVE
 			|| actionID == ComMailingBaseAction.ACTION_SAVE_MAILING_GRID) {
 			parameterMap.clear();
-			addParameter = false;
 		}
 
 		intervalType = ComMailingParameterDao.IntervalType.None;
@@ -242,17 +237,15 @@ public class ComMailingBaseForm extends MailingBaseForm {
 	}
 	
 	/**
-     * Clears all data connected with targets for action based mailing form
+     * Clears all data connected with targets
      *
      */
-    public void clearTargetsData () {
-        if (mailingType == MailingModel.MailingType.ACTION_BASED.getValue()) {
-			setTargetGroupsList(Collections.emptyList());
-			setTargetGroups(Collections.emptyList());
-            setSplitId(0);
-            setSplitBase(null);
-            setSplitPart(null);
-        }
+    public void clearTargetsData() {
+		setTargetGroupsList(Collections.emptyList());
+		setTargetGroups(Collections.emptyList());
+		setSplitId(0);
+		setSplitBase(null);
+		setSplitPart(null);
     }
 
 	public String getFilterCreationDateBegin() {
@@ -296,7 +289,18 @@ public class ComMailingBaseForm extends MailingBaseForm {
 	}
 
 	public Map<Integer, ComMailingParameter> getParameterMap() {
-		return parameterMap;
+		List<Integer> emptyParams = this.parameterMap.entrySet().stream()
+				.filter(pair -> {
+					ComMailingParameter param = pair.getValue();
+					return StringUtils.isBlank(param.getName()) &&
+							StringUtils.isBlank(param.getValue()) &&
+							StringUtils.isBlank(param.getDescription());
+				})
+				.map(Map.Entry::getKey)
+				.collect(Collectors.toList());
+
+		emptyParams.forEach(key -> this.parameterMap.remove(key));
+		return this.parameterMap;
 	}
 
 	public void setParameterMap(Map<Integer, ComMailingParameter> parameterMap) {
@@ -305,14 +309,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 	public ComMailingParameter getParameter(int index) {
 		return parameterMap.computeIfAbsent(index, i -> new ComMailingParameter());
-	}
-
-	public boolean isAddParameter() {
-		return addParameter;
-	}
-
-	public void setAddParameter(boolean addParameter) {
-		this.addParameter = addParameter;
 	}
 
     public int getWorkflowId() {
@@ -348,33 +344,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 	public void setParentMailing(int parentMailing) {
 		this.parentMailing = parentMailing;
-	}
-
-	public static int getNumOfMediaTypes(HttpServletRequest req) {
-
-		int numOfMediaTypes = 0;
-
-		for(final MediaTypes mt : MediaTypes.values()) {
-			if(AgnUtils.allowed(req, mt.getRequiredPermission())) {
-				numOfMediaTypes++;
-			}
-		}
-
-		if (numOfMediaTypes == 0) {
-			numOfMediaTypes = 1;
-		}
-
-		return numOfMediaTypes;
-	}
-
-	public static int getDefaultMediaType(HttpServletRequest req) {
-		for(final MediaTypes mt : MediaTypes.valuesSortedByDefaultValuePriority()) {
-			if(AgnUtils.allowed(req, mt.getRequiredPermission())) {
-				return mt.getMediaCode();
-			}
-		}
-
-		return MediaTypes.EMAIL.getMediaCode();
 	}
 
 	@Override
@@ -483,10 +452,18 @@ public class ComMailingBaseForm extends MailingBaseForm {
 				actionErrors.add("subject", new ActionMessage("error.personalization_tag"));
 			}
 
-			if (addParameter) {
-				ComMailingParameter parameter = parameterMap.get(0);
-				if (parameter != null && StringUtils.isEmpty(parameter.getName())) {
-					actionErrors.add("global", new ActionMessage("error.mailing.parameter.emptyName"));
+			if (MapUtils.isNotEmpty(parameterMap)) {
+				Optional<ComMailingParameter> optional = parameterMap.values().stream()
+						.filter(param -> {
+							if (param != null && StringUtils.isBlank(param.getName())) {
+								return StringUtils.isNotBlank(param.getValue()) || StringUtils.isNotBlank(param.getDescription());
+							} else {
+								return false;
+							}
+						}).findFirst();
+
+				if (optional.isPresent()) {
+					actionErrors.add(ActionMessages.GLOBAL_MESSAGE,  new ActionMessage("error.mailing.parameter.emptyName"));
 				}
 			}
 		}
@@ -506,8 +483,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 			followMailing = "";
 		}
 
-		numOfMediaTypes = getNumOfMediaTypes(request);
-		defaultMediaType = getDefaultMediaType(request);
 		return actionErrors;
 	}
 
@@ -616,27 +591,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 	}
 
 	/**
-	 * Getter for property archived.
-	 * 
-	 * @return Value of property archived.
-	 */
-	@Override
-	public boolean isArchived() {
-		return archived;
-	}
-
-	/**
-	 * Setter for property archived.
-	 * 
-	 * @param archived
-	 *            New value of property archived.
-	 */
-	@Override
-	public void setArchived(boolean archived) {
-		this.archived = archived;
-	}
-
-	/**
 	 * Indexed getter for property useMediaType.
 	 * 
 	 * @param index
@@ -650,7 +604,7 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		if (media == null) {
 			return false;
 		} else {
-			return media.getStatus() == Mediatype.STATUS_ACTIVE;
+			return media.getStatus() == MediaTypeStatus.Active.getCode();
 		}
 	}
 
@@ -667,116 +621,82 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		return getUseMediaType(MediaTypes.EMAIL.getMediaCode());
 	}
 
-	public String[] getMediaTypeLabelsLowerCase() {
-		if (mediaTypeLabelsLowerCase == null) {
-			List<String> mediaTypeLabelsLowerCaseList = new ArrayList<>();
-			for (MediaTypes mediaType : MediaTypes.valuesSortedByCode()) {
-				mediaTypeLabelsLowerCaseList.add(mediaType.name().toLowerCase());
-			}
-			mediaTypeLabelsLowerCase = mediaTypeLabelsLowerCaseList.toArray(new String[0]);
-		}
-		return mediaTypeLabelsLowerCase;
-	}
-
-	public List<String> getPrioritizedUsedMediaTypes() {
-		List<String> result = new ArrayList<>();
-		String[] labels = getMediaTypeLabelsLowerCase();
-		for (int priority : getPriorities()) {
-			if (getUseMediaType(priority)) {
-				result.add(labels[priority].toLowerCase());
-			}
-		}
-		return result;
-	}
-
-	public void setUseMediaType(int index, boolean how) {
+	public void setUseMediaType(int index, boolean active) {
 		Mediatype mt = getMediatypes().get(index);
 
 		if (mt == null) {
-			if (!how) {
+			if (!active) {
 				return;
 			}
 			mt = getMedia(index);
 		}
 		if (mt != null) {
-			if (how) {
-				mt.setStatus(Mediatype.STATUS_ACTIVE);
+			if (active) {
+				mt.setStatus(MediaTypeStatus.Active.getCode());
 			} else {
-				mt.setStatus(Mediatype.STATUS_INACTIVE);
+				mt.setStatus(MediaTypeStatus.Inactive.getCode());
 			}
 		}
 	}
 
 	public void setMoveMedia(int type, boolean isUp) {
-		List<Integer> list = getPriorities();
-		Mediatype upper = null, lower = null;
-		int index;
-
-		for (index = 0; index < 5; index++) {
-			if (list.get(index) == type) {
-				break;
-			}
-		}
-		if (index >= 5) {
+		if (type == -1) {
 			return;
 		}
-		if (isUp) {
-			if (index <= 0) {
-				return;
-			}
-			lower = mediatypes.get(list.get(index - 1));
-			upper = mediatypes.get(list.get(index));
-			// Bugfix priority was always 5 --> index is true priority
-			upper.setPriority(index - 1);
-			lower.setPriority(index);
-		} else {
-			if (index >= 4) {
-				return;
-			}
-			lower = mediatypes.get(list.get(index));
-			upper = mediatypes.get(list.get(index + 1));
-			if (upper == null) {
-				return;
-			}
-			// Bugfix priority was always 5 --> index is true priority
-			upper.setPriority(index);
-			lower.setPriority(index + 1);
+
+		Mediatype media = getMediatypes().get(type);
+		if (media == null) {
+			return;
 		}
-		/*
-		 * savePrio=upper.getPriorities(); upper.setPriority(lower.getPriorities()); lower.setPriority(savePrio);
-		 */
-	}
 
-	public int getNumberOfMediatypes() {
-		return numOfMediaTypes;
-	}
-
-	public int getDefaultMediatype() {
-		return defaultMediaType;
-	}
-
-	public ArrayList<Integer> getPriorities() {
-		MediaTypes[] mediaTypes = MediaTypes.values();
-
-		ArrayList<Integer> priorities = new ArrayList<>(mediaTypes.length);
-		for (MediaTypes type : mediaTypes) {
-			priorities.add(type.getMediaCode());
+		List<MediaTypes> prioritized = getPrioritizedMediatypes();
+		OptionalInt optional = IntStream.range(0, prioritized.size())
+				.filter(i -> prioritized.get(i).getMediaCode() == type).findFirst();
+		if (!optional.isPresent()) {
+			return;
 		}
+
+		// Bugfix priority was always 5 --> index is true priority
+		int priority = optional.getAsInt();
+		if (priority > 4) {
+			return;
+		}
+
+		int newPriority = isUp ? priority - 1 : priority + 1;
+		if (newPriority < 0 || newPriority > 4) {
+			return;
+		}
+
+		int swapMediaType = Optional.ofNullable(prioritized.get(newPriority))
+				.map(MediaTypes::getMediaCode).orElse(-1);
+		Mediatype nextMedia = getMediatypes().get(swapMediaType);
+
+		if (nextMedia != null) {
+			media.setPriority(newPriority);
+			nextMedia.setPriority(priority);
+		}
+	}
+
+	public List<MediaTypes> getPrioritizedMediatypes() {
+		List<MediaTypes> priorities = new ArrayList<>(Arrays.asList(MediaTypes.values()));
 
 		Map<Integer, Mediatype> map = getMediatypes();
-		priorities.sort((c1, c2) -> {
-			Mediatype type1 = map.get(c1);
-			Mediatype type2 = map.get(c2);
-
-			if (type1 == null || type2 == null) {
-				if (type1 == type2) {
-					return 0;
-				} else {
-					return type1 == null ? 1 : -1;
-				}
-			} else {
-				return type1.getPriority() - type2.getPriority();
+		priorities.sort((m1, m2) -> {
+			//prevent prioritizing of unused media type
+			Mediatype type1 = null;
+			if (getUseMediaType(m1.getMediaCode())) {
+				type1 = map.get(m1.getMediaCode());
 			}
+
+			Mediatype type2 = null;
+			if (getUseMediaType(m2.getMediaCode())) {
+				type2 = map.get(m2.getMediaCode());
+			}
+
+			return Objects.equals(type1, type2) ? 0 :
+					type1 == null ? 1 :
+					type2 == null ? -1 :
+							type1.getPriority() - type2.getPriority();
 		});
 
 		return priorities;
@@ -825,45 +745,18 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		this.mailingTypeInterval = mailingTypeInterval;
 	}
 
-	/**
-	 * Getter for property mailingType.
-	 * 
-	 * @return Value of property mailingType.
-	 */
 	@Override
-	public String getTypes() {
-		types = "";
-		if (mailingTypeNormal) {
-			types = "0";
-		}
-		if (mailingTypeEvent) {
-			if (!types.equals("")) {
-				types = types + ",";
-			}
-			types = types + "1";
-		}
-		if (mailingTypeDate) {
-			if (!types.equals("")) {
-				types = types + ",";
-			}
-			types = types + "2";
-		}
+	protected List<Integer> getTypeList() {
+		List<Integer> typeList = super.getTypeList();
+
 		if (mailingTypeFollowup) {
-			if (!types.equals("")) {
-				types = types + ",";
-			}
-			types = types + "3";
+			typeList.add(MailingType.FOLLOW_UP.getCode());
 		}
 		if (mailingTypeInterval) {
-			if (!types.equals("")) {
-				types = types + ",";
-			}
-			types = types + "4";
+			typeList.add(MailingType.INTERVAL.getCode());
 		}
-		if (types.equals("")) {
-			types = "100";
-		}
-		return types;
+
+		return typeList;
 	}
 
 	@Override
@@ -879,7 +772,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
         workflowForwardParams = "";
 		setSplitBase("none");
 		setSplitPart("1");
-		setNotes("");
         setMailingGrid(false);
         parameterMap.clear();
         mailingContentType = null;
@@ -916,7 +808,7 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		if (dynamicTemplateString == null) {
 			dynamicTemplate = false;
 		} else {
-			dynamicTemplate = dynamicTemplateString.equals("on") || dynamicTemplateString.equals("on") || dynamicTemplateString.equals("true");
+			dynamicTemplate = AgnUtils.interpretAsBoolean(dynamicTemplateString);
 		}
 	}
 
@@ -1085,14 +977,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
     public void setOwnerName(String ownerName) {
         this.ownerName = ownerName;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
-    public void setNotes(String notes) {
-        this.notes = notes;
     }
 
     public boolean isIsMailingGrid() {

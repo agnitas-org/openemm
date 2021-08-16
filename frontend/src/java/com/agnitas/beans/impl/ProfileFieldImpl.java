@@ -25,6 +25,7 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	protected int adminID = 0;
 	protected String description = "";
 	protected String dataType;
+	protected SimpleDataType overrideSimpleDataType = null;
 	protected int dataTypeLength;
 	private int maxDataSize;
 	protected String defaultValue = "";
@@ -125,7 +126,11 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	
 	@Override
 	public SimpleDataType getSimpleDataType() {
-		return new DbColumnType(dataType, 0, 0, 0, false).getSimpleDataType();
+		if (overrideSimpleDataType != null) {
+			return overrideSimpleDataType;
+		} else {
+			return new DbColumnType(dataType, 0, 0, 0, false).getSimpleDataType();
+		}
 	}
 
 	@Override
@@ -318,6 +323,16 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	@Override
 	public final void setMaxDataSize(final int maxDataSize) {
 		this.maxDataSize = maxDataSize;
+	}
+
+	@Override
+	public SimpleDataType getOverrideSimpleDataType() {
+		return overrideSimpleDataType;
+	}
+
+	@Override
+	public void setOverrideSimpleDataType(SimpleDataType overrideSimpleDataType) {
+		this.overrideSimpleDataType = overrideSimpleDataType;
 	}
 
 	/**

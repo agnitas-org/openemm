@@ -33,21 +33,6 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
 		return selectInt(logger, query, UserStatus.Bounce.getStatusCode(), mailingID);
 	}
 
-	@Override
-	public int getClicks(int mailingID, @VelocityCheck int companyID) {
-		String query = "SELECT count(rlog.customer_id) AS tg1_gross "
-			+ " , count(distinct rlog.customer_id) AS tg1_clicker "
-			+ " , count(distinct rlog.customer_id|| rlog.url_id) AS tg1_net "
-			+ " FROM rdirlog_<COMPANYID>_tbl rlog  WHERE rlog.mailing_id = ?  " +
-		" AND rlog.customer_id  NOT IN ( SELECT customer_id FROM customer_<COMPANYID>_binding_tbl" +
-		" WHERE user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND mailinglist_id=(SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?)) " ;
-		
-		query = query.replace("<COMPANYID>",Integer.toString(companyID));
-		
-		Map<String, Object> clicksAllSubscribers = select(logger, query, mailingID, mailingID).get(0);
-		return ((Number)clicksAllSubscribers.get("tg1_clicker")).intValue();
-	}
-
     private String getRecipientsTypeCondition(String recipientsType) {
         StringBuilder queryBuilder = new StringBuilder();
         String user_type;
@@ -82,26 +67,6 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
     }
 
     @Override
-	public int getOpened(int mailingID, @VelocityCheck int companyID) {
-        String query = "SELECT count(customer_id) AS net, sum(open_count) AS gross FROM " +
-		   	" (SELECT open_count, customer_id FROM (" +
-		   	"SELECT customer_id, open_count FROM onepixellog_<COMPANYID>_tbl op WHERE mailing_id= ? " +
-		   	" AND customer_id IN ( " +
-		   	" SELECT bind.customer_id FROM customer_<COMPANYID>_binding_tbl bind " +
-		   	"WHERE user_type NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND mailinglist_id=(" +
-		   	"SELECT mailinglist_id FROM mailing_tbl mt WHERE mailing_id = ?))) sel2) sel1 ";
-		
-		query = query.replace("<COMPANYID>",Integer.toString(companyID));
-		Map<String, Object> openedMap = select(logger, query, mailingID, mailingID).get(0);
-		
-		int value = 0;
-		if (openedMap.get("net") != null) {
-			value = ((Number)openedMap.get("net")).intValue();
-		}
-		return value;
-	}
-
-    @Override
     public int getOpened(int mailingId, @VelocityCheck int companyId, String recipientsType) {
         StringBuilder queryBuilder = new StringBuilder();
         queryBuilder
@@ -124,19 +89,6 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
 			
 		Map<String, Object> optoutMap = select(logger, query, mailingID, mailingID).get(0);
 		return optoutMap.get("optout") != null ? ((Number)optoutMap.get("optout")).intValue():0 ;
-	}
-
-	@Override
-	public int getSend(int mailingID) {
-        String query = "";
-        if (isOracleDB()) {
-              query = "SELECT COALESCE(SUM(no_of_mailings), 0) mails FROM mailing_account_tbl " +
-              		"WHERE mailing_id= ? AND NOT (status_field = 'A' or status_field = 'T')";
-        } else {
-              query = "SELECT SUM(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = ? " +
-              		"AND NOT (status_field = 'A' or status_field = 'T')";
-        }
-		return selectInt(logger, query, mailingID);
 	}
 
     @Override

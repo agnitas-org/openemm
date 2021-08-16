@@ -140,7 +140,7 @@
                     <html:hidden property="templateID" value="0"/>
                 </logic:equal>
             </logic:equal>
-                <div class="inline-tile">
+                <div class="inline-tile form-group" data-field="validator">
                     <div class="inline-tile-header">
                         <h2 class="headline"><bean:message key="Text_Version"/></h2>
                         <ul class="inline-tile-header-actions">
@@ -154,7 +154,8 @@
                     <div class="inline-tile-content">
                         <div class="row">
                             <div class="col-sm-12">
-                                <html:textarea styleId="textTemplate" property="textTemplate" rows="14" cols="${TEXTAREA_WIDTH}"
+                                <agn:agnTextarea styleId="textTemplate" property="textTemplate" rows="14" cols="${TEXTAREA_WIDTH}"
+                                               data-field-validator="reject-script-element"
                                                styleClass="form-control js-editor-text" readonly="${not isMailingEditable}"/>
                             </div>
                         </div>
@@ -162,7 +163,7 @@
                 </div>
 
                 <c:if test="${mailingBaseForm.mediaEmail.mailFormat != 0 and not mailingBaseForm.isMailingGrid}">
-                    <div class="inline-tile">
+                    <div class="inline-tile form-group" data-field="validator">
                         <div class="inline-tile-header">
                             <h2 class="headline"><bean:message key="mailing.HTML_Version"/></h2>
                             <ul class="inline-tile-header-actions">
@@ -176,7 +177,8 @@
                         <div class="inline-tile-content">
                             <div class="row">
                                 <div class="col-sm-12">
-                                    <html:textarea styleId="htmlTemplate" property="htmlTemplate" rows="14" cols="${TEXTAREA_WIDTH}"
+                                    <agn:agnTextarea styleId="htmlTemplate" property="htmlTemplate" rows="14" cols="${TEXTAREA_WIDTH}"
+                                                   data-field-validator="reject-script-element"
                                                    styleClass="form-control js-editor" readonly="${not isMailingEditable}" />
                                 </div>
                             </div>
@@ -226,15 +228,16 @@
 
     <div id="tile-mediaEmail" class="tile-content tile-content-forms">
         <div id="tab-mailingMediaEmailBase" >
-            <div class="form-group">
+            <div class="form-group" data-field="validator">
                 <div class="col-sm-4">
                     <label class="control-label" for="emailSubject">
                         <bean:message key="mailing.Subject"/>
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text styleId="emailSubject" property="emailSubject"
-                           styleClass="form-control" readonly="${isEmailSettingsDisabled}" />
+                    <agn:agnText styleId="emailSubject" property="emailSubject"
+                           styleClass="form-control" readonly="${isEmailSettingsDisabled}" data-field-validator="length"
+                           data-validator-options="required: true, min: 2" />
                 </div>
             </div>
 
@@ -254,15 +257,16 @@
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" data-field="validator">
                 <div class="col-sm-4">
                     <label class="control-label" for="emailSenderMail">
                         <bean:message key="mailing.SenderEmail"/>
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text styleId="emailSenderMail" property="media[0].fromEmail"
-                               styleClass="form-control" readonly="${isEmailSettingsDisabled}"/>
+                    <agn:agnText styleId="emailSenderMail" property="media[0].fromEmail"
+                               styleClass="form-control" readonly="${isEmailSettingsDisabled}" data-field-validator="length"
+                               data-validator-options="required: true"/>
                </div>
             </div>
 
@@ -278,15 +282,16 @@
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" data-field="validator">
                 <div class="col-sm-4">
                     <label class="control-label" for="emailReplyEmail">
                         <bean:message key="mailing.ReplyEmail"/>
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text styleId="emailReplyEmail" property="media[0].replyEmail"
-                           styleClass="form-control" readonly="${isEmailSettingsDisabled}"/>
+                    <agn:agnText styleId="emailReplyEmail" property="media[0].replyEmail"
+                           styleClass="form-control" readonly="${isEmailSettingsDisabled}" data-field-validator="length"
+                               data-validator-options="required: true"/>
                 </div>
             </div>
 
@@ -359,24 +364,9 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label" for="emailOnepixel">
-                        <bean:message key="openrate.measure"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <html:select styleId="emailOnepixel" property="emailOnepixel"
-                                 styleClass="form-control" disabled="${isEmailSettingsDisabled}">
-                        <html:option value="<%= MediatypeEmail.ONEPIXEL_TOP %>"><bean:message
-                                key="mailing.openrate.top"/></html:option>
-                        <html:option value="<%= MediatypeEmail.ONEPIXEL_BOTTOM %>"><bean:message
-                                key="mailing.openrate.bottom"/></html:option>
-                        <html:option value="<%= MediatypeEmail.ONEPIXEL_NONE %>"><bean:message
-                                key="openrate.none"/></html:option>
-                    </html:select>
-                </div>
-            </div>
+           <jsp:include page="email-onepixel.jsp">
+                <jsp:param name="isEmailSettingsDisabled" value="${isEmailSettingsDisabled}"/>
+           </jsp:include>
 
         </div>
     </div>

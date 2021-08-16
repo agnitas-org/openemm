@@ -2,7 +2,7 @@
   "openapi" : "3.0.0",
   "info" : {
     "title" : "EMM Restful API",
-    "description" : "This is the EMM Restful API.<br /><br />Authorization is done via username and password as URL parameters or via Basic Auth (see https://en.wikipedia.org/wiki/Basic_access_authentication).<br />Use username and password of an EMM GUI user with permission \"utilize the RESTful interface\".<br /><br />Example for request via wget with URL parameters:<br /><pre>wget -S -O - --content-on-error \"https://<emm_system_url>/restful/mailing/1?username=<UrlencodedUserName>&password=<UrlencodedPassword>\" > test.txt; cat test.txt</pre><br />Example for request via wget with BASIC AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"<UrlencodedUserName>\" --http-password=\"<UrlencodedPassword>\" \"https://<emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre>",
+    "description" : "This is the EMM Restful API.<br /><br />Authorization is done via username and password as URL parameters or via Basic Auth (see https://en.wikipedia.org/wiki/Basic_access_authentication).<br />Use username and password of an EMM GUI user with permission \"utilize the RESTful interface\".<br /><br />Example for request via wget with URL parameters:<br /><pre>wget -S -O - --content-on-error \"https://&lt;emm_system_url>/restful/mailing/1?username=&lt;UrlencodedUserName>&password=&lt;UrlencodedPassword>\" > test.txt; cat test.txt</pre><br />Example for request via wget with BASIC AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"&lt;UrlencodedUserName>\" --http-password=\"&lt;UrlencodedPassword>\" \"https://&lt;emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre>",
     "version" : "1.0.0",
     "contact" : {
       "email" : "info@agnitas.ag"
@@ -1703,6 +1703,45 @@
         }
       }
     },
+    "/mailinglist/{mailinglist_id}/recipients" : {
+      "get" : {
+        "summary" : "Read a single existing mailinglist item and its recipients",
+        "tags" : [ "Mailinglist" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mailinglist_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailinglist to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Mailinglist item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MailinglistItemWithRecipients"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
     "/mailinglist/{mailinglist_name}" : {
       "get" : {
         "summary" : "Read a single existing mailinglist item",
@@ -2093,6 +2132,45 @@
         }
       }
     },
+    "/recipient/{customer_id}/mailings" : {
+      "get" : {
+        "summary" : "Read a single existing recipient entry and its delievered mailings",
+        "tags" : [ "Recipient" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "customer_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the recipient entry"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Single recipient entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecipientItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
     "/recipient/{email}" : {
       "get" : {
         "summary" : "Read a single existing recipient entry",
@@ -2194,6 +2272,45 @@
         "responses" : {
           "200" : {
             "description" : "Stored data of updated recipient entry",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecipientItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/recipient/{email}/mailings" : {
+      "get" : {
+        "summary" : "Read a single existing recipient entry and its delievered mailings",
+        "tags" : [ "Recipient" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "email",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Email of the recipient entry"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Single recipient entry",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -3967,6 +4084,116 @@
           }
         }
       }
+    },
+    "/autoimport/{autoimport_id}" : {
+      "get" : {
+        "summary" : "Read status information of an existing auto import",
+        "tags" : [ "Autoimport" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "autoimport_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of Autoimport"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Information json object"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Start an existing auto import",
+        "tags" : [ "Autoimport" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "autoimport_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of Autoimport"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Information json object"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Start an existing auto import",
+        "tags" : [ "Autoimport" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "autoimport_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of Autoimport"
+        } ],
+        "requestBody" : {
+          "description" : "agnUID data",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "agnUid" : {
+                    "type" : "string",
+                    "description" : "agnUID",
+                    "example" : "abc.123.456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Information json object"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
     }
   },
   "components" : {
@@ -4146,6 +4373,42 @@
             "type" : "string",
             "description" : "Date-time of latest change (ISO-8601). Only for read methods. Items to create or update may not have a change_date.",
             "example" : "2017-07-21T17:32:28Z"
+          }
+        }
+      },
+      "MailinglistItemWithRecipients" : {
+        "type" : "object",
+        "required" : [ "name" ],
+        "properties" : {
+          "mailinglist_id" : {
+            "type" : "integer",
+            "description" : "Only for read methods. Items to create or update may not have a predefined id.",
+            "example" : 4711
+          },
+          "name" : {
+            "type" : "string",
+            "example" : "My_Mailinglist"
+          },
+          "description" : {
+            "type" : "string",
+            "example" : "My special mailinglist"
+          },
+          "creation_date" : {
+            "type" : "string",
+            "description" : "Date-time of creation (ISO-8601). Only for read methods. Items to create or update may not have a creation_date.",
+            "example" : "2017-07-21T17:32:28Z"
+          },
+          "change_date" : {
+            "type" : "string",
+            "description" : "Date-time of latest change (ISO-8601). Only for read methods. Items to create or update may not have a change_date.",
+            "example" : "2017-07-21T17:32:28Z"
+          },
+          "recipients" : {
+            "type" : "array",
+            "description" : "Array of recipients data",
+            "items" : {
+              "$ref" : "#/components/schemas/RecipientItem"
+            }
           }
         }
       },

@@ -14,12 +14,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -28,18 +30,24 @@ import org.agnitas.emm.core.userforms.impl.UserformServiceImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.UserFormExporter;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbColumnType;
 import org.agnitas.util.FileUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.commons.ActivenessStatus;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.trackablelinks.service.FormTrackableLinkService;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.emm.core.userform.service.ComUserformService;
@@ -49,6 +57,9 @@ import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.userform.bean.UserForm;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 public class ComUserformServiceImpl extends UserformServiceImpl implements ComUserformService {
 
@@ -62,6 +73,8 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     private UserFormExporter userFormExporter;
     private ConfigService configService;
     private ExtensibleUIDService uidService;
+    private ComRecipientDao comRecipientDao;
+    private ProfileFieldService profileFieldService;
 
     @Override
 	public String getUserFormName(int formId, @VelocityCheck int companyId) {
@@ -123,43 +136,51 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
 
         return null;
     }
-    
-	@Override
-    public PaginatedListImpl<UserFormDto> getUserFormsWithActionData(ComAdmin admin, String sort,
-			String order, int page, int numberOfRows, ActivenessStatus filter) {
-        
-        PaginatedListImpl<UserForm> userForms = userFormDao
-                .getUserFormsWithActionIdsNew(sort, order, page, numberOfRows, filter == null ? ActivenessStatus.NONE : filter, admin.getCompanyID());
-        
-        //collect action ID which are used by forms
+
+    @Override
+    public JSONArray getUserFormsJson(ComAdmin admin) {
+        JSONArray actionsJson = new JSONArray();
+		List<UserForm> userForms = userFormDao.getUserForms(admin.getCompanyID());
+
+		//collect action ID which are used by forms
         List<Integer> usedActionIds = new ArrayList<>();
-        for (UserForm userForm : userForms.getList()) {
-            int actionId = userForm.getStartActionID();
+        for (UserForm userForm : userForms) {
+            if (userForm.isUsesActions()) {
+                usedActionIds.addAll(userForm.getUsedActionIds());
+            }
+        }
+
+        //set action names
+        Map<Integer, String> actionNames = emmActionDao.getEmmActionNames(admin.getCompanyID(), usedActionIds);
+
+		for (UserForm userForm: userForms) {
+            JSONObject entry = new JSONObject();
+
+			entry.element("id", userForm.getId());
+			entry.element("name", userForm.getFormName());
+			entry.element("description", userForm.getDescription());
+
+			JSONArray actions = new JSONArray();
+			int actionId = userForm.getStartActionID();
             if (actionId > 0) {
-                usedActionIds.add(actionId);
+                actions.add(actionNames.get(actionId));
             }
             actionId = userForm.getEndActionID();
             if (actionId > 0) {
-                usedActionIds.add(actionId);
+                actions.add(actionNames.get(actionId));
             }
-        }
-        
-        PaginatedListImpl<UserFormDto> convertedList = conversionService
-                .convertPaginatedList(userForms, UserForm.class, UserFormDto.class);
-        
-        //set action names
-        Map<Integer, String> actionNames = emmActionDao.getEmmActionNamesNew(admin.getCompanyID(), usedActionIds);
-        for (UserFormDto dto : convertedList.getList()) {
-            int actionId = dto.getSuccessSettings().getStartActionId();
-            dto.setActionName(actionNames.get(actionId));
-            actionId = dto.getSuccessSettings().getFinalActionId();
-            dto.setActionName(actionNames.get(actionId));
-        }
-        
-        return convertedList;
-	}
 
-	@Override
+			entry.element("actionNames", actions);
+			entry.element("creationDate", DateUtilities.toLong(userForm.getCreationDate()));
+			entry.element("changeDate", DateUtilities.toLong(userForm.getChangeDate()));
+			entry.element("activeStatus", userForm.getIsActive() ? ActivenessStatus.ACTIVE : ActivenessStatus.INACTIVE);
+
+			actionsJson.add(entry);
+		}
+		return actionsJson;
+    }
+
+    @Override
 	public UserFormDto getUserForm(@VelocityCheck int companyId, int formId) {
         UserForm userForm = userFormDao.getUserForm(formId, companyId);
         if (userForm != null) {
@@ -188,10 +209,11 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
         }
         userFormDto.setId(userFormId);
 
-        List<Message> errors = new ArrayList<>();
-        trackableLinkService.saveTrackableLinks(admin, userFormDto, errors);
+        final List<Message> errors = new ArrayList<>();
+        final List<Message> warnings = new ArrayList<>();
+        trackableLinkService.saveTrackableLinks(admin, userFormDto, errors, warnings);
 
-        return new ServiceResult<>(userFormId, userFormId > 0 && errors.isEmpty(), errors);
+        return new ServiceResult<>(userFormId, userFormId > 0 && errors.isEmpty(), null, warnings, errors);
 	}
 
     @Override
@@ -261,8 +283,10 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
 	public String getUserFormUrlPattern(ComAdmin admin, boolean resolveUID) {
         if (resolveUID) {
             try {
+                int testCustomerId = comRecipientDao.getAdminOrTestRecipientId(admin.getCompanyID(), admin.getAdminID());
+
                 final int licenseID = configService.getLicenseID();
-                final ComExtensibleUID uid = UIDFactory.from(licenseID, admin.getCompanyID(), admin.getAdminID());
+                final ComExtensibleUID uid = UIDFactory.from(licenseID, admin.getCompanyID(), testCustomerId);
                 final String urlEncodedUID = URLEncoder.encode(uidService.buildUIDString(uid), "UTF-8");
                 return WebFormUtils.getFormFullViewPattern(AgnUtils.getRedirectDomain(admin.getCompany()), admin.getCompanyID(), urlEncodedUID);
             } catch (Exception e) {
@@ -273,7 +297,37 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
         return WebFormUtils.getFormFullViewPattern(AgnUtils.getRedirectDomain(admin.getCompany()), admin.getCompanyID(), "##AGNUID##");
 	}
 
-	@Required
+    @Override
+    public List<String> getUserFormNames(final int companyId) {
+        final List<UserForm> userForms = userFormDao.getUserForms(companyId);
+
+        return userForms.stream().map(UserForm::getFormName).collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, String> getMediapoolImages(ComAdmin admin) {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public Map<String, String> getProfileFields(ComAdmin admin, DbColumnType.SimpleDataType... allowedTypes) {
+        final Map<String, String> resultMap = new LinkedHashMap<>();
+        resultMap.put("none", I18nString.getLocaleString("default.none", admin.getLocale()));
+
+        final List<ProfileField> profileFields = profileFieldService.getSortedColumnInfo(admin.getCompanyID());
+        for (ProfileField field : profileFields) {
+            if(ArrayUtils.isNotEmpty(allowedTypes)) {
+                if(ArrayUtils.contains(allowedTypes, DbColumnType.getSimpleDataType(field.getDataType(), field.getNumericScale()))) {
+                    resultMap.put(field.getColumn(), field.getShortname());
+                }
+            } else {
+                resultMap.put(field.getColumn(), field.getShortname());
+            }
+        }
+        return resultMap;
+    }
+
+    @Required
     public void setEmmActionDao(EmmActionDao emmActionDao) {
         this.emmActionDao = emmActionDao;
     }
@@ -301,5 +355,15 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     @Required
     public void setUidService(ExtensibleUIDService uidService) {
         this.uidService = uidService;
+    }
+
+    @Required
+    public void setComRecipientDao(ComRecipientDao comRecipientDao) {
+        this.comRecipientDao = comRecipientDao;
+    }
+
+    @Required
+    public void setProfileFieldService(ProfileFieldService profileFieldService) {
+        this.profileFieldService = profileFieldService;
     }
 }

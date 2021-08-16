@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.stat.service.impl;
 
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,7 +85,7 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 		
 		if (!errorStr.toString().isEmpty()) {
 			throw new FailedArgumentsValidationException(errorStr.toString());
-		} 
+		}
 	}
 	
 	@Override
@@ -96,8 +98,8 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 		Collections.sort(targetList);
 		final String targetGroups = StringUtils.join(targetList, ',');
 		
-		final MailingStatJobDescriptor job = new MailingStatJobDescriptor(mailingId, 
-				(recipientsType == null) ? MailingStatJobDescriptor.RECIPIENT_TYPE_ALL : recipientsType, 
+		final MailingStatJobDescriptor job = new MailingStatJobDescriptor(mailingId,
+				(recipientsType == null) ? MailingStatJobDescriptor.RECIPIENT_TYPE_ALL : recipientsType,
 				(targetGroups == null) ? "" : targetGroups);
 		
 		int expiredTime = configService.getIntegerValue(ConfigValue.ExpireStatisticSummary);
@@ -151,7 +153,7 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 			throw new TargetGroupsStringFormatException();
 		}
 		
-		removeExpiredData();
+		// removeExpiredData(); // Done by CleanDBDaoImpl now
 		
 		int targetGroupIndex = 1;
 		 // DataSet uses target group ID = 1 for 'all subscribers'
@@ -169,15 +171,17 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 		return 0;
 	}
 	
-	private void removeExpiredData() {
+	@Override
+	public void removeExpiredData() {
 		int cleanUpTime = configService.getIntegerValue(ConfigValue.ExpireStatisticSummaryCleanup);
-		if (cleanUpTime < 0) {
+		if (cleanUpTime > 0) {
+			final ZonedDateTime threshold = ZonedDateTime.now().minus(cleanUpTime, ChronoUnit.SECONDS);
+	
+			mailingStatTgtGrpDao.removeExpiredMailingStatTgtGrp(threshold);
+			mailingStatJobDao.removeExpiredMailingStatJobs(threshold);
+		} else {
 			logger.error("Summary statistic clean up time is " + cleanUpTime + ". All data remains in DB!");
-			return;
 		}
-
-		mailingStatJobDao.removeExpiredMailingStatJobs(cleanUpTime);
-		mailingStatTgtGrpDao.removeExpiredMailingStatTgtGrp(cleanUpTime);
 	}
 	
 	private void updateJobStatus(int jobId, int status, String statusDescription) {
@@ -221,7 +225,7 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 				tgtGrp.setRevenue(sendStatRow.getRate());
 				continue;
 			}
-			tgtGrp.getStatValues().put(sendStatRow.getCategoryindex(), 
+			tgtGrp.getStatValues().put(sendStatRow.getCategoryindex(),
 					new StatisticValue(sendStatRow.getCount(), sendStatRow.getRate()));
 		}
 		

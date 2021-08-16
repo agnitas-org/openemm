@@ -59,7 +59,7 @@ public class InitialPasswordEncryptor {
 				String emmPasswordHash = passwordEncryptor.encrypt(generatedPassword, adminID, "UTF-8");
 				
 				try (FileOutputStream outputStream = new FileOutputStream(sqlFile)) {
-					outputStream.write(("UPDATE admin_tbl SET secure_password_hash = '" + emmPasswordHash + "', pwdchange_date = CURRENT_TIMESTAMP, is_one_time_pass = 1 WHERE admin_id = " + adminID + ";").getBytes("UTF-8"));
+					outputStream.write(("UPDATE admin_tbl SET secure_password_hash = '" + emmPasswordHash + "', pwdchange_date = CURRENT_TIMESTAMP WHERE admin_id = " + adminID + ";").getBytes("UTF-8"));
 				}
 				
 				System.out.println("Generated EMM password: " + generatedPassword);

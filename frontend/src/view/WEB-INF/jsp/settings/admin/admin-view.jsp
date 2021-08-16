@@ -14,17 +14,11 @@
 <%--@elvariable id="availableTimeZones" type="java.util.List"--%>
 <%--@elvariable id="layouts" type="java.util.List"--%>
 
-<c:set var="START_PAGE_DASHBOARD" value="<%= ComAdminPreferences.START_PAGE_DASHBOARD %>"/>
-<c:set var="START_PAGE_CALENDAR" value="<%= ComAdminPreferences.START_PAGE_CALENDAR %>"/>
-
 <c:set var="MAILING_CONTENT_HTML_EDITOR" value="<%= ComAdminPreferences.MAILING_CONTENT_HTML_EDITOR %>"/>
 <c:set var="MAILING_CONTENT_HTML_CODE" value="<%= ComAdminPreferences.MAILING_CONTENT_HTML_CODE %>"/>
 
 <c:set var="DASHBOARD_MAILINGS_LIST" value="<%= ComAdminPreferences.DASHBOARD_MAILINGS_LIST %>"/>
 <c:set var="DASHBOARD_MAILINGS_PREVIEW" value="<%= ComAdminPreferences.DASHBOARD_MAILINGS_PREVIEW %>"/>
-
-<c:set var="NAVIGATION_LEFT" value="<%= ComAdminPreferences.NAVIGATION_LEFT %>"/>
-<c:set var="NAVIGATION_TOP" value="<%= ComAdminPreferences.NAVIGATION_TOP %>"/>
 
 <c:set var="MAILING_SETTINGS_EXPANDED" value="<%= ComAdminPreferences.MAILING_SETTINGS_EXPANDED %>"/>
 <c:set var="MAILING_SETTINGS_COLLAPSED" value="<%= ComAdminPreferences.MAILING_SETTINGS_COLLAPSED %>"/>
@@ -149,18 +143,6 @@
                 </div>
             </emm:ShowByPermission>
 
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label" for="oneTimePassword"><mvc:message code="password.once.switch"/></label>
-                </div>
-                <div class="col-sm-8">
-                    <label class="toggle">
-                        <mvc:checkbox path="oneTimePassword" id="oneTimePassword"/>
-                        <div class="toggle-control"></div>
-                    </label>
-                </div>
-            </div>
-
             <div data-field="password">
                 <div class="form-group">
                     <div class="col-sm-4">
@@ -263,20 +245,6 @@
                     </mvc:select>
                 </div>
             </div>
-
-            <emm:ShowByPermission token="calendar.show">
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label" for="startPage"><mvc:message code="start.page.label"/></label>
-                    </div>
-                    <div class="col-sm-8">
-                        <mvc:select cssClass="form-control js-select" path="adminPreferences.startPage" id="startPage">
-                            <mvc:option value="${START_PAGE_DASHBOARD}"><mvc:message code="Dashboard"/></mvc:option>
-                            <mvc:option value="${START_PAGE_CALENDAR}"><mvc:message code="calendar.Calendar"/></mvc:option>
-                        </mvc:select>
-                    </div>
-                </div>
-            </emm:ShowByPermission>
 
             <div class="form-group">
                 <div class="col-sm-4">

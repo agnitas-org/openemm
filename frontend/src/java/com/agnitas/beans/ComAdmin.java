@@ -88,9 +88,6 @@ public interface ComAdmin {
 	String getTitle();
     void setTitle(String title);
 
-	boolean isOneTimePassword();
-	void setOneTimePassword(boolean oneTimePassword);
-    
     String getAdminCountry();
     int getAdminID();
 
@@ -180,9 +177,17 @@ public interface ComAdmin {
 	DateTimeFormatter getDateTimeFormatterWithSeconds();
 	
 	void setCompanyPermissions(Set<Permission> companyPermissions);
-
-	int getAltgId();
-	void setAltgId(int altgId);
+		
+	public int getAccessLimitingTargetGroupID();
+	
+	public void setAccessLimitingTargetGroupID(final int id);
+	
+	public default boolean isAccessLimitedByTargetGroup() {
+		return getAccessLimitingTargetGroupID() > 0;
+	}
 	
 	boolean permissionAllowedByGroups(Permission... permission);
+	
+	public Date getLastLoginDate();
+	public void setLastLoginDate(final Date date);
 }

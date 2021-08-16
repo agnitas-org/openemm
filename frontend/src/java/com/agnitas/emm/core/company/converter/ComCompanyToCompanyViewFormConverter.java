@@ -10,9 +10,9 @@
 
 package com.agnitas.emm.core.company.converter;
 
-import java.util.Objects;
 import java.util.Optional;
 
+import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.BooleanUtils;
@@ -26,7 +26,6 @@ import com.agnitas.emm.core.company.dto.CompanyInfoDto;
 import com.agnitas.emm.core.company.dto.CompanySettingsDto;
 import com.agnitas.emm.core.company.enums.LoginlockSettings;
 import com.agnitas.emm.core.company.form.CompanyViewForm;
-import com.agnitas.emm.core.company.service.ComCompanyService;
 
 @Component
 public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompany, CompanyViewForm> {
@@ -34,11 +33,9 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompan
 	private static final transient Logger logger = Logger.getLogger(ComCompanyToCompanyViewFormConverter.class);
 
     private final ConfigService configService;
-    private final ComCompanyService companyService;
 
-    public ComCompanyToCompanyViewFormConverter(final ConfigService configService, final ComCompanyService companyService) {
+    public ComCompanyToCompanyViewFormConverter(final ConfigService configService) {
         this.configService = configService;
-        this.companyService = Objects.requireNonNull(companyService, "Company service is null");
     }
 
     @Override
@@ -94,7 +91,7 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompan
         settingsDto.setLoginlockSettingsName(settingsOptional.isPresent() ? settingsOptional.get().getName() : "UNDEFINED");
         
         // Password policy
-        settingsDto.setPasswordPolicyName(this.companyService.getPasswordPolicy(comCompany.getId()).getPolicyName());
+        settingsDto.setPasswordPolicyName(getPasswordPolicyName(comCompany.getId()));
         settingsDto.setPasswordExpireDays(this.configService.getIntegerValue(ConfigValue.UserPasswordExpireDays, comCompany.getId()));
         
         // 2FA cookie
@@ -102,4 +99,9 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompan
         
         return settingsDto;
     }
+
+	private String getPasswordPolicyName(final int companyId) {
+		final String policyName = configService.getValue(ConfigValue.PasswordPolicy, companyId);
+		return PasswordPolicies.findByName(policyName).getPolicyName();
+	}
 }

@@ -10,25 +10,22 @@
 
 package org.agnitas.emm.springws.endpoint;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.OptionalInt;
 
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.jaxb.Map;
 import org.agnitas.emm.springws.jaxb.MapItem;
-import org.agnitas.emm.springws.security.authorities.CompanyAuthority;
 import org.agnitas.service.UserActivityLogService;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.w3c.dom.Element;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.impl.ComAdminImpl;
+import com.agnitas.emm.springws.WebserviceUserDetails;
 import com.agnitas.emm.springws.exception.BulkSizeLimitExeededExeption;
 import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
@@ -52,29 +49,40 @@ public class Utils {
 		}
 		return resultMap;
 	}
+
+	public static CaseInsensitiveMap<String, Object> toCaseInsensitiveComMap(com.agnitas.emm.springws.jaxb.Map map, final boolean extractStringFromSubXml) {
+		if (map == null || map.getItem() == null) {
+			return null;
+		}
+		CaseInsensitiveMap<String, Object> resultMap = new CaseInsensitiveMap<>(map.getItem().size());
+		
+		for (com.agnitas.emm.springws.jaxb.MapItem item : map.getItem()) {
+			final String key = (item.getKey() instanceof Element && extractStringFromSubXml) ? stringFromSubXml((Element) item.getKey()) : (String) item.getKey();
+			final Object value = (item.getValue() instanceof Element && extractStringFromSubXml) ? stringFromSubXml((Element) item.getValue()) : item.getValue();
+			
+			resultMap.put(key, value);
+		}
+		return resultMap;
+	}
 	
 	private static final String stringFromSubXml(final Element object) {
 		return object.getTextContent();
 	}
 	
 	public static final boolean isAuthorityGranted(final GrantedAuthority authority) {
-		final Collection<? extends GrantedAuthority> allAuthorities = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getAuthorities();
-
-		return allAuthorities.contains(authority);
+		return getWebserviceUserDetails().getAuthorities().contains(authority);
 	}
 	
 	public static int getUserCompany() {
-		final Collection<? extends GrantedAuthority> allAuthorities = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getAuthorities();
-		
-		final Optional<? extends GrantedAuthority> authorityOptional = allAuthorities.stream().filter(auth -> auth instanceof CompanyAuthority).findFirst();
-		
-		return authorityOptional.isPresent()
-				? Integer.valueOf(((CompanyAuthority) authorityOptional.get()).getCompanyID())
-				: -1;
+		return getWebserviceUserDetails().getCompanyID();
 	}
 
     public static String getUserName(){
-        return ((UserDetails)SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
+    	return getWebserviceUserDetails().getUsername();
+    }
+    
+    public static final WebserviceUserDetails getWebserviceUserDetails() {
+    	return ((WebserviceUserDetails)SecurityContextHolder.getContext().getAuthentication().getPrincipal());
     }
 
     private static ComAdmin getAdminForUserActivityLog() {

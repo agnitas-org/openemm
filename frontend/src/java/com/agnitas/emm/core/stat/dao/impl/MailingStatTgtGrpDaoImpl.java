@@ -12,7 +12,9 @@ package com.agnitas.emm.core.stat.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -83,33 +85,23 @@ public class MailingStatTgtGrpDaoImpl extends BaseDaoImpl implements MailingStat
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void removeExpiredMailingStatTgtGrp(int maxAgeSeconds) {
-		List<MailingStatisticTgtGrp> tgtGrps;
-		if (isOracleDB()) {
-			tgtGrps = select(logger, "SELECT * FROM mailing_statistic_tgtgrp_tbl WHERE creation_date < SYSDATE - ?/24/60/60", 
-								new MailingStatTgtGrpMapper(), maxAgeSeconds);
-		} else {
-			tgtGrps = select(logger, "SELECT * FROM mailing_statistic_tgtgrp_tbl WHERE creation_date < (NOW() - INTERVAL ? SECOND)", 
-								new MailingStatTgtGrpMapper(), maxAgeSeconds);
-		}
+	public final void removeExpiredMailingStatTgtGrp(final ZonedDateTime threshold) {
+		/*
+		 * Deletes by job ID based on given threshold.
+		 */
+		final Date thresholdDate = Date.from(threshold.toInstant());
+		final String queryJobsSql = "SELECT mailing_stat_job_id FROM mailing_statistic_job_tbl WHERE creation_date < ?";
+
+		// Step 1: Deleted values
+		final String targetGroupIdsSql = "SELECT mailing_stat_tgtgrp_id FROM mailing_statistic_tgtgrp_tbl WHERE mailing_stat_job_id IN (" + queryJobsSql + ")";
+		final String deleteValuesSql = 
+				"DELETE FROM mailing_statistic_value_tbl "
+				+ "WHERE mailing_stat_tgtgrp_id IN (" + targetGroupIdsSql + ")";
+		update(logger, deleteValuesSql, thresholdDate);
 		
-		if (tgtGrps == null || tgtGrps.size() < 1) {
-			return;
-		}
-		
-		StringBuffer tgtGrpsStr = new StringBuffer("(");
-		boolean firstTime = true;
-		for (MailingStatisticTgtGrp mailingStatTgtGrp : tgtGrps) {
-			if (!firstTime) {
-				tgtGrpsStr.append(",");
-			} else {
-				firstTime = false;
-			}
-			tgtGrpsStr.append(mailingStatTgtGrp.getId());
-		}
-		tgtGrpsStr.append(")");
-		update(logger, "DELETE FROM mailing_statistic_value_tbl WHERE mailing_stat_tgtgrp_id in " + tgtGrpsStr.toString());
-		update(logger, "DELETE FROM mailing_statistic_tgtgrp_tbl WHERE mailing_stat_tgtgrp_id in " + tgtGrpsStr.toString());
+		// Step 2: Delete target groups
+		final String deleteTargetGroupsSql = "DELETE FROM mailing_statistic_tgtgrp_tbl WHERE mailing_stat_job_id IN (" + queryJobsSql + ")";
+		update(logger, deleteTargetGroupsSql, thresholdDate);
 	}
 
     private class MailingStatTgtGrpMapper implements RowMapper<MailingStatisticTgtGrp> {

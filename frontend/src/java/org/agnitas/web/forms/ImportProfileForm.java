@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.impl.ImportProfileImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.importvalues.Charset;
@@ -39,10 +40,11 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ImportProcessAction;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 /**
  * Form class that incapsulates the data of import profile
@@ -56,7 +58,7 @@ public class ImportProfileForm extends StrutsFormBase {
 
     protected int defaultProfileId;
 
-    protected ImportProfile profile;
+    protected ImportProfile profile = new ImportProfileImpl();
 
     protected String[] allDBColumns;
 
@@ -80,6 +82,9 @@ public class ImportProfileForm extends StrutsFormBase {
 	//Page settings - necessary for properly set up page after validation error
 	private List<ProfileField> availableImportProfileFields;
 	private List<Mailinglist> availableMailinglists;
+	
+	// Set of mediatypes managed by user manually.
+	private Set<Integer> mediatypes = new HashSet<>();
 	
 	public int getProfileId() {
         return profileId;
@@ -188,6 +193,7 @@ public class ImportProfileForm extends StrutsFormBase {
 	@Override
 	public void reset(ActionMapping map, HttpServletRequest request) {
 		super.reset(map, request);
+		profile = new ImportProfileImpl();
 		mailinglists = new HashSet<>();
 		setNumberOfRows(-1);
 	}
@@ -198,7 +204,7 @@ public class ImportProfileForm extends StrutsFormBase {
 
         if (action == ImportProfileAction.ACTION_SAVE) {
             if (AgnUtils.parameterNotEmpty(request, "save")) {
-                if (profile.getName().length() < 3) {
+                if (profile.getName() == null || profile.getName().length() < 3) {
                     actionErrors.add("shortname", new ActionMessage("error.name.too.short"));
                 }
                 if (StringUtils.isNotBlank(profile.getMailForReport())) {
@@ -274,6 +280,33 @@ public class ImportProfileForm extends StrutsFormBase {
 
 	public Set<Integer> getMailinglists() {
 		return mailinglists;
+	}
+
+	public void setMediatype(int id, String value) {
+		if (AgnUtils.interpretAsBoolean(value)) {
+			mediatypes.add(id);
+		} else {
+			mediatypes.remove(id);
+		}
+	}
+
+	public String getMediatype(int id) {
+		return mediatypes.contains(id) ? "on" : "";
+	}
+
+	public Set<MediaTypes> getMediatypes() {
+		Set<MediaTypes> returnSet = new HashSet<>();
+		for (int mediatypeCode : mediatypes) {
+			returnSet.add(MediaTypes.getMediaTypeForCode(mediatypeCode));
+		}
+		return returnSet;
+	}
+
+	public void setMediatypes(Set<MediaTypes> mediatypes) {
+		this.mediatypes.clear();
+		for (MediaTypes mediatype : mediatypes) {
+			this.mediatypes.add(mediatype.getMediaCode());
+		}
 	}
 
 	public void setMailinglistsToShow(Set<Integer> mailinglistsToShow) {

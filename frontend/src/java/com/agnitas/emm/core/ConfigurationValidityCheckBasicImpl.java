@@ -12,7 +12,6 @@ package com.agnitas.emm.core;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
@@ -21,7 +20,6 @@ import javax.sql.DataSource;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -29,7 +27,6 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
-import com.agnitas.beans.ComCompany;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LayoutDao;
@@ -91,115 +88,27 @@ public class ConfigurationValidityCheckBasicImpl implements ConfigurationValidit
 	@Override
 	public void checkValidity(WebApplicationContext webApplicationContext) {
     	try {
-            initializeTargetComplexityIndices();
-
-    		// Migrate SystemUrl from emm.properties into db (keep until EMM Versions 19.10 and 20.04)
-    		migrateEmmPropertiesValueToDb(ConfigValue.SystemUrl, "system", "url");
-
-    		// Migrate BirtUrl from emm.properties into db
-    		migrateEmmPropertiesValueToDb(ConfigValue.BirtUrl, "birt", "url");
-
-    		// Migrate BirtUrlIntern from emm.properties into db
-    		migrateEmmPropertiesValueToDb(ConfigValue.BirtUrlIntern, "birt", "url.intern");
-
-    		// Migrate BirtDrilldownUrl from emm.properties into db
-    		migrateEmmPropertiesValueToDb(ConfigValue.BirtDrilldownUrl, "birt", "drilldownurl");
-
-			migrateBirtKeys();
-
-    		// Migrate HostauthenticationCookiesHttpsOnly from emm.properties into db
-    		migrateEmmPropertiesValueToDb(ConfigValue.HostauthenticationCookiesHttpsOnly, "hostauthentication", "cookies.https.only");
-
-    		// Migrate SmtpMailRelayHostname from emm.properties into db
-    		migrateEmmPropertiesValueToDb(ConfigValue.SmtpMailRelayHostname, "system", "mail.host");
-
-    		// Migrate mailaddresses from emm.properties into db
-    		migrateEmmPropertiesValueToDb(ConfigValue.Mailaddress_Sender, "mailaddress", "sender");
-    		migrateEmmPropertiesValueToDb(ConfigValue.Mailaddress_ReplyTo, "mailaddress", "replyto");
-    		migrateEmmPropertiesValueToDb(ConfigValue.Mailaddress_Bounce, "mailaddress", "bounce");
-    		migrateEmmPropertiesValueToDb(ConfigValue.Mailaddress_Frontend, "mailaddress", "frontend");
-    		migrateEmmPropertiesValueToDb(ConfigValue.Mailaddress_Support, "mailaddress", "support");
-    		migrateEmmPropertiesValueToDb(ConfigValue.Mailaddress_Error, "mailaddress", "error");
-    		migrateEmmPropertiesValueToDb(ConfigValue.MailAddress_UploadDatabase, "mailaddress", "upload.database");
-    		migrateEmmPropertiesValueToDb(ConfigValue.MailAddress_UploadSupport, "mailaddress", "upload.support");
-    		migrateEmmPropertiesValueToDb(ConfigValue.Mailaddress_ReportArchive, "mailaddress", "report_archive");
-    		
-    		migrateLogosAndImages(webApplicationContext);
-    		
-    		removeObsoletePluginDirectories();
-
 			/**
 			 * ATTENTION: Before changing something in Database affecting all companies, please rethink.
 			 * Try if it is possible to make a soft rollout and activate the changes for single companyIDs first. If not, you HAVE TO talk to AGNITAS developer first.
 			 */
+
+    		initiallyConfigureBirtKeys();
+    		migrateLogosAndImages(webApplicationContext);
 		} catch (Exception e) {
 			logger.error("Cannot check installation validity: " + e.getMessage(), e);
 		}
     }
 
-	private void removeObsoletePluginDirectories() throws IOException {
-		if (new File(AgnUtils.getUserHomeDir() + "/emm-plugins").exists()) {
-			FileUtils.deleteDirectory(new File(AgnUtils.getUserHomeDir() + "/emm-plugins"));
-		}
-		
-		if (new File(AgnUtils.getUserHomeDir() + "/birt-plugins").exists()) {
-			FileUtils.deleteDirectory(new File(AgnUtils.getUserHomeDir() + "/birt-plugins"));
-		}
-	}
-
-	private void initializeTargetComplexityIndices() {
-		for (ComCompany company : companyDao.getAllActiveCompanies()) {
-			int companyId = company.getId();
-
-			if (configService.getBooleanValue(ConfigValue.InitializeTargetGroupComplexityIndicesOnStartup, companyId)) {
-				try {
-					targetService.initializeComplexityIndex(companyId);
-					configService.writeOrDeleteIfDefaultBooleanValue(ConfigValue.InitializeTargetGroupComplexityIndicesOnStartup, companyId, false, "Changed by ConfigurationValidityCheck");
-				} catch (Exception e) {
-					logger.error("Failed to initialize target groups complexity indices for company #" + companyId);
-				}
-			}
-		}
-    }
-
-	private void migrateEmmPropertiesValueToDb(ConfigValue configValueItem, String configClass, String configName) throws Exception {
-		String currentValue = configService.getValue(configValueItem);
-		if (StringUtils.isNotBlank(currentValue) && currentValue.startsWith(AgnUtils.getUserHomeDir())) {
-			currentValue = currentValue.replace(AgnUtils.getUserHomeDir(), "${home}");
-		}
-		
-		if (StringUtils.isNotBlank(currentValue)) {
-			boolean foundThisValue = false;
-			boolean foundOtherValue = false;
-			for (Map<String, Object> row : jdbcTemplate.queryForList("SELECT hostname, value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", configClass, configName)) {
-				String hostname = (String) row.get("hostname");
-				String value = (String) row.get("value");
-				if (StringUtils.isNotBlank(value) && value.startsWith(AgnUtils.getUserHomeDir())) {
-					value = value.replace(AgnUtils.getUserHomeDir(), "${home}");
-				}
-				
-				if (StringUtils.isNotBlank(currentValue) && currentValue.equals(value) && (StringUtils.isBlank(hostname) || AgnUtils.getHostName().toLowerCase().equals(hostname))) {
-					foundThisValue = true;
-				} else if (StringUtils.isNotBlank(value) && !value.equals("[to be defined]")) {
-					foundOtherValue = true;
-				}
-			}
-			if (!foundThisValue) {
-				if (foundOtherValue) {
-					configTableDao.storeEntry(configClass, configName, AgnUtils.getHostName(), currentValue, "migrated EMM property to DB");
-				} else {
-					configTableDao.storeEntry(configClass, configName, null, currentValue, "migrated EMM property to DB");
-				}
-			}
-		}
-	}
-
-	private void migrateBirtKeys() throws Exception {
-		// Migrate Birt configuration to db (birt.privatekey)
+	/**
+	 * Insert Birt RSA keys from PEM files into db
+	 */
+	private void initiallyConfigureBirtKeys() throws Exception {
+		// birt.privatekey
 		boolean foundThisBirtPrivateKeyValue = false;
 		boolean foundOtherBirtPrivateKeyValue = false;
-		String birtPrivateKeyFile = configService.getValue(ConfigValue.BirtPrivateKeyFile);
-		if (StringUtils.isNotBlank(birtPrivateKeyFile) && new File(birtPrivateKeyFile).exists()) {
+		String birtPrivateKeyFile = AgnUtils.getUserHomeDir() + "/conf/keys/birt_private.pem";
+		if (new File(birtPrivateKeyFile).exists() && (StringUtils.isBlank(configService.getValue(ConfigValue.BirtPrivateKey)) || "[to be defined]".equals(configService.getValue(ConfigValue.BirtPrivateKey)))) {
 			String birtPrivateKey = RSACryptUtil.getPrivateKey(birtPrivateKeyFile);
 			for (Map<String, Object> row : jdbcTemplate.queryForList("SELECT hostname, value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", "birt", "privatekey")) {
 				String hostname = (String) row.get("hostname");
@@ -222,11 +131,11 @@ public class ConfigurationValidityCheckBasicImpl implements ConfigurationValidit
 			}
 		}
 
-		// Migrate Birt configuration to db (birt.publickey)
+		// birt.publickey
 		boolean foundThisBirtPublicKeyValue = false;
 		boolean foundOtherBirtPublicKeyValue = false;
-		String birtPublicKeyFile = configService.getValue(ConfigValue.BirtPublicKeyFile);
-		if (StringUtils.isNotBlank(birtPublicKeyFile) && new File(birtPublicKeyFile).exists()) {
+		String birtPublicKeyFile = AgnUtils.getUserHomeDir() + "/conf/keys/birt_public.pem";
+		if (new File(birtPublicKeyFile).exists() && (StringUtils.isBlank(configService.getValue(ConfigValue.BirtPublicKey)) || "[to be defined]".equals(configService.getValue(ConfigValue.BirtPublicKey)))) {
 			String birtPublicKey = RSACryptUtil.getPublicKey(birtPublicKeyFile);
 			for (Map<String, Object> row : jdbcTemplate.queryForList("SELECT hostname, value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", "birt", "publickey")) {
 				String hostname = (String) row.get("hostname");

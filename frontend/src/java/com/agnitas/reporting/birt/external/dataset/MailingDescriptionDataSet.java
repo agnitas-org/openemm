@@ -17,7 +17,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,22 +31,14 @@ public class MailingDescriptionDataSet extends BIRTDataSet {
 	public List<String> getMailingDescription (int mailingID){
 		List<String> mailingDescription = new ArrayList<>();
 		String query = getMailingDescriptionQuery(mailingID);
-		Connection connection = null;
-        Statement statement = null;
-        ResultSet resultSet = null;
-        try {
-			connection = getDataSource().getConnection();
-			statement = connection.createStatement();
-			resultSet = statement.executeQuery(query);
+        try (Connection connection = getDataSource().getConnection();
+        		Statement statement = connection.createStatement();
+        		ResultSet resultSet = statement.executeQuery(query)) {
 			if (resultSet.next()){
 				mailingDescription.add(resultSet.getString("mailing_name"));
 			}
 		} catch (SQLException e) {
 			log.error(" SQL-Exception ! Mailing-Description-Query is: " + query , e);
-		} finally {
-			DbUtilities.closeQuietly(connection, "Could not close connection !");
-            DbUtilities.closeQuietly(statement, "Could not close DB-statement !");
-            DbUtilities.closeQuietly(resultSet, "Could not close result set !");
 		}
 		return mailingDescription;
 	}
@@ -57,7 +48,7 @@ public class MailingDescriptionDataSet extends BIRTDataSet {
 	 * @param mailingID
 	 * @return list of email params
 	 *  1st element  emailFormat[0] value[1]
-	 *  2nd element onepixel enabled[0] value[1] 
+	 *  2nd element onepixel enabled[0] value[1]
 	 */
 	public List<String[]> getEmailParams(int mailingID, String language) {
 		if (StringUtils.isBlank(language)) {
@@ -67,17 +58,13 @@ public class MailingDescriptionDataSet extends BIRTDataSet {
 		List<String[]> paramsList = new ArrayList<>();
 		String paramsQuery =  getEmailParamsQuery(mailingID);
 		
-		Connection connection = null;
-        Statement statement = null;
-        ResultSet resultSet = null;
-        try {
-			connection = getDataSource().getConnection();
-			statement = connection.createStatement();
-			resultSet = statement.executeQuery(paramsQuery);
+        try (Connection connection = getDataSource().getConnection();
+        		Statement statement = connection.createStatement();
+        		ResultSet resultSet = statement.executeQuery(paramsQuery)) {
 			if (resultSet.next()) {
 				String emailParams = resultSet.getString("param");
 				int mailFormat = Integer.parseInt(EmailParamExtractor.getMailformat(emailParams));
-				String mailFormatStr = (mailFormat == 0 ? I18nString.getLocaleString("only_Text", language): (mailFormat == 1 ? I18nString.getLocaleString("Text_HTML", language):I18nString.getLocaleString("Text_HTML_OfflineHTML", language) ));		
+				String mailFormatStr = (mailFormat == 0 ? I18nString.getLocaleString("only_Text", language): (mailFormat == 1 ? I18nString.getLocaleString("Text_HTML", language):I18nString.getLocaleString("Text_HTML_OfflineHTML", language) ));
 				 
 				String[] mailFormatValueStringArray = new String[]{I18nString.getLocaleString("Format", language), mailFormatStr};
 				paramsList.add(mailFormatValueStringArray);
@@ -90,10 +77,6 @@ public class MailingDescriptionDataSet extends BIRTDataSet {
 			log.error(" SQL-Exception ! Mailing-Params-Query is: " + paramsQuery , e);
 		} catch (Exception e) {
 			log.error(" Just another exception ?" ,e);
-		} finally {
-            DbUtilities.closeQuietly(connection, "Could not close connection !");
-            DbUtilities.closeQuietly(statement, "Could not close DB-statement !");
-            DbUtilities.closeQuietly(resultSet, "Could not close result set !");
 		}
 		return paramsList;
 	}

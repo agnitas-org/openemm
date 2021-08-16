@@ -40,14 +40,23 @@ public interface MailinglistApprovalDao {
 	List<Integer> getAdminsDisallowedToUseMailinglist(@VelocityCheck int companyId, int mailinglistId);
 
 	/**
-	 * Check is admin have access to certain mailing list.
+	 * Check if admin has access to certain mailing list.
 	 */
 	boolean isAdminHaveAccess(@VelocityCheck int companyId, int adminId, int mailingListId);
 
 	/**
-	 * Check is admin have any disabled mailing lists.
+	 * Check if admin has any disabled mailing lists.
 	 */
 	boolean hasAnyDisabledMailingListsForAdmin(@VelocityCheck int companyId, int adminId);
+
+	/**
+	 * Check if admin has any disabled mailing lists binding for the recipient
+	 * @param companyId 	company identifier
+	 * @param adminId		admin identifier
+	 * @param recipientId	recipient identifier
+	 * @return true if admin has at least one disabled mailing list that bound to the recipient otherwise false
+	 */
+	boolean hasAnyDisabledRecipientBindingsForAdmin(@VelocityCheck int companyId, int adminId, int recipientId);
 
 	/**
 	 * Add rows to disabled_mailinglist_tbl for each mailinglist and chosen admin. <br>
@@ -87,4 +96,5 @@ public interface MailinglistApprovalDao {
 	 */
 	void allowAllAdminsToUseMailinglist(@VelocityCheck int companyId, int mailinglistId);
 
+	List<Integer> getMailinglistsWithMailinglistApproval(int companyId);
 }

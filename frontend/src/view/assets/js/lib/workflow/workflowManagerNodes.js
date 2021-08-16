@@ -39,7 +39,7 @@
 
     this.nodesContainerDOMId = data.nodesContainerDOMId;
     this.autoOptData = $.extend({resultMailingId: 0}, data.autoOptData);
-    this.localeDateNTimePattern = data.localeDateNTimePattern;
+    this.localeDateTimePattern = data.localeDateTimePattern;
 
     this.MAX_NUMBER_OF_TARGETS_FOR_DISPLAY = 2;
     this.MAX_NUMBER_OF_REPORTS_FOR_DISPLAY = 2;
@@ -402,7 +402,7 @@
 
       // start/stop icon
       if (node.type == nodeFactory.NODE_TYPE_START || node.type == nodeFactory.NODE_TYPE_STOP) {
-        var startStopDateStr = DateTimeUtils.getDateTimeStr(node.data.date, node.data.hour, node.data.minute, this.localeDateNTimePattern);
+        var startStopDateStr = DateTimeUtils.getDateTimeStr(node.data.date, node.data.hour, node.data.minute, this.localeDateTimePattern);
 
         // add start date
         if (node.type == nodeFactory.NODE_TYPE_START && node.data.startType == constants.startTypeDate) {
@@ -448,7 +448,7 @@
       else if (node.type === nodeFactory.NODE_TYPE_DEADLINE) {
         // add deadline date
         if (node.data.deadlineType === constants.deadlineTypeFixedDeadline) {
-          var decisionDateStr = DateTimeUtils.getDateTimeStr(node.data.date, node.data.hour, node.data.minute, this.localeDateNTimePattern);;
+          var decisionDateStr = DateTimeUtils.getDateTimeStr(node.data.date, node.data.hour, node.data.minute, this.localeDateTimePattern);;
           node.elementJQ.append($("<div class='icon-extra-info'>" + t('workflow.deadline.title') + ":<br>" + decisionDateStr + "</div>"));
         }
         // add delay
@@ -529,7 +529,7 @@
           }
 
           if (!!node.data.decisionDate) {
-            var dateStr = DateTimeUtils.getDateTimeStr(node.data.decisionDate, null, null, this.localeDateNTimePattern);;
+            var dateStr = DateTimeUtils.getDateTimeStr(node.data.decisionDate, null, null, this.localeDateTimePattern);;
             textValue += ", " + t('workflow.defaults.date') + ": " + dateStr;
           }
         }
@@ -566,9 +566,15 @@
 
       // recipient
       else if (node.type == nodeFactory.NODE_TYPE_RECIPIENT) {
-        var textToShow = t('workflow.mailinglist.short') + ": " + allUsedEntity.allMailinglists[node.data.mailinglistId];
+        var textToShow = "";
+        if(node.isDependent !== true && node.isRecipientDependent !== true) {
+          textToShow = t('workflow.mailinglist.short') + ": " + allUsedEntity.allMailinglists[node.data.mailinglistId];
+        }
         if (node.data.targets && node.data.targets.length > 0) {
-          textToShow += "<br>" + t('workflow.target.short') + ": ";
+          if(textToShow.length > 0) {
+            textToShow += "<br>";
+          }
+          textToShow += t('workflow.target.short') + ": ";
           for(i = 0; i < node.data.targets.length; i++) {
             textToShow += allUsedEntity.allTargets[node.data.targets[i]];
             if (i == self.MAX_NUMBER_OF_TARGETS_FOR_DISPLAY - 1 && node.data.targets.length > self.MAX_NUMBER_OF_TARGETS_FOR_DISPLAY) {

@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.agnitas.actions.EmmAction;
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -30,6 +29,7 @@ import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.UserFormImporter;
 import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DbColumnType;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.web.forms.BulkActionForm;
 import org.agnitas.web.forms.FormUtils;
@@ -50,11 +50,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.LinkService;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.ComEmmActionService;
+import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.userform.dto.ResultSettings;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.emm.core.userform.form.UserFormForm;
@@ -63,6 +65,7 @@ import com.agnitas.emm.core.userform.service.ComUserformService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
+import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
@@ -84,7 +87,10 @@ public class UserFormController {
 	private VelocityDirectiveScriptValidator velocityValidator;
 	private UserFormImporter userFormImporter;
 
-	public UserFormController(WebStorage webStorage, ComUserformService userformService, ComEmmActionService emmActionService, ConfigService configService, UserActivityLogService userActivityLogService, ExtendedConversionService conversionService, LinkService linkService, VelocityDirectiveScriptValidator velocityValidator, UserFormImporter userFormImporter) {
+	public UserFormController(WebStorage webStorage, ComUserformService userformService, ComEmmActionService emmActionService,
+							  ConfigService configService, UserActivityLogService userActivityLogService,
+							  ExtendedConversionService conversionService, LinkService linkService,
+							  VelocityDirectiveScriptValidator velocityValidator, UserFormImporter userFormImporter) {
 		this.webStorage = webStorage;
 		this.userformService = userformService;
 		this.emmActionService = emmActionService;
@@ -102,9 +108,7 @@ public class UserFormController {
 			AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
 			FormUtils.syncNumberOfRows(webStorage, WebStorage.USERFORM_OVERVIEW, form);
 			
-			PaginatedListImpl<UserFormDto> userFormList = userformService
-					.getUserFormsWithActionData(admin, form.getSort(), form.getOrder(), form.getPage(), form.getNumberOfRows(), form.getFilter());
-			model.addAttribute("userFormList", userFormList);
+			model.addAttribute("webformListJson", userformService.getUserFormsJson(admin));
 
 			loadUserFormUrlPatterns(admin, model);
 		} catch (Exception e) {
@@ -121,14 +125,18 @@ public class UserFormController {
 	}
 
 	@PostMapping("/saveActiveness.action")
-	public String saveActiveness(ComAdmin admin, @ModelAttribute("form") UserFormsForm form, Popups popups) {
+	public @ResponseBody BooleanResponseDto saveActiveness(ComAdmin admin, @ModelAttribute("form") UserFormsForm form, Popups popups) {
 		UserAction userAction = userformService.setActiveness(admin.getCompanyID(), form.getActiveness());
+		boolean result = false;
 		if (Objects.nonNull(userAction)) {
 			writeUserActivityLog(admin, userAction);
 			popups.success("default.changes_saved");
+			result = true;
+		} else {
+			popups.alert("Error");
 		}
 		
-		return "redirect:/webform/list.action";
+		return new BooleanResponseDto(popups, result);
 	}
 	
 	@GetMapping(value = {"/new.action", "/0/view.action"})
@@ -141,6 +149,10 @@ public class UserFormController {
 		loadUserFormUrlPatterns(admin, model);
 		List<EmmAction> emmActions = emmActionService.getEmmNotLinkActions(admin.getCompanyID(), false);
 		model.addAttribute("emmActions", emmActions);
+
+		if(admin.permissionAllowed(Permission.FORMS_CREATOR)) {
+			loadFormBuilderData(admin, model);
+		}
 		
 		return "userform_view";
 	}
@@ -160,7 +172,13 @@ public class UserFormController {
 
 			List<EmmAction> emmActions = emmActionService.getEmmNotLinkActions(admin.getCompanyID(), false);
 			model.addAttribute("emmActions", emmActions);
-			
+
+			model.addAttribute("formCssLocation", configService.getValue(ConfigValue.UserFormCssLocation));
+
+			if(admin.permissionAllowed(Permission.FORMS_CREATOR)) {
+				loadFormBuilderData(admin, model);
+			}
+
 			writeUserActivityLog(admin, "view user form", String.format("%s (ID:%d)", userForm.getName(), userForm.getId()));
 		} catch (Exception e) {
 			popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
@@ -184,6 +202,9 @@ public class UserFormController {
 
 				if (CollectionUtils.isNotEmpty(result.getErrorMessages())) {
 					result.getErrorMessages().forEach(popups::alert);
+				}
+				if(CollectionUtils.isNotEmpty(result.getWarningMessages())) {
+					result.getWarningMessages().forEach(popups::warning);
 				}
 
 				if (formId > 0) {
@@ -292,7 +313,7 @@ public class UserFormController {
         return ResponseEntity.ok()
                 .contentLength(exportedFile.length())
                 .contentType(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionHeaderContent(downloadFileName))
+                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(downloadFileName))
                 .body(new DeleteFileAfterSuccessReadResource(exportedFile));
 	}
 	
@@ -302,6 +323,9 @@ public class UserFormController {
 			ServiceResult<Integer> result = userformService.cloneUserForm(admin, id);
 			if (CollectionUtils.isNotEmpty(result.getErrorMessages())) {
 				result.getErrorMessages().forEach(popups::alert);
+			}
+			if(CollectionUtils.isNotEmpty(result.getWarningMessages())) {
+				result.getWarningMessages().forEach(popups::warning);
 			}
 
 			int cloneId = result.getResult();
@@ -378,7 +402,7 @@ public class UserFormController {
         popups.alert("Error");
         return "messages";
     }
-	
+
 	private void writeUserActivityLog(ComAdmin admin, String action, String description) {
 		writeUserActivityLog(admin, new UserAction(action, description));
 	}
@@ -391,4 +415,13 @@ public class UserFormController {
 			logger.info("Userlog: " + admin.getUsername() + " " + userAction.getAction() + " " +  userAction.getDescription());
 		}
 	}
+
+	private void loadFormBuilderData(final  ComAdmin admin, final Model model) {
+		model.addAttribute("names", userformService.getUserFormNames(admin.getCompanyID()));
+		model.addAttribute("mediapoolImages", userformService.getMediapoolImages(admin));
+		model.addAttribute("textProfileFields", userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Characters));
+		model.addAttribute("dateProfileFields", userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Date, DbColumnType.SimpleDataType.DateTime));
+		model.addAttribute("numberProfileFields", userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Numeric, DbColumnType.SimpleDataType.Float));
+	}
+
 }

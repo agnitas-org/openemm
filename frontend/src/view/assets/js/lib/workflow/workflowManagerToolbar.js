@@ -50,18 +50,13 @@
     },
 
     setUndoAvailable: function(isAvailable) {
-      if (isAvailable) {
-        $('#undoButtonFake').css("visibility", "hidden");
-        $('#undoButton').removeClass("backgroundImageNone");
-      } else {
-        $('#undoButtonFake').css("visibility", "visible");
-        $('#undoButton').addClass("backgroundImageNone");
-      }
+      $('#undoButton').toggleClass('disabled', !isAvailable);
       $('#undoItem').prop('disabled', !isAvailable);
     },
 
     setDeletionAvailable: function(isAvailable) {
-      $('#deleteButton, #deleteItem').prop('disabled', !isAvailable);
+      $('#deleteButton').toggleClass('disabled', !isAvailable);
+      $('#deleteItem').prop('disabled', !isAvailable);
     }
 
   };

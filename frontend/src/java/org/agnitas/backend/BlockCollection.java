@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.agnitas.backend.dao.ComponentDAO;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Const;
 import org.agnitas.util.Log;
@@ -608,7 +609,12 @@ public class BlockCollection {
 					link = "<" + data.rdirDomain + "/uq.html?uid=[agnUID]>";
 				}
 			}
-			method = (link != null ? (link + ", ") : "") + "<mailto:" + env + "?subject=unsubscribe:[agnUID]>";
+			method = link != null ? link + ", " : "";
+			if (data.mailloopDomain != null) {
+				method += data.substituteString ("<mailto:fbl@%(mailloop-domain)?subject=unsubscribe:[agnUID]>", extra);
+			} else if (env != null) {
+				method += "<mailto:" + env + "?subject=unsubscribe:[agnUID]>";
+			}
 		} else {
 			method = method.trim();
 			if (method.equals("-")) {
@@ -726,13 +732,23 @@ public class BlockCollection {
 	 * Reads the blocks used by this mailing from the database
 	 */
 	protected void readBlockData() throws Exception {
-		int[] comptypes = null;
+		MailingComponentType[] comptypes = null;
 
 		if (data.maildropStatus.isPreviewMailing()) {
 			if (data.previewCreateAll) {
-				comptypes = new int[] { 0, 4, 5, 6, 7 };
+				comptypes = new MailingComponentType[] {
+					MailingComponentType.Template,
+					MailingComponentType.PersonalizedAttachment,
+					MailingComponentType.HostedImage,
+					MailingComponentType.Font,
+					MailingComponentType.PrecAAttachement
+				};
 			} else {
-				comptypes = new int[] { 0, 4, 5 };
+				comptypes = new MailingComponentType[] {
+					MailingComponentType.Template,
+					MailingComponentType.PersonalizedAttachment,
+					MailingComponentType.HostedImage,
+				};
 			}
 		}
 
@@ -779,7 +795,7 @@ public class BlockCollection {
 		}
 	}
 
-	protected List<BlockData> retrieveComponents(int[] comptypes) throws SQLException {
+	protected List<BlockData> retrieveComponents(MailingComponentType[] comptypes) throws SQLException {
 		return componentDao.retrieve(data.dbase, comptypes);
 	}
 

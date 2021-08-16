@@ -4,8 +4,10 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="importProfileForm" type="org.agnitas.web.forms.ImportProfileForm"--%>
+<%--@elvariable id="allowedModesForAllMailinglists" type="java.util.List<java.lang.Integer>"--%>
 
 <c:set var="isMailingListSelectionEditable" value="${importProfileForm.profile.actionForNewRecipients eq 0}"/>
 
@@ -18,6 +20,23 @@
     </div>
 
     <div class="tile-content tile-content-forms" id="tile-recipient-autoimport-mailinglists">
+        <emm:ShowByPermission token="import.mailinglists.all">
+            <div class="form-group" id="all-mailinglists-wrapper"
+                 data-initializer="allMailinglists-checkbox"
+                    data-show-by-select="#import_mode_select" data-show-by-select-values="${allowedModesForAllMailinglists}">
+                <div class="col-sm-4">
+                    <label class="control-label"><bean:message key="import.mailinglists.all"/></label>
+                </div>
+                <div class="col-sm-8">
+                    <html:hidden property="__STRUTS_CHECKBOX_profile.mailinglistsAll" value="false"/>
+                    <label class="toggle">
+                        <agn:agnCheckbox styleId="allMalinglistsCheckbox" property="profile.mailinglistsAll" data-action="allMailinglists-checkbox"/>
+                        <div class="toggle-control"></div>
+                    </label>
+                </div>
+            </div>
+        </emm:ShowByPermission>
+
         <div class="form-group">
             <div class="col-sm-4">
                 <label class="control-label">

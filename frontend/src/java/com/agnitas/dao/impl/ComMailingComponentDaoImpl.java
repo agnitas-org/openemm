@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.factory.MailingComponentFactory;
 import org.agnitas.dao.impl.BaseDaoImpl;
@@ -44,8 +45,8 @@ import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.dao.ComTrackableLinkDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.util.ImageUtils;
 import com.agnitas.web.CdnImage;
-import com.agnitas.web.ShowImageServlet;
 
 public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailingComponentDao {
 	/**
@@ -75,19 +76,19 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 	}
 
 	@Override
-	public List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID, int componentType) {
+	public List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID, MailingComponentType componentType) {
 		return getMailingComponents(mailingID, companyID, componentType, true);
 	}
 
 	@Override
-	public List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID, int componentType, boolean includeContent) {
+	public List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID, MailingComponentType componentType, boolean includeContent) {
 		String sqlGetComponents = "SELECT company_id, mailing_id, component_id, compname, comppresent, comptype, mtype, target_id, url_id, description, timestamp" +
 				(includeContent ? ", emmblock, binblock " : " ") +
 				"FROM component_tbl " +
 				"WHERE company_id = ? AND mailing_id = ? AND comptype = ? " +
 				"ORDER BY compname ASC";
 
-		return select(logger, sqlGetComponents, new MailingComponentRowMapper(includeContent), companyID, mailingID, componentType);
+		return select(logger, sqlGetComponents, new MailingComponentRowMapper(includeContent), companyID, mailingID, componentType.getCode());
 	}
 
 	@Override
@@ -106,18 +107,18 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 		// Sort results (mobile components after their base components)
 		Collections.sort(mailingComponentList, (mailingComponent1, mailingComponent2) -> {
 			String name1 = mailingComponent1.getComponentName();
-			if (name1.startsWith(ShowImageServlet.MOBILE_IMAGE_PREFIX)) {
-				name1 = name1.substring(ShowImageServlet.MOBILE_IMAGE_PREFIX.length());
+			if (name1.startsWith(ImageUtils.MOBILE_IMAGE_PREFIX)) {
+				name1 = name1.substring(ImageUtils.MOBILE_IMAGE_PREFIX.length());
 			}
 			String name2 = mailingComponent2.getComponentName();
-			if (name2.startsWith(ShowImageServlet.MOBILE_IMAGE_PREFIX)) {
-				name2 = name2.substring(ShowImageServlet.MOBILE_IMAGE_PREFIX.length());
+			if (name2.startsWith(ImageUtils.MOBILE_IMAGE_PREFIX)) {
+				name2 = name2.substring(ImageUtils.MOBILE_IMAGE_PREFIX.length());
 			}
 			if (name1.equals(name2)) {
-				if (mailingComponent1.getComponentName().startsWith(ShowImageServlet.MOBILE_IMAGE_PREFIX)) {
-					return mailingComponent2.getComponentName().startsWith(ShowImageServlet.MOBILE_IMAGE_PREFIX) ? 0 : 1;
+				if (mailingComponent1.getComponentName().startsWith(ImageUtils.MOBILE_IMAGE_PREFIX)) {
+					return mailingComponent2.getComponentName().startsWith(ImageUtils.MOBILE_IMAGE_PREFIX) ? 0 : 1;
 				} else {
-					return mailingComponent2.getComponentName().startsWith(ShowImageServlet.MOBILE_IMAGE_PREFIX) ? -1 : 0;
+					return mailingComponent2.getComponentName().startsWith(ImageUtils.MOBILE_IMAGE_PREFIX) ? -1 : 0;
 				}
 			} else {
 				return name1.compareTo(name2);
@@ -194,7 +195,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 		int comppresent = 1;
 
 		try {
-			if (mailingComponent.getType() != 0 && StringUtils.isNotBlank(mailingComponent.getLink()) && mailingComponent.getUrlID() == 0) {
+			if (mailingComponent.getType() != MailingComponentType.Template && StringUtils.isNotBlank(mailingComponent.getLink()) && mailingComponent.getUrlID() == 0) {
 				Set<String> existingLinkUrls = comTrackableLinkDao.getTrackableLinks(mailingComponent.getCompanyID(), mailingComponent.getMailingID())
 					.stream().map(ComTrackableLink::getFullUrl).collect(Collectors.toSet());
 				// Only create new link if its url does not exist by now
@@ -219,7 +220,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
                 if (isOracleDB()) {
                 	int newID = selectInt(logger, "SELECT component_tbl_seq.NEXTVAL FROM DUAL");
                 	String sql = "INSERT INTO component_tbl (component_id, mailing_id, company_id, compname, comptype, mtype, target_id, url_id, mailtemplate_id, comppresent, timestamp, description) VALUES (" + AgnUtils.repeatString("?", 12, ", ") + ")";
-                    int touchedLines = update(logger, sql, newID, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), mailtemplateID, comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription());
+                    int touchedLines = update(logger, sql, newID, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), mailtemplateID, comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription());
                     if (touchedLines != 1) {
                         throw new RuntimeException("Illegal insert result");
                     } else {
@@ -237,7 +238,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
                     mailingComponent.setId(newID);
                 } else {
                 	String insertStatement = "INSERT INTO component_tbl (mailing_id, company_id, compname, comptype, mtype, target_id, url_id, mailtemplate_id, comppresent, timestamp, description) VALUES (" + AgnUtils.repeatString("?", 11, ", ") + ")";
-                    int newID = insertIntoAutoincrementMysqlTable(logger, "component_id", insertStatement, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), mailtemplateID, comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription());
+                    int newID = insertIntoAutoincrementMysqlTable(logger, "component_id", insertStatement, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), mailtemplateID, comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription());
 					try {
 						updateBlob(logger, "UPDATE component_tbl SET binblock = ? WHERE component_id = ?", mailingComponent.getBinaryBlock(), newID);
 						updateClob(logger, "UPDATE component_tbl SET emmblock = ? WHERE component_id = ?", mailingComponent.getEmmBlock(), newID);
@@ -252,7 +253,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
                 mailingComponent.setTimestamp(new Date());
 				
 				String sql = "UPDATE component_tbl SET mailing_id = ?, company_id = ?, compname = ?, comptype = ?, mtype = ?, target_id = ?, url_id = ?, comppresent = ?, timestamp = ?, description = ? WHERE component_id = ?";
-				int touchedLines = update(logger, sql, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription(), mailingComponent.getId());
+				int touchedLines = update(logger, sql, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription(), mailingComponent.getId());
 				if (touchedLines != 1) {
 					throw new RuntimeException("Illegal update result");
 				} else {
@@ -305,11 +306,11 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 
 		if (includeExternalImages) {
 			sqlGetNames += " AND comptype IN (?, ?)";
-			sqlParameters.add(MailingComponent.TYPE_IMAGE);
-			sqlParameters.add(MailingComponent.TYPE_HOSTED_IMAGE);
+			sqlParameters.add(MailingComponentType.Image.getCode());
+			sqlParameters.add(MailingComponentType.HostedImage.getCode());
 		} else {
 			sqlGetNames += " AND comptype = ?";
-			sqlParameters.add(MailingComponent.TYPE_HOSTED_IMAGE);
+			sqlParameters.add(MailingComponentType.HostedImage.getCode());
 		}
 
 		Map<Integer, String> map = new HashMap<>();
@@ -319,7 +320,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 
 	@Override
 	public Map<Integer, Integer> getImageComponentsSizes(@VelocityCheck int companyID, int mailingID) {
-		Object[] sqlParameters = new Object[] {companyID, mailingID, MailingComponent.TYPE_IMAGE, MailingComponent.TYPE_HOSTED_IMAGE};
+		Object[] sqlParameters = new Object[] { companyID, mailingID, MailingComponentType.Image.getCode(), MailingComponentType.HostedImage.getCode() };
 		String sql;
 		if (isOracleDB()) {
 			sql = "SELECT COALESCE(DBMS_LOB.GETLENGTH(binblock), 0) image_size, component_id FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype IN (?, ?)";
@@ -335,7 +336,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 	@Override
 	public Map<Integer, Date> getImageComponentsTimestamps(@VelocityCheck int companyID, int mailingID) {
 		String sql = "SELECT timestamp, component_id FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype IN (?, ?)";
-		Object[] sqlParameters = new Object[]{companyID, mailingID, MailingComponent.TYPE_IMAGE, MailingComponent.TYPE_HOSTED_IMAGE};
+		Object[] sqlParameters = new Object[]{companyID, mailingID, MailingComponentType.Image.getCode(), MailingComponentType.HostedImage.getCode()};
 
 		Map<Integer, Date> map = new HashMap<>();
 		query(logger, sql, rs -> map.put(rs.getInt("component_id"), rs.getTimestamp("timestamp")), sqlParameters);
@@ -355,9 +356,9 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 	}
 
 	@Override
-	public List<MailingComponent> getMailingComponentsByType(int componentType, @VelocityCheck int companyID) {
+	public List<MailingComponent> getMailingComponentsByType(MailingComponentType componentType, @VelocityCheck int companyID) {
 		String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE company_id = ? AND comptype = ? ORDER BY compname ASC";
-		return select(logger, componentSelect, new MailingComponentRowMapper(), companyID, componentType);
+		return select(logger, componentSelect, new MailingComponentRowMapper(), companyID, componentType.getCode());
 	}
 
 	@Override
@@ -387,23 +388,24 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 	}
 
 	@Override
-	public boolean deleteHostedImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds) {
+	public boolean deleteImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds) {
 		if (CollectionUtils.isEmpty(bulkIds)) {
 			return false;
 		}
 
-		String sqlDeleteImages = "DELETE FROM component_tbl " +
-				"WHERE company_id = ? AND mailing_id = ? AND comptype = ? AND component_id IN (" + StringUtils.join(bulkIds, ", ") + ")";
+		String sqlDeleteImages = "DELETE FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype in (?, ?) AND component_id IN (" + StringUtils.join(bulkIds, ", ") + ")";
 
-		return update(logger, sqlDeleteImages, companyId, mailingId, MailingComponent.TYPE_HOSTED_IMAGE) > 0;
+		return update(logger, sqlDeleteImages, companyId, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode()) > 0;
 	}
 
     @Override
-    public List<MailingComponent> getMailingComponentsByType(@VelocityCheck int companyID, int mailingID, List<Integer> types) {
+    public List<MailingComponent> getMailingComponentsByType(@VelocityCheck int companyID, int mailingID, List<MailingComponentType> types) {
 		if (CollectionUtils.isEmpty(types)) {
 			return new ArrayList<>();
 		}
-        String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype IN (" + StringUtils.join(types, ", ") + ") ORDER BY comptype DESC, compname ASC";
+        String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE company_id = ? AND mailing_id = ?"
+        	+ " AND comptype IN (" + types.stream().map(e -> Integer.toString(e.getCode())).collect(Collectors.joining(", ")) + ") ORDER BY comptype DESC, compname ASC";
+        
         List<MailingComponent> mailingComponentList = select(logger, componentSelect, new MailingComponentRowMapper(), companyID, mailingID);
 
         return mailingComponentList;
@@ -428,7 +430,11 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 			component.setMailingID(resultSet.getInt("mailing_id"));
 			component.setId(resultSet.getInt("component_id"));
 			component.setComponentName(resultSet.getString("compname"));
-			component.setType(resultSet.getInt("comptype"));
+			try {
+				component.setType(MailingComponentType.getMailingComponentTypeByCode(resultSet.getInt("comptype")));
+			} catch (Exception e) {
+				throw new SQLException("Invalid mailing component type found: " + resultSet.getInt("comptype"), e);
+			}
 			component.setPresent(resultSet.getInt("comppresent"));
 			component.setTargetID(resultSet.getInt("target_id"));
 			component.setUrlID(resultSet.getInt("url_id"));
@@ -439,6 +445,9 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 				Blob blob = resultSet.getBlob("binblock");
 				// binblock sometimes contains an array "byte[1] = {0}", which also signals empty binary data
 				
+				// Only store one of type of data: emmblock or binblock
+				// Exemption: Personalized PDF attachments require emmblock and binblock to be filled with different files
+				
 				if (blob != null && blob.length() > 1) {
 					try (InputStream dataStream = blob.getBinaryStream()) {
 						byte[] data = IOUtils.toByteArray(dataStream);
@@ -446,7 +455,9 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 					} catch (Exception ex) {
 						logger.error("Error:" + ex, ex);
 					}
-				} else {
+				}
+				
+				if (blob == null || blob.length() <= 1 || "application/pdf".equalsIgnoreCase(resultSet.getString("mtype"))) {
 					component.setEmmBlock(resultSet.getString("emmblock"), resultSet.getString("mtype"));
 				}
 			}
@@ -456,7 +467,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 	}
 
 	@Override
-    public int getImageComponent(@VelocityCheck int companyId, int mailingId, int componentType) {
+    public int getImageComponent(@VelocityCheck int companyId, int mailingId, MailingComponentType componentType) {
 		String sqlGetComponentId = "SELECT component_id FROM component_tbl " +
 				"WHERE company_id = ? AND mailing_id = ? AND comptype = ? " +
 				"ORDER BY timestamp DESC";
@@ -467,13 +478,13 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 			sqlGetComponentId += " LIMIT 1";
 		}
 
-        return selectInt(logger, sqlGetComponentId, companyId, mailingId, componentType);
+        return selectInt(logger, sqlGetComponentId, companyId, mailingId, componentType.getCode());
     }
 
 	@Override
 	public List<MailingComponent> getPreviewHeaderComponents(int mailingID, @VelocityCheck int companyID) {
 		return select(logger, "SELECT * FROM component_tbl WHERE (comptype = ? OR comptype = ?) AND mailing_id = ? AND company_id = ? ORDER BY component_id", new MailingComponentRowMapper(),
-				MailingComponent.TYPE_ATTACHMENT, MailingComponent.TYPE_PERSONALIZED_ATTACHMENT, mailingID, companyID);
+				MailingComponentType.Attachment.getCode(), MailingComponentType.PersonalizedAttachment.getCode(), mailingID, companyID);
 	}
 
 	@Override
@@ -492,18 +503,26 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 	}
 
 	@Override
-	public CdnImage getCdnImage(int companyID, int mailingID, String imageName) {
+	public CdnImage getCdnImage(int companyID, int mailingID, String imageName, boolean mobile) {
 		if (companyID == 0) {
 			return null;
 		}
-
-		String sql;
-		if (isOracleDB()) {
-			sql = "SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?";
-		} else {
-			sql = "SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?";
+		
+		List<Map<String, Object>> results = null;
+		if (mobile) {
+			if (isOracleDB()) {
+				results = select(logger, "SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, ImageUtils.MOBILE_IMAGE_PREFIX + imageName);
+			} else {
+				results = select(logger, "SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, ImageUtils.MOBILE_IMAGE_PREFIX + imageName);
+			}
 		}
-		List<Map<String, Object>> results = select(logger, sql, companyID, mailingID, imageName);
+		if (results == null || results.size() == 0) {
+			if (isOracleDB()) {
+				results = select(logger, "SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, imageName);
+			} else {
+				results = select(logger, "SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, imageName);
+			}
+		}
 		if (results.size() <= 0) {
 			return null;
 		} else {
@@ -514,7 +533,20 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 				cdnID = AgnUtils.generateNewUUID().toString().replace("-", "").toUpperCase();
 				int touchedLines = update(logger, "UPDATE component_tbl SET cdn_id = ? WHERE company_id = ? AND mailing_id = ? AND component_id = ? AND cdn_id IS NULL", cdnID, companyID, mailingID, componentID);
 				if (touchedLines == 0) {
-					results = select(logger, sql, companyID, mailingID, imageName);
+					if (mobile) {
+						if (isOracleDB()) {
+							results = select(logger, "SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, ImageUtils.MOBILE_IMAGE_PREFIX + imageName);
+						} else {
+							results = select(logger, "SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, ImageUtils.MOBILE_IMAGE_PREFIX + imageName);
+						}
+					}
+					if (results == null || results.size() == 0) {
+						if (isOracleDB()) {
+							results = select(logger, "SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, imageName);
+						} else {
+							results = select(logger, "SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, imageName);
+						}
+					}
 					result = results.get(0);
 					cdnID = (String) result.get("cdn_id");
 				}
@@ -554,7 +586,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 	}
 
 	@Override
-	public boolean updateBinBlockBulk(@VelocityCheck int companyId, Collection<Integer> mailingIds, int componentType, Collection<String> namePatterns, byte[] value) throws Exception {
+	public boolean updateBinBlockBulk(@VelocityCheck int companyId, Collection<Integer> mailingIds, MailingComponentType componentType, Collection<String> namePatterns, byte[] value) throws Exception {
 		if (companyId < 0 || CollectionUtils.isEmpty(mailingIds) || CollectionUtils.isEmpty(namePatterns)) {
 			return false;
 		}
@@ -562,7 +594,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 		List<Object> sqlParameters = new ArrayList<>();
 
 		sqlParameters.add(companyId);
-		sqlParameters.add(componentType);
+		sqlParameters.add(componentType.getCode());
 		sqlParameters.addAll(namePatterns);
 
 		String sqlFilterByMailingId = DbUtilities.makeBulkInClauseWithDelimiter(isOracleDB(), "mailing_id", mailingIds, null);

@@ -16,9 +16,6 @@ import com.agnitas.emm.landingpage.beans.RedirectSettings;
 
 public interface LandingpageDao {
 	
-	@Deprecated
-	public String getLandingPage(String requestUrl);
-	
 	public Optional<RedirectSettings> getLandingPageRedirectionForDomain(final String domain);
 	
 }

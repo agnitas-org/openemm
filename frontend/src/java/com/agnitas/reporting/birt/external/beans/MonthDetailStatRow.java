@@ -17,9 +17,8 @@ public class MonthDetailStatRow {
 	private String kiloByte;
 	private int mailingCount;
 	private String mailtype;
-    private int openings;
-    private int clickRecipients;
     private int mailingId;
+    private int total;
 
     public String getDate() {
 		return date;
@@ -61,22 +60,6 @@ public class MonthDetailStatRow {
 		return mailtype;
 	}
 
-    public int getOpenings() {
-        return openings;
-    }
-
-    public void setOpenings(int openings) {
-        this.openings = openings;
-    }
-
-    public int getClickRecipients() {
-        return clickRecipients;
-    }
-
-    public void setClickRecipients(int clickRecipients) {
-        this.clickRecipients = clickRecipients;
-    }
-
     public int getMailingId() {
         return mailingId;
     }
@@ -92,4 +75,12 @@ public class MonthDetailStatRow {
     public void setDescription(String description) {
         this.description = description;
     }
+
+	public int getTotal() {
+		return total;
+	}
+
+	public void setTotal(int total) {
+		this.total = total;
+	}
 }

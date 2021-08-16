@@ -25,6 +25,7 @@ import com.agnitas.emm.core.upload.service.dto.EmailEntry;
 import com.agnitas.emm.core.upload.service.dto.PageSetUp;
 import com.agnitas.emm.core.upload.service.dto.PageUploadData;
 import com.agnitas.emm.core.upload.service.dto.UploadFileDescription;
+import com.agnitas.web.mvc.Popups;
 
 public interface UploadService {
 
@@ -40,7 +41,7 @@ public interface UploadService {
 
     boolean hasPermissionForDelete(int id, int adminId, int companyId);
 
-    void uploadFiles(UploadFileDescription description, List<MultipartFile> files);
+	void uploadFiles(UploadFileDescription description, List<MultipartFile> files, Popups popups, ComAdmin admin);
 
     File getDataForDownload(int id);
 
@@ -50,5 +51,4 @@ public interface UploadService {
 
     @Deprecated
     FormFile getFormFileByUploadId(int uploadID, String mime);
-
 }

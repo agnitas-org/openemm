@@ -38,6 +38,12 @@
             <mvc:exclude-mapping path="/form.action"/>
             <bean class="com.agnitas.web.perm.AuthorizationInterceptor"/>
         </mvc:interceptor>
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <mvc:exclude-mapping path="/assets/**"/>
+            <mvc:exclude-mapping path="/form.action"/>
+            <bean class="com.agnitas.web.perm.XssInterceptor"/>
+        </mvc:interceptor>
     </mvc:interceptors>
 
     <mvc:interceptors>

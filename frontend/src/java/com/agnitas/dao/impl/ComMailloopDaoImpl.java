@@ -54,13 +54,17 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 		if (mailloopId == 0 || companyId == 0) {
 			return null;
 		} else {
-			return selectObjectDefaultNull(logger, "SELECT * FROM mailloop_tbl WHERE rid = ? AND company_id = ?", new Mailloop_RowMapper(), mailloopId, companyId);
+			return selectObjectDefaultNull(logger, "SELECT rid, company_id, description, shortname, forward, filter_address, forward_enable, "
+					+ "ar_enable, timestamp, subscribe_enable, mailinglist_id, form_id, autoresponder_mailing_id, security_token "
+					+ "FROM mailloop_tbl WHERE rid = ? AND company_id = ?", new Mailloop_RowMapper(), mailloopId, companyId);
 		}
 	}
 
 	@Override
 	public List<Mailloop> getMailloops(@VelocityCheck int companyId) {
-		return select(logger, "SELECT * FROM mailloop_tbl WHERE company_id = ?", new Mailloop_RowMapper(), companyId);
+		return select(logger, "SELECT rid, company_id, description, shortname, forward, filter_address, forward_enable, ar_enable, timestamp, "
+				+ "subscribe_enable, mailinglist_id, form_id, autoresponder_mailing_id, security_token  FROM mailloop_tbl WHERE company_id = ?", 
+				new Mailloop_RowMapper(), companyId);
 	}
 	
 	@Override

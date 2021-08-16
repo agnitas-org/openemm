@@ -35,10 +35,6 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -78,9 +74,7 @@ import javax.mail.internet.InternetAddress;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.PageContext;
-import javax.sql.DataSource;
 
 import org.agnitas.beans.AdminPreferences;
 import org.agnitas.beans.Company;
@@ -98,7 +92,6 @@ import org.apache.log4j.Logger;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
-import org.springframework.context.ApplicationContext;
 import org.springframework.ui.Model;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -109,9 +102,6 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
 import com.agnitas.util.Version;
-
-import bsh.Interpreter;
-import bsh.NameSpace;
 
 public class AgnUtils {
 
@@ -625,91 +615,6 @@ public class AgnUtils {
 	
 	public static boolean isMailTrackingAvailable(Company company) {
 		return company != null && company.getMailtracking() == 1;
-	}
-
-	/**
-	 * Getter for property bshInterpreter.
-	 *
-	 * @return Value of property bshInterpreter.
-	 * @throws Exception
-	 */
-	 @Deprecated // TODO EMM-6543 remove (replacement exists)
-	public static Interpreter getBshInterpreter(int cID, int customerID, ApplicationContext con) throws JspException {
-		DataSource ds = con.getBean("dataSource", DataSource.class);
-		Interpreter aBsh = new Interpreter();
-		NameSpace aNameSpace = aBsh.getNameSpace();
-		aNameSpace.importClass("org.agnitas.util.AgnUtils");
-
-		if (cID <= 0) {
-			throw new IllegalArgumentException("cID <= 0");
-		}
-
-		String sqlStatement = String.format("SELECT * FROM customer_%d_tbl cust WHERE cust.customer_id = ?", cID);
-
-		try (final Connection connection = ds.getConnection()) {
-			try (final PreparedStatement preparedStatement = connection.prepareStatement(sqlStatement)) {
-				preparedStatement.setInt(1, customerID);
-
-				try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-					ResultSetMetaData aMeta = resultSet.getMetaData();
-
-					if (resultSet.next()) {
-						for (int i = 1; i <= aMeta.getColumnCount(); i++) {
-							String columnName = aMeta.getColumnName(i).toLowerCase();
-
-							try {
-								switch (aMeta.getColumnType(i)) {
-								case java.sql.Types.BIGINT:
-								case java.sql.Types.INTEGER:
-								case java.sql.Types.NUMERIC:
-								case java.sql.Types.SMALLINT:
-								case java.sql.Types.TINYINT:
-									if (resultSet.getObject(i) != null) {
-										aNameSpace.setTypedVariable(columnName, Integer.class, resultSet.getInt(i), null);
-									} else {
-										aNameSpace.setTypedVariable(columnName, Integer.class, null, null);
-									}
-									break;
-	
-								case java.sql.Types.DECIMAL:
-								case java.sql.Types.DOUBLE:
-								case java.sql.Types.FLOAT:
-									if (resultSet.getObject(i) != null) {
-										aNameSpace.setTypedVariable(columnName, Double.class, resultSet.getDouble(i), null);
-									} else {
-										aNameSpace.setTypedVariable(columnName, Double.class, null, null);
-									}
-									break;
-	
-								case java.sql.Types.CHAR:
-								case java.sql.Types.LONGVARCHAR:
-								case java.sql.Types.VARCHAR:
-									aNameSpace.setTypedVariable(columnName, String.class, resultSet.getString(i), null);
-									break;
-	
-								case java.sql.Types.DATE:
-								case java.sql.Types.TIME:
-								case java.sql.Types.TIMESTAMP:
-									aNameSpace.setTypedVariable(columnName, Date.class, resultSet.getTimestamp(i), null);
-									break;
-								default:
-									logger.error("Ignoring: " + columnName);
-								}
-							} catch(final Exception e) {
-								throw new Exception(String.format("Error accessing column %d ('%s')", i, columnName), e);
-							}
-						}
-					}
-					// add virtual column "sysdate"
-					aNameSpace.setTypedVariable("CURRENT_TIMESTAMP", Date.class, new Date(), null);
-
-					return aBsh;
-				}
-			}
-		} catch (Exception e) {
-			logger.error("Error in getBshInterpreter(): " + e.getMessage(), e);
-			throw new JspException("Sql: " + sqlStatement, e);
-		}
 	}
 
 	/**
@@ -1463,7 +1368,7 @@ public class AgnUtils {
 	}
 
 	public static byte[] decodeBase64(String data) {
-		return data != null ?  Base64.getDecoder().decode(data) : null;
+		return data != null ? Base64.getDecoder().decode(data) : null;
 	}
 
 	public static byte[] decodeZippedBase64(String data) throws IOException {
@@ -2518,14 +2423,6 @@ public class AgnUtils {
 		return text;
 	}
 
-	/**
-	 * @deprecated please use {@link org.apache.commons.lang3.StringUtils#startsWithIgnoreCase(String, String)} instead.
-	 */
-	@Deprecated
-	public static boolean startsWithIgnoreCase(String str, String prefix) {
-		return StringUtils.startsWithIgnoreCase(str, prefix);
-	}
-
 	public static boolean startsWith(byte[] data, byte[] prefix) {
 		if (data == null || prefix == null) {
 			return data == prefix;
@@ -2545,11 +2442,15 @@ public class AgnUtils {
 	}
 
 	public static String getHumanReadableNumber(Number value, String unitTypeSign, boolean siUnits, HttpServletRequest request) {
-		return getHumanReadableNumber(value, unitTypeSign, siUnits, getLocale(request));
+		return getHumanReadableNumber(value, unitTypeSign, siUnits, getLocale(request), true);
 	}
 
 	public static String getHumanReadableNumber(Number value, String unitTypeSign, boolean siUnits) {
-		return getHumanReadableNumber(value, unitTypeSign, siUnits, Locale.ENGLISH);
+		return getHumanReadableNumber(value, unitTypeSign, siUnits, Locale.ENGLISH, true);
+	}
+
+	public static String getHumanReadableNumber(Number value, String unitTypeSign, boolean siUnits, Locale locale) {
+		return getHumanReadableNumber(value, unitTypeSign, siUnits, locale, true);
 	}
 
 	  /**
@@ -2560,7 +2461,7 @@ public class AgnUtils {
 	   * @param siUnits
 	   * @return
 	   */
-	public static String getHumanReadableNumber(Number value, String unitTypeSign, boolean siUnits, Locale locale) {
+	public static String getHumanReadableNumber(Number value, String unitTypeSign, boolean siUnits, Locale locale, boolean keepTrailingZeros) {
 		int unit = siUnits ? 1000 : 1024;
 		double interimValue = value.doubleValue();
 		String unitExtension = "";
@@ -2581,20 +2482,35 @@ public class AgnUtils {
 			interimValue = interimValue / Math.pow(unit, exp);
 		}
 
-		String valueString;
-		if (interimValue >= 1000) {
-			valueString = String.format(locale, "%.1f", interimValue);
-		} else if (interimValue >= 100) {
-			valueString = String.format(locale, "%.2f", interimValue);
-		} else if (interimValue >= 10) {
-			valueString = String.format(locale, "%.3f", interimValue);
-		} else if (interimValue >= 1) {
-			valueString = String.format(locale, "%.4f", interimValue);
+		DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols(locale);
+		DecimalFormat numberFormat;
+		if (keepTrailingZeros) {
+			if (interimValue >= 1000) {
+				numberFormat = new DecimalFormat("#0.0", decimalFormatSymbols);
+			} else if (interimValue >= 100) {
+				numberFormat = new DecimalFormat("#0.00", decimalFormatSymbols);
+			} else if (interimValue >= 10) {
+				numberFormat = new DecimalFormat("#0.000", decimalFormatSymbols);
+			} else if (interimValue >= 1) {
+				numberFormat = new DecimalFormat("#0.0000", decimalFormatSymbols);
+			} else {
+				numberFormat = new DecimalFormat("#0.00000", decimalFormatSymbols);
+			}
 		} else {
-			valueString = String.format(locale, "%.5f", interimValue);
+			if (interimValue >= 1000) {
+				numberFormat = new DecimalFormat("#0.0", decimalFormatSymbols);
+			} else if (interimValue >= 100) {
+				numberFormat = new DecimalFormat("#0.0#", decimalFormatSymbols);
+			} else if (interimValue >= 10) {
+				numberFormat = new DecimalFormat("#0.0##", decimalFormatSymbols);
+			} else if (interimValue >= 1) {
+				numberFormat = new DecimalFormat("#0.0###", decimalFormatSymbols);
+			} else {
+				numberFormat = new DecimalFormat("#0.0####", decimalFormatSymbols);
+			}
 		}
 
-		return valueString + unitExtension;
+		return numberFormat.format(interimValue) + unitExtension;
 	}
 
 	public static String getHumanReadableDurationFromMillis(long durationMillis) {
@@ -2776,14 +2692,21 @@ public class AgnUtils {
 	}
 
 	public static Object[] extendObjectArray(Object[] array, Object... objects) {
-		Object[] extendedParameters = new Object[array.length + objects.length];
-		for (int i = 0; i < array.length; i++) {
-			extendedParameters[i] = array[i];
+		if (objects != null && objects.length > 0) {
+			if (array == null) {
+				array = new Object[0];
+			}
+			Object[] extendedParameters = new Object[array.length + objects.length];
+			for (int i = 0; i < array.length; i++) {
+				extendedParameters[i] = array[i];
+			}
+			for (int i = 0; i < objects.length; i++) {
+				extendedParameters[array.length + i] = objects[i];
+			}
+			return extendedParameters;
+		} else {
+			return array;
 		}
-		for (int i = 0; i < objects.length; i++) {
-			extendedParameters[array.length + i] = objects[i];
-		}
-		return extendedParameters;
 	}
 
 	public static String removeJsessionIdFromUrl(String urlString) {
@@ -2890,7 +2813,7 @@ public class AgnUtils {
 			try {
 				String ckeditorPathNamePrefix = "ckeditor-";
 				Version ckEditorVersion = new Version("0.0.0");
-				for (File subFile : getApplicationInstallPath().listFiles()){
+				for (File subFile : getCkeditorLibsPath().listFiles()){
 					if (subFile.isDirectory() && subFile.getName().startsWith(ckeditorPathNamePrefix)) {
 						String versionString = subFile.getName().substring(ckeditorPathNamePrefix.length());
 						Version nextVersion = new Version(versionString);
@@ -2914,6 +2837,8 @@ public class AgnUtils {
 				}
 
 				if (ckEditorPath != null) {
+					ckEditorPath = "js/lib/ckeditor/" + ckEditorPath;
+
 					CKEDITOR_PATH_CACHE.put(companyID, ckEditorPath);
 					return ckEditorPath;
 				} else {
@@ -2927,7 +2852,7 @@ public class AgnUtils {
 		}
 	}
 
-	private static File getApplicationInstallPath() throws Exception {
+	private static File getCkeditorLibsPath() throws Exception {
 		String applicationInstallPath = AgnUtils.class.getClassLoader().getResource("/").getFile();
 		if (applicationInstallPath != null && applicationInstallPath.endsWith("/")) {
 			applicationInstallPath = applicationInstallPath.substring(0, applicationInstallPath.length() - 1);
@@ -2936,7 +2861,7 @@ public class AgnUtils {
 		if (StringUtils.isBlank(applicationInstallPath)) {
 			throw new Exception("Cannot find application install directory");
 		} else {
-			applicationInstallPath += "/../..";
+			applicationInstallPath += "/../../js/lib/ckeditor";
 			try {
 				return new File(applicationInstallPath).getCanonicalFile();
 			} catch (Exception e) {

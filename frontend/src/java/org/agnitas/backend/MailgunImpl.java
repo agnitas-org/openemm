@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Blacklist;
-import org.agnitas.util.Const;
 import org.agnitas.util.Log;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
@@ -147,8 +147,9 @@ public class MailgunImpl implements Mailgun {
 			data.logging(Log.INFO, "mailout", "Starting up");
 			Map<String, Object> opts = new HashMap<>();
 
-			if (custid != null)
+			if (custid != null) {
 				opts.put("customer-id", custid);
+			}
 			doPrepare(opts);
 			doExecute(opts);
 			str = "Success: Mailout fired.";
@@ -263,8 +264,9 @@ public class MailgunImpl implements Mailgun {
 
 			for (int state = 0; state < clist.size(); ++state) {
 				String clause = clist.get(state);
-				if (clause == null)
+				if (clause == null) {
 					continue;
+				}
 
 				String query = (state == 0 ? selectQuery : wSelectQuery) + " " + clause;
 
@@ -411,7 +413,7 @@ public class MailgunImpl implements Mailgun {
 	protected void finalizeMailingToDatabase(MailWriter mailer) throws Exception {
 		//
 		// EMM-4150 & EMM-7151
-		data.mailing.setWorkStatus(data.totalReceivers == 0 ? Const.Workstatus.MAILING_STATUS_NORECIPIENTS : Const.Workstatus.MAILING_STATUS_GENERATION_FINISHED);
+		data.mailing.setWorkStatus(data.totalReceivers == 0 ? MailingStatus.NORECIPIENTS.getDbKey() : MailingStatus.GENERATION_FINISHED.getDbKey());
 
 		data.toMailtrack();
 
@@ -456,9 +458,9 @@ public class MailgunImpl implements Mailgun {
 				} else {
 					data.logging(Log.DEBUG, "execute", "profile updates will occur later");
 				}
-				(new CustomProfiles (data)).add (profileUpdates);
+				CustomProfiles.add(data, profileUpdates);
 				if (profileUpdates.size () > 0) {
-					postexecs.add ("UPDATE customer_" + data.company.id () + "_tbl cust " + 
+					postexecs.add ("UPDATE customer_" + data.company.id () + "_tbl cust " +
 						       "SET " + profileUpdates.stream ().reduce ((s, e) -> s + ", " + e).orElse (null) + " " +
 						       "WHERE " + where);
 				}

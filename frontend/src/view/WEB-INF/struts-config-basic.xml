@@ -22,8 +22,6 @@
 
 		<form-bean name="mailingContentForm" type="com.agnitas.web.ComMailingContentForm" />
 
-		<form-bean name="emmActionForm" type="com.agnitas.web.forms.ComEmmActionForm" />
-
 		<form-bean name="ecsForm" type="com.agnitas.ecs.web.forms.EcsForm" />
 
 		<form-bean name="mailingComponentsForm" type="com.agnitas.web.forms.ComMailingComponentsForm" />
@@ -37,8 +35,6 @@
 		<form-bean name="trackableLinkForm" type="com.agnitas.web.ComTrackableLinkForm" />
 
 		<form-bean name="predeliveryForm" type="com.agnitas.predelivery.web.ComPredeliveryForm" />
-
-		<form-bean name="userFormExecuteForm" type="org.agnitas.web.UserFormExecuteForm" />
 
 		<form-bean name="importWizardForm" type="com.agnitas.web.ComImportWizardForm" />
 
@@ -165,7 +161,9 @@
 		<action path="/tracklink" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="trackableLinkForm" scope="request">
 			<forward name="view" path="mailing_trackablelink_view" />
 			<forward name="list" path="mailing_trackablelink_list" />
-		</action>
+			<forward name="bulk_clear_extensions_confirm" path="mailing_trackablelink_bulk_clear_extensions_confirm" />
+			<forward name="bulk_actions_show" path="mailing_trackablelink_bulk_actions_modal" />
+        </action>
 
 
 		<action path="/mailingsend_ajax" type="org.springframework.web.struts.DelegatingActionProxy" parameter="method">
@@ -178,7 +176,6 @@
 		<!-- Mailing-Wizard mappings -->
 		<action path="/mwStart" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_start">
 			<forward name="next" path="mailing_wizard_name" />
-			<forward name="withoutWizard" path="/mailingbase.do?action=4" />
 		</action>
 
 		<action path="/mwName" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_name">
@@ -209,25 +206,24 @@
 		<action path="/mwSubject" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_subject">
 			<forward name="previous" path="mailing_wizard_mailtype" />
 			<forward name="next" path="mailing_wizard_target" />
+			<forward name="targetView" path="mailing_wizard_target" />
 		</action>
 
 		<action path="/mwTarget" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="/mwTarget.do?action=targetView">
-			<forward name="previous" path="mailing_wizard_subject" />
 			<forward name="next" path="mailing_wizard_textmodules" />
 			<forward name="finish" path="mailing_wizard_finish" />
 			<forward name="newTarget" path="mailing_wizard_new_target" />
 			<forward name="targetView" path="mailing_wizard_target" />
 		</action>
 
-		<action path="/mwNewTarget" type="org.springframework.web.struts.DelegatingActionProxy" name="targetForm" scope="session" parameter="action" input="mailing_wizard_new_target">
-			<forward name="success" path="mailing_wizard_new_target" />
+		<action path="/mwNewTarget" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="editTargetForm" scope="session" parameter="method" input="mailing_wizard_new_target">
 			<forward name="view" path="mailing_wizard_new_target" />
-			<forward name="delete" path="mailing_wizard_delete_target_ajax" />
-			<forward name="after_delete" path="/mwTarget.do?action=targetView"/>
+			<forward name="targetView" path="mailing_wizard_target" />
+			<forward name="messages" path="messages" />
 		</action>
 
 		<action path="/mwTextmodules" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_textmodules">
-			<forward name="previous" path="/mwSubject.do?action=target" />
+			<forward name="previous" path="/mwSubject.do?action=subject" />
 			<forward name="next" path="mailing_wizard_textmodule" />
 			<forward name="skip" path="mailing_wizard_links" />
 			<forward name="finish" path="mailing_wizard_finish" />
@@ -321,7 +317,7 @@
 			<forward name="profile_edit" path="/importprofile.do" />
 		</action>
 
-		<action path="/importprofile" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="importProfileForm" scope="session" parameter="action" input="importwizard_profile_view">
+		<action path="/importprofile" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="importProfileForm" scope="request" parameter="action" input="importwizard_profile_view">
 			<forward name="view" path="importwizard_profile_view" />
 			<forward name="list" path="importwizard_profile_list" />
 			<forward name="delete" path="importwizard_profile_delete" />
@@ -378,7 +374,7 @@
 			<forward name="delete" path="targets_delete_ajax" />
 			<forward name="create_ml" path="targets_new_ml_ajax" />
 			<forward name="delete_recipients" path="targets_delete_recipients_ajax" />
-			<!--<forward name="back_mailingwizard" path="mailing_wizard_target"/> -->
+			<forward name="mailing_wizard_new_target" path="/mwTarget.do?action=newTarget" />
 			<forward name="back_mailingwizard" path="/mwSubject.do?action=subject" />
 			<forward name="bulk_delete_confirm" path="targets_bulk_delete_ajax" />
 			<forward name="workflow_view" path="/workflow/{WORKFLOW_ID}/view.action" />
@@ -394,21 +390,6 @@
 		
 		
 		<action path="/newTargetGroup" type="org.apache.struts.actions.ForwardAction" parameter="/targetQB.do?method=create" />
-
-		<!-- Process a userform (execute) -->
-		<action path="/form" type="org.springframework.web.struts.DelegatingActionProxy" name="userFormExecuteForm" scope="request" input="/WEB-INF/jsp/support/form_not_found.jsp">
-			<forward name="form_not_found" path="/WEB-INF/jsp/support/form_not_found.jsp" />
-		</action>
-
-		<!-- Process actions -->
-		<action path="/action" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="emmActionForm" scope="session" input="actions_view">
-			<forward name="failure" path="actions_view" />
-			<forward name="success" path="actions_view" />
-			<forward name="list" path="actions_list" />
-			<forward name="delete" path="action_delete_ajax" />
-			<forward name="bulk_delete_confirm" path="action_bulk_delete_ajax" />
-			<forward name="view_forms" path="actions_view_forms"/>
-		</action>
 
 		<action path="/support" type="org.springframework.web.struts.DelegatingActionProxy" parameter="method" scope="request" name="supportForm" input="/WEB-INF/jsp/support/form_not_found.jsp">
 			<forward name="form_not_found_sent" path="/WEB-INF/jsp/support/form_not_found_sent.jsp" />
@@ -426,7 +407,7 @@
 		<action path="/permissionDenied" type="com.agnitas.web.perm.DelegatingActionProxySecured" parameter="permissionDenied">
 			<forward name="permissionDenied" path="permission_denied" />
 		</action>
-		
+
 		<action path="/error" type="com.agnitas.web.perm.DelegatingActionProxySecured" parameter="error">
 			<forward name="error" path="error" />
 		</action>
@@ -450,6 +431,10 @@
 			<forward name="schedule" path="campaign_autooptimization_schedule" />
 			<forward name="unscheduleSuccess" path="/optimize.do?method=view" />
 		</action>
+	
+		<action path="/form" type="org.springframework.web.struts.DelegatingActionProxy">
+			<!-- Legacy form.do for redirection to form.action -->
+		</action>
 	</action-mappings>
 
 	<controller maxFileSize="500M" />
@@ -459,5 +444,4 @@
 	<plug-in className="org.apache.struts.tiles.TilesPlugin">
 		<set-property property="definitions-config" value="/WEB-INF/tiles-defs.xml" />
 	</plug-in>
-
 </struts-config>

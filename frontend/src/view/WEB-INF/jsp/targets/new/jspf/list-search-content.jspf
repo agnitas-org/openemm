@@ -1,0 +1,41 @@
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
+            <div class="col-md-12">
+                <label class="control-label">
+                    <label for="searchQueryText"><mvc:message code="mailing.searchFor"/></label>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/mailing/overview/SearchFor.xml"
+                            tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-md-12">
+                <mvc:text path="searchQueryText" cssClass="form-control" styleId="searchQueryText"/>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            <div class="col-md-12">
+                <label for="placesToSearch" class="control-label"><mvc:message code="mailing.searchIn"/></label>
+            </div>
+            <div class="col-md-12">
+                <ul class="list-group" style="margin-bottom: 0px;" id="placesToSearch">
+                    <li class="list-group-item checkbox">
+                        <label>
+                            <mvc:checkbox path="searchNameChecked" value="true"/>
+                            <mvc:message code="target.searchName"/>
+                        </label>
+                    </li>
+                    <li class="list-group-item checkbox">
+                        <label>
+                            <mvc:checkbox path="searchDescriptionChecked" value="true"/>
+                            <mvc:message code="target.searchDescription"/>
+                        </label>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

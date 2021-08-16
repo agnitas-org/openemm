@@ -52,7 +52,7 @@ import com.agnitas.json.JsonObject;
 
 /**
  * This restful service is available at:
- * https:/<system.url>/restful/component
+ * https://<system.url>/restful/component
  */
 public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	@SuppressWarnings("unused")
@@ -343,7 +343,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 		componentJsonObject.add("component_id", component.getId());
 		componentJsonObject.add("name", component.getComponentName());
 		componentJsonObject.add("description", component.getDescription());
-		componentJsonObject.add("type", MailingComponentType.getMailingComponentTypeByCode(component.getType()).name());
+		componentJsonObject.add("type", component.getType().name());
 		if (component.getTargetID() > 0) {
 			componentJsonObject.add("target_id", component.getTargetID());
 		}
@@ -392,7 +392,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 						} else if ("type".equals(entry.getKey())) {
 							if (entry.getValue() != null && entry.getValue() instanceof String) {
 								try {
-									mailingComponent.setType(MailingComponentType.getMailingComponentTypeByName((String) entry.getValue()).getCode());
+									mailingComponent.setType(MailingComponentType.getMailingComponentTypeByName((String) entry.getValue()));
 								} catch (Exception e) {
 									throw new RestfulClientException("Invalid value for 'type'");
 								}
@@ -463,7 +463,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 					
 					if (StringUtils.isBlank(mailingComponent.getComponentName())) {
 						throw new RestfulClientException("Missing value for property 'name'. String expected");
-					} else if (mailingComponent.getType() <= 0) {
+					} else if (mailingComponent.getType() == null) {
 						throw new RestfulClientException("Missing value for property 'type'. String expected");
 					}
 				} else {

@@ -4,6 +4,7 @@ AGN.Lib.Controller.new('birt-reports', function() {
         reportType = 0,
         ARCHIVE_LIST = [],
         MAILINGLIST_LIST = [],
+        TARGETS_LIST = [],
         AFTER_MAILING_TYPE_ID,
         MAILING_ID;
 
@@ -13,6 +14,7 @@ AGN.Lib.Controller.new('birt-reports', function() {
         AFTER_MAILING_TYPE_ID = config.constant.AFTER_MAILING_TYPE_ID;
         ARCHIVE_LIST = config.filtered.FILTER_ARCHIVE;
         MAILINGLIST_LIST = config.filtered.FILTER_MAILINGLIST;
+        TARGETS_LIST = config.filtered.FILTER_TARGET;
         reportType = config.reportType;
     });
 
@@ -67,7 +69,7 @@ AGN.Lib.Controller.new('birt-reports', function() {
 
         self.init(config);
 
-        container.find(config.selectors.mailingType).on('change click', function(event) {
+        container.find(config.selectors.mailingType).on('change', function(event) {
             self.handleMailingTypeChanges($(event.target));
         });
         container.find(config.selectors.mailingFilter).on('change', function (event) {
@@ -90,7 +92,7 @@ AGN.Lib.Controller.new('birt-reports', function() {
 
     ReportSettings.prototype.handleMailingTypeChanges = function(el) {
         var report = this;
-        var mailingFilter = report.getMailingFilterValue();
+        var mailingFilter = report.getMailingFilter();
         var mailingFilterValue = report.getMailingFilterValue();
         report.updateNormalMailingField(el.val(), mailingFilter, mailingFilterValue);
     };
@@ -119,6 +121,8 @@ AGN.Lib.Controller.new('birt-reports', function() {
                 data = ARCHIVE_LIST;
             } else if(mailingFilter == 2) {
                 data = MAILINGLIST_LIST;
+            } else if(mailingFilter == 4) {
+                data = TARGETS_LIST;
             }
 
             _.each(data, function(item) {

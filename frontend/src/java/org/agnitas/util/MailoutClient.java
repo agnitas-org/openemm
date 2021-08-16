@@ -51,8 +51,9 @@ public class MailoutClient {
 	/** general method to trigger remote mailout
 	 * @param command the command itself
 	 * @param option  command depended options
+	 * @throws Exception
 	 */
-	public void invoke (String command, String option) {
+	public void invoke (String command, String option) throws Exception {
 		String		message = "blank";
 		String		host = syscfg.get ("mailout-server", "openemm".equals (System.getenv ("USER")) ? "localhost" : hostname);
 		int		port = syscfg.get ("mailout-port", portnumber);
@@ -62,6 +63,7 @@ public class MailoutClient {
 			message = (String) XMLRPCClient.invoke (host, port, 30 * 1000, "Merger.remote_control", command, option);
 		} catch (Exception e) {
 			log.out (Log.ERROR, "invoke", "MailoutClient exception: " + e.getMessage());
+			throw new Exception("MailoutClient exception: " + e.getMessage(), e);
 		}
 		log.out (Log.INFO, "invoke", "Message: " + message);
 	}
@@ -69,8 +71,9 @@ public class MailoutClient {
 	/** Wrapper for invoke for starting a mailing
 	 * @param status_id the status_id in maildrop_status_tbl to start
 	 * @param custid the customer_id to start mailout for
+	 * @throws Exception
 	 */
-	public void run(String status_id, String custid) {
+	public void run(String status_id, String custid) throws Exception {
 		String	option;
 
 		option = status_id;

@@ -450,6 +450,8 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
+	
+	<bean id="TargetGroupsReferencedItemsDao" class="com.agnitas.emm.core.target.dao.impl.ReferencedItemsDaoImpl" parent="_BaseDao" />
 
 	<bean id="ExportPredefTargetGroupLocatorDao" class="org.agnitas.emm.core.target.dao.impl.ExportPredefTargetGroupLocatorDaoImpl">
 		<property name="dataSource" ref="dataSource" />
@@ -586,7 +588,6 @@
 	<bean id="LandingpageDao" class="com.agnitas.emm.landingpage.dao.LandingpageDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
-		<property name="configService" ref="ConfigService" />
 	</bean>
 
 	<bean id="ScripthelperEmailLogDao" class="com.agnitas.dao.impl.ScripthelperEmailLogDaoImpl">

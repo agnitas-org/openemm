@@ -19,6 +19,8 @@ public final class CheckLogonTag extends TagSupport {
      
      
     private static final long serialVersionUID = -4706642742651352150L;
+
+	// TODO Move initialization to method (same init used below a second time) and use WebAppFileUtil.getWebInfDirectoryPath()
     private String page = "/WEB-INF/jsp/login.jsp";
        
     public String getPage() {
@@ -53,6 +55,8 @@ public final class CheckLogonTag extends TagSupport {
     @Override
     public void release() {  
         super.release();
+
+        // TODO Move initialization to method (same init used above a second time) and use WebAppFileUtil.getWebInfDirectoryPath()
         this.page = "/WEB-INF/jsp/logon/logon.jsp";
     }
 }

@@ -10,7 +10,6 @@
 
 package com.agnitas.beans.impl;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
@@ -61,9 +60,9 @@ public class ComAdminImpl implements ComAdmin {
     protected String firstName;
 	protected Date lastNewsDate;
 	protected Date lastMessageDate;
-	private boolean isOneTimePassword;
 	protected String adminPhone;
-	private int altgId;
+	private int accessLimitingTargetGroupID;
+	private Date lastLoginDate;
     
     /**
      * This member is not stored in db, but encrypted into securePasswordHash by PasswordEncryptor
@@ -75,16 +74,6 @@ public class ComAdminImpl implements ComAdmin {
      * This data will not be stored in db, but is used as a session marker for supervisor in action
      */
     protected Supervisor supervisor;
-
-	@Override
-	public boolean isOneTimePassword() {
-		return isOneTimePassword;
-	}
-
-	@Override
-	public void setOneTimePassword(boolean oneTimePassword) {
-		isOneTimePassword = oneTimePassword;
-	}
 
 	@Override
 	public void setCompany(Company company) {
@@ -103,11 +92,7 @@ public class ComAdminImpl implements ComAdmin {
 
 	@Override
 	public void setUsername(String username) {
-		if (username != null) {
-			this.username = username.trim();
-		} else {
-			this.username = username;
-		}
+		this.username = StringUtils.trimToNull(username);
 	}
 
 	@Override
@@ -182,11 +167,7 @@ public class ComAdminImpl implements ComAdmin {
 
     @Override
 	public String getUsername() {
-    	if (username != null) {
-    		return username.trim();
-    	} else {
-    		return username;
-    	}
+    	return StringUtils.trimToNull(username);
 	}
 
 	@Override
@@ -296,12 +277,12 @@ public class ComAdminImpl implements ComAdmin {
 
     @Override
 	public String getStatEmail() {
-		return statEmail;
+		return StringUtils.trimToNull(StringUtils.lowerCase(statEmail));
 	}
 
     @Override
 	public void setStatEmail(String statEmail) {
-		this.statEmail = statEmail;
+		this.statEmail = StringUtils.trimToNull(StringUtils.lowerCase(statEmail));
 	}
 
     @Override
@@ -316,20 +297,12 @@ public class ComAdminImpl implements ComAdmin {
 
     @Override
     public String getEmail() {
-    	if (email != null) {
-    		return email.trim();
-    	} else {
-    		return email;
-    	}
+    	return StringUtils.trimToNull(StringUtils.lowerCase(email));
     }
 
     @Override
     public void setEmail(String email) {
-    	if (email != null) {
-    		this.email = email.trim();
-    	} else {
-    		this.email = email;
-    	}
+    	this.email = StringUtils.trimToNull(StringUtils.lowerCase(email));
     }
 
 	@Override
@@ -447,8 +420,8 @@ public class ComAdminImpl implements ComAdmin {
 	
 	@Override
 	public SimpleDateFormat getDateTimeFormatWithSeconds() {
-		SimpleDateFormat dateTimeFormat = (SimpleDateFormat) DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, getLocale());
-		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
+		SimpleDateFormat dateTimeFormat = (SimpleDateFormat) SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, getLocale());
+		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy") + " HH:mm:ss");
 		dateTimeFormat.setTimeZone(TimeZone.getTimeZone(getAdminTimezone()));
 		dateTimeFormat.setLenient(false);
 		return dateTimeFormat;
@@ -456,8 +429,8 @@ public class ComAdminImpl implements ComAdmin {
 	
 	@Override
 	public SimpleDateFormat getDateTimeFormat() {
-		SimpleDateFormat dateTimeFormat = (SimpleDateFormat) DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, getLocale());
-		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
+		SimpleDateFormat dateTimeFormat = (SimpleDateFormat) SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, getLocale());
+		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy") + " HH:mm");
 		dateTimeFormat.setTimeZone(TimeZone.getTimeZone(getAdminTimezone()));
 		dateTimeFormat.setLenient(false);
 		return dateTimeFormat;
@@ -465,18 +438,18 @@ public class ComAdminImpl implements ComAdmin {
 
 	@Override
 	public DateTimeFormatter getDateTimeFormatterWithSeconds() {
-		String dateFormatPattern = DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.MEDIUM, IsoChronology.INSTANCE, getLocale());
-		dateFormatPattern = dateFormatPattern.replaceFirst("y+", "yyyy").replaceFirst(", ", " ");
+		String dateTimeFormatPattern = DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, null, IsoChronology.INSTANCE, getLocale());
+		dateTimeFormatPattern = dateTimeFormatPattern.replaceFirst("y+", "yyyy").replaceFirst(", ", " ") + " HH:mm:ss";
 
-		return getDateTimeFormatterByPattern(dateFormatPattern)
+		return getDateTimeFormatterByPattern(dateTimeFormatPattern)
 				.withZone(TimeZone.getTimeZone(getAdminTimezone()).toZoneId())
 				.withResolverStyle(ResolverStyle.STRICT);
 	}
 
 	@Override
 	public DateTimeFormatter getDateTimeFormatter() {
-		String dateTimeFormatPattern = DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, getLocale());
-		dateTimeFormatPattern = dateTimeFormatPattern.replaceFirst("y+", "yyyy").replaceFirst(", ", " ");
+		String dateTimeFormatPattern = DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, null, IsoChronology.INSTANCE, getLocale());
+		dateTimeFormatPattern = dateTimeFormatPattern.replaceFirst("y+", "yyyy").replaceFirst(", ", " ") + " HH:mm";
 
 		return getDateTimeFormatterByPattern(dateTimeFormatPattern)
 				.withZone(TimeZone.getTimeZone(getAdminTimezone()).toZoneId())
@@ -487,7 +460,6 @@ public class ComAdminImpl implements ComAdmin {
 	public SimpleDateFormat getDateFormat() {
 		SimpleDateFormat dateFormat = (SimpleDateFormat) SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, getLocale());
 		dateFormat.applyPattern(dateFormat.toPattern().replaceFirst("y+", "yyyy"));
-		dateFormat.setTimeZone(TimeZone.getTimeZone(getAdminTimezone()));
 		dateFormat.setLenient(false);
 		return dateFormat;
 	}
@@ -496,7 +468,6 @@ public class ComAdminImpl implements ComAdmin {
 	public DateTimeFormatter getDateFormatter() {
 		String dateFormatPattern = ((SimpleDateFormat) SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, getLocale())).toPattern().replaceFirst("y+", "yyyy");
 		return getDateTimeFormatterByPattern(dateFormatPattern)
-				.withZone(TimeZone.getTimeZone(getAdminTimezone()).toZoneId())
 				.withResolverStyle(ResolverStyle.STRICT);
 	}
 
@@ -530,12 +501,14 @@ public class ComAdminImpl implements ComAdmin {
 		this.companyPermissions = companyPermissions;
 	}
 
-	@Override public int getAltgId() {
-		return altgId;
+	@Override
+	public int getAccessLimitingTargetGroupID() {
+		return accessLimitingTargetGroupID;
 	}
 
-	@Override public void setAltgId(int altgId) {
-		this.altgId = altgId;
+	@Override
+	public void setAccessLimitingTargetGroupID(int accessLimitingTargetGroupID) {
+		this.accessLimitingTargetGroupID = accessLimitingTargetGroupID;
 	}
 
 	@Override
@@ -551,4 +524,15 @@ public class ComAdminImpl implements ComAdmin {
 			return false;
 		}
 	}
+
+	@Override
+	public final Date getLastLoginDate() {
+		return lastLoginDate;
+	}
+
+	@Override
+	public final void setLastLoginDate(final Date lastLoginDate) {
+		this.lastLoginDate = lastLoginDate;
+	}
+	
 }

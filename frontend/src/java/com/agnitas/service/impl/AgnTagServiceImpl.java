@@ -110,12 +110,12 @@ public class AgnTagServiceImpl implements AgnTagService {
     }
 
     @Override
-    public String resolveTags(int companyID, String content, AgnTagResolver resolver) throws Exception {
-        return resolveTags(companyID, content, true, resolver);
+    public String resolveTags(String content, AgnTagResolver resolver) throws Exception {
+        return resolveTags(content, true, resolver);
     }
 
     @Override
-    public String resolveTags(int companyID, String content, boolean recursive, AgnTagResolver resolver) throws Exception {
+    public String resolveTags(String content, boolean recursive, AgnTagResolver resolver) throws Exception {
         if (StringUtils.isEmpty(content)) {
             return content;
         }
@@ -136,7 +136,7 @@ public class AgnTagServiceImpl implements AgnTagService {
                     throw new Exception("error.personalization_tag_parameter");
                 }
 
-                String value = resolver.resolve(companyID, tag);
+                String value = resolver.resolve(tag);
                 if (value == null) {
                     position = end + 1;
                 } else {
@@ -159,12 +159,12 @@ public class AgnTagServiceImpl implements AgnTagService {
 
     @Override
     public String resolveTags(String content, @VelocityCheck int companyId, int mailingId, int mailingListId, int customerId) throws Exception {
-        return resolveTags(companyId, content, agnTagResolverFactory.create(companyId, mailingId, mailingListId, customerId));
+        return resolveTags(content, agnTagResolverFactory.create(companyId, mailingId, mailingListId, customerId));
     }
 
     @Override
     public String resolve(TagDetails tag, @VelocityCheck int companyId, int mailingId, int mailingListId, int customerId) {
-        return agnTagResolverFactory.create(companyId, mailingId, mailingListId, customerId).resolve(companyId, tag);
+        return agnTagResolverFactory.create(companyId, mailingId, mailingListId, customerId).resolve(tag);
     }
 
     @Override

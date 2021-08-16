@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.mailing.service.ComMailingGridService;
 import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
 import com.agnitas.emm.grid.grid.beans.ComTemplateSettings;
@@ -73,7 +73,7 @@ public class GridServiceWrapperImpl implements GridServiceWrapper {
     }
 
     @Override
-    public ComMailing createGridMailing(ComAdmin admin, int templateId, MailingCreationOptions creationOptions) throws Exception {
+    public Mailing createGridMailing(ComAdmin admin, int templateId, MailingCreationOptions creationOptions) throws Exception {
         if (gridTemplateService != null) {
             return gridTemplateService.createMailing(admin, templateId, creationOptions);
         } else {
@@ -88,7 +88,7 @@ public class GridServiceWrapperImpl implements GridServiceWrapper {
     }
 
     @Override
-    public void restoreGridMailingUndo(int undoId, ComMailing mailing) {
+    public void restoreGridMailingUndo(int undoId, Mailing mailing) {
         checkAndRun(mailingGridService, (dummy) -> {
 			try {
 				mailingGridService.restoreGridMailingUndo(undoId, mailing);

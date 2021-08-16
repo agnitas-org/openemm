@@ -11,8 +11,6 @@
 package org.agnitas.service.impl;
 
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
@@ -22,18 +20,13 @@ import org.agnitas.service.RecipientDuplicateSqlOptions;
 import org.agnitas.service.RecipientOptions;
 import org.agnitas.service.RecipientQueryBuilder;
 import org.agnitas.service.RecipientSqlOptions;
-import org.agnitas.target.ChainOperator;
-import org.agnitas.target.ConditionalOperator;
-import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.SqlPreparedStatementManager;
-import org.agnitas.web.RecipientForm;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.target.eql.EqlFacade;
@@ -48,9 +41,6 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(RecipientQueryBuilderImpl.class);
 
-	// TODO This is part of a workaround a should be removed as soon as possible after recipient search uses the QueryBuilder UI
-	private static final transient Pattern TODAY_WITH_OFFSET_PATTERN = Pattern.compile("^\\s*(?:TODAY|SYSDATE|CURRENT_TIMESTAMP|NOW)\\s*(\\+|\\-)\\s*(\\d+)\\s*$");
-	
 	/** DAO for target groups. */
 	protected ComTargetDao targetDao;
 
@@ -109,190 +99,6 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
 	}
 
 	@Override
-	public final String createEqlFromForm(final RecipientForm form, final int companyId) {
-		final StringBuffer eqlBuffer = new StringBuffer();
-		
-		final int lastIndex = form.getNumTargetNodes();
-		for(int index = 0; index < lastIndex; index++) {
-			createEqlFromForm(form, companyId, index, eqlBuffer);
-		}
-		
-		return eqlBuffer.toString();
-	}
-	
-	public final void createEqlFromForm(final RecipientForm form, final int companyId, final int index, final StringBuffer eqlBuffer) {
-		final String column = extractColumnFromForm(form, index);
-		final String type = determineColumnType(column, companyId);
-		
-		final String eqlOfNode = convertRuleToEql(form, column, type, index, companyId);
-
-		// In recipient search, conditions are ANDed only
-		if(index > 0) {
-			if(form.getChainOperator(index) == ChainOperator.OR.getOperatorCode()) {
-				eqlBuffer.append(" OR ");
-			} else {
-				eqlBuffer.append(" AND ");
-			}
-		}
-		
-		// Add left parenthesis
-		if(form.getParenthesisOpened(index) == 1) {
-			eqlBuffer.append('(');
-		}
-		
-		eqlBuffer.append(eqlOfNode);
-		
-		// Add right parenthesis
-		if(form.getParenthesisClosed(index) == 1) {
-			eqlBuffer.append(')');
-		}
-	}
-
-	/**
-	 * Converts rule at given index. Parenthesis will be handled by caller!
-	 * 
-	 * Overwrite this method in sub-classes.
-	 */
-	protected String convertRuleToEql(final RecipientForm form, final String columnName, final String columnType, final int nodeIndex, final int companyId) {
-		switch (columnType) {
-			case DbColumnType.GENERIC_TYPE_VARCHAR: // fall-through
-			case "VARCHAR2": // fall-through
-			case "CHAR":
-				return convertStringRuleToEql(form, columnNameToProfileFieldName(columnName, companyId), columnType, nodeIndex);
-				
-			case DbColumnType.GENERIC_TYPE_INTEGER: // fall-through
-			case "DOUBLE": // fall-through
-			case DbColumnType.GENERIC_TYPE_FLOAT: // fall-through
-			case "NUMBER":
-				return convertNumericRuleToEql(form, columnNameToProfileFieldName(columnName, companyId), columnType, nodeIndex);
-				
-			case DbColumnType.GENERIC_TYPE_DATE: // fall-through
-			case DbColumnType.GENERIC_TYPE_DATETIME:
-				return convertDateRuleToEql(form, columnNameToProfileFieldName(columnName, companyId), columnType, nodeIndex);
-				
-			default:
-				throw new RuntimeException(String.format("Encountered unhandled column type '%s'", columnType));
-		}
-	}
-	
-	private final String columnNameToProfileFieldName(final String columnName, final int companyId) {
-		try {
-			final ProfileField field = this.columnInfoService.getColumnInfo(companyId, columnName);
-			
-			return field != null ? field.getShortname() : columnName;
-		} catch(final Exception e) {
-			logger.error(String.format("Cannot determine shortname for profile field column '%s'", columnName), e);
-			
-			return columnName;
-		}
-	}
-	
-	private final String convertStringRuleToEql(final RecipientForm form, final String profileFieldName, final String columnType, final int nodeIndex) {
-		final ConditionalOperator primaryOperator = ConditionalOperator.fromOperatorCode(form.getPrimaryOperator(nodeIndex)).orElse(ConditionalOperator.EQ);
-		final String primaryValue = form.getPrimaryValue(nodeIndex);
-	
-		if(primaryOperator == ConditionalOperator.IS) {
-			return "null".equalsIgnoreCase(primaryValue)
-					? String.format("`%s` IS EMPTY", profileFieldName)
-							: String.format("`%s` IS NOT EMPTY", profileFieldName);
-		} else {
-			return String.format("`%s` %s \"%s\"", profileFieldName, primaryOperator.getEqlSymbol(), primaryValue);
-		}
-	}
-	
-	private final String convertNumericRuleToEql(final RecipientForm form, final String profileFieldName, final String columnType, final int nodeIndex) {
-		final ConditionalOperator primaryOperator = ConditionalOperator.fromOperatorCode(form.getPrimaryOperator(nodeIndex)).orElse(ConditionalOperator.EQ);
-		final ConditionalOperator secondaryOperator = ConditionalOperator.fromOperatorCode(form.getSecondaryOperator(nodeIndex)).orElse(null);
-
-		if(primaryOperator == ConditionalOperator.MOD) {
-			return String.format(
-					"`%s` MOD %s %s %s",
-					profileFieldName,
-					primaryOperator.getEqlSymbol(),
-					form.getPrimaryValue(nodeIndex),
-					secondaryOperator.getEqlSymbol(),
-					form.getSecondaryValue(nodeIndex));
-		} else {
-			return String.format(
-					"`%s` %s %s",
-					profileFieldName,
-					primaryOperator.getEqlSymbol(),
-					form.getPrimaryValue(nodeIndex));
-		}
-	}
-	
-	private final String convertDateRuleToEql(final RecipientForm form, final String profileFieldName, final String columnType, final int nodeIndex) {
-		final ConditionalOperator primaryOperator = ConditionalOperator.fromOperatorCode(form.getPrimaryOperator(nodeIndex)).orElse(ConditionalOperator.EQ);
-		final String primaryValue = form.getPrimaryValue(nodeIndex);
-		final String dateFormat = form.getDateFormat(nodeIndex) != null
-				? form.getDateFormat(nodeIndex).toUpperCase()
-				: "YYYYMMDD";
-				
-		if(primaryOperator == ConditionalOperator.IS) {
-			return "null".equalsIgnoreCase(primaryValue)
-					? String.format("`%s` IS EMPTY", profileFieldName)
-							: String.format("`%s` IS NOT EMPTY", profileFieldName);
-		} else {
-			// TODO This is part of a workaround a should be removed as soon as possible after recipient search uses the QueryBuilder UI
-			final Matcher todayWithOffsetMatcher = TODAY_WITH_OFFSET_PATTERN.matcher(primaryValue.toUpperCase());
-			
-			if(todayWithOffsetMatcher.matches()) {
-				final String operator = todayWithOffsetMatcher.group(1);
-				final String offset = todayWithOffsetMatcher.group(2);
-				
-				return String.format(
-						"%s %s TODAY%s%s DATEFORMAT \"%s\"",
-						isNow(profileFieldName) ? "TODAY" : String.format("`%s`", profileFieldName),
-						primaryOperator.getEqlSymbol(),
-						operator,
-						offset,
-						dateFormat.toUpperCase());
-				
-			} else {
-				return String.format(
-						"%s %s %s DATEFORMAT \"%s\"",
-						isNow(profileFieldName) ? "TODAY" : String.format("`%s`", profileFieldName),
-						primaryOperator.getEqlSymbol(),
-						isNow(primaryValue) ? "TODAY" : String.format("\"%s\"", primaryValue),
-						dateFormat.toUpperCase());
-			}
-		}
-	}
-
-	private static final boolean isNow(final String name) {
-		return "current_timestamp".equalsIgnoreCase(name)
-				|| "sysdate".equalsIgnoreCase(name)
-				|| "now".equals(name)
-				|| "today".equals(name);
-	}
-	
-	private final String extractColumnFromForm(final RecipientForm form, final int index) {
-  		final String column = form.getColumnAndType(index);
-  	  	
-  		final int indexOfHash = column.indexOf('#');
-  		
-  		if(indexOfHash != -1) {
-  			return column.substring(0, indexOfHash);
-  		} else {
-  			return column;
-  		}
-	}
-	
-	protected String determineColumnType(final String columnName, final int companyId) {
-		if ("CURRENT_TIMESTAMP".equalsIgnoreCase(columnName)) {
-			return DbColumnType.GENERIC_TYPE_DATE;
-		} else {
-			try {
-				return columnInfoService.getColumnInfo(companyId, columnName).getDataType();
-			} catch (Exception e) {
-				logger.error(String.format("Cannot find fieldtype for companyId %d and column '%s'", companyId, columnName), e);
-				
-				return "unknownType";
-			}
-		}
-	}
-
-	@Override
 	public SqlPreparedStatementManager getRecipientListSQLStatement(ComAdmin admin, RecipientSqlOptions options) throws Exception {
 		return getSqlStatement(admin, options);
 	}
@@ -328,7 +134,7 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
 				final SqlPreparedStatementManager sqlCheckBinding = createBindingCheckQuery(companyId, adminId, options, checkDisabledMailingLists);
 
 				// The mailingListId == -1 means "No binding", but ignored ("All" option used instead) in restricted mode (when checkDisabledMailingLists == true).
-				if (options.getListId()>= 0 || checkDisabledMailingLists) {
+				if (options.getListId() >= 0 || checkDisabledMailingLists) {
 					// Binding must be present for customer to pass filters.
 					statement.addWhereClause(asExistsClause(sqlCheckBinding, true), sqlCheckBinding.getPreparedSqlParameters());
 				} else {
@@ -338,7 +144,7 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
 			}
 
 			return statement;
-		} catch(final EqlParserException e) {
+		} catch (final EqlParserException e) {
 			logger.warn("Unable to create SQL statement for recipient search", e);
 			
 			// In case of an error, return a statement that won't show recipients

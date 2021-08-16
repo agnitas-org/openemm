@@ -10,6 +10,15 @@
 
 package com.agnitas.mailing.autooptimization.service.impl;
 
+import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_CLICKRATE;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_OPENRATE;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_REVENUE;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_EVAL_IN_PROGRESS;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_FINISHED;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_SCHEDULED;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_TEST_SEND;
+
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -26,11 +35,26 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.emm.core.mailing.service.CopyMailingService;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.stat.CampaignStatEntry;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.beans.impl.SelectOption;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.impl.MaildropEntryImpl;
@@ -47,32 +71,9 @@ import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationCommonService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationStatService;
+
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import org.agnitas.beans.Mailing;
-import org.agnitas.beans.impl.MaildropDeleteException;
-import org.agnitas.emm.core.mailing.service.CopyMailingService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.stat.CampaignStatEntry;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.beans.impl.SelectOption;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
-import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_CLICKRATE;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_OPENRATE;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_REVENUE;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_EVAL_IN_PROGRESS;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_FINISHED;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_SCHEDULED;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_TEST_SEND;
 
 public class ComOptimizationServiceImpl implements ComOptimizationService, ApplicationContextAware { // TODO: Remove dependency to ApplicationContextAware
 	
@@ -215,7 +216,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 		return optimizationDao.listWorkflowManaged(workflowId, companyID);
 	}
 
-	private boolean sendFinalMailing(Mailing mailing, boolean testRun, int blockSize, int stepping) {
+	private boolean sendFinalMailing(Mailing mailing, boolean testRun, int blockSize, int stepping) throws Exception {
 		logger.debug( "sendFinalMailing(" + (testRun ? "test run" : "") + "), mailing ID " + mailing.getId() + ", hashCode(this) = " + hashCode());
 
 		MaildropEntry drop = new MaildropEntryImpl();
@@ -277,7 +278,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 				List<ComMailingParameter> orgMailingParameters = mailingParameterService.getMailingParameters(optimization.getCompanyID(), bestMailing);
 				
 				int copiedMailingID = copyMailingService.copyMailing(orgMailing.getCompanyID(), orgMailing.getId(), orgMailing.getCompanyID(), orgMailing.getShortname(), orgMailing.getDescription());
-				ComMailing mailing = mailingDao.getMailing(copiedMailingID, orgMailing.getCompanyID());
+				Mailing mailing = mailingDao.getMailing(copiedMailingID, orgMailing.getCompanyID());
 
 				mailing.setCampaignID(orgMailing.getCampaignID());
 				mailing.setMailingType(orgMailing.getMailingType());

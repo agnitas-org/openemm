@@ -47,6 +47,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComAdminPreferences;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.logon.beans.LogonState;
 import com.agnitas.emm.core.logon.beans.LogonStateBundle;
@@ -73,17 +74,18 @@ public class LogonControllerBasic {
     protected static final String PASSWORD_CHANGED_KEY = "com.agnitas.emm.core.logon.web.PASSWORD_CHANGED";
     public static final String PASSWORD_RESET_LINK_PATTERN = "/logon/reset-password.action?username={username}&token={token}";
 
-    protected ComLogonService logonService;
-    protected LoginTrackService loginTrackService;
-    protected ComHostAuthenticationService hostAuthenticationService;
-    protected WebStorage webStorage;
-    protected ConfigService configService;
-    protected UserActivityLogService userActivityLogService;
-    protected ClientHostIdService clientHostIdService;
+    protected final ComLogonService logonService;
+    protected final LoginTrackService loginTrackService;
+    protected final ComHostAuthenticationService hostAuthenticationService;
+    protected final WebStorage webStorage;
+    protected final ConfigService configService;
+    protected final UserActivityLogService userActivityLogService;
+    protected final ClientHostIdService clientHostIdService;
+    protected AdminService adminService;
 
     private final LogonFormValidator logonFormValidator = new LogonFormValidator();
 
-    public LogonControllerBasic(ComLogonService logonService, LoginTrackService loginTrackService, ComHostAuthenticationService hostAuthenticationService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService, final ClientHostIdService clientHostIdService) {
+    public LogonControllerBasic(ComLogonService logonService, LoginTrackService loginTrackService, ComHostAuthenticationService hostAuthenticationService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService, final ClientHostIdService clientHostIdService, final AdminService adminService) {
         this.logonService = logonService;
         this.loginTrackService = loginTrackService;
         this.hostAuthenticationService = hostAuthenticationService;
@@ -91,6 +93,7 @@ public class LogonControllerBasic {
         this.configService = configService;
         this.userActivityLogService = userActivityLogService;
         this.clientHostIdService = Objects.requireNonNull(clientHostIdService, "ClientHostIdService is null");
+        this.adminService = Objects.requireNonNull(adminService, "AdminService is null");
     }
 
     // This exception should normally never occur unless user manually navigates to some endpoints.
@@ -338,7 +341,7 @@ public class LogonControllerBasic {
 
     @Anonymous
     @PostMapping("/start.action")
-    public String start(final LogonStateBundle logonStateBundle, ComAdmin admin, ComAdminPreferences preferences, @RequestParam(required = false) String webStorageJson, Model model, Popups popups, final HttpServletRequest request) {
+    public String start(final LogonStateBundle logonStateBundle, ComAdmin admin, @RequestParam(required = false) String webStorageJson, Model model, Popups popups, final HttpServletRequest request) {
         if (admin == null) {
         	logonStateBundle.requireLogonState(LogonState.COMPLETE);
 
@@ -350,19 +353,19 @@ public class LogonControllerBasic {
             return complete(logonStateBundle.toCompleteState(request), webStorageJson, popups);
         } else {
             // Redirect to EMM start page.
-            return getStartPageRedirection(admin, preferences);
+            return "redirect:/dashboard.action";
         }
     }
 
     @Anonymous
     @GetMapping("/start.action")
-    public String startView(final LogonStateBundle logonStateBundle, ComAdmin admin, ComAdminPreferences preferences, Model model) {
+    public String startView(final LogonStateBundle logonStateBundle, ComAdmin admin, Model model) {
         if (admin == null) {
         	logonStateBundle.requireLogonState(LogonState.COMPLETE);
             return getLogonCompletePage(logonStateBundle.getAdmin(), model);
         } else {
             // Admin is already in, redirect to EMM start page.
-            return getStartPageRedirection(admin, preferences);
+            return "redirect:/dashboard.action";
         }
     }
 
@@ -534,9 +537,8 @@ public class LogonControllerBasic {
 
         attributes.setAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN, admin, RequestAttributes.SCOPE_SESSION);
         attributes.setAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMINPREFERENCES, preferences, RequestAttributes.SCOPE_SESSION);
-        attributes.setAttribute(Globals.LOCALE_KEY, admin.getLocale(), RequestAttributes.SCOPE_SESSION);  // To be removed when Struts message tags are not in use anymore.
+        logonService.updateSessionsLanguagesAttributes(admin);
         attributes.setAttribute("emmLayoutBase", logonService.getEmmLayoutBase(admin), RequestAttributes.SCOPE_SESSION);
-        attributes.setAttribute("helplanguage", logonService.getHelpLanguage(admin), RequestAttributes.SCOPE_SESSION);
 
         attributes.setAttribute("userName", StringUtils.defaultString(admin.getUsername()), RequestAttributes.SCOPE_SESSION);
         attributes.setAttribute("firstName", StringUtils.defaultString(admin.getFirstName()), RequestAttributes.SCOPE_SESSION);
@@ -561,7 +563,11 @@ public class LogonControllerBasic {
             }
         }
         
-        return getStartPageRedirection(admin, preferences);
+        if (!admin.isSupervisor()) {
+        	adminService.updateLoginDate(admin.getAdminID());
+        }
+        
+        return "redirect:/dashboard.action";
     }
 
     private String getLogonPage(Model model, String serverName) {
@@ -603,19 +609,6 @@ public class LogonControllerBasic {
         return "logon_complete";
     }
 
-    private String getStartPageRedirection(ComAdmin admin, ComAdminPreferences preferences) {
-        switch (preferences.getStartPage()) {
-            case ComAdminPreferences.START_PAGE_DASHBOARD:
-                return "redirect:/dashboard.action";
-
-            case ComAdminPreferences.START_PAGE_CALENDAR:
-                return "redirect:/calendar.action";
-
-            default:
-                throw new IllegalStateException(String.format("Unknown start page %d configured for user %s (company #%d)", preferences.getStartPage(), admin.getUsername(), admin.getCompanyID()));
-        }
-    }
-
     private List<String> getWebStorageBundleNames() {
         return WebStorageBundle.definitions().stream()
                 .map(WebStorageBundle::getName)
@@ -629,4 +622,5 @@ public class LogonControllerBasic {
     private void writeUserActivityLog(ComAdmin admin, String action, String description) {
         userActivityLogService.writeUserActivityLog(admin, action, description);
     }
+ 
 }

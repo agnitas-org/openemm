@@ -143,13 +143,13 @@ public class MailingClickersTimeBasedDataSet extends TimeBasedDataSet {
 						+ " AND EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rlog2"
 						    + " WHERE ? <= rlog2.timestamp"
 						    + " AND rlog2.timestamp < ?"
-						    + " AND rlog." + keyColumn + " = rlog2." + keyColumn + ""
+						    + " AND rlog." + keyColumn + " = rlog2." + keyColumn
 						    + " AND rlog.customer_id = rlog2.customer_id"
 						    + " AND rlog2.device_class_id = ?)"
 						+ " AND NOT EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rlog3"
 						    + " WHERE ? <= rlog3.timestamp"
 						    + " AND rlog3.timestamp < ?"
-						    + " AND rlog." + keyColumn + " = rlog3." + keyColumn + ""
+						    + " AND rlog." + keyColumn + " = rlog3." + keyColumn
 						    + " AND rlog.customer_id = rlog3.customer_id"
 						    + " AND rlog3.device_class_id != ?)"
 						+ " AND ? <= rlog.timestamp"
@@ -170,13 +170,13 @@ public class MailingClickersTimeBasedDataSet extends TimeBasedDataSet {
 						+ " AND EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rlog2"
 						    + " WHERE ? <= rlog2.timestamp"
 						    + " AND rlog2.timestamp < ?"
-						    + " AND rlog." + keyColumn + " = rlog2." + keyColumn + ""
+						    + " AND rlog." + keyColumn + " = rlog2." + keyColumn
 						    + " AND rlog.customer_id = rlog2.customer_id"
 						    + " AND rlog2.device_class_id = ?)"
 						+ " AND NOT EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rlog3"
 						    + " WHERE ? <= rlog3.timestamp"
 						    + " AND rlog3.timestamp < ?"
-						    + " AND rlog." + keyColumn + " = rlog3." + keyColumn + ""
+						    + " AND rlog." + keyColumn + " = rlog3." + keyColumn
 						    + " AND rlog.customer_id = rlog3.customer_id"
 						    + " AND rlog3.device_class_id != ?)"
 						+ " AND ? <= rlog.timestamp"
@@ -208,7 +208,7 @@ public class MailingClickersTimeBasedDataSet extends TimeBasedDataSet {
 		        	+ " AND (SELECT COUNT(DISTINCT device_class_id) FROM rdirlog_" + companyID + "_tbl rlog2"
 		        		+ " WHERE ? <= rlog2.timestamp"
 					    + " AND rlog2.timestamp < ?"
-					    + " AND rlog." + keyColumn + " = rlog2." + keyColumn + ""
+					    + " AND rlog." + keyColumn + " = rlog2." + keyColumn
 					    + " AND rlog.customer_id = rlog2.customer_id) > 1"
 					+ " AND ? <= rlog.timestamp"
 					+ " AND rlog.timestamp < ?"
@@ -228,7 +228,7 @@ public class MailingClickersTimeBasedDataSet extends TimeBasedDataSet {
 			        + " AND (SELECT COUNT(DISTINCT device_class_id) FROM rdirlog_" + companyID + "_tbl rlog2"
 		        		+ " WHERE ? <= rlog2.timestamp"
 					    + " AND rlog2.timestamp < ?"
-					    + " AND rlog." + keyColumn + " = rlog2." + keyColumn + ""
+					    + " AND rlog." + keyColumn + " = rlog2." + keyColumn
 					    + " AND rlog.customer_id = rlog2.customer_id) > 1"
 					+ " AND ? <= rlog.timestamp"
 					+ " AND rlog.timestamp < ?"

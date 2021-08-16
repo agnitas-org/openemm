@@ -23,7 +23,6 @@ import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveListParam
 import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveMailingParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationGetCustomerParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationIdentifyCustomerParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationServiceMailParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerParameters;
@@ -83,15 +82,4 @@ public class ComActionOperationFactoryImpl implements ActionOperationFactory {
 	public String[] getTypeNames() {
 		return Arrays.stream(ActionOperationType.values()).map(ActionOperationType::getName).toArray(String[]::new);
 	}
-
-	@Override
-	@Deprecated
-	public String getType(ActionOperationParameters actionOperation) {
-		if (actionOperation instanceof AbstractActionOperationParameters) {
-			return ((AbstractActionOperationParameters) actionOperation).getOperationType().getName();
-		}
-
-		throw new RuntimeException("Unsupported type");
-	}
-
 }

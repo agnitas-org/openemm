@@ -23,8 +23,14 @@
     </div>
 
     <div id="tile-mailingParameters" class="tile-content tile-content-forms">
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped">
+        <div class="table-responsive" data-controller="mailing-parameters">
+            <c:set var="maxIndex" value="${fn:length(mailingBaseForm.parameterMap)}"/>
+            <script data-initializer="mailing-parameters" type="application/json">
+                {
+                  "maxIndex": ${maxIndex}
+                }
+            </script>
+            <table class="table table-bordered table-striped" id="mailingParamsTable">
                 <thead>
                     <tr>
                         <th><bean:message key="default.Name"/></th>
@@ -39,48 +45,46 @@
                     <c:forEach var="parameter" items="${mailingBaseForm.parameterMap}" varStatus="status">
                         <tr>
                             <td>
-                                <c:if test="${isChangable}">
-                                    <html:hidden property="parameter[${status.index + 1}].mailingInfoID" value="${parameter.value.mailingInfoID}"/>
-                                </c:if>
-                                <html:text property="parameter[${status.index + 1}].name" styleClass="form-control" disabled="${not isChangable}"/>
+                                <html:text property="parameter[${parameter.key}].name" styleClass="form-control" disabled="${not isChangable}"/>
                             </td>
                             <td>
-                                <html:text property="parameter[${status.index + 1}].value" styleClass="form-control" disabled="${not isChangable}"/>
+                                <html:text property="parameter[${parameter.key}].value" styleClass="form-control" disabled="${not isChangable}"/>
                             </td>
                             <td>
-                                <html:text property="parameter[${status.index + 1}].description" styleClass="form-control" disabled="${not isChangable}"/>
+                                <html:text property="parameter[${parameter.key}].description" styleClass="form-control" disabled="${not isChangable}"/>
                             </td>
 
                             <c:if test="${isChangable}">
                             <td class="table-actions">
-                                <button type="button" class="btn btn-regular btn-alert" data-action="deleteMailingParameter" data-controls-group="save" data-tooltip="<bean:message key="button.Delete"/>">
+                                <a href="#" class="btn btn-regular btn-alert" data-action="remove-mailing-parameter" id="removeMailingParameterBtn" data-tooltip="<bean:message key="button.Delete"/>">
                                     <i class="icon icon-trash-o"></i>
-                                </button>
+                                </a>
                             </td>
                             </c:if>
                         </tr>
                     </c:forEach>
 
                     <c:if test="${isChangable}">
-                        <c:if test="${fn:length(mailingBaseForm.parameterMap) > 0}">
+                        <c:if test="${maxIndex > 0}">
                             <th colspan="4"><bean:message key="mailing.newParameter"/></th>
                         </c:if>
 
                         <tr>
                             <td>
-                                <html:hidden property="parameter[0].mailingInfoID" value="0"/>
-                                <html:text property="parameter[0].name" value="" styleClass="form-control"/>
+                                <html:hidden property="parameter[${maxIndex}].mailingInfoID" value="0"/>
+                                <html:text property="parameter[${maxIndex}].name" value="" styleClass="form-control"/>
                             </td>
                             <td>
-                                <html:text property="parameter[0].value" value="" styleClass="form-control"/>
+                                <html:text property="parameter[${maxIndex}].value" value="" styleClass="form-control"/>
                             </td>
                             <td>
-                                <html:text property="parameter[0].description" value="" styleClass="form-control"/>
+                                <html:text property="parameter[${maxIndex}].description" value="" styleClass="form-control"/>
                             </td>
 
                             <c:if test="${isChangable}">
                             <td class="table-actions">
-                                <a href="#" class="btn btn-regular btn-primary" data-action="createMailingParameter" data-controls-group="save" data-tooltip="<bean:message key="button.Add"/>">
+                                <a href="#" class="btn btn-regular btn-primary" data-action="add-mailing-parameter"
+                                   id="newMailingParameterBtn" data-tooltip="<bean:message key="button.Add"/>">
                                     <i class="icon icon-plus"></i>
                                 </a>
                             </td>
@@ -91,4 +95,23 @@
             </table>
         </div>
     </div>
+
+    <script id="mailing-param-row-new" type="text/x-mustache-template">
+        <tr>
+            <td>
+                <input name="parameter[{{= key }}].name" class="form-control"/>
+            </td>
+            <td>
+                <input name="parameter[{{= key }}].value" class="form-control"/>
+            </td>
+            <td>
+                <input name="parameter[{{= key }}].description" class="form-control"/>
+            </td>
+
+            <td class="table-actions">
+                <a href="#" class="btn btn-regular btn-primary" data-action="add-mailing-parameter"
+                   id="newMailingParameterBtn"><i class="icon icon-plus"></i></a>
+            </td>
+        </tr>
+    </script>
 </div>

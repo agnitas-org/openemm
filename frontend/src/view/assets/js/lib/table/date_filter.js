@@ -27,23 +27,24 @@
     this.beginDate = undefined;
     this.endDate = undefined;
     this.clearFilter = $(this.eGui).find('#clearFilter');
+
     this.filterBegin.on('change', this.filterBeginChanged.bind(this));
     this.filterEnd.on('change', this.filterEndChanged.bind(this));
     this.clearFilter.on('click', this.filterClear.bind(this));
-    
+    AGN.Lib.CoreInitializer.run('pickadate', $(this.eGui));
+
     this.filterActive = false;
     this.filterChangedCallback = params.filterChangedCallback;
     this.valueGetter = params.valueGetter;
   };
 
-  DateFilter.prototype.afterGuiAttached = function() {
-    AGN.Lib.CoreInitializer.run('pickadate', $(this.eGui));
-  }
+  DateFilter.prototype.afterGuiAttached = function() {};
 
   DateFilter.prototype.destroy = function() {
     this.filterBegin.off('change', this.filterBeginChanged.bind(this));
     this.filterEnd.off('change', this.filterEndChanged.bind(this));
-  }
+    this.clearFilter.off('click', this.filterClear.bind(this))
+  };
 
   DateFilter.prototype.filterBeginChanged = function () {
     var apiMax = this.filterEnd.data('pickadate');
@@ -57,7 +58,7 @@
 
   DateFilter.prototype.filterEndChanged = function () {
     var apiMin = this.filterBegin.data('pickadate');
-    apiMin.set('max', this.filterEnd.val())
+    apiMin.set('max', this.filterEnd.val());
 
     this.endDate = this.filterEnd.data('pickadate').get('select').pick;
 
@@ -76,7 +77,7 @@
     apiMax = this.filterEnd.data('pickadate');
     apiMax.set('min', false);
     apiMin = this.filterBegin.data('pickadate');
-    apiMin.set('max', false)
+    apiMin.set('max', false);
 
     this.filterActive = false;
     this.filterChangedCallback();
@@ -115,7 +116,7 @@
       return;
     }
     return moment(date, t('date.format').toUpperCase()).valueOf();
-  }
+  };
 
   DateFilter.prototype.isFilterActive = function () {
     return this.filterActive;
@@ -128,4 +129,4 @@
 
 
   AGN.Lib.TableDateFilter = DateFilter;
-})()
+})();

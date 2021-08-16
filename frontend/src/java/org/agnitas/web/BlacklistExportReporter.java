@@ -339,6 +339,14 @@ public class BlacklistExportReporter {
 	}
 
 	public void createAndSaveExportReport(BlacklistExportWorker exportWorker, ComAdmin admin, boolean isError) throws Exception {
-		recipientsReportService.createAndSaveExportReport(admin, new File(exportWorker.getExportFile()).getName(), exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker, admin), isError);
+		String fileToShow;
+		if (exportWorker.getRemoteFile() != null && StringUtils.isNotBlank(exportWorker.getRemoteFile().getRemoteFilePath())) {
+			// Remote file on ftp or sftp server
+			fileToShow = exportWorker.getRemoteFile().getRemoteFilePath();
+		} else {
+			//Local exported File
+			fileToShow = exportWorker.getExportFile();
+		}
+		recipientsReportService.createAndSaveExportReport(admin, fileToShow, exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker, admin), isError);
 	}
 }

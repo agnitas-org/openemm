@@ -17,7 +17,7 @@ import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
@@ -32,7 +32,7 @@ public class ComMailingLightServiceImpl implements ComMailingLightService {
     public List<LightweightMailingWithMailingList> getLightweightMailings(@VelocityCheck int companyID, int adminId,
                                                                           int parentMailingId, int mailingId) {
 
-        List<ComMailing> mailings = mailingDao.getMailings(companyID, adminId, TAKE_ALL_MAILINGS, "W", true);
+        List<Mailing> mailings = mailingDao.getMailings(companyID, adminId, TAKE_ALL_MAILINGS, "W", true);
 
         List<LightweightMailingWithMailingList> results = mailings.stream()
                 .filter(mailing -> mailing.getDeleted() == 0
@@ -45,7 +45,7 @@ public class ComMailingLightServiceImpl implements ComMailingLightService {
                 .noneMatch(id -> id == parentMailingId);
 
         if (parentMailingId > 0 && parentMailingId != mailingId && isParentIdNotInResultsList) {
-            ComMailing parentMailing = mailingDao.getMailing(parentMailingId, companyID);
+            Mailing parentMailing = mailingDao.getMailing(parentMailingId, companyID);
             results.add(new LightweightMailingWithMailingList(parentMailing, parentMailing.getMailinglistID()));
         }
         return results;

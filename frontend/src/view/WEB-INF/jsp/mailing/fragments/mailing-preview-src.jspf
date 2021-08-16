@@ -1,0 +1,14 @@
+<c:choose>
+    <c:when test="${mailing.isOnlyPostType}">
+        <c:url var="previewImageSrc" value="assets/core/images/facelift/post_thumbnail.jpg"/>
+    </c:when>
+    <c:when test="${not empty mailing.preview_component and mailing.preview_component ne 0}">
+        <c:url var="previewImageSrc" value="/sc">
+            <c:param name="compID" value="${mailing.preview_component}"/>
+            <c:param name="cacheKiller" value="${emm:milliseconds()}"/>
+        </c:url>
+    </c:when>
+    <c:otherwise>
+        <c:url var="previewImageSrc" value="assets/core/images/facelift/no_preview.svg"/>
+    </c:otherwise>
+</c:choose>

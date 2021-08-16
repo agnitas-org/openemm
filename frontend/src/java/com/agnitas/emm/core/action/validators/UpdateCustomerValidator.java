@@ -72,9 +72,10 @@ public class UpdateCustomerValidator implements ActionOperationValidator {
         DbColumnType.SimpleDataType simpleDataType = dataType.getSimpleDataType();
         if (operation.isUseTrack()) {
             valid = validateTrackingPoint(admin, operation, simpleDataType, dataType, errors);
+        } else {
+            valid = validateColumnName(admin, operation, errors, simpleDataType);
         }
 
-        valid &= validateColumnName(admin, operation, errors, simpleDataType);
 
         return new SimpleServiceResult(valid, errors);
     }

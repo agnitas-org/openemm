@@ -226,7 +226,7 @@ public class PasswordEncryptor {
 	
 	}
 	
-	public final String computeAdminPasswordHash(final String password, final int adminID, final int companyID) throws Exception {
+	public final String computeAdminPasswordHash(final String password, final int adminID) throws Exception {
 		return computeAdminPasswordHash(password, adminID, this.sha512Encoder);
 	}
 	

@@ -16,11 +16,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.actions.EmmAction;
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.dao.EmmActionOperationDao;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,6 +38,9 @@ import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.ActivenessStatus;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ExtendedConversionService;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 public class EmmActionServiceImpl implements EmmActionService {
     protected EmmActionDao emmActionDao;
@@ -110,7 +113,7 @@ public class EmmActionServiceImpl implements EmmActionService {
 		emmAction.setActionOperations(ops);
 		emmAction.setId(0);
 		emmAction.setCompanyID(toCompanyId);
-		return saveEmmAction(emmAction);
+		return saveEmmAction(toCompanyId, emmAction);
 	}
 	
 	@Override
@@ -123,23 +126,23 @@ public class EmmActionServiceImpl implements EmmActionService {
 			op.setCompanyId(destinationActionCompanyId);
 		}
 		subscribeAction.setActionOperations(ops);
-		return saveEmmAction(subscribeAction);
+		return saveEmmAction(destinationActionCompanyId, subscribeAction);
 	}
 
 	@Override
-	public int saveEmmAction(EmmAction action) {
-    	return saveEmmAction(action, null);
+	public int saveEmmAction(int companyId, EmmAction action) {
+    	return saveEmmAction(companyId, action, null);
 	}
 
 	@Override
 	@Transactional
-    public int saveEmmAction(ComAdmin admin, EmmAction action, List<UserAction> userActions) {
+    public int saveEmmAction(int companyId, EmmAction action, List<UserAction> userActions) {
     	EmmAction oldAction = action.getId() > 0 ? getEmmAction(action.getId(), action.getCompanyID()) : null;
 
 		int actionId = emmActionDao.saveEmmAction(action);
 		if (actionId > 0) {
 			for (AbstractActionOperationParameters operation : action.getActionOperations()) {
-				operation.setCompanyId(admin.getCompanyID());
+				operation.setCompanyId(companyId);
 				operation.setActionId(actionId);
 				emmActionOperationDao.saveOperation(operation);
 			}
@@ -161,102 +164,6 @@ public class EmmActionServiceImpl implements EmmActionService {
 		}
 
 		return actionId;
-	}
-
-
-	@Override
-	@Transactional
-	public int saveEmmAction(EmmAction action, List<UserAction> userActions) {
-    	EmmAction oldAction = action.getId() > 0 ? getEmmAction(action.getId(), action.getCompanyID()) : null;
-
-		int actionId = emmActionDao.saveEmmAction(action);
-		if (actionId > 0) {
-			for (AbstractActionOperationParameters operation : action.getActionOperations()) {
-				operation.setActionId(actionId);
-				emmActionOperationDao.saveOperation(operation);
-			}
-
-			if (oldAction != null && oldAction.getActionOperations() != null) {
-				for (AbstractActionOperationParameters operation : ListUtils.removeAll(oldAction.getActionOperations(), action.getActionOperations())) {
-					emmActionOperationDao.deleteOperation(operation);
-				}
-			}
-
-			if (userActions != null) {
-				userActions.add(getChangesAsUserAction(action, oldAction));
-			}
-		}
-
-		return actionId;
-	}
-
-	private UserAction getChangesAsUserAction(EmmAction newAction, EmmAction oldAction) {
-    	List<String> description = new ArrayList<>();
-
-		description.add(String.format("%s (%d)", newAction.getShortname(), newAction.getId()));
-
-		if (oldAction == null) {
-			description.add("Set type to " + getTypeAsString(newAction.getType()));
-			description.add("Made " + (newAction.getIsActive() ? "active" : "inactive"));
-
-			for (AbstractActionOperationParameters operation : newAction.getActionOperations()) {
-				String changes = getChanges(null, operation);
-				if (changes != null) {
-					description.add(changes);
-				}
-			}
-		} else {
-			if (!StringUtils.equals(newAction.getShortname(), oldAction.getShortname())) {
-				description.add("Renamed " + oldAction.getShortname() + " to " + newAction.getShortname());
-			}
-			if (newAction.getType() != oldAction.getType()) {
-				description.add("Changed type to " + getTypeAsString(newAction.getType()));
-			}
-			if (newAction.getIsActive() != oldAction.getIsActive()) {
-				description.add("Made " + (newAction.getIsActive() ? "active" : "inactive"));
-			}
-
-			List<AbstractActionOperationParameters> newOperations = newAction.getActionOperations();
-			List<AbstractActionOperationParameters> oldOperations = oldAction.getActionOperations();
-
-			// Order by id to join both lists by id below.
-			newOperations.sort(Comparator.comparingInt(AbstractActionOperationParameters::getId));
-			oldOperations.sort(Comparator.comparingInt(AbstractActionOperationParameters::getId));
-
-			int newIndex = 0;
-			int oldIndex = 0;
-
-			while (newIndex < newOperations.size() || oldIndex < oldOperations.size()) {
-				AbstractActionOperationParameters newOperation = null;
-				AbstractActionOperationParameters oldOperation = null;
-
-				if (newIndex < newOperations.size()) {
-					newOperation = newOperations.get(newIndex++);
-				}
-
-				if (oldIndex < oldOperations.size()) {
-					oldOperation = oldOperations.get(oldIndex++);
-
-					if (newOperation != null) {
-						// Join if ids match or roll back a side having greater id otherwise.
-						if (newOperation.getId() < oldOperation.getId()) {
-							oldOperation = null;
-							oldIndex--;
-						} else if (newOperation.getId() > oldOperation.getId()) {
-							newOperation = null;
-							newIndex--;
-						}
-					}
-				}
-
-				String changes = getChanges(oldOperation, newOperation);
-				if (changes != null) {
-					description.add(changes);
-				}
-			}
-		}
-
-    	return new UserAction(oldAction == null ? "create action" : "edit action", StringUtils.join(description, '\n'));
 	}
 
 	private List<String> getChangesDescriptions(EmmAction newAction, EmmAction oldAction) {
@@ -343,27 +250,6 @@ public class EmmActionServiceImpl implements EmmActionService {
 		}
 	}
 
-	private String getChanges(AbstractActionOperationParameters oldOperation, AbstractActionOperationParameters newOperation) {
-    	if (newOperation == null) {
-    		return "Removed " + oldOperation.getOperationType().getName() + " module #" + oldOperation.getId();
-		}
-
-		String description = newOperation.getUalDescription(oldOperation);
-		String changes = (oldOperation == null ? "Added " : "Changed ") + newOperation.getOperationType().getName() +
-				" module #" + newOperation.getId();
-
-		if (StringUtils.isNotEmpty(description)) {
-    		return changes + " (" + description + ")";
-		}
-
-		// Missing description means "nothing changed".
-		if (oldOperation != null && StringUtils.isEmpty(description)) {
-			return null;
-		}
-
-		return changes;
-	}
-
 	private String asUalDescription(AbstractActionOperationParameters newOperation, AbstractActionOperationParameters oldOperation) {
 		if (newOperation == null && oldOperation == null) {
 			return "";
@@ -435,32 +321,44 @@ public class EmmActionServiceImpl implements EmmActionService {
 		return emmActionDao.getActionListBySendMailingId(companyId, mailingId);
 	}
 
-	@Override
-	public PaginatedListImpl<EmmActionDto> getEmmActions(ComAdmin admin, String sort, String order, int page, int numberOfRows, ActivenessStatus filter) {
-		sort = StringUtils.defaultString(sort, "shortname");
-		PaginatedListImpl<EmmAction> actionList = emmActionDao.getPaginatedActionList(admin.getCompanyID(), sort, order, page, numberOfRows, filter);
-
-		return conversionService.convertPaginatedList(actionList, EmmAction.class, EmmActionDto.class);
-	}
-
     @Override
     public EmmActionDto getCopyOfAction(ComAdmin admin, int originId) {
 		EmmAction originAction = emmActionDao.getEmmAction(originId, admin.getCompanyID());
 		if (originAction != null) {
-			String copyShortname = I18nString.getLocaleString("mailing.CopyOf", admin.getLocale()) + originAction.getShortname();
+			String copyShortname = I18nString.getLocaleString("mailing.CopyOf", admin.getLocale()) + " " + originAction.getShortname();
 			originAction.setId(0);
 			originAction.setShortname(copyShortname);
 
 			// An operations should be cloned, not referenced
-			List<AbstractActionOperationParameters> operations = originAction.getActionOperations();
+			List<AbstractActionOperationParameters> operations = emmActionOperationDao.getOperations(originId, admin.getCompanyID());
 			for (AbstractActionOperationParameters operation : CollectionUtils.emptyIfNull(operations)) {
 				operation.setId(0);
 				operation.setActionId(0);
 			}
+			originAction.setActionOperations(operations);
 
 			return conversionService.convert(originAction, EmmActionDto.class);
 		} else {
 			return new EmmActionDto();
 		}
+    }
+
+    @Override
+    public JSONArray getEmmActionsJson(ComAdmin admin) {
+        JSONArray actionsJson = new JSONArray();
+		for (EmmAction action: emmActionDao.getEmmActions(admin.getCompanyID())) {
+            JSONObject entry = new JSONObject();
+
+			entry.element("id", action.getId());
+			entry.element("shortname", action.getShortname());
+			entry.element("description", action.getDescription());
+			entry.element("formNames", emmActionDao.getActionUserFormNames(action.getId(), admin.getCompanyID()));
+			entry.element("creationDate", DateUtilities.toLong(action.getCreationDate()));
+			entry.element("changeDate", DateUtilities.toLong(action.getChangeDate()));
+			entry.element("activeStatus", action.getIsActive() ? ActivenessStatus.ACTIVE : ActivenessStatus.INACTIVE);
+
+			actionsJson.add(entry);
+		}
+		return actionsJson;
     }
 }

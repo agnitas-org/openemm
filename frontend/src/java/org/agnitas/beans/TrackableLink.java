@@ -19,9 +19,6 @@ public interface TrackableLink extends BaseTrackableLink {
 
     int DEEPTRACKING_NONE = 0;
     int DEEPTRACKING_ONLY_COOKIE = 1;
-    int DEEPTRACKING_ONLY_URL = 2;
-    int DEEPTRACKING_BOTH = 3;
-
 
     /**
      * Getter for property mailingID.

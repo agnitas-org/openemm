@@ -26,7 +26,7 @@
 
           if (node.type == nodeFactory.NODE_TYPE_RECIPIENT) {
             //only one mailinglist allowed per campaign. That's why we disable editing for the second and others recipient icons.
-            if (node.isDependent == true) {
+            if (node.isDependent == true || node.isRecipientDependent == true) {
               self.getEditorPanel(node.type).parent().find(".recipient-editor-select").prop("disabled", true);
             } else {
               self.getEditorPanel(node.type).parent().find(".recipient-editor-select").prop("disabled", false);
@@ -132,6 +132,7 @@
 
         campaignManager.updateNode(this.curEditingNode);
         campaignManager.updateParameterValueAfterDecision();
+        campaignManager.updateRecipientNodesChains();
         campaignManager.callWorkflowManagerStateChangedCallback();
       }
     };
@@ -163,6 +164,7 @@
       }
 
       campaignManager.updateParameterValueAfterDecision();
+      campaignManager.updateNodesAfterRecipient();
       campaignManager.callWorkflowManagerStateChangedCallback();
     };
 
@@ -212,9 +214,7 @@
       });
       // handle unselected checkboxes
       jQuery('form[name="' + formName + '"] [type="checkbox"]').each(function() {
-        if (!jQuery(this).prop("checked")) {
-          result[this.name] = false;
-        }
+        result[this.name] = jQuery(this).prop("checked");
       });
       return result;
     };

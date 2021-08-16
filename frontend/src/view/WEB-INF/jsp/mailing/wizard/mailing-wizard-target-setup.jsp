@@ -3,6 +3,8 @@
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
+<%--@elvariable id="mailingWizardForm" type="org.agnitas.web.MailingWizardForm"--%>
+
 <c:choose>
     <c:when test="${not empty mailingWizardForm.mailing}">
         <c:set var="shortname" value="${mailingWizardForm.mailing.shortname}"/>

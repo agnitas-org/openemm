@@ -1,3 +1,4 @@
+<%@ page import="org.agnitas.dao.MailingStatus" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb"  errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.ExportWizardAction" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
@@ -101,21 +102,21 @@
                                                     <span class="text">${mailing.mailinglist}</span>
                                                 </span>
 
-                                                <c:if test="${mailing.senddate ne null}">
+                                               <span data-tooltip="<mvc:message code='default.changeDate'/>">
+                                                    <i class="icon icon-pencil"></i>
+                                                    <span class="text">
+                                                        <emm:formatDate value="${mailing.changedate}" pattern="${adminDateFormat}"/>
+                                                    </span>
+                                                </span>
+
+                                               <c:if test="${mailing.senddate ne null}">
                                                     <span data-tooltip="<mvc:message code='mailing.senddate'/>">
                                                         <i class="icon icon-calendar-o"></i>
-                                                        <span class="text">
+                                                        <strong>
                                                             <emm:formatDate value="${mailing.senddate}" pattern="${adminDateFormat}"/>
-                                                        </span>
+                                                        </strong>
                                                     </span>
                                                 </c:if>
-
-                                                <span data-tooltip="<mvc:message code='default.changeDate'/>">
-                                                    <i class="icon icon-calendar-o"></i>
-                                                    <strong>
-                                                        <emm:formatDate value="${mailing.changedate}" pattern="${adminDateFormat}"/>
-                                                    </strong>
-                                                </span>
 
                                                 <c:if test="${mailing.usedInCM}">
                                                     <button class="text" data-help="help_${helplanguage}/mailing/overview/WorkflowEditorMailingOverviewMsg.xml" tabindex="-1" type="button">
@@ -145,42 +146,46 @@
                                             </emm:ShowByPermission>
                                         </c:if>
                                         <a class="mailing-preview-card" href="${mailingLink}">
-                                        <c:if test="${mailing.component == null}">
-                                            <img src="<c:url value='/assets/core/images/facelift/no_preview.svg'/>" class="mailing-preview-card-image" />
-                                        </c:if>
-                                        <c:if test="${mailing.component != null}">
-
-                                            <c:url var="previewUrl" value="/sc">
-                                                <c:param name="compID" value="${mailing.component}"/>
-                                                <c:param name="cacheKiller" value="${emm:milliseconds()}"/>
-                                            </c:url>
+                                            <c:choose>
+                                                <c:when test="${mailing.isOnlyPostType}">
+                                                    <c:url var="previewUrl" value="assets/core/images/facelift/post_thumbnail.jpg"/>
+                                                </c:when>
+                                                <c:when test="${not empty mailing.component and mailing.component ne 0}">
+                                                    <c:url var="previewUrl" value="/sc">
+                                                        <c:param name="compID" value="${mailing.component}"/>
+                                                        <c:param name="cacheKiller" value="${emm:milliseconds()}"/>
+                                                    </c:url>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <c:url var="previewUrl" value="assets/core/images/facelift/no_preview.svg"/>
+                                                </c:otherwise>
+                                            </c:choose>
 
                                             <img src="${previewUrl}" class="mailing-preview-card-image" />
-                                        </c:if>
-                                        <div class="mailing-preview-card-body">
-                                            <strong class="headline">
-                                                <c:set var="mailingWorkStatus">
-                                                    <c:if test="${mailing.workstatus ne null}">
-                                                        <mvc:message code="${mailing.workstatus}"/>
+                                            <div class="mailing-preview-card-body">
+                                                <strong class="headline">
+                                                    <c:set var="mailingWorkStatus">
+                                                        <c:if test="${mailing.workstatus ne null}">
+                                                            <mvc:message code="${mailing.workstatus}"/>
+                                                        </c:if>
+                                                    </c:set>
+                                                    <span class="mailing-badge ${mailing.workstatus}" data-tooltip="${mailingWorkStatus}"></span>
+                                                        ${mailing.shortname}
+                                                </strong>
+
+                                                <p class="description">
+                                                        <span data-tooltip="<mvc:message code='birt.mailinglist'/>">
+                                                            <i class="icon icon-list"></i>
+                                                            ${mailing.mailinglist}
+                                                        </span>
+
+                                                    <c:if test="${mailing.usedInCM}">
+                                                        <button class="text" data-help="help_${helplanguage}/mailing/overview/WorkflowEditorMailingOverviewMsg.xml" tabindex="-1" type="button">
+                                                            <i class="icon icon-linkage-campaignmanager"></i> <strong><mvc:message code="campaign.manager.icon"/></strong>
+                                                        </button>
                                                     </c:if>
-                                                </c:set>
-                                                <span class="mailing-badge ${mailing.workstatus}" data-tooltip="${mailingWorkStatus}"></span>
-                                                    ${mailing.shortname}
-                                            </strong>
-
-                                            <p class="description">
-                                                    <span data-tooltip="<mvc:message code='birt.mailinglist'/>">
-                                                        <i class="icon icon-list"></i>
-                                                        ${mailing.mailinglist}
-                                                    </span>
-
-                                                <c:if test="${mailing.usedInCM}">
-                                                    <button class="text" data-help="help_${helplanguage}/mailing/overview/WorkflowEditorMailingOverviewMsg.xml" tabindex="-1" type="button">
-                                                        <i class="icon icon-linkage-campaignmanager"></i> <strong><mvc:message code="campaign.manager.icon"/></strong>
-                                                    </button>
-                                                </c:if>
-                                            </p>
-                                        </div>
+                                                </p>
+                                            </div>
                                         </a>
                                     </div>
                                 </c:forEach>

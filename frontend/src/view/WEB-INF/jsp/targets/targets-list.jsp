@@ -28,6 +28,9 @@
         <html:hidden property="__STRUTS_CHECKBOX_searchDescriptionChecked" value="false"/>
     </logic:equal>
 
+    <html:hidden property="__STRUTS_CHECKBOX_showWorldDelivery" value="false" />
+    <html:hidden property="__STRUTS_CHECKBOX_showTestAndAdminDelivery" value="false" />
+
     <logic:equal name="targetForm" property="searchEnabled" value="true">
         <div class="tile">
             <div class="tile-header">

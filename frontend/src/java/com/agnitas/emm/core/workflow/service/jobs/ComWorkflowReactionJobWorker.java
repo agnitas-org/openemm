@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.service.JobWorker;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Logger;

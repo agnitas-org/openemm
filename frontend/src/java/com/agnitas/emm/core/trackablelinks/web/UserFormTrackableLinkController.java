@@ -27,8 +27,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.LinkProperty;
-import com.agnitas.emm.core.LinkService;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.trackablelinks.dto.ExtensionProperty;
 import com.agnitas.emm.core.trackablelinks.dto.FormTrackableLinkDto;
 import com.agnitas.emm.core.trackablelinks.form.FormTrackableLinkForm;

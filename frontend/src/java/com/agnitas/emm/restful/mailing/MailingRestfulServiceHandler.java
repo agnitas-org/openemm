@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
@@ -52,7 +52,7 @@ import com.agnitas.json.JsonObject;
 
 /**
  * This restful service is available at:
- * https:/<system.url>/restful/mailing
+ * https://<system.url>/restful/mailing
  */
 public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	@SuppressWarnings("unused")
@@ -272,7 +272,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 		
 		int mailingID = Integer.parseInt(restfulContext[0]);
 		
-		ComMailing mailing = mailingDao.getMailing(mailingID, admin.getCompanyID());
+		Mailing mailing = mailingDao.getMailing(mailingID, admin.getCompanyID());
 		if (mailing != null) {
 			try (InputStream inputStream = new FileInputStream(requestDataFile)) {
 				try (Json5Reader jsonReader = new Json5Reader(inputStream)) {

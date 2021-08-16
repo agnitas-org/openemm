@@ -111,6 +111,9 @@ public class DBJobWorker extends JobWorker {
 				throw new Exception("SQL statement parameter (" + statementIndex + "_statement) is empty or missing");
 			} else {
 				sqlStatement = sqlStatement.replace("<company_id>", Integer.toString(companyID));
+				if (previousJobStart != null) {
+					sqlStatement = sqlStatement.replace("<previous_start>", new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS).format(previousJobStart));
+				}
 			}
 			
 			if (StringUtils.isNotEmpty(sftpServerCredentials)) {

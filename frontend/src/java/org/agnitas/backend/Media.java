@@ -63,7 +63,7 @@ public class Media {
 	 */
 	public int stat;
 	/**
-	 * Assigned paramter as found in database
+	 * Assigned parameter as found in database
 	 */
 	private String parm;
 	/**
@@ -245,7 +245,7 @@ public class Media {
 	}
 
 	/**
-	 * Find a paramter as interger value
+	 * Find a parameter as interger value
 	 *
 	 * @param id   Variable to look for
 	 * @param dflt default, if variable is not found

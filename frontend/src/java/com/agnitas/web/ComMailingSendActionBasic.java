@@ -43,10 +43,12 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.beans.Mediatype;
+import org.agnitas.dao.FollowUpType;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.OnepixelDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
@@ -83,8 +85,8 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComCompany;
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.impl.MaildropEntryImpl;
@@ -184,7 +186,6 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 	public static final int ACTION_DEACTIVATE_INTERVALMAILING = ACTION_SEND_LAST + 6;
     public static final int ACTION_PDF_PREVIEW = ACTION_SEND_LAST + 7;
     public static final int ACTION_SAVE_STATUSMAIL_ONERRORONLY = ACTION_SEND_LAST + 8;
-    public static final int ACTION_CREATE_EXTERNAL = ACTION_SEND_LAST + 9;
 
     public static final int SAVE_RECIPIENTS_STATUS_WRONG = 1;
     public static final int SAVE_RECIPIENTS_STATUS_DUPLICATED = 2;
@@ -275,10 +276,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
                 return "check_links";
 			case ACTION_PRIORITIZATION_SWITCHING:
 				return "prioritization_switching";
-				
-			case ACTION_CREATE_EXTERNAL:
-				return "create_external_mailing";
-            
+			
             default:
                 return super.subActionMethodName(subAction);
         }
@@ -378,12 +376,19 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 				
 				case MailingSendAction.ACTION_ACTIVATE_RULEBASED:
 				case MailingSendAction.ACTION_ACTIVATE_CAMPAIGN:
-					loadMailing(aForm, request);
+					Mailing mailingToSend = loadMailing(aForm, request);
 					
 					if (validateActivation(request, aForm, errors, messages)) {
 						if(!containsInvalidTargetGroups(companyId, aForm)) {
 							try {
-								sendMailing(aForm, request, messages);
+								if (isPostMailing(mailingToSend)) {
+									TimeZone aZone = AgnUtils.getTimeZone(request);
+									GregorianCalendar sendDate = new GregorianCalendar(aZone);
+									sendDate.set(Integer.parseInt(aForm.getSendDate().substring(0, 4)), Integer.parseInt(aForm.getSendDate().substring(4, 6)) - 1, Integer.parseInt(aForm.getSendDate().substring(6, 8)), aForm.getSendHour(), aForm.getSendMinute());
+									createPostTrigger(mailingToSend, companyId, sendDate.getTime());
+								} else {
+									sendMailing(aForm, request, messages);
+								}
 							} finally {
 								loadMailing(aForm, request);
 							}
@@ -477,33 +482,40 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 							destination = mapping.findForward("send2");
 						}
 						
-						ComMailing mailing = mailingDao.getMailing(aForm.getMailingID(), companyId);
-						if (!createPostTrigger(mailing, companyId, sendDate.getTime())) {
-							if (mailingDao.getMailingType(aForm.getMailingID()) == MailingTypes.FOLLOW_UP.getCode()) {
-								// Check basemailing data for followup mailing
-								String followUpFor = mailingDao.getFollowUpFor(aForm.getMailingID());
-								if (StringUtils.isNotEmpty(followUpFor)) {
-									int basemailingId = Integer.parseInt(followUpFor);
-									Timestamp baseMailingSendDate = mailingDao.getLastSendDate(basemailingId);
-									if (baseMailingSendDate == null || sendDate.getTime().before(baseMailingSendDate)) {
-										errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.followup.senddate_before_basemail"));
-									}
+						if (mailingDao.getMailingType(aForm.getMailingID()) == MailingTypes.FOLLOW_UP.getCode()) {
+							// Check basemailing data for followup mailing
+							String followUpFor = mailingDao.getFollowUpFor(aForm.getMailingID());
+							if (StringUtils.isNotEmpty(followUpFor)) {
+								int basemailingId = Integer.parseInt(followUpFor);
+								Timestamp baseMailingSendDate = mailingDao.getLastSendDate(basemailingId);
+								if (baseMailingSendDate == null || sendDate.getTime().before(baseMailingSendDate)) {
+									errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.followup.senddate_before_basemail"));
 								}
 							}
-							
-							if (containsInvalidTargetGroups(companyId, aForm)) {
-								errors.add("global", new ActionMessage("error.mailing.containsInvaidTargetGroups"));
-							}
-							
-							int num_recipients;
-							if (Integer.parseInt(aForm.getMaxRecipients()) <= 0) {
-								num_recipients = aForm.getSendStatText() + aForm.getSendStatHtml() + aForm.getSendStatOffline();
-							} else {
-								num_recipients = Math.min(Integer.parseInt(aForm.getMaxRecipients()), aForm.getSendStatText() + aForm.getSendStatHtml() + aForm.getSendStatOffline());
-							}
-							final NumberFormat formatter = NumberFormat.getNumberInstance(admin.getLocale());
-							request.setAttribute("num_recipients", formatter.format(num_recipients));
 						}
+						
+						if (containsInvalidTargetGroups(companyId, aForm)) {
+							errors.add("global", new ActionMessage("error.mailing.containsInvaidTargetGroups"));
+						}
+							
+						int num_recipients;
+						
+						int recipientsAmount = aForm.getSendStatText() + aForm.getSendStatHtml() + aForm.getSendStatOffline();
+						// Sum up other mediatypes
+						loadSendStats(aForm, request);
+						for (Entry<Integer, Integer> entry : aForm.getSendStats().entrySet()) {
+							if (entry.getKey() > 0 && entry.getValue() > 0) {
+								recipientsAmount += entry.getValue();
+							}
+						}
+						
+						if (Integer.parseInt(aForm.getMaxRecipients()) <= 0) {
+							num_recipients = recipientsAmount;
+						} else {
+							num_recipients = Math.min(Integer.parseInt(aForm.getMaxRecipients()), recipientsAmount);
+						}
+						final NumberFormat formatter = NumberFormat.getNumberInstance(admin.getLocale());
+						request.setAttribute("num_recipients", formatter.format(num_recipients));
 					}
 					
 					break;
@@ -524,7 +536,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 					break;
 				
 				case ACTION_VIEW_SEND2:
-					final ComMailing mailing = loadMailing(aForm, request);
+					final Mailing mailing = loadMailing(aForm, request);
 
 					if (!checkIfSendConfigurationPossible(mailing, errors, messages)) {
 						saveErrors(request, errors);
@@ -538,7 +550,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 
 						//if (comForm.getFollowupFor() == null || comForm.getFollowupFor().equals("")) {
 						destination = mapping.findForward("progress");
-					boolean recipientStatIsDone = loadSendStats(aForm, request);
+						boolean recipientStatIsDone = loadSendStats(aForm, request);
 						//                        } else {
 						//                            int companyID = aForm.getCompanyID(req);
 						//                            int followUpID = aForm.getMailingID();
@@ -578,6 +590,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 						}
 						
 						aForm.setAutoExports(autoExportService == null ? new ArrayList<>() : autoExportService.getMailingAutoExports(companyId, false));
+						setInputControlAttributes(request, companyId);
 					}
 					break;
 				
@@ -609,8 +622,12 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 					break;
 				
 				case ACTION_PDF_PREVIEW:
-					String hostUrl = configService.getValue(ConfigValue.SystemUrl);
-					String url = hostUrl + "/mailingsend.do;jsessionid=" + request.getSession().getId() +
+		            String baseUrl = configService.getValue(ConfigValue.PreviewUrl);
+
+		            if (StringUtils.isBlank(baseUrl)) {
+		                baseUrl = configService.getValue(ConfigValue.SystemUrl);
+		            }
+					String url = baseUrl + "/mailingsend.do;jsessionid=" + request.getSession().getId() +
 							"?action=" + MailingSendAction.ACTION_PREVIEW + "&mailingID=" + aForm.getMailingID() +
 							"&previewForm.format=" + MailingPreviewHelper.INPUT_TYPE_HTML +
 							"&previewForm.size=" + previewForm.getSize() +
@@ -651,18 +668,6 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 						}
 					}
 					destination = null;
-					break;
-					
-				case ACTION_CREATE_EXTERNAL:
-					createExternalMailing(companyId, aForm);
-					
-					loadMailing(aForm, request);
-					
-					validateNeedTarget(aForm, errors);
-					loadDeliveryStats(aForm, request);
-					
-					aForm.setAdminTargetGroupID(0);
-					destination = mapping.findForward("send");
 					break;
 				
 				default:
@@ -732,11 +737,8 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 		}
 	}
 	
-	protected void createExternalMailing(int companyId, ComMailingSendForm form) throws Exception {
-    	//nothing do
-	}
-	
-	protected boolean createPostTrigger(ComMailing mailing, int companyId, Date sendDate) {
+	@Override
+	protected boolean createPostTrigger(Mailing mailing, int companyId, Date sendDate) throws Exception {
 		return false;
 	}
 	
@@ -890,8 +892,8 @@ public class ComMailingSendActionBasic extends MailingSendAction {
      * @throws Exception
 	 */
 	@Override
-    protected ComMailing loadMailing(MailingSendForm aForm, HttpServletRequest request) throws Exception {
-		ComMailing aMailing = super.loadMailing(aForm, request);
+    protected Mailing loadMailing(MailingSendForm aForm, HttpServletRequest request) throws Exception {
+		Mailing aMailing = super.loadMailing(aForm, request);
 
         ComMailingSendForm comForm = (ComMailingSendForm) aForm;
         final int companyId = AgnUtils.getCompanyID(request);
@@ -930,9 +932,9 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 
 		if (aForm.getMailingtype() == MailingTypes.INTERVAL.getCode()) {
 			String workStatus = mailingDao.getWorkStatus(companyId, aForm.getMailingID());
-			if (workStatus == null || !workStatus.equals("mailing.status.active")) {
+			if (workStatus == null || !workStatus.equals(MailingStatus.ACTIVE.getDbKey())) {
 				// only active or disable is allowed for interval mailings
-				workStatus = "mailing.status.disable";
+				workStatus = MailingStatus.DISABLE.getDbKey();
 			}
 			
 			comForm.setWorkStatus(workStatus);
@@ -949,7 +951,9 @@ public class ComMailingSendActionBasic extends MailingSendAction {
         // For backward compatibility
         request.setAttribute("templateId", gridTemplateId);
         request.setAttribute("isMailingGrid", gridTemplateId > 0);
-
+        
+        request.setAttribute("enableAdminTestDelivery", true);
+        
         comForm.setIsMailingUndoAvailable(mailingBaseService.checkUndoAvailable(aForm.getMailingID()));
 
         setSendButtonsControlAttributes(request, aMailing);
@@ -957,7 +961,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
         return aMailing;
     }
 	
-	private void loadDependents(HttpServletRequest req, ComMailingSendForm form, ComMailing mailing) {
+	private void loadDependents(HttpServletRequest req, ComMailingSendForm form, Mailing mailing) {
 		int mailingId = mailing.getId();
 		if(mailing.getMailingType() == MailingType.ACTION_BASED.getCode()) {
 			webStorage.access(WebStorage.MAILING_SEND_DEPENDENTS_OVERVIEW, entry -> {
@@ -1032,7 +1036,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 
 	protected List<Integer> getAvailablePreviewFormats(Mailing mailing) {
 		return mailing.getMediatypes().values().stream()
-				.filter(type -> type.getStatus() == Mediatype.STATUS_ACTIVE)
+				.filter(type -> type.getStatus() == MediaTypeStatus.Active.getCode())
 				.map(Mediatype::getMediaType)
 				.map(MediaTypes::getMediaCode)
 				.sorted()
@@ -1160,7 +1164,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 
 		drop.setMaxRecipients(Integer.parseInt(comForm.getMaxRecipients()));
 
-		ComMailing aMailing = mailingDao.getMailing(aForm.getMailingID(), companyId);
+		Mailing aMailing = mailingDao.getMailing(aForm.getMailingID(), companyId);
 
 		if (aMailing == null) {
 			return;
@@ -1262,7 +1266,11 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 		}
 		
 		if (drop.getStatus() == MaildropStatus.DATE_BASED.getCode()) {
-			sendDate.setSeconds(0);
+			GregorianCalendar calendar = new GregorianCalendar();
+			calendar.setTime(sendDate);
+			calendar.set(Calendar.SECOND, 0);
+			calendar.set(Calendar.MILLISECOND, 0);
+			sendDate = calendar.getTime();
 		}
 
 		drop.setSendDate(sendDate);
@@ -1363,7 +1371,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
         logSendAction(AgnUtils.getAdmin(req), sendDate, aMailing, aForm.getAction());
 	}
 
-	private boolean checkIfSendConfigurationPossible(final ComMailing mailing, final ActionMessages errors, final ActionMessages messages) {
+	private boolean checkIfSendConfigurationPossible(final Mailing mailing, final ActionMessages errors, final ActionMessages messages) {
 		SimpleServiceResult result = mailingBaseService.checkContentNotBlank(mailing);
 
 		for (Message msg : result.getErrorMessages()) {
@@ -1385,13 +1393,13 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 		return mailingBaseService.isContentBlank(template.getEmmBlock(), mailing.getDynTags());
 	}
 
-	private void triggerMaildrop(int maildropStatusId) {
+	private void triggerMaildrop(int maildropStatusId) throws Exception {
 		new MailoutClient().invoke("fire", Integer.toString(maildropStatusId));
 	}
 
 	private void selectTestRecipients(@VelocityCheck int companyId, int mailingListId, int maildropStatusId, List<String> addresses) {
 		if (CollectionUtils.isNotEmpty(addresses)) {
-			List<Integer> customerIds = recipientDao.insertTestRecipients(companyId, mailingListId, UserStatus.Suspend.getStatusCode(), addresses);
+			List<Integer> customerIds = recipientDao.insertTestRecipients(companyId, mailingListId, UserStatus.Suspend.getStatusCode(), "Test recipient for delivery test", addresses);
 			maildropService.selectTestRecipients(companyId, maildropStatusId, customerIds);
 		}
 	}
@@ -1449,7 +1457,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
     }
 
     
-    private void scheduleReport(final ComMailingSendForm form, ComAdmin admin, final ComMailing mailing, Date sendDate) throws Exception {
+    private void scheduleReport(final ComMailingSendForm form, ComAdmin admin, final Mailing mailing, Date sendDate) throws Exception {
     	// Reports only, if sending world mailings
     	if (form.getAction() == MailingSendAction.ACTION_SEND_WORLD) {
     		if (form.isReportSendAfter24h()) {
@@ -1479,7 +1487,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 	 * Keep in mind, 'selectedMailings' prop will be overwritten by @see {@link ComBirtReportService#getReportsToSend(int, List, List)}
 	 *
 	 */
-    private void scheduleNewReport(final ComMailingSendForm form, ComAdmin admin, final ComMailing mailing, final Date sendDate, final BirtReportType reportType) throws Exception {
+    private void scheduleNewReport(final ComMailingSendForm form, ComAdmin admin, final Mailing mailing, final Date sendDate, final BirtReportType reportType) throws Exception {
 		// Create the report itself
     	final ComBirtReport report = birtReportFactory.createReport();
 		report.setReportType(reportType.getKey());
@@ -1693,9 +1701,9 @@ public class ComMailingSendActionBasic extends MailingSendAction {
             		messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.followup.basemail_was_not_sent"));
             	} else {
             	    ComAdmin admin = AgnUtils.getAdmin(req);
-            	    List<ComMailing> availableBaseMailings = mailingDao.getMailings(admin.getCompanyID(), admin.getAdminID(), ComMailingLightService.TAKE_ALL_MAILINGS, "W", true);
+            	    List<Mailing> availableBaseMailings = mailingDao.getMailings(admin.getCompanyID(), admin.getAdminID(), ComMailingLightService.TAKE_ALL_MAILINGS, "W", true);
                 	boolean isBaseMailingTrackingDataAvailable = false;
-                	for (ComMailing mailing : availableBaseMailings) {
+                	for (Mailing mailing : availableBaseMailings) {
                 		if (mailing.getId() == basemailingId) {
                 			isBaseMailingTrackingDataAvailable = true;
                 			break;
@@ -1723,7 +1731,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 	 * This method returns the type of this mailing. The returnvalues can be
 	 * "followup_clicker", "followup_nonclicker", "followup_opener", "followup_nonopener"
 	 * the reason for that is, that this string is used directly as translation given in messages.properties.
-	 * therefore this value must be unique and can not be Mailing.TYPE_FOLLOWUP_CLICKER or something
+	 * therefore this value must be unique and can not be FollowUpType.TYPE_FOLLOWUP_CLICKER or something
 	 * like that.
 	 *
 	 * @param mailingID
@@ -1736,13 +1744,13 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 		if (mailingType == MailingTypes.FOLLOW_UP.getCode()) {
 //			String tmpString = aMailing.getFollowUpType();
 
-			if (Mailing.TYPE_FOLLOWUP_CLICKER.equals(followUpType)) {
+			if (FollowUpType.TYPE_FOLLOWUP_CLICKER.getKey().equals(followUpType)) {
 				return "followup_clicker";
-			} else if (Mailing.TYPE_FOLLOWUP_NON_CLICKER.equals(followUpType)) {
+			} else if (FollowUpType.TYPE_FOLLOWUP_NON_CLICKER.getKey().equals(followUpType)) {
 				return "followup_nonclicker";
-			} else if (Mailing.TYPE_FOLLOWUP_OPENER.equals(followUpType)) {
+			} else if (FollowUpType.TYPE_FOLLOWUP_OPENER.getKey().equals(followUpType)) {
 				return "followup_opener";
-			} else if (Mailing.TYPE_FOLLOWUP_NON_OPENER.equals(followUpType)) {
+			} else if (FollowUpType.TYPE_FOLLOWUP_NON_OPENER.getKey().equals(followUpType)) {
 				return "followup_nonopener";
 			}
 		}
@@ -1784,15 +1792,15 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 	}
 
 	@Override
-    protected void setSendButtonsControlAttributes(final HttpServletRequest request, final Mailing mailing) {
+    protected void setSendButtonsControlAttributes(final HttpServletRequest request, final Mailing mailing) throws Exception {
     	request.setAttribute("CAN_SEND_WORLDMAILING", checkCanSendWorldMailing(request, mailing));
     	request.setAttribute("CAN_ENABLE_SEND_WORLDMAILING", checkCanEnableSendWorldMailing(request, mailing));
     }
     
 	@Override
-    protected boolean checkCanSendWorldMailing(final HttpServletRequest request, final Mailing mailing) {
+    protected boolean checkCanSendWorldMailing(final HttpServletRequest request, final Mailing mailing) throws Exception {
 		if (super.checkCanSendWorldMailing(request, mailing)) {
-            if (AgnUtils.allowed(request, Permission.MAILING_CAN_SEND_ALWAYS)) {
+			if (AgnUtils.allowed(request, Permission.MAILING_CAN_SEND_ALWAYS)) {
                 return true;
             } else {
                 return !checkIfMailingIsLocked(mailing);
@@ -1877,6 +1885,11 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 		}
 	}
 
+	private void setInputControlAttributes(final HttpServletRequest request, final int companyId) {
+        request.setAttribute("isMailtrackExtended", 
+                configService.getBooleanValue(ConfigValue.MailtrackExtended, companyId));
+	}
+
     public void setAutoExportService(AutoExportService autoExportService) {
         this.autoExportService = autoExportService;
     }
@@ -1925,7 +1938,6 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 	public void setWebStorage(WebStorage webStorage) {
 		this.webStorage = webStorage;
 	}
-
 
 	@Required
     public void setBirtReportService(final ComBirtReportService service) {

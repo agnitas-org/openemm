@@ -13,7 +13,7 @@ package org.agnitas.emm.springws.endpoint.mailing;
 import java.util.Collection;
 import java.util.List;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.mailing.service.MailingModel.Format;
 import org.agnitas.emm.springws.jaxb.Template;

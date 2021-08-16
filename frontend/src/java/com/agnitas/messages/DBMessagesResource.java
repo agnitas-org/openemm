@@ -143,7 +143,7 @@ public class DBMessagesResource {
 			if (applicationVersion.getMajorVersion() > 0) {
 				versionString += "20" + applicationVersion.getMajorVersion();
 			} else {
-				versionString += "<b><font color=\"#FF0000\">INTERNAL TEST</font></b>";
+				versionString += "<b><font color=\"#FF0000\">TEST</font></b>";
 			}
 			defaultLanguageMessages.put("default.version", versionString);
 			

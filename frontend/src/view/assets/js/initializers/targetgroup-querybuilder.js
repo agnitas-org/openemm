@@ -1,33 +1,42 @@
 (function() {
 
   var READ_ONLY_PARAMS = {
+    header_readonly: true,
     filter_readonly: true,
     condition_readonly: true,
     operator_readonly: true,
     value_readonly: true,
     no_delete: true,
     no_add_rule: true,
+    no_sortable: true,
     no_add_group: true
   };
 
-  AGN.Lib.DomInitializer.new('target-group-query-builder', function($form) {
+  AGN.Lib.DomInitializer.new('target-group-query-builder', function($needle) {
+    var $form = AGN.Lib.Form.getWrapper($needle);
     var qbSelector = '#targetgroup-querybuilder';
     var queryBuilders = $(qbSelector);
 
     var mailTrackingAvailable = this.config.mailTrackingAvailable;
     var isTargetGroupLocked = this.config.isTargetGroupLocked;
+    var helpLanguage = this.config.helpLanguage;
 
     var isIE10 = navigator.userAgent.match('MSIE 10.0;');
 
+    var self = this;
     _.each(queryBuilders, function(el) {
       var $el = $(el);
       var operator_groups = buildOperatorGroups();
-      var qbFilters = readFiltersFromJson($el, "#queryBuilderFilters", {mail_tracking_available: mailTrackingAvailable});
+
+      var qbFilters = readFiltersFromJson(self.config.queryBuilderFilters, {mail_tracking_available: mailTrackingAvailable});
+      var rules = readRulesFromJson(JSON.parse(self.config.queryBuilderRules), isTargetGroupLocked);
 
       $el.queryBuilder({
         filters: qbFilters,
         allow_empty: true,
         operators: operator_groups,
+        helpLanguage: helpLanguage,
+        readonly: isTargetGroupLocked,
         plugins: {
           'sortable': {
             inherit_no_drop: true,
@@ -35,7 +44,7 @@
             icon: 'icon icon-arrows-alt'
           }
         },
-        rules: readRulesFromJson($el, "#queryBuilderRules", isTargetGroupLocked)
+        rules: rules
       });
 
       if (!isIE10) {
@@ -71,54 +80,34 @@
         return false;
       });
 
-      $form.on('validation', function(e) {
-        var $self = $(this),
-          qb = $el.prop('queryBuilder');
+    });
 
-        var methodName = AGN.Lib.Form.get($self).getValue('method');
-        if (methodName === 'save') {
-          validate(e, qb, false);
-        } else {
-          validate(e, qb, true);
+    $form
+      .off()
+      .on('validation', function(e, options) {
+      // ignore_qb_validation is used to prevent validate QB rules
+      // this option prevent update query builder rules field
+      options = $.extend({ignore_qb_validation: false, skip_empty: false}, options);
+      _.each($(qbSelector), function(el) {
+        var $el = $(el);
+        var qb = $el.prop('queryBuilder');
+        if (!validate(e, qb, options, $el)) {
+          return false;
         }
       });
     });
 
-    $form.on('click', '[data-toggle-tab]', function(e) {
-      var form = AGN.Lib.Form.get($form);
-      //reset the method for proper validation
-      //method hasn't to be 'save'
-      form.setValue('method', '');
-      if (!form.valid()) {
-        e.preventDefault();
-        return false;
-      }
-    });
-
-    this.addAction({click: 'switch-tab-viewEQL'}, function() {
-      var element = this.el,
-        form = AGN.Lib.Form.get($(element));
-
-      form.setValue('method', 'viewEQL');
-      form.submit();
-    });
-
-    this.addAction({click: 'switch-tab-viewQB'}, function() {
-      var element = this.el,
-        form = AGN.Lib.Form.get($(element));
-
-      form.setValue('method', 'viewQB');
-      form.submit();
-    });
-
-    function validate(e, qb, skipEmpty) {
+    function validate(e, qb, options, $el) {
       qb.clearInitialRuleSettings();
 
-      if (qb.validate({skip_filter_validation: false, skip_empty: skipEmpty})) {
-        $('#queryBuilderRules').val(getRulesAsJson(qb, skipEmpty));
+      if (options.ignore_qb_validation) {
+        //don't update query builder rule
+        return true;
+      } else if (qb.validate({skip_filter_validation: false, skip_empty: options.skip_empty})) {
+        $el.find('#queryBuilderRules').val(getRulesAsJson(qb, options.skip_empty));
         return true;
       } else {
-        AGN.Lib.Messages(t('defaults.error'), t('querybuilder.errors.general'), 'alert');
+        $el.trigger('qb:invalidrules');
         e.preventDefault();
         return false;
       }
@@ -136,11 +125,9 @@
       }
     }
 
-    function readFiltersFromJson($scope, name, options) {
-      var result = readQBJSON($scope, name);
-
-      if (result === null) {
-        result = [{
+    function readFiltersFromJson(filtersJson, options) {
+      if (filtersJson === null) {
+        filtersJson = [{
           id: '?',
           label: '?',
           type: 'string'
@@ -148,7 +135,7 @@
       } else {
         var ids = {};
 
-        result = result.filter(function(e) {
+        filtersJson = filtersJson.filter(function(e) {
           if (ids[e.id]) {
             return false;
           }
@@ -158,9 +145,9 @@
         });
       }
 
-      augmentIndependentFields(result, options);
+      augmentIndependentFields(filtersJson, options);
 
-      return result;
+      return $.extend([], filtersJson);
     }
 
     function addReadOnlyFlags(options) {
@@ -169,6 +156,9 @@
 
         _.each(options.rules, function(rule){
           rule.flags = READ_ONLY_PARAMS;
+          if (rule.hasOwnProperty('condition')) {
+             addReadOnlyFlags(rule)
+          }
         });
       }
       return options;
@@ -179,13 +169,13 @@
 
       options = $.extend({mail_tracking_available: false}, options);
       var getEmptyMailingSelect = function(rule) {
-        var $select = $('<select class="form-control qb-input-element-select mailings js-select">');
+        var $select = $('<select class="form-control qb-input-element-select mailings js-select"></select>');
         $select.attr("id", rule.id);
         return $select;
       };
 
       var getEmptyAutoImportSelect = function(rule) {
-        var $select = $('<select class="form-control qb-input-element-select auto-imports js-select">');
+        var $select = $('<select class="form-control qb-input-element-select auto-imports js-select"></select>');
         $select.attr("id", rule.id);
         return $select;
       };
@@ -269,52 +259,59 @@
         'clicked in mailing': {
           type: 'string',
           input_event: 'values-setup-finished',
+          valueSelector: function(ruleId, index) {
+            var ids = ['mailingID', 'linkID'];
+            return ruleId + '_' + ids[index];
+          },
           input: function(rule) {
-            return $(
-              '<div class="qb-input-element">' +
-              '<select class="form-control js-select mailings" id="' + rule.id + '" />' +
+            return $('<div class="qb-input-element-select">' +
+              '<select class="form-control js-select mailings" data-rule-id="' + rule.id + '" id="' + rule.filter.valueSelector(rule.id, 0) + '" ></select>' +
               '</div>' +
               '<div class="qb-input-label">' +
               '<div class="qb-input-inner">Links</div>' +
               '</div>' +
-              '<div class="qb-input-element">' +
-              '<select class="form-control js-select links" id="' + rule.id + '" />' +
-              '</div>'
-            );
+              '<div class="qb-input-element-select">' +
+              '<select class="form-control js-select links" data-rule-id="' + rule.id + '" id="' + rule.filter.valueSelector(rule.id, 1) + '" ></select>' +
+              '</div>');
           },
           values: function($ruleInput) {
-            var $mailingsSelect = $ruleInput.find('.mailings');
-            $mailingsSelect.change(function(event) {
-              var mailingID = $(event.target).find(':selected').val();
+            var $mailings = $ruleInput.find('.mailings');
+            var mailings = AGN.Lib.Select.get($mailings);
+            $mailings.change(function() {
+              var mailingID = mailings.getSelectedValue();
               requestMailingLinks(mailingID, function(data) {
-                var $linksContainer = $ruleInput.find('.links'),
-                  option = $('<option value="-1">' + t('querybuilder.common.anyLink') +
-                    '</option>');
-                $linksContainer.empty();
-                $linksContainer.append(option);
+                var $links = $ruleInput.find('.links');
+                var links = AGN.Lib.Select.get($links);
+                var options = [{id: -1, text: t('querybuilder.common.anyLink')}];
+
                 $.each(data, function(key, value) {
-                  option = $('<option/>');
-                  option.text(value.url);
-                  option.val(value.id);
-                  $linksContainer.append(option);
+                  options.push({id: value.id, text: value.url});
                 });
-                $linksContainer.trigger('link-values-set');
+
+                links.setOptions(options);
+                $links.trigger('link-values-set');
               });
             });
-            requestMailings($mailingsSelect, function(data) {
-              defaultMailingsSuccessCallback(data, $mailingsSelect);
-              $mailingsSelect.trigger('mailing-values-set');
+            requestMailings($mailings, function(data) {
+              var options = [];
+              data.forEach(function(element) {
+                options.push({id: element.mailingID, text: element.shortname})
+              });
+
+              mailings.setOptions(options);
+              $mailings.trigger('mailing-values-set');
             });
           },
           valueGetter: function(rule) {
-            var value = [];
-            var mailingID = 0, linkID = 1;
-            value[mailingID] = rule.$el.find('select.mailings').val();
-            value[linkID] = rule.$el.find('select.links').val();
+            var mailingID = 0, linkID = 1,
+              value = [];
+
+            value[mailingID] = rule.$el.find('#' + rule.filter.valueSelector(rule.id, mailingID)).val();
+            value[linkID] = rule.$el.find('#' + rule.filter.valueSelector(rule.id, linkID)).val();
             return value;
           },
           valueSetter: (function() {
-            var mailingID = 0, linkID = 1, qbSelector = '#tab-targetgroupQueryBuilderEditor',
+            var mailingID = 0, linkID = 1,
               savedValues = {}, savedRules = {};
             var valueSetter = function(rule, value) {
               savedValues[rule.id] = value;
@@ -323,7 +320,7 @@
             //Optimize
             $(qbSelector).on('mailing-values-set', function(event) {
               var $select = $(event.target),
-                id = $select.attr('id'),
+                id = $select.data('rule-id'),
                 savedRule = savedRules[id], $mailings;
               if (savedRule) {
                 $mailings = savedRule.$el.find('.mailings');
@@ -335,7 +332,7 @@
               }
             });
             $(qbSelector).on('link-values-set', function(event) {
-              var id = $(event.target).attr('id'),
+              var id = $(event.target).data('rule-id'),
                 savedRule = savedRules[id], $links;
               if (savedRule) {
                 $links = savedRule.$el.find('.links');
@@ -386,12 +383,14 @@
 
     function requestMailings($ruleInput, successCallback) {
       var success = successCallback || function(data) {
+        var rule = AGN.Lib.Select.get($ruleInput);
+        var options = [];
+
         data.forEach(function(element) {
-          var option = $('<option>');
-          option.text(element.shortname);
-          option.val(element.mailingID);
-          $ruleInput.append(option);
+          options.push({id: element.mailingID, text: element.shortname})
         });
+
+        rule.setOptions(options);
         $ruleInput.trigger('values-set');
       };
 
@@ -447,24 +446,11 @@
       });
     }
 
-    function readRulesFromJson($scope, name, isTGLocked) {
-      var result =  readQBJSON($scope, name, isTGLocked);
-      if(isTGLocked == 'true') {
-        result = addReadOnlyFlags(result);
+    function readRulesFromJson(rulesJson, isTGLocked) {
+      if (isTGLocked) {
+        rulesJson = addReadOnlyFlags(rulesJson);
       }
-      return result;
-    }
-
-    function readQBJSON($scope, name) {
-      var result = null;
-      _.each($scope.find(name), function(el) {
-        if (result === null) {
-          var $el = $(el),
-            source = $el.val();
-          result = JSON.parse(source);
-        }
-      });
-      return result;
+      return $.extend({}, rulesJson);
     }
 
     function buildOperatorGroups() {

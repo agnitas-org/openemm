@@ -62,9 +62,10 @@ public class ImportProfileImpl implements ImportProfile {
     private boolean zipped = false;
     private String zipPassword = null;
     private boolean autoMapping = false;
-    private List<Integer> mailinglistIds;
-    private MediaTypes mediatype;
+    private List<Integer> mailinglistIds = new ArrayList<>();
+    private Set<MediaTypes> mediatypes = new HashSet<>();
     private String datatype = "CSV";
+	private boolean mailinglistsAll;
     
     public ImportProfileImpl() {
     	keyColumns = new ArrayList<>();
@@ -254,33 +255,6 @@ public class ImportProfileImpl implements ImportProfile {
             return genderMapping.get(fieldValue);
         }
     }
-
-    /**
-     * returns false on adding duplicate entries
-     */
-	@Override
-	public boolean addGenderMappingSequence(String stringGenderSequence, int intGender) {
-		if (StringUtils.isEmpty(stringGenderSequence)) {
-			return false;
-		} else {
-			String[] genderTokens = stringGenderSequence.split(",");
-			
-			// Check if any token is already set
-			for (String genderToken : genderTokens) {
-				if (StringUtils.isNotBlank(genderToken) && genderMapping.containsKey(genderToken.trim())) {
-					return false;
-				}
-			}
-			
-			for (String genderToken : genderTokens) {
-				if (StringUtils.isNotBlank(genderToken)) {
-					genderMapping.put(genderToken.trim(), intGender);
-				}
-			}
-			
-			return true;
-		}
-	}
 
     private boolean isParsableToInt(String i) {
         try {
@@ -527,23 +501,17 @@ public class ImportProfileImpl implements ImportProfile {
 	}
 
 	@Override
-	public MediaTypes getMediatype() {
-		return mediatype;
+	public Set<MediaTypes> getMediatypes() {
+		if (mediatypes == null || mediatypes.size() == 0) {
+			mediatypes = new HashSet<>();
+			mediatypes.add(MediaTypes.EMAIL);
+		}
+		return mediatypes;
 	}
 
 	@Override
-	public void setMediatype(MediaTypes mediatype) {
-		this.mediatype = mediatype;
-	}
-
-	@Override
-	public int getMediatypeCode() {
-		return mediatype == null ? MediaTypes.EMAIL.getMediaCode() : mediatype.getMediaCode();
-	}
-
-	@Override
-	public void setMediatypeCode(int mediatypeCode) {
-		this.mediatype = MediaTypes.getMediaTypeForCode(mediatypeCode);
+	public void setMediatypes(Set<MediaTypes> mediatypes) {
+		this.mediatypes = mediatypes;
 	}
 
 	@Override
@@ -554,5 +522,15 @@ public class ImportProfileImpl implements ImportProfile {
 	@Override
 	public void setDatatype(String datatype) {
 		this.datatype = datatype;
+	}
+
+	@Override
+	public void setMailinglistsAll(boolean mailinglistsAll) {
+		this.mailinglistsAll = mailinglistsAll;
+	}
+
+	@Override
+	public boolean isMailinglistsAll() {
+		return mailinglistsAll;
 	}
 }

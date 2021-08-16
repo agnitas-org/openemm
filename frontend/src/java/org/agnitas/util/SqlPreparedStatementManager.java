@@ -80,7 +80,7 @@ public class SqlPreparedStatementManager {
 		
 		if (hasAppendedClauses) {
 			statement.append(" ");
-			if(concatenateByOr){
+			if (concatenateByOr){
 				addOrClause();
 			} else {
 				addAndClause();

@@ -11,7 +11,8 @@
 
 <%@include file="webserviceuser-create.jsp"%>
 
-<mvc:form servletRelativeAction="/administration/wsmanager/users.action" modelAttribute="webserviceUserListForm" data-form="resource">
+<mvc:form servletRelativeAction="/administration/wsmanager/users.action" id="wsuser-list-form"
+          modelAttribute="webserviceUserListForm" data-form="resource">
     <script type="application/json" data-initializer="web-storage-persist">
         {
             "ws-manager-overview": {

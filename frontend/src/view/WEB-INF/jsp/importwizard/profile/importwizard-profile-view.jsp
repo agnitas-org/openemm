@@ -22,8 +22,7 @@
     </c:otherwise>
 </c:choose>
 
-
-<agn:agnForm action="/importprofile" data-form-focus="profile.name" id="importProfileForm" data-form="resource" data-controller="import-profile">
+<agn:agnForm action="/importprofile" data-form-focus="${isGenderSectionFocused ? 'addedGender' : 'profile.name'}" id="importProfileForm" data-form="resource" data-controller="import-profile">
 
     <html:hidden property="profileId"/>
     <html:hidden property="action"/>
@@ -52,5 +51,6 @@
     <%@include file="/WEB-INF/jsp/importwizard/profile/action_settings.jsp" %>
     <%@include file="/WEB-INF/jsp/importwizard/profile/gender_settings.jsp" %>
     <%@include file="/WEB-INF/jsp/importwizard/profile/mailinglist_settings.jsp" %>
+    <%@include file="/WEB-INF/jsp/importwizard/profile/mediatype_settings.jspf" %>
 
 </agn:agnForm>

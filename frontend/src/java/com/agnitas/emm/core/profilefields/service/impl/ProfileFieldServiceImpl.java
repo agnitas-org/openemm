@@ -91,8 +91,23 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
             throw new ProfileFieldException(msg, e);
         }
     }
+    
+    
 
     @Override
+	public final String translateVisibleNameToDatabaseName(final int companyID, final String visibleName) throws ProfileFieldException {
+    	try {
+    		return this.profileFieldDao.getProfileFieldByShortname(companyID, visibleName).getColumn();
+    	} catch(final Exception e) {
+            final String msg = String.format("Unable to translate profile field visible name '%s' to database name (company ID %d)", visibleName, companyID);
+
+            logger.error(msg, e);
+
+            throw new ProfileFieldException(msg, e);
+        }
+	}
+
+	@Override
     public List<ProfileField> getProfileFieldsWithInterest(ComAdmin admin) {
         try {
             return profileFieldDao.getProfileFieldsWithInterest(admin.getCompanyID(), admin.getAdminID());

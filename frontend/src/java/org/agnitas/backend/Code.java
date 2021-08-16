@@ -10,6 +10,8 @@
 
 package org.agnitas.backend;
 
+import bsh.EvalError;
+import bsh.Interpreter;
 import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -105,7 +107,10 @@ public class Code {
 		if (!valid) {
 			valid = fetchCodeFromDatabase();
 			if (valid) {
-				parseCodeForConfiguration();
+				valid = conditionalPreprocessCode ();
+				if (valid) {
+					parseCodeForConfiguration();
+				}
 			}
 		}
 		return valid;
@@ -118,7 +123,7 @@ public class Code {
 	 * values for the calling agnTag.
 	 *
 	 * @param predef the referenced database columns
-	 * @param parms  the default value for the agnTag paramtere
+	 * @param parms  the default value for the agnTag parameter
 	 * @throws Exception
 	 */
 	public void requestFields(Set<String> predef, Map<String, String> parameter) throws Exception {
@@ -157,8 +162,53 @@ public class Code {
 		return function != null;
 	}
 
-	private static Pattern optPattern = Pattern.compile("^[^a-zA-Z0-9\\\\]*([a-zA-Z_][a-zA-Z0-9_]*):[ \t]*(.+);[ \t]*[\r\n]*");
+	private static Pattern conditionPattern = Pattern.compile ("#<(.*)>#$", Pattern.MULTILINE);
+	private boolean conditionalPreprocessCode () {
+		Matcher	chk = conditionPattern.matcher (code);
+		
+		if (! chk.find ()) {
+			return true;
+		}
+		
+		List <String>	newCode = new ArrayList <> ();
+		boolean		match = true;
+		int		lineno = 0;
+		
+		for (String line : code.split ("\n")) {
+			++lineno;
+			
+			Matcher	m = conditionPattern.matcher (line.trim ());
+			if (m.find ()) {
+				String	condition = m.group (1).trim ();
+				
+				try {
+					Interpreter	interpreter = new Interpreter ();
+					
+					interpreter.set ("data", data);
+					
+					Object	rc = interpreter.eval (condition);
+					
+					if ((rc == null) || (rc.getClass () != Boolean.class)) {
+						data.logging (Log.ERROR, "code", name + ": invalid return type in \"" + condition + "\" in line " + lineno + ", expect boolean, got " + (rc == null ? "NULL" : rc.getClass ()));
+						return false;
+					}
+					match = (Boolean) rc;
+					if (match) {
+						newCode.clear ();
+					}
+				} catch (EvalError e) {
+					data.logging (Log.ERROR, "code", name + ": invalid condition \"" + condition + "\" in line " + lineno + ": " + e.toString ());
+					return false;
+				}
+			} else if (match) {
+				newCode.add (line);
+			}
+		}
+		code = newCode.stream ().reduce ((s, e) -> s + "\n" + e).orElse ("");
+		return true;
+	}
 
+	private static Pattern optPattern = Pattern.compile("^[^a-zA-Z0-9\\\\]*([a-zA-Z_][a-zA-Z0-9_]*):[ \t]*(.+);[ \t]*[\r\n]*");
 	private void parseCodeForConfiguration() {
 		while (true) {
 			Matcher m = optPattern.matcher(code);

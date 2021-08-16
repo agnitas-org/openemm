@@ -12,8 +12,6 @@ package com.agnitas.emm.core.birtreport.dao.impl;
 
 import static org.agnitas.util.DbUtilities.joinForIn;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -34,6 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.birtreport.bean.BirtReportFactory;
@@ -371,56 +370,24 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 			"UPDATE birtreport_tbl SET running = 0, nextstart = CURRENT_TIMESTAMP WHERE lasthostname = ? AND running = 1",
 			AgnUtils.getHostName());
 	}
-
+	
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean announceStart(ComBirtReport birtReport) {
-		if (birtReport.getId() <= 0) {
+	@Transactional
+	public final boolean announceStart(final ComBirtReport birtReport) {
+		if(birtReport.getId() <= 0) {
 			return false;
-		} else {
-			try {
-				try (Connection connection = getDataSource().getConnection()) {
-					boolean previousAutoCommit = connection.getAutoCommit();
-					connection.setAutoCommit(false);
-					
-					String selectSql = "SELECT running FROM birtreport_tbl WHERE running <= 0 AND report_id = ? FOR UPDATE";
-					
-					logSqlStatement(logger, selectSql);
-					try (PreparedStatement lockStatement = connection.prepareStatement(selectSql)) {
-						lockStatement.setInt(1, birtReport.getId());
-						
-						try (ResultSet lockQueryResult = lockStatement.executeQuery()) {
-							if (lockQueryResult.next()) {
-								// Lock this job by setting to running
-								String updateJobStatusSql = "UPDATE birtreport_tbl SET running = 1, nextstart = ?, lasthostname = ?, laststart = CURRENT_TIMESTAMP WHERE report_id = ?";
-								logSqlStatement(logger, updateJobStatusSql);
-								try (PreparedStatement updateStatement = connection.prepareStatement(updateJobStatusSql)) {
-									if (birtReport.getNextStart() == null) {
-										updateStatement.setTimestamp(1, null);
-									} else {
-										updateStatement.setTimestamp(1, new Timestamp(birtReport.getNextStart().getTime()));
-									}
-									
-									updateStatement.setString(2, AgnUtils.getHostName());
-									updateStatement.setInt(3, birtReport.getId());
-									updateStatement.executeUpdate();
-								}
-								
-								return true;
-							} else {
-								return false;
-							}
-						} finally {
-							connection.commit();
-						}
-					} finally {
-						connection.setAutoCommit(previousAutoCommit);
-					}
-				}
-			} catch(Exception e) {
-				logger.error("Error while setting birtreport status", e);
-				throw new RuntimeException("Error while setting birtreport status", e);
-			}
+		}
+		
+		try {
+			// Lock rows against modification by other sessions
+			final String updateJobStatusSql = "UPDATE birtreport_tbl SET running = 1, nextstart = ?, lasthostname = ?, laststart = CURRENT_TIMESTAMP WHERE report_id = ? AND running <= 0";
+			final Timestamp nextStartTimestamp = birtReport.getNextStart() != null ? new Timestamp(birtReport.getNextStart().getTime()) : null;
+			int touchedLines = update(logger, updateJobStatusSql, nextStartTimestamp, AgnUtils.getHostName(), birtReport.getId());
+			return touchedLines == 1;
+		} catch(final Exception e) {
+			logger.error("Error while setting birtreport status", e);
+			throw new RuntimeException("Error while setting birtreport status", e);
 		}
 	}
 	

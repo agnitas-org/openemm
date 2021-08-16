@@ -13,7 +13,6 @@ package com.agnitas.service.impl;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.MaildropStatusDao;
@@ -33,12 +32,12 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingSendOptions;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.impl.ComMailingImpl;
 import com.agnitas.beans.impl.MaildropEntryImpl;
+import com.agnitas.beans.impl.MailingImpl;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTrackableLinkDao;
@@ -71,13 +70,13 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
     private ConfigService configService;
 
     @Override
-    public void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, List<Message> warnings, List<Message> errors, List<UserAction> userActions) {
+    public void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
         if (companyId == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
             errors.add(Message.of("error.company.mailings.sent.forbidden"));
             return;
         }
 
-        ComMailing mailing = mailingDao.getMailing(mailingId, companyId);
+        Mailing mailing = mailingDao.getMailing(mailingId, companyId);
 
         MailingTypes mailingType = MailingTypes.getByCode(mailing.getMailingType());
         if (mailing.getId() == 0) {
@@ -299,7 +298,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
 
         if (startGen == MaildropGenerationStatus.NOW.getCode() && drop.getStatus() != MaildropStatus.ACTION_BASED.getCode() && drop.getStatus() != MaildropStatus.DATE_BASED.getCode()) {
             classicTemplateGenerator.generate(mailingId, options.getAdminId(), companyId, true, true);
-            ((ComMailingImpl)mailing).triggerMailing(drop.getId());
+            ((MailingImpl)mailing).triggerMailing(drop.getId());
             updateStatusByMaildrop(mailingId, drop);
         }
 

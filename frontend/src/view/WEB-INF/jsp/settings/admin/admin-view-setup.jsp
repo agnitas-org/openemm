@@ -96,7 +96,7 @@
                 <emm:instantiate var="element" type="java.util.LinkedHashMap">
                     <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
                     <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-                    <c:set target="${element}" property="extraAttributes" value="data-form-url='${saveUrl}' data-form-target='#adminForm' data-form-submit"/>
+                    <c:set target="${element}" property="extraAttributes" value="data-form-url='${saveUrl}' data-form-target='#adminForm' data-form-submit-static"/>
                     <c:set target="${element}" property="iconBefore" value="icon-save"/>
                     <c:set target="${element}" property="name">
                         <mvc:message code="button.Save"/>

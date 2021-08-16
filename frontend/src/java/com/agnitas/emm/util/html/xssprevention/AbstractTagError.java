@@ -12,6 +12,8 @@ package com.agnitas.emm.util.html.xssprevention;
 
 import java.util.Objects;
 
+import com.agnitas.messages.Message;
+
 public abstract class AbstractTagError extends HtmlCheckError {
 
 	private final String tagName;
@@ -22,6 +24,11 @@ public abstract class AbstractTagError extends HtmlCheckError {
 	
 	public final String getTagName() {
 		return this.tagName;
+	}
+
+	@Override
+	public Message toMessage() {
+		return Message.of("error.html.genericTagError", tagName);
 	}
 
 }

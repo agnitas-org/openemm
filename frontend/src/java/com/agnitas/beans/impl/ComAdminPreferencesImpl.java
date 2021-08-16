@@ -19,22 +19,10 @@ public class ComAdminPreferencesImpl extends AdminPreferencesImpl implements Com
     private static final long serialVersionUID = -8128756315435745115L;
 
     protected int dashboardMailingsView;
-    protected int navigationLocation;
     protected int mailingSettingsView;
     protected int livePreviewPosition;
-    protected int startPage;
     protected int statisticLoadType;
 
-
-    @Override
-    public int getNavigationLocation() {
-        return navigationLocation;
-    }
-
-    @Override
-    public void setNavigationLocation(int navigationLocation) {
-        this.navigationLocation = navigationLocation;
-    }
 
     @Override
     public int getMailingSettingsView() {
@@ -64,16 +52,6 @@ public class ComAdminPreferencesImpl extends AdminPreferencesImpl implements Com
     @Override
     public void setLivePreviewPosition(int livePreviewPosition) {
         this.livePreviewPosition = livePreviewPosition;
-    }
-
-    @Override
-    public int getStartPage() {
-        return startPage;
-    }
-
-    @Override
-    public void setStartPage(int startPage) {
-        this.startPage = startPage;
     }
 
     @Override

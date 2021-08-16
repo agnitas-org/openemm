@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.exception.target.TargetGroupTooLargeException;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -415,8 +416,12 @@ public class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 					reloadTargetGroupFromDB = newTargetId > 0;
 					isTargetGroupValid = false;
 				}
+			} catch(final TargetGroupTooLargeException e) {
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.too_large"));
+				saveErrors(request, errors);
+
 			} catch (final Exception e) {
-				logger.info("There was an error Saving the target group. ", e);
+				logger.warn("There was an error Saving the target group. ", e);
 
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.saving"));
 				saveErrors(request, errors);
@@ -495,10 +500,17 @@ public class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		copiedTarget.setTargetName(newName);
 		form.setShortname(newName);
 
-		int targetID = targetService.saveTarget(AgnUtils.getAdmin(request), copiedTarget, null, errors, this::writeUserActivityLog);
+		try {
+			int targetID = targetService.saveTarget(AgnUtils.getAdmin(request), copiedTarget, null, errors, this::writeUserActivityLog);
+	
+			form.setTargetID(targetID);
+			saveErrors(request, errors);
+		} catch(final TargetGroupTooLargeException e) {
+			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.too_large"));
 
-		form.setTargetID(targetID);
-		saveErrors(request, errors);
+			form.setTargetID(e.getTargetId());
+			saveErrors(request, errors);
+		}
 
 		return show(mapping, form0, request, response);
 	}

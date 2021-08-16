@@ -10,9 +10,9 @@
 
 package org.agnitas.beans.factory;
 
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.Mailing;
 
 
 public interface MailingFactory {
-    public ComMailing newMailing();
+    public Mailing newMailing();
 }

@@ -13,15 +13,8 @@ package com.agnitas.mailing.autooptimization.dao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComOptimizationStatDao {
-
-    @Deprecated
-	public int getSend(int mailingID);
     public int getSend(int mailingId, String recipientsType);
-    @Deprecated
-	public int getClicks(int mailingID, @VelocityCheck int companyID);
     public int getClicks(int mailingId, @VelocityCheck int companyId, String recipientsType);
-    @Deprecated
-	public int getOpened(int mailingID, @VelocityCheck int companyID);
     public int getOpened(int mailingId, @VelocityCheck int companyId, String recipientsType);
 	public int getBounces(int mailingID, @VelocityCheck int companyID);
 	public int getOptOuts(int mailingID, @VelocityCheck int companyID);

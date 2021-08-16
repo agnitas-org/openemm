@@ -99,10 +99,7 @@
                         </c:if>
                     </th>
                     <td class="align-top">
-                        <agn:agnLink
-                                page="/sc?compID=${component.id}&mailingID=${mailingSendForm.mailingID}
-                                &customerID=${mailingSendForm.previewForm.customerID}
-                                &targetGroupID=${mailingSendForm.previewForm.targetGroupId}" data-prevent-load="">
+                        <agn:agnLink page="/sc?compID=${component.id}&mailingID=${mailingSendForm.mailingID}&customerID=${mailingSendForm.previewForm.customerID}&targetGroupID=${mailingSendForm.previewForm.targetGroupId}" data-prevent-load="">
                             ${component.componentName}
                             <span class="badge"><i class="icon icon-download"></i></span>
                         </agn:agnLink>

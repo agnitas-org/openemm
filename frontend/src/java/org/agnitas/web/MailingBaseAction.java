@@ -28,7 +28,6 @@ import java.util.concurrent.Future;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
@@ -62,7 +61,7 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComCampaignDao;
@@ -71,6 +70,7 @@ import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.web.forms.ComMailingBaseForm;
 
@@ -108,7 +108,13 @@ public class MailingBaseAction extends StrutsActionBase {
     private JavaMailService javaMailService;
 	
     protected MailinglistApprovalService mailinglistApprovalService;
+    
+    private ObjectUsageService objectUsageService;
 
+    protected final ObjectUsageService getObjectUsageService() {
+    	return this.objectUsageService;
+    }
+    
     /**
      * Process the specified HTTP request, and create the corresponding HTTP
      * response (or forward to another web component that will create it).
@@ -370,7 +376,7 @@ public class MailingBaseAction extends StrutsActionBase {
      * @param req request
      * @throws Exception
      */
-    protected ComMailing loadMailing(MailingBaseForm aForm, HttpServletRequest req) throws Exception {
+    protected Mailing loadMailing(MailingBaseForm aForm, HttpServletRequest req) throws Exception {
         throw new UnsupportedOperationException();
     }
 
@@ -593,7 +599,7 @@ public class MailingBaseAction extends StrutsActionBase {
 
      	final ComAdmin admin = AgnUtils.getAdmin(req);
 
-        MailingsQueryWorker mailingsQueryWorker = createMailingsQueryWorker(errors, form, req, admin.getCompanyID(), admin.getAdminID(), form.getTypes(), isTemplate, sort, direction, page, rownums, true);
+        MailingsQueryWorker mailingsQueryWorker = createMailingsQueryWorker(errors, form, req, admin.getCompanyID(), admin.getAdminID(), form.getTypesString(), isTemplate, sort, direction, page, rownums, true);
         return workerExecutorService.submit(mailingsQueryWorker);
     }
 
@@ -851,4 +857,9 @@ public class MailingBaseAction extends StrutsActionBase {
 	public void setTargetService(ComTargetService targetService) {
 		this.targetService = targetService;
 	}
+    
+    @Required
+    public final void setObjectUsageService(final ObjectUsageService service) {
+    	this.objectUsageService = Objects.requireNonNull(service, "ObjectUsageService is null");
+    }
 }

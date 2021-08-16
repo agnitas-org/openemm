@@ -40,11 +40,9 @@ public class ComAdminPreferencesDaoImpl extends BaseDaoImpl implements ComAdminP
 
     //preferences names
     protected static final String PREFERENCE_CONTENTBLOCKS = "mailing.contentblocks";    //Contentblocks
-    private static final String PREFERENCE_NAVIGATION_LOCATION = "navigation.location";  //Navigation
     private static final String PREFERENCE_DASHBOARD_MAILING = "dashboard.mailing";      //Mailings in Dashboard
     private static final String PREFERENCE_MAILING_LIVE_PREVIEW = "mailing.livepreview"; //Live Preview
     private static final String PREFERENCE_MAILING_SETTINGS = "mailing.settings";        //Mailing settings
-    private static final String PREFERENCE_STARTPAGE = "startpage";                      //Startpage
     private static final String PREFERENCE_STATISTIC_LOADTYPE = "statistic.loadtype";    //Statistic-Summary
 
     //SQL requests
@@ -76,8 +74,6 @@ public class ComAdminPreferencesDaoImpl extends BaseDaoImpl implements ComAdminP
                     adminPreferencesMap.put(resultRow.get(FIELD_PREFERENCE).toString(), resultRow.get(FIELD_VALUE).toString());
                 }
 
-                int prefNavigationLocation = adminPreferencesMap.get(PREFERENCE_NAVIGATION_LOCATION) != null ?
-                        Integer.parseInt(adminPreferencesMap.get(PREFERENCE_NAVIGATION_LOCATION)) : PREFERENCE_NAVIGATION_LOCATION_DEFAULT;
                 int prefDashboardMailing = adminPreferencesMap.get(PREFERENCE_DASHBOARD_MAILING) != null ?
                         Integer.parseInt(adminPreferencesMap.get(PREFERENCE_DASHBOARD_MAILING)) : PREFERENCE_DASHBOARD_MAILING_DEFAULT;
                 int prefMailingLivePreview = adminPreferencesMap.get(PREFERENCE_MAILING_LIVE_PREVIEW) != null ?
@@ -86,29 +82,23 @@ public class ComAdminPreferencesDaoImpl extends BaseDaoImpl implements ComAdminP
                         Integer.parseInt(adminPreferencesMap.get(PREFERENCE_MAILING_SETTINGS)) : PREFERENCE_MAILING_SETTINGS_DEFAULT;
                 int prefContentBlocks = adminPreferencesMap.get(PREFERENCE_CONTENTBLOCKS) != null ?
                         Integer.parseInt(adminPreferencesMap.get(PREFERENCE_CONTENTBLOCKS)) : PREFERENCE_CONTENTBLOCKS_DEFAULT;
-                int startPage = adminPreferencesMap.get(PREFERENCE_STARTPAGE) != null ?
-                        Integer.parseInt(adminPreferencesMap.get(PREFERENCE_STARTPAGE)) : PREFERENCE_STARTPAGE_DEFAULT;
                 int statisticLoadType = adminPreferencesMap.get(PREFERENCE_STATISTIC_LOADTYPE) != null ?
                         Integer.parseInt(adminPreferencesMap.get(PREFERENCE_STATISTIC_LOADTYPE)) : PREFERENCE_STATISTIC_LOADTYPE_DEFAULT;
 
-                adminPreferences.setNavigationLocation(prefNavigationLocation);
                 adminPreferences.setDashboardMailingsView(prefDashboardMailing);
                 adminPreferences.setLivePreviewPosition(prefMailingLivePreview);
                 adminPreferences.setMailingSettingsView(prefMailingSettings);
                 adminPreferences.setMailingContentView(prefContentBlocks);
-                adminPreferences.setStartPage(startPage);
                 adminPreferences.setStatisticLoadType(statisticLoadType);
 
                 return adminPreferences;
             } else {
                 logger.debug("User preferences not found for user id = " + adminId);
                 //set and return default preferences
-                adminPreferences.setNavigationLocation(PREFERENCE_NAVIGATION_LOCATION_DEFAULT);
                 adminPreferences.setDashboardMailingsView(PREFERENCE_DASHBOARD_MAILING_DEFAULT);
                 adminPreferences.setLivePreviewPosition(PREFERENCE_MAILING_LIVE_PREVIEW_DEFAULT);
                 adminPreferences.setMailingSettingsView(PREFERENCE_MAILING_SETTINGS_DEFAULT);
                 adminPreferences.setMailingContentView(PREFERENCE_CONTENTBLOCKS_DEFAULT);
-                adminPreferences.setStartPage(PREFERENCE_STARTPAGE_DEFAULT);
                 adminPreferences.setStatisticLoadType(PREFERENCE_STATISTIC_LOADTYPE_DEFAULT);
 
                 return adminPreferences;
@@ -148,12 +138,10 @@ public class ComAdminPreferencesDaoImpl extends BaseDaoImpl implements ComAdminP
         
         int touchedLines = 0;
 
-        touchedLines += update(logger, INSERT, adminId, PREFERENCE_NAVIGATION_LOCATION, comAdminPreferences.getNavigationLocation());
         touchedLines += update(logger, INSERT, adminId, PREFERENCE_DASHBOARD_MAILING, comAdminPreferences.getDashboardMailingsView());
         touchedLines += update(logger, INSERT, adminId, PREFERENCE_MAILING_LIVE_PREVIEW, comAdminPreferences.getLivePreviewPosition());
         touchedLines += update(logger, INSERT, adminId, PREFERENCE_CONTENTBLOCKS, comAdminPreferences.getMailingContentView());
         touchedLines += update(logger, INSERT, adminId, PREFERENCE_MAILING_SETTINGS, comAdminPreferences.getMailingSettingsView());
-        touchedLines += update(logger, INSERT, adminId, PREFERENCE_STARTPAGE, comAdminPreferences.getStartPage());
         touchedLines += update(logger, INSERT, adminId, PREFERENCE_STATISTIC_LOADTYPE, comAdminPreferences.getStatisticLoadType());
         
         return touchedLines;

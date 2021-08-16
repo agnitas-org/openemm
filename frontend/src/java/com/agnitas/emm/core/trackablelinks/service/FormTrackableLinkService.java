@@ -20,7 +20,7 @@ import com.agnitas.messages.Message;
 
 public interface FormTrackableLinkService {
 
-	void saveTrackableLinks(ComAdmin admin, UserFormDto userFormDto, List<Message> errors);
+	void saveTrackableLinks(ComAdmin admin, UserFormDto userFormDto, List<Message> errors, final List<Message> warnings);
 
 	List<FormTrackableLinkDto> getFormTrackableLinks(ComAdmin admin, int formId);
 

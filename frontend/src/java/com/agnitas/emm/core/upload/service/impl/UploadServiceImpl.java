@@ -29,14 +29,13 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.SafeString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.upload.FormFile;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -53,6 +52,8 @@ import com.agnitas.emm.core.upload.service.dto.PageSetUp;
 import com.agnitas.emm.core.upload.service.dto.PageUploadData;
 import com.agnitas.emm.core.upload.service.dto.UploadFileDescription;
 import com.agnitas.messages.I18nString;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.web.mvc.Popups;
 
 public class UploadServiceImpl implements UploadService {
 	
@@ -60,7 +61,7 @@ public class UploadServiceImpl implements UploadService {
     private static final transient Logger logger = Logger.getLogger(UploadServiceImpl.class);
 
     private ComUploadDao uploadDao;
-    private ConversionService conversionService;
+    private ExtendedConversionService conversionService;
     private ComCompanyDao companyDao;
     private AdminService adminService;
     private JavaMailService javaMailService;
@@ -82,17 +83,12 @@ public class UploadServiceImpl implements UploadService {
                 pageSetUp.getOrder(), pageSetUp.getPage(),
                 pageSetUp.getNumberOfRows());
 
-        List<PageUploadData> pageUploadDataList = transformListToPageUploadData(paginatedList.getList());
+        PaginatedListImpl<PageUploadData> pageUploadDataPaginatedList = conversionService.convertPaginatedList(paginatedList, UploadData.class, PageUploadData.class);
 
-        pageUploadDataList.forEach(data -> calculateExpireDate(pageSetUp.getCompanyId(), data));
+        int expireRange = configService.getIntegerValue(ConfigValue.ExpireUpload, pageSetUp.getCompanyId());
+        pageUploadDataPaginatedList.getList().forEach(data -> calculateExpireDate(expireRange, data));
 
-        return new PaginatedListImpl<>(pageUploadDataList,
-                paginatedList.getFullListSize(),
-                paginatedList.getPageSize(),
-                paginatedList.getPageNumber(),
-                paginatedList.getSortCriterion(),
-                paginatedList.getSortDirection().toString());
-
+        return pageUploadDataPaginatedList;
     }
 
     @Override
@@ -117,7 +113,26 @@ public class UploadServiceImpl implements UploadService {
     }
 
     @Override
-    public void uploadFiles(UploadFileDescription description, List<MultipartFile> files) {
+    public void uploadFiles(UploadFileDescription description, List<MultipartFile> files, Popups popups, ComAdmin admin) {
+    	long uploadSizeBytes = uploadDao.getCurrentUploadOverallSizeBytes(description.getCompanyId());
+    	long maximumOverallSizeBytes = configService.getLongValue(ConfigValue.UploadMaximumOverallSizeBytes, description.getCompanyId());
+    	if (uploadSizeBytes > maximumOverallSizeBytes) {
+    		popups.alert("error.upload.overallsize", AgnUtils.getHumanReadableNumber(maximumOverallSizeBytes, "Byte", false, admin.getLocale(), false));
+    		return;
+    	}
+    	long maximumSingleFileSizeBytes = configService.getLongValue(ConfigValue.UploadMaximumSizeBytes, description.getCompanyId());
+    	for (MultipartFile multipartFile : files) {
+    		if (multipartFile.getSize() > maximumSingleFileSizeBytes) {
+        		popups.alert("error.upload.filesize", AgnUtils.getHumanReadableNumber(maximumSingleFileSizeBytes, "Byte", false, admin.getLocale(), false), multipartFile.getOriginalFilename(), AgnUtils.getHumanReadableNumber(multipartFile.getSize(), "Byte", false, admin.getLocale(), false));
+        		return;
+        	}
+    		uploadSizeBytes += multipartFile.getSize();
+    		if (uploadSizeBytes > maximumOverallSizeBytes) {
+        		popups.alert("error.upload.overallsize", AgnUtils.getHumanReadableNumber(maximumOverallSizeBytes, "Byte", false, admin.getLocale(), false));
+        		return;
+        	}
+    	}
+    	
         if (description.getUploadId() > 0) {
             UploadData data = conversionService.convert(description, UploadData.class);
             uploadDao.updateData(data);
@@ -208,22 +223,10 @@ public class UploadServiceImpl implements UploadService {
         return data;
     }
 
-    private List<PageUploadData> transformListToPageUploadData(List<UploadData> paginatedList) {
-        TypeDescriptor source = TypeDescriptor.collection(List.class, TypeDescriptor.valueOf(UploadData.class));
-        TypeDescriptor target = TypeDescriptor.collection(List.class, TypeDescriptor.valueOf(PageUploadData.class));
-
-        @SuppressWarnings("unchecked")
-		List<PageUploadData> returnList = (List<PageUploadData>) conversionService.convert(paginatedList, source, target);
-        return returnList;
-    }
-
-    private PageUploadData calculateExpireDate(int companyId, PageUploadData pageUploadData) {
-        int expireRange = configService.getIntegerValue(ConfigValue.ExpireUpload, companyId);
+    private void calculateExpireDate(int expireRange, PageUploadData pageUploadData) {
         LocalDate date = DateUtilities.toLocalDate(pageUploadData.getCreateDate());
         Date deleteDate = DateUtilities.toDate(date.plusDays(expireRange));
         pageUploadData.setDeleteDate(deleteDate);
-
-        return pageUploadData;
     }
 
     @Override
@@ -296,7 +299,7 @@ public class UploadServiceImpl implements UploadService {
 	}
     
     @Required
-	public void setConversionService(ConversionService conversionService) {
+	public void setConversionService(ExtendedConversionService conversionService) {
 		this.conversionService = conversionService;
 	}
 

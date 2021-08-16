@@ -25,7 +25,7 @@
                 <li class="list-group-item">
                     <label class="checkbock-inline">
                         <input id="${param.containerId}-transferTargetGroups" name="transferTargetGroups" value="1" type="checkbox" />
-                        <bean:message key="mailing.archive"/>
+                        <bean:message key="Targetgroups"/>
                     </label>
                 </li>
                 <li class="list-group-item">

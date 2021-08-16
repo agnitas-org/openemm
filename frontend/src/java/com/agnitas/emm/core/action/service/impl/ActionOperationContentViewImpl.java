@@ -11,11 +11,15 @@
 package com.agnitas.emm.core.action.service.impl;
 
 import java.util.Map;
+import java.util.Objects;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.dao.MailingDao;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -25,6 +29,8 @@ import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
+import com.agnitas.mailing.preview.service.HtmlPreviewOptions;
+import com.agnitas.mailing.preview.service.MailingPreviewService;
 
 public class ActionOperationContentViewImpl implements EmmActionOperation, ApplicationContextAware {
 	
@@ -32,13 +38,16 @@ public class ActionOperationContentViewImpl implements EmmActionOperation, Appli
 
 	private MailingDao mailingDao;
 	private ApplicationContext con;
+	private MailingPreviewService mailingPreviewService;
 
 	@Override
 	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors actionOperationErrors) {
 		ActionOperationContentViewParameters op =(ActionOperationContentViewParameters) operation;
 		int companyID = op.getCompanyId();
 		String tagName = op.getTagName();
-		
+
+		final boolean useNewMailingPreview = con.getBean("ConfigService", ConfigService.class).getBooleanValue(ConfigValue.Development.UseBackendMailingPreview, companyID);
+
         Integer tmpNum=null;
         int customerID=0;
         boolean returnValue=false;
@@ -64,15 +73,31 @@ public class ActionOperationContentViewImpl implements EmmActionOperation, Appli
         Mailing aMailing=mailingDao.getMailing(tmpMailingID, companyID);
 
         if(aMailing.getId() != 0) {
-
             try {
-             	if(tagName.compareTo("") == 0) {
-               		archiveHtml=aMailing.getPreview(aMailing.getHtmlTemplate().getEmmBlock(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, true, con);
+           		// Removing HTML tags and cut at line feed was also done by old preview implementation 
+           		final HtmlPreviewOptions options = HtmlPreviewOptions.createDefault()
+           				.withRemoveHtmlTags(true)
+           				.withLineFeed(aMailing.getEmailParam().getLinefeed());
+
+           		if(tagName.compareTo("") == 0) {
+               		archiveHtml = useNewMailingPreview 
+               				? mailingPreviewService.renderHtmlPreview(tmpMailingID, customerID, options)
+               				: aMailing.getPreview(aMailing.getHtmlTemplate().getEmmBlock(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, true, con);
                	} else {
-               		archiveHtml=aMailing.getPreview("[agnDYN name=\""+tagName+"\"/]", MailingPreviewHelper.INPUT_TYPE_HTML, customerID, true, con);
+               		final String fragment = String.format("[agnDYN name=\"%s\"/]", tagName);
+
+               		archiveHtml = useNewMailingPreview
+               				? mailingPreviewService.renderPreviewFor(tmpMailingID, customerID, fragment)
+               				: aMailing.getPreview(fragment, MailingPreviewHelper.INPUT_TYPE_HTML, customerID, true, con);
                	}
-                archiveSender=aMailing.getPreview(aMailing.getEmailParam().getFromAdr(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, con);
-                archiveSubject=aMailing.getPreview(aMailing.getEmailParam().getSubject(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, con);
+                archiveSender = useNewMailingPreview
+                		? mailingPreviewService.renderPreviewFor(tmpMailingID, customerID, aMailing.getEmailParam().getFromAdr())
+                		: aMailing.getPreview(aMailing.getEmailParam().getFromAdr(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, con);
+                		
+                archiveSubject = useNewMailingPreview
+                	    ? mailingPreviewService.renderPreviewFor(tmpMailingID, customerID, aMailing.getEmailParam().getSubject())
+                	    : aMailing.getPreview(aMailing.getEmailParam().getSubject(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, con);
+                
                 returnValue=true;
             } catch (Exception e) {
               	logger.error("archive problem: "+e, e);
@@ -84,6 +109,7 @@ public class ActionOperationContentViewImpl implements EmmActionOperation, Appli
             params.put("archiveSender", archiveSender);
             params.put("archiveSubject", archiveSubject);
         }
+        
         return returnValue;
 	}
 
@@ -101,4 +127,8 @@ public class ActionOperationContentViewImpl implements EmmActionOperation, Appli
 		this.con = con;
 	}
 
+	@Required
+	public final void setMailingPreviewService(final MailingPreviewService service) {
+		this.mailingPreviewService = Objects.requireNonNull(service, "MailingPreviewService is null");
+	}
 }

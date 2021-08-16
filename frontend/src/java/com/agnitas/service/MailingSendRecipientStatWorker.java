@@ -16,7 +16,7 @@ import java.util.concurrent.Callable;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComMailingDao;
 
 public class MailingSendRecipientStatWorker implements Callable<Map<Integer, Integer>>, Serializable {
@@ -34,7 +34,7 @@ public class MailingSendRecipientStatWorker implements Callable<Map<Integer, Int
 
     @Override
 	public Map<Integer, Integer> call() throws Exception {
-        ComMailing mailing = mailingDao.getMailing(mailingId, companyId);
+        Mailing mailing = mailingDao.getMailing(mailingId, companyId);
         return mailingDao.getSendStats(mailing, companyId);
     }
 }

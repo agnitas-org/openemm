@@ -10,14 +10,14 @@
 
 package com.agnitas.emm.core.workflow.beans.impl;
 
+import java.util.Objects;
+
 import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
 import com.agnitas.emm.core.workflow.beans.WorkflowMailing;
 
-import java.util.Objects;
-
 public class WorkflowMailingImpl extends WorkflowMailingAwareImpl implements WorkflowMailing {
     private int autoReport;
-    private boolean skipEmptyBlocks = true;
+    private boolean skipEmptyBlocks = false;
     private boolean doubleCheck = true;
     private int maxRecipients;
     private int blocksize;

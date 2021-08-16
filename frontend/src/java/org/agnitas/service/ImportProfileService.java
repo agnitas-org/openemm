@@ -11,6 +11,7 @@
 package org.agnitas.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -28,4 +29,10 @@ public interface ImportProfileService {
     List<ImportProfile> getImportProfilesByCompanyId(int companyId);
 
     List<Integer> getSelectedMailingListIds(int id, @VelocityCheck int companyId);
+
+	Map<String, Integer> getImportProfileGenderMapping(int id);
+
+	void saveImportProfileGenderMapping(int id, Map<String, Integer> genderMapping);
+
+	boolean addImportProfileGenderMapping(int profileId, String addedGender, int addedGenderInt);
 }

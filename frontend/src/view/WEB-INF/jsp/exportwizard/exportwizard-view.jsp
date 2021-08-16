@@ -1,7 +1,10 @@
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@page import="org.agnitas.dao.UserStatus"%>
 <%@page import="org.agnitas.service.RecipientExportWorker"%>
-<%@ page language="java" contentType="text/html; charset=utf-8" import="org.agnitas.util.AgnUtils, org.agnitas.web.ExportWizardAction"  errorPage="/error.do" %>
+<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="org.agnitas.util.DbColumnType" %>
 <%@ page import="org.agnitas.beans.BindingEntry" %>
+<%@ page import="org.agnitas.web.ExportWizardAction" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -10,6 +13,12 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="NO_MAILINGLIST" value="<%= RecipientExportWorker.NO_MAILINGLIST %>" scope="page" />
+
+<c:set var="GENERIC_TYPE_VARCHAR" value="<%= DbColumnType.GENERIC_TYPE_VARCHAR %>" scope="page" />
+<c:set var="GENERIC_TYPE_INTEGER" value="<%= DbColumnType.GENERIC_TYPE_INTEGER %>" scope="page" />
+<c:set var="GENERIC_TYPE_FLOAT" value="<%= DbColumnType.GENERIC_TYPE_FLOAT %>" scope="page" />
+<c:set var="GENERIC_TYPE_DATE" value="<%= DbColumnType.GENERIC_TYPE_DATE %>" scope="page" />
+<c:set var="GENERIC_TYPE_DATETIME" value="<%= DbColumnType.GENERIC_TYPE_DATETIME %>" scope="page" />
 
 <%--@elvariable id="exportWizardForm" type="org.agnitas.web.forms.ExportWizardForm"--%>
 <c:set var="localeDatePattern" value="${fn:toLowerCase(exportWizardForm.localeDatePattern)}"/>
@@ -183,19 +192,19 @@
                                 </td>
                                 <td>
                                     <c:choose>
-                                        <c:when test='${colType.toUpperCase().indexOf("CHAR") ne -1}'>
+                                        <c:when test='${colType.toUpperCase().indexOf(GENERIC_TYPE_VARCHAR) ne -1}'>
                                             <bean:message key="statistic.alphanumeric"/>
                                         </c:when>
-                                        <c:when test='${colType.toUpperCase().indexOf("NUMBER") ne -1}'>
+                                        <c:when test='${colType.toUpperCase().indexOf(GENERIC_TYPE_INTEGER) ne -1}'>
                                             <bean:message key="statistic.numeric"/>
                                         </c:when>
-                                        <c:when test='${colType.toUpperCase().indexOf("DOUBLE") ne -1}'>
+                                        <c:when test='${colType.toUpperCase().indexOf(GENERIC_TYPE_FLOAT) ne -1}'>
                                             <bean:message key="statistic.numeric"/>
                                         </c:when>
-                                        <c:when test='${colType.toUpperCase().indexOf("TIME") ne -1}'>
+                                        <c:when test='${colType.toUpperCase().indexOf(GENERIC_TYPE_DATETIME) ne -1}'>
                                             <bean:message key="settings.fieldType.DATE"/>
                                         </c:when>
-                                        <c:when test='${colType.toUpperCase().indexOf("DATE") ne -1}'>
+                                        <c:when test='${colType.toUpperCase().indexOf(GENERIC_TYPE_DATE) ne -1}'>
                                             <bean:message key="settings.fieldType.DATE"/>
                                         </c:when>
                                         <c:otherwise>
@@ -317,6 +326,65 @@
                 	<%@include file="exportwizard-charsets.jspf" %>
                 </div>
             </div>
+            
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label for="recipient-export-format-delimiter" class="control-label">
+                        <bean:message key="csv.DateFormat"/>
+                    </label>
+                </div>
+                <div class="col-sm-8">
+                    <html:select property="dateFormat" styleClass="form-control js-select" styleId="recipient-export-format-delimiter">
+						<c:forEach var="availableDateFormat" items="${availableDateFormats}">
+							<html:option value="${availableDateFormat.intValue}"><bean:message key="${availableDateFormat.publicValue}"/></html:option>
+						</c:forEach>
+                    </html:select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label for="recipient-export-format-delimiter" class="control-label">
+                        <bean:message key="csv.DateTimeFormat"/>
+                    </label>
+                </div>
+                <div class="col-sm-8">
+                    <html:select property="dateTimeFormat" styleClass="form-control js-select" styleId="recipient-export-format-delimiter">
+						<c:forEach var="availableDateTimeFormat" items="${availableDateTimeFormats}">
+							<html:option value="${availableDateTimeFormat.intValue}"><bean:message key="${availableDateTimeFormat.publicValue}"/></html:option>
+						</c:forEach>
+                    </html:select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label for="recipient-export-format-delimiter" class="control-label">
+                        <bean:message key="Timezone"/>
+                    </label>
+                </div>
+                <div class="col-sm-8">
+                    <html:select property="timezone" styleClass="form-control js-select" styleId="recipient-export-format-delimiter">
+						<c:forEach var="availableTimeZone" items="${availableTimeZones}">
+							<html:option value="${availableTimeZone}">${availableTimeZone}</html:option>
+						</c:forEach>
+                    </html:select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label for="recipient-export-format-delimiter" class="control-label">
+                        <bean:message key="csv.DecimalSeparator"/>
+                    </label>
+                </div>
+                <div class="col-sm-8">
+                    <html:select property="decimalSeparator" styleClass="form-control" styleId="recipient-export-format-delimiter">
+						<html:option value=".">.</html:option>
+						<html:option value=",">,</html:option>
+                    </html:select>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -338,6 +406,7 @@
                         <th><bean:message key="Start"/></th>
                         <th><bean:message key="report.stopDate"/></th>
                         <th><bean:message key="lastDays"/></th>
+                        <th><bean:message key="export.dates.includeCurrentDay"/></th>
                     </tr>
                 </thead>
 
@@ -375,6 +444,13 @@
                                 </div>
                             </div>
                         </td>
+                        <td>
+                            <div class="input-group">
+                                <div class="input-group-controls">
+                                    <agn:agnCheckbox property="timestampIncludeCurrentDay"/>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                     <tr>
                         <td><bean:message key="export.dates.creation_date"/></td>
@@ -406,6 +482,13 @@
                             <div class="input-group">
                                 <div class="input-group-controls">
                                     <agn:agnText styleClass="form-control" property="creationDateLastDays"/>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <div class="input-group-controls">
+                                    <agn:agnCheckbox property="creationDateIncludeCurrentDay"/>
                                 </div>
                             </div>
                         </td>
@@ -443,14 +526,20 @@
                                 </div>
                             </div>
                         </td>
+                        <td>
+                            <div class="input-group">
+                                <div class="input-group-controls">
+                                    <agn:agnCheckbox property="mailinglistBindIncludeCurrentDay"/>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                     <tr>
-                        <td></td>
+                        <td><agn:agnCheckbox property="timeLimitsLinkedByAnd"/> <bean:message key="export.timeLimitsLinkedByAnd"/></td>
                         <td colspan="3">* <bean:message key="export.dates.mailinglists.hint"/></td>
                     </tr>
                 </tbody>
             </table>
-
         </div>
     </div>
 

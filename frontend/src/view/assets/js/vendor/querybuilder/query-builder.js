@@ -307,10 +307,11 @@
 
         rules_list:           '.rules-group-body>.rules-list',
 
+        group_btns:           '.btn',
         group_condition:      '.rules-group-header [name$=_cond]',
         rule_filter:          '.rule-filter-container [name$=_filter]',
         rule_operator:        '.rule-operator-container [name$=_operator]',
-        rule_value:           '.rule-value-container [name*=_value_]',
+        rule_value:           '.rule-value-container :input:not(.icon-help)',
 
         add_rule:             '[data-add=rule]',
         delete_rule:          '[data-delete=rule]',
@@ -903,6 +904,7 @@
 
         var group_id = this.nextGroupId();
         var $group = $(this.getGroupTemplate(group_id, 1));
+        $group.find(QueryBuilder.selectors.group_btns).addClass(this.settings.readonly ? 'disabled' : '')
 
         this.$el.append($group);
         this.model.root = new Group(null, $group);
@@ -2536,10 +2538,12 @@
 
         if (rule.readonly) {
             $.extend(flags, {
+                header_readonly: true,
                 filter_readonly: true,
                 operator_readonly: true,
                 value_readonly: true,
-                no_delete: true
+                no_delete: true,
+                no_sortable: true
             });
         }
 

@@ -22,6 +22,9 @@ import org.springframework.jdbc.core.RowMapper;
  */
 public class IntegerRowMapper implements RowMapper<Integer> {
 	
+	/** Singleton of this {@link RowMapper}. */
+	public static final IntegerRowMapper INSTANCE = new IntegerRowMapper();
+	
 	@Override
 	public Integer mapRow(ResultSet resultSet, int row) throws SQLException {
 		return resultSet.getInt(1);

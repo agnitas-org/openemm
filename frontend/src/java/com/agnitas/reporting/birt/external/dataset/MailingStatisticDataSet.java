@@ -22,6 +22,7 @@ import java.util.Set;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.reporting.birt.external.beans.LightMailing;
@@ -43,10 +44,14 @@ public class MailingStatisticDataSet extends BIRTDataSet {
         return new DateFormats(startDate, stopDate, hourScale);
     }
 
-    public int prepareSummaryReport(int mailingId, @VelocityCheck int companyId, String targetsStr, String recipientType, List<BirtReporUtils.BirtReportFigure> figures, DateFormats dateFormats) throws Exception {
+    private int prepareSummaryReport(int mailingId, @VelocityCheck int companyId, String targetsStr, String hiddenTargetIdStr,
+                                     String recipientType, List<BirtReporUtils.BirtReportFigure> figures, DateFormats dateFormats) throws Exception {
         try {
 			int tempTableId = mailingSummaryDataSet.createTempTable();
 			List<LightTarget> targets = getTargets(targetsStr, companyId);
+			final int hiddenTargetId = NumberUtils.toInt(hiddenTargetIdStr, -1);
+            final LightTarget hiddenTarget = hiddenTargetId > 0 ? getTarget(hiddenTargetId, companyId) : null;
+
 			// @todo: what should we do with options html/text/offlineHtml ?
 
 			boolean mailingTrackingAvailable = isTrackingExists(mailingId, companyId);
@@ -54,15 +59,15 @@ public class MailingStatisticDataSet extends BIRTDataSet {
 			if (dateFormats == null) {
 			    dateFormats = new DateFormats();
 			}
-			mailingSummaryDataSet.insertSendIntoTempTable(mailingId, tempTableId, companyId, targets, recipientType, dateFormats);
+			mailingSummaryDataSet.insertSendIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, dateFormats);
 			mailingSummaryDataSet.insertRecipientsNumberToTemplate(mailingDataSet, mailingId, tempTableId, dateFormats);
 
 			if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)
 			    || figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE)) {
-			    mailingSummaryDataSet.insertOpenersIntoTempTable(mailingId, tempTableId, companyId, targets, recipientType, true, false, dateFormats);
+			    mailingSummaryDataSet.insertOpenersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, true, false, dateFormats);
 			}
 			if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE)) {
-			    mailingSummaryDataSet.insertOpenedInvisibleIntoTempTable(mailingId, tempTableId, companyId, targets, recipientType, dateFormats);
+			    mailingSummaryDataSet.insertOpenedInvisibleIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, dateFormats);
 			}
 
 			if (!figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_TOTAL)) {
@@ -73,22 +78,22 @@ public class MailingStatisticDataSet extends BIRTDataSet {
 			}
 			if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)
 			    || figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {
-			    mailingSummaryDataSet.insertClickersIntoTempTable(mailingId, tempTableId, companyId, targets, recipientType, true, dateFormats);
+			    mailingSummaryDataSet.insertClickersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, true, dateFormats);
 			}
 			if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKS_ANONYMOUS)) {
 			    mailingSummaryDataSet.insertClicksAnonymousIntoTempTable(mailingId, tempTableId, companyId, dateFormats);
 			}
 			if (figures.contains(BirtReporUtils.BirtReportFigure.SIGNED_OFF)) {
-			    mailingSummaryDataSet.insertOptOutsIntoTempTable(mailingId, tempTableId, companyId, targets, recipientType, dateFormats);
+			    mailingSummaryDataSet.insertOptOutsIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, dateFormats);
 			}
 			if (figures.contains(BirtReporUtils.BirtReportFigure.HARDBOUNCES) || figures.contains(BirtReporUtils.BirtReportFigure.SOFTBOUNCES)) {
-			    mailingSummaryDataSet.insertBouncesIntoTempTable(mailingId, tempTableId, companyId, targets, recipientType, true, dateFormats);
+			    mailingSummaryDataSet.insertBouncesIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, true, dateFormats);
 			}
 
-			mailingSummaryDataSet.insertDeliveredIntoTempTable(tempTableId, mailingId, companyId, targets, recipientType, dateFormats);
+			mailingSummaryDataSet.insertDeliveredIntoTempTable(tempTableId, mailingId, companyId, targets, hiddenTarget, recipientType, dateFormats);
 
 			if (figures.contains(BirtReporUtils.BirtReportFigure.REVENUE)) {
-			    mailingSummaryDataSet.insertRevenueIntoTempTable(mailingId, tempTableId, companyId, targets, dateFormats);
+			    mailingSummaryDataSet.insertRevenueIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, dateFormats);
 			}
 
 			// now we need to remove mobile/tablet/multiple_device data if it is not selected by user
@@ -136,16 +141,20 @@ public class MailingStatisticDataSet extends BIRTDataSet {
     }
 
     public List<SendStatWithMailingIdRow> getSummaryData(@VelocityCheck int companyID, String mailings, String targetGroupIds, String figuresOptions) throws Exception {
-        return getSummaryData(companyID, mailings, targetGroupIds, figuresOptions, null);
+        return getSummaryData(companyID, mailings, targetGroupIds, null, figuresOptions, null);
     }
 
     public List<SendStatWithMailingIdRow> getSummaryData(@VelocityCheck int companyID, String mailings, String targetGroupIds, String figuresOptions, DateFormats dateFormats) throws Exception {
+        return getSummaryData(companyID, mailings, targetGroupIds, null, figuresOptions, dateFormats);
+    }
+
+    public List<SendStatWithMailingIdRow> getSummaryData(@VelocityCheck int companyID, String mailings, String targetGroupIds, String hiddenTargetGroup, String figuresOptions, DateFormats dateFormats) throws Exception {
         List<SendStatWithMailingIdRow> resultList = new LinkedList<>();
         List<Integer> mailingIds = parseCommaSeparatedIds(mailings);
         List<BirtReporUtils.BirtReportFigure> figures = BirtReporUtils.unpackFigures(figuresOptions);
 
         for (Integer mailingId : mailingIds) {
-            int tempTableID = prepareSummaryReport(mailingId, companyID, targetGroupIds, CommonKeys.TYPE_ALL_SUBSCRIBERS, figures, dateFormats);
+            int tempTableID = prepareSummaryReport(mailingId, companyID, targetGroupIds, hiddenTargetGroup, CommonKeys.TYPE_ALL_SUBSCRIBERS, figures, dateFormats);
             List<MailingSummaryDataSet.MailingSummaryRow> summaryData = mailingSummaryDataSet.getSummaryData(tempTableID);
 
             for (SendStatRow row : summaryData) {
@@ -160,7 +169,9 @@ public class MailingStatisticDataSet extends BIRTDataSet {
         return resultList;
     }
 
-    public List<MailingClickStatsPerTargetWithMailingIdRow>  getLinkClicksData(@VelocityCheck int companyID, String mailings, String targetGroupIds, DateFormats dateFormats) throws Exception {
+    public List<MailingClickStatsPerTargetWithMailingIdRow>  getLinkClicksData(@VelocityCheck int companyID, String mailings,
+                                                                               String targetGroupIds, String hiddenTargetId,
+                                                                               DateFormats dateFormats) throws Exception {
         List<MailingClickStatsPerTargetWithMailingIdRow> resultList = new LinkedList<>();
         List<Integer> mailingIds = parseCommaSeparatedIds(mailings);
 
@@ -170,7 +181,7 @@ public class MailingStatisticDataSet extends BIRTDataSet {
 
         for (Integer mailingId : mailingIds) {
             int itemLinkNumber = 0;
-            int tempTableID = mailingURLClicksDataSet.prepareReport(mailingId, companyID, targetGroupIds, CommonKeys.TYPE_ALL_SUBSCRIBERS, dateFormats);
+            int tempTableID = mailingURLClicksDataSet.prepareReport(mailingId, companyID, targetGroupIds, hiddenTargetId, CommonKeys.TYPE_ALL_SUBSCRIBERS, dateFormats);
             List<MailingClickStatsPerTargetWithMailingIdRow> resultListLeadingLinks = new LinkedList<>();
             List<MailingClickStatsPerTargetWithMailingIdRow> resultListAdministrativeLinks = new LinkedList<>();
             List<MailingClickStatsPerTargetRow> urlClicksData = mailingURLClicksDataSet.getUrlClicksData(tempTableID);

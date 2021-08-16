@@ -26,12 +26,20 @@ import org.apache.struts.util.MessageResources;
 import com.agnitas.web.ComTargetAction;
 
 public class TargetForm extends StrutsFormBase {
+
+    @Deprecated
 	public static final int COLUMN_TYPE_STRING = 0;
+    @Deprecated
 	public static final int COLUMN_TYPE_NUMERIC = 1;
+    @Deprecated
 	public static final int COLUMN_TYPE_DATE = 2;
-	public static final int COLUMN_TYPE_INTERVAL_MAILING = 3;
+	@Deprecated
+    public static final int COLUMN_TYPE_INTERVAL_MAILING = 3;
+	@Deprecated
 	public static final int COLUMN_TYPE_MAILING_RECEIVED = 4;
+	@Deprecated
 	public static final int COLUMN_TYPE_MAILING_OPENED = 5;
+	@Deprecated
 	public static final int COLUMN_TYPE_MAILING_CLICKED = 6;
 	
     private static final long serialVersionUID = 45877020863407141L;
@@ -77,7 +85,7 @@ public class TargetForm extends StrutsFormBase {
         
         MessageResources text=(MessageResources)this.getServlet().getServletContext().getAttribute(org.apache.struts.Globals.MESSAGES_KEY);
         //MessageResources text=this.getServlet().getResources();
-        
+
         this.shortname = text.getMessage(aLoc, "default.Name");
         this.description = text.getMessage(aLoc, "default.description");
         this.isShowStatistic = false;
@@ -102,12 +110,6 @@ public class TargetForm extends StrutsFormBase {
             if (StringUtils.isEmpty(shortname) || shortname.length()<3) {
                 errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.name.too.short"));
             }
-
-            /* Currently disabled. Due to two parallel editors, empty target groups cannot be detected.
-            if(this.getNumTargetNodes() == 0 && !this.getAddTargetNode()) {
-                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.norule"));
-            }
-            */
         }
 
         return errors;

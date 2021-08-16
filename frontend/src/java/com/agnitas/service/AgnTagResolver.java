@@ -13,5 +13,5 @@ package com.agnitas.service;
 import org.agnitas.beans.TagDetails;
 
 public interface AgnTagResolver {
-    String resolve(int companyID, TagDetails tag);
+    String resolve(TagDetails tag);
 }

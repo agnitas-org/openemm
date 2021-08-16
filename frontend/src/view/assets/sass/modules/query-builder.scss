@@ -149,6 +149,14 @@
     @include border-image(#DDD);
   }
 
+  .rule-container .rule-operator-conditions-container {
+    margin: 0 50px 0 0;
+
+    &:empty {
+      display: none;
+    }
+  }
+
   // Flex value children
   .qb-input-element {
     flex-grow: 0;

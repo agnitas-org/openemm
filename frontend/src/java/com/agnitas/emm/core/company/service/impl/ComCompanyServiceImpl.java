@@ -16,6 +16,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TimeZone;
 
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.factory.CompanyFactory;
@@ -42,6 +43,8 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.form.AdminForm;
 import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
+import com.agnitas.emm.core.bounce.service.BounceFilterService;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.company.dto.CompanyAdminDto;
 import com.agnitas.emm.core.company.dto.CompanyInfoDto;
@@ -72,6 +75,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     private CompanyFactory companyFactory;
     private ConfigService configService;
     private AdminService adminService;
+    private BounceFilterService bounceFilterService;
     protected ComCompanyDao companyDao;
 
     @Override
@@ -160,6 +164,8 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         // create new user for new company
         int executiveAdminId = createExecutiveAdmin(admin, form.getCompanyInfoDto(), form.getCompanyAdminDto(), company.getId(), popups);
         addExecutiveAdmin(company.getId(), executiveAdminId);
+        
+        createStandardBounceFilter(company.getId(), TimeZone.getTimeZone(form.getCompanySettingsDto().getTimeZone()));
         return company.getId();
     }
 
@@ -201,21 +207,28 @@ public class ComCompanyServiceImpl implements ComCompanyService {
                 logger.info("Company: " + companyIdForDeactivation + " deactivated");
             }
             return true;
+        } else {
+        	return false;
         }
-        return false;
     }
     
     @Override
     public boolean reactivateCompany(int companyIdForReactivation) {
         ComCompany company = companyDao.getCompany(companyIdForReactivation);
-        if (Objects.nonNull(company) && company.getStatus() == CompanyStatus.TODELETE) {
+        if (Objects.nonNull(company) && (company.getStatus() == CompanyStatus.TODELETE || company.getStatus() == CompanyStatus.LOCKED)) {
             companyDao.updateCompanyStatus(company.getId(), CompanyStatus.ACTIVE);
             if (logger.isInfoEnabled()) {
                 logger.info("Company: " + companyIdForReactivation + " reactivated");
             }
             return true;
+        } else {
+        	return false;
         }
-        return false;
+    }
+
+    @Override
+    public int getCompanyDatasource(@VelocityCheck int companyId) {
+        return companyDao.getCompanyDatasource(companyId);
     }
 
     @Override
@@ -434,7 +447,6 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         adminForm.setFirstname(companyAdmin.getFirstName());
         adminForm.setFullname(companyAdmin.getLastName());
         adminForm.setPassword(companyAdmin.getPassword());
-        adminForm.setOneTimePassword(companyAdmin.getHasDisposablePassword());
         List<Integer> adminGroupIds = new ArrayList<>();
         adminGroupIds.add(adminService.adminGroupExists(admin.getCompanyID(), "Administrator"));
         adminForm.setGroupIDs(adminGroupIds);
@@ -563,6 +575,12 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         return new UserAction("edit company", description.toString());
     }
     
+    private void createStandardBounceFilter(final int companyId, final TimeZone adminTimeZone) throws Exception {
+		BounceFilterDto standardBounceFilter = new BounceFilterDto();
+		standardBounceFilter.setShortName("Standard-Filter");
+		bounceFilterService.saveBounceFilter(companyId, adminTimeZone, standardBounceFilter, true);
+	}
+	
     @Override
     public boolean createFrequencyFields(@VelocityCheck int companyID) {
     	return companyDao.createFrequencyFields(companyID);
@@ -603,6 +621,11 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         this.companyDao = companyDao;
     }
 
+	@Required
+	public void setBounceFilterService(BounceFilterService bounceFilterService) {
+		this.bounceFilterService = bounceFilterService;
+	}
+    
 	@Override
 	public final PasswordPolicies getPasswordPolicy(int companyID) {
 		final String policyName = configService.getValue(ConfigValue.PasswordPolicy, companyID);

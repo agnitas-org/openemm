@@ -141,7 +141,7 @@
                             <c:when test="${item.type == 'ACTION'}">
                                 <emm:ShowByPermission token="actions.show">
                                     <html:link styleClass="hidden js-row-show"
-                                               page="/action.do?action=${ACTION_VIEW}&actionID=${item.id}"/>
+                                               page="/action/${item.id}/view.action"/>
                                 </emm:ShowByPermission>
                                 <bean:message key="action.Action"/>
                             </c:when>

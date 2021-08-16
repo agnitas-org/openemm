@@ -74,6 +74,11 @@ public class MailinglistApprovalDaoImpl extends PaginatedBaseDaoImpl implements 
 	}
 
 	@Override
+	public boolean hasAnyDisabledRecipientBindingsForAdmin(@VelocityCheck int companyId, int adminId, int recipientId) {
+		return false;
+	}
+
+	@Override
 	public boolean disallowAdminToUseMailinglists(int companyId, int adminID, Collection<Integer> mailinglistIds) {
 		throw new UnsupportedOperationException();
 	}
@@ -103,4 +108,8 @@ public class MailinglistApprovalDaoImpl extends PaginatedBaseDaoImpl implements 
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
+	public List<Integer> getMailinglistsWithMailinglistApproval(int companyId) {
+		return new ArrayList<>();
+	}
 }

@@ -9,6 +9,9 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
   var mailingListSelect;
   var lastMailingListId = 0;
 
+  var saveDirtyState = false;
+  var backupFieldsDirtyData = {};
+
   this.addDomInitializer('mailing-view-base', function() {
     config = this.config;
 
@@ -38,6 +41,54 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
     if (lastMailingListId  > 0) {
       lastMailingListId = mailingListSelect.select2("val", lastMailingListId);
     }
+
+    updateGeneralMailingTypeView(config.mailingType);
+  });
+
+  function isDirtyOnlyNonEditableFields($form) {
+    var dirtyFields = $form.dirty('showDirtyFields');
+    if (dirtyFields.length > 0) {
+      var filtered = dirtyFields
+        .filter(function(_, e) {
+          //filter non editable fields
+          var $el = $(e);
+          return !($el.prop('readonly') === true || $el.is(':disabled') || $el.prop('type') === 'hidden');
+        });
+
+      return filtered.length === 0;
+    } else {
+      return false;
+    }
+  }
+
+  function configureFormChangesTracking($form) {
+    if ($form.dirty('refreshEvents') === null) {
+      $form.dirty({
+        preventLeaving: true,
+        leavingMessage: t('grid.layout.leaveQuestion'),
+        onDirty: function() {
+          if (isDirtyOnlyNonEditableFields($form)) {
+            $form.dirty('setAsClean');
+          }
+        }
+      });
+    }
+
+    if (saveDirtyState) {
+      $form.dirty('restoreData', backupFieldsDirtyData);
+    }
+
+    if (!saveDirtyState || isDirtyOnlyNonEditableFields($form)) {
+      $form.dirty('setAsClean');
+      backupFieldsDirtyData = $form.dirty('backupData');
+    }
+
+    saveDirtyState = false;
+  }
+
+  this.addDomInitializer('mailing-view-base-form', function() {
+    var $form = $(this.el);
+    configureFormChangesTracking($form);
 
     updateGeneralMailingTypeView(config.mailingType);
   });
@@ -130,41 +181,21 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
       scrollOffset = Math.round(position);
   });
 
-  this.addAction({click: 'deleteMailingParameter'}, function() {
-    var form = Form.get(this.el);
-    var position = getPosition(this.el);
-
-    var $tr = this.el.closest('tr');
-    $tr.remove();
-
-    scrollOffset = Math.round(position);
-    form.submit();
-  });
-
-  this.addAction({click: 'createMailingParameter'}, function() {
-    var form = Form.get(this.el);
-    var position = getPosition(this.el);
-
-    form.setValueOnce('addParameter', true);
-    scrollOffset = Math.round(position);
-
-    form.submit();
-  });
-
   this.addAction({change: 'change-general-mailing-type'}, function() {
     var self = this;
-    var value = self.el.val();
+    var mailingType = self.el.val();
     mailingListSelect.select2("readonly", false);
 
-    if(lastMailingListId > 0) {
+    if (lastMailingListId > 0) {
       mailingListSelect.select2("val", lastMailingListId);
     }
 
-    updateGeneralMailingTypeView(value);
+    updateGeneralMailingTypeView(mailingType);
   });
 
   this.addAction({change: 'save-mailing-list-id'}, function() {
-    if(config.TYPE_FOLLOWUP !== $('#settingsGeneralMailType').val()) {
+    var mailingType = $('#settingsGeneralMailType').val();
+    if (!isFollowUpMailing(mailingType)) {
       lastMailingListId = this.el.select2("val");
     }
   });
@@ -177,22 +208,45 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
     mailingListSelect.select2("readonly", true);
   }
 
-  function updateGeneralMailingTypeView(value) {
-    var isFollowUpMailingType = config.TYPE_FOLLOWUP == value;
+  var isFollowUpMailing = function(mailingType) {
+    return config.TYPE_FOLLOWUP == mailingType;
+  };
+
+  var isIntervalMailing = function(mailingType) {
+    return config.TYPE_INTERVAL == mailingType;
+  };
+
+  var isActionBasedMailing = function(mailingType) {
+    return config.TYPE_ACTIONBASED == mailingType;
+  };
+
+  var isDateBasedMailing = function(mailingType) {
+    return config.TYPE_DATEBASED == mailingType;
+  };
+
+  function updateGeneralMailingTypeView(mailingType) {
+    var showFollowUpControls = false;
     if (config.followUpAllowed) {
-      if(isFollowUpMailingType) {
+      if (isFollowUpMailing(mailingType)) {
         setMailingListSelectByFollowUpMailing();
+        showFollowUpControls = true;
       }
-      toggle(isFollowUpMailingType, '#followUpControls');
+      toggle(showFollowUpControls, '#followUpControls');
     }
 
-    toggle(config.TYPE_INTERVAL == value, '#mailingIntervalContainer');
+    toggle(isIntervalMailing(mailingType), '#mailingIntervalContainer');
 
-    toggle(config.TYPE_DATEBASED == value, '#mailing-bcc-recipients');
+    toggle(isDateBasedMailing(mailingType), '#mailing-bcc-recipients');
 
-    var hideTargets = config.TYPE_ACTIONBASED == value || (config.TYPE_DATEBASED == value && config.isWorkflowDriven);
-    toggle(!hideTargets, '#mailingTargets');
+    var showTargetGroups = true;
+    if (isActionBasedMailing(mailingType)) {
+      showTargetGroups = config.campaignEnableTargetGroups;
+    }
+    if (isDateBasedMailing(mailingType)) {
+      showTargetGroups = !config.isWorkflowDriven;
+    }
 
+    toggle(showTargetGroups, '#mailingTargets');
   }
 
   function toggle(show, selector) {
@@ -207,4 +261,48 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
     }
   }
 
+  this.addAction({change: 'change-media'}, function() {
+    var $el = $(this.el);
+
+    var form = AGN.Lib.Form.get($el);
+    var $form = AGN.Lib.Form.getWrapper($el);
+    backupFieldsDirtyData = $form.dirty('backupData');
+
+    form.setValueOnce('action', config.actions.ACTION_VIEW_WITHOUT_LOAD);
+    form.setValueOnce($el.prop('name'), $el.is(':checked'));
+
+    form.setResourceSelectorOnce('#mailingBaseForm');
+
+    $.post(form.getAction(), form.params())
+      .done(function (resp) {
+        saveDirtyState = true;
+        form.updateHtml(resp);
+      });
+  });
+
+  this.addAction({click: 'prioritise-media'}, function() {
+    var $el = $(this.el);
+
+    var form = AGN.Lib.Form.get($el);
+    var $form = AGN.Lib.Form.getWrapper($el);
+    backupFieldsDirtyData = $form.dirty('backupData');
+
+    var data = _.extend({}, AGN.Lib.Helpers.objFromString($el.data('config')));
+    form.setValueOnce('action', data.action);
+    form.setValueOnce('activeMedia', data.activeMedia);
+
+    form.setResourceSelectorOnce('#mailingBaseForm');
+    $.post(form.getAction(), form.params())
+      .done(function(resp) {
+        saveDirtyState = true;
+        form.updateHtml(resp);
+      });
+  });
+
+  window.onbeforeunload = function() {
+    //prevent show loader if form is dirty
+    if (!$('#mailingBaseForm').dirty('isDirty') === true) {
+        AGN.Lib.Loader.show();
+    }
+  };
 });

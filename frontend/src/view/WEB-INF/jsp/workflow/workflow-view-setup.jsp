@@ -94,7 +94,7 @@
                     <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
                         <c:set target="${options}" property="3" value="${option}"/>
 
-                        <c:set target="${option}" property="url" value=""/>
+                        <c:set target="${option}" property="url" value="#"/>
                         <c:set target="${option}" property="extraAttributes" value="data-action='workflowCopyBtn'"/>
                         <c:set target="${option}" property="icon" value="icon-copy"/>
                         <c:set target="${option}" property="name">
@@ -123,8 +123,8 @@
 	
 	                    <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
 	                        <c:set target="${options}" property="0" value="${option}"/>
-	                        <c:set target="${option}" property="url" value=""/>
-	                        <c:set target="${option}" property="extraAttributes" value="data-action='workflowTestBtn'  data-tooltip-help='${buttonText}' data-tooltip-help-text='${helperText}' "/>
+	                        <c:set target="${option}" property="url" value="#"/>
+	                        <c:set target="${option}" property="extraAttributes" value="data-action='workflow-dry-run'  data-tooltip-help='${buttonText}' data-tooltip-help-text='${helperText}' "/>
 	                        <c:set target="${option}" property="icon" value="icon-fa5-project-diagram icon-fa5"/>
 	                        <c:set target="${option}" property="name">${buttonText}</c:set>
 	                    </emm:instantiate>
@@ -135,11 +135,11 @@
                 <%-- Fade in Statistics button --%>
                 <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
                     <c:set target="${options}" property="1" value="${option}"/>
-                    <c:set target="${option}" property="url" value=""/>
-                    <c:set target="${option}" property="extraAttributes" value="data-action='workflowStatsBtn'"/>
+                    <c:set target="${option}" property="url" value="#"/>
+                    <c:set target="${option}" property="extraAttributes" value="id='toggle-statistic-btn' data-action='workflowStatsBtn'"/>
                     <c:set target="${option}" property="icon" value="icon-fa5 icon-fa5-chart-bar far"/>
                     <c:set target="${option}" property="name">
-                        <mvc:message code="workflow.fadeInStatistics"/>
+                        <span class="text"><mvc:message code="workflow.fadeInStatistics"/></span>
                     </c:set>
                 </emm:instantiate>
 
@@ -162,7 +162,7 @@
                     <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
                         <c:set target="${options}" property="4" value="${option}"/>
                         <c:set target="${option}" property="url">
-                            <c:url value="/workflow/${workflowForm.workflowId}/delete.action"/>
+                            <c:url value="/workflow/${workflowForm.workflowId}/confirmDelete.action"/>
                         </c:set>
                         <c:set target="${option}" property="extraAttributes" value="data-confirm"/>
                         <c:set target="${option}" property="icon" value="icon-fa5 icon-fa5-trash-alt far"/>

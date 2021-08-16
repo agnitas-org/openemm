@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.stat.dao;
 
+import java.time.ZonedDateTime;
+
 import com.agnitas.emm.core.stat.beans.MailingStatisticTgtGrp;
 
 public interface MailingStatTgtGrpDao {
@@ -18,6 +20,6 @@ public interface MailingStatTgtGrpDao {
 
 	public MailingStatisticTgtGrp getMailingStatTgtGrpByJobId(int jobId, int targetGroupId);
 	
-	public void removeExpiredMailingStatTgtGrp(int maxAgeSeconds);
+	public void removeExpiredMailingStatTgtGrp(final ZonedDateTime threshold);
 
 }

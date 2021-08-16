@@ -25,12 +25,12 @@ public final class DepartmentDaoImpl extends BaseDaoImpl implements DepartmentDa
 	
 	@Override
 	public final List<Department> listAllDepartments() {
-		return select(logger, "SELECT * FROM department_tbl", new DepartmentRowMapper());
+		return select(logger, "SELECT department_id, slug, cid_0_allowed, no_permission_required FROM department_tbl", new DepartmentRowMapper());
 	}
 
 	@Override
 	public final Department getDepartmentByID(final int departmentID) throws UnknownDepartmentIdException {
-		final List<Department> list = select(logger, "SELECT * FROM department_tbl WHERE department_id = ?", new DepartmentRowMapper(), departmentID);
+		final List<Department> list = select(logger, "SELECT department_id, slug, cid_0_allowed, no_permission_required FROM department_tbl WHERE department_id = ?", new DepartmentRowMapper(), departmentID);
 		
 		if(list.isEmpty()) {
 			throw new UnknownDepartmentIdException(departmentID);
@@ -41,7 +41,7 @@ public final class DepartmentDaoImpl extends BaseDaoImpl implements DepartmentDa
 	
 	@Override
 	public final Department getDepartmentByShortname(final String shortname) throws UnknownDepartmentNameException {
-		final List<Department> list = select(logger, "SELECT * FROM department_tbl WHERE LOWER(slug) = LOWER(?)", new DepartmentRowMapper(), shortname);
+		final List<Department> list = select(logger, "SELECT department_id, slug, cid_0_allowed, no_permission_required FROM department_tbl WHERE LOWER(slug) = LOWER(?)", new DepartmentRowMapper(), shortname);
 		
 		if (list.isEmpty()) {
 			return null;

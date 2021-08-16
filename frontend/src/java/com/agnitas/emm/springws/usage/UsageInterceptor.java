@@ -18,7 +18,8 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.server.EndpointInterceptor;
-import org.springframework.ws.server.endpoint.MethodEndpoint;
+
+import com.agnitas.emm.springws.common.EndpointClassUtil;
 
 public final class UsageInterceptor implements EndpointInterceptor {
 	
@@ -52,9 +53,9 @@ public final class UsageInterceptor implements EndpointInterceptor {
 			final String username = Utils.getUserName();
 			final int companyID = Utils.getUserCompany();
 			
-			final Object endpointBean = ((MethodEndpoint) endpoint).getBean();
+			final Class<?> endpointClass = EndpointClassUtil.trueEndpointClass(endpoint);
 			
-			this.usageLogger.logWebserviceUsage(now, endpointBean.getClass().getCanonicalName(), companyID, username);
+			this.usageLogger.logWebserviceUsage(now, endpointClass.getCanonicalName(), companyID, username);
 		} catch(final Exception e) {
 			logger.warn("Error logging webservice usage", e);
 		}

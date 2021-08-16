@@ -5,12 +5,25 @@
 <c:url var="jqueryUiUrl" value="/assets/core/styles/common/jquery-ui.css"/>
 <c:url var="contextMenuUrl" value="/assets/core/styles/common/jquery.contextMenu.css"/>
 <c:url var="campaignManagerUrl" value="/assets/core/styles/campaignManager/campaignManager.css"/>
+
+<emm:ShowByPermission token="workflow.jsplumb2">
+    <c:url var="campaignManagerUrl" value="/assets/core/styles/campaignManager/campaignManager-new.css"/>
+</emm:ShowByPermission>
+
 <link rel="stylesheet" href="${jqueryUiUrl}" />
 <link rel="stylesheet" href="${contextMenuUrl}" />
 <link rel="stylesheet" href="${campaignManagerUrl}">
 
 <%--libs--%>
-<%--<script type="text/javascript" src="${pageContext.request.contextPath}/js/lib/common/jquery.jsPlumb-1.3.16-all.js"></script>--%>
+<emm:ShowByPermission token="workflow.jsplumb2">
+<script type="text/javascript" src="${pageContext.request.contextPath}/js/lib/common/jsplumb.min.js"></script>
+<script type="text/javascript" src="${pageContext.request.contextPath}/js/lib/common/panzoom-9.2.5.min.js"></script>
+</emm:ShowByPermission>
+
+<emm:HideByPermission token="workflow.jsplumb2">
+<script type="text/javascript" src="${pageContext.request.contextPath}/js/lib/common/jquery.jsPlumb-1.3.16-all.js"></script>
+</emm:HideByPermission>
+
 <script type="text/javascript" src="${pageContext.request.contextPath}/js/lib/common/jquery.contextMenu.js"></script>
 <script type="text/javascript" src="${pageContext.request.contextPath}/js/lib/common/jquery.disableSelection.js"></script>
 <script type="text/javascript" src="${pageContext.request.contextPath}/js/lib/common/jquery-datepicker-i18n/jquery.ui.datepicker-de.js"></script>

@@ -12,13 +12,13 @@ package com.agnitas.beans.factory.impl;
 
 import org.agnitas.beans.factory.MailingFactory;
 
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.impl.ComMailingImpl;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.impl.MailingImpl;
 
 public class ComMailingFactoryImpl implements MailingFactory {
     @Override
-    public ComMailing newMailing() {
-        ComMailingImpl mailing = new ComMailingImpl();
+    public Mailing newMailing() {
+        MailingImpl mailing = new MailingImpl();
         return mailing;
     }
 }

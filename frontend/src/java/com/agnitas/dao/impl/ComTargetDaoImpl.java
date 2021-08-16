@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +30,7 @@ import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.dao.exception.target.TargetGroupTooLargeException;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.util.AgnUtils;
@@ -45,6 +47,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.TargetLight;
@@ -663,12 +667,12 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 
 			if (options.isSearchName()) {
 				searchClauses.add(isOracleDB() ? "CONTAINS(target_shortname, ?) > 0" : "MATCH(target_shortname) AGAINST(? IN BOOLEAN MODE) > 0");
-				properties.add(isOracleDB() ? "{" + fullTextSearchClause.replace("}", "}}") + "}" : fullTextSearchClause);
+				properties.add(fullTextSearchClause);
 			}
 
 			if (options.isSearchDescription()) {
 				searchClauses.add(isOracleDB() ? "CONTAINS(target_description, ?) > 0" : "MATCH(target_description) AGAINST(? IN BOOLEAN MODE) > 0");
-				properties.add(isOracleDB() ? "{" + fullTextSearchClause.replace("}", "}}") + "}" : fullTextSearchClause);
+				properties.add(fullTextSearchClause);
 			}
 
 			String searchClause = searchClauses.stream().map(StringUtils::trimToNull).filter(Objects::nonNull).collect(Collectors.joining(" OR "));
@@ -735,7 +739,8 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	 *
 	 * @return true if locked, otherwise false
 	 */
-	private boolean isTargetGroupLocked(int targetID, @VelocityCheck int companyID) {
+    @Override
+	public boolean isTargetGroupLocked(int targetID, @VelocityCheck int companyID) {
 		// New target groups are never locked
 		if (targetID == 0) {
 			return false;
@@ -837,6 +842,19 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
     @Override
     public boolean isBasicFullTextSearchSupported() {
         return checkIndicesAvailable(logger, "dyntg$sname$idx", "dyntg$descr$idx");
+    }
+
+    @Override
+    public Set<Integer> getInvalidTargets(final int companyId, final Set<Integer> targets) {
+        if(CollectionUtils.isEmpty(targets) || companyId <= 0) {
+            return new HashSet<>();
+        }
+        final String query = "SELECT target_id FROM dyn_target_tbl WHERE invalid <> 0 AND target_id IN (:targetIds) AND company_id = :companyId";
+
+        final MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("targetIds", targets);
+        parameters.addValue("companyId", companyId);
+        return new HashSet<>(new NamedParameterJdbcTemplate(getDataSource()).query(query, parameters, new IntegerRowMapper()));
     }
 
 	private String makeShortNameMatchConditionClause(List<Object> sqlParameters) {

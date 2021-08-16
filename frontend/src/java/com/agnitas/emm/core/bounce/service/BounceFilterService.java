@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.bounce.service;
 
 import java.util.List;
+import java.util.TimeZone;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
@@ -21,6 +22,8 @@ public interface BounceFilterService {
     int saveBounceFilter(ComAdmin admin, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
 
     PaginatedListImpl<BounceFilterDto> getPaginatedBounceFilterList(ComAdmin admin, String sort, String direction, int page, int rownums);
+
+	int saveBounceFilter(int companyId, TimeZone adminTimeZone, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
 
     BounceFilterDto getBounceFilter(@VelocityCheck int companyId, int filterId);
 

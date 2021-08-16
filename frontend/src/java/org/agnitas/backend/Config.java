@@ -11,6 +11,7 @@
 package org.agnitas.backend;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,13 +27,18 @@ public class Config {
 	 * namespace for replacing configuration values
 	 */
 	private Map<String, String> namespace;
-
+	/**
+	 * lock (unchangable) configuration values
+	 */
+	private Set <String> locked;
+	
 	/**
 	 * Constructor for the class
 	 */
 	public Config(String systemConfigPrefix) {
 		config = new HashMap <> ();
 		namespace = new HashMap<>();
+		locked = new HashSet <> ();
 		namespace.put("home", Data.home);
 		namespace.put("fqdn", Data.fqdn);
 		namespace.put("hostname", Data.hostname);
@@ -90,8 +96,17 @@ public class Config {
 		return namespace;
 	}
 */	
+	public void lock (String key) {
+		locked.add (key.toLowerCase ());
+	}
+	public void unlock (String key) {
+		locked.remove (key.toLowerCase ());
+	}
 	public void set(String key, String value) {
-		config.put (key.toLowerCase (), value);
+		key = key.toLowerCase ();
+		if (! locked.contains (key)) {
+			config.put (key.toLowerCase (), value);
+		}
 	}
 
 	public Map <String, String> copy () {
@@ -100,7 +115,7 @@ public class Config {
 		config
 			.entrySet ()
 			.stream ()
-			.forEach (entry -> rc.put (entry.getKey ().toString (), entry.getValue ().toString ()));
+			.forEach (entry -> set (entry.getKey ().toString (), entry.getValue ().toString ()));
 		return rc;
 	}
 
@@ -147,30 +162,7 @@ public class Config {
 	}
 
 	private boolean convertToBool(String str) {
-		boolean val = false;
-
-		if (str != null) {
-			try {
-				char ch = str.charAt(0);
-
-				switch (ch) {
-					case 't':
-					case 'T':
-					case 'y':
-					case 'Y':
-					case '1':
-					case '+':
-						val = true;
-						break;
-
-					default:
-						break;
-				}
-			} catch (IndexOutOfBoundsException e) {
-				// do nothing
-			}
-		}
-		return val;
+		return StringOps.atob (str, false);
 	}
 
 	private String fill(String s) {

@@ -14,9 +14,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.ColumnMapping;
@@ -80,8 +82,8 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 			update(logger,
 				"INSERT INTO import_profile_tbl (id, company_id, admin_id, shortname, column_separator, text_delimiter"
 					+ ", file_charset, date_format, import_mode, null_values_action, key_column, report_email, error_email, check_for_duplicates"
-					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip, zip_password_encr, automapping, mediatype, datatype)"
-					+ " VALUES (" + AgnUtils.repeatString("?", 25, ", ") + ")",
+					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip, zip_password_encr, automapping, datatype, mailinglists_all, creation_date, change_date)"
+					+ " VALUES (" + AgnUtils.repeatString("?", 25, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
 				profileId,
 				importProfile.getCompanyId(),
 				importProfile.getAdminId(),
@@ -105,15 +107,15 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 				importProfile.isZipped() ? 1 : 0,
 				StringUtils.isEmpty(importProfile.getZipPassword()) ? null : dataEncryptor.encrypt(importProfile.getZipPassword()),
 				importProfile.isAutoMapping() ? 1 : 0,
-				importProfile.getMediatype() == null ? MediaTypes.EMAIL.getMediaCode() : importProfile.getMediatype().getMediaCode(),
-				importProfile.getDatatype()
+				importProfile.getDatatype(),
+				importProfile.isMailinglistsAll() ? 1 : 0
 			);
 		} else {
 			profileId = insertIntoAutoincrementMysqlTable(logger, "id",
 				"INSERT INTO import_profile_tbl (company_id, admin_id, shortname, column_separator, text_delimiter"
 					+ ", file_charset, date_format, import_mode, null_values_action, key_column, report_email, error_email, check_for_duplicates"
-					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip, zip_password_encr, automapping, mediatype, datatype)"
-					+ " VALUES (" + AgnUtils.repeatString("?", 24, ", ") + ")",
+					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip, zip_password_encr, automapping, datatype, mailinglists_all, creation_date, change_date)"
+					+ " VALUES (" + AgnUtils.repeatString("?", 24, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
         		importProfile.getCompanyId(),
 				importProfile.getAdminId(),
 				importProfile.getName(),
@@ -136,14 +138,15 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 				importProfile.isZipped() ? 1 : 0,
 				StringUtils.isEmpty(importProfile.getZipPassword()) ? null : dataEncryptor.encrypt(importProfile.getZipPassword()),
 				importProfile.isAutoMapping() ? 1 : 0,
-				importProfile.getMediatype() == null ? MediaTypes.EMAIL.getMediaCode() : importProfile.getMediatype().getMediaCode(),
-				importProfile.getDatatype()
+				importProfile.getDatatype(),
+				importProfile.isMailinglistsAll() ? 1 : 0
 			);
 		}
 
 		importProfile.setId(profileId);
 		insertGenderMappings(importProfile.getGenderMapping(), importProfile.getId());
 		updateMailinglists(importProfile);
+		updateMediatypes(importProfile.getId(), importProfile.getMediatypes());
 
 		return importProfile.getId();
 	}
@@ -152,7 +155,7 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	@DaoUpdateReturnValueCheck
 	public void updateImportProfile(ImportProfile importProfile) throws Exception {
 		update(logger,
-			"UPDATE import_profile_tbl SET company_id = ?, admin_id = ?, shortname = ?, column_separator = ?, text_delimiter = ?, file_charset = ?, date_format = ?, import_mode = ?, null_values_action = ?, key_column = ?, report_email = ?, error_email = ?, check_for_duplicates = ?, mail_type = ?, update_all_duplicates = ?, pre_import_action = ?, decimal_separator = ?, action_for_new_recipients = ?, noheaders = ?, zip = ?, zip_password_encr = ?, automapping = ?, mediatype = ?, datatype = ? WHERE id = ?",
+			"UPDATE import_profile_tbl SET company_id = ?, admin_id = ?, shortname = ?, column_separator = ?, text_delimiter = ?, file_charset = ?, date_format = ?, import_mode = ?, null_values_action = ?, key_column = ?, report_email = ?, error_email = ?, check_for_duplicates = ?, mail_type = ?, update_all_duplicates = ?, pre_import_action = ?, decimal_separator = ?, action_for_new_recipients = ?, noheaders = ?, zip = ?, zip_password_encr = ?, automapping = ?, datatype = ?, mailinglists_all = ?, change_date = CURRENT_TIMESTAMP WHERE id = ?",
 			importProfile.getCompanyId(),
 			importProfile.getAdminId(),
 			importProfile.getName(),
@@ -175,14 +178,15 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 			importProfile.isZipped() ? 1 : 0,
 			StringUtils.isEmpty(importProfile.getZipPassword()) ? null : dataEncryptor.encrypt(importProfile.getZipPassword()),
 			importProfile.isAutoMapping() ? 1 : 0,
-			importProfile.getMediatype() == null ? MediaTypes.EMAIL.getMediaCode() : importProfile.getMediatype().getMediaCode(),
 			importProfile.getDatatype(),
+			importProfile.isMailinglistsAll() ? 1 : 0,
 			importProfile.getId()
 		);
 
 		update(logger, "DELETE FROM import_gender_mapping_tbl WHERE profile_id = ?", importProfile.getId());
 		insertGenderMappings(importProfile.getGenderMapping(), importProfile.getId());
 		updateMailinglists(importProfile);
+		updateMediatypes(importProfile.getId(), importProfile.getMediatypes());
 	}
 
 	private void updateMailinglists(ImportProfile profile) {
@@ -203,6 +207,19 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 		}
 
 		batchupdate(logger, insertMailinglists, params);
+	}
+
+	private void updateMediatypes(int profileId, Set<MediaTypes> mediatypes) {
+		String cleanMediatypesSql = "DELETE FROM import_profile_mediatype_tbl WHERE import_profile_id = ?";
+		update(logger, cleanMediatypesSql, profileId);
+
+		String insertMediatypes = "INSERT INTO import_profile_mediatype_tbl(import_profile_id, mediatype) VALUES (?, ?)";
+		List<Object[]> params = new ArrayList<>();
+		for(MediaTypes mediatype : mediatypes) {
+			params.add(new Object[]{profileId, mediatype.getMediaCode()});
+		}
+
+		batchupdate(logger, insertMediatypes, params);
 	}
 
 	@Override
@@ -234,6 +251,7 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	@DaoUpdateReturnValueCheck
     public boolean deleteImportProfileById(int profileId) {
     	try {
+    		update(logger, "DELETE FROM import_profile_mediatype_tbl WHERE import_profile_id = ?", profileId);
     		update(logger, "DELETE FROM import_profile_mlist_bind_tbl WHERE import_profile_id = ?", profileId);
     		update(logger, "DELETE FROM import_profile_tbl WHERE id = ?", profileId);
     		update(logger, "DELETE FROM import_column_mapping_tbl WHERE profile_id = ?", profileId);
@@ -302,6 +320,17 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	public List<Integer> getSelectedMailingListIds(int id, @VelocityCheck int companyId) {
 		String sqlGetMailingListIds = "SELECT mailinglist_id FROM import_profile_mlist_bind_tbl WHERE import_profile_id = ? AND company_id = ?";
 		return select(logger, sqlGetMailingListIds, new IntegerRowMapper(), id, companyId);
+	}
+
+	private Set<MediaTypes> getMediatypes(int profileId) {
+		Set<MediaTypes> returnSet = new HashSet<>();
+		for (int mediatypeCode : select(logger, "SELECT mediatype FROM import_profile_mediatype_tbl WHERE import_profile_id = ?", new IntegerRowMapper(), profileId)) {
+			returnSet.add(MediaTypes.getMediaTypeForCode(mediatypeCode));
+		}
+		if (returnSet.size() == 0) {
+			returnSet.add(MediaTypes.EMAIL);
+		}
+		return returnSet;
 	}
 
 	@DaoUpdateReturnValueCheck
@@ -401,9 +430,11 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 					profile.setMailinglists(getSelectedMailingListIds(profile.getId(), profile.getCompanyId()));
 	        	}
 	        	
-	            profile.setMediatype(MediaTypes.getMediaTypeForCode(resultSet.getInt("mediatype")));
+	            profile.setMediatypes(getMediatypes(profile.getId()));
 	            
 	            profile.setDatatype(resultSet.getString("datatype"));
+	            
+	            profile.setMailinglistsAll(resultSet.getInt("mailinglists_all") > 0);
 	            
 	            return profile;
 			} catch (Exception e) {
@@ -429,4 +460,20 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
             return mapping;
     	}
     }
+
+	@Override
+	public Map<String, Integer> getImportProfileGenderMapping(int id) {
+		List<Map<String, Object>> queryResult = select(logger, "SELECT * FROM import_gender_mapping_tbl WHERE profile_id = ? AND deleted != 1 ORDER BY id", id);
+        Map<String, Integer> genderMappings = new HashMap<>();
+        for (Map<String, Object> resultSetRow : queryResult) {
+        	genderMappings.put((String) resultSetRow.get("string_gender"), ((Number)resultSetRow.get("int_gender")).intValue());
+        }
+		return genderMappings;
+	}
+
+	@Override
+	public void saveImportProfileGenderMapping(int id, Map<String, Integer> genderMapping) {
+		update(logger, "DELETE FROM import_gender_mapping_tbl WHERE profile_id = ?", id);
+		insertGenderMappings(genderMapping, id);
+	}
 }

@@ -138,7 +138,7 @@
                                 </div>
                                 <div class="col-sm-8">
                                     <agn:agnSelect property="trackable" styleId="trackable" styleClass="form-control" data-action="link-details-trackable">
-                                        <html:option value="0"><bean:message key="Not_Trackable" /></html:option>
+                                        <html:option value="0"><bean:message key="mailing.Not_Trackable" /></html:option>
                                         <html:option value="1"><bean:message key="Only_Text_Version" /></html:option>
                                         <html:option value="2"><bean:message key="Only_HTML_Version" /></html:option>
                                         <html:option value="3"><bean:message key="Text_and_HTML_Version" /></html:option>

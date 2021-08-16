@@ -47,7 +47,7 @@
         </div>
     </div>
 
-    <c:if test="${importProfileMode ne 5}">
+    <c:if test="${showImportMailinglistSelection}">
     <div class="tile">
         <div class="tile-header">
             <h2 class="headline"><bean:message key="settings.mailinglist"/></h2>

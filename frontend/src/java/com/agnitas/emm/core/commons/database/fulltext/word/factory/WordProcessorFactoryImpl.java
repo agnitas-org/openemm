@@ -17,9 +17,10 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.emm.core.commons.database.configuration.DatabaseConfiguration;
 import com.agnitas.emm.core.commons.database.fulltext.word.WordProcessor;
-import com.agnitas.emm.core.commons.database.fulltext.word.impl.OracleMultiEscapeProcessor;
+import com.agnitas.emm.core.commons.database.fulltext.word.impl.mysql.MysqlWildcardWordProcessor;
+import com.agnitas.emm.core.commons.database.fulltext.word.impl.oracle.OracleMultiEscapeProcessor;
+import com.agnitas.emm.core.commons.database.fulltext.word.impl.oracle.OracleWildcardWordProcessor;
 import com.agnitas.emm.core.commons.database.fulltext.word.impl.SingleWildcardWordProcessor;
-import com.agnitas.emm.core.commons.database.fulltext.word.impl.WildcardWordProcessor;
 
 public class WordProcessorFactoryImpl implements WordProcessorFactory {
 
@@ -29,9 +30,11 @@ public class WordProcessorFactoryImpl implements WordProcessorFactory {
     public Set<WordProcessor> createWordProcessors() {
         Set<WordProcessor> wordProcessors = new HashSet<>();
         wordProcessors.add(new SingleWildcardWordProcessor());
-        wordProcessors.add(new WildcardWordProcessor());
         if (databaseConfiguration.isOracle()) {
+            wordProcessors.add(new OracleWildcardWordProcessor());
             wordProcessors.add(new OracleMultiEscapeProcessor());
+        } else {
+            wordProcessors.add(new MysqlWildcardWordProcessor());
         }
         return wordProcessors;
     }

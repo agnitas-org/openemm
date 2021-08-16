@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.action.validators;
 
+import java.util.Locale;
+
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -18,6 +20,7 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.action.operations.ActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
 import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
+import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.SimpleServiceResult;
 
@@ -39,8 +42,10 @@ public class SendMailingValidator implements ActionOperationValidator {
     public SimpleServiceResult validate(ComAdmin admin, ActionOperationParameters target) {
         String bcc = ((ActionOperationSendMailingParameters) target).getBcc();
 
+        Locale locale = admin.getLocale();
         if (StringUtils.isNotBlank(bcc) && !AgnUtils.isEmailsListValid(bcc)) {
-            return new SimpleServiceResult(false, Message.of("error.email.invalid"));
+            return new SimpleServiceResult(false,
+                    Message.exact(I18nString.getLocaleString("action.address.bcc", locale) + ": " + I18nString.getLocaleString("error.email.invalid", locale)));
         }
 
         if (StringUtils.isNotBlank(bcc) && blacklistService.blacklistCheckCompanyOnly(bcc, admin.getCompanyID())) {

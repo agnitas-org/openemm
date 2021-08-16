@@ -55,6 +55,7 @@ import org.agnitas.service.ProfileImportWorkerFactory;
 import org.agnitas.service.impl.ImportWizardContentParseException;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CsvColInfo;
+import org.agnitas.util.CsvDataInvalidItemCountException;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.EmmCalendar;
 import org.agnitas.util.GuiConstants;
@@ -389,6 +390,8 @@ public final class ComImportWizardAction extends StrutsActionBase {
 	                    aForm.setAction(ACTION_CHECK_FIELDS);
 	                    destination = mapping.findForward("mapping");
 	                    break;
+	                } catch (CsvDataInvalidItemCountException e) {
+	                    errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.import.data.itemcount", e.getExpected(), e.getActual(), e.getErrorLineNumber()));
 	                } catch (Exception e) {
 	                    logger.error("Exception caught: " + e.getMessage(), e);
 	                    errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.import.exception", e.getMessage()));

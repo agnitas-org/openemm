@@ -38,17 +38,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ProfileField;
-import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.objectusage.common.ObjectUsages;
+import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
+import com.agnitas.emm.core.objectusage.web.ObjectUsagesToPopups;
 import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryUtil;
-import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
@@ -63,27 +65,27 @@ public class ProfileFieldsController {
     private ConversionService conversionService;
     private ConfigService configService;
     private ProfileFieldValidationService validationService;
-    private ComTargetService targetService;
     private UserActivityLogService userActivityLogService;
-
+    private ObjectUsageService objectUsageService;
+    
     public ProfileFieldsController(ProfileFieldService profileFieldService, WebStorage webStorage,
                                    ConversionService conversionService, ConfigService configService,
-                                   ProfileFieldValidationService validationService, ComTargetService targetService,
-                                   UserActivityLogService userActivityLogService) {
+                                   ProfileFieldValidationService validationService,
+                                   UserActivityLogService userActivityLogService, final ObjectUsageService objectUsageService) {
         this.profileFieldService = profileFieldService;
         this.webStorage = webStorage;
         this.conversionService = conversionService;
         this.configService = configService;
         this.validationService = validationService;
-        this.targetService = targetService;
         this.userActivityLogService = userActivityLogService;
+        this.objectUsageService = Objects.requireNonNull(objectUsageService, "ObjectUsageService is null");
     }
 
     @RequestMapping("/profiledb.action")
     public String list(ComAdmin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Model model, Popups popups) {
-        int companyId = admin.getCompanyID();
+    	FormUtils.syncNumberOfRows(webStorage, ComWebStorage.PROFILE_FIELD_OVERVIEW, profileForm);
 
-        FormUtils.syncNumberOfRows(webStorage, ComWebStorage.PROFILE_FIELD_OVERVIEW, profileForm);
+    	int companyId = admin.getCompanyID();
 
         model.addAttribute("columnInfo", profileFieldService.getSortedColumnInfo(companyId));
         model.addAttribute("fieldsWithIndividualSortOrder", profileFieldService.getFieldWithIndividualSortOrder(companyId, admin.getAdminID()));
@@ -197,34 +199,41 @@ public class ProfileFieldsController {
     }
 
     @RequestMapping("/profiledb/{fieldname}/confirmDelete.action")
-    public String confirmDelete(ComAdmin admin, @PathVariable("fieldname") String fieldName, Model model) {
-        String result = "settings_profile_field_delete_ajax";
-        final int companyId = admin.getCompanyID();
-
-        List<String> dependentWorkflows = profileFieldService.getDependentWorkflows(companyId, fieldName);
-        List<TargetLight> targetLights = targetService.listTargetGroupsUsingProfileFieldByDatabaseName(fieldName, companyId); //TODO optimize
-
-        if (CollectionUtils.isNotEmpty(targetLights)) {
-            model.addAttribute("affectedTargetGroupsMessageKey", "settings.ProfileFieldErrorMsg");
-            model.addAttribute("affectedTargetGroupsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
-            model.addAttribute("affectedTargetGroups", targetLights);
-
-            result = "messages";
+    public String confirmDelete(ComAdmin admin, @PathVariable("fieldname") String fieldName, Model model, final Popups popups, @RequestParam(name="from_list_page", required=false) final boolean fromListPage) {
+    	final int companyId = admin.getCompanyID();
+        
+        final ObjectUsages usages = this.objectUsageService.listUsageOfProfileFieldByDatabaseName(companyId, fieldName);
+        if(!usages.isEmpty()) {
+        	ObjectUsagesToPopups.objectUsagesToPopups("error.profilefield.used", "error.profilefield.used.withMore", usages, popups, admin.getLocale());
+        	
+        	return fromListPage 
+        			? "redirect:/profiledb.action"
+        			: String.format("redirect:/profiledb/%s/view.action", fieldName);
+        } else {        
+        	String result = "settings_profile_field_delete_ajax";
+	        List<String> dependentWorkflows = profileFieldService.getDependentWorkflows(companyId, fieldName);
+	
+	        if(!usages.isEmpty()) {
+	        	model.addAttribute("objectUsageMessageKey", "");
+	        	model.addAttribute("objectUsages", usages.mappedByType());
+	        	
+	        	result = "messages";
+	        }
+	
+	        if (CollectionUtils.isNotEmpty(dependentWorkflows)) {
+	            model.addAttribute("affectedDependentWorkflowsMessageKey", "error.profiledb.dependency.workflow");
+	            model.addAttribute("affectedDependentWorkflowsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
+	            model.addAttribute("affectedDependentWorkflows", dependentWorkflows);
+	
+	            result = "messages";
+	        }
+	
+	        if (CollectionUtils.isEmpty(dependentWorkflows)) {
+	            model.addAttribute("fieldname", fieldName);
+	        }
+	
+	        return result;
         }
-
-        if (CollectionUtils.isNotEmpty(dependentWorkflows)) {
-            model.addAttribute("affectedDependentWorkflowsMessageKey", "error.profiledb.dependency.workflow");
-            model.addAttribute("affectedDependentWorkflowsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
-            model.addAttribute("affectedDependentWorkflows", dependentWorkflows);
-
-            result = "messages";
-        }
-
-        if (CollectionUtils.isEmpty(targetLights) && CollectionUtils.isEmpty(dependentWorkflows)) {
-            model.addAttribute("fieldname", fieldName);
-        }
-
-        return result;
     }
 
     @RequestMapping(value = "/profiledb/{fieldname}/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})

@@ -11,6 +11,7 @@
 <%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.ComWorkflowForm"--%>
 <%--@elvariable id="allMailinglists" type="java.util.List"--%>
 <%--@elvariable id="allTargets" type="java.util.List"--%>
+<%--@elvariable id="accessLimitTargetId" type="java.lang.Integer"--%>
 
 <c:set var="FORWARD_TARGETGROUP_CREATE" value="<%= WorkflowController.FORWARD_TARGETGROUP_CREATE_QB%>"/>
 <c:set var="FORWARD_TARGETGROUP_EDIT" value="<%= WorkflowController.FORWARD_TARGETGROUP_EDIT_QB%>"/>
@@ -46,7 +47,8 @@
             <div class="col-sm-8">
                 <select class="form-control js-select" multiple="" id="recipientTargetSelect">
                     <c:forEach var="target" items="${allTargets}" varStatus="rowCounter">
-                        <option value="${target.id}">${target.targetName}</option>
+                        <option value="${target.id}" data-editable="${not target.accessLimitation}"
+                                data-locked="${target.id eq accessLimitTargetId}">${target.targetName}</option>
                     </c:forEach>
                 </select>
             </div>
@@ -65,7 +67,8 @@
                 <ul class="list-group">
                     <li class="list-group-item">
                         <label class="radio-inline">
-                            <input name="targetsOption" type="radio" checked="checked" value="${ONE_TARGET_REQUIRED}" id="oneTargetRequired"/>
+                            <input name="targetsOption" type="radio" checked="checked" value="${ONE_TARGET_REQUIRED}" id="oneTargetRequired"
+                                   ${accessLimitTargetId gt 0 ? 'disabled' : ''}/>
                             <bean:message key="workflow.recipient.oneTargetRequired"/> "&cup;"
                         </label>
                     </li>
@@ -77,7 +80,8 @@
                     </li>
                     <li class="list-group-item">
                         <label class="radio-inline">
-                            <input name="targetsOption" type="radio" value="${NOT_IN_TARGETS}" id="notInTargets"/>
+                            <input name="targetsOption" type="radio" value="${NOT_IN_TARGETS}" id="notInTargets"
+                                  ${accessLimitTargetId gt 0 ? 'disabled' : ''}/>
                             <bean:message key="workflow.recipient.notInTargets"/> "&ne;"
                         </label>
                     </li>

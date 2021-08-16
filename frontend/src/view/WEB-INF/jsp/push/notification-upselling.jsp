@@ -1,34 +1,36 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
+<%@ page contentType="text/html; charset=utf-8"%>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+
+<%--@elvariable id="upsellingInfoUrl" type="String"--%>
 
 <div class="tile" data-sizing="container">
     <div class="tile-header" data-sizing="top">
         <h2 class="headline">
             <i class="icon icon-bolt"></i>
-            <bean:message key="PushNotifications"/>
+            <mvc:message code="push.teaser.title"/>
         </h2>
     </div>
 
-    <div class="tile-content push-upselling">
-        <div class="push-upselling-background" data-sizing="scroll">
-            <div class="push-upselling-description">
-                <h3><bean:message key="PushNotifications"/></h3>
-                <h1><bean:message key="push.teaser.headline"/></h1>
+    <div class="upselling-content notification-upselling" data-sizing="scroll">
 
-                <p><bean:message key="push.teaser.text"/></p>
-
-                <a href="mailto:sales@agnitas.de?Subject=<bean:message key="PushNotifications"/>" class="btn btn-primary btn-large">
-                    <i class="icon icon-envelope-o"></i>
-                    <bean:message key="push.teaser.contact.sales"/>
-                </a>
-            </div>
+        <div class="upselling-headline">
+            <h3 class="upselling-title"><mvc:message code="push.teaser.title"/></h3>
+            <h1 class="upselling-header"><mvc:message code="push.teaser.headline"/></h1>
         </div>
+        <div class="upselling-desc">
+            <p><mvc:message code="push.teaser.text"/></p>
+
+            <a href="${upsellingInfoUrl}" target="_blank" class="more-info-btn">
+                <mvc:message code="general.upselling.information"/>
+            </a>
+        </div>
+
     </div>
 
     <div class="tile-footer" data-sizing="bottom">
         <a href="javascript:void(0);" class="btn btn-large pull-left" onclick="history.back(); return false;">
             <i class="icon icon-angle-left"></i>
-            <span class="text"><bean:message key="button.Back"/></span>
+            <span class="text"><mvc:message code="button.Back" /></span>
         </a>
     </div>
 </div>

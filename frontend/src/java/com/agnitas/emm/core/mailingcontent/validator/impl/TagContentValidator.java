@@ -44,7 +44,7 @@ public class TagContentValidator implements DynTagValidator {
             StringBuffer tagErrorReport = new StringBuffer();
             List<DynContentDto> contentBlocks = dynTagDto.getContentBlocks();
 
-            TAGCheck tagCheck = tagCheckFactory.createTAGCheck(dynTagDto.getMailingId());
+            TAGCheck tagCheck = tagCheckFactory.createTAGCheck(dynTagDto.getMailingId(), admin.getLocale());
             for (DynContentDto contentBlock : contentBlocks) {
                 if (!tagCheck.checkContent(contentBlock.getContent(), tagErrorReport, new Vector<>())) {
                     String description = StringEscapeUtils.escapeHtml4(tagErrorReport.toString());

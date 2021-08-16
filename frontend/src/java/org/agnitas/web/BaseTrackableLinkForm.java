@@ -94,8 +94,6 @@ public abstract class BaseTrackableLinkForm extends StrutsFormBase {
      */
     protected List<LinkProperty> commonLinkExtensions;
     
-    protected boolean companyHasDefaultLinkExtension = false;
-
 	protected Map<Integer, String> linkItemName = new HashMap<>();
 	
     protected Set<Integer> bulkIDs = new HashSet<>();
@@ -369,22 +367,6 @@ public abstract class BaseTrackableLinkForm extends StrutsFormBase {
      */
 	public void setCommonLinkExtensions(List<LinkProperty> commonLinkExtensions) {
 		this.commonLinkExtensions = commonLinkExtensions;
-	}
-    
-    /**
-     * Getter for property companyHasDefaultLinkExtension.
-     * @return Value of property companyHasDefaultLinkExtension
-     */
-	public boolean getCompanyHasDefaultLinkExtension() {
-		return companyHasDefaultLinkExtension;
-	}
-    
-    /**
-     * Setter for property commonLinkExtensions.
-     * @param companyHasDefaultLinkExtension new value of link companyHasDefaultLinkExtension
-     */
-	public void setCompanyHasDefaultLinkExtension(boolean companyHasDefaultLinkExtension) {
-		this.companyHasDefaultLinkExtension = companyHasDefaultLinkExtension;
 	}
 	
 	public String getBulkID(int id) {

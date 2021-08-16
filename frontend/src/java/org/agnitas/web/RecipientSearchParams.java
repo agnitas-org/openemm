@@ -24,6 +24,7 @@ public class RecipientSearchParams implements Serializable {
     private String firstName = "";
     private String lastName = "";
     private String email = "";
+    private String queryBuilderRules = "[]";
 
     public int getMailingListId() {
         return mailingListId;
@@ -79,5 +80,13 @@ public class RecipientSearchParams implements Serializable {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getQueryBuilderRules() {
+        return queryBuilderRules;
+    }
+
+    public void setQueryBuilderRules(String queryBuilderRules) {
+        this.queryBuilderRules = queryBuilderRules;
     }
 }

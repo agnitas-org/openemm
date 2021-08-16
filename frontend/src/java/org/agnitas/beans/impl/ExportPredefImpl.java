@@ -14,6 +14,7 @@ import java.util.Date;
 
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.importvalues.DateFormat;
 
 public class ExportPredefImpl implements ExportPredef {
 	protected int id;
@@ -46,17 +47,27 @@ public class ExportPredefImpl implements ExportPredef {
 
 	protected int deleted;
 
+	protected boolean timeLimitsLinkedByAnd = true;
+
 	private Date timestampStart;
 	private Date timestampEnd;
 	private int timestampLastDays;
+	private boolean timestampIncludeCurrentDay;
 
 	private Date creationDateStart;
 	private Date creationDateEnd;
 	private int creationDateLastDays;
+	private boolean creationDateIncludeCurrentDay;
 
 	private Date mailinglistBindStart;
 	private Date mailinglistBindEnd;
 	private int mailinglistBindLastDays;
+	private boolean mailinglistBindIncludeCurrentDay;
+	
+	private int dateFormat = DateFormat.ddMMyyyy.getIntValue();
+	private int dateTimeFormat = DateFormat.ddMMyyyyHHmmss.getIntValue();
+	private String timezone = "Europe/Berlin";
+	private String decimalSeparator = ",";
 
 	public ExportPredefImpl() {
 	}
@@ -292,6 +303,36 @@ public class ExportPredefImpl implements ExportPredef {
 	}
 
 	@Override
+	public boolean isTimestampIncludeCurrentDay() {
+		return timestampIncludeCurrentDay;
+	}
+
+	@Override
+	public void setTimestampIncludeCurrentDay(boolean timestampIncludeCurrentDay) {
+		this.timestampIncludeCurrentDay = timestampIncludeCurrentDay;
+	}
+
+	@Override
+	public boolean isCreationDateIncludeCurrentDay() {
+		return creationDateIncludeCurrentDay;
+	}
+
+	@Override
+	public void setCreationDateIncludeCurrentDay(boolean creationDateIncludeCurrentDay) {
+		this.creationDateIncludeCurrentDay = creationDateIncludeCurrentDay;
+	}
+
+	@Override
+	public boolean isMailinglistBindIncludeCurrentDay() {
+		return mailinglistBindIncludeCurrentDay;
+	}
+
+	@Override
+	public void setMailinglistBindIncludeCurrentDay(boolean mailinglistBindIncludeCurrentDay) {
+		this.mailinglistBindIncludeCurrentDay = mailinglistBindIncludeCurrentDay;
+	}
+
+	@Override
 	public boolean isAlwaysQuote() {
 		return alwaysQuote;
 	}
@@ -299,5 +340,55 @@ public class ExportPredefImpl implements ExportPredef {
 	@Override
 	public void setAlwaysQuote(boolean alwaysQuote) {
 		this.alwaysQuote = alwaysQuote;
+	}
+
+	@Override
+	public int getDateFormat() {
+		return dateFormat;
+	}
+
+	@Override
+	public void setDateFormat(int dateFormat) {
+		this.dateFormat = dateFormat;
+	}
+
+	@Override
+	public int getDateTimeFormat() {
+		return dateTimeFormat;
+	}
+
+	@Override
+	public void setDateTimeFormat(int dateTimeFormat) {
+		this.dateTimeFormat = dateTimeFormat;
+	}
+
+	@Override
+	public String getTimezone() {
+		return timezone;
+	}
+
+	@Override
+	public void setTimezone(String timezone) {
+		this.timezone = timezone;
+	}
+
+	@Override
+	public String getDecimalSeparator() {
+		return decimalSeparator;
+	}
+
+	@Override
+	public void setDecimalSeparator(String decimalSeparator) {
+		this.decimalSeparator = decimalSeparator;
+	}
+
+	@Override
+	public boolean isTimeLimitsLinkedByAnd() {
+		return timeLimitsLinkedByAnd;
+	}
+
+	@Override
+	public void setTimeLimitsLinkedByAnd(boolean timeLimitsLinkedByAnd) {
+		this.timeLimitsLinkedByAnd = timeLimitsLinkedByAnd;
 	}
 }

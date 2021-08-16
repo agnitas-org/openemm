@@ -50,6 +50,9 @@ import com.agnitas.messages.Message;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.Version;
 
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
 public abstract class ServerStatusServiceImplBasic implements ServerStatusService {
 	
 	private static final Logger logger = Logger.getLogger(ServerStatusService.class);
@@ -420,10 +423,10 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 		
 		String[] allTables = {"config_tbl", "company_tbl", "company_info_tbl", "serverset_tbl", "serverprop_tbl"};
 		
-		String[] allSelects = {"select * from config_tbl order by class, name", 
-				"select * from company_tbl order by company_id", 
-				"select * from company_info_tbl order by company_id, cname", 
-				"select * from serverset_tbl order by set_id", 
+		String[] allSelects = {"select * from config_tbl order by class, name",
+				"select * from company_tbl order by company_id",
+				"select * from company_info_tbl order by company_id, cname",
+				"select * from serverset_tbl order by set_id",
 				"select * from serverprop_tbl order by mailer, mvar"
 				};
 		
@@ -445,5 +448,41 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 		ZipUtilities.closeZipOutputStream(zipOutput);
 		
 		return zippedFile;
+	}
+	
+	@Override
+	public JSONArray getSystemStatus() {
+		JSONArray allStatus = new JSONArray();
+		String[] statusNames = {
+				"overall",
+				"jobqueue",
+				"import",
+				"dbOverall",
+				"dbConnection",
+				"report"
+			};
+		boolean[] statusValues = {
+				isOverallStatusOK(),
+				isJobQueueStatusOK(),
+				!isImportStalling(),
+				isDBStatusOK(),
+				checkDatabaseConnection(),
+				isReportStatusOK()
+			};
+		
+		for (int i = 0; i < statusNames.length; i++) {
+			JSONObject m = new JSONObject();
+			m.put("shortname", statusNames[i]);
+			m.put("value", statusValues[i]);
+			allStatus.add(m);
+			m = null;
+		}
+		
+		return allStatus;
+	}
+
+	@Override
+	public void acknowledgeErrorneousJob(int idToAcknowledge) {
+		jobQueueService.acknowledgeErrorneousJob(idToAcknowledge);
 	}
 }

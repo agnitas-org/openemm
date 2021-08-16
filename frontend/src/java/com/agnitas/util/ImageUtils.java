@@ -10,9 +10,6 @@
 
 package com.agnitas.util;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -28,6 +25,10 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -37,6 +38,8 @@ import org.xml.sax.SAXException;
 
 public class ImageUtils {
 	private static final Logger logger = Logger.getLogger(ImageUtils.class);
+
+	public static final String MOBILE_IMAGE_PREFIX = "mobile_";
 
 	private static final Set<String> availableImageExtensions = new HashSet<>();
 
@@ -212,4 +215,28 @@ public class ImageUtils {
 			return false;
 		}
 	}
+
+	public static String makeMobileFilenameIfNecessary(String filename, String mobileComponentBase) {
+        if (StringUtils.isBlank(mobileComponentBase)) {
+            return filename;
+        } else {
+            return MOBILE_IMAGE_PREFIX + mobileComponentBase;
+        }
+    }
+
+    public static String makeMobileDescriptionIfNecessary(String userDescription, String mobileComponentBase) {
+        if (StringUtils.isBlank(mobileComponentBase)) {
+            return userDescription;
+        }
+
+        if (StringUtils.isBlank(userDescription)) {
+            return  "Mobile component for " + mobileComponentBase;
+        } else {
+            return  userDescription + " / Mobile component for " + mobileComponentBase;
+        }
+    }
+
+    public static boolean isMobileImage(String componentName) {
+        return StringUtils.startsWith(componentName, MOBILE_IMAGE_PREFIX);
+    }
 }

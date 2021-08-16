@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
 <%@ page import="com.agnitas.beans.MediatypeEmail" %>
 <%@ page import="com.agnitas.web.ComMailingWizardAction" %>
+<%@ page import="com.agnitas.beans.Mailing" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -10,17 +11,25 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="mailingWizardForm" type="org.agnitas.web.MailingWizardForm"--%>
+<%--@elvariable id="targetComplexities" type="Map<java.lang.Integer, com.agnitas.emm.core.target.beans.TargetComplexityGrade>"--%>
+<%--@elvariable id="targets" type="java.util.List"--%>
+<%--@elvariable id="altgId" type="java.lang.Integer"--%>
 
 <c:set var="ACTION_TARGET" value="<%= ComMailingWizardAction.ACTION_TARGET %>" />
-<c:set var="ACTION_ADD_TARGET" value="<%= ComMailingWizardAction.ACTION_ADD_TARGET %>"/>
 <c:set var="ACTION_NEW_TARGET" value="<%= ComMailingWizardAction.ACTION_NEW_TARGET %>"/>
+<c:set var="ACTION_MAILTYPE" value="<%= ComMailingWizardAction.ACTION_MAILTYPE %>"/>
+
+<c:set var="TARGET_MODE_OR" value="<%= Mailing.TARGET_MODE_OR%>"/>
+<c:set var="TARGET_MODE_AND" value="<%= Mailing.TARGET_MODE_AND%>"/>
 
 <c:set var="workflowParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, workflowId)}" scope="page"/>
 <c:set var="workflowId" value="${workflowParams.workflowId}" scope="page"/>
+<c:set var="isWorkflowDriven" value="${workflowParams.workflowId gt 0}" scope="page"/>
 
-<agn:agnForm action="/mwTarget" id="wizard-step-7" data-form-focus="" data-form="resource">
+<c:url var="previous" value="/mwMailtype.do?action=${ACTION_MAILTYPE}"/>
+
+<agn:agnForm action="/mwTarget" id="wizard-step-7" data-form-focus="" data-form="resource" data-controller="mailing-wizard">
     <html:hidden property="action" value="${ACTION_TARGET}"/>
-    <input type="hidden" name="removeTargetID" value="0">
 
     <div class="col-md-10 col-md-push-1 col-lg-8 col-lg-push-2">
         <div class="tile">
@@ -33,7 +42,7 @@
                     <li class="">
                         <ul class="pagination">
                             <li>
-                                <a href="#" data-form-action="previous">
+                                <a href="${previous}">
                                     <i class="icon icon-angle-left"></i>
                                     <bean:message key="button.Back" />
                                 </a>
@@ -72,7 +81,7 @@
                         <div class="input-group">
                             <div class="input-group-controls">
                                 <agn:agnSelect styleId="mailing.mailinglistID" property="mailing.mailinglistID" size="1"
-                                               styleClass="form-control js-select" disabled="${workflowId gt 0}">
+                                               styleClass="form-control js-select" disabled="${isWorkflowDriven}">
                                     <c:forEach var="mailinglist" items="${mailinglists}">
                                         <html:option value="${mailinglist.id}">
                                             ${mailinglist.shortname}
@@ -80,7 +89,7 @@
                                     </c:forEach>
                                 </agn:agnSelect>
                              </div>
-                            <c:if test="${workflowId ne null or workflowId gt 0}">
+                            <c:if test="${workflowDriven}">
                                 <div class="input-group-btn">
                                     <c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">
                                         <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingBaseForm.mailingID}"/>
@@ -105,7 +114,7 @@
                             <div class="input-group">
                                 <div class="input-group-controls">
                                     <html:select styleId="mailing.campaignID" styleClass="form-control js-select"
-                                                 property="mailing.campaignID" disabled="${workflowId gt 0}">
+                                                 property="mailing.campaignID" disabled="${workflowDriven}">
                                         <html:option value="0"><bean:message key="mailing.NoCampaign"/></html:option>
                                         <c:forEach var="campaign" items="${campaigns}">
                                             <html:option value="${campaign.id}">
@@ -114,7 +123,7 @@
                                         </c:forEach>
                                     </html:select>
                                  </div>
-                                <c:if test="${workflowId ne null or workflowId gt 0}">
+                                <c:if test="${workflowDriven}">
                                     <div class="input-group-btn">
                                         <c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">
                                             <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingBaseForm.mailingID}"/>
@@ -129,116 +138,41 @@
                         </div>
                     </div>
                 </emm:ShowByPermission>
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label" for="emailOnepixel"><bean:message key="openrate.measure"/></label>
-                    </div>
-                    <div class="col-sm-8">
-                        <html:select styleId="emailOnepixel" styleClass="form-control js-select" property="emailOnepixel" size="1">
-                            <html:option value="<%= MediatypeEmail.ONEPIXEL_TOP %>"><bean:message key="mailing.openrate.top"/></html:option>
-                            <html:option value="<%= MediatypeEmail.ONEPIXEL_BOTTOM %>"><bean:message
-                                    key="mailing.openrate.bottom"/></html:option>
-                            <html:option value="<%= MediatypeEmail.ONEPIXEL_NONE %>"><bean:message
-                                    key="openrate.none"/></html:option>
-                        </html:select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label" for="assistant_step7_targetgroups_select"><bean:message key="Targets"/>:</label>
-                    </div>
-                    <div class="col-sm-8">
-                        <div class="input-group">
-                            <div class="input-group-controls">
-                                <select id="assistant_step7_targetgroups_select" name="targetID" size="1" class="form-control js-select" ${workflowId gt 0 ? 'disabled="disabled"' : ''}>
-                                    <option value="0" selected>---</option>
-                                    <c:forEach var="target" items="${targets}">
-                                        <c:if test="${not emm:contains(mailingWizardForm.mailing.targetGroups, target.id)}">
-                                            <option title="${fn:escapeXml(target.targetName)}" value="${target.id}">${fn:escapeXml(target.targetName)} (${target.id})</option>
-                                        </c:if>
-                                    </c:forEach>
-                                </select>
-                            </div>
 
-                            <c:choose>
-                                <c:when test="${workflowId ne null or workflowId gt 0}">
-                                    <div class="input-group-btn">
-                                        <c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">
-                                            <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingBaseForm.mailingID}"/>
-                                        </c:url>
-                                        <a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
-                                            <i class="icon icon-linkage-campaignmanager"></i>
-                                            <strong><bean:message key="campaign.manager.icon"/></strong>
-                                        </a>
-                                    </div>
-                                </c:when>
-                                <c:otherwise>
-                                    <div class="input-group-btn">
-                                        <button type="button" class="btn btn-regular" data-form-action="${ACTION_ADD_TARGET}">
-                                            <i class="icon icon-plus"></i>
-                                        </button>
-                                    </div>
-                                </c:otherwise>
-                            </c:choose>
+                <jsp:include page="../media/email-onepixel.jsp">
+                    <jsp:param name="isEmailSettingsDisabled" value="${false}"/>
+                </jsp:include>
+
+                <html:hidden property="__STRUTS_CHECKBOX_targetGroupIds" value="[]"/>
+                <c:set var="complexTargetExpression" value="${mailingWizardForm.mailing.hasComplexTargetExpression()}" scope="page" />
+                <%@include file="../fragments/mailing-targets-select.jspf" %>
+
+                <c:if test="${not (mailingWizardForm.mailing.hasComplexTargetExpression() or (isWorkflowDriven and fn:length(mailingWizardForm.mailing.targetGroups) <= 1))}">
+                    <div class="form-group" style="${fn:length(mailingWizardForm.mailing.targetGroups) <= 1 ? 'display: none;' : ''}">
+                        <div class="col-sm-offset-4 col-sm-8">
+                            <html:hidden property="__STRUTS_CHECKBOX_mailing.targetMode" value="${TARGET_MODE_OR}"/>
+                            <div class="checkbox">
+                                <label>
+                                    <html:checkbox styleId="targetModeCheck" property="mailing.targetMode" value="${TARGET_MODE_AND}" disabled="${isWorkflowDriven or altgId > 0}" />
+                                    <bean:message key="mailing.targetmode.and"/>
+                                </label>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="form-group">
-                    <div class="col-sm-offset-4 col-sm-8">
-                        <c:choose>
-                            <c:when test="${fn:length(mailingWizardForm.mailing.targetGroups) gt 0}">
-                                <c:forEach var="target" items="${targets}">
-                                    <c:if test="${emm:contains(mailingWizardForm.mailing.targetGroups, target.id)}">
-                                        <div class="form-group">
-                                            <div class="col-sm-5">
-                                                <label class="control-label">${fn:escapeXml(target.targetName)} (${target.id})</label>
-                                            </div>
-                                            <c:if test="${mailingWizardForm.altgId != target.id}">
-                                                <div class="col-sm-2">
-                                                    <button class="btn btn-regular btn-alert" type="button" data-form-set="removeTargetID:${target.id}, targetID:0" data-form-action="${ACTION_TARGET}">
-                                                        <i class="icon icon-trash-o"></i>
-                                                        <bean:message key="button.Delete"/>
-                                                    </button>
-                                                </div>
-                                            </c:if>
-                                        </div>
-                                    </c:if>
-                                </c:forEach>
-                            </c:when>
-                            <c:otherwise>
-                                <bean:message key="statistic.all_subscribers"/><br>
-                            </c:otherwise>
-                        </c:choose>
+                </c:if>
+
+                <c:if test="${not isWorkflowDriven}">
+                    <div class="form-group">
+                        <div class="col-sm-offset-4 col-sm-8">
+                            <a href="#" class="btn btn-regular btn-primary" data-form-action="${ACTION_NEW_TARGET}">
+                                <bean:message key="target.NewTarget"/>
+                            </a>
+                        </div>
                     </div>
-                </div>
-                <div class="form-group">
-                    <div class="col-sm-offset-4 col-sm-8">
-                        <c:choose>
-                            <c:when test="${fn:length(mailingWizardForm.mailing.targetGroups) > 1}">
-                                <input type="hidden" name="__STRUTS_CHECKBOX_mailing.targetMode" value="0"/>
-                                <div class="checkbox">
-                                    <label>
-                                        <html:checkbox property="mailing.targetMode" value="1" styleId="assistant_step7_reciepient_in_all_targetgroups"/>
-                                        <bean:message key="mailing.targetmode.and"/>
-                                    </label>
-                                </div>
-                            </c:when>
-                            <c:otherwise>
-                                <html:hidden property="mailing.targetMode"/>
-                            </c:otherwise>
-                        </c:choose>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="col-sm-offset-4 col-sm-8">
-                        <a href="#" class="btn btn-regular btn-primary" data-form-action="${ACTION_NEW_TARGET}">
-                            <bean:message key="target.NewTarget"/>
-                        </a>
-                    </div>
-                </div>
+                </c:if>
             </div>
             <div class="tile-footer">
-                <a href="#" class="btn btn-large pull-left" data-form-action="previous">
+                <a href="${previous}" class="btn btn-large pull-left">
                     <i class="icon icon-angle-left"></i>
                     <span class="text"><bean:message key="button.Back"/></span>
                 </a>

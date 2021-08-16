@@ -1,0 +1,2 @@
+1) jquery-3.5.1.js
+- bring back QtWebKit support for jQuery 3.x (https://github.com/jquery/jquery/issues/4756)

@@ -20,7 +20,6 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
@@ -45,7 +44,7 @@ public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
 	}
 	
 	private static String getSqlUpdateString(@VelocityCheck int companyId) {
-		return "UPDATE " + getOnepixellogTableName(companyId) + " SET open_count = open_count + 1, mobile_count = COALESCE(mobile_count, 0) + ?, last_open = CURRENT_TIMESTAMP WHERE company_id = ? AND mailing_id = ? AND customer_id = ?";
+		return "UPDATE " + getOnepixellogTableName(companyId) + " SET open_count = open_count + 1, mobile_count = COALESCE(mobile_count, 0) + ?, last_open = CURRENT_TIMESTAMP WHERE mailing_id = ? AND customer_id = ?";
 	}
 	
 	private static String getSqlDeviceInsertString(int companyId) {
@@ -81,7 +80,12 @@ public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
         		mobileCountDelta = 1;
         	}
         	
-    		int touchedLines = update(logger, getSqlUpdateString(companyID), mobileCountDelta, companyID, mailingID, recipientID);
+        	if (recipientID == 0) {
+        		// Fallback for anonymous recipients
+        		remoteAddr = null;
+        	}
+        	
+    		int touchedLines = update(logger, getSqlUpdateString(companyID), mobileCountDelta, mailingID, recipientID);
     		
         	if (touchedLines == 0) {
 				// Insert new entry
@@ -124,30 +128,6 @@ public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
             return false;
         }
     }
-	
-	@Override
-	@DaoUpdateReturnValueCheck
-	public boolean writePixel(@VelocityCheck int companyID, int recipientID, int mailingID, String remoteAddr)	{
-		JdbcTemplate jdbc = new JdbcTemplate(getDataSource());
-		String sql = null;
-
-		try {
-			sql="update onepixel_log_tbl set open_count = open_count+1 where company_id = ? and customer_id = ?  and mailing_id = ?";
-                                
-
-			if(jdbc.update(sql, new Object[] { new Integer(companyID), new Integer(recipientID), new Integer(mailingID)}) > 0) {
-				return true;
-			}
-			sql="insert into onepixel_log_tbl (company_id, customer_id, mailing_id, open_count, ip_adr, timestamp) VALUES (?, ?, ?, 1, ?, CURRENT_TIMESTAMP)";
-			if(jdbc.update(sql, new Object[] {new Integer(companyID), new Integer(recipientID), new Integer(mailingID), remoteAddr}) > 0) {
-				return true;
-			}
-		} catch (Exception e) {
-			logger.error( "sql: " + sql, e);
-			javaMailService.sendExceptionMail("sql:" + sql, e);
-		}
-		return false;
-	}
 	
 	@Override
 	@DaoUpdateReturnValueCheck

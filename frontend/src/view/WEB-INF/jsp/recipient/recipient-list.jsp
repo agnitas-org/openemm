@@ -34,12 +34,15 @@
 
 <emm:ShowColumnInfo id="colsel" table="<%= AgnUtils.getCompanyID(request) %>"/>
 
-<agn:agnForm action="/recipient.do" data-form="search" class="form-vertical" id="recipientForm"
-             data-controller="recipient-list">
+<c:set var="controllerName" value="recipient-list"/>
+<emm:ShowByPermission token="recipient.advanced.search.migration">
+    <c:set var="controllerName" value="recipient-list-new"/>
+    <c:set var="validatorOptions" value="ignore_qb_validation: true, skip_empty: true"/>
+</emm:ShowByPermission>
+
+<agn:agnForm action="/recipient.do" data-form="search" class="form-vertical" id="recipientForm" data-action="search-recipient"
+                 data-controller="${controllerName}" data-validator-options="${validatorOptions}">
     <html:hidden property="numberOfRowsChanged"/>
-    <html:hidden property="advancedSearchVisible"/>
-    <html:hidden property="recipientFieldsVisible"/>
-    <html:hidden property="saveTargetVisible"/>
     <html:hidden property="overview" value="true"/>
     <html:hidden property="action"/>
     <html:hidden property="actionList" value="${ACTION_LIST}"/>
@@ -58,17 +61,28 @@
             }
         </script>
 
-        <div class="tile" data-initializer="recipient-list" data-config="">
+        <div class="tile" data-initializer="${controllerName}" data-config="">
 
             <c:url var="limitAccessUrl" value="/recipient.do?action=${ACTION_CHECK_LIMITACCESS}" />
             <c:url var="viewUrl" value="/recipient.do?action=${ACTION_VIEW}" />
 
-            <script id="config:recipient-list" type="application/json">
-                {
-                "CHECK_LIMITACCESS_URL": "${limitAccessUrl}&recipientID={RECIPIENT_ID}",
-                "VIEW_URL": "${viewUrl}&recipientID={RECIPIENT_ID}"
-                }
-            </script>
+            <emm:HideByPermission token="recipient.advanced.search.migration">
+                <script id="config:recipient-list" type="application/json">
+                    {
+                        "CHECK_LIMITACCESS_URL": "${limitAccessUrl}&recipientID={RECIPIENT_ID}",
+                        "VIEW_URL": "${viewUrl}&recipientID={RECIPIENT_ID}"
+                    }
+                </script>
+            </emm:HideByPermission>
+            <emm:ShowByPermission token="recipient.advanced.search.migration">
+                <script id="config:recipient-list-new" type="application/json">
+                    {
+                        "CHECK_LIMITACCESS_URL": "${limitAccessUrl}&recipientID={RECIPIENT_ID}",
+                        "VIEW_URL": "${viewUrl}&recipientID={RECIPIENT_ID}",
+                        "initialRules": ${emm:toJson(recipientForm.queryBuilderRules)}
+                    }
+                </script>
+            </emm:ShowByPermission>
 
             <div class="tile-header">
                 <h2 class="headline">
@@ -129,8 +143,7 @@
                             <li class="divider"></li>
                             <li>
                                 <p>
-                                    <button class="btn btn-block btn-secondary btn-regular" data-form-change
-                                            data-form-submit type="button">
+                                    <button class="btn btn-block btn-secondary btn-regular" data-form-change data-form-submit type="button">
                                         <i class="icon icon-refresh"></i><span class="text"><bean:message key="button.Show"/></span>
                                     </button>
                                 </p>
@@ -193,8 +206,15 @@
             </div>
 
             <div class="tile-content">
-                <jsp:include page="/WEB-INF/jsp/recipient/recipient-list-basic-search-tab.jsp"/>
-                <jsp:include page="/WEB-INF/jsp/recipient/recipient-list-advanced-search-tab.jsp"/>
+                <emm:ShowByPermission token="recipient.advanced.search.migration">
+                    <jsp:include page="/WEB-INF/jsp/recipient/recipient-list-basic-search-tab-new.jsp"/>
+                    <jsp:include page="/WEB-INF/jsp/recipient/recipient-list-advanced-search-tab-new.jsp"/>
+                </emm:ShowByPermission>
+
+                <emm:HideByPermission token="recipient.advanced.search.migration">
+                    <jsp:include page="/WEB-INF/jsp/recipient/recipient-list-basic-search-tab.jsp"/>
+                    <jsp:include page="/WEB-INF/jsp/recipient/recipient-list-advanced-search-tab.jsp"/>
+                </emm:HideByPermission>
 
                 <div class="${recipientForm.deactivatePagination ? 'table-wrapper hide-pagination' : 'table-wrapper'}">
                     <c:if test="${recipientForm.overview}">
@@ -251,7 +271,5 @@
     </div>
 
     <%@include file="/WEB-INF/jsp/recipient/recipient-list-target-group-save-template.jspf" %>
-
-
 </agn:agnForm>
 

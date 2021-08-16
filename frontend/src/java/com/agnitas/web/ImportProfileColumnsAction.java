@@ -38,11 +38,11 @@ import org.agnitas.service.ImportException;
 import org.agnitas.service.ImportProfileService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CsvColInfo;
+import org.agnitas.util.CsvDataInvalidItemCountException;
 import org.agnitas.util.CsvReader;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.ImportUtils;
-import org.agnitas.util.TempFileInputStream;
 import org.agnitas.util.ZipUtilities;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.DateFormat;
@@ -69,6 +69,9 @@ import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader.JsonToken;
 import com.agnitas.web.forms.ImportProfileColumnsForm;
+
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.FileHeader;
 
 /**
  * Action that handles import profile column mapping management
@@ -732,6 +735,9 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 			} else {
 				throw new Exception("Invalid datatype: " + profile.getDatatype());
 			}
+        } catch (CsvDataInvalidItemCountException e) {
+			logger.error("Error while mapping import columns: " + e.getMessage(), e);
+            errors.add("global", new ActionMessage("error.import.data.itemcount", e.getExpected(), e.getActual(), e.getErrorLineNumber()));
 		} catch (Exception e) {
 			logger.error("Error while mapping import columns: " + e.getMessage(), e);
 			errors.add("global", new ActionMessage("error.import.exception", e.getMessage()));
@@ -746,20 +752,19 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 	                ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
 	                if (zipEntry == null) {
 	                	throw new ImportException(false, "error.unzip.noEntry");
+	                } else {
+	                	return dataInputStream;
 	                }
-	                return dataInputStream;
 	            } else {
-	                File unzipPath = new File(file.getAbsolutePath() + ".unzipped");
-	                unzipPath.mkdir();
-	                ZipUtilities.decompressFromEncryptedZipFile(file, unzipPath, profile.getZipPassword());
-
-	                // Check if there was only one file within the zip file and use it for import
-	                String[] filesToImport = unzipPath.list(); // Returns null if no files found
-	                if (filesToImport == null || filesToImport.length != 1) {
-	                    throw new Exception("Invalid number of files included in zip file");
-	                }
-	                InputStream dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
-	                return new TempFileInputStream(dataInputStream, unzipPath);
+					ZipFile zipFile = new ZipFile(file);
+					zipFile.setPassword(profile.getZipPassword().toCharArray());
+					List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+					// Check if there is only one file within the zip file
+					if (fileHeaders == null || fileHeaders.size() != 1) {
+						throw new Exception("Invalid number of files included in zip file");
+					} else {
+						return zipFile.getInputStream(fileHeaders.get(0));
+					}
 	            }
 			} catch (ImportException e) {
 				throw e;

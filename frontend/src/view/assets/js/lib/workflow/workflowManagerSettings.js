@@ -1,5 +1,5 @@
 campaignManagerSettings = {
-  renderMode: jsPlumb.CANVAS,
+  renderMode: 'canvas',
   gridSize: 20,
   nodeSize: 64,
   arrowSize: 10,

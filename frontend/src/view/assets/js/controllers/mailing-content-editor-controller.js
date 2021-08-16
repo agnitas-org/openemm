@@ -212,6 +212,19 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
       return false;
     }
 
+    if (showHTMLEditor) {
+      var illegalScriptElement = currentDynTag.contentBlocks.find(function (content) {
+        return new DOMParser()
+          .parseFromString(content, 'text/html')
+          .querySelector('script');
+      });
+
+      if (illegalScriptElement) {
+        AGN.Lib.Messages(t("Error"), t("fields.error.illegal_script_element"), "alert");
+        return false;
+      }
+    }
+
     // check for 'all recipients at the very end'
     var allRecipientsContentBlock = currentDynTag.contentBlocks.filter(function (block) {
       return block.targetId === 0;

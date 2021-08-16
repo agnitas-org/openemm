@@ -24,6 +24,8 @@ public class ResultSettings {
 	private boolean useVelocity;
 	private String url;
 
+	private String formBuilderJson;
+
 	public ResultSettings(boolean success) {
 		this.success = success;
 	}
@@ -75,5 +77,13 @@ public class ResultSettings {
 	
 	public void setUrl(String url) {
 		this.url = url;
+	}
+
+	public String getFormBuilderJson() {
+		return formBuilderJson;
+	}
+
+	public void setFormBuilderJson(String formBuilderJson) {
+		this.formBuilderJson = formBuilderJson;
 	}
 }

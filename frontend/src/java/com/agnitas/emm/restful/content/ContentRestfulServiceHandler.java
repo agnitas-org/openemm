@@ -52,7 +52,7 @@ import com.agnitas.json.JsonObject;
 
 /**
  * This restful service is available at:
- * https:/<system.url>/restful/content
+ * https://<system.url>/restful/content
  */
 public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	@SuppressWarnings("unused")

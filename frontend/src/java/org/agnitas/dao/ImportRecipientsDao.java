@@ -65,7 +65,7 @@ public interface ImportRecipientsDao {
 	
 	int removeNewCustomersWithInvalidNullValues(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, List<ColumnMapping> columnMapping) throws Exception;
 
-	int insertNewCustomers(String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, int datasourceId, int defaultMailType, List<ColumnMapping> columnMappingForDefaultValues);
+	int insertNewCustomers(String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, int datasourceId, int defaultMailType, List<ColumnMapping> columnMappingForDefaultValues, int companyId);
 
 	int updateFirstExistingCustomers(String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception;
 
@@ -118,6 +118,8 @@ public interface ImportRecipientsDao {
 	int changeStatusInMailingListNotIncludedInTempData(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, MediaTypes mediatype, int currentStatus, int updateStatus, String remark) throws Exception;
 
 	void removeFromBlackListNotIncludedInTempData(String temporaryImportTableName, int companyId);
+
+	void gatherTableStats(String tableName);
 
 	void changeEmailColumnCollation(String temporaryImportTableName, String collation);
 }

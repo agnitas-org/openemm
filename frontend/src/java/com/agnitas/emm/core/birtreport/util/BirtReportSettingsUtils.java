@@ -10,38 +10,6 @@
 
 package com.agnitas.emm.core.birtreport.util;
 
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings;
-import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
-import com.agnitas.emm.core.birtreport.dto.PeriodType;
-import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
-import com.agnitas.messages.I18nString;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
-
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_KEY;
@@ -70,6 +38,7 @@ import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_WEEK;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.ACTIVATE_LINK_STATISTICS;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.ACTIVITY_ANALYSIS;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.CLICKERS_AFTER_DEVICE;
+import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.CLICKER_DEVICES;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.CLICKING_ANONYM;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.CLICKING_RECIPIENT;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.CONVERSION_RATE;
@@ -84,12 +53,47 @@ import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Prope
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.OPENERS_AFTER_DEVICE;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.OPENERS_INVISIBLE;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.OPENERS_MEASURED;
+import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.OPENER_DEVICES;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.OPENING_ANONYM;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.RECIPIENT_STATUS;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.SENT_MAILS;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.SIGNED_OFF;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.SOFT_BOUNCES;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.TEXT;
+
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.Logger;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings;
+import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings;
+import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
+import com.agnitas.emm.core.birtreport.dto.PeriodType;
+import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
+import com.agnitas.messages.I18nString;
 
 public class BirtReportSettingsUtils {
     @SuppressWarnings("unused")
@@ -115,7 +119,9 @@ public class BirtReportSettingsUtils {
     
     private static final int MAX_TARGET_GROUPS_FOR_RECIPIENTS = 10;
     private static final int MAX_TARGET_GROUPS = 5;
-    
+
+    public static final int ACTION_AND_DATEBASED_MAILING_MAX_COUNT = 10;
+
     public static final String REPORT_DATE_FORMAT = DateUtilities.YYYY_MM_DD;
     public static final String REPORT_DATE_FORMAT_FOR_DAY = DateUtilities.YYYY_MM_DD_HH_MM;
     
@@ -127,7 +133,7 @@ public class BirtReportSettingsUtils {
     public static final List<BirtReportSettingsUtils.Properties> MAILING_FORMATS_GROUP = Arrays.asList(HTML, TEXT, OFFLINE_HTML);
     public static final List<BirtReportSettingsUtils.Properties> MAILING_GENERAL_GROUP = Arrays.asList(CLICKING_RECIPIENT, CLICKING_ANONYM, SIGNED_OFF, SOFT_BOUNCES, HARD_BOUNCES, CONVERSION_RATE);
     public static final List<BirtReportSettingsUtils.Properties> MAILING_OPENER_GROUP = Arrays.asList(OPENERS_MEASURED, OPENERS_INVISIBLE, OPENERES_TOTAL, OPENING_ANONYM);
-    public static final List<BirtReportSettingsUtils.Properties> MAILING_DEVICES_GROUP = Arrays.asList(OPENERS_AFTER_DEVICE, CLICKERS_AFTER_DEVICE, ACTIVATE_LINK_STATISTICS);
+    public static final List<BirtReportSettingsUtils.Properties> MAILING_DEVICES_GROUP = Arrays.asList(OPENERS_AFTER_DEVICE, CLICKERS_AFTER_DEVICE, OPENER_DEVICES, CLICKER_DEVICES, ACTIVATE_LINK_STATISTICS);
     
     public static final List<BirtReportSettingsUtils.Properties> RECIPIENT_WITHOUT_GROUP = Arrays.asList(RECIPIENT_STATUS, DEVELOPMENT_DETAILED, DEVELOPMENT_NET, FORMAT_TYPE, ACTIVITY_ANALYSIS);
     public static final List<BirtReportSettingsUtils.Properties> RECIPIENT_ANALYSIS_GROUP = Arrays.asList(OPENERS_MEASURED, CLICKING_RECIPIENT, CLICKERS_AFTER_DEVICE);
@@ -173,7 +179,7 @@ public class BirtReportSettingsUtils {
     public static int getIntProperty(Map<String, Object> properties, String propertyName) {
         return NumberUtils.toInt(getSettingsProperty(properties, propertyName), 0);
     }
-    
+
     public static boolean getBooleanProperty(Map<String, Object> properties, String propertyName) {
         if(properties == null || properties.isEmpty()) {
             return false;
@@ -522,8 +528,30 @@ public class BirtReportSettingsUtils {
         
         return parameter;
     }
-    
-    
+
+    public static boolean isMailingSettings(ReportSettingsType activeSettingsType) {
+        return activeSettingsType == ReportSettingsType.MAILING;
+    }
+
+    public static boolean isMailingActionBased(ReportSettingsType type, Map<String, Object> settings) {
+        if (isMailingSettings(type)) {
+            int subType = getIntProperty(settings, MAILING_GENERAL_TYPES_KEY);
+            return subType == ComBirtReportMailingSettings.MAILING_ACTION_BASED;
+        }
+
+        return false;
+    }
+
+    public static boolean isMailingDateBased(ReportSettingsType type, Map<String, Object> settings) {
+        if (isMailingSettings(type)) {
+            int subType = getIntProperty(settings, MAILING_GENERAL_TYPES_KEY);
+            return subType == ComBirtReportMailingSettings.MAILING_DATE_BASED;
+        }
+
+        return false;
+    }
+
+
     public enum Properties {
         CLICKING_RECIPIENT("clickingRecipients", "statistic.clicker"),
         CLICKING_ANONYM("clickingAnonymous", "statistic.clicks.anonym"),
@@ -540,7 +568,9 @@ public class BirtReportSettingsUtils {
         OPENERS_AFTER_DEVICE("openersAfterDevice", "report.mailing.openersByDevices"),
         CLICKERS_AFTER_DEVICE("clickersAfterDevice", "report.mailing.clickersByDevices"),
         ACTIVATE_LINK_STATISTICS("activateLinkStatistics", "report.activate.link.statistics"),
-        
+        OPENER_DEVICES("openerDevices", "report.devices.opener"),
+        CLICKER_DEVICES("clickerDevices", "report.devices.clicker"),
+
         HTML("html", "HTML"),
         TEXT("text", "report.text"),
         OFFLINE_HTML("offlineHtml", "report.offline.html"),

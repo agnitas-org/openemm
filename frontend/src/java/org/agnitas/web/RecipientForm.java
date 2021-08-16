@@ -10,7 +10,7 @@
 
 package org.agnitas.web;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -19,23 +19,16 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.ImageButton;
 import org.agnitas.emm.core.recipient.dto.RecipientFrequencyCounterDto;
 import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.SafeString;
 import org.agnitas.web.forms.StrutsFormBase;
-import org.agnitas.web.forms.helper.EmptyStringFactory;
-import org.agnitas.web.forms.helper.ImageButtonFactory;
-import org.agnitas.web.forms.helper.ZeroIntegerFactory;
-import org.apache.commons.collections4.Factory;
-import org.apache.commons.collections4.FactoryUtils;
-import org.apache.commons.collections4.list.GrowthList;
-import org.apache.commons.collections4.list.LazyList;
+import org.agnitas.web.forms.TargetEqlBuilder;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
@@ -48,15 +41,6 @@ public class RecipientForm extends StrutsFormBase  {
 
 	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(RecipientForm.class);
-
-	private static transient final Factory<ImageButton> imageButtonFactory = new ImageButtonFactory();
-	private static transient final Factory<String> emptyStringFactory = new EmptyStringFactory();
-	private static transient final Factory<Integer> zeroIntegerFactory = new ZeroIntegerFactory();
-	private static transient final Factory<ConditionalOperator[]> nullFactory = FactoryUtils.nullFactory();
-
-	public static transient final int COLUMN_TYPE_STRING = 0;
-	public static transient final int COLUMN_TYPE_NUMERIC = 1;
-	public static transient final int COLUMN_TYPE_DATE = 2;
 
     protected int action = 9;
 	protected int recipientID = 0;
@@ -71,47 +55,13 @@ public class RecipientForm extends StrutsFormBase  {
     protected String email = "";
     protected String user_type = "";
 
-    private String targetShortname;
-    private String targetDescription;
-
 	private String searchFirstName = "";
 	private String searchLastName = "";
 	private String searchEmail = "";
 
-    private ImageButton updateButton;
-    private ImageButton deleteButton;
-
-    private List<ImageButton> targetRemoveList;
-    private List<String> columnAndTypeList;
-    private List<Integer> chainOperatorList;
-    private List<Integer> parenthesisOpenedList;
-    private List<Integer> primaryOperatorList;
-    private List<String> primaryValueList;
-    private List<Integer> parenthesisClosedList;
-    private List<String> dateFormatList;
-    private List<Integer> secondaryOperatorList;
-    private List<String> secondaryValueList;
-    private List<ConditionalOperator[]> validTargetOperatorsList;
-    private List<String> columnNameList;
-    private List<Integer> columnTypeList;
     private String[] selectedFields = ArrayUtils.EMPTY_STRING_ARRAY;
-
-    private ImageButton targetAddButton;
-    private String columnAndTypeNew;
-    private int chainOperatorNew;
-    private int parenthesisOpenedNew;
-    private int primaryOperatorNew;
-    private String primaryValueNew;
-    private int parenthesisClosedNew;
-    private String dateFormatNew;
-    private int secondaryOperatorNew;
-    private String secondaryValueNew;
-    private boolean recipientFieldsVisible;
-	protected boolean advancedSearchVisible;
-    private boolean saveTargetVisible;
-    private boolean needSaveTargetGroup = false;
-
     protected Map<String, Object> column = new CaseInsensitiveMap<>();
+
     protected Map<Integer, Map<Integer, BindingEntry>> mailing = new HashMap<>();
 
     protected int targetID;
@@ -127,107 +77,34 @@ public class RecipientForm extends StrutsFormBase  {
     protected boolean fromListPage;
 
     protected int adminId;
-
-    protected String datePickerFormat;
-    private boolean advancedSearch;
-
     private int mailingId;
     private String mailingName;
 
     private RecipientFrequencyCounterDto frequencyCounterDto;
 
+
+    /**
+     * Flag is used to save target group from advanced search fields
+     */
+    private boolean needSaveTargetGroup = false;
+
+    @Deprecated
+    private boolean advancedSearch;
+    @Deprecated
+    private boolean changeToAdvancedSearch;
+
+    @Deprecated
+    protected TargetEqlBuilder targetEqlBuilder;
+
+    private String queryBuilderRules;
+    private int latestDataSourceId;
+
+
     public RecipientForm() {
-    	updateButton = new ImageButton();
-    	deleteButton = new ImageButton();
-    	targetAddButton = new ImageButton();
-
-    	targetRemoveList = GrowthList.growthList(LazyList.lazyList(new ArrayList<ImageButton>(), imageButtonFactory));
-        columnAndTypeList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), emptyStringFactory));
-        chainOperatorList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), zeroIntegerFactory));
-        parenthesisOpenedList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), zeroIntegerFactory));
-        primaryOperatorList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), zeroIntegerFactory));
-        primaryValueList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), emptyStringFactory));
-        parenthesisClosedList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), zeroIntegerFactory));
-        dateFormatList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), emptyStringFactory));
-        secondaryOperatorList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), zeroIntegerFactory));
-        secondaryValueList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), emptyStringFactory));
-        validTargetOperatorsList = GrowthList.growthList(LazyList.lazyList(new ArrayList<ConditionalOperator[]>(), nullFactory));
-        columnNameList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), emptyStringFactory));
-        columnTypeList = GrowthList.growthList(LazyList.lazyList(new ArrayList<>(), zeroIntegerFactory));
-		advancedSearchVisible = false;
-        saveTargetVisible = false;
+    	targetEqlBuilder = new TargetEqlBuilder();
     }
 
-    @Override
-	public void reset(ActionMapping mapping, HttpServletRequest request) {
-    	super.reset(mapping, request);
-
-        // Reset all image buttons
-        for(ImageButton button : targetRemoveList) {
-			button.clearButton();
-		}
-        targetAddButton.clearButton();
-        updateButton.clearButton();
-        deleteButton.clearButton();
-
-        // Reset form fields for new rule
-        columnAndTypeNew = null;
-        chainOperatorNew = 0;
-        parenthesisOpenedNew = 0;
-        primaryOperatorNew = 0;
-        primaryValueNew = null;
-        parenthesisClosedNew = 0;
-        dateFormatNew = null;
-        secondaryOperatorNew = 0;
-        secondaryValueNew = null;
-        needSaveTargetGroup = false;
-        // We need just to check if user is logged in - in other case we'll get NPE here.
-        // The actual redirect to login page will be made by Action class.
-        if (AgnUtils.isUserLoggedIn(request)) {
-            targetShortname = SafeString.getLocaleString("default.Name", AgnUtils.getLocale(request));
-            targetDescription = SafeString.getLocaleString("default.description", AgnUtils.getLocale(request));
-        }
-
-        setNumberOfRows(-1);
-        selectedFields = ArrayUtils.EMPTY_STRING_ARRAY;
-
-        mailingId = 0;
-        mailingName = null;
-    }
-    
-    public void resetSearch() {
-        setSearchFirstName(StringUtils.EMPTY);
-		setSearchEmail(StringUtils.EMPTY);
-		setSearchLastName(StringUtils.EMPTY);
-		setListID(0);
-		setTargetID(0);
-		setUser_status(0);
-        setUser_type("");
-		cleanAllRules();
-    }
-    
-    private void cleanAllRules () {
-        for (int index = getNumTargetNodes(); index >= 0; index--) {
-            removeRule(index);
-        }
-    }
-
-    public void clearRules() {
-        targetRemoveList.clear();
-        columnAndTypeList.clear();
-        chainOperatorList.clear();
-        parenthesisOpenedList.clear();
-        primaryOperatorList.clear();
-        primaryValueList.clear();
-        parenthesisClosedList.clear();
-        dateFormatList.clear();
-        secondaryOperatorList.clear();
-        secondaryValueList.clear();
-        columnNameList.clear();
-        columnTypeList.clear();
-    }
-
-	/**
+    /**
      * Validate the properties that have been set from this HTTP request,
      * and return an <code>ActionErrors</code> object that encapsulates any
      * validation errors that have been found.  If no errors are found, return
@@ -246,56 +123,64 @@ public class RecipientForm extends StrutsFormBase  {
             setRecipientID(0);
             clearRules();
 
+
             if (action != RecipientAction.ACTION_LIST ){ // reset filter fields only if there is no future running
             	setUser_status(0);
             	setUser_type("");
             	setTargetID(0);
                	setListID(0);
+                setQueryBuilderRules("[]");
             }
         }
 
         return errors;
     }
 
-    public boolean checkParenthesisBalance() {
-    	int opened = 0;
-    	int closed = 0;
+    @Override
+	public void reset(ActionMapping mapping, HttpServletRequest request) {
+    	super.reset(mapping, request);
 
-    	int lastIndex = this.getNumTargetNodes();
+        targetEqlBuilder.reset();
+        needSaveTargetGroup = false;
+        // We need just to check if user is logged in - in other case we'll get NPE here.
+        // The actual redirect to login page will be made by Action class.
+        if (AgnUtils.isUserLoggedIn(request)) {
+            targetEqlBuilder.setShortname(SafeString.getLocaleString("default.Name", AgnUtils.getLocale(request)));
+            targetEqlBuilder.setDescription(SafeString.getLocaleString("default.description", AgnUtils.getLocale(request)));
+        }
 
-    	for (int index = 0; index < lastIndex; index++) {
-    		opened += this.getParenthesisOpened(index);
-    		closed += this.getParenthesisClosed(index);
-    	}
+        setNumberOfRows(-1);
+        selectedFields = ArrayUtils.EMPTY_STRING_ARRAY;
 
-    	return opened == closed;
+        mailingId = 0;
+        mailingName = null;
+    }
+    
+    public void resetSearch() {
+        setSearchFirstName(StringUtils.EMPTY);
+		setSearchEmail(StringUtils.EMPTY);
+		setSearchLastName(StringUtils.EMPTY);
+		setListID(0);
+		setTargetID(0);
+		setUser_status(0);
+        setUser_type("");
+        setQueryBuilderRules("[]");
+		cleanAllRules();
     }
 
-	/**
-	 * Getter for property advancedSearchVisible
-	 *
-	 * @return value of property advancedSearchVisible
-	 */
-	public boolean isAdvancedSearchVisible() {
-		return advancedSearchVisible;
-	}
-
-	/**
-	 * Setter for property advancedSearchVisible
-	 *
-	 * @param advancedSearchVisible new value of property advancedSearchVisible
-	 */
-	public void setAdvancedSearchVisible(boolean advancedSearchVisible) {
-		this.advancedSearchVisible = advancedSearchVisible;
-	}
-
-    public boolean isSaveTargetVisible() {
-        return saveTargetVisible;
+    @Deprecated
+    private void cleanAllRules() {
+        for (int index = targetEqlBuilder.getNumTargetNodes(); index >= 0; index--) {
+            removeRule(index);
+        }
     }
 
-    public void setSaveTargetVisible(boolean saveTargetVisible) {
-        this.saveTargetVisible = saveTargetVisible;
+    @Deprecated
+    public void clearRules() {
+        targetEqlBuilder.clearRules();
     }
+
+
 	/**
      * Getter for property action.
      *
@@ -377,7 +262,7 @@ public class RecipientForm extends StrutsFormBase  {
         return this.user_status;
     }
 
-   /**
+    /**
      * Setter for property user_status.
      *
      * @param user_status New value of property user_status.
@@ -552,21 +437,6 @@ public class RecipientForm extends StrutsFormBase  {
         this.user_type = user_type;
     }
 
-    public  String getTargetShortname() {
-        return targetShortname;
-    }
-
-    public void setTargetShortname(String targetShortname) {
-        this.targetShortname = targetShortname;
-    }
-
-    public String getTargetDescription() {
-        return targetDescription;
-    }
-
-    public void setTargetDescription(String targetDescription) {
-        this.targetDescription = targetDescription;
-    }
 
     /**
      * Getter for property columnMap.
@@ -578,11 +448,11 @@ public class RecipientForm extends StrutsFormBase  {
     }
 
     public void clearColumns() {
-        setFirstname( "");
-        setLastname( "");
-        setTitle( "");
-        setEmail( "");
-        setGender( 0);
+        setFirstname("");
+        setLastname("");
+        setTitle("");
+        setEmail("");
+        setGender(0);
 
         this.column.clear();
     }
@@ -615,14 +485,12 @@ public class RecipientForm extends StrutsFormBase  {
         Map<Integer, BindingEntry> sub =
                 mailing.computeIfAbsent(id, unused -> new HashMap<>());
 
-        BindingEntry bindingEntry = sub.computeIfAbsent(0, unused -> {
+        return sub.computeIfAbsent(0, unused -> {
             BindingEntry entry = getWebApplicationContext().getBean("BindingEntry", BindingEntry.class);
             entry.setMailinglistID(id);
             entry.setMediaType(0);
             return entry;
         });
-
-        return bindingEntry;
     }
 
     /**
@@ -665,6 +533,54 @@ public class RecipientForm extends StrutsFormBase  {
 		this.mailinglistID = mailinglistID;
 	}
 
+	public boolean isDeactivatePagination() {
+        return deactivatePagination;
+    }
+
+    public void setDeactivatePagination(boolean deactivatePagination) {
+        this.deactivatePagination = deactivatePagination;
+    }
+
+    public boolean getFromListPage() {
+        return fromListPage;
+    }
+
+    public void setFromListPage(boolean fromListPage) {
+        this.fromListPage = fromListPage;
+    }
+
+    public void setSelectedFields(String[] selectedFields) {
+		this.selectedFields = selectedFields;
+	}
+
+    public String[] getSelectedFields() {
+		return selectedFields;
+	}
+
+    public int getAdminId() {
+        return adminId;
+    }
+
+    public void setAdminId(int adminId) {
+        this.adminId = adminId;
+    }
+
+    public void setMailingId(int mailingId) {
+        this.mailingId = mailingId;
+    }
+
+    public int getMailingId() {
+        return mailingId;
+    }
+
+    public void setMailingName(String mailingName) {
+        this.mailingName = mailingName;
+    }
+
+    public String getMailingName() {
+        return mailingName;
+    }
+
 	/**
 	 * if overview = true, we have the recipient overview.
 	 * if overview = false, we have the recipient search.
@@ -701,281 +617,6 @@ public class RecipientForm extends StrutsFormBase  {
         this.errors = new ActionErrors();
     }
 
-    public ImageButton getUpdate() {
-		return this.updateButton;
-	}
-
-	public void setUpdate(String value) {
-		this.updateButton.setLabel(value);
-	}
-
-	public ImageButton getDelete() {
-		return this.deleteButton;
-	}
-
-	public void setDelete(String value) {
-		this.deleteButton.setLabel(value);
-	}
-
-	public ImageButton getTargetAdd() {
-		return this.targetAddButton;
-	}
-
-	public void setTargetAdd(String value) {
-		this.targetAddButton.setLabel(value);
-	}
-
-	public void removeRule(int index) {
-        safeRemove(targetRemoveList, index);
-        safeRemove(columnAndTypeList, index);
-        safeRemove(chainOperatorList, index);
-        safeRemove(parenthesisOpenedList, index);
-        safeRemove(primaryOperatorList, index);
-        safeRemove(primaryValueList, index);
-        safeRemove(parenthesisClosedList, index);
-        safeRemove(dateFormatList, index);
-        safeRemove(secondaryOperatorList, index);
-        safeRemove(secondaryValueList, index);
-        safeRemove(columnNameList, index);
-        safeRemove(columnTypeList, index);
-	}
-
-	/**
-	 * Removes and index safely from list. If index does not exists, nothing happens.
-	 *
-	 * @param list list to remove index from
-	 * @param index index to be removed
-	 */
-	private void safeRemove(List<?> list, int index) {
-		if (list.size() > index && index >= 0) {
-			list.remove(index);
-		}
-	}
-
-	public int getNumTargetNodes() {
-		return this.columnAndTypeList.size();
-	}
-
-	public String getColumnAndType(int index) {
-		return this.columnAndTypeList.get(index);
-	}
-
-	public void setColumnAndType(int index, String value) {
-		this.columnAndTypeList.set(index, value);
-	}
-
-	public ImageButton getTargetRemove(int index) {
-		return this.targetRemoveList.get(index);
-	}
-
-	public void setTargetRemove(int index, String value) {
-		this.targetRemoveList.get(index).setLabel(value); // Needed to delegate it to correct setter method, otherwise we get an invalid type exception
-	}
-
-	public int getChainOperator(int index) {
-		return this.chainOperatorList.get(index);
-	}
-
-	public void setChainOperator(int index, int value) {
-		this.chainOperatorList.set(index, value);
-	}
-
-	public int getParenthesisOpened(int index) {
-		return this.parenthesisOpenedList.get(index);
-	}
-
-	public void setParenthesisOpened(int index, int value) {
-		this.parenthesisOpenedList.set(index, value);
-	}
-
-	public int getPrimaryOperator(int index) {
-		return this.primaryOperatorList.get(index);
-	}
-
-	public void setPrimaryOperator(int index, int value) {
-		this.primaryOperatorList.set(index, value);
-	}
-
-	public String getPrimaryValue(int index) {
-		return this.primaryValueList.get(index);
-	}
-
-	public void setPrimaryValue(int index, String value) {
-		this.primaryValueList.set(index, value);
-	}
-
-	public int getParenthesisClosed(int index) {
-		return this.parenthesisClosedList.get(index);
-	}
-
-	public void setParenthesisClosed(int index, int value) {
-		this.parenthesisClosedList.set(index, value);
-	}
-
-	public String getDateFormat(int index) {
-		return this.dateFormatList.get(index);
-	}
-
-	public void setDateFormat(int index, String value) {
-		this.dateFormatList.set(index, value);
-	}
-
-	public int getSecondaryOperator(int index) {
-		return this.secondaryOperatorList.get(index);
-	}
-
-	public void setSecondaryOperator(int index, int value) {
-		this.secondaryOperatorList.set(index, value);
-	}
-
-	public String getSecondaryValue(int index) {
-		return this.secondaryValueList.get(index);
-	}
-
-	public void setSecondaryValue(int index, String value) {
-		this.secondaryValueList.set(index, value);
-	}
-
-	public List<String> getAllColumnsAndTypes() {
-		return this.columnAndTypeList;
-	}
-
-	public void setValidTargetOperators(int index, ConditionalOperator[] operators) {
-		this.validTargetOperatorsList.set(index, operators);
-	}
-
-	public ConditionalOperator[] getValidTargetOperators(int index) {
-		return this.validTargetOperatorsList.get(index);
-	}
-
-	public void setColumnName(int index, String value) {
-		this.columnNameList.set(index, value);
-	}
-
-	public String getColumnName(int index) {
-		return this.columnNameList.get(index);
-	}
-
-	public void setColumnType(int index, int type) {
-		this.columnTypeList.set(index, type);
-	}
-
-	public int getColumnType(int index) {
-		return this.columnTypeList.get(index);
-	}
-
-	public String getColumnAndTypeNew() {
-		return columnAndTypeNew;
-	}
-
-	public void setColumnAndTypeNew(String columnAndTypeNew) {
-		this.columnAndTypeNew = columnAndTypeNew;
-	}
-
-	public int getChainOperatorNew() {
-		return chainOperatorNew;
-	}
-
-	public void setChainOperatorNew(int chainOperatorNew) {
-		this.chainOperatorNew = chainOperatorNew;
-	}
-
-	public int getParenthesisOpenedNew() {
-		return parenthesisOpenedNew;
-	}
-
-	public void setParenthesisOpenedNew(int parenthesisOpenedNew) {
-		this.parenthesisOpenedNew = parenthesisOpenedNew;
-	}
-
-	public int getPrimaryOperatorNew() {
-		return primaryOperatorNew;
-	}
-
-	public void setPrimaryOperatorNew(int primaryOperatorNew) {
-		this.primaryOperatorNew = primaryOperatorNew;
-	}
-
-	public String getPrimaryValueNew() {
-		return primaryValueNew;
-	}
-
-	public void setPrimaryValueNew(String primaryValueNew) {
-		this.primaryValueNew = primaryValueNew;
-	}
-
-	public int getParenthesisClosedNew() {
-		return parenthesisClosedNew;
-	}
-
-	public void setParenthesisClosedNew(int parenthesisClosedNew) {
-		this.parenthesisClosedNew = parenthesisClosedNew;
-	}
-
-	public String getDateFormatNew() {
-		return dateFormatNew;
-	}
-
-	public void setDateFormatNew(String dateFormatNew) {
-		this.dateFormatNew = dateFormatNew;
-	}
-
-	public int getSecondaryOperatorNew() {
-		return secondaryOperatorNew;
-	}
-
-	public void setSecondaryOperatorNew(int secondaryOperatorNew) {
-		this.secondaryOperatorNew = secondaryOperatorNew;
-	}
-
-	public String getSecondaryValueNew() {
-		return secondaryValueNew;
-	}
-
-	public void setSecondaryValueNew(String secondaryValueNew) {
-		this.secondaryValueNew = secondaryValueNew;
-	}
-
-    public boolean isDeactivatePagination() {
-        return deactivatePagination;
-    }
-
-    public void setDeactivatePagination(boolean deactivatePagination) {
-        this.deactivatePagination = deactivatePagination;
-    }
-
-    public boolean getFromListPage() {
-        return fromListPage;
-    }
-
-    public void setFromListPage(boolean fromListPage) {
-        this.fromListPage = fromListPage;
-    }
-
-    public void setSelectedFields(String[] selectedFields) {
-		this.selectedFields = selectedFields;
-	}
-
-    public String[] getSelectedFields() {
-		return selectedFields;
-	}
-
-    public void setRecipientFieldsVisible(boolean recipientFieldsVisible) {
-		this.recipientFieldsVisible = recipientFieldsVisible;
-	}
-
-    public boolean isRecipientFieldsVisible() {
-		return recipientFieldsVisible;
-	}
-
-    public int getAdminId() {
-        return adminId;
-    }
-
-    public void setAdminId(int adminId) {
-        this.adminId = adminId;
-    }
-
     public void clearRecipientData() {
     	recipientID = 0;
         gender = 2;
@@ -988,16 +629,146 @@ public class RecipientForm extends StrutsFormBase  {
         mailing = new HashMap<>();
     }
 
+    public RecipientFrequencyCounterDto getFrequencyCounterDto() {
+        return frequencyCounterDto;
+    }
+
+    public void setFrequencyCounterDto(RecipientFrequencyCounterDto frequencyCounterDto) {
+        this.frequencyCounterDto = frequencyCounterDto;
+    }
+
+
+    @Deprecated
+    public boolean checkParenthesisBalance() {
+        return targetEqlBuilder.checkParenthesisBalance();
+    }
+
+    @Deprecated
+	public void removeRule(int index) {
+        targetEqlBuilder.removeRule(index);
+	}
+
+	@Deprecated
+	public int getNumTargetNodes() {
+		return targetEqlBuilder.getNumTargetNodes();
+	}
+
+	@Deprecated
+	public String getColumnAndType(int index) {
+		return targetEqlBuilder.getColumnAndType(index);
+	}
+
+	@Deprecated
+	public void setColumnAndType(int index, String value) {
+		targetEqlBuilder.setColumnAndType(index, value);
+	}
+
+	@Deprecated
+	public int getChainOperator(int index) {
+		return targetEqlBuilder.getChainOperator(index);
+	}
+
+	@Deprecated
+	public void setChainOperator(int index, int value) {
+		targetEqlBuilder.setChainOperator(index, value);
+	}
+
+	@Deprecated
+	public int getParenthesisOpened(int index) {
+		return targetEqlBuilder.getParenthesisOpened(index);
+	}
+
+	@Deprecated
+	public void setParenthesisOpened(int index, int value) {
+		targetEqlBuilder.setParenthesisOpened(index, value);
+	}
+
+	@Deprecated
+	public int getPrimaryOperator(int index) {
+		return targetEqlBuilder.getPrimaryOperator(index);
+	}
+
+	@Deprecated
+	public void setPrimaryOperator(int index, int value) {
+		targetEqlBuilder.setPrimaryOperator(index, value);
+	}
+
+	@Deprecated
+	public String getPrimaryValue(int index) {
+		return targetEqlBuilder.getPrimaryValue(index);
+	}
+
+	@Deprecated
+	public void setPrimaryValue(int index, String value) {
+		targetEqlBuilder.setPrimaryValue(index, value);
+	}
+
+	@Deprecated
+	public int getParenthesisClosed(int index) {
+		return targetEqlBuilder.getParenthesisClosed(index);
+	}
+
+	@Deprecated
+	public void setParenthesisClosed(int index, int value) {
+		targetEqlBuilder.setParenthesisClosed(index, value);
+	}
+
+	@Deprecated
+	public String getDateFormat(int index) {
+		return targetEqlBuilder.getDateFormat(index);
+	}
+
+	@Deprecated
+	public void setDateFormat(int index, String value) {
+		targetEqlBuilder.setDateFormat(index, value);
+	}
+
+	@Deprecated
+	public int getSecondaryOperator(int index) {
+		return targetEqlBuilder.getSecondaryOperator(index);
+	}
+
+	@Deprecated
+	public void setSecondaryOperator(int index, int value) {
+		targetEqlBuilder.setSecondaryOperator(index, value);
+	}
+
+	@Deprecated
+	public String getSecondaryValue(int index) {
+		return targetEqlBuilder.getSecondaryValue(index);
+	}
+
+	@Deprecated
+	public void setSecondaryValue(int index, String value) {
+		targetEqlBuilder.setSecondaryValue(index, value);
+	}
+
+	@Deprecated
+	public List<String> getAllColumnsAndTypes() {
+		return targetEqlBuilder.getAllColumnsAndTypes();
+	}
+
+	@Deprecated
+	public void setValidTargetOperators(int index, ConditionalOperator[] operators) {
+		targetEqlBuilder.setValidTargetOperators(index, operators);
+	}
+
+	@Deprecated
+	public ConditionalOperator[] getValidTargetOperators(int index) {
+		return targetEqlBuilder.getValidTargetOperators(index);
+	}
+
+	@Deprecated
     public void clearNewAdvancedSearch() {
-        columnAndTypeNew = "";
-        chainOperatorNew = 0;
-        parenthesisOpenedNew = 0;
-        primaryOperatorNew = 0;
-        primaryValueNew = "";
-        parenthesisClosedNew = 0;
-        dateFormatNew = "";
-        secondaryOperatorNew = 0;
-        secondaryValueNew = "";
+        targetEqlBuilder.setColumnAndTypeNew("");
+        targetEqlBuilder.setChainOperatorNew(0);
+        targetEqlBuilder.setParenthesisOpenedNew(0);
+        targetEqlBuilder.setPrimaryOperatorNew(0);
+        targetEqlBuilder.setPrimaryValueNew("");
+        targetEqlBuilder.setParenthesisClosedNew(0);
+        targetEqlBuilder.setDateFormatNew("");
+        targetEqlBuilder.setSecondaryOperatorNew(0);
+        targetEqlBuilder.setSecondaryValueNew("");
     }
 
     public boolean isNeedSaveTargetGroup() {
@@ -1008,20 +779,20 @@ public class RecipientForm extends StrutsFormBase  {
         this.needSaveTargetGroup = needSaveTargetGroup;
     }
 
-    public String getDatePickerFormat() {
-        return datePickerFormat;
+    public  String getTargetShortname() {
+        return targetEqlBuilder.getShortname();
     }
 
-    public void setDatePickerFormat(String datePickerFormat) {
-        this.datePickerFormat = datePickerFormat;
+    public void setTargetShortname(String targetShortname) {
+        targetEqlBuilder.setShortname(targetShortname);
     }
 
-    public Date getCurrentDate(){
-        return new Date();
+    public String getTargetDescription() {
+        return targetEqlBuilder.getDescription();
     }
 
-    public Date getYearAgoDate(){
-        return DateUtils.addYears(new Date(), -1);
+    public void setTargetDescription(String targetDescription) {
+        targetEqlBuilder.setDescription(targetDescription);
     }
 
 	public final void setAdvancedSearch(final boolean value) {
@@ -1032,21 +803,16 @@ public class RecipientForm extends StrutsFormBase  {
 		return this.advancedSearch;
 	}
 
-    public void setMailingId(int mailingId) {
-        this.mailingId = mailingId;
+	@Deprecated
+    public boolean isChangeToAdvancedSearch() {
+        return changeToAdvancedSearch;
     }
 
-    public int getMailingId() {
-        return mailingId;
+    @Deprecated
+    public void setChangeToAdvancedSearch(boolean changeToAdvancedSearch) {
+        this.changeToAdvancedSearch = changeToAdvancedSearch;
     }
 
-    public void setMailingName(String mailingName) {
-        this.mailingName = mailingName;
-    }
-
-    public String getMailingName() {
-        return mailingName;
-    }
 
     public RecipientSearchParams generateSearchParams(){
         final RecipientSearchParams result = new RecipientSearchParams();
@@ -1057,6 +823,7 @@ public class RecipientForm extends StrutsFormBase  {
         result.setFirstName(getSearchFirstName());
         result.setLastName(getSearchLastName());
         result.setEmail(getSearchEmail());
+        result.setQueryBuilderRules(getQueryBuilderRules());
         return result;
     }
 
@@ -1068,41 +835,235 @@ public class RecipientForm extends StrutsFormBase  {
         setSearchFirstName(searchParams.getFirstName());
         setSearchLastName(searchParams.getLastName());
         setSearchEmail(searchParams.getEmail());
+        setQueryBuilderRules(searchParams.getQueryBuilderRules());
+        if (isAdvancedSearch()) {
+            setChangeToAdvancedSearch(true);
+        }
     }
-    
     /**
      * Get index of conditional field
      *
      * @param field
      * @return found index of field column otherwise return -1
      */
+    @Deprecated
     public int findConditionalIndex(String field) {
-	    final List<String> columns = getAllColumnsAndTypes();
-		
-		int index = 0;
-		for (String columnToCheck : columns) {
-			if (columnToCheck.equals(field)) {
-				return index;
-			}
-			index++;
-		}
-		
-		return -1;
+        return targetEqlBuilder.findConditionalIndex(field);
     }
-    
+
+    @Deprecated
+    //TODO: GWUA-4678: delete after migrate successfully; implemented by JS
     public void cleanRulesForBasicSearch() {
-        if (StringUtils.isNotBlank(getSearchFirstName()) || StringUtils.isNotBlank(getSearchLastName()) || StringUtils.isNotBlank(getSearchEmail())) {
-			for (int index = getNumTargetNodes(); index >= 0; index--) {
-				removeRule(index);
-			}
+        if (StringUtils.isNotBlank(getSearchFirstName()) ||
+                StringUtils.isNotBlank(getSearchLastName()) ||
+                StringUtils.isNotBlank(getSearchEmail())) {
+			for (String field: Arrays.asList("FIRSTNAME", "LASTNAME", "EMAIL")) {
+                final int conditionalIndex = findConditionalIndex(field);
+                if (conditionalIndex != -1) {
+                    removeRule(conditionalIndex);
+                }
+            }
 		}
     }
 
-    public RecipientFrequencyCounterDto getFrequencyCounterDto() {
-        return frequencyCounterDto;
+    @Deprecated
+    //TODO: GWUA-4678: delete after migrate successfully; implemented by JS
+    public int createRuleFromBasicSearch(int lastIndex, String field, String value) {
+        final int conditionalIndex = findConditionalIndex(field);
+        if (conditionalIndex != -1) {
+            removeRule(conditionalIndex);
+            return --lastIndex;
+        }
+
+        if (StringUtils.isNotBlank(value)) {
+            addSimpleRule(lastIndex, field, ConditionalOperator.LIKE, value);
+            return ++lastIndex;
+        }
+
+        return lastIndex;
     }
 
-    public void setFrequencyCounterDto(RecipientFrequencyCounterDto frequencyCounterDto) {
-        this.frequencyCounterDto = frequencyCounterDto;
+    @Deprecated
+    //TODO: GWUA-4678: delete after migrate successfully; implemented by JS
+    public void addSimpleRule(int lastIndex, String field, ConditionalOperator operator, String value) {
+        targetEqlBuilder.setColumnAndType(lastIndex, field);
+        targetEqlBuilder.setChainOperator(lastIndex, targetEqlBuilder.getChainOperatorNew());
+        targetEqlBuilder.setParenthesisOpened(lastIndex, targetEqlBuilder.getParenthesisOpenedNew());
+        targetEqlBuilder.setPrimaryOperator(lastIndex, operator.getOperatorCode());
+        targetEqlBuilder.setPrimaryValue(lastIndex, StringUtils.trim(value));
+        targetEqlBuilder.setParenthesisClosed(lastIndex, targetEqlBuilder.getParenthesisClosedNew());
+        targetEqlBuilder.setDateFormat(lastIndex, targetEqlBuilder.getDateFormatNew());
+        targetEqlBuilder.setSecondaryOperator(lastIndex, targetEqlBuilder.getSecondaryOperatorNew());
+        targetEqlBuilder.setSecondaryValue(lastIndex, targetEqlBuilder.getSecondaryValueNew());
     }
+
+    @Deprecated
+    //TODO: GWUA-4678: delete after migrate successfully; implemented by JS
+    public void updateBasicSearchFromRules() {
+        for (String field: Arrays.asList("FIRSTNAME", "LASTNAME", "EMAIL")) {
+            final int conditionalIndex = findConditionalIndex(field);
+            if (conditionalIndex != -1) {
+                String value = targetEqlBuilder.getPrimaryValue(conditionalIndex);
+                switch (field) {
+                    case "FIRSTNAME":
+                        setSearchFirstName(value);
+                        break;
+                    case "LASTNAME":
+                        setSearchLastName(value);
+                        break;
+                    case "EMAIL":
+                        setSearchEmail(value);
+                        break;
+                    default:
+                        //nothing do
+                }
+            }
+        }
+    }
+
+    @Deprecated
+    public TargetEqlBuilder getTargetEqlBuilder() {
+        return targetEqlBuilder;
+    }
+
+    @Deprecated
+    public void setTargetEqlBuilder(TargetEqlBuilder targetEqlBuilder) {
+        this.targetEqlBuilder = targetEqlBuilder;
+    }
+
+    @Deprecated
+    public void setColumnName(int index, String value) {
+		targetEqlBuilder.setColumnName(index, value);
+	}
+
+	@Deprecated
+	public String getColumnName(int index) {
+		return targetEqlBuilder.getColumnName(index);
+	}
+
+	@Deprecated
+	public void setColumnType(int index, int type) {
+		targetEqlBuilder.setColumnType(index, type);
+	}
+
+	@Deprecated
+	public int getColumnType(int index) {
+		return targetEqlBuilder.getColumnType(index);
+	}
+
+	@Deprecated
+	public String getColumnAndTypeNew() {
+		return targetEqlBuilder.getColumnAndTypeNew();
+	}
+
+	@Deprecated
+	public void setColumnAndTypeNew(String columnAndTypeNew) {
+		targetEqlBuilder.setColumnAndTypeNew(columnAndTypeNew);
+	}
+
+	@Deprecated
+	public int getChainOperatorNew() {
+		return targetEqlBuilder.getChainOperatorNew();
+	}
+
+	@Deprecated
+	public void setChainOperatorNew(int chainOperatorNew) {
+		targetEqlBuilder.setChainOperatorNew(chainOperatorNew);
+	}
+
+	@Deprecated
+	public int getParenthesisOpenedNew() {
+		return targetEqlBuilder.getParenthesisOpenedNew();
+	}
+
+	@Deprecated
+	public void setParenthesisOpenedNew(int parenthesisOpenedNew) {
+		targetEqlBuilder.setParenthesisOpenedNew(parenthesisOpenedNew);
+	}
+
+	@Deprecated
+	public int getPrimaryOperatorNew() {
+		return targetEqlBuilder.getPrimaryOperatorNew();
+	}
+
+	@Deprecated
+	public void setPrimaryOperatorNew(int primaryOperatorNew) {
+		targetEqlBuilder.setPrimaryOperatorNew(primaryOperatorNew);
+	}
+
+	@Deprecated
+	public String getPrimaryValueNew() {
+		return targetEqlBuilder.getPrimaryValueNew();
+	}
+
+	@Deprecated
+	public void setPrimaryValueNew(String primaryValueNew) {
+		targetEqlBuilder.setPrimaryValueNew(primaryValueNew);
+	}
+
+	@Deprecated
+	public int getParenthesisClosedNew() {
+		return targetEqlBuilder.getParenthesisClosedNew();
+	}
+
+	@Deprecated
+	public void setParenthesisClosedNew(int parenthesisClosedNew) {
+		targetEqlBuilder.setParenthesisClosedNew(parenthesisClosedNew);
+	}
+
+	@Deprecated
+	public String getDateFormatNew() {
+		return targetEqlBuilder.getDateFormatNew();
+	}
+
+	@Deprecated
+	public void setDateFormatNew(String dateFormatNew) {
+		targetEqlBuilder.setDateFormatNew(dateFormatNew);
+	}
+
+	@Deprecated
+	public int getSecondaryOperatorNew() {
+		return targetEqlBuilder.getSecondaryOperatorNew();
+	}
+
+	@Deprecated
+	public void setSecondaryOperatorNew(int secondaryOperatorNew) {
+		targetEqlBuilder.setSecondaryOperatorNew(secondaryOperatorNew);
+	}
+
+	@Deprecated
+	public String getSecondaryValueNew() {
+		return targetEqlBuilder.getSecondaryValueNew();
+	}
+
+	@Deprecated
+	public void setSecondaryValueNew(String secondaryValueNew) {
+		targetEqlBuilder.setSecondaryValueNew(secondaryValueNew);
+	}
+
+	@Deprecated
+    public Date getCurrentDate(){
+        return new Date();
+    }
+
+    @Deprecated
+    public Date getYearAgoDate(){
+        return DateUtils.addYears(new Date(), -1);
+    }
+
+    public String getQueryBuilderRules() {
+        return queryBuilderRules;
+    }
+
+    public void setQueryBuilderRules(String queryBuilderRules) {
+        this.queryBuilderRules = queryBuilderRules;
+    }
+
+	public int getLatestDataSourceId() {
+		return latestDataSourceId;
+	}
+
+	public void setLatestDataSourceId(int latestDataSourceId) {
+		this.latestDataSourceId = latestDataSourceId;
+	}
 }

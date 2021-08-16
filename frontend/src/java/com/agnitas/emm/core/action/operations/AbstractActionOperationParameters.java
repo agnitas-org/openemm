@@ -10,12 +10,6 @@
 
 package com.agnitas.emm.core.action.operations;
 
-import java.util.Locale;
-
-import org.apache.struts.action.ActionMessages;
-
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComTrackpointDao;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -34,11 +28,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @JsonSubTypes.Type(value = ActionOperationUnsubscribeCustomerParameters.class, name = "UnsubscribeCustomer"),
     @JsonSubTypes.Type(value = ActionOperationUpdateCustomerParameters.class, name = "UpdateCustomer")
 })
-public abstract class AbstractActionOperationParameters  implements ActionOperationParameters {
+public abstract class AbstractActionOperationParameters implements ActionOperationParameters {
 	private int id;
 	private int companyId;
 	private int actionId;
-	private ActionOperationType type;
+	private final ActionOperationType type;
 
 	public AbstractActionOperationParameters(ActionOperationType type) {
 		this.type = type;
@@ -93,15 +87,5 @@ public abstract class AbstractActionOperationParameters  implements ActionOperat
 	@Override
 	public int hashCode() {
 		return id;
-	}
-
-	@Deprecated
-	public boolean validate(ActionMessages errors, Locale locale, ComRecipientDao recipientDao, ComTrackpointDao trackpointDao) throws Exception {
-		return true;
-	}
-
-	@Deprecated
-	public String getUalDescription(AbstractActionOperationParameters oldOperation) {
-		return "";
 	}
 }

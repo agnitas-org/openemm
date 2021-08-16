@@ -10,6 +10,7 @@
 
 package org.agnitas.emm.core.mailinglist.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Resource;
@@ -22,12 +23,14 @@ import org.agnitas.emm.core.mailinglist.service.MailinglistModel;
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.mailinglist.service.MailinglistService;
 import org.agnitas.emm.core.validator.annotation.Validate;
+import org.apache.log4j.Logger;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComCompanyDao;
 
 public class MailinglistServiceImpl implements MailinglistService {
+	private static final Logger LOGGER = Logger.getLogger(MailinglistServiceImpl.class);
 	
 	@Resource(name="MailinglistDao")
 	private MailinglistDao mailinglistDao;
@@ -65,7 +68,7 @@ public class MailinglistServiceImpl implements MailinglistService {
     public Mailinglist getMailinglist(MailinglistModel model) throws MailinglistException {
         Mailinglist mailingList = mailinglistDao.getMailinglist(model.getMailinglistId(), model.getCompanyId());
         if (mailingList == null) {
-        	throw new MailinglistNotExistException(model.getMailinglistId());
+        	throw new MailinglistNotExistException(model.getMailinglistId(), model.getCompanyId());
         }
         return mailingList;
     }
@@ -77,9 +80,9 @@ public class MailinglistServiceImpl implements MailinglistService {
 		int mailingListId = model.getMailinglistId();
 		int companyId = model.getCompanyId();
 		if (!mailinglistDao.exist(mailingListId, companyId)) {
-			throw new MailinglistNotExistException(mailingListId);
+			throw new MailinglistNotExistException(mailingListId, companyId);
 		} else if(mailinglistDao.checkMailinglistInUse(mailingListId, companyId)){
-			throw new MailinglistInUseException(mailingListId);
+			throw new MailinglistInUseException(mailingListId, companyId);
 		} else {
 				// delete bindings, only if no mailing refers to this mailinglist
 
@@ -91,15 +94,13 @@ public class MailinglistServiceImpl implements MailinglistService {
 
 	@Override
 	@Transactional
-	@Validate(groups = MailinglistModel.CompanyGroup.class)
-	public List<Mailinglist> getMailinglists(MailinglistModel model) {
-		return listMailinglists(model.getCompanyId());
-	}
-	
+	public List<Mailinglist> listMailinglists(final int companyId) {
+		try {
+			return mailinglistDao.getMailinglists(companyId);
+		} catch (Exception e) {
+			LOGGER.error(String.format("Error reading mailing lists of company %d", companyId), e);
+		}
 
-	@Override
-	@Transactional
-	public List<Mailinglist> listMailinglists(final int companyID) {
-		return mailinglistDao.getMailinglists(companyID);
+		return new ArrayList<>();
 	}
 }

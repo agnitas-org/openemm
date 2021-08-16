@@ -14,14 +14,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.actions.EmmAction;
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.action.dto.EmmActionDto;
-import com.agnitas.emm.core.commons.ActivenessStatus;
+
+import net.sf.json.JSONArray;
 
 public interface EmmActionService {
 	/**
@@ -38,12 +38,10 @@ public interface EmmActionService {
 
 	int copyEmmAction(EmmAction emmAction, int toCompanyId);
 
-	int saveEmmAction(EmmAction action);
+	int saveEmmAction(int companyId, EmmAction action);
 
-	@Transactional
-	int saveEmmAction(ComAdmin admin, EmmAction action, List<UserAction> userActions);
-
-	int saveEmmAction(EmmAction action, List<UserAction> userActions);
+    @Transactional
+    int saveEmmAction(int companyId, EmmAction action, List<UserAction> userActions);
 
 	EmmAction getEmmAction(int actionID, int companyID);
 
@@ -59,8 +57,7 @@ public interface EmmActionService {
 	 */
 	List<EmmAction> getActionListBySendMailingId(int companyId, int mailingId);
 
-	PaginatedListImpl<EmmActionDto> getEmmActions(ComAdmin admin, String sort, String order, int page, int numberOfRows, ActivenessStatus filter);
+	EmmActionDto getCopyOfAction(ComAdmin admin, int originId);
 
-    EmmActionDto getCopyOfAction(ComAdmin admin, int originId);
-
+    JSONArray getEmmActionsJson(ComAdmin admin);
 }

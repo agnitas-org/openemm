@@ -19,6 +19,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.MailingStatus;
+import org.agnitas.util.SafeString;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.dashboard.service.DashboardService;
@@ -26,11 +32,8 @@ import com.agnitas.reporting.birt.external.beans.SendStatRow;
 import com.agnitas.reporting.birt.external.beans.factory.MailingSummaryDataSetFactory;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 import com.agnitas.reporting.birt.external.dataset.MailingSummaryDataSet;
+
 import net.sf.json.JSONObject;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.util.SafeString;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 
 public class DashboardServiceImpl implements DashboardService {
     private Logger logger = Logger.getLogger(DashboardServiceImpl.class);
@@ -132,7 +135,7 @@ public class DashboardServiceImpl implements DashboardService {
 
             switch (categoryId) {
                 case CommonKeys.DELIVERED_EMAILS_INDEX:
-                    messageKey = "mailing.status.sent";
+                    messageKey = MailingStatus.SENT.getMessageKey();
                     break;
                 case CommonKeys.OPENERS_INDEX:
                     messageKey = "statistic.opener";

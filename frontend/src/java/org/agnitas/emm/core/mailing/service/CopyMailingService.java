@@ -10,6 +10,12 @@
 
 package org.agnitas.emm.core.mailing.service;
 
+import com.agnitas.util.TimingLogger;
+
 public interface CopyMailingService {
+	
+	@Deprecated // Not for common use. Used by EMM-8126 only for measure timing.
+	int copyMailing(final TimingLogger timingLoggerOrNull, int sourceCompanyID, int sourceMailingID, int destinationCompanyID, String nameOfCopy, String descriptionOfCopy) throws Exception;
+	
 	int copyMailing(int sourceCompanyID, int sourceMailingID, int destinationCompanyID, String nameOfCopy, String descriptionOfCopy) throws Exception;
 }

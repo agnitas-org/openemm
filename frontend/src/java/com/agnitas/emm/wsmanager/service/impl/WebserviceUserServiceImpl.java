@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.wsmanager.service.impl;
 
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -222,5 +223,10 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 		}
 		
 		return optional.get();
+	}
+
+	@Override
+	public final void updateLastLoginDate(final String username) {
+		this.webserviceUserDao.updateLastLoginDate(username, ZonedDateTime.now());
 	}
 }

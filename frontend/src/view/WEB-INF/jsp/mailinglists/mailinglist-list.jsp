@@ -22,7 +22,7 @@
             <mvc:message code="default.Overview" />
         </h2>
         <ul class="tile-header-actions">
-            <emm:ShowByPermission token="mailing.delete">
+            <emm:ShowByPermission token="mailinglist.delete">
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="icon icon-pencil"></i>
@@ -73,9 +73,10 @@
     <c:forEach var="entry" items="${mailingListsJson}">
         <c:url var="viewLink" value="/mailinglist/${entry['id']}/view.action"/>
         <c:set target="${entry}" property="show" value="${viewLink}"/>
-
-        <c:url var="deleteLink" value="/mailinglist/${entry['id']}/confirmDelete.action"/>
-        <c:set target="${entry}" property="delete" value="${deleteLink}"/>
+		<emm:ShowByPermission token="mailinglist.delete">
+	        <c:url var="deleteLink" value="/mailinglist/${entry['id']}/confirmDelete.action"/>
+	        <c:set target="${entry}" property="delete" value="${deleteLink}"/>
+        </emm:ShowByPermission>
     </c:forEach>
 
     <script id="mailing-lists" type="application/json">
@@ -96,13 +97,15 @@
                     "headerName": "<mvc:message code='Mailinglist'/>",
                     "editable": false,
                     "cellAction": "goTo",
-                    "field": "shortname"
+                    "field": "shortname",
+                    "type": "textCaseInsensitiveColumn"
                 },
                 {
                     "headerName": "<mvc:message code='default.description'/>",
                     "editable": false,
                     "cellAction": "goTo",
-                    "field": "description"
+                    "field": "description",
+                    "type": "textCaseInsensitiveColumn"
                 },
                 {
                     "headerName": "<mvc:message code='CreationDate'/>",

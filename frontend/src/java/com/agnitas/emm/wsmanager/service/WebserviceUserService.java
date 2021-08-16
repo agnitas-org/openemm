@@ -75,7 +75,7 @@ public interface WebserviceUserService {
 
 	int getNumberOfWebserviceUsers();
 	
-	
 	public WebserviceUserSettings findSettingsForWebserviceUser(final String username) throws WebserviceUserException, WebserviceUserServiceException;
 
+	public void updateLastLoginDate(final String username);
 }

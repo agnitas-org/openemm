@@ -18,20 +18,33 @@ import org.agnitas.util.Log;
 public class EMMTagException extends Exception {
 	final static long serialVersionUID = 0x055e44;
 
+	private final String msgKey;
+	private final String[] msgArgs;
+
 	/**
 	 * Constructor
 	 *
 	 * @param data Reference to configuration
 	 * @param msg  the error message
 	 */
-	public EMMTagException(Data data, EMMTag tag, String msg) {
+	public EMMTagException(Data data, EMMTag tag, String msg, final String msgKey, final String... msgArgs) {
 		super(msg = (msg != null) && (tag != null) && (tag.mTagFullname != null) ? msg + ": " + tag.mTagFullname : msg);
 		if ((data != null) && (msg != null)) {
 			data.logging(Log.ERROR, "emmtag", msg);
 		}
+		this.msgKey = msgKey;
+		this.msgArgs = msgArgs;
+	}
+	
+	public EMMTagException(Data data, EMMTag tag, String msg) {
+		this (data, tag, msg, null);
+	}
+	
+	public String getMessageKey() {
+		return msgKey;
 	}
 
-	public EMMTagException(String msg) {
-		this(null, null, msg);
+	public String[] getMessageArgs() {
+		return msgArgs;
 	}
 }

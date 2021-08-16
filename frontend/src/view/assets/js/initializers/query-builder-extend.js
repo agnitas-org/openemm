@@ -1,11 +1,11 @@
 (function () {
     AGN.Lib.CoreInitializer.new('target-group-query-builder-extend', function() {
-      var MIN_EXPECTED_SIZE = 2;
-      var Utils = {};
-
-        var getHelpLanguage = function() {
-            return $('#helpLanguage').val();
-        };
+        if(window.queryBuilderIsExtended){
+            return;
+        }
+        window.queryBuilderIsExtended = true;
+        var MIN_EXPECTED_SIZE = 2;
+        var Utils = {};
 
         function addOperator(value, dateValue) {
             if (Math.sign(value) === -1) {
@@ -31,10 +31,18 @@
         var QueryBuilderConstructor = QueryBuilder.constructor;
         var originalInit = QueryBuilderConstructor.prototype.init;
         var originalValidate = QueryBuilderConstructor.prototype.validate;
+        var originalBindEvents = QueryBuilderConstructor.prototype.bindEvents;
 
         //Unconventional variables to avoid unnecessary OOTB code changes.
         Utils = QueryBuilderConstructor.utils;
         var Selectors = QueryBuilderConstructor.selectors;
+        Object.assign(Selectors, {
+            rule_include_empty:   '.rule-include-empty[name*=_include_empty]',
+            rule_operator_conditions_container: '.rule-operator-conditions-container',
+            rule_header_inputs: '.rule-header :input'
+        });
+
+        Utils.defineModelProperties(QueryBuilderConstructor.Rule, ['includeEmpty']);
 
         QueryBuilder.extend({
 
@@ -59,12 +67,8 @@
                     }
                 });
 
-                if (this.isEmptyOrInitial(rules)) {
-                    this.initialRule = true;
-                    rules.rules = [{initialRule: true, empty: true}];
-                } else {
-                    this.initialRule = false;
-                }
+                this.setupInitialRule(rules);
+
                 return originalInit.call(this, rules);
             },
 
@@ -73,11 +77,20 @@
                     return true;
                 }
 
-                if (data.rules.length === 1 && (data.rules[0].initialRule || data.rules[0].empty) ) {
+                if (data.rules.length === 1 && (data.rules[0].initialRule || data.rules[0].empty)) {
                     return true;
                 }
 
                 return false;
+            },
+
+            setupInitialRule: function (data) {
+                if (this.isEmptyOrInitial(data)) {
+                    this.initialRule = true;
+                    data.rules = [{initialRule: true, empty: true}];
+                } else {
+                    this.initialRule = false;
+                }
             },
 
             optionsByType: {
@@ -118,7 +131,7 @@
                             '</div>' +
                             '<div class="qb-input-label">' +
                                 '<div class="qb-input-inner">' +
-                                    '<button type="button" class="icon icon-help" data-help="help_' + getHelpLanguage() + '/targets/DateFormat.xml"></button>' +
+                                    '<button type="button" class="icon icon-help" data-help="help_' + this.settings.helpLanguage + '/targets/DateFormat.xml"></button>' +
                                 '</div>' +
                             '</div>'
                         );
@@ -388,9 +401,34 @@
 
                     // refresh value if the format changed for this operator
                     rule.__.value = this.getRuleInputValue(rule);
+                    this.createExtendedOperatorConditions(rule);
                 }
                 this.trigger('afterUpdateRuleOperator', rule, previousOperator);
                 this.trigger('rulesChanged');
+            },
+
+            createExtendedOperatorConditions: function(rule) {
+                var self = this;
+                var operatorConditionsContainer = rule.$el.find(Selectors.rule_operator_conditions_container);
+                if(rule.operator.type === 'not_equal') {
+                    rule.includeEmpty = true;
+                    var $condition = $(
+                        '<div class="qb-input-label">' +
+                            '<label class="checkbox-inline">' +
+                                '<input type="checkbox" class="rule-include-empty" name="' + rule.id + '_include_empty" checked/>' +
+                                '<span class="text">' + t('querybuilder.common.include_empty') + '</span>' +
+                            '</label>' +
+                        '</div>');
+                    operatorConditionsContainer.html($condition);
+                    var $checkbox = $condition.find(Selectors.rule_include_empty);
+                    $checkbox.on('change', function() {
+                        rule.includeEmpty = self.getRuleIncludeEmptyValue(rule);
+                    });
+                    rule.$el.find(Selectors.rule_header_inputs).prop('disabled', rule.flags.header_readonly);
+                } else {
+                    rule.includeEmpty = false;
+                    operatorConditionsContainer.html('');
+                }
             },
 
             createRuleOperators: function(rule) {
@@ -609,6 +647,10 @@
                 return this.change('getRuleValue', value, rule);
             },
 
+            getRuleIncludeEmptyValue: function(rule) {
+                return rule.$el.find(Selectors.rule_include_empty).is(':checked');
+            },
+
             validateValue: function(rule, value) {
                 var validation = rule.filter.validation || {};
                 var result = true;
@@ -675,7 +717,8 @@
                             type: rule.filter ? rule.filter.type : null,
                             input: rule.filter ? rule.filter.input : null,
                             operator: rule.operator ? rule.operator.type : null,
-                            value: value
+                            value: value,
+                            includeEmpty: rule.includeEmpty
                         };
 
                         if (rule.filter && rule.filter.data || rule.data) {
@@ -715,6 +758,8 @@
                 options = $.extend({
                     allow_invalid: false
                 }, options);
+
+                this.setupInitialRule(data);
 
                 if ($.isArray(data)) {
                     data = {
@@ -799,6 +844,7 @@
                                 model.negated = item.negated;
 
                                 if (model.operator && model.operator.nb_inputs !== 0) {
+                                    model.includeEmpty = !!item.includeEmpty;
                                     if (item.value !== undefined) {
                                         model.value = item.value;
                                     }
@@ -867,8 +913,97 @@
                         AGN.Lib.CoreInitializer.run('tooltip', node.$el);
                     }
                 }
+            },
+            bindEvents: function () {
+                originalBindEvents.call(this);
+
+                var self = this;
+                this.model.on('update', function(e, node, field) {
+                    if (node instanceof QueryBuilderConstructor.Rule && field === 'includeEmpty') {
+                        self.updateRuleIncludeEmpty(node);
+                    }
+                });
+            },
+
+            findRuleByField: function(root, id, recursively) {
+                var isGroup = function(node) {return node.hasOwnProperty('rules')}
+                if (isGroup(root)) {
+                    var self = this;
+                    return root.rules.find(function(node) {
+                        if (isGroup(node)) {
+                            return recursively ? self.findRuleByField(node, recursively) : false;
+                        } else {
+                            return node.field && node.field === id;
+                        }
+                    });
+                } else {
+                    return root.field && root.field === id;
+                }
+            },
+
+            deleteRuleByField: function(root, id, recursively) {
+                if (!root) {
+                    root = this.getModel().model.root;
+
+                }
+                var del = false;
+                root.each('reverse', function(rule) {
+                    if (rule && rule.filter && rule.filter.id == id) {
+                        del &= this.deleteRule(rule);
+                    }
+                }, function(group) {
+                    del &= this.deleteRuleByField(group, id, recursively);
+                }, this);
+
+                return del;
+            },
+
+            setOrReplaceRule: function(rules, rule, recursively) {
+                if (!rules) {
+                    rules = this.getRules({allow_invalid: true, skip_empty: true});
+                }
+
+                if (rule && rule.id) {
+                    var foundRule = this.findRuleByField(rules, rule.id, recursively);
+
+                    if (foundRule) {
+                        $.extend(foundRule, rule);
+                    } else {
+                        rules.rules.push(rule);
+                    }
+
+                    this.setRules(rules);
+
+                    return true;
+                } else {
+                    return false;
+                }
+            },
+
+            containsNotEmptyRule: function (target) {
+                var self = this;
+
+                var model = self.getModel(target);
+                if (model.rules && model.rules.length) {
+                    return model.rules.every(function(node) {
+                        if (node.hasOwnProperty('rules')) {
+                            return self.containsNotEmptyRule(node);
+                        } else {
+                            return !!node.filter;
+                        }
+                    });
+                } else {
+                    return !!model.filter;
+                }
             }
         })
+
+        QueryBuilderConstructor.prototype.updateRuleIncludeEmpty = function(rule) {
+            var $includeEmptyCheckbox = rule.$el.find(Selectors.rule_include_empty);
+            $includeEmptyCheckbox.prop("checked", rule.includeEmpty);
+
+            this.trigger('rulesChanged');
+        }
     });
 
     function generateDateFormatSelect(availableFormats) {

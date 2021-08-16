@@ -15,7 +15,7 @@ import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 public class MailinglistNotExistException extends MailinglistException {
 	private static final long serialVersionUID = -1182381885122181120L;
 
-	public MailinglistNotExistException(final int mailinglistID) {
-		super(mailinglistID, "Unknown mailinglist");
+	public MailinglistNotExistException(final int mailinglistID, final int companyID) {
+		super(mailinglistID, companyID, String.format("Unknown mailinglist ID %d (company ID %d)", mailinglistID, companyID));
 	}
 }

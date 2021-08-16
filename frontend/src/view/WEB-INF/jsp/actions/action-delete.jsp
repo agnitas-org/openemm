@@ -1,36 +1,38 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" import="org.agnitas.web.EmmActionAction"  errorPage="/error.do" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<c:set var="ACTION_BULK_DELETE" value="<%= EmmActionAction.ACTION_DELETE %>" />
+<%--@elvariable id="simpleActionForm" type="org.agnitas.web.forms.SimpleActionForm"--%>
 
 <div class="modal">
     <div class="modal-dialog">
         <div class="modal-content">
-            <html:form action="/action">
-                <html:hidden property="action" value="${ACTION_BULK_DELETE}"/>
-                <html:hidden property="actionID"/>
+            <mvc:form servletRelativeAction="/action/delete.action" method="DELETE" modelAttribute="simpleActionForm">
+                <mvc:hidden path="id"/>
+                <mvc:hidden path="shortname"/>
+
                 <div class="modal-header">
-                    <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal"><i aria-hidden="true" class="icon icon-times-circle"></i><span class="sr-only"><bean:message key="button.Cancel"/></span></button>
-                    <h4 class="modal-title"><bean:message key="action.Action"/>:&nbsp;${emmActionForm.shortname}</h4>
+                    <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal">
+                        <i aria-hidden="true" class="icon icon-times-circle"></i>
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                    <h4 class="modal-title"><mvc:message code="action.Action"/>:&nbsp;${simpleActionForm.shortname}</h4>
                 </div>
                 <div class="modal-body">
-                    <bean:message key="action.deleteQuestion"/>
+                    <mvc:message code="action.deleteQuestion"/>
                 </div>
                 <div class="modal-footer">
                     <div class="btn-group">
                         <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal">
                             <i class="icon icon-times"></i>
-                            <span class="text"><bean:message key="button.Cancel"/></span>
+                            <span class="text"><mvc:message code="button.Cancel"/></span>
                         </button>
                         <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal">
                             <i class="icon icon-check"></i>
-                            <span class="text"><bean:message key="button.Delete"/></span>
+                            <span class="text"><mvc:message code="button.Delete"/></span>
                         </button>
                     </div>
                 </div>
-            </html:form>
+            </mvc:form>
         </div>
     </div>
 </div>

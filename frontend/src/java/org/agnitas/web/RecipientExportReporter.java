@@ -11,6 +11,7 @@
 package org.agnitas.web;
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.HashSet;
 import java.util.Locale;
@@ -160,7 +161,7 @@ public class RecipientExportReporter {
 			reportContent += I18nString.getLocaleString("error.import.profile.email", locale) + ": " + (StringUtils.isBlank(exportWorker.getAutoExport().getEmailOnError()) ? I18nString.getLocaleString("default.none", locale) : exportWorker.getAutoExport().getEmailOnError());
 			reportContent += I18nString.getLocaleString("autoImport.fileServer", locale) + ": " + exportWorker.getAutoExport().getFileServerWithoutCredentials();
 			reportContent += I18nString.getLocaleString("autoImport.filePath", locale) + ": " + exportWorker.getAutoExport().getFilePath();
-			reportContent += I18nString.getLocaleString("settings.FileName", locale) + ": " + exportWorker.getAutoExport().getFileNameWithPatterns();
+			reportContent += I18nString.getLocaleString("export.settings.FileNamePattern", locale) + ": " + exportWorker.getAutoExport().getFileNameWithPatterns();
 		}
 		
 		if (exportWorker.getUsername() != null) {
@@ -188,6 +189,24 @@ public class RecipientExportReporter {
 		}
 		profileContent += I18nString.getLocaleString("csv.alwaysQuote", locale) + ": " + I18nString.getLocaleString(exportWorker.getAlwaysQuote() ? "delimiter.always" : "delimiter.ifneeded", locale) + "\n";
 
+		if (exportWorker.getDateFormat() != null) {
+			profileContent += I18nString.getLocaleString("csv.DateFormat", locale) + ": " + ((SimpleDateFormat) exportWorker.getDateFormat()).toPattern() + "\n";
+		} else if (exportWorker.getDateFormatter() != null){
+			profileContent += I18nString.getLocaleString("csv.DateFormat", locale) + ": " + exportWorker.getDateFormatter().toString() + "\n";
+		}
+		if (exportWorker.getDateTimeFormat() != null) {
+			profileContent += I18nString.getLocaleString("csv.DateTimeFormat", locale) + ": " + ((SimpleDateFormat) exportWorker.getDateTimeFormat()).toPattern() + "\n";
+		} else if (exportWorker.getDateTimeFormatter() != null){
+			profileContent += I18nString.getLocaleString("csv.DateTimeFormat", locale) + ": " + exportWorker.getDateTimeFormatter().toString() + "\n";
+		}
+		if (exportWorker.getExportTimezone() != null) {
+			profileContent += I18nString.getLocaleString("Timezone", locale) + ": " + exportWorker.getExportTimezone().getId() + "\n";
+		}
+		if (exportWorker.getDecimalFormat() != null) {
+			char decimalSeparator = ((DecimalFormat) exportWorker.getDecimalFormat()).getDecimalFormatSymbols().getDecimalSeparator();
+			profileContent += I18nString.getLocaleString("csv.DecimalSeparator", locale) + ": " + Character.toString(decimalSeparator) + "\n";
+		}
+		
 		if (StringUtils.isNotBlank(exportWorker.getExportProfile().getColumns())) {
 			profileContent += I18nString.getLocaleString("htmled.columns", locale) + ": " + StringUtils.join(AgnUtils.removeEmptyFromStringlist(AgnUtils.splitAndTrimList(exportWorker.getExportProfile().getColumns())), ", ") + "\n";
 		} else {
@@ -289,7 +308,7 @@ public class RecipientExportReporter {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("error.import.profile.email", locale), (StringUtils.isBlank(exportWorker.getAutoExport().getEmailOnError()) ? I18nString.getLocaleString("default.none", locale) : exportWorker.getAutoExport().getEmailOnError())));
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.fileServer", locale), exportWorker.getAutoExport().getFileServerWithoutCredentials()));
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.filePath", locale), exportWorker.getAutoExport().getFilePath()));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("settings.FileName", locale), exportWorker.getAutoExport().getFileNameWithPatterns()));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("export.settings.FileNamePattern", locale), exportWorker.getAutoExport().getFileNameWithPatterns()));
 		}
 		
 		if (exportWorker.getUsername() != null) {
@@ -316,6 +335,24 @@ public class RecipientExportReporter {
 		}
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.alwaysQuote", locale), I18nString.getLocaleString(exportWorker.getAlwaysQuote() ? "delimiter.always" : "delimiter.ifneeded", locale)));
 
+		if (exportWorker.getDateFormat() != null) {
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.DateFormat", locale), ((SimpleDateFormat) exportWorker.getDateFormat()).toPattern()));
+		} else if (exportWorker.getDateFormatter() != null){
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.DateFormat", locale), exportWorker.getDateFormatter().toString()));
+		}
+		if (exportWorker.getDateTimeFormat() != null) {
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.DateTimeFormat", locale), ((SimpleDateFormat) exportWorker.getDateTimeFormat()).toPattern()));
+		} else if (exportWorker.getDateTimeFormatter() != null){
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.DateTimeFormat", locale), exportWorker.getDateTimeFormatter().toString()));
+		}
+		if (exportWorker.getExportTimezone() != null) {
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Timezone", locale), exportWorker.getExportTimezone().getId()));
+		}
+		if (exportWorker.getDecimalFormat() != null) {
+			char decimalSeparator = ((DecimalFormat) exportWorker.getDecimalFormat()).getDecimalFormatSymbols().getDecimalSeparator();
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.DecimalSeparator", locale), Character.toString(decimalSeparator)));
+		}
+		
 		if (StringUtils.isNotBlank(exportWorker.getExportProfile().getColumns())) {
 			htmlContent.append(HtmlReporterHelper.getOutputTableSubHeader(I18nString.getLocaleString("htmled.columns", locale), false));
 			for (String columnName : AgnUtils.removeEmptyFromStringlist(AgnUtils.splitAndTrimList(exportWorker.getExportProfile().getColumns()))) {
@@ -419,7 +456,15 @@ public class RecipientExportReporter {
 	}
 	
 	public void createAndSaveExportReport(RecipientExportWorker exportWorker, ComAdmin admin, boolean isError) throws Exception {
-		recipientsReportService.createAndSaveExportReport(admin, new File(exportWorker.getExportFile()).getName(), exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker, admin), isError);
+		String fileToShow;
+		if (exportWorker.getRemoteFile() != null && StringUtils.isNotBlank(exportWorker.getRemoteFile().getRemoteFilePath())) {
+			// Remote file on ftp or sftp server
+			fileToShow = exportWorker.getRemoteFile().getRemoteFilePath();
+		} else {
+			//Local exported File
+			fileToShow = exportWorker.getExportFile();
+		}
+		recipientsReportService.createAndSaveExportReport(admin, fileToShow, exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker, admin), isError);
 	}
 }
 

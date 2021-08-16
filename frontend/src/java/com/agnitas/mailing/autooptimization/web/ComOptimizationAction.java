@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.Company;
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.beans.impl.MaildropDeleteException;
 import org.agnitas.emm.core.commons.util.Constants;
 import org.agnitas.emm.core.mailing.MailingAllReadySentException;

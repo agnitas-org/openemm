@@ -1,5 +1,6 @@
+<%@ page import="com.agnitas.beans.Mailing"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
-<%@ page import="org.agnitas.web.*, com.agnitas.web.*, org.agnitas.beans.*" %>
+<%@ page import="org.agnitas.web.*, com.agnitas.web.*, org.agnitas.beans.*, com.agnitas.beans.*" %>
 <%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
@@ -13,14 +14,14 @@
 
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
+<%--@elvariable id="isCampaignEnableTargetGroups" type="java.lang.Boolean"--%>
 
 <c:set var="ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>"/>
 <c:set var="ACTION_CONFIRM_UNDO" value="<%= ComMailingBaseAction.ACTION_CONFIRM_UNDO %>"/>
 <c:set var="ACTION_CONFIRM_DELETE" value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>" />
 <c:set var="ACTION_PREVIEW_SELECT" value="<%=ComMailingSendActionBasic.ACTION_PREVIEW_SELECT%>"/>
 <c:set var="ACTION_RECIPIENTS_CALCULATE" value="<%= ComMailingBaseAction.ACTION_RECIPIENTS_CALCULATE %>"/>
-
-<c:set var="MAILING_COMPONENT_TYPE_THUMBNAIL_IMAGE" value="<%= MailingComponentType.ThumbnailImage.getCode() %>"/>
+<c:set var="ACTION_VIEW_WITHOUT_LOAD" value="<%= ComMailingBaseAction.ACTION_VIEW_WITHOUT_LOAD %>"/>
 
 <c:set var="TYPE_FOLLOWUP" value="<%= MailingTypes.FOLLOW_UP.getCode() %>"/>
 <c:set var="TYPE_INTERVAL" value="<%= MailingTypes.INTERVAL.getCode() %>"/>
@@ -78,14 +79,16 @@
 
         </tiles:add>
 
-        <tiles:add>
-            <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#mailingBaseForm' data-form-set='save:save' data-form-submit="" data-controls-group="save">
-                <span class="text">
-                    <bean:message key="button.Save"/>
-                </span>
-                    <%--<i class="icon icon-save"></i>--%>
-            </button>
-        </tiles:add>
+        <emm:ShowByPermission token="mailing.change">
+            <tiles:add>
+                <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#mailingBaseForm' data-form-set='save:save' data-form-submit="" data-controls-group="save">
+                    <span class="text">
+                        <bean:message key="button.Save"/>
+                    </span>
+                        <%--<i class="icon icon-save"></i>--%>
+                </button>
+            </tiles:add>
+        </emm:ShowByPermission>
     </tiles:putList>
 
     <tiles:put name="content" type="string">
@@ -110,7 +113,7 @@
                 </c:choose>
             </c:if>
 
-            <div class="${mainBoxClass}" data-controller="mailing-view-base" ${mainBoxViewModes}>
+            <div id="mailing-main-wrapper" class="${mainBoxClass}" data-controller="mailing-view-base" ${mainBoxViewModes}>
                 <script data-initializer="mailing-view-base" type="application/json">
                     {
                         "mailingId": ${mailingBaseForm.mailingID},
@@ -124,14 +127,17 @@
                             "MAILINGBASE": "<c:url value="/mailingbase.do"/>"
                         },
                         "actions": {
-                            "ACTION_RECIPIENTS_CALCULATE": ${ACTION_RECIPIENTS_CALCULATE}
+                            "ACTION_RECIPIENTS_CALCULATE": ${ACTION_RECIPIENTS_CALCULATE},
+                            "ACTION_VIEW_WITHOUT_LOAD": ${ACTION_VIEW_WITHOUT_LOAD}
                         },
                         "followUpAllowed": ${mailingFollowUpAllowed},
                         "isWorkflowDriven": ${isWorkflowDriven},
-                        "mailingType": ${mailingBaseForm.mailingType}
+                        "mailingType": ${mailingBaseForm.mailingType},
+                        "campaignEnableTargetGroups": ${isCampaignEnableTargetGroups},
+                        "mainBoxClass": "${mainBoxClass}"
                     }
                 </script>
-                <agn:agnForm action="/mailingbase" id="mailingBaseForm" data-form="resource" data-disable-controls="save"
+                <agn:agnForm action="/mailingbase" id="mailingBaseForm" data-form="resource" data-disable-controls="save" data-initializer="mailing-view-base-form"
                              data-form-focus="${not isPostMailing and not isMailingGrid and mailingBaseForm.mailingID ne 0 ? '' : 'shortname'}">
                     <html:hidden property="mailingID"/>
                     <html:hidden property="action"/>
@@ -152,14 +158,15 @@
                         </div>
                         <div id="tile-mailingBase" class="tile-content tile-content-forms">
 
-                            <div class="form-group">
+                            <div class="form-group" data-field="validator">
                                 <div class="col-sm-4">
                                     <label class="control-label" for="mailingShortname">
                                         <bean:message key="default.Name"/>
                                     </label>
                                 </div>
                                 <div class="col-sm-8">
-                                    <html:text styleId="mailingShortname" styleClass="form-control" property="shortname" maxlength="99"/>
+                                    <agn:agnText styleId="mailingShortname" styleClass="form-control" property="shortname" maxlength="99"  data-field-validator="length"
+                                               data-validator-options="required: true, min: 3, max: 99"/>
                                 </div>
                             </div>
 
@@ -225,7 +232,7 @@
                             <%@include file="./mailing-frequency-toggle.jspf" %>
 
                             <c:if test="${isMailingGrid}">
-                                <jsp:include page="/WEB-INF/jsp/mailing/grid/mailing-grid-notes.jsp"/>
+                                <jsp:include page="/WEB-INF/jsp/mailing/grid/mailing-grid-owner.jsp"/>
                             </c:if>
 
                         </div>
@@ -252,12 +259,11 @@
 
             <c:if test="${not isPostMailing and not isMailingGrid and mailingBaseForm.mailingID ne 0}">
                 <emm:ShowByPermission token="mailing.send.show">
-                    <div class="hidden" data-view-split="col-md-6" data-view-block="col-xs-12" data-view-hidden="hidden">
+                    <div id="mailing-preview-wrapper" class="hidden" data-view-split="col-md-6" data-view-block="col-xs-12" data-view-hidden="hidden">
                         <div data-load="<html:rewrite page="/mailingsend.do?action=${ACTION_PREVIEW_SELECT}&mailingID=${mailingBaseForm.mailingID}&previewForm.pure=true"/>" data-load-target="#preview"></div>
                     </div>
                 </emm:ShowByPermission>
             </c:if>
-
         </div>
     </tiles:put>
 </tiles:insert>

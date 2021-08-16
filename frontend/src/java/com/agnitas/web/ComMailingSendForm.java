@@ -22,7 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 
-import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.mailing.bean.MailingDependentType;
@@ -184,7 +184,7 @@ public class ComMailingSendForm extends MailingSendForm {
 	/**
 	 * returns the Follow-Up Type of this mailing. This can be
 	 * clicker, non-clicker, opener, non-opener. The definition can
-	 * be found in Mailing.java (e.g. Mailing.TYPE_FOLLOWUP_OPENER = "opener")
+	 * be found in Mailing.java (e.g. FollowUpType.TYPE_FOLLOWUP_OPENER = "opener")
 	 * 
 	 * @return
 	 */
@@ -204,7 +204,7 @@ public class ComMailingSendForm extends MailingSendForm {
 	 * sets the followUp-type.
 	 * possible values are "clicker", "non-clicker", "opener", "non-opener" but its better
 	 * to use the constant definition from Mailing.java like
-	 * Mailing.TYPE_FOLLOWUP_OPENER
+	 * FollowUpType.TYPE_FOLLOWUP_OPENER
 	 * @param followUpType
 	 */
 	public void setFollowUpType(String followUpType) {
@@ -300,7 +300,7 @@ public class ComMailingSendForm extends MailingSendForm {
 	}
 
     public String getMailingSubject(){
-        ComMailing mailing = (ComMailing) getMailing();
+        Mailing mailing = getMailing();
         MediatypeEmail mediatype = (MediatypeEmail) mailing.getMediatypes().get(0);
         String subject = mediatype.getSubject();
         return subject;

@@ -104,28 +104,6 @@
         </field>
     </bean>
 
-    <bean class="org.agnitas.emm.core.blacklist.service.BlacklistModel">
-        <field name="companyId">
-            <constraint annotation="javax.validation.constraints.Positive">
-                <message>err.isPositive{company.id}</message>
-            </constraint>
-        </field>
-        <field name="email">
-            <constraint annotation="javax.validation.constraints.NotBlank">
-                <message>err.required{email}</message>
-            </constraint>
-            <constraint annotation="javax.validation.constraints.Email">
-                <message>err.isEmail{email}</message>
-            </constraint>
-        </field>
-        <field name="reason">
-            <constraint annotation="javax.validation.constraints.Size">
-                <message>err.maxLength{reason}{500}</message>
-                <element name="max">500</element>
-            </constraint>
-        </field>
-    </bean>
-
     <bean class="org.agnitas.emm.core.mailing.service.MailingModel">
         <field name="companyId">
             <constraint annotation="javax.validation.constraints.Positive">

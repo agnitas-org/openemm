@@ -17,7 +17,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.beans.impl.ExportPredefImpl;
 import org.agnitas.dao.ExportPredefDao;
@@ -29,6 +28,8 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
 
 public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao {
 	private static final transient Logger logger = Logger.getLogger(ExportPredefDaoImpl.class);
@@ -70,7 +71,7 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 			}
 
 			if (exists) {
-				update(logger, "UPDATE export_predef_tbl SET charset = ?, columns = ?, shortname = ?, description = ?, mailinglists = ?, mailinglist_id = ?, delimiter_char = ?, always_quote = ?, separator_char = ?, target_id = ?, user_type = ?, user_status = ?, deleted = ?, timestamp_start = ?, timestamp_end = ?, timestamp_lastdays = ?, creation_date_start = ?, creation_date_end = ?, creation_date_lastdays = ?, mailinglist_bind_start = ?, mailinglist_bind_end = ?, mailinglist_bind_lastdays = ? WHERE export_predef_id = ? AND company_id = ?",
+				update(logger, "UPDATE export_predef_tbl SET charset = ?, columns = ?, shortname = ?, description = ?, mailinglists = ?, mailinglist_id = ?, delimiter_char = ?, always_quote = ?, separator_char = ?, target_id = ?, user_type = ?, user_status = ?, deleted = ?, timestamp_start = ?, timestamp_end = ?, timestamp_lastdays = ?, timestamp_includecurrent = ?, creation_date_start = ?, creation_date_end = ?, creation_date_lastdays = ?, creation_date_includecurrent = ?, mailinglist_bind_start = ?, mailinglist_bind_end = ?, mailinglist_bind_lastdays = ?, ml_bind_includecurrent = ?, dateformat = ?, datetimeformat = ?, timezone = ?, decimalseparator = ?, limits_linked_by_and = ? WHERE export_predef_id = ? AND company_id = ?",
 					exportPredef.getCharset(),
 					exportPredef.getColumns(),
 					exportPredef.getShortname(),
@@ -78,7 +79,7 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 					exportPredef.getMailinglists(),
 					exportPredef.getMailinglistID(),
 					isOracleDB() ? getDelimiterValueForOracle(exportPredef) : exportPredef.getDelimiter(),
-					exportPredef.isAlwaysQuote() ? 1 : 0,	
+					exportPredef.isAlwaysQuote() ? 1 : 0,
 					isOracleDB() ? getSeparatorValueForOracle(exportPredef) : exportPredef.getSeparator(),
 					exportPredef.getTargetID(),
 					exportPredef.getUserType(),
@@ -87,18 +88,26 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 					exportPredef.getTimestampStart(),
 					exportPredef.getTimestampEnd(),
 					exportPredef.getTimestampLastDays(),
+					exportPredef.isTimestampIncludeCurrentDay() ? 1 : 0,
 					exportPredef.getCreationDateStart(),
 					exportPredef.getCreationDateEnd(),
 					exportPredef.getCreationDateLastDays(),
+					exportPredef.isCreationDateIncludeCurrentDay() ? 1 : 0,
 					exportPredef.getMailinglistBindStart(),
 					exportPredef.getMailinglistBindEnd(),
 					exportPredef.getMailinglistBindLastDays(),
+					exportPredef.isMailinglistBindIncludeCurrentDay() ? 1 : 0,
+					exportPredef.getDateFormat(),
+					exportPredef.getDateTimeFormat(),
+					exportPredef.getTimezone(),
+					exportPredef.getDecimalSeparator(),
+					exportPredef.isTimeLimitsLinkedByAnd() ? 1 : 0,
 					exportPredef.getId(),
 					exportPredef.getCompanyID());
 			} else {
 				if (isOracleDB()) {
 					int newExportPredefID = selectInt(logger, "SELECT export_predef_tbl_seq.NEXTVAL FROM DUAL");
-					update(logger, "INSERT INTO export_predef_tbl (export_predef_id, company_id, charset, columns, shortname, description, mailinglists, mailinglist_id, delimiter_char, always_quote, separator_char, target_id, user_type, user_status, deleted, timestamp_start, timestamp_end, timestamp_lastdays, creation_date_start, creation_date_end, creation_date_lastdays, mailinglist_bind_start, mailinglist_bind_end, mailinglist_bind_lastdays) VALUES (" + AgnUtils.repeatString("?", 24, ", ") + ")",
+					update(logger, "INSERT INTO export_predef_tbl (export_predef_id, company_id, charset, columns, shortname, description, mailinglists, mailinglist_id, delimiter_char, always_quote, separator_char, target_id, user_type, user_status, deleted, timestamp_start, timestamp_end, timestamp_lastdays, timestamp_includecurrent, creation_date_start, creation_date_end, creation_date_lastdays, creation_date_includecurrent, mailinglist_bind_start, mailinglist_bind_end, mailinglist_bind_lastdays, ml_bind_includecurrent, dateformat, datetimeformat, timezone, decimalseparator, limits_linked_by_and) VALUES (" + AgnUtils.repeatString("?", 32, ", ") + ")",
 						newExportPredefID,
 						exportPredef.getCompanyID(),
 						exportPredef.getCharset(),
@@ -117,15 +126,23 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 						exportPredef.getTimestampStart(),
 						exportPredef.getTimestampEnd(),
 						exportPredef.getTimestampLastDays(),
+						exportPredef.isTimestampIncludeCurrentDay() ? 1 : 0,
 						exportPredef.getCreationDateStart(),
 						exportPredef.getCreationDateEnd(),
 						exportPredef.getCreationDateLastDays(),
+						exportPredef.isCreationDateIncludeCurrentDay() ? 1 : 0,
 						exportPredef.getMailinglistBindStart(),
 						exportPredef.getMailinglistBindEnd(),
-						exportPredef.getMailinglistBindLastDays());
+						exportPredef.getMailinglistBindLastDays(),
+						exportPredef.isMailinglistBindIncludeCurrentDay() ? 1 : 0,
+						exportPredef.getDateFormat(),
+						exportPredef.getDateTimeFormat(),
+						exportPredef.getTimezone(),
+						exportPredef.getDecimalSeparator(),
+						exportPredef.isTimeLimitsLinkedByAnd() ? 1 : 0);
 					exportPredef.setId(newExportPredefID);
 				} else {
-					int newExportPredefID = insertIntoAutoincrementMysqlTable(logger, "export_predef_id", "INSERT INTO export_predef_tbl (company_id, charset, columns, shortname, description, mailinglists, mailinglist_id, delimiter_char, always_quote, separator_char, target_id, user_type, user_status, deleted, timestamp_start, timestamp_end, timestamp_lastdays, creation_date_start, creation_date_end, creation_date_lastdays, mailinglist_bind_start, mailinglist_bind_end, mailinglist_bind_lastdays) VALUES (" + AgnUtils.repeatString("?", 23, ", ") + ")",
+					int newExportPredefID = insertIntoAutoincrementMysqlTable(logger, "export_predef_id", "INSERT INTO export_predef_tbl (company_id, charset, columns, shortname, description, mailinglists, mailinglist_id, delimiter_char, always_quote, separator_char, target_id, user_type, user_status, deleted, timestamp_start, timestamp_end, timestamp_lastdays, timestamp_includecurrent, creation_date_start, creation_date_end, creation_date_lastdays, creation_date_includecurrent, mailinglist_bind_start, mailinglist_bind_end, mailinglist_bind_lastdays, ml_bind_includecurrent, dateformat, datetimeformat, timezone, decimalseparator, limits_linked_by_and) VALUES (" + AgnUtils.repeatString("?", 31, ", ") + ")",
 						exportPredef.getCompanyID(),
 						exportPredef.getCharset(),
 						exportPredef.getColumns(),
@@ -143,12 +160,20 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 						exportPredef.getTimestampStart(),
 						exportPredef.getTimestampEnd(),
 						exportPredef.getTimestampLastDays(),
+						exportPredef.isTimestampIncludeCurrentDay() ? 1 : 0,
 						exportPredef.getCreationDateStart(),
 						exportPredef.getCreationDateEnd(),
 						exportPredef.getCreationDateLastDays(),
+						exportPredef.isCreationDateIncludeCurrentDay() ? 1 : 0,
 						exportPredef.getMailinglistBindStart(),
 						exportPredef.getMailinglistBindEnd(),
-						exportPredef.getMailinglistBindLastDays());
+						exportPredef.getMailinglistBindLastDays(),
+						exportPredef.isMailinglistBindIncludeCurrentDay() ? 1 : 0,
+						exportPredef.getDateFormat(),
+						exportPredef.getDateTimeFormat(),
+						exportPredef.getTimezone(),
+						exportPredef.getDecimalSeparator(),
+						exportPredef.isTimeLimitsLinkedByAnd() ? 1 : 0);
 					exportPredef.setId(newExportPredefID);
 				}
 			}
@@ -296,12 +321,15 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 			readItem.setTimestampStart(resultSet.getTimestamp("timestamp_start"));
 			readItem.setTimestampEnd(resultSet.getTimestamp("timestamp_end"));
 			readItem.setTimestampLastDays(resultSet.getInt("timestamp_lastdays"));
+			readItem.setTimestampIncludeCurrentDay(resultSet.getInt("timestamp_includecurrent") > 0);
 			readItem.setCreationDateStart(resultSet.getTimestamp("creation_date_start"));
 			readItem.setCreationDateEnd(resultSet.getTimestamp("creation_date_end"));
 			readItem.setCreationDateLastDays(resultSet.getInt("creation_date_lastdays"));
+			readItem.setCreationDateIncludeCurrentDay(resultSet.getInt("creation_date_includecurrent") > 0);
 			readItem.setMailinglistBindStart(resultSet.getTimestamp("mailinglist_bind_start"));
 			readItem.setMailinglistBindEnd(resultSet.getTimestamp("mailinglist_bind_end"));
 			readItem.setMailinglistBindLastDays(resultSet.getInt("mailinglist_bind_lastdays"));
+			readItem.setMailinglistBindIncludeCurrentDay(resultSet.getInt("ml_bind_includecurrent") > 0);
 			readItem.setAlwaysQuote(resultSet.getInt("always_quote") > 0);
 			
 			if (isOracle) {
@@ -336,6 +364,13 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 				readItem.setDelimiter(resultSet.getString("delimiter_char"));
 				readItem.setSeparator(resultSet.getString("separator_char"));
 			}
+			
+			readItem.setDateFormat(resultSet.getInt("dateformat"));
+			readItem.setDateTimeFormat(resultSet.getInt("datetimeformat"));
+			readItem.setTimezone(resultSet.getString("timezone"));
+			readItem.setDecimalSeparator(resultSet.getString("decimalseparator"));
+			
+			readItem.setTimeLimitsLinkedByAnd(resultSet.getInt("limits_linked_by_and") > 0);
 
 			return readItem;
 		}

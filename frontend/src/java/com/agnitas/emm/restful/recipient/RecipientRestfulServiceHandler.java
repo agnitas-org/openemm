@@ -17,9 +17,11 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TimeZone;
 
 import javax.servlet.ServletContext;
@@ -62,12 +64,14 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComRecipientMailing;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComDatasourceDescriptionDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.mailing.service.FullviewService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
@@ -102,6 +106,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	private MailinglistDao mailinglistDao;
 	private ProfileImportWorkerFactory profileImportWorkerFactory;
 	private ComDatasourceDescriptionDao datasourceDescriptionDao;
+	private FullviewService fullviewService;
 
 	@Required
 	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
@@ -136,6 +141,11 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setDatasourceDescriptionDao(final ComDatasourceDescriptionDao datasourceDescriptionDao) {
 		this.datasourceDescriptionDao = datasourceDescriptionDao;
+	}
+
+	@Required
+	public void setFullviewService(FullviewService fullviewService) {
+		this.fullviewService = fullviewService;
 	}
 
 	@Override
@@ -174,7 +184,16 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.RECIPIENT_SHOW.toString() + "'");
 		}
 		
-		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 1);
+		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 2);
+
+		boolean showReceivedMailings = false;
+		if (restfulContext.length == 2) {
+			if ("mailings".equalsIgnoreCase(restfulContext[1])) {
+				showReceivedMailings = true;
+			} else {
+				throw new RestfulClientException("Invalid requestcontext: " + restfulContext[1]);
+			}
+		}
 		
 		String requestedRecipientKeyValue = restfulContext[0];
 		List<Integer> customerIDs;
@@ -202,6 +221,9 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 						customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
 					}
 				}
+				if (showReceivedMailings) {
+					addReceivedMailingsToCustomer(admin.getCompanyID(), customerJsonObject);
+				}
 				result.add(customerJsonObject);
 			}
 			return result;
@@ -215,10 +237,39 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
 				}
 			}
+			if (showReceivedMailings) {
+				addReceivedMailingsToCustomer(admin.getCompanyID(), customerJsonObject);
+			}
 			return customerJsonObject;
 		} else {
 			throw new RestfulNoDataFoundException("No data found");
 		}
+	}
+
+	private void addReceivedMailingsToCustomer(int companyID, JsonObject customerJsonObject) {
+		int customerID = ((Number) customerJsonObject.get("customer_id")).intValue();
+		JsonArray mailingsJsonArray = new JsonArray();
+		for (ComRecipientMailing mailing : recipientDao.getMailingsSentToRecipient(customerID, companyID)) {
+			JsonObject mailingJsonObject = new JsonObject();
+
+			mailingJsonObject.add("mailing_id", mailing.getMailingId());
+			mailingJsonObject.add("senddate", new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(mailing.getSendDate()));
+			mailingJsonObject.add("mailing_type", mailing.getMailingType());
+			mailingJsonObject.add("mailing_name", mailing.getShortName());
+			mailingJsonObject.add("mailing_subject", mailing.getSubject());
+			mailingJsonObject.add("openings", mailing.getNumberOfOpenings());
+			mailingJsonObject.add("clicks", mailing.getNumberOfClicks());
+			
+			try {
+				String fullviewLink = fullviewService.getFullviewUrl(companyID, mailing.getMailingId(), customerID, null);
+				mailingJsonObject.add("fullview_url", fullviewLink);
+			} catch (Exception e) {
+				mailingJsonObject.add("fullview_url_error", "Not available");
+			}
+
+			mailingsJsonArray.add(mailingJsonObject);
+		}
+		customerJsonObject.add("mailingsReceived", mailingsJsonArray);
 	}
 
 	/**
@@ -341,15 +392,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					((RecipientImpl) recipient).setRecipientDao(recipientDao);
 					recipient.setCompanyID(admin.getCompanyID());
 					
-					int customerID = 0;
 					if (jsonObject.containsPropertyKey("customer_id")) {
-						customerID = recipientDao.findByKeyColumn(recipient, "customer_id", jsonObject.get("customer_id").toString());
-					} else if (jsonObject.containsPropertyKey("email")) {
-						customerID = recipientDao.findByKeyColumn(recipient, "email", (String) jsonObject.get("email"));
-					}
-					
-					if (customerID > 0) {
-						recipient.getCustomerDataFromDb();
+						throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field customer_id is included");
 					}
 					
 					Map<String, Object> custParameters = recipient.getCustParameters();
@@ -370,7 +414,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					
 					recipient.setChangeFlag(true);
 					
-					if (!recipientDao.updateInDB(recipient, false)) {
+					if (!recipientDao.updateInDB(recipient, false, true)) {
 						throw new RestfulClientException("Invalid recipient data for recipient");
 					}
 					
@@ -465,7 +509,9 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 						throw new RestfulClientException("Expected JSON item type 'JsonArray_Close' was: " + readJsonToken);
 					}
 			
-					CustomerImportStatus status = importRecipients(admin, importMode, keyColumn, mailinglistID, temporaryImportFile, requestUUID, newMediaType);
+					Set<MediaTypes> newMediaTypes = new HashSet<>();
+					newMediaTypes.add(newMediaType);
+					CustomerImportStatus status = importRecipients(admin, importMode, keyColumn, mailinglistID, temporaryImportFile, requestUUID, newMediaTypes);
 					
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
 					userActivityLogDao.writeUserActivityLog(admin, "restful/recipient POST", "IMPORT");
@@ -598,7 +644,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 							}
 							
 							recipient.setChangeFlag(true);
-							if (!recipientDao.updateInDB(recipient, false)) {
+							if (!recipientDao.updateInDB(recipient, false, true)) {
 								throw new RestfulClientException("Invalid recipient data for recipient: " + requestedRecipientKeyValue);
 							}
 						} else if (AgnUtils.isNumber(requestedRecipientKeyValue)) {
@@ -616,7 +662,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 							}
 							
 							recipient.setChangeFlag(true);
-							if (!recipientDao.updateInDB(recipient, false)) {
+							if (!recipientDao.updateInDB(recipient, false, true)) {
 								throw new RestfulClientException("Invalid recipient data for recipient: " + requestedRecipientKeyValue);
 							}
 						} else {
@@ -651,7 +697,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 						
 						recipient.setChangeFlag(true);
 						
-						if (!recipientDao.updateInDB(recipient, false)) {
+						if (!recipientDao.updateInDB(recipient, false, true)) {
 							throw new RestfulClientException("Invalid recipient data for recipient");
 						}
 					}
@@ -746,8 +792,10 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					if (JsonToken.JsonArray_Close != readJsonToken) {
 						throw new RestfulClientException("Expected JSON item type 'JsonArray_Close' was: " + readJsonToken);
 					}
-			
-					CustomerImportStatus status = importRecipients(admin, importMode, keyColumn, mailinglistID, temporaryImportFile, requestUUID, newMediaType);
+
+					Set<MediaTypes> newMediaTypes = new HashSet<>();
+					newMediaTypes.add(newMediaType);
+					CustomerImportStatus status = importRecipients(admin, importMode, keyColumn, mailinglistID, temporaryImportFile, requestUUID, newMediaTypes);
 					
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
 					userActivityLogDao.writeUserActivityLog(admin, "restful/recipient PUT", "IMPORT");
@@ -789,7 +837,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			|| StringUtils.endsWithIgnoreCase(item.getKey(), ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND));
 	}
 
-	private CustomerImportStatus importRecipients(ComAdmin admin, ImportMode importMode, String keyColumn, int mailinglistID, File temporaryImportFile, String sessionID, MediaTypes mediaType) throws Exception {
+	private CustomerImportStatus importRecipients(ComAdmin admin, ImportMode importMode, String keyColumn, int mailinglistID, File temporaryImportFile, String sessionID, Set<MediaTypes> mediaTypes) throws Exception {
 		ImportProfile importProfile = new ImportProfileImpl();
 		importProfile.setCompanyId(admin.getCompanyID());
 		importProfile.setAdminId(admin.getAdminID());
@@ -803,7 +851,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		importProfile.setDefaultMailType(MailType.HTML.getIntValue());
 		importProfile.setDatatype("JSON"); // use JSON Import
 		importProfile.setCharset(Charset.UTF_8.getIntValue());
-		importProfile.setMediatype(mediaType);
+		importProfile.setMediatypes(mediaTypes);
 
 		DatasourceDescription dsDescription = new DatasourceDescriptionImpl();
 		dsDescription.setId(0);

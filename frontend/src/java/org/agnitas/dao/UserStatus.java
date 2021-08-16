@@ -25,6 +25,13 @@ public enum UserStatus {
 	Blacklisted(6),
 	Suspend(7); // Sometimes also referred to as status "supended" or "pending"
 	
+	/*
+	 *  Status 7 is used for single test delivery, when 
+	 *  - a customer has been created by entering an unknown mail address or
+	 *  - when a mail address of an existing customer is entered, but the customer
+	 *    doesn't have a binding on the mailinglist of the mailing
+	 */
+	
 	private int statusCode;
 	
 	UserStatus(int statusCode) {

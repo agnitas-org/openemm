@@ -23,6 +23,10 @@ import com.agnitas.beans.impl.TargetLightImpl;
  * Row mapper for target group data without target representation.
  */
 public class TargetLightRowMapper implements RowMapper<TargetLight> {
+	
+	/** Singleton instance for use in persistence layer. */
+	public static final transient TargetLightRowMapper INSTANCE = new TargetLightRowMapper();
+	
     @Override
     public TargetLight mapRow(ResultSet resultSet, int row) throws SQLException {
         try {

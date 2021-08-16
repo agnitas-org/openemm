@@ -49,12 +49,13 @@ import com.agnitas.emm.core.usergroup.form.UserGroupForm;
 import com.agnitas.emm.core.usergroup.service.UserGroupService;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping("/administration/usergroup")
 @PermissionMapping("user.group")
-public class UserGroupController {
+public class UserGroupController implements XssCheckAware {
 
     private static final Logger logger = Logger.getLogger(UserGroupController.class);
 

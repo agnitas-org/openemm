@@ -12,22 +12,6 @@ package com.agnitas.emm.core.wsmanager.web;
 
 import java.util.Objects;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
-import com.agnitas.emm.core.wsmanager.form.WebserviceUserForm;
-import com.agnitas.emm.core.wsmanager.form.WebserviceUserListForm;
-import com.agnitas.emm.wsmanager.bean.WebservicePermissionGroups;
-import com.agnitas.emm.wsmanager.bean.WebservicePermissions;
-import com.agnitas.emm.wsmanager.common.UnknownWebserviceUsernameException;
-import com.agnitas.emm.wsmanager.service.WebservicePermissionGroupService;
-import com.agnitas.emm.wsmanager.service.WebservicePermissionService;
-import com.agnitas.emm.wsmanager.service.WebserviceUserAlreadyExistsException;
-import com.agnitas.emm.wsmanager.service.WebserviceUserService;
-import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
-import com.agnitas.service.ComWebStorage;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.emm.core.commons.password.PasswordCheck;
 import org.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
@@ -50,6 +34,23 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
+import com.agnitas.emm.core.wsmanager.form.WebserviceUserForm;
+import com.agnitas.emm.core.wsmanager.form.WebserviceUserListForm;
+import com.agnitas.emm.wsmanager.bean.WebservicePermissionGroups;
+import com.agnitas.emm.wsmanager.bean.WebservicePermissions;
+import com.agnitas.emm.wsmanager.common.UnknownWebserviceUsernameException;
+import com.agnitas.emm.wsmanager.service.WebservicePermissionGroupService;
+import com.agnitas.emm.wsmanager.service.WebservicePermissionService;
+import com.agnitas.emm.wsmanager.service.WebserviceUserAlreadyExistsException;
+import com.agnitas.emm.wsmanager.service.WebserviceUserService;
+import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
+import com.agnitas.service.ComWebStorage;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping(value = "/administration/wsmanager")
@@ -88,8 +89,7 @@ public class WebserviceUserManagerController {
     }
 
     @RequestMapping(value = "/users.action")
-    public String list(ComAdmin admin, @ModelAttribute WebserviceUserListForm userListForm,
-                       WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
+    public String list(ComAdmin admin, @ModelAttribute WebserviceUserListForm userListForm, WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
         FormUtils.syncNumberOfRows(webStorage, ComWebStorage.WS_MANAGER_OVERVIEW, userListForm);
 
         model.addAttribute("webserviceUserList",
@@ -101,7 +101,7 @@ public class WebserviceUserManagerController {
                         admin.permissionAllowed(Permission.MASTER_SHOW)));
 
         model.addAttribute("companyList", companyService.getActiveOwnCompanyEntries(admin.getCompanyID(), true));
-        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");        
+        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
 
         writeUserActivityLog(admin, "webservice manager", "active tab - manage webservice user");
 
@@ -109,7 +109,7 @@ public class WebserviceUserManagerController {
     }
 
     @PostMapping(value = "/user/new.action")
-    public String create(ComAdmin admin, @ModelAttribute WebserviceUserForm userForm, Popups popups, final Model model) {
+    public String create(ComAdmin admin, @ModelAttribute("webserviceUserForm") WebserviceUserForm userForm, Popups popups, final Model model) {
         processCompanyId(admin, userForm);
         if (creationValidation(userForm, popups) ) {
             if (saveWebserviceUser(admin, true, userForm, popups)) {
@@ -117,14 +117,14 @@ public class WebserviceUserManagerController {
             }
         }
         
-        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");        
+        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
     
         popups.alert("error.webserviceuser.cannot_create");
         return "forward:/administration/wsmanager/users.action";
     }
 
     @PostMapping(value = "/user/update.action")
-    public String update(ComAdmin admin, @ModelAttribute WebserviceUserForm userForm, Popups popups) {
+    public String update(ComAdmin admin, @ModelAttribute("webserviceUserForm") WebserviceUserForm userForm, Popups popups) {
         if (editingValidation(userForm, popups)) {
             if (saveWebserviceUser(admin, false, userForm, popups)) {
                 return "redirect:/administration/wsmanager/users.action";
@@ -136,7 +136,7 @@ public class WebserviceUserManagerController {
     }
 
     private void processCompanyId(final ComAdmin admin, final WebserviceUserForm userForm) {
-        if(!admin.permissionAllowed(Permission.MASTER_COMPANIES_SHOW)) {
+        if (!admin.permissionAllowed(Permission.MASTER_COMPANIES_SHOW)) {
             userForm.setCompanyId(admin.getCompanyID());
         }
     }
@@ -170,7 +170,7 @@ public class WebserviceUserManagerController {
             valid = false;
         }
         
-        if(!this.passwordCheck.checkAdminPassword(userForm.getPassword(), null, new SpringPasswordCheckHandler(popups, "password"))) {
+        if (!passwordCheck.checkAdminPassword(userForm.getPassword(), null, new SpringPasswordCheckHandler(popups, "password"))) {
         	valid = false;
         }
         
@@ -227,7 +227,7 @@ public class WebserviceUserManagerController {
     @GetMapping(value = "/user/{username}/view.action")
     public String view(ComAdmin admin, @PathVariable String username, Model model, Popups popups) {
         try {
-        	final WebserviceUserDto webserviceUser = this.webserviceUserService.getWebserviceUserByUserName(username);
+        	final WebserviceUserDto webserviceUser = webserviceUserService.getWebserviceUserByUserName(username);
         	final WebserviceUserForm userForm = conversionService.convert(webserviceUser, WebserviceUserForm.class);
         	
         	// Determine company ID of webservice user to show permissions only if WS permissions are enabled for his company!
@@ -235,11 +235,11 @@ public class WebserviceUserManagerController {
         	
         	
             model.addAttribute("webserviceUserForm", userForm);
-            model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");        
+            model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
 
-            if(this.configService.getBooleanValue(Webservices.WebserviceEnablePermissions, companyIdOfWebserviceUser)) {
-            	final WebservicePermissions permissions = this.webservicePermissionService.listAllPermissions();
-            	final WebservicePermissionGroups permissionGroups = this.webservicePermissionGroupService.listAllPermissionGroups();
+            if (configService.getBooleanValue(Webservices.WebserviceEnablePermissions, companyIdOfWebserviceUser)) {
+            	final WebservicePermissions permissions = webservicePermissionService.listAllPermissions();
+            	final WebservicePermissionGroups permissionGroups = webservicePermissionGroupService.listAllPermissionGroups();
            	
 	            model.addAttribute("PERMISSIONS", permissions);
 	            model.addAttribute("PERMISSION_GROUPS", permissionGroups);

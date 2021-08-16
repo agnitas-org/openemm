@@ -5,7 +5,7 @@
 <div id="workflow-save-before-pdf-dialog" data-initializer="save-before-pdf-initializer">
     <div class="form-group">
         <div class="col-xs-12">
-            <div class="well">
+            <div class="dialog-message well">
             </div>
         </div>
     </div>
@@ -15,12 +15,12 @@
     <div class="form-group">
         <div class="col-xs-12">
             <div class="btn-group">
-                <a id="workflowBtnYes" href="#" class="btn btn-regular btn-primary" data-action="save-before-pdf-btn-save">
+                <a href="#" class="btn btn-regular btn-primary" id="save-before-pdf-btn-save" data-action="save-before-pdf-btn-save">
                     <span>
                         <bean:message key="button.Save"/>
                     </span>
                 </a>
-                <a href="#" class="btn btn-regular" data-action="save-before-pdf-btn-cancel">
+                <a href="#" class="btn btn-regular" id="save-before-pdf-btn-cancel" data-action="save-before-pdf-btn-cancel">
                     <span>
                         <bean:message key="button.Cancel"/>
                     </span>

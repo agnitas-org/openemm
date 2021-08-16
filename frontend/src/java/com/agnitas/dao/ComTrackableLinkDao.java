@@ -13,14 +13,17 @@ package com.agnitas.dao;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import org.agnitas.beans.TrackableLink;
+import org.agnitas.dao.TrackableLinkDao;
+import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import org.agnitas.beans.TrackableLink;
-import org.agnitas.dao.TrackableLinkDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import com.agnitas.web.exception.ClearLinkExtensionsException;
 
 public interface ComTrackableLinkDao extends TrackableLinkDao {
 	 
@@ -72,4 +75,6 @@ public interface ComTrackableLinkDao extends TrackableLinkDao {
 	void removeLinkExtensionsByCompany(int companyID);
 	
 	Map<Integer, String> getTrackableLinkUrl(@VelocityCheck int companyId, int mailingId, List<Integer> linkIds);
+
+    void bulkClearExtensions(int mailingId, int companyId, Set<Integer> bulkIds) throws ClearLinkExtensionsException;
 }

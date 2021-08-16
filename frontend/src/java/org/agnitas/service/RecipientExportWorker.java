@@ -11,6 +11,10 @@
 package org.agnitas.service;
 
 import java.io.File;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.SimpleDateFormat;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -26,6 +30,7 @@ import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.importvalues.DateFormat;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
@@ -89,7 +94,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 		return this.admin;
 	}
 
-	public RecipientExportWorker(ExportPredef exportProfile, ComAdmin admin, final ComTargetService targetService) {
+	public RecipientExportWorker(ExportPredef exportProfile, ComAdmin admin, final ComTargetService targetService) throws Exception {
 		super();
 		this.exportProfile = exportProfile;
 		this.admin = admin;
@@ -104,6 +109,20 @@ public class RecipientExportWorker extends GenericExportWorker {
 			setStringQuote(exportProfile.getDelimiter().toCharArray()[0]);
 			setAlwaysQuote(exportProfile.isAlwaysQuote());
 		}
+
+		setDateFormat(new SimpleDateFormat(DateFormat.getDateFormatById(exportProfile.getDateFormat()).getValue()));
+		setDateTimeFormat(new SimpleDateFormat(DateFormat.getDateFormatById(exportProfile.getDateTimeFormat()).getValue()));
+		setExportTimezone(ZoneId.of(exportProfile.getTimezone()));
+		
+		DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols();
+		if (",".equals(exportProfile.getDecimalSeparator())) {
+			decimalFormatSymbols.setDecimalSeparator(',');
+			decimalFormatSymbols.setGroupingSeparator('.');
+		} else {
+			decimalFormatSymbols.setDecimalSeparator('.');
+			decimalFormatSymbols.setGroupingSeparator(',');
+		}
+		setDecimalFormat(new DecimalFormat("###0.###", decimalFormatSymbols));
 
 		this.targetService = targetService;
 	}
@@ -221,12 +240,16 @@ public class RecipientExportWorker extends GenericExportWorker {
 			// Add date limits for change date to sql statement
 			TimeZone timeZone = TimeZone.getTimeZone(admin.getAdminTimezone());
 			
+			String timestampLimitPart = "";
 			if (exportProfile.getTimestampStart() != null) {
-				customerTableSql.append(" AND cust.timestamp >= ?");
+				timestampLimitPart += "cust.timestamp >= ?";
 				selectParameters.add(exportProfile.getTimestampStart());
 			}
 			if (exportProfile.getTimestampEnd() != null) {
-				customerTableSql.append(" AND cust.timestamp < ?");
+				if (timestampLimitPart.length() > 0) {
+					timestampLimitPart += " AND ";
+				}
+				timestampLimitPart += "cust.timestamp < ?";
 				Calendar endGregDate = new GregorianCalendar(timeZone);
 				endGregDate.setTime(exportProfile.getTimestampEnd());
 				endGregDate.add(Calendar.DAY_OF_MONTH, 1);
@@ -234,19 +257,30 @@ public class RecipientExportWorker extends GenericExportWorker {
 				selectParameters.add(endGregDate.getTime());
 			}
 			if (exportProfile.getTimestampLastDays() > 0) {
-				customerTableSql.append(" AND cust.timestamp >= ?");
+				if (timestampLimitPart.length() > 0) {
+					timestampLimitPart += " AND ";
+				}
+				timestampLimitPart += "cust.timestamp >= ?";
 				selectParameters.add(DateUtilities.removeTime(DateUtilities.getDateOfDaysAgo(exportProfile.getTimestampLastDays()), timeZone));
-				customerTableSql.append(" AND cust.timestamp < ?");
-				selectParameters.add(DateUtilities.midnight(timeZone));
+				
+				if (!exportProfile.isTimestampIncludeCurrentDay()) {
+					// Exclude data of current day
+					timestampLimitPart += " AND cust.timestamp < ?";
+					selectParameters.add(DateUtilities.midnight(timeZone));
+				}
 			}
 
+			String creationDateLimitPart = "";
 			// Add date limits for create date to sql statement
 			if (exportProfile.getCreationDateStart() != null) {
-				customerTableSql.append(" AND cust.creation_date >= ?");
+				creationDateLimitPart += "cust.creation_date >= ?";
 				selectParameters.add(exportProfile.getCreationDateStart());
 			}
 			if (exportProfile.getCreationDateEnd() != null) {
-				customerTableSql.append(" AND cust.creation_date < ?");
+				if (creationDateLimitPart.length() > 0) {
+					creationDateLimitPart += " AND ";
+				}
+				creationDateLimitPart += "cust.creation_date < ?";
 				Calendar endGregDate = new GregorianCalendar(timeZone);
 				endGregDate.setTime(exportProfile.getCreationDateEnd());
 				endGregDate.add(Calendar.DAY_OF_MONTH, 1);
@@ -254,10 +288,17 @@ public class RecipientExportWorker extends GenericExportWorker {
 				selectParameters.add(endGregDate.getTime());
 			}
 			if (exportProfile.getCreationDateLastDays() > 0) {
-				customerTableSql.append(" AND cust.creation_date >= ?");
+				if (creationDateLimitPart.length() > 0) {
+					creationDateLimitPart += " AND ";
+				}
+				creationDateLimitPart += "cust.creation_date >= ?";
 				selectParameters.add(DateUtilities.removeTime(DateUtilities.getDateOfDaysAgo(exportProfile.getCreationDateLastDays()), timeZone));
-				customerTableSql.append(" AND cust.creation_date < ?");
-				selectParameters.add(DateUtilities.midnight(timeZone));
+				
+				if (!exportProfile.isCreationDateIncludeCurrentDay()) {
+					// Exclude data of current day
+					creationDateLimitPart += " AND cust.creation_date < ?";
+					selectParameters.add(DateUtilities.midnight(timeZone));
+				}
 			}
 
 			// Add date limits for mailing list binding change date to sql statement
@@ -284,19 +325,48 @@ public class RecipientExportWorker extends GenericExportWorker {
 					if (mailinglistChangeClause.length() > 0) {
 						mailinglistChangeClause += " AND ";
 					}
-					mailinglistChangeClause += "m" + selectedMailinglistID + ".timestamp >= ? AND m" + selectedMailinglistID + ".timestamp < ?";
+					mailinglistChangeClause += "m" + selectedMailinglistID + ".timestamp >= ?";
 					selectParameters.add(DateUtilities.removeTime(DateUtilities.getDateOfDaysAgo(exportProfile.getMailinglistBindLastDays()), timeZone));
-					selectParameters.add(DateUtilities.midnight(timeZone));
+
+					if (!exportProfile.isMailinglistBindIncludeCurrentDay()) {
+						// Exclude data of current day
+						mailinglistChangeClause += " AND m" + selectedMailinglistID + ".timestamp < ?";
+						selectParameters.add(DateUtilities.midnight(timeZone));
+					}
 				}
 				
 				if (mailinglistChangeClause.length() > 0) {
 					mailinglistChangeClauses.add(mailinglistChangeClause);
 				}
 			}
-			if (mailinglistChangeClauses.size() == 1) {
-				customerTableSql.append(" AND (" + mailinglistChangeClauses.get(0) + ")");
-			} else if (mailinglistChangeClauses.size() > 1) {
-				customerTableSql.append(" AND ((" + StringUtils.join(mailinglistChangeClauses, ") OR (") + "))");
+			
+			String timeLimitLinkOperator = "AND";
+			if (!exportProfile.isTimeLimitsLinkedByAnd()) {
+				timeLimitLinkOperator = "OR";
+			}
+			
+			String timeLimitPart = "";
+			if (timestampLimitPart.length() > 0) {
+				timeLimitPart += "(" + timestampLimitPart + ")";
+			}
+			if (creationDateLimitPart.length() > 0) {
+				if (timeLimitPart.length() > 0) {
+					timeLimitPart += " " + timeLimitLinkOperator + " ";
+				}
+				timeLimitPart += "(" + creationDateLimitPart + ")";
+			}
+			if (mailinglistChangeClauses.size() > 0) {
+				if (timeLimitPart.length() > 0) {
+					timeLimitPart += " " + timeLimitLinkOperator + " ";
+				}
+				if (mailinglistChangeClauses.size() == 1) {
+					timeLimitPart += "(" + mailinglistChangeClauses.get(0) + ")";
+				} else {
+					timeLimitPart += "((" + StringUtils.join(mailinglistChangeClauses, ") OR (") + "))";
+				}
+			}
+			if (timeLimitPart.length() > 0) {
+				customerTableSql.append(" AND (" + timeLimitPart + ")");
 			}
 
 			selectStatement = customerTableSql.toString();

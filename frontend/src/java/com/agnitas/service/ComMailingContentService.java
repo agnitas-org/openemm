@@ -10,7 +10,7 @@
 
 package com.agnitas.service;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailing;
 import org.agnitas.util.DynTagException;
 
 public interface ComMailingContentService {

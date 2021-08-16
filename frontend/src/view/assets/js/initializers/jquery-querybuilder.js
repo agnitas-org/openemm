@@ -40,6 +40,7 @@ $.fn.queryBuilder.defaults({templates: { rule: '\
         <i class="{{= it.icons.remove_rule }}"></i> \
       </button> \
     </div> \
+    <div class="rule-operator-conditions-container pull-right"></div> \
   </div> \
   {{? it.settings.display_errors }} \
     <div class="error-container"><i class="{{= it.icons.error }}"></i></div> \

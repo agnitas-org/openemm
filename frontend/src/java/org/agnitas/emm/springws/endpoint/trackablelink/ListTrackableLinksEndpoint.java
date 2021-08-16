@@ -41,7 +41,7 @@ public class ListTrackableLinksEndpoint extends BaseEndpoint {
 
         int companyId = Utils.getUserCompany();
         int mailingId = request.getMailingID();
-        List<TrackableLinkListItem> trackableLinksList = trackableLinkService.getTrackableLinks(mailingId, companyId);
+        List<TrackableLinkListItem> trackableLinksList = trackableLinkService.getTrackableLinkItems(mailingId, companyId);
 
         setTrackableLinksToResponse(response, trackableLinksList);
 

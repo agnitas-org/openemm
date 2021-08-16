@@ -13,6 +13,7 @@ package org.agnitas.util.importvalues;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.ImportProfile;
@@ -60,12 +61,15 @@ public class ImportModeBounceReactivateHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, MediaTypes mediatype) throws Exception {
+	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
 		// Reactivate bounced customers in binding table
 		if (mailingListIdsToAssign != null) {
 			Map<Integer, Integer> mailinglistAssignStatistics = new HashMap<>();
 	    	for (int mailingListId : mailingListIdsToAssign) {
-	    		int changed = importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Bounce.getStatusCode(), UserStatus.Active.getStatusCode(), "Mass Bounce-Reactivation by Admin");
+	    		int changed = 0;
+	    		for (MediaTypes mediatype : mediatypes) {
+	    			changed += importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Bounce.getStatusCode(), UserStatus.Active.getStatusCode(), "Mass Bounce-Reactivation by Admin");
+	    		}
 	    		mailinglistAssignStatistics.put(mailingListId, changed);
 	    	}
 			return mailinglistAssignStatistics;

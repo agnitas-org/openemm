@@ -215,6 +215,38 @@
 
       return collectIncomingChains(iconId || editorsHelper.curEditingNode.id, {});
     };
+
+    this.updateRecipientNodesChains = function () {
+      var icons = campaignManager.getIconsForSubmission();
+      var nodes = Object.values(campaignManager.getCampaignManagerNodes().getNodes());
+      var nodesMap = getIconMap(nodes);
+
+      nodes.forEach(function (node) {
+        node.isRecipientDependent = false;
+      });
+
+      var connectionForwardMap = getForwardConnectionMap(icons);
+      Object.keys(connectionForwardMap).filter(function (key) {
+        return nodesMap[key].type !== nodeFactory.NODE_TYPE_RECIPIENT;
+      }).forEach(function (key) {
+        delete connectionForwardMap[key];
+      });
+
+      for (var stub in connectionForwardMap) {
+        for (var index in connectionForwardMap) {
+          var subsidiaries = connectionForwardMap[index];
+          if (!subsidiaries || !Object.keys(subsidiaries).length) {
+            continue;
+          }
+          var node = nodesMap[index];
+          var mailingListId = node.data.mailinglistId;
+          for (var subsdr in subsidiaries) {
+            nodesMap[subsdr].data.mailinglistId = mailingListId;
+            nodesMap[subsdr].isRecipientDependent = true;
+          }
+        }
+      }
+    }
   };
 
   AGN.Lib.WM.ChainProcessor = ChainProcessor;

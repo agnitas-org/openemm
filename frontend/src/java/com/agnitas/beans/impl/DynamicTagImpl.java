@@ -17,11 +17,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
 
 public final class DynamicTagImpl implements DynamicTag {
 	protected String dynName;
@@ -166,8 +166,9 @@ public final class DynamicTagImpl implements DynamicTag {
 		int otherID = 0;
 		int tmp = 0;
 
-		if (dynContent == null)
+		if (dynContent == null) {
 			return false;
+		}
 
 		DynamicTagContent firstContent = searchByOrderId ? getDynContentByOrderId(aID) : getDynContentID(aID);
 
@@ -466,7 +467,7 @@ public final class DynamicTagImpl implements DynamicTag {
 	 *            New value of property mailing.
 	 */
 	@Override
-	public void setMailing(org.agnitas.beans.Mailing mailing) {
+	public void setMailing(Mailing mailing) {
 		this.mailing = mailing;
 	}
 
@@ -516,7 +517,7 @@ public final class DynamicTagImpl implements DynamicTag {
 
 	@Override
 	public final void setDynInterestGroup(final String interestgroup) {
-		this.dynInterestGroup = interestgroup;		
+		this.dynInterestGroup = interestgroup;
 	}
 
 	@Override
@@ -526,7 +527,7 @@ public final class DynamicTagImpl implements DynamicTag {
 
 	@Override
 	public final void setInterestValue(final int interestValue) {
-		this.interestValue = interestValue;		
+		this.interestValue = interestValue;
 	}
 
 	@Override

@@ -10,14 +10,8 @@
 
 package org.agnitas.util;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.agnitas.util.NetworkUtil.setHttpClientProxyFromSystem;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -41,10 +35,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.agnitas.emm.core.commons.filter.OriginUriFilter;
-import com.agnitas.json.JsonUtilities;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import net.sf.json.JSON;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.httpclient.HttpClient;
@@ -56,7 +55,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import static org.agnitas.util.NetworkUtil.setHttpClientProxyFromSystem;
+import com.agnitas.emm.core.commons.filter.OriginUriFilter;
+import com.agnitas.json.JsonUtilities;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import net.sf.json.JSON;
 
 public class HttpUtils {
 	public enum RequestMethod {
@@ -126,7 +129,7 @@ public class HttpUtils {
 
 			return httpClient.executeMethod(method);
 		} catch (IOException e) {
-			logger.error("Could not instantiate connection", e);
+			logger.warn("Could not instantiate connection");
 		}
 		return -1;
 	}
@@ -431,13 +434,6 @@ public class HttpUtils {
 		}
 	}
 
-	public static String escapeFileName(String filename) {
-		if (StringUtils.isEmpty(filename)) {
-			return "";
-		} else {
-			return filename.replaceAll("[?:\\*/<>|\"\\\\]", "_");
-		}
-	}
 
 	/**
 	 * Checks FTP/SFTP connection
@@ -608,15 +604,89 @@ public class HttpUtils {
 	}
 
 	public static void setDownloadFilenameHeader(HttpServletResponse response, String filename) {
-		String encodedFilename = escapeFileName(filename);
-		response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFilename + "\";");
+		setDownloadFilenameHeader(response, filename, "UTF-8");
+	}
+	public static void setDownloadFilenameHeader(HttpServletResponse response, String filename, String charset) {
+		response.setHeader(HttpHeaders.CONTENT_DISPOSITION, getContentDispositionAttachment(filename, charset));
+		response.setCharacterEncoding(charset);
 	}
 
-	public static String getContentDispositionHeaderContent(String filename) {
-		String encodedFilename = escapeFileName(filename);
-		return "attachment; filename=\"" + encodedFilename + "\";";
+	public static String getContentDispositionAttachment(String filename) {
+		return getContentDispositionAttachment(filename, "UTF-8");
 	}
-	
+
+	public static String getContentDispositionAttachment(String filename, String charset) {
+		String header = "attachment; ";
+
+		if ("US-ASCII".equalsIgnoreCase(charset)) {
+			header += "filename=\"" + escapeFileName(filename) + "\";";
+		} else {
+			String encodedFileName = "";
+			try {
+				encodedFileName = encodeFilename(filename.replaceAll("[\\s]", "_"), charset);
+			} catch (Exception e) {
+				logger.error("Cannot encode file name: " + filename, e);
+			}
+			header += "filename*=" + encodedFileName;
+		}
+
+		return header;
+	}
+
+	/**
+	 * Encode the given header field param as describe in RFC 5987.
+	 * @param filename the header field param
+	 * @return the encoded header field param
+	 * @see <a href="https://tools.ietf.org/html/rfc5987">RFC 5987</a>
+	 */
+	private static String encodeFilename(String filename, String charset) throws UnsupportedEncodingException {
+		if (StringUtils.isBlank(filename)) {
+			return "";
+		}
+		if ("US-ASCII".equalsIgnoreCase(charset)) {
+			logger.info("Does not require encoding for ASCII charset");
+			return filename;
+		}
+
+		if (!"UTF-8".equalsIgnoreCase(charset) && !"ISO-8859-1".equalsIgnoreCase(charset)) {
+			logger.error("Unsupported charset " + charset);
+			throw new UnsupportedEncodingException("Unsupported charset " + charset);
+		}
+
+		byte[] source = filename.getBytes(charset);
+		int len = source.length;
+		StringBuilder sb = new StringBuilder(len << 1);
+		sb.append(charset);
+		sb.append("''");
+		for (byte b : source) {
+			if (isRFC5987AttrChar(b)) {
+				sb.append((char) b);
+			}
+			else {
+				sb.append('%');
+				char hex1 = Character.toUpperCase(Character.forDigit((b >> 4) & 0xF, 16));
+				char hex2 = Character.toUpperCase(Character.forDigit(b & 0xF, 16));
+				sb.append(hex1);
+				sb.append(hex2);
+			}
+		}
+		return sb.toString();
+	}
+
+	private static boolean isRFC5987AttrChar(byte c) {
+		return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+				c == '!' || c == '#' || c == '$' || c == '&' || c == '+' || c == '-' || c == '.' ||
+				c == '^' || c == '_' || c == '`' || c == '|' || c == '~';
+	}
+
+	public static String escapeFileName(String filename) {
+		if (StringUtils.isEmpty(filename)) {
+			return "";
+		} else {
+			return filename.replaceAll("[?:;\\*/<>{}|\"'\\\\,\\s]", "_");
+		}
+	}
+
 	/**
 	 * Method that initialize http client
 	 *
@@ -635,4 +705,40 @@ public class HttpUtils {
 
         return httpClient;
     }
+	
+	public static String getBasicAuthenticationUsername(HttpServletRequest request) {
+		try {
+			String basicAuthorizationHeader = request.getHeader("Authorization"); // like: "Basic bXl1c2VybmFtZTpteXBhc3N3b3Jk"
+			if (StringUtils.isBlank(basicAuthorizationHeader) || !basicAuthorizationHeader.startsWith("Basic ")) {
+				return null;
+			} else {
+				String decodedAuthorization = new String(AgnUtils.decodeBase64(basicAuthorizationHeader.substring(6)), "UTF-8"); // like: "myusername:mypassword"
+				if (decodedAuthorization.contains(":")) {
+					return decodedAuthorization.substring(0, decodedAuthorization.indexOf(":"));
+				} else {
+					return decodedAuthorization;
+				}
+			}
+		} catch (UnsupportedEncodingException e) {
+			return null;
+		}
+	}
+	
+	public static String getBasicAuthenticationPassword(HttpServletRequest request) {
+		try {
+			String basicAuthorizationHeader = request.getHeader("Authorization"); // like: "Basic bXl1c2VybmFtZTpteXBhc3N3b3Jk"
+			if (StringUtils.isBlank(basicAuthorizationHeader) || !basicAuthorizationHeader.startsWith("Basic ")) {
+				return null;
+			} else {
+				String decodedAuthorization = new String(AgnUtils.decodeBase64(basicAuthorizationHeader.substring(6)), "UTF-8"); // like: "myusername:mypassword"
+				if (decodedAuthorization.contains(":")) {
+					return decodedAuthorization.substring(decodedAuthorization.indexOf(":") + 1);
+				} else {
+					return null;
+				}
+			}
+		} catch (UnsupportedEncodingException e) {
+			return null;
+		}
+	}
 }

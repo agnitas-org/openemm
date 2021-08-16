@@ -25,6 +25,7 @@ public final class MailingCreationOptions {
     private String textTemplateStub;
     private boolean generateTextVersion;
     private boolean imagesMigrationRequired = true;
+    private boolean isMobileView = false;
 
     private MailingCreationOptions() {}
 
@@ -56,6 +57,10 @@ public final class MailingCreationOptions {
         return imagesMigrationRequired;
     }
 
+    public boolean isMobileView() {
+        return isMobileView;
+    }
+
     @Override
 	public int hashCode() {
 		final int prime = 31;
@@ -63,7 +68,8 @@ public final class MailingCreationOptions {
 		result = prime * result + (alwaysCreateNew ? 1231 : 1237);
 		result = prime * result + (createdFromReleased ? 1231 : 1237);
 		result = prime * result + (generateTextVersion ? 1231 : 1237);
-		result = prime * result + (imagesMigrationRequired ? 1231 : 1237);
+        result = prime * result + (imagesMigrationRequired ? 1231 : 1237);
+        result = prime * result + (isMobileView ? 1231 : 1237);
 		result = prime * result + mailingListId;
 		result = prime * result + ((targetGroupExtension == null) ? 0 : targetGroupExtension.hashCode());
 		result = prime * result + ((textTemplateStub == null) ? 0 : textTemplateStub.hashCode());
@@ -81,7 +87,8 @@ public final class MailingCreationOptions {
                 options.createdFromReleased == createdFromReleased &&
                 StringUtils.equals(options.textTemplateStub, textTemplateStub) &&
                 options.generateTextVersion == generateTextVersion &&
-                options.imagesMigrationRequired == imagesMigrationRequired;
+                options.imagesMigrationRequired == imagesMigrationRequired &&
+                options.isMobileView == isMobileView;
         }
 
         return false;
@@ -97,6 +104,7 @@ public final class MailingCreationOptions {
             .append("textTemplateStub", textTemplateStub)
             .append("generateTextVersion", generateTextVersion)
             .append("imagesMigrationRequired", imagesMigrationRequired)
+            .append("isMobileView", isMobileView)
             .toString();
     }
 
@@ -137,6 +145,11 @@ public final class MailingCreationOptions {
 
         public Builder setImagesMigrationRequired(boolean imagesMigrationRequired) {
             options.imagesMigrationRequired = imagesMigrationRequired;
+            return this;
+        }
+
+        public Builder setMobileView(boolean isMobileView) {
+            options.isMobileView = isMobileView;
             return this;
         }
 

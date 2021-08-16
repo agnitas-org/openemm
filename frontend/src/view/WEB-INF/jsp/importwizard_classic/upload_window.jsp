@@ -2,7 +2,7 @@
 <%@page import="org.agnitas.util.importvalues.ImportModeAddAndUpdateHandler"%>
 <%@page import="org.agnitas.util.importvalues.ImportModeAddHandler"%>
 <%@ page language="java" contentType="text/html; charset=utf-8"
-         import="org.agnitas.util.*, org.agnitas.web.*, com.agnitas.web.*, java.util.*, org.agnitas.beans.*, org.agnitas.util.importvalues.ImportMode"
+         import="org.agnitas.util.*, org.agnitas.web.*, com.agnitas.web.*, java.util.*, org.agnitas.beans.*, com.agnitas.beans.*, org.agnitas.util.importvalues.ImportMode"
          errorPage="/error.do" %>
 <%@page import="com.agnitas.beans.ComAdmin"%>
 <%@page import="org.apache.commons.lang3.StringUtils"%>
@@ -35,7 +35,7 @@
     pageContext.setAttribute("time_key", timekey);
     Hashtable<String, String> my_map = null;
     if (pageContext.getSession().getAttribute("map") == null) {
-        my_map = new Hashtable<String, String>();
+        my_map = new Hashtable<>();
         pageContext.getSession().setAttribute("map", my_map);
     } else {
         my_map = (Hashtable<String, String>) pageContext.getSession().getAttribute("map");
@@ -270,7 +270,7 @@
             
 		<c:if test="${importIsDone}">
 			<div class="tile-footer">
-				<html:link page='<%= "/recipient.do?action=" + RecipientAction.ACTION_LIST %>' styleClass="btn btn-large btn-primary pull-right">
+				<html:link page='<%= "/recipient.do?action=" + RecipientAction.ACTION_LIST + "&latestDataSourceId=" + aForm.getDatasourceID() %>' styleClass="btn btn-large btn-primary pull-right">
 					<span><bean:message key="button.Finish"/></span>
 				</html:link>
 				<span class="clearfix"></span>

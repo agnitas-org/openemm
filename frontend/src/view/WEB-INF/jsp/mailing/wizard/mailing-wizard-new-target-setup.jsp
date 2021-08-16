@@ -39,9 +39,14 @@
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="1" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}" property="text" value="${shortname}"/>
-        <c:url var="backToWizardLink" value="/target.do">
-            <c:param name="action" value="${ACTION_BACK_TO_MAILINGWIZARD}"/>
-        </c:url>
+        <emm:HideByPermission token="targets.migration">
+            <c:url var="backToWizardLink" value="/target.do">
+                <c:param name="action" value="${ACTION_BACK_TO_MAILINGWIZARD}"/>
+            </c:url>
+        </emm:HideByPermission>
+        <emm:ShowByPermission token="targets.migration">
+            <c:url var="backToWizardLink" value="/mwSubject.do?action=subject"/>
+        </emm:ShowByPermission>
         <c:set target="${agnBreadcrumb}" property="url" value="${backToWizardLink}"/>
     </emm:instantiate>
 

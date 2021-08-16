@@ -25,6 +25,7 @@
 
 <c:set var="GENERIC_TYPE_DATE" value="<%= DbColumnType.GENERIC_TYPE_DATE %>"/>
 <c:set var="GENERIC_TYPE_DATETIME" value="<%= DbColumnType.GENERIC_TYPE_DATETIME %>"/>
+<c:set var="GENERIC_TYPE_VARCHAR" value="<%= DbColumnType.GENERIC_TYPE_VARCHAR %>"/>
 
 <c:set var="allowedValueDatePattern" value="<%= new SimpleDateFormat(DateUtilities.DD_MM_YYYY).toPattern() %>"/>
 <c:set var="columnValueDatePattern" value="<%= new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).toPattern() %>"/>
@@ -393,11 +394,11 @@
                                                             </c:if>
                                                         </agn:agnSelect>
                                                     </c:when>
-                                                    <c:when test="${_agnTbl_data_type == 'VARCHAR'}">
+                                                    <c:when test="${_agnTbl_data_type == GENERIC_TYPE_VARCHAR}">
                                                         <html:text property="${propName}" styleClass="form-control" maxlength="${_agnTbl_data_length}" readonly="${not isWritable}"/>
                                                     </c:when>
-                                                   <c:when test="${_agnTbl_column_name == 'DATASOURCE_ID' or _agnTbl_column_name == 'datasource_id'}">
-                                                       <c:set var="importExportUrl" value="${importexport/datasource/list.action}"/>
+                                                   <c:when test="${_agnTbl_column_name == 'DATASOURCE_ID' or _agnTbl_column_name == 'datasource_id' or _agnTbl_column_name == 'latest_datasource_id' or _agnTbl_column_name == 'LATEST_DATASOURCE_ID'}">
+                                                       <c:set var="importExportUrl" value="importexport/datasource/list.action"/>
                                                         <a href="${importExportUrl}"><html:text property="${propName}" styleClass="form-control" readonly="${not isWritable}"/></a>
                                                     </c:when>
                                                     <c:otherwise>
@@ -425,6 +426,7 @@
         <c:set var="statusesKeys" value='${["email", "fax", "post", "mms", "sms"]}' />
         <c:set var="ACTIVE_STATUS" value="<%= UserStatus.Active.getStatusCode() %>" />
         <c:set var="ADMIN_OUT_STATUS" value="<%= UserStatus.AdminOut.getStatusCode() %>" />
+        <c:set var="USER_OUT_STATUS" value="<%= UserStatus.UserOut.getStatusCode() %>" />
 
         <div class="col-md-6">
             <div class="tile">
@@ -516,7 +518,10 @@
 
                                     <c:set var="statusRemark" value="${mlBinding.userRemark}"/>
                                     <c:if test="${not empty mlBinding.referrer}">
-                                        <c:set var="statusRemark" value="${mlBinding.userRemark}Ref: ${emm:abbreviate(mlBinding.referrer, 15)}"/>
+                                        <c:set var="statusRemark" value="${mlBinding.userRemark} Ref: ${emm:abbreviate(mlBinding.referrer, 15)}"/>
+                                    </c:if>
+                                    <c:if test="${mlBinding.userStatus == USER_OUT_STATUS}">
+                                        <c:set var="statusRemark" value="${statusRemark}<br>Opt-Out-Mailing: ${mlBinding.exitMailingID}"/>
                                     </c:if>
 
                                     <c:if test="${fn:length(statusRemark) gt 0}">

@@ -18,11 +18,12 @@ import org.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
 import org.agnitas.emm.springws.security.authorities.EndpointAuthority;
 import org.apache.log4j.Logger;
 import org.springframework.ws.context.MessageContext;
-import org.springframework.ws.server.endpoint.MethodEndpoint;
 import org.springframework.ws.soap.SoapBody;
 import org.springframework.ws.soap.SoapHeaderElement;
 import org.springframework.ws.soap.SoapMessage;
 import org.springframework.ws.soap.server.SoapEndpointInterceptor;
+
+import com.agnitas.emm.springws.common.EndpointClassUtil;
 
 /**
  * Interceptor checking webservice permissions.
@@ -63,20 +64,12 @@ public final class PermissionCheckingEndpointInterceptor implements SoapEndpoint
 	}
 	
 	private static final String permissionFromEndpointInstance(final Object endpoint) {
-		if (endpoint instanceof MethodEndpoint) {
-			final MethodEndpoint methodEndpoint = (MethodEndpoint) endpoint;
-			
-			return permissionFromEndpointClass(methodEndpoint.getBean().getClass());
-		} else {
-			final Class<?> endpointClass = endpoint.getClass();
-			
-			return permissionFromEndpointClass(endpointClass);
-		}
+		return permissionFromEndpointClass(EndpointClassUtil.trueEndpointClass(endpoint));
 	}
 	
 	private static final String permissionFromEndpointClass(final Class<?> clazz) {
 		try {
-			final String permission = WebservicePermissionUtils.permissionTokenFromEndpointClass(clazz);
+			final String permission = EndpointClassUtil.endpointNameFromClass(clazz);
 			
 			if(LOGGER.isInfoEnabled()) {
 				LOGGER.info(String.format("Permission for endpoint class '%s' is '%s'", clazz.getCanonicalName(), permission));

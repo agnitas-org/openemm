@@ -46,8 +46,8 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.ComCompany;
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.ComCompanyImpl;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
@@ -382,8 +382,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		String sortColumn = sortCriterion;
 
 		boolean sortDirectionAscending = !"desc".equalsIgnoreCase(sortDirection) && !"descending".equalsIgnoreCase(sortDirection);
-
-		PaginatedListImpl<CompanyEntry> paginatedList = selectPaginatedList(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE (company_id = ? OR creator_company_id = ?) AND status != '" + CompanyStatus.DELETED.getDbValue() + "'", "company_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new CompanyEntryRowMapper(), companyID, companyID);
+		PaginatedListImpl<CompanyEntry> paginatedList;
+		
+		if (companyID == 1) {
+			paginatedList = selectPaginatedList(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE status != '" + CompanyStatus.DELETED.getDbValue() + "'", "company_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new CompanyEntryRowMapper());
+		} else {
+			paginatedList = selectPaginatedList(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE (company_id = ? OR creator_company_id = ?) AND status != '" + CompanyStatus.DELETED.getDbValue() + "'", "company_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new CompanyEntryRowMapper(), companyID, companyID);
+		}
 		paginatedList.setSortCriterion(sortCriterion);
 		return paginatedList;
 	}
@@ -400,7 +405,12 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	@Override
 	public List<CompanyEntry> getActiveOwnCompaniesLight(@VelocityCheck int companyId, boolean allowTransitionStatus) {
 		if (allowTransitionStatus) {
-			return select(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE status != '" + CompanyStatus.DELETED.getDbValue() + "' AND (company_id = ? OR creator_company_id = ?) ORDER BY LOWER(shortname)", new CompanyEntryRowMapper(), companyId, companyId);
+			if (companyId == 1) {
+				return select(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE status != '" + CompanyStatus.DELETED.getDbValue() + "' ORDER BY LOWER(shortname)", new CompanyEntryRowMapper());
+			} else {
+				return select(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE status != '" + CompanyStatus.DELETED.getDbValue() + "' AND (company_id = ? OR creator_company_id = ?) ORDER BY LOWER(shortname)", new CompanyEntryRowMapper(), companyId, companyId);
+			}
+			
 		} else {
 			return select(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND (company_id = ? OR creator_company_id = ?) ORDER BY LOWER(shortname)", new CompanyEntryRowMapper(), companyId, companyId);
 		}
@@ -414,7 +424,11 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	@Override
 	public List<ComCompany> getCreatedCompanies(@VelocityCheck int companyId) {
 		try {
-			return select(logger, "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE (creator_company_id = ? OR company_id = ?) AND status = '" + CompanyStatus.ACTIVE.getDbValue() + "' ORDER BY LOWER (shortname)", new ComCompany_RowMapper(), companyId, companyId);
+			if (companyId == 1) {
+				return select(logger, "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' ORDER BY LOWER (shortname)", new ComCompany_RowMapper());
+			} else {
+				return select(logger, "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE (creator_company_id = ? OR company_id = ?) AND status = '" + CompanyStatus.ACTIVE.getDbValue() + "' ORDER BY LOWER (shortname)", new ComCompany_RowMapper(), companyId, companyId);
+			}
 		} catch (Exception e) {
 			return new ArrayList<>();
 		}
@@ -462,7 +476,9 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					tablespaceClauseCustomerBindIndex = " TABLESPACE " + TABLESPACE_INDEX_CUSTOMER;
 				}
 				
-				initCustomerTables(newCompanyId);
+				if (!initCustomerTables(newCompanyId)) {
+					throw new Exception("Cannot create Customer tables for company id: " + newCompanyId);
+				}
 				
 				sql = "CREATE TABLE interval_track_" + newCompanyId + "_tbl (customer_id NUMBER NOT NULL, mailing_id NUMBER NOT NULL, send_date TIMESTAMP NOT NULL)" + tablespaceClauseCustomerTable;
 				executeWithRetry(logger, 0, 3, 120, sql);
@@ -803,7 +819,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		// Copy sample mailing templates
 		for (int sampleMailingID : mailingDao.getSampleMailingIDs()) {
 			int copiedMailingID = copyMailingService.copyMailing(1, sampleMailingID, newCompanyId, null, null);
-			ComMailing newMailing = mailingDao.getMailing(copiedMailingID, newCompanyId);
+			Mailing newMailing = mailingDao.getMailing(copiedMailingID, newCompanyId);
 			newMailing.setMailinglistID(mailinglistID);
 			
 			for (MailingComponent component : newMailing.getComponents().values()) {
@@ -1353,13 +1369,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	@Override
 	public void createCompanyPermission(int companyID, Permission permission, String comment) {
 		if (companyID >= 0  && !hasCompanyPermission(companyID, permission)) {
-			update(logger, "INSERT INTO company_permission_tbl (company_id, security_token, permission_name, description, creation_date) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)", companyID, permission.getTokenString(), permission.getTokenString(), comment);
+			update(logger, "INSERT INTO company_permission_tbl (company_id, permission_name, description, creation_date) VALUES (?, ?, ?, CURRENT_TIMESTAMP)", companyID, permission.getTokenString(), comment);
 		}
 	}
 
 	@Override
 	public boolean hasCompanyPermission(int companyID, Permission permission) {
-		return selectInt(logger, "SELECT COUNT(*) FROM company_permission_tbl WHERE (company_id = ? OR company_id = 0) AND security_token = ?", companyID, permission.getTokenString()) > 0;
+		return selectInt(logger, "SELECT COUNT(*) FROM company_permission_tbl WHERE (company_id = ? OR company_id = 0) AND permission_name = ?", companyID, permission.getTokenString()) > 0;
 	}
 
 	@Override
@@ -1372,7 +1388,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 			}
 			return returnSet;
 		} else {
-			List<String> result = select(logger, "SELECT DISTINCT security_token FROM company_permission_tbl WHERE company_id = ? OR company_id = 0", new StringRowMapper(), companyID);
+			List<String> result = select(logger, "SELECT DISTINCT permission_name FROM company_permission_tbl WHERE company_id = ? OR company_id = 0", new StringRowMapper(), companyID);
 			Set<Permission> returnSet = new HashSet<>();
 			for (String securityToken: result) {
 				Permission permission = Permission.getPermissionByToken(securityToken);
@@ -1386,7 +1402,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	@Override
 	public void deleteCompanyPermission(int companyID, Permission permission) {
-		update(logger, "DELETE FROM company_permission_tbl WHERE company_id = ? AND security_token = ?", companyID, permission.getTokenString());
+		update(logger, "DELETE FROM company_permission_tbl WHERE company_id = ? AND permission_name = ?", companyID, permission.getTokenString());
 	}
 	
 	@Override
@@ -1419,9 +1435,9 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		if (unAllowedPremiumFeatures != null && unAllowedPremiumFeatures.size() > 0) {
 			Object[] parameters = unAllowedPremiumFeatures.toArray(new String[unAllowedPremiumFeatures.size()]);
 			
-			List<String> foundUnAllowedPremiumFeatures_Admin = select(logger, "SELECT security_token FROM company_permission_tbl WHERE security_token IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", new StringRowMapper(), parameters);
+			List<String> foundUnAllowedPremiumFeatures_Admin = select(logger, "SELECT permission_name FROM company_permission_tbl WHERE permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", new StringRowMapper(), parameters);
 			
-			int touchedLines1 = update(logger, "DELETE FROM company_permission_tbl WHERE security_token IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", parameters);
+			int touchedLines1 = update(logger, "DELETE FROM company_permission_tbl WHERE permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", parameters);
 			if (touchedLines1 > 0) {
 				logger.error("Deleted unallowed premium features for admins: " + touchedLines1);
 				logger.error(StringUtils.join(foundUnAllowedPremiumFeatures_Admin, ", "));

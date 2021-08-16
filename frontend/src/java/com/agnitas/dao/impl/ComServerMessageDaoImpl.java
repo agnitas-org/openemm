@@ -39,10 +39,10 @@ public class ComServerMessageDaoImpl extends BaseDaoImpl implements ComServerMes
     @Override
     public List<ServerCommand> getCommand(Date since, Date till, ServerCommand.Server server, ServerCommand.Command command) {
     	if (since == null) {
-	        String query = "SELECT * FROM server_command_tbl WHERE execution_date <= ? AND (server_name = ? OR server_name = 'ALL') AND command = ?";
+	        String query = "SELECT command, server_name, execution_date, admin_id, description FROM server_command_tbl WHERE execution_date <= ? AND (server_name = ? OR server_name = 'ALL') AND command = ?";
 	        return select(logger, query, new ServerCommandRowMapper(), till, server.toString(), command.toString());
     	} else {
-	        String query = "SELECT * FROM server_command_tbl WHERE (? < execution_date AND execution_date <= ?) AND (server_name = ? OR server_name = 'ALL') AND command = ?";
+	        String query = "SELECT command, server_name, execution_date, admin_id, description FROM server_command_tbl WHERE (? < execution_date AND execution_date <= ?) AND (server_name = ? OR server_name = 'ALL') AND command = ?";
             return select(logger, query, new ServerCommandRowMapper(), since, till, server.toString(), command.toString());
     	}
     }

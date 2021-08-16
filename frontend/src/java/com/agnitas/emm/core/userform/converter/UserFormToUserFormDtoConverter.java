@@ -37,11 +37,13 @@ public class UserFormToUserFormDtoConverter implements Converter<UserForm, UserF
 		successForm.setUseUrl(userForm.isSuccessUseUrl());
 		successForm.setStartActionId(userForm.getStartActionID());
 		successForm.setFinalActionId(userForm.getEndActionID());
+		successForm.setFormBuilderJson(userForm.getSuccessFormBuilderJson());
 		
 		ResultSettings errorForm = dto.getErrorSettings();
 		errorForm.setTemplate(userForm.getErrorTemplate());
 		errorForm.setUrl(userForm.getErrorUrl());
 		errorForm.setUseUrl(userForm.isErrorUseUrl());
+		errorForm.setFormBuilderJson(userForm.getErrorFormBuilderJson());
 		
 		return dto;
 	}

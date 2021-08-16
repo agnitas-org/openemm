@@ -85,7 +85,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
             return false;
         }
 
-        Pattern compile = Pattern.compile("[\"?*)(+]");
+        Pattern compile = Pattern.compile("[\"?*)(+%]");
         return compile.matcher(searchQuery).find();
     }
 
@@ -107,7 +107,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
                 checkMatchingIndex(i, matchingIndex, QUOTES_ERROR);
                 token = Arrays.stream(Arrays.copyOfRange(tokens, i + 1, matchingIndex))
                         .collect(Collectors.joining(StringUtils.EMPTY));
-                operandStack.push(DOUBLE_QUOTES + token + DOUBLE_QUOTES);
+                operandStack.push(DOUBLE_QUOTES + reservedLiteralsConfig.escapeWord(token) + DOUBLE_QUOTES);
                 i = matchingIndex;
             } else if (operators.containsKey(token)) {
                 if (WHITESPACE.equals(token) &&
@@ -117,6 +117,8 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
                 }
                 operatorStack.push(operators.get(token));
             } else {
+                token = reservedLiteralsConfig.isReservedWord(token) ?
+                        reservedLiteralsConfig.escapeWord(token) : token;
                 operandStack.push(token);
             }
         }
@@ -172,15 +174,15 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
     }
 
     private String escapeDatabaseSpecificSymbols(String query) {
-        List<Character> reservedSymbols = reservedLiteralsConfig.getSpecialSymbols();
         StringBuilder escapedQuery = new StringBuilder();
         char symbol;
         for (int i = 0; i < query.length(); i++) {
             symbol = query.charAt(i);
-            if (reservedSymbols.contains(symbol)) {
-                escapedQuery.append('\\');
+            if (reservedLiteralsConfig.isReservedCharacter(symbol)) {
+                escapedQuery.append(reservedLiteralsConfig.escapeCharacter(symbol));
+            } else {
+                escapedQuery.append(symbol);
             }
-            escapedQuery.append(symbol);
         }
         return escapedQuery.toString();
     }
