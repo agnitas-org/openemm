@@ -38,16 +38,13 @@ export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
 verbose=1
 quiet=0
-version="20.10.000.126"
+version="21.04.000.118"
 licence="`$BASE/bin/config-query licence`"
 system="`uname -s`"
 host="`uname -n | cut -d. -f1`"
 optbase="$BASE/opt"
 softwarebase="$optbase"
 pathstrip="$BASE/bin/pathstrip"
-if [ ! -x "$pathstrip" ]; then
-	pathstrip="echo"
-fi
 # .. and for java ..
 LC_ALL=C
 NLS_LANG=american_america.UTF8
@@ -558,7 +555,7 @@ else
 	LD_LIBRARY_PATH="$BASE/lib"
 fi
 export LD_LIBRARY_PATH
-LD_LIBRARY_PATH="`$pathstrip \"$LD_LIBRARY_PATH\"`"
+LD_LIBRARY_PATH="`$pathstrip -s \"$LD_LIBRARY_PATH\"`"
 export LD_LIBRARY_PATH
 #
 if [ "$PATH" ] ; then
@@ -572,7 +569,7 @@ fi
 if [ -d "$BASE/lbin" ]; then
 	PATH="$BASE/lbin:$PATH"
 fi
-PATH="`$pathstrip \"$PATH\"`"
+PATH="`$pathstrip -s \"$PATH\"`"
 export PATH
 #
 if [ "$CLASSPATH" ] ; then
@@ -589,8 +586,9 @@ if [ -d "$BASE/plugins" ]; then
 	PYTHONPATH="$BASE/plugins:$PYTHONPATH"
 fi
 PYTHONPATH="$BASE/scripts:$PYTHONPATH"
-PYTHONPATH="`$pathstrip \"$PYTHONPATH\"`"
+PYTHONPATH="`$pathstrip -s \"$PYTHONPATH\"`"
 export PYTHONPATH
 #
 export VERSION="$version"
 export LICENCE="$licence"
+py3required

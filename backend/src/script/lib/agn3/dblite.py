@@ -19,11 +19,12 @@ from	._db.sqlite import Layout, SQLite3
 __all__ = ['DBLite', 'DB', 'Layout']
 #
 class DBLite (DB):
-	__slots__ = ['_path', '_layout']
-	def __init__ (self, path: str, layout: Optional[List[Layout]] = None) -> None:
+	__slots__ = ['_path', '_layout', '_lock']
+	def __init__ (self, path: str, layout: Optional[List[Layout]] = None, lock: bool = False) -> None:
 		super ().__init__ ()
 		self._path = path
 		self._layout = layout
+		self._lock = lock
 	
 	def new (self) -> Core:
 		return SQLite3 (
@@ -31,5 +32,7 @@ class DBLite (DB):
 			layout = self._layout,
 			extended_types = True,
 			extended_rows = True,
-			extended_functions = True
+			extended_functions = True,
+			lock_database = self._lock,
+			wait_for_lock = self._lock
 		)

@@ -13,16 +13,18 @@
 from	__future__ import annotations
 import	logging, argparse
 import	threading, socket
-from	typing import Optional, Protocol
+from	typing import Any, Optional, Protocol
 from	typing import Dict, List, Tuple
 from	typing import cast
 from	agn3.config import Config
 from	agn3.db import DB
-from	agn3.definitions import user, syscfg
+from	agn3.definitions import licence, user, syscfg
+from	agn3.emm.companyconfig import CompanyConfig
 from	agn3.ignore import Ignore
 from	agn3.process import Processentry, Processtable
 from	agn3.rpc import XMLRPC, XMLRPCClient
 from	agn3.runtime import Runtime
+from	agn3.stream import Stream
 from	agn3.tools import atoi
 #
 logger = logging.getLogger (__name__)
@@ -215,23 +217,72 @@ class Callback (XMLRPC.RObject):
 
 	def is_onhold (self, mailing_id: int) -> bool:
 		logger.debug ('is_onhold')
-		with DBAccess () as dba:
-			companyID = None
-			for rq in dba.queryc ('SELECT company_id, deleted FROM mailing_tbl WHERE mailing_id = :mailing_id', {'mailing_id': mailing_id}):
-				companyID = rq.company_id
-				if bool (rq.deleted):
-					return True
-			#
-			if companyID is not None:
-				for rq in dba.queryc ('SELECT company_id, mailing_id, priority FROM serverprio_tbl WHERE company_id = :companyID OR mailing_id = :mailing_id',{'companyID': companyID, 'mailing_id': mailing_id}):
-					if rq.company_id:
-						if rq.company_id == companyID and (not rq.mailing_id or rq.mailing_id == mailing_id):
-							return True
-					elif rq.mailing_id and rq.mailing_id == mailing_id:
-						return True
-		return False
+		ms = self.__mailing_status (mailing_id, False)
+		company = ms.get ('company')
+		return (
+			ms.get ('deleted', False)
+			or
+			ms.get ('onhold', False)
+			or
+			not ms.get ('exists', True)
+			or
+			(company is not None and company.get ('status', '') != 'active')
+		)
 	isOnhold = is_onhold
 
+	def mailing_status (self, mailing_id: int, use_company_info: bool = False) -> Dict[str, Any]:
+		logger.debug ('mailing_status')
+		return self.__mailing_status (mailing_id, use_company_info)
+
+	def __mailing_status (self, mailing_id: int, use_company_info: bool) -> Dict[str, Any]:
+		rc: Dict[str, Any] = {
+			'licence_id': licence,
+			'mailing_id': mailing_id
+		}
+		with DBAccess () as dba:
+			company_id = None
+			exists = False
+			deleted = False
+			rq = dba.querys ('SELECT company_id, deleted FROM mailing_tbl WHERE mailing_id = :mailing_id', {'mailing_id': mailing_id})
+			if rq is not None:
+				company_id = rq.company_id
+				exists = True
+				if bool (rq.deleted):
+					deleted = True
+			else:
+				for table in ['maildrop_status_tbl', 'mailing_account_tbl']:
+					for row in dba.query (f'SELECT distinct company_id FROM {table} WHERE mailing_id = :mailing_id', {'mailing_id': mailing_id}):
+						if row.company_id is not None:
+							company_id = row.company_id
+							break
+					if company_id is not None:
+						break
+			if company_id is not None:
+				rc['company_id'] = company_id
+				rq = dba.querys ('SELECT company_id, shortname, rdir_domain, mailloop_domain, status, mailtracking, mailerset FROM company_tbl WHERE company_id = :company_id', {'company_id': company_id})
+				if rq is not None:
+					rc['company'] = dict (rq._asdict ())
+			rc['exists'] = exists
+			rc['deleted'] = deleted
+			#
+			onhold = False
+			if company_id is not None:
+				for rq in dba.queryc ('SELECT company_id, mailing_id, priority FROM serverprio_tbl WHERE company_id = :company_id OR mailing_id = :mailing_id',{'company_id': company_id, 'mailing_id': mailing_id}):
+					if rq.company_id:
+						if rq.company_id == company_id and (not rq.mailing_id or rq.mailing_id == mailing_id):
+							onhold = True
+					elif rq.mailing_id and rq.mailing_id == mailing_id:
+						onhold = True
+			rc['onhold'] = onhold
+			if use_company_info:
+				ccfg = CompanyConfig (db = dba)
+				ccfg.read ()
+				rc['cinfo'] = (Stream (ccfg.scan_company_info (company_id = company_id))
+					.map (lambda cv: (cv.name, cv.value))
+					.dict ()
+				)
+		return rc
+		
 class Main (Runtime):
 	__slots__ = ['port']
 	def supports (self, option: str) -> bool:
@@ -265,3 +316,4 @@ class Main (Runtime):
 
 if __name__ == '__main__':
 	Main.main ()
+

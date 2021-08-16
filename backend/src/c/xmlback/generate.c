@@ -20,6 +20,7 @@
 # include	<dirent.h>
 # include	<sys/wait.h>
 # include	<sysexits.h>
+# include	<opendkim/dkim.h>
 # include	"xmlback.h"
 
 typedef struct sendmail	sendmail_t;
@@ -172,6 +173,9 @@ create_bcc_head (buffer_t *target, blockmail_t *blockmail, const char *bcc, int 
 					buffer_format (target, "V%d-", nr) &&
 					buffer_appendsn (target, cur + sizeof (H_MESSAGE_ID) - 1, len - (sizeof (H_MESSAGE_ID) - 1));
 				found_message_id = true;
+# define	H_DKIM_SIGNATURE	"H" DKIM_SIGNHEADER ": "
+			} else if (! strncmp (cur, H_DKIM_SIGNATURE, sizeof (H_DKIM_SIGNATURE) - 1)) {
+				ignore_current = true;
 			} else {
 				rc = buffer_appendsn (target, cur, len);
 				if (rc && (! found_to) && (! strncmp (cur, H_TO, sizeof (H_TO) - 1))) {
@@ -1135,6 +1139,8 @@ sendmail_owrite_spool (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receiver
 				if (! create_bcc_head (bcc_head, blockmail, rec -> bcc[n], n))
 					log_out (blockmail -> lg, LV_ERROR, "Unable to create temp. bcc header for %s", rec -> bcc[n]);
 				else {
+					if (rec -> dkim)
+						sign_mail (blockmail, bcc_head);
 					sendmail_write_spoolfile (blockmail, s, spool, false, 0, bcc_head, nl, nllen);
 				}
 			buffer_free (bcc_head);

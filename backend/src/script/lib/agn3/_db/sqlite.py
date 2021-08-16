@@ -33,9 +33,6 @@ these database specific methods are available here:
 	- validate: performs an integrity check of the database
 """
 		__slots__: List[str] = []
-		def __init__ (self, db: Core, autocommit: bool) -> None:
-			super ().__init__ (db, autocommit, False)
-
 		modes = {
 			'fast':	[
 				'PRAGMA cache_size = 65536',

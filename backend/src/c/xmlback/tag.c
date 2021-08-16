@@ -69,6 +69,75 @@ proc_alloc_function (tag_t *t, blockmail_t *blockmail) /*{{{*/
 	return p;
 }/*}}}*/
 
+typedef struct { /*{{{*/
+	xmlBufferPtr	orig;
+	xmlBufferPtr	mfrom;
+	/*}}}*/
+}	procmfrom_t;
+static void *
+procmfrom_free (void *pd) /*{{{*/
+{
+	procmfrom_t	*pmf = (procmfrom_t *) pd;
+	
+	if (pmf) {
+		if (pmf -> mfrom == pmf -> orig)
+			pmf -> mfrom = NULL;
+		if (pmf -> orig)
+			xmlBufferFree (pmf -> orig);
+		if (pmf -> mfrom)
+			xmlBufferFree (pmf -> mfrom);
+		free (pmf);
+	}
+	return NULL;
+}/*}}}*/
+static procmfrom_t *
+procmfrom_alloc (xmlBufferPtr orig) /*{{{*/
+{
+	procmfrom_t	*pmf;
+	
+	if (pmf = (procmfrom_t *) malloc (sizeof (procmfrom_t))) {
+		pmf -> orig = xmlBufferCreateSize (xmlBufferLength (orig));
+		pmf -> mfrom = NULL;
+		if (pmf -> orig) {
+			xmlBufferAdd (pmf -> orig, xmlBufferContent (orig), xmlBufferLength (orig));
+		} else
+			pmf = procmfrom_free (pmf);
+	}
+	return pmf;
+}/*}}}*/
+static void
+procmfrom_proc (void *pd, tag_t *t, blockmail_t *blockmail, receiver_t *rec) /*{{{*/
+{
+	procmfrom_t	*pmf = (procmfrom_t *) pd;
+	
+	if (pmf -> orig) {
+		xmlBufferPtr	use;
+		
+		if (! pmf -> mfrom) {
+			if (blockmail -> dkim && blockmail -> mfrom) {
+				if (pmf -> mfrom = xmlBufferCreateSize (strlen (blockmail -> mfrom))) {
+					xmlBufferCCat (pmf -> mfrom, blockmail -> mfrom);
+				}
+			}
+			if (! pmf -> mfrom)
+				pmf -> mfrom = pmf -> orig;
+		}
+		use = rec -> dkim ? pmf -> mfrom : pmf -> orig;
+		xmlBufferAdd (t -> value, xmlBufferContent (use), xmlBufferLength (use));
+	}
+}/*}}}*/
+static proc_t *
+proc_alloc_mfrom (tag_t *t, blockmail_t *blockmail) /*{{{*/
+{
+	proc_t	*p;
+	void	*pd;
+	
+	p = NULL;
+	if (pd = procmfrom_alloc (t -> value))
+		p = proc_alloc (pd, procmfrom_free, procmfrom_proc);
+	return p;
+}/*}}}*/
+
 static struct { /*{{{*/
 	const char	*tname;		/* tagname to be parsed		*/
 	/*}}}*/
@@ -158,12 +227,10 @@ xmlSkip (xmlChar **ptr, int *len) /*{{{*/
 	}
 }/*}}}*/
 static int
-mkRFCdate (char *dbuf, size_t dlen) /*{{{*/
+mkRFCdate (time_t now, char *dbuf, size_t dlen) /*{{{*/
 {
-	time_t          now;
 	struct tm       *tt;
 
-	time (& now);
 	if (tt = gmtime (& now)) {
 		const char	*weekday[] = {
 			"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
@@ -394,16 +461,14 @@ tag_parse (tag_t *t, blockmail_t *blockmail) /*{{{*/
 						} else if (! strcmp (cur -> val, "RFCDATE")) {
 							char            dbuf[128];
 
-							if (mkRFCdate (dbuf, sizeof (dbuf))) {
+							if (mkRFCdate (blockmail_now (blockmail), dbuf, sizeof (dbuf))) {
 								xmlBufferEmpty (t -> value);
 								xmlBufferCCat (t -> value, dbuf);
 							}
 						} else if (! strcmp (cur -> val, "EPOCH")) {
-							time_t		now;
 							char		dbuf[64];
 							
-							time (& now);
-							sprintf (dbuf, "%ld", (long) now);
+							sprintf (dbuf, "%ld", (long) blockmail_now (blockmail));
 							xmlBufferEmpty (t -> value);
 							xmlBufferCCat (t -> value, dbuf);
 						}
@@ -422,6 +487,10 @@ tag_parse (tag_t *t, blockmail_t *blockmail) /*{{{*/
 								if (! user)
 									user = cuserid (NULL);
 								if (! user)
+									user = getenv ("USER");
+								if (! user)
+									user = getenv ("LOGNAME");
+								if (! user)
 									user = "nobody";
 								xmlBufferEmpty (t -> value);
 								xmlBufferCCat (t -> value, user);
@@ -432,6 +501,8 @@ tag_parse (tag_t *t, blockmail_t *blockmail) /*{{{*/
 								xmlBufferEmpty (t -> value);
 								xmlBufferCCat (t -> value, mfrom);
 							}
+							if (! strcmp (cur -> val, "RPATH"))
+								t -> proc = proc_alloc_mfrom (t, blockmail);
 						}
 					}
 				break;

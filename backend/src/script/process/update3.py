@@ -12,16 +12,17 @@
 #
 from	__future__ import annotations
 import	logging, argparse
-import	os, time, re, errno
+import	os, time, re, errno, pickle
 from	collections import defaultdict
 from	functools import partial
 from	datetime import datetime
 from	dataclasses import dataclass, field
+from	types import TracebackType
 from	typing import Any, Callable, Final, Optional, Union
 from	typing import DefaultDict, Dict, Iterator, List, Pattern, Set, TextIO, Tuple, Type
 from	typing import cast
 from	agn3.cache import Cache
-from	agn3.db import DB, Row
+from	agn3.db import DBIgnore, DB, Row
 from	agn3.dbm import DBM
 from	agn3.definitions import base, licence, syscfg
 from	agn3.email import EMail
@@ -37,7 +38,7 @@ from	agn3.plugin import Plugin, LoggingManager
 from	agn3.runtime import Runtime
 from	agn3.stream import Stream
 from	agn3.template import Template
-from	agn3.tools import atob
+from	agn3.tools import atob, atoi
 from	agn3.tracker import Key, Tracker
 #
 logger = logging.getLogger (__name__)
@@ -46,13 +47,14 @@ class UpdatePlugin (Plugin): #{{{
 	plugin_version = '2.0'
 #}}}
 class Duplicate: #{{{
-	__slots__ = ['name', 'expiration', 'path', 'dbs']
+	__slots__ = ['name', 'expiration', 'path', 'dbs', 'write_count']
 	def __init__ (self, name: str, expiration: int) -> None:
 		self.name = name
 		self.expiration = expiration
 		self.path = os.path.join (base, 'var', 'run', f'duplicate-{name}')
 		create_path (self.path)
 		self.dbs: List[DBM] = []
+		self.write_count = 0
 	
 	def __contains__ (self, line: str) -> bool:
 		key = line.encode ('UTF-8')
@@ -60,7 +62,14 @@ class Duplicate: #{{{
 			if key in db:
 				return True
 		self.dbs[0][key] = b''
+		self.write_count += 1
+		if self.write_count % 1000 == 0:
+			self.dbs[0].sync ()
 		return False
+	
+	def __delitem__ (self, line: str) -> None:
+		with Ignore (KeyError):
+			del self.dbs[0][line.encode ('UTF-8')]
 	
 	def open (self) -> bool:
 		self.close ()
@@ -79,20 +88,22 @@ class Duplicate: #{{{
 				if filename in filenames:
 					if filename == current:
 						current_exists = True
-						mode = 'w'
+						mode = 'wf'
 					else:
-						mode = 'r'
+						mode = 'ru'
 					self.dbs.append (DBM (path, mode))
 				else:
 					logger.info ('Removing outdated file %s' % path)
 					os.unlink (path)
 		if not current_exists:
 			path = os.path.join (self.path, current)
-			self.dbs.insert (0, DBM (path, 'c'))
+			self.dbs.insert (0, DBM (path, 'cf'))
 		return bool (self.dbs)
 	
 	def close (self) -> None:
-		Stream (self.dbs).each (lambda d: d.close ())
+		if self.dbs:
+			self.dbs[0].sync ()
+			Stream (self.dbs).each (lambda d: d.close ())
 		self.dbs.clear ()
 #}}}
 class Log: #{{{
@@ -260,7 +271,7 @@ class Update: #{{{
 				count = self.__fill_and_count_log ()
 				if count > 0:
 					if self.update_prepare ():
-						with DB () as db:
+						with DBIgnore (), DB () as db:
 							if not self.update (db, count, is_active):
 								logger.info ('Update failed')
 							else:
@@ -323,6 +334,8 @@ class Update: #{{{
 										if not self.save_to_fail (line):
 											do_remove = False
 										rc = False
+										if self.duplicate is not None:
+											del self.duplicate[line]
 									else:
 										if not self.save_to_log (line):
 											do_remove = False
@@ -355,8 +368,9 @@ class Detail: #{{{
 	HardbounceOther = 510
 	HardbounceReceiver = 511
 	HardbounceSystem = 512
+	HardbounceNotEncrypted = 513
 	Softbounces = (SoftbounceOther, SoftbounceReceiver, SoftbounceMailbox)
-	Hardbounces = (HardbounceOther, HardbounceReceiver, HardbounceSystem)
+	Hardbounces = (HardbounceOther, HardbounceReceiver, HardbounceSystem, HardbounceNotEncrypted)
 	names = {
 		Ignore:			'Ignore',
 		Internal:		'Internal',
@@ -366,14 +380,15 @@ class Detail: #{{{
 		SoftbounceMailbox:	'SB-MBox',
 		HardbounceOther:	'HB-Other',
 		HardbounceReceiver: 	'HB-Recv',
-		HardbounceSystem:	'HB-Sys'
+		HardbounceSystem:	'HB-Sys',
+		HardbounceNotEncrypted:	'HB-Crypt'
 	}
 #}}}
 class UpdateBounce (Update): #{{{
 	__slots__ = [
 		'mailing_map',
 		'igcount', 'sucount', 'sbcount', 'hbcount', 'blcount', 'rvcount', 'ccount',
-		'translate', 'cache', 'succeeded',
+		'translate', 'delayed_processing', 'cache', 'succeeded',
 		'has_mailtrack', 'has_mailtrack_last_read'
 	]
 	name = 'bounce'
@@ -421,9 +436,13 @@ class UpdateBounce (Update): #{{{
 			def __init__ (self, data: str, debug: bool) -> None:
 				try:
 					self.data = Parameter (data).data
+					self.valid = True
 				except Exception as e:
 					logger.warning ('Failed to parse input data %r: %s' % (data, e))
+					if debug:
+						print (f'Failed to parse input data {data!r}: {e}')
 					self.data = {}
+					self.valid = False
 				self.debug = debug
 				self.checks: Dict[str, Pattern[str]] = {}
 				flags: Union[int, re.RegexFlag]
@@ -465,14 +484,14 @@ class UpdateBounce (Update): #{{{
 										flags |= re.IGNORECASE
 							else:
 								pattern = value
+						self.checks[key] = re.compile (pattern, flags)
 						if self.debug:
 							print ('\tTranslate: %s="%s" -> "%s"%s' % (key, value, pattern, ' (ignorecase)' if flags & re.IGNORECASE else ''))
-						self.checks[key] = re.compile (pattern, flags)
 					except re.error as e:
 						logger.warning ('Failed to parse regex in %s="%s": %s' % (key, value, e))
-
-			def valid (self) -> bool:
-				return len (self.checks) > 0
+						if self.debug:
+							print (f'\tfailed to compile pattern {key}="{value}": {e}')
+						self.valid = False
 
 			def match (self, infos: UpdateBounce.Info) -> bool:
 				for (key, pattern) in [(_k.lower (), _v) for (_k, _v) in self.checks.items ()]:
@@ -509,7 +528,7 @@ class UpdateBounce (Update): #{{{
 				if self.debug:
 					print ('Pattern for company_id=%r for DSN=%r leading to Detail=%r using pattern %r' % (company_id, dsn, detail, pattern_expr))
 				pattern: Optional[UpdateBounce.Translate.Pattern] = UpdateBounce.Translate.Pattern (pattern_expr, self.debug)
-				if pattern is None or not pattern.valid ():
+				if pattern is None or not pattern.valid:
 					logger.error ('Invalid pattern "%s" for company %d found' % (pattern_expr, company_id))
 					return
 			else:
@@ -533,15 +552,96 @@ class UpdateBounce (Update): #{{{
 				self.add (row.rule_id, row.company_id, row.dsn, row.detail, row.pattern)
 
 		def trans (self, company: int, dsn: int, infos: UpdateBounce.Info) -> Tuple[int, int]:
+			def match_pattern (e: UpdateBounce.Translate.Element) -> bool:
+				return e.pattern is not None and e.pattern.match (infos)
+			def match_default (e: UpdateBounce.Translate.Element) -> bool:
+				return e.pattern is None
 			for tab in [self.tab[_k] for _k in (company, 0) if _k in self.tab] + [self.default_tab]:
-				nr = dsn
-				while nr > 0:
-					if nr in tab:
-						for element in tab[nr]:
-							if element.pattern is None or element.pattern.match (infos):
-								return (element.rule_id, element.detail)
-					nr //= 10
+				for predicate in [match_pattern, match_default]:
+					nr = dsn
+					while nr > 0:
+						if nr in tab:
+							for element in tab[nr]:
+								if predicate (element):
+									return (element.rule_id, element.detail)
+						nr //= 10
 			return (0, Detail.Ignore)
+	#}}}
+	class DelayedProcessing: #{{{
+		__slots__ = ['to_process', 'processing', 'capacity']
+		path = os.path.join (base, 'var', 'run', 'delayed-processing.persist')
+		def __init__ (self) -> None:
+			self.to_process: Dict[Tuple[int, int, int], Tuple[int, str]] = {}
+			if os.path.isfile (self.path):
+				with open (self.path, 'rb') as fd:
+					self.to_process = pickle.load (fd)
+					logger.info ('Read {count:,d} delayed bounces from {path}'.format (
+						count = len (self.to_process),
+						path = self.path
+					))
+			self.processing = False
+			self.capacity = len (self.to_process)
+
+		def __iter__ (self) -> Iterator[Tuple[Tuple[int, int, int], str]]:
+			expire = int (time.time ()) - 24 * 60 * 60
+			expire_list = (Stream (self.to_process.items ())
+				.filter (lambda kv: bool (kv[1][0] < expire))
+				.map (lambda kv: (kv[0], kv[1][1]))
+				.list ()
+			)
+			for element in expire_list:
+				yield element
+		
+		def __enter__ (self) -> UpdateBounce.DelayedProcessing:
+			if self.processing:
+				raise error ('already processing delayed records')
+			self.processing = True
+			return self
+		
+		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+			self.processing = False
+			return None
+		
+		def __delitem__ (self, key: Tuple[int, int, int]) -> None:
+			with Ignore (KeyError):
+				del self.to_process[key]
+		
+		def __len__ (self) -> int:
+			return len (self.to_process)
+
+		def done (self) -> None:
+			logger.info ('save {count} non processed delayed bounces, had a maximum of {capacity} bounces'.format (
+				count = len (self.to_process),
+				capacity = self.capacity
+			))
+			if self.to_process:
+				with open (self.path, 'wb') as fd:
+					pickle.dump (self.to_process, fd)
+					logger.info ('Saved {count:,d} delayed bounces to {path}'.format (
+						count = len (self.to_process),
+						path = self.path
+					))
+			elif os.path.isfile (self.path):
+				os.unlink (self.path)
+				logger.info (f'Removed {self.path} due to no more delayed bounces to process')
+		
+		def add (self, now: int, line: str, mailing_id: int, media: int, customer_id: int) -> None:
+			key = self.make_key (mailing_id, media, customer_id)
+			if key not in self.to_process:
+				self.to_process[key] = (now, line)
+				self.capacity = max (self.capacity, len (self.to_process))
+				logger.debug (f'Store for later processing: {line} (now {self.capacity:,d} entries in store)')
+			else:
+				logger.debug (f'Already stored an entry for {key}: {self.to_process[key]}, skip {line}')
+		
+		def drop (self, mailing_id: int, media: int, customer_id: int) -> None:
+			key = self.make_key (mailing_id, media, customer_id)
+			if key in self.to_process:
+				logger.debug (f'Remove stored entry for {key}: {self.to_process[key]}')
+				del self[key]
+		
+		def make_key (self, mailing_id: int, media: int, customer_id: int) -> Tuple[int, int, int]:
+			return (mailing_id, media, customer_id)
 	#}}}
 	def __init__ (self) -> None:
 		super ().__init__ ()
@@ -555,11 +655,16 @@ class UpdateBounce (Update): #{{{
 		self.rvcount = 0
 		self.ccount = 0
 		self.translate = UpdateBounce.Translate ()
+		self.delayed_processing = UpdateBounce.DelayedProcessing ()
 		self.cache: Cache[Key, Dict[str, Any]] = Cache (limit = 65536)
 		self.succeeded: DefaultDict[int, int] = defaultdict (int)
 		self.has_mailtrack: Dict[int, bool] = {}
 		self.has_mailtrack_last_read = 0
-
+	
+	def done (self) -> None:
+		self.delayed_processing.done ()
+		super ().done ()
+	
 	dsnparse = re.compile ('^([0-9])\\.([0-9])\\.([0-9]+)$')
 	user_unknown = re.compile ('user unknown|unknown user', re.IGNORECASE)
 	line_parser = Lineparser (
@@ -605,7 +710,7 @@ class UpdateBounce (Update): #{{{
 				rc.mailloop_remark = infos['mailloop']
 				if rc.mailloop_remark is not None:
 					if UpdateBounce.user_unknown.search (rc.mailloop_remark) is not None:
-						rc.code = 511
+						rc.code = Detail.HardbounceReceiver
 				if rc.code % 100 == 99:
 					if rc.code // 100 == 5:
 						rc.detail = Detail.HardbounceOther
@@ -694,6 +799,19 @@ class UpdateBounce (Update): #{{{
 				db.update ('UPDATE mailing_tbl SET delivered = delivered + :success WHERE mailing_id = :mailing_id', {'success': self.succeeded[mailing_id], 'mailing_id': mailing_id})
 			db.sync ()
 		logger.info ('Found %d hardbounces, %d softbounces (%d written), %d successes, %d blacklisted, %d revoked, %d ignored in %d lines' % (self.hbcount, self.sbcount, (self.sbcount - self.ccount), self.sucount, self.blcount, self.rvcount, self.igcount, self.lineno))
+		if self.delayed_processing:
+			with self.delayed_processing:
+				count = 0
+				success = 0
+				for (key, line) in self.delayed_processing:
+					if self.update_line (db, line):
+						success += 1
+					del self.delayed_processing[key]
+					count += 1
+					if count % 1000 == 0:
+						db.sync ()
+				db.sync ()
+				logger.info (f'Apply {count:,d} delayed processed bounces (where {success:,d} succeeded)')
 		return True
 
 	def update_line (self, db: DB, line: str) -> bool:
@@ -720,14 +838,22 @@ class UpdateBounce (Update): #{{{
 			if breakdown.detail < 0:
 				logger.warning ('Got line with invalid detail (%d): %s' % (breakdown.detail, line))
 				return False
+			#
 			now = int (time.time ())
+			if breakdown.detail in Detail.Hardbounces and breakdown.code // 100 != 5:
+				if not self.delayed_processing.processing:
+					self.delayed_processing.add (now, line, record.mailing_id, record.media, record.customer_id)
+					return True
+				breakdown.timestamp = datetime.now ()
+			#
 			if breakdown.detail == Detail.Success:
+				self.delayed_processing.drop (record.mailing_id, record.media, record.customer_id)
 				self.succeeded[record.mailing_id] += 1
-				logging = self.__log_success (db, company_id, now)
+				log_to_database = self.__log_success (db, company_id, now)
 			else:
-				logging = True
+				log_to_database = True
 			rc = True
-			if logging:
+			if log_to_database:
 				if breakdown.detail == Detail.Success:
 					data = {
 						'customer': record.customer_id,
@@ -1050,8 +1176,10 @@ class UpdateAccount (Update): #{{{
 							minfo.mail_sent = True
 					for r in db.query ('SELECT sum(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = :mid AND status_field = \'W\'', { 'mid': minfo.mailing_id }):
 						if r[0] == minfo.created_mails:
-							if db.update ('UPDATE mailing_tbl SET work_status = \'mailing.status.sent\' WHERE mailing_id = :mid', { 'mid': minfo.mailing_id }, commit = True) == 1:
+							if (count := db.update ('UPDATE mailing_tbl SET work_status = \'mailing.status.sent\' WHERE mailing_id = :mid', { 'mid': minfo.mailing_id }, commit = True)) == 1:
 								logger.info ('Changed work status for mailing_id %d to sent' % minfo.mailing_id)
+							elif count == 0:
+								logger.warning (f'Failed to change work status for mailing_id {minfo.mailing_id}: the mailing seems to be removed')
 							else:
 								logger.error ('Failed to change work status for mailing_id %d to sent: %s' % (minfo.mailing_id, db.last_error ()))
 							minfo.active = False
@@ -1132,8 +1260,36 @@ class UpdateAccount (Update): #{{{
 			self.failed += 1
 		return False
 #}}}
-class UpdateDeliver (Update): #{{{
-	__slots__ = ['existing_deliver_tables', 'mailings_to_companies', 'count']
+class UpdateWithCache (Update): #{{{
+	__slots__ = ['_cache', '_mailings_to_company']
+	def __init__ (self, limit: int = 0, timeout: str = '30m') -> None:
+		super ().__init__ ()
+		self._cache: Cache[str, Any] = Cache (limit = limit, timeout = timeout)
+		self._mailings_to_company: Dict[int, Optional[int]] = {}
+
+	def get (self, key: str, method: Callable[[], Any]) -> Any:
+		try:
+			return self._cache[key]
+		except KeyError:
+			value = self._cache[key] = method ()
+			return value
+			
+	def mailing_to_company (self, db: DB, mailing_id: int) -> Optional[int]:
+		try:
+			return self._mailings_to_company[mailing_id]
+		except KeyError:
+			with db.request () as cursor:
+				rq = cursor.querys (
+					'SELECT company_id '
+					'FROM mailing_tbl '
+					'WHERE mailing_id = :mailing_id',
+					{'mailing_id': mailing_id}
+				)
+				self._mailings_to_company[mailing_id] = rq.company_id if rq is not None else None
+			return self._mailings_to_company[mailing_id]
+#}}}
+class UpdateDeliver (UpdateWithCache): #{{{
+	__slots__ = ['existing_deliver_tables', 'count']
 	name = 'deliver'
 	path = os.path.join (base, 'log', 'deliver.log')
 	line_parser = Lineparser (
@@ -1147,7 +1303,6 @@ class UpdateDeliver (Update): #{{{
 	def __init__ (self) -> None:
 		super ().__init__ ()
 		self.existing_deliver_tables: Set[str] = set ()
-		self.mailings_to_companies: Dict[int, int] = {}
 		self.count = 0
 
 	def update_start (self, db: DB) -> bool:
@@ -1164,17 +1319,10 @@ class UpdateDeliver (Update): #{{{
 			if record.licence_id != licence:
 				logger.debug (f'{record.licence_id}: ignore foreign licence id (own is {licence})')
 			else:
-				try:
-					company_id = self.mailings_to_companies[record.mailing_id]
-				except KeyError:
-					rq = db.querys (
-						'SELECT company_id FROM mailing_tbl WHERE mailing_id = :mailing_id',
-						{'mailing_id': record.mailing_id}
-					)
-					company_id = self.mailings_to_companies[record.mailing_id] = rq.company_id if rq is not None else None
-					if company_id is None:
-						logger.info ('mailing {mailing_id}: not found in databsae'.format (mailing_id = record.mailing_id))
-				if company_id is not None:
+				company_id = self.mailing_to_company (db, record.mailing_id)
+				if company_id is None:
+					logger.info ('mailing {mailing_id}: not found in databsae'.format (mailing_id = record.mailing_id))
+				else:
 					table = 'deliver_{company_id}_tbl'.format (company_id = company_id)
 					if table not in self.existing_deliver_tables:
 						if not db.exists (table):
@@ -1204,6 +1352,7 @@ class UpdateDeliver (Update): #{{{
 									')'
 									.format (table = table)
 								)
+							db.setup_table_optimizer (table)
 						self.existing_deliver_tables.add (table)
 					self.count += db.update (db.qselect (
 						oracle = (
@@ -1233,12 +1382,13 @@ class UpdateDeliver (Update): #{{{
 			return True
 #}}}
 class UpdateMailtrack (Update): #{{{
-	__slots__ = ['mailtrack_process_table', 'companies', 'count', 'insert_statement']
+	__slots__ = ['mailtrack_process_table', 'companies', 'count', 'insert_statement', 'max_count', 'max_count_last_updated']
 	name = 'mailtrack'
 	path = os.path.join (base, 'log', 'mailtrack.log')
 	mailtrack_process_table_default = 'mailtrack_process_tbl'
 	mailtrack_config_key: Final[str] = 'mailtrack-extended'
 	mailtrack_bulk_update_config_key: Final[str] = f'{mailtrack_config_key}:bulk-update'
+	mailtrack_bulk_update_chunk_config_key: Final[str] = f'{mailtrack_config_key}:bulk-update-chunk'
 	line_parser = Lineparser (
 		lambda a: a.split (';', 6),
 		'id',
@@ -1266,7 +1416,9 @@ class UpdateMailtrack (Update): #{{{
 			'       (:company_id, :mailing_id, :maildrop_status_id, :customer_id, :timestamp)'
 			.format (table = self.mailtrack_process_table)
 		)
-		with DB () as db:
+		self.max_count = 0
+		self.max_count_last_updated = 0
+		with DBIgnore (), DB () as db:
 			if not db.exists (self.mailtrack_process_table):
 				tablespace = db.find_tablespace ('DATA_TEMP')
 				tablespace_expr = (' TABLESPACE %s' % tablespace) if tablespace else ''
@@ -1318,6 +1470,16 @@ class UpdateMailtrack (Update): #{{{
 
 	def update_end (self, db: DB) -> bool:
 		if self.companies:
+			#
+			# enforce optimizer each new day and when the number of records had increased
+			# compared to maximum records of the current day
+			today = datetime.now ().toordinal ()
+			if self.count > self.max_count or today != self.max_count_last_updated:
+				db.setup_table_optimizer (self.mailtrack_process_table, estimate_percent = 10)
+				self.max_count = self.count
+				self.max_count_last_updated = today
+				logger.info (f'optimizer started for {self.count:,d} entries in {self.mailtrack_process_table}')
+			#
 			ccfg = CompanyConfig (db = db)
 			ccfg.read ()
 			for (company_id, counter) in sorted (self.companies.items ()):
@@ -1332,10 +1494,12 @@ class UpdateMailtrack (Update): #{{{
 						continue
 				#
 				bulk_update: bool = ccfg.get_company_info (UpdateMailtrack.mailtrack_bulk_update_config_key, company_id = company_id, default = False, convert = atob)
+				bulk_update_chunk: int = ccfg.get_company_info (UpdateMailtrack.mailtrack_bulk_update_chunk_config_key, company_id = company_id, default = 0, convert = atoi)
 				logger.info (f'{company_id}: processing {counter} update mailtracking')
 				self.__update_mailtracking (db, company_id, counter)
-				logger.info (f'{company_id}: processing profile updates (bulk is {bulk_update})')
-				self.__update_profile (db, company_id, bulk_update, counter)
+				logger.info (f'{company_id}: processing profile updates (bulk is {bulk_update}, chunk is {bulk_update_chunk})')
+				with db.logging (lambda m: logger.info (f'DB: {m}')):
+					self.__update_profile (db, company_id, bulk_update, bulk_update_chunk, counter)
 				db.sync ()
 				logger.info (f'{company_id}: done')
 		logger.info ('Added mailtracking for {count} companies'.format (count = len (self.companies)))
@@ -1384,7 +1548,8 @@ class UpdateMailtrack (Update): #{{{
 						{
 							'company_id': company_id
 						},
-						commit = True
+						commit = True,
+						sync_and_retry = True
 					)
 					if count == counter.count:
 						logger.debug (f'{company_id}: inserted {count:,d} in {mailtrack_table} as expected')
@@ -1395,7 +1560,7 @@ class UpdateMailtrack (Update): #{{{
 		else:
 			logger.debug ('%d: mailtracking is disabled' % company_id)
 
-	def __update_profile (self, db: DB, company_id: int, bulk_update: bool, counter: UpdateMailtrack.CompanyCounter) -> None:
+	def __update_profile (self, db: DB, company_id: int, bulk_update: bool, bulk_update_chunk: int, counter: UpdateMailtrack.CompanyCounter) -> None:
 		customer_table = 'customer_{company_id}_tbl'.format (company_id = company_id)
 		lastsend_date = 'lastsend_date'
 		if not db.exists (customer_table):
@@ -1408,7 +1573,7 @@ class UpdateMailtrack (Update): #{{{
 			logger.info (f'{company_id}: update for {lastsend_date} in {customer_table} started')
 			count = 0
 			if bulk_update:
-				count = db.update (db.qselect (
+				query = db.qselect (
 					oracle = (
 						f'UPDATE {customer_table} cust '
 						f'SET cust.{lastsend_date} = '
@@ -1420,7 +1585,21 @@ class UpdateMailtrack (Update): #{{{
 						f'ON (cust.customer_id = temp.customer_id AND temp.company_id = {company_id} AND (cust.{lastsend_date} IS NULL OR cust.{lastsend_date} < temp.timestamp)) '
 						f'SET cust.{lastsend_date} = temp.timestamp'
 					)
-				), sync_and_retry = True)
+				)
+				if bulk_update_chunk > 0:
+					count = 0
+					query += db.qselect (
+						oracle = f' AND rownum <= {bulk_update_chunk}',
+						mysql = f' LIMIT {bulk_update_chunk}'
+					)
+					while True:
+						chunk_count = db.update (query, commit = True, sync_and_retry = True)
+						if chunk_count > 0:
+							count += chunk_count
+						else:
+							break
+				else:
+					count = db.update (query, commit = True, sync_and_retry = True)
 			else:
 				query = (
 					'UPDATE {table} '
@@ -1429,7 +1608,7 @@ class UpdateMailtrack (Update): #{{{
 					.format (table = customer_table, lastsend_date = lastsend_date)
 				)
 				with db.request () as cursor:
-					for (row_count, row) in enumerate (db.query (
+					for (row_count, row) in enumerate (db.queryc (
 						'SELECT customer_id, timestamp '
 						'FROM {table} '
 						'WHERE company_id = :company_id'
@@ -1551,12 +1730,6 @@ class Main (Runtime):
 	def supports (self, option: str) -> bool:
 		return option != 'dryrun'
 
-	def prepare (self) -> None:
-		if self.single:
-			self.ctx.watchdog = False
-		else:
-			self.ctx.watchdog = True
-			
 	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
 		parser.add_argument (
 			'-S', '--single', action = 'store_true',
@@ -1576,6 +1749,12 @@ class Main (Runtime):
 			self.ctx.background = False
 			self.ctx.watchdog = False
 
+	def prepare (self) -> None:
+		if self.single:
+			self.ctx.watchdog = False
+		else:
+			self.ctx.watchdog = True
+			
 	def start_update (self, update_class: Type[Update]) -> bool:
 		with self.title (update_class.name), log (update_class.name):
 			upd = update_class ()

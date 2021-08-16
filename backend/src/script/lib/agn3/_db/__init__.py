@@ -12,8 +12,8 @@
 from	itertools import chain
 from	enum import Enum
 from	.types import Driver
-from	. import mysql, oracle, sqlite
+from	. import mysql, mariadb, oracle, sqlite
 #
 __all__ = ['Drivers']
 #
-Drivers = Enum ('Drivers', ((_v.name, _v) for (_n, _v) in chain (*(_m.__dict__.items () for _m in (mysql, oracle, sqlite))) if type (_v) is Driver))
+Drivers = Enum ('Drivers', ((_v.name, _v) for (_n, _v) in chain (*(_m.__dict__.items () for _m in (mysql, mariadb, oracle, sqlite))) if type (_v) is Driver))

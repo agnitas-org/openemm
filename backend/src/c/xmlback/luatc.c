@@ -14,10 +14,116 @@
 # include	<sys/types.h>
 # include	<sys/stat.h>
 # include	<sys/time.h>
+# include	<regex.h>
 # include	"tflua.c"
 
 # define	F_MAIN		"main"
 
+typedef struct codeblock	codeblock_t;
+struct codeblock { /*{{{*/
+	char		*condition;
+	char		*code;
+	int		length;
+	codeblock_t	*next;
+	/*}}}*/
+};
+static codeblock_t *
+codeblock_free (codeblock_t *cb) /*{{{*/
+{
+	if (cb) {
+		if (cb -> condition)
+			free (cb -> condition);
+		if (cb -> code)
+			free (cb -> code);
+		free (cb);
+	}
+	return NULL;
+}/*}}}*/
+static codeblock_t *
+codeblock_free_all (codeblock_t *cb) /*{{{*/
+{
+	codeblock_t	*tmp;
+	
+	while (tmp = cb) {
+		cb = cb -> next;
+		codeblock_free (tmp);
+	}
+	return NULL;
+}/*}}}*/
+static codeblock_t *
+codeblock_alloc (char *condition, const char *code, int length) /*{{{*/
+{
+	codeblock_t	*cb;
+	
+	if (cb = (codeblock_t *) malloc (sizeof (codeblock_t))) {
+		cb -> condition = condition;
+		cb -> next = NULL;
+		if (cb -> code = malloc (length + 1)) {
+			if (length > 0)
+				memcpy (cb -> code, code, length);
+			cb -> code[length] = '\0';
+			cb -> length = length;
+		} else
+			cb = codeblock_free (cb);
+	}
+	return cb;
+}/*}}}*/
+static codeblock_t *
+split_code (const char *buffer) /*{{{*/
+{
+	codeblock_t	*root, *previous, *current;
+	regex_t	re;
+
+	root = previous = NULL;
+	if (regcomp (& re, "^.*#<(.*)>#$", REG_EXTENDED | REG_NEWLINE) == 0) {
+		const char	*ptr;
+		regmatch_t	match[2];
+		char		*condition;
+		
+		condition = NULL;
+		for (ptr = buffer; ptr; ) {
+			if (regexec (& re, ptr, 2, match, 0) == 0) {
+				current = codeblock_alloc (condition, ptr, match[0].rm_so);
+				if (condition = malloc (match[1].rm_eo - match[1].rm_so + 1)) {
+					int	state;
+					int	pos;
+					char	*target;
+					
+					for (state = 0, pos = match[1].rm_so, target = condition; pos < match[1].rm_eo; ++pos) {
+						if (state == 0) {
+							if (isspace (ptr[pos]))
+								continue;
+							state = 1;
+						}
+						if (state == 1) {
+							*target++ = ptr[pos];
+						}
+					}
+					while ((target > condition) && isspace (*(target - 1)))
+						--target;
+					*target = '\0';
+				}
+				ptr += match[0].rm_eo;
+				if (*ptr == '\n')
+					++ptr;
+			} else {
+				current = codeblock_alloc (condition, ptr, strlen (ptr));
+				ptr = NULL;
+			}
+			if (! current) {
+				fprintf (stderr, "Failed to allocated code block: %m\n");
+				exit (1);
+			}
+			if (previous)
+				previous -> next = current;
+			else
+				root = current;
+			previous = current;
+		}
+	}
+	return root;
+}/*}}}*/
+	
 static char *
 read_file (const char *fname, size_t *length) /*{{{*/
 {
@@ -184,11 +290,12 @@ do_unittest (iflua_t *il, bool_t quiet, int benchmark) /*{{{*/
 	return rc;
 }/*}}}*/
 static bool_t
-validate (const char *fname, char *code, size_t length, bool_t quiet, bool_t postproc, bool_t unittest, int benchmark) /*{{{*/
+validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t postproc, bool_t unittest, int benchmark) /*{{{*/
 {
 	bool_t		rc;
 	log_t		*lg;
 	blockmail_t	*blockmail;
+	codeblock_t	*run;
 	receiver_t	*r;
 
 	rc = false;
@@ -243,45 +350,54 @@ validate (const char *fname, char *code, size_t length, bool_t quiet, bool_t pos
 				if (cur -> var[0] == '_')
 					string_map_addss (blockmail -> smap, cur -> var + 1, cur -> val);
 			}
-			if (r = receiver_alloc (blockmail, 0)) {
-				r -> customer_id = 100;
-				r -> user_type = 'W';
-				if (postproc) {
-					fprintf (stderr, "Postprocessing not available for %s\n", fname);
-				} else {
-					iflua_t		*il;
+			for (run = cb; run; run = run ->next) {
+				char	id[1024];
+				
+				if (run -> condition)
+					snprintf (id, sizeof (id) - 1, "%s - %s", fname, run -> condition);
+				else
+					strcpy (id, fname);
+				rc = false;
+				if (r = receiver_alloc (blockmail, 0)) {
+					r -> customer_id = 100;
+					r -> user_type = 'W';
+					if (postproc) {
+						fprintf (stderr, "Postprocessing not available for %s\n", id);
+					} else {
+						iflua_t		*il;
 
-					if (il = iflua_alloc (blockmail)) {
-						il -> rec = r;
-						alua_setup_function (il -> lua, NULL, "fileread", l_fileread, il);
-						if (quiet)
-							alua_setup_function (il -> lua, NULL, "print", l_silent, NULL);
-						if (alua_load (il -> lua, fname, code, length)) {
-							if (unittest)
-								rc = do_unittest (il, quiet, benchmark);
-							else {
-								rc = true;
-								lua_getglobal (il -> lua, F_MAIN);
-								if (lua_isfunction (il -> lua, -1)) {
-									if (lua_pcall (il -> lua, 0, 0, 0) != 0) {
-										fprintf (stderr, "Failed to execute function \"" F_MAIN "\"\n");
-										fprintf (stderr, "*** %s\n", lua_tostring (il -> lua, -1));
-										rc = false;
-									}
-								} else
-									lua_pop (il -> lua, 1);
+						if (il = iflua_alloc (blockmail)) {
+							il -> rec = r;
+							alua_setup_function (il -> lua, NULL, "fileread", l_fileread, il);
+							if (quiet)
+								alua_setup_function (il -> lua, NULL, "print", l_silent, NULL);
+							if (alua_load (il -> lua, id, run -> code, run -> length)) {
+								if (unittest)
+									rc = do_unittest (il, quiet, benchmark);
+								else {
+									rc = true;
+									lua_getglobal (il -> lua, F_MAIN);
+									if (lua_isfunction (il -> lua, -1)) {
+										if (lua_pcall (il -> lua, 0, 0, 0) != 0) {
+											fprintf (stderr, "Failed to execute function \"" F_MAIN "\"\n");
+											fprintf (stderr, "*** %s\n", lua_tostring (il -> lua, -1));
+											rc = false;
+										}
+									} else
+										lua_pop (il -> lua, 1);
+								}
+							} else {
+								fprintf (stderr, "Failed to execute code for %s\n", id);
+								fprintf (stderr, "*** %s\n", lua_tostring (il -> lua, -1));
 							}
-						} else {
-							fprintf (stderr, "Failed to execute code for %s\n", fname);
-							fprintf (stderr, "*** %s\n", lua_tostring (il -> lua, -1));
-						}
-						iflua_free (il);
-					} else
-						fprintf (stderr, "Failed to setup interpreter interface for %s\n", fname);
-				}
-				receiver_free (r);
-			} else
-				fprintf (stderr, "Failed to setup receiver structure for %s\n", fname);
+							iflua_free (il);
+						} else
+							fprintf (stderr, "Failed to setup interpreter interface for %s\n", id);
+					}
+					receiver_free (r);
+				} else
+					fprintf (stderr, "Failed to setup receiver structure for %s\n", id);
+			}
 			blockmail_free (blockmail);
 		} else
 			fprintf (stderr, "Failed to setup blockmail structure for %s\n", fname);
@@ -337,8 +453,16 @@ main (int argc, char **argv) /*{{{*/
 		size_t	length;
 		
 		if (buf = read_file (argv[n], & length)) {
-			if (! validate (argv[n], buf, length, quiet, postproc, unittest, benchmark))
+			codeblock_t	*cb;
+			
+			if (cb = split_code (buf)) {
+				if (! validate (argv[n], cb, quiet, postproc, unittest, benchmark))
+					rc = 1;
+				codeblock_free_all (cb);
+			} else {
+				fprintf (stderr, "Failed to split code for %s\n", argv[n]);
 				rc = 1;
+			}
 			free (buf);
 		} else
 			rc = 1;

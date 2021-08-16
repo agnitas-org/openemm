@@ -99,6 +99,7 @@ systemconfig_alloc (const char *fname) /*{{{*/
 		c -> e = 0;
 		c -> count = 0;
 		c -> size = 0;
+		c -> statics = NULL;
 		c -> scratch = NULL;
 		if (env) {
 			if (! (c -> buf = strdup (env)))
@@ -191,8 +192,7 @@ parse_plain (config_t *c) /*{{{*/
 								;
 							while (*p1)
 								if (*p1 == '\n') {
-									*p2++ = ' ';
-									p1++;
+									*p2++ = *p1++;
 									while (isspace (*p1))
 										++p1;
 								} else if (p1 != p2)

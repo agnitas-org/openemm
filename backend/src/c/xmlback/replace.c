@@ -8,6 +8,7 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
+# include	<ctype.h>
 # include	"xmlback.h"
 
 static bool_t
@@ -86,6 +87,23 @@ tp_compare (const void *ap, const void *bp) /*{{{*/
 	}
 	return diff;
 }/*}}}*/
+static bool_t
+is_empty (xmlBuffer *buffer) /*{{{*/
+{
+	const xmlChar	*ptr = xmlBufferContent (buffer);
+	int		length = xmlBufferLength (buffer);
+	int		clen;
+	
+	while (length > 0) {
+		clen = xmlCharLength (*ptr);
+		if ((clen != 1) || (! isspace (*ptr)))
+			break;
+		++ptr;
+		--length;
+	}
+	return length == 0 ? true : false;
+}/*}}}*/
+	
 bool_t
 replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block, 
 	      int level, bool_t code_urls,
@@ -105,6 +123,7 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 	int		n;
 	tag_t		*tag;
 	protect_t	*proot, *pprev, *ptmp;
+	bool_t		clear_output;
 
 	st = true;
 	record = rec -> rvdata -> cur;
@@ -130,6 +149,7 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 	start = 0;
 	proot = NULL;
 	pprev = NULL;
+	clear_output = false;
 	end = xmlBufferLength (block -> content);
 	content = xmlBufferContent (block -> content);
 	xmlBufferEmpty (block -> in);
@@ -218,6 +238,12 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 												st = false;
 										} else
 											ptmp = NULL;
+										if ((sp -> type == TP_DYNAMICVALUE) && is_empty (use -> in)) {
+											/*
+											 * agnDVALUE is empty, so clear out the whole [agnDYN] ... [/agnDYN] block
+											 */
+											clear_output = true;
+										}
 										if (replace)
 											individual_replace (replace, block -> in, xmlBufferContent (use -> in), xmlBufferLength (use -> in));
 										else
@@ -295,6 +321,10 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 	if (st && code_urls)
 		st = modify_urls (blockmail, rec, block, proot, ishtml, record);
 	protect_free_all (proot);
+	if (blockmail -> clear_empty_dyn_block && clear_output) {
+		xmlBufferEmpty (block -> in);
+		dynused = 0;
+	}
 	if ((level == 0) && (dyncount > 0) && (dynused == 0)) {
 		/* have hit one empty text block */
 		if (rec -> media && rec -> media -> empty) {

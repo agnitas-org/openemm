@@ -1,0 +1,57 @@
+######################################################################################################################################################################################################################################################################
+##                                                                                                                                                                                                                                                                  ##
+##                                                                                                                                                                                                                                                                  ##
+##        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   ##
+##                                                                                                                                                                                                                                                                  ##
+##        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    ##
+##        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           ##
+##        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            ##
+##                                                                                                                                                                                                                                                                  ##
+######################################################################################################################################################################################################################################################################
+diff -ur opendkim-2.10.3-orig/libopendkim/dkim.c opendkim-2.10.3/libopendkim/dkim.c
+--- opendkim-2.10.3-orig/libopendkim/dkim.c	2015-05-12 20:43:09.000000000 +0200
++++ opendkim-2.10.3/libopendkim/dkim.c	2017-07-13 15:45:08.550181308 +0200
+@@ -29,9 +29,6 @@
+ #include <string.h>
+ #include <limits.h>
+ #include <unistd.h>
+-#ifndef USE_GNUTLS
+-# include <pthread.h>
+-#endif /* ! USE_GNUTLS */
+ #include <resolv.h>
+ #ifdef USE_TRE
+ # ifdef TRE_PRE_080
+@@ -4187,19 +4184,14 @@
+ **  	None.
+ */
+ 
+-static pthread_mutex_t openssl_lock = PTHREAD_MUTEX_INITIALIZER;
+ static unsigned openssl_refcount = 0;
+ 
+ static void
+ dkim_init_openssl(void)
+ {
+-	pthread_mutex_lock(&openssl_lock);
+-
+ 	if (openssl_refcount == 0)
+ 		OpenSSL_add_all_algorithms();
+ 	openssl_refcount++;
+-
+-	pthread_mutex_unlock(&openssl_lock);
+ }
+ 
+ /*
+@@ -4217,13 +4209,9 @@
+ {
+ 	assert(openssl_refcount > 0);
+ 
+-	pthread_mutex_lock(&openssl_lock);
+-
+ 	openssl_refcount--;
+ 	if (openssl_refcount == 0)
+ 		EVP_cleanup();
+-
+-	pthread_mutex_unlock(&openssl_lock);
+ }
+ #endif /* ! USE_GNUTLS */
+ 

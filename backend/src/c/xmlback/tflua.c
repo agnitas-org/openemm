@@ -593,7 +593,7 @@ static void
 iflua_push_context (iflua_t *il) /*{{{*/
 {
 	lua_getfield (il -> lua, LUA_REGISTRYINDEX, ID_CTX);
-	if (il -> last_customer_id != il -> rec -> customer_id) {
+	if ((il -> last_customer_id != il -> rec -> customer_id) || (il -> rec -> customer_id == 0)) {
 		char	scratch[2];
 
 		setifield (il -> rec -> customer_id, "customer_id");
@@ -740,8 +740,13 @@ tf_lua_proc (void *ilp, const char *func, tag_t *tag, blockmail_t *blockmail, re
 			alua_date_t	*date;
 			
 			if (date = alua_todate (il -> lua, -1)) {
-				if (strftime (scratch, sizeof (scratch) - 1, "%c", & date -> tt) > 0)
+				if (strftime (scratch, sizeof (scratch) - 1, "%c", & date -> tt) > 0) {
 					result = scratch;
+				} else {
+					result = "failed to format date";
+				}
+			} else {
+				result = "no parseable date";
 			}
 		} else
 			result = lua_tostring (il -> lua, -1);

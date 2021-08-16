@@ -12,21 +12,83 @@
 # include	<stdlib.h>
 # include	<string.h>
 # include	<unistd.h>
+# include	<pwd.h>
 
-static void
-usage (const char *pgm) /*{{{*/
+static int
+match_directory_prefix (const char *prefix, int prefix_length, const char *path)
 {
-	fprintf (stderr, "Usage: %s <path-expression>\n", pgm);
-}/*}}}*/
-int
-main (int argc, char **argv) /*{{{*/
-{
-	int	n;
-	int	rc;
-	char	*orig, *target;
+	int	path_length = strlen (path);
 	
-	while ((n = getopt (argc, argv, "?h")) != -1)
+	return (path_length >= prefix_length) && (! strncmp (prefix, path, prefix_length)) && ((prefix_length == path_length) || (path[prefix_length] == '/'));
+}
+static void
+sort_elements (char **elements, int count)
+{
+	const char	*home;
+	struct passwd	*pwd;
+	const char	*patterns[2];
+	int		start;
+	int		n, m, o;
+
+	if ((pwd = getpwuid (getuid ())) && pwd -> pw_dir)
+		home = pwd -> pw_dir;
+	else
+		home = getenv ("HOME");
+	patterns[0] = home;
+	patterns[1] = "/opt";
+	for (o = 0, start = 0; o < sizeof (patterns) / sizeof (patterns[0]); ++o) {
+		if (patterns[o] && patterns[o][0]) {
+			const char	*pattern = patterns[o];
+			int		pattern_length = strlen (pattern);
+					
+			for (n = start; n < count; ++n) {
+				if (! match_directory_prefix (pattern, pattern_length, elements[n])) {
+					for (m = n + 1; m < count; ++m)
+						if (match_directory_prefix (pattern, pattern_length, elements[m]))
+							break;
+					if (m < count) {
+						char	*save = elements[m];
+								
+						for (; m >= n; --m) {
+							elements[m] = elements[m - 1];
+						}
+						elements[n] = save;
+					} else {
+						start = n + 1;
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+static void
+usage (const char *pgm)
+{
+	fprintf (stderr, "Usage: %s [-c] [-n] [-s] <path-expression>\n", pgm);
+}
+int
+main (int argc, char **argv)
+{
+	int		n;
+	int		rc;
+	char		*orig, *target;
+	int		classic, newline, sort;
+	
+	classic = 0;
+	newline = 0;
+	sort = 0;
+	while ((n = getopt (argc, argv, "cns?h")) != -1)
 		switch (n) {
+		case 'c':
+			classic = 1;
+			break;
+		case 'n':
+			newline = 1;
+			break;
+		case 's':
+			sort = 1;
+			break;
 		case '?':
 		case 'h':
 		default:
@@ -51,15 +113,32 @@ main (int argc, char **argv) /*{{{*/
 				if (ptr = strchr (ptr, ':'))
 					*ptr++ = '\0';
 			}
-			for (n = count - 1; n > 0; --n) {
-				for (m = n - 1; m >= 0; --m)
-					if (! strcmp (elements[n], elements[m]))
-						break;
-				if (m >= 0) {
-					for (m = n; m < count - 1; ++m)
-						elements[m] = elements[m + 1];
-					--count;
+			if (classic) {
+				for (n = count - 1; n > 0; --n) {
+					for (m = n - 1; m >= 0; --m)
+						if (! strcmp (elements[n], elements[m]))
+							break;
+					if (m >= 0) {
+						for (m = n; m < count - 1; ++m)
+							elements[m] = elements[m + 1];
+						--count;
+					}
 				}
+			} else {
+				for (n = 0; n < count - 1; ) {
+					for (m = n + 1; m < count; ++m)
+						if (! strcmp (elements[n], elements[m]))
+							break;
+					if (m < count) {
+						for (m = n; m < count - 1; ++m)
+							elements[m] = elements[m + 1];
+						--count;
+					} else
+						++n;
+				}
+			}
+			if (sort) {
+				sort_elements (elements, count);
 			}
 			for (ptr = target, n = 0; n < count; ++n) {
 				if (ptr != target)
@@ -69,6 +148,8 @@ main (int argc, char **argv) /*{{{*/
 					++ptr;
 			}
 			write (1, target, strlen (target));
+			if (newline)
+				write (1, "\n", 1);
 			rc = 0;
 			free (elements);
 		}
@@ -76,4 +157,4 @@ main (int argc, char **argv) /*{{{*/
 		free (orig);
 	}
 	return rc;
-}/*}}}*/
+}

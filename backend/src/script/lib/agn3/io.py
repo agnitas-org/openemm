@@ -15,6 +15,7 @@ import	csv, codecs, hashlib
 from	collections import namedtuple
 from	dataclasses import dataclass
 from	functools import partial
+from	io import StringIO
 from	types import TracebackType
 from	typing import Any, Callable, Optional, Union
 from	typing import Dict, IO, Iterator, List, Pattern, Set, TextIO, Tuple, Type
@@ -22,6 +23,7 @@ from	typing import cast
 from	.definitions import base, system
 from	.exceptions import error
 from	.ignore import Ignore
+from	.parser import Line, Field
 from	.pattern import isnum
 from	.stream import Stream
 #
@@ -32,6 +34,7 @@ __all__ = [
 	'CSVDialects', 'CSVDefault',
 	'CSVWriter', 'CSVDictWriter',
 	'CSVReader', 'CSVDictReader', 'CSVAutoDictReader',
+	'CSVNamedReader', 'Line', 'Field',
 	'CSVAuto'
 ]
 #
@@ -572,45 +575,46 @@ append mode it is only written, if the file had zero length on open)."""
 		else:
 			self.fd = stream
 			self.foreign = True
-		self.bom = None
-		self.charset = None
-		if mode is None or 'r' in mode:
-			with Ignore (AttributeError):
-				self.fd.seek
-				pos = 0
-				start: bytes
-				if isinstance (stream, str):
-					with copen (stream, 'rb') as raw:
-						start = raw.read (self.maxBomLength)
-				else:
-					with open (self.fd.fileno (), 'rb', closefd = False) as raw:
-						pos = raw.tell ()
-						start = raw.read (self.maxBomLength)
-				for bom in self.boms:
-					if start.startswith (bom.bom):
-						pos += len (bom.bom)
-						self.bom = bom.name
-						self.charset = self.bom2charset.get (bom.bom)
-						self.fd.seek (pos)
-		elif 'w' in mode or 'a' in mode:
-			bom_seq: Optional[bytes] = None
-			if bom_charset is not None:
-				try:
-					self.charset = bom_charset.upper ()
-					bom_seq = self.charset2bom[self.charset]
+		if not isinstance (stream, StringIO):
+			self.bom = None
+			self.charset = None
+			if mode is None or 'r' in mode:
+				with Ignore (AttributeError):
+					self.fd.seek
+					pos = 0
+					start: bytes
+					if isinstance (stream, str):
+						with copen (stream, 'rb') as raw:
+							start = raw.read (self.maxBomLength)
+					else:
+						with open (self.fd.fileno (), 'rb', closefd = False) as raw:
+							pos = raw.tell ()
+							start = raw.read (self.maxBomLength)
 					for bom in self.boms:
-						if bom.bom == bom_seq:
+						if start.startswith (bom.bom):
+							pos += len (bom.bom)
 							self.bom = bom.name
-							break
-				except (AttributeError, KeyError) as e:
-					raise error (f'{bom_charset}: BOM not found: {e}')
-			if self.fd.tell () == 0:
-				if bom_seq is not None and len (bom_seq) > 0:
-					raw = open (self.fd.fileno (), 'wb', closefd = False)
-					raw.write (bom_seq)
-					raw.close ()
-					self.fd.seek (len (bom_seq))
-				self.empty = True
+							self.charset = self.bom2charset.get (bom.bom)
+							self.fd.seek (pos)
+			elif 'w' in mode or 'a' in mode:
+				bom_seq: Optional[bytes] = None
+				if bom_charset is not None:
+					try:
+						self.charset = bom_charset.upper ()
+						bom_seq = self.charset2bom[self.charset]
+						for bom in self.boms:
+							if bom.bom == bom_seq:
+								self.bom = bom.name
+								break
+					except (AttributeError, KeyError) as e:
+						raise error (f'{bom_charset}: BOM not found: {e}')
+				if self.fd.tell () == 0:
+					if bom_seq is not None and len (bom_seq) > 0:
+						raw = open (self.fd.fileno (), 'wb', closefd = False)
+						raw.write (bom_seq)
+						raw.close ()
+						self.fd.seek (len (bom_seq))
+					self.empty = True
 
 	def done (self) -> None:
 		"""cleanup resources"""
@@ -753,44 +757,51 @@ CSVIO.open (), for availble ``dialect'' values see CSVIO.__doc__"""
 		header = next (csv.reader (cast (IO[Any], self.fd), dialect = dialect))
 		self.reader = csv.DictReader (cast (IO[Any], self.fd), header, dialect = dialect)
 
-class CSVNamedReader (CSVReader):
-	__slots__ = ['maker']
+class CSVNamedReader:
+	__slots__ = ['csv', 'maker']
 	def __init__ (self,
 		stream: Union[str, IO[Any]],
 		dialect: str,
-		name: Optional[str] = None,
-		converter: Optional[Dict[str, Callable[[Any], str]]] = None,
-		default_converter: Optional[Callable[[Any], str]] = None
+		*fields: Field
 	) -> None:
-		super ().__init__ (stream, dialect)
-		header = next (self.reader)
+		self.csv = CSVReader (stream, dialect)
+		header = next (self.csv.reader)
 		if header is not None:
-			typ = namedtuple (name if name is not None else 'record', header)
+			typ = cast (Type[Line], namedtuple ('record', header))
 			#
 			def passthru (s: str) -> str:
 				return s
-			def convert_row (row: List[str]) -> Tuple[Any, ...]:
-				return typ (*tuple (_c (_v) for (_c, _v) in zip (self.converter, row)))
-			def passthru_row (row: List[str]) -> Tuple[Any, ...]:
+			def convert_row (row: List[str]) -> Line:
+				return typ (*tuple (_c (_v) for (_c, _v) in zip (converter, row)))
+			def passthru_row (row: List[str]) -> Line:
 				return typ (*row)
 			#
-			if converter is not None:
-				self.converter = [default_converter if default_converter is not None else passthru] * len (header)
-				for (field, convert) in converter.items ():
-					self.converter[header.index (field)] = convert if convert is not None else passthru
+			if fields:
+				converter: List[Callable[[str], Any]] = [passthru] * len (header)
+				for field in fields:
+					index = header.index (field.name)
+					if index != -1:
+						converter[index] = field.converter
 				self.maker = convert_row
 			else:
 				self.maker = passthru_row
 		
-	def __iter__ (self) -> Iterator[Tuple[Any, ...]]:
-		return (self.maker (_r) for _r in self.reader)
+	def __iter__ (self) -> Iterator[Line]:
+		return (self.maker (_r) for _r in self.csv.reader)
 	
+	def __enter__ (self) -> CSVNamedReader:
+		return self
+
+	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+		self.csv.close ()
+		return None
+
 	def read (self) -> Any:
-		r = super ().read ()
+		r = self.csv.reader.read ()
 		return self.maker (r) if r is not None else None
 
 	def stream (self) -> Stream:
-		return Stream.defer (self, lambda o: self.close ())
+		return Stream.defer (self, lambda o: self.csv.close ())
 
 class CSVAuto:
 	"""CSV reading class which tries to guess the dialect of the input file"""

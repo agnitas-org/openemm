@@ -463,6 +463,7 @@ struct blockmail { /*{{{*/
 	/* all known tags */
 	tag_t		*ltag;
 	int		taglist_count;
+	bool_t		clear_empty_dyn_block;
 	/* tag function global data */
 	void		*tfunc;
 	/* global tags */
@@ -488,10 +489,14 @@ struct blockmail { /*{{{*/
 	int		receiver_count;
 	/* our full qualified domain name */
 	char		*fqdn;
+	/* optional fixed point of time for mail generation */
+	time_t		pointintime;
 	/* cache for conversion functions */
 	xconv_t		*xconv;
 	/* envelope address */
 	char		*mfrom;
+	/* DKIM sign message */
+	void		*dkim;
 	/* for VIP exploder, the parsed block */
 	xmlBufferPtr	vip;
 	/* optional template for onepixel link */
@@ -578,6 +583,7 @@ struct receiver { /*{{{*/
 	gnode_t		**slist;	/* list of nodes		*/
 	int		chunks;		/* # of chunks of message	*/
 	long		size;		/* raw message size		*/
+	bool_t		dkim;		/* sign this mail with DKIM	*/
 	/*}}}*/
 };
 
@@ -677,6 +683,7 @@ extern mailtrack_t	*mailtrack_free (mailtrack_t *m);
 extern void		mailtrack_add (mailtrack_t *m, int customer_id);
 extern blockmail_t	*blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg);
 extern blockmail_t	*blockmail_free (blockmail_t *b);
+extern time_t		blockmail_now (blockmail_t *b);
 extern bool_t		blockmail_count (blockmail_t *b, const char *mediatype, int subtype, int chunks, long bytes, int bcccount);
 extern void		blockmail_count_sort (blockmail_t *b);
 extern void		blockmail_unsync (blockmail_t *b);
@@ -686,6 +693,7 @@ extern bool_t		blockmail_extract_mediatypes (blockmail_t *b);
 extern void		blockmail_setup_senddate (blockmail_t *b, const char *date);
 extern void		blockmail_setup_company_configuration (blockmail_t *b);
 extern void		blockmail_setup_mfrom (blockmail_t *b);
+extern void		blockmail_setup_dkim (blockmail_t *b);
 extern void		blockmail_setup_vip_block (blockmail_t *b);
 extern void		blockmail_setup_onepixel_template (blockmail_t *b);
 extern void		blockmail_setup_tagpositions (blockmail_t *b);
@@ -785,6 +793,13 @@ extern head_t		*head_alloc (void);
 extern head_t		*head_free (head_t *h);
 extern void		head_add (head_t *h, const char *str, int len);
 extern void		head_trim (head_t *h);
+
+extern void		*sdkim_alloc (blockmail_t *blockmail, const char *domain, const char *key, const char *ident,
+				      const char *selector, const char *column, bool_t enable_report, bool_t enable_debug);
+extern void		*sdkim_free (void *sp);
+extern bool_t		sdkim_should_sign (void *sp, receiver_t *rec);
+extern char		*sdkim_sign (blockmail_t *blockmail, head_t *head, buffer_t *body);
+extern void		sign_mail (blockmail_t *blockmail, buffer_t *header);
 
 /*
  * some support routines

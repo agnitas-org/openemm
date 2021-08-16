@@ -246,7 +246,7 @@ class Softbounce (Runtime):
 
 				def accumulator (self, supplier: Any, element: Any) -> None:
 					update = Update (*element)
-					if update.detail >= 400 and update.detail < 520:
+					if update.detail >= 400 and update.detail < 510:
 						key = (update.company_id, update.customer_id)
 						try:
 							if update.detail > self.data[key].detail:
@@ -327,7 +327,7 @@ class Softbounce (Runtime):
 					'AND mt.company_id = :company_id '
 					'ORDER BY cust.email, mt.mailing_id'
 				)
-				for row in self.db.query (query, {'company_id': company_id}):
+				for row in self.db.queryc (query, {'company_id': company_id}):
 					parm = {
 						'company_id': company_id,
 						'customer_id': row.customer_id,
@@ -458,7 +458,7 @@ class Softbounce (Runtime):
 						open_cache.add (record[0])
 				logger.info ('Setup completed')
 				ccount = 0
-				for record in scurs.query (squery):
+				for record in scurs.queryc (squery):
 					parm = {
 						'email': record[0],
 						'mailing_id': record[1],

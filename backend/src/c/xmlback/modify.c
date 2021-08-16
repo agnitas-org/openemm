@@ -860,7 +860,7 @@ modify_linelength (blockmail_t *blockmail, block_t *block, blockspec_t *bspec) /
 	const xmlChar	*cont;
 	int		spos, slen;
 	int		space, dash;
-	int		spchr, dachr;
+	int		spchr;
 	int		inspace, spacecount;
 	int		llen, wordstart;
 	int		doit;
@@ -874,7 +874,6 @@ modify_linelength (blockmail_t *blockmail, block_t *block, blockspec_t *bspec) /
 	space = -1;
 	dash = -1;
 	spchr = -1;
-	dachr = -1;
 	inspace = 0;
 	spacecount = 0;
 	llen = 0;
@@ -906,7 +905,6 @@ modify_linelength (blockmail_t *blockmail, block_t *block, blockspec_t *bspec) /
 				    ((spchr == -1) || (llen - spchr > 2)) &&
 				    (! islink (cont + wordstart, n - wordstart))) {
 					dash = n;
-					dachr = llen;
 				}
 			}
 			if (++llen >= bspec -> linelength)
@@ -942,7 +940,6 @@ modify_linelength (blockmail_t *blockmail, block_t *block, blockspec_t *bspec) /
 			space = -1;
 			dash = -1;
 			spchr = -1;
-			dachr = -1;
 			inspace = 0;
 			spacecount = 0;
  			llen = 0;

@@ -618,7 +618,7 @@ found, no module is loaded at all.
 				self.verbose (f'{path}: Using configuration file {config_file}')
 			else:
 				cfg = None
-				self.verbose ('{path}: No separate configuration file found')
+				self.verbose (f'{path}: No separate configuration file found')
 				if force_config:
 					continue
 			sources = {}

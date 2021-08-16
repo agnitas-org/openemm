@@ -16,7 +16,7 @@ from	collections import defaultdict
 from	datetime import datetime
 from	typing import Optional
 from	typing import DefaultDict, Dict, List, Set, Tuple
-from	agn3.db import DB
+from	agn3.db import DBIgnore, DB
 from	agn3.definitions import base
 import	agn3.emm.metafile
 from	agn3.io import create_path
@@ -114,7 +114,7 @@ class Pickdist (Runtime):
 		if ready:
 			for info in ready:
 				info.stamp = stamps[info.basename]
-			with DB () as db:
+			with DBIgnore (), DB () as db:
 				invalids: Set[int] = set ()
 				for mailing in (Stream (ready)
 					.map (lambda i: i.mailing)

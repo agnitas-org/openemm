@@ -368,23 +368,24 @@ tag_function_alloc (tag_t *tag, blockmail_t *blockmail) /*{{{*/
 	code_t		*code;
 	
 	tf = NULL;
-	
-	if (func = strrchr (tag -> topt, ':'))
-		*func++ = '\0';
-	else
-		func = tag -> topt;
-	if (((lidx = find_language (tag -> topt)) != -1) &&
-	    (code = tfunc_find (blockmail -> tfunc, blockmail, tag,
-				tag -> topt, func, langtab[lidx].lang,
-				langtab[lidx].lalloc, langtab[lidx].lfree,
-				langtab[lidx].lload,
-				langtab[lidx].lsetup, langtab[lidx].lproc)) &&
-	    (tf = (tf_t *) malloc (sizeof (tf_t)))) {
-		if (tf -> func = strdup (func)) {
-			tf -> code = code;
-		} else {
-			free (tf);
-			tf = NULL;
+	if (tag -> topt) {
+		if (func = strrchr (tag -> topt, ':'))
+			*func++ = '\0';
+		else
+			func = tag -> topt;
+		if (((lidx = find_language (tag -> topt)) != -1) &&
+		    (code = tfunc_find (blockmail -> tfunc, blockmail, tag,
+					tag -> topt, func, langtab[lidx].lang,
+					langtab[lidx].lalloc, langtab[lidx].lfree,
+					langtab[lidx].lload,
+					langtab[lidx].lsetup, langtab[lidx].lproc)) &&
+		    (tf = (tf_t *) malloc (sizeof (tf_t)))) {
+			if (tf -> func = strdup (func)) {
+				tf -> code = code;
+			} else {
+				free (tf);
+				tf = NULL;
+			}
 		}
 	}
 	return tf;

@@ -90,12 +90,6 @@ a default database driver is created for database access."""
 								') VALUES ('
 								'            :description, :company_id, :source_group, current_timestamp'
 								')'
-							), sqlite = (
-								'INSERT INTO datasource_description_tbl ('
-								'            description, company_id, sourcegroup_id, timestamp'
-								') VALUES ('
-								'            :description, :company_id, :source_group, current_timestamp'
-								')'
 							)
 						)
 						usedb.update (

@@ -12,15 +12,15 @@
 #
 from	__future__ import annotations
 import	logging, argparse, errno
-import	urllib.request,	urllib.parse, urllib.error
 import	sys, os, signal, time, re
 import	subprocess, multiprocessing
+import	requests, warnings
 from	collections import defaultdict
+from	dataclasses import dataclass, field
 from	datetime import datetime
 from	email.message import EmailMessage
 from	email.utils import parseaddr
-from	dataclasses import dataclass, field
-from	typing import Optional
+from	typing import Any, Optional
 from	typing import DefaultDict, Dict, List, NamedTuple, Tuple
 from	typing import cast
 from	agn3.db import DB, Row
@@ -42,6 +42,31 @@ from	agn3.uid import UID, UIDHandler
 #
 logger = logging.getLogger (__name__)
 #
+def invoke (url: str, retries: int = 3, **kws: Any) -> Tuple[bool, requests.Response]:
+	with log ('invoke'), warnings.catch_warnings ():
+		warnings.simplefilter ("ignore")
+		parameter: Dict[str, Any] = {
+			'url': url,
+			'verify': False,
+			'timeout': (30, 180)
+		}
+		parameter.update (kws)
+		for round in range (retries):
+			if round > 0:
+				time.sleep (round)
+			try:
+				response = requests.get (**parameter)
+				if response.status_code // 100 == 2:
+					logger.debug (f'{url} invoked successfully: {response}: "{response.text}"')
+					return (True, response)
+				logger.warning (f'{url} invocation failed: {response}: "{response.text}"')
+				if response.status_code // 100 == 5 or round + 1 == retries:
+					return (False, response)
+			except Exception as e:
+				logger.error (f'{url} invocation failed: {e}')
+				raise
+		raise error (f'{url} invocation failed after {retries} retries')
+
 class Autoresponder:
 	__slots__ = ['aid', 'sender']
 	whitelist_file = os.path.join (base, 'var', 'lib', 'ar.whitelist')
@@ -87,6 +112,19 @@ class Autoresponder:
 		except dbmerror as e:
 			logger.error ('Unable to acess %s %s' % (arlimit, e))
 		return not may_receive
+	
+	def clear_limit (self, dryrun: bool) -> None:
+		try:
+			arlimit = Autoresponder.limit_pattern % self.aid
+			if os.path.isfile (arlimit):
+				with Autoresponder.lock, DBM (arlimit, 'c') as dbf:
+					try:
+						del dbf[self.sender.encode ('UTF-8')]
+						logger.debug (f'{self.sender}: removed limit')
+					except KeyError:
+						logger.debug (f'{self.sender}: no limit entry found')
+		except dbmerror as e:
+			logger.error (f'{arlimit}: failed to access: {e}')
 	
 	def allow (self, parameter: Line, dryrun: bool) -> bool:
 		if self.is_in_whitelist ():
@@ -138,51 +176,64 @@ class Autoresponder:
 				if rq is None or rq.user_type not in ('A', 'T', 't'):
 					if not self.allow (parameter, dryrun):
 						raise error ('recipient is not allowed to received (again) an autoresponder')
+					clear_limit = True
 				else:
 					logger.info ('recipient %d on %d for %d is admin/test recipient and not blocked' % (customer_id, mailinglist_id, mailing_id))
+					clear_limit = False
 				#
-				rq = db.querys (
-					'SELECT rdir_domain '
-					'FROM mailinglist_tbl '
-					'WHERE mailinglist_id = :mailinglist_id',
-					{'mailinglist_id': mailinglist_id}
-				)
-				if rq is not None and rq.rdir_domain is not None:
-					rdir_domain = rq.rdir_domain
-				else:
+				try:
 					rq = db.querys (
 						'SELECT rdir_domain '
-						'FROM company_tbl '
-						'WHERE company_id = :company_id',
-						{'company_id': company_id}
+						'FROM mailinglist_tbl '
+						'WHERE mailinglist_id = :mailinglist_id',
+						{'mailinglist_id': mailinglist_id}
 					)
-					if rq is not None:
+					if rq is not None and rq.rdir_domain is not None:
 						rdir_domain = rq.rdir_domain
-				if rdir_domain is None:
-					raise error ('failed to determinate rdir-domain')
-				#
-				rq = db.querys (
-					'SELECT security_token '
-					'FROM mailloop_tbl '
-					'WHERE rid = :rid',
-					{'rid': int (self.aid)}
-				)
-				if rq is None:
-					raise error ('no entry in mailloop_tbl for %s found' % self.aid)
-				security_token = rq.security_token if rq.security_token else ''
-				url = ('%s/sendMailloopAutoresponder.do?'
-				       'mailloopID=%s&companyID=%d&customerID=%d&securityToken=%s'
-				       % (rdir_domain, self.aid, company_id, customer_id, urllib.parse.quote (security_token)))
-				if dryrun:
-					print ('Would trigger mail using %s' % url)
-				else:
-					try:
-						uh = urllib.request.urlopen (url)
-						response = uh.read ()
-						uh.close ()
-						logger.info ('Autoresponder mailing %d for customer %d triggered: %s' % (mailing_id, customer_id, response))
-					except (urllib.error.URLError, urllib.error.HTTPError) as e:
-						logger.error ('Failed to trigger %s: %s' % (url, str (e)))
+					else:
+						rq = db.querys (
+							'SELECT rdir_domain '
+							'FROM company_tbl '
+							'WHERE company_id = :company_id',
+							{'company_id': company_id}
+						)
+						if rq is not None:
+							rdir_domain = rq.rdir_domain
+					if rdir_domain is None:
+						raise error ('failed to determinate rdir-domain')
+					#
+					rq = db.querys (
+						'SELECT security_token '
+						'FROM mailloop_tbl '
+						'WHERE rid = :rid',
+						{'rid': int (self.aid)}
+					)
+					if rq is None:
+						raise error ('no entry in mailloop_tbl for %s found' % self.aid)
+					security_token = rq.security_token if rq.security_token else ''
+					url = f'{rdir_domain}/sendMailloopAutoresponder.do'
+					params: Dict[str, str] = {
+						'mailloopID': self.aid,
+						'companyID': str (company_id),
+						'customerID': str (customer_id),
+						'securityToken': security_token
+					}
+					if dryrun:
+						print (f'Would trigger mail using {url} with {params}')
+					else:
+						try:
+							(success, response) = invoke (url, params = params)
+							if success:
+								logger.info ('Autoresponder mailing %d for customer %d triggered: %s' % (mailing_id, customer_id, response))
+								clear_limit = False
+							else:
+								logger.warning (f'Autoresponder mailing {mailing_id} for customer {customer_id} failed due to: {response} with {response.text}')
+						except Exception as e:
+							logger.error (f'Failed to trigger {url}: {e}')
+				finally:
+					if clear_limit:
+						self.clear_limit (dryrun)
+						
 		except error as e:
 			logger.info ('Failed to send autoresponder: %s' % str (e))
 		except (KeyError, ValueError, TypeError) as e:
@@ -771,18 +822,20 @@ class BAV:
 									mailing_id = mailing_id,
 									customer_id = customer_id
 								)
-								url = '%s/form.action?agnCI=%d&agnFN=%s&agnUID=%s' % (rdir, company_id, urllib.parse.quote (formname), self.uid_handler.create (uid))
-								logger.info ('Trigger mail using "%s"' % url)
-								uh = urllib.request.urlopen (url)
-								resp = uh.read ().decode ('UTF-8', errors = 'ignore')
-								uh.close ()
-								logger.info ('Subscription request returns "%r"' % resp)
-								if len (resp) < 2 or resp[:2].lower () != 'ok':
-									logger.error ('Subscribe formular "%s" returns error "%r"' % (url, resp))
-							except urllib.error.HTTPError as e:
-								logger.error ('Failed to trigger [http] forumlar using "%s": %s' % (url, str (e)))
-							except urllib.error.URLError as e:
-								logger.error ('Failed to trigger [prot] forumlar using "%s": %s' % (url, e))
+								url = f'{rdir}/form.action'
+								params: Dict[str, str] = {
+									'agnCI': str (company_id),
+									'agnFN': formname,
+									'agnUID': self.uid_handler.create (uid)
+								}
+								logger.info (f'Trigger mail using {url} with {params}')
+								(success, response) = invoke (url, params = params)
+								logger.info (f'Subscription request returns "{response}" with "{response.text}"')
+								resp = response.text.strip ()
+								if not success or not isinstance (resp, str) or not resp.lower ().startswith ('ok'):
+									logger.error (f'Subscribe formular "{url}" returns error "{resp}"')
+							except Exception as e:
+								logger.error (f'Failed to trigger [prot] forumlar using "{url}": {e}')
 						else:
 							logger.error ('Failed to find active mailing for company %d' % company_id)
 					else:

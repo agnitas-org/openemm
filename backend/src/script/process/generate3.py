@@ -194,8 +194,8 @@ class Sending (Task): #{{{
 					if row.genstatus in (3, 4) or (row.genstatus == 1 and row.genchange > entry.genChange):
 						duration = int ((row.genchange - entry.startDate).total_seconds ())
 						logger.info ('%s: generation finished after %s' % (entry.name, duration_format (duration)))
-					else:
-						duration = int ((now - row.genchange).total_seconds ())
+					elif entry.startDate is not None:
+						duration = int ((now - entry.startDate).total_seconds ())
 						if row.genstatus == 1:
 							if duration >= startup:
 								logger.warning ('%s: startup time exceeded, respool entry' % entry.name)
@@ -221,6 +221,9 @@ class Sending (Task): #{{{
 								self.in_progress[entry.statusID] = entry
 						else:
 							logger.error ('%s: unexpected genstatus %s, leave it alone' % (entry.name, row.genstatus))
+					else:
+						logger.warning (f'{entry}: unset startDate, but had been started, startDate set to {now}')
+						entry.startDate = now
 				self.db.sync ()
 				for entry in Stream (self.in_progress.values ()).filter (lambda e: e.statusID not in seen).list ():
 					logger.warning ('%s: maildrop status entry vanished, remove from observing' % entry.name)
@@ -818,7 +821,7 @@ class Generate (Runtime):
 		with Activator () as activator:
 			modules = (Stream.of (globals ().values ())
 				.filter (lambda module: type (module) is type and issubclass (module, Task) and hasattr (module, 'interval'))
-				.filter (lambda module: activator.check (['%s-%s' % (program, module.name)]))
+				.filter (lambda module: bool (activator.check (['%s-%s' % (program, module.name)])))
 				.map (lambda module: (module.name, module))
 				.dict ()
 			)

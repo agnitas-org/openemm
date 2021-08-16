@@ -27,7 +27,9 @@ from	agn3.ignore import Ignore
 from	agn3.parameter import Parameter
 from	agn3.parser import Line, Field, Lineparser
 from	agn3.runtime import CLI
+from	agn3.stream import Stream
 from	softbounce3 import Softbounce
+from	update3 import UpdateBounce
 #
 class Main (CLI):
 	__slots__ = ['dryrun', 'caller']
@@ -50,6 +52,10 @@ class Main (CLI):
 				Field ('detail', int),
 				Field ('pattern', lambda v: v if v else None)
 			)
+			def make_rulekey (dsn: int, detail: int, pattern: Optional[str]) -> Tuple[int, int, Optional[str]]:
+				return (dsn, detail, pattern)
+			def rulekey_from_rule (rule: Line) -> Tuple[int, int, Optional[str]]:
+				return make_rulekey (rule.dsn, rule.detail, rule.pattern)
 			pattern_parameter = re.compile ('^## *PARAMETER: *(.*)$')
 			pattern_start = re.compile ('^## *RULES$')
 			start_found = False
@@ -69,6 +75,21 @@ class Main (CLI):
 						print (f'Failed to parse {self.caller[0]}:{lineno}:{line} due to: {e}')
 						ok = False
 			if ok:
+				delete_rules = Stream (rules).filter (lambda r: bool (r.name.startswith ('-'))).list ()
+				if delete_rules:
+					source_rules = rules
+					rules = []
+					for rule in source_rules:
+						if not rule.name.startswith ('-'):
+							rulekey = rulekey_from_rule (rule)
+							for to_delete in delete_rules:
+								if rulekey == rulekey_from_rule (to_delete):
+									if self.dryrun:
+										print (f'Drop rule {rule} due to deletion rule {to_delete}')
+									break
+							else:
+								rules.append (rule)
+					rules = delete_rules + rules
 				with DB () as db:
 					if parameter is not None:
 						orig = Parameter ()
@@ -110,13 +131,12 @@ class Main (CLI):
 							print ('Parameter not changed')
 					#
 					current: Dict[Tuple[int, int, Optional[str]], Row] = {}
-					rulekey: Tuple[int, int, Optional[str]]
 					for row in db.query (
 						'SELECT rule_id, dsn, detail, pattern, shortname, description '
 						'FROM bounce_translate_tbl '
 						'WHERE company_id = 0 AND active = 1'
 					):
-						rulekey = (row.dsn, row.detail, row.pattern)
+						rulekey = make_rulekey (row.dsn, row.detail, row.pattern)
 						if rulekey in current:
 							if self.dryrun:
 								print ('{row}: already found entry with same {rulekey}: {entry}'.format (
@@ -149,7 +169,7 @@ class Main (CLI):
 					query_update_name = 'UPDATE bounce_translate_tbl SET shortname = :shortname, change_date = current_timestamp WHERE rule_id = :rule_id'
 					query_update_desc = 'UPDATE bounce_translate_tbl SET description = :description, change_date = current_timestamp WHERE rule_id = :rule_id'
 					for rule in rules:
-						rulekey = (rule.dsn, rule.detail, rule.pattern)
+						rulekey = rulekey_from_rule (rule)
 						if rule.name.startswith ('-'):
 							if rulekey in current:
 								row = current[rulekey]
@@ -183,7 +203,10 @@ class Main (CLI):
 										failed += 1
 						else:
 							new += 1
-							if self.dryrun:
+							if rule.pattern and not UpdateBounce.Translate.Pattern (rule.pattern, False).valid:
+								print (f'Failed to validate pattern for {rule}, mark as failed')
+								failed += 1
+							elif self.dryrun:
 								print (f'Would insert new rule {rule}')
 							else:
 								if db.update (query_insert, {
@@ -198,7 +221,7 @@ class Main (CLI):
 					if failed:
 						ok = False
 					if self.dryrun or new or disabled or updated or failed:
-						print (f'Added {new} rules, disable {disabled} rules, update {updated} rules where {failed} failed and found {exists} already existing rules')
+						print (f'Added {new} rules, disable {disabled} rules, update {updated} rules where {failed} failed and found {exists} already existing active rules')
 					db.sync (bool (not self.dryrun and (new or disabled or updated) and ok))
 		return ok
 
@@ -247,21 +270,35 @@ EMM-7311;;500;511;stat="Your IP will be reported for abuse - better watch out ne
 ;;550;511;stat="unknown recipient"
 ;;571;410;
 ;;572;511;
-EMM-7409;;500;511;stat="5.1.0 Address rejected.", relay=".man.eu."
 EMM-7389;;530;511;stat="No such user"
-EMM-7379 GMX;;500;511;stat="mailbox unavailable", relay=".gmx.net."
-EMM-7379 WEB;;500;511;stat="mailbox unavailable", relay=".web.de."
-EMM-7379 KDN;;500;511;stat="mailbox unavailable", relay=".kundenserver.de."
 EMM-7378;;500;511;stat="invalid mailbox", relay=".mail.ru."
 EMM-7492;;520;511;stat="no such mailbox", relay=".rzone.de."
 EMM-7491;;550;511;stat="no such recipient"
-EMM-7490;;520;511;stat="mailbox unavailable", relay=".rmx.de."
 EMM-7593;;500;511;stat="Not a valid recipient", relay=".yahoo"
-EMM-7594;;500;511;stat="mailbox not found|unknown adress|unrouteable adress"
-EMM-7489;;550;511;stat="mailbox unavailable", relay=".protection.outlook.com."
-EMM-7489;;550;511;stat="mailbox unavailable", relay=".retarus.com."
 EMM-7743;;541;511;stat="Recipient address rejected", relay=".protection.outlook.com."
 EMM-7691;;500;511;stat="No such user"
+EMM-7816;;417;0;
+EMM-7816;;418;0;
+EMM-7816;;517;0;
+EMM-7816;;518;0;
+EMM-7990;;500;511;stat="no mailbox here"
+EMM-7991;;5;511;relay="void.blackhole.mx."
+EMM-7901;;500;511;stat="user unknown|unknown user"
+EMM-7594;;500;511;stat="mailbox not found|unknown add?ress|unrouteable add?ress"
+EMM-7379;;500;511;stat="mailbox unavailable" relay=".rmx.de.|.protection.outlook.com.|.retarus.com."
+EMM-7490;;520;511;stat="mailbox unavailable"
+EMM-7490;;550;511;stat="mailbox unavailable"
+EMM-7409;;500;511;stat="5.1.0 Address rejected."
+EMM-8045;;510;511;stat="user unknown|unknown user"
+EMM-8045;;530;511;stat="user unknown|unknown user"
+EMM-8046;;500;511;stat="Es gibt keine Person mit diesem Namen unter dieser Adresse", relay=".sp-server.net."
+EMM-8044;;530;511;stat="user does not exist"
+EMM-8028;;571;511;stat="user does not exist"
+EMM-8043;;546;512;stat="mail for .* loops back to myself"
+EMM-8027;;500;511;stat="no such recipient here|recipient unknown|invalid recipient|no valid recipient"
+EMM-8030;;500;511;stat="Mailaddress is administratively disabled"
+EMM-8029;;500;511;stat="mailbox for .* does not exist"
+EMM-8135;;474;513;stat="TLS is required, but was not offered"
 #
 # outdated rules
 #
@@ -269,3 +306,16 @@ EMM-7691;;500;511;stat="No such user"
 -;;500;400;
 # is covered by EMM-7594
 -EMM-7315;;500;511;stat="mailbox not found", relay=".aon.at."
+# is covered by EMM-7816
+-;;517;511;
+-;;518;512;
+# updated rules by new definitions
+-EMM-7901;;500;511;stat="user unknown"
+-EMM-7594;;500;511;stat="mailbox not found|unknown adress|unrouteable adress"
+-EMM-7379 GMX;;500;511;stat="mailbox unavailable", relay=".gmx.net."
+-EMM-7379 WEB;;500;511;stat="mailbox unavailable", relay=".web.de."
+-EMM-7379 KDN;;500;511;stat="mailbox unavailable", relay=".kundenserver.de."
+-EMM-7490;;520;511;stat="mailbox unavailable", relay=".rmx.de."
+-EMM-7489;;550;511;stat="mailbox unavailable", relay=".protection.outlook.com."
+-EMM-7489;;550;511;stat="mailbox unavailable", relay=".retarus.com."
+-EMM-7409;;500;511;stat="5.1.0 Address rejected.", relay=".man.eu."

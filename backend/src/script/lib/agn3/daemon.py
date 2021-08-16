@@ -12,15 +12,16 @@
 from	__future__ import annotations
 import	os, stat, errno, signal, fcntl
 import	time, pickle, mmap, subprocess
-import	platform, multiprocessing, logging
+import	multiprocessing, logging
 from	abc import abstractmethod
 from	collections import deque
 from	dataclasses import dataclass, field
+from	datetime import datetime
 from	enum import Enum
 from	signal import Signals, Handlers
 from	types import FrameType, TracebackType
-from	typing import Any, Callable, NoReturn, Optional, Sequence, Union
-from	typing import Deque, Dict, List, Set, Tuple, Type
+from	typing import Any, Callable, Generic, NoReturn, Optional, Sequence, TypeVar, Union
+from	typing import Deque, Dict, Generator, List, Set, Tuple, Type
 from	typing import cast
 from	.definitions import base
 from	.exceptions import error, Timeout
@@ -32,6 +33,8 @@ from	.stream import Stream
 __all__ = ['Signal', 'Timer', 'Daemonic', 'Watchdog', 'EWatchdog', 'Daemon']
 #
 logger = logging.getLogger (__name__)
+#
+T = TypeVar ('T')
 #
 Handler = Union[Callable[[Signals, FrameType], None], int, Handlers, None]
 class Signal:
@@ -154,7 +157,7 @@ level process control. In general this (or one of its subclasses)
 should be subclassed and extended for the process to implement."""
 	__slots__ = ['running', 'signals']
 	try:
-		devnull = platform.DEV_NULL
+		devnull = os.devnull
 	except AttributeError:
 		devnull = '/dev/null'
 	@classmethod
@@ -312,6 +315,17 @@ process), ``timeout'' is the time in seconds to max. wait. If this is
 			return e.errno != errno.ESRCH
 
 	class State (Enum):
+		"""Daemon State
+
+This enumeration represents the current state of a member in a daemon
+group. Currently these states are definied:
+	- new: the member has been created, but not added to a group
+	- schedulued: the member had been added to the group and is ready to be scheduled
+	- running: the member had been started and is currently an active subprocess
+	- dying: the member had been ended or singaled to terminate, but had not died and collected
+	- terminated: the member had been finished and collected by the group
+	- canceled: the member had been canceled before ever been started
+"""
 		new = 0
 		scheduled = 1
 		running = 2
@@ -319,56 +333,135 @@ process), ``timeout'' is the time in seconds to max. wait. If this is
 		terminated = 4
 		canceled = 5
 	@dataclass
-	class Member:
+	class Member (Generic[T]):
+		"""Daemon Member
+
+This represents one method that is called in a subprocess. The
+``context'' is any user provided data structure and its attributes
+can be accessed through the member using attribute notation. The
+``channel'' is a communication channel to report the exit status
+(return value) of the subprocess back to the caller. The ``state''
+reprensents (Daemonic.State) the current state of the member and
+``status'' is filled with the Daemonic.Status when the subprocess
+had terminated.
+"""
 		method: Callable[..., Any]
 		args: Sequence[Any]
 		kwargs: Dict[str, Any]
-		context: Any = None
+		context: T
 		channel: multiprocessing.SimpleQueue[Any] = field (default_factory = lambda: multiprocessing.SimpleQueue ())
 		value: Any = None
 		state: Daemonic.State = field (default_factory = lambda: Daemonic.State.new)
 		status: Optional[Daemonic.Status] = None
+		pid: Optional[int] = None
+		launched: datetime = datetime (1970, 1, 1)
 		def __getattr__ (self, attribute: str) -> Any:
 			if self.context is not None:
 				return getattr (self.context, attribute)
 			raise AttributeError (attribute)
 	@dataclass
-	class Group:
+	class Stats (Generic[T]):
+		scheduled: List[Daemonic.Member[T]]
+		active: List[Daemonic.Member[T]]
+		ended: List[Daemonic.Member[T]]
+	@dataclass
+	class Group (Generic[T]):
+		"""Daemon Group
+
+This class allows managing a group of process. Each member of the group
+is represented by an instance of the Daemon.Member class. In general it
+is not instantiated directly but using the method ``group'' of a Daemonic
+instance. This class provides the context manager interface so it could
+be used in a ``with ...:'' construct.
+
+The ``limit'' is the maximum number of parallel running subprocess for
+this group. This allows to schedule a large amount of subprocess but
+guarantee to limit the number of actual running subprocesses.
+
+One can either pass a list of ``Daemonic.Memeber'' instances during
+instantiation or add them using the ``add'' method later. New members
+can even be added when there are already subprocess running.
+
+The method ``remove'' will remove a member from the group. If this
+member had already been started as a subprocess, it will not be terminate
+but removed from managing.
+
+The method ``start'' starts as many scheduled process as possible up
+to limit (or until all process had been started.)
+
+The method ``stop'' will either remove a member, if it is not yet started
+or terminate it. If option ``hard'' is passed, it is terminated with a
+SIGKILL, otherwise with SIGTERM.
+
+The method ``wait'' will wait for finished processes, updates their ``state''
+and ``status'' and returns the number of joined processes.
+
+The method ``cancel'' will remove all scheduled members from schedule queue,
+update their ``state'' and ``status'' and will never start them.
+
+The method ``term'' will call ``cancel'' first and then terminate all running
+processes so after this call no more subprocesses for this group should be
+active anymore.
+
+The method ``run'' will use the above methods to manage the start/wait
+process including an optional timeout for all processes. This method
+is called at the exit of the context manager.
+"""
 		daemon: Daemonic
 		limit: Optional[int] = None
-		scheduled: Deque[Daemonic.Member] = field (default_factory = deque)
-		active: Dict[int, Daemonic.Member] = field (default_factory = dict)
-		status: List[Daemonic.Member] = field (default_factory = list)
-		def __enter__ (self) -> Daemonic.Group:
+		scheduled: Deque[Daemonic.Member[T]] = field (default_factory = deque)
+		active: Dict[int, Daemonic.Member[T]] = field (default_factory = dict)
+		status: List[Daemonic.Member[T]] = field (default_factory = list)
+		log: Optional[Callable[[Daemonic.Member[T], str], None]] = None
+		def __enter__ (self) -> Daemonic.Group[T]:
 			return self
 
 		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
 			self.run ()
 			return None
-	
-		def add (self, member: Daemonic.Member) -> Daemonic.Member:
+
+		def __iter__ (self) -> Generator[Daemonic.Member[T], None, None]:
+			for member in [_s for _s in self.status if _s.state in (Daemonic.State.terminated, Daemonic.State.canceled)]:
+				yield member
+
+		def stats (self) -> Daemonic.Stats[T]:
+			return Daemonic.Stats (
+				scheduled = list (self.scheduled),
+				active = list (self.active.values ()),
+				ended = list (self)
+			)
+		def add (self, member: Daemonic.Member[T]) -> Daemonic.Member[T]:
 			member.state = Daemonic.State.scheduled
 			self.scheduled.append (member)
+			if self.log: self.log (member, 'added')
 			return member
 		
-		def remove (self, member: Daemonic.Member) -> Daemonic.Member:
+		def remove (self, member: Daemonic.Member[T]) -> Daemonic.Member[T]:
 			with Ignore (ValueError):
 				while True:
 					self.scheduled.remove (member)
-			for pid in Stream (self.active.items ()).filter (lambda kv: kv[1] is member).list ():
+					if self.log: self.log (member, 'removed from schedule')
+			for (pid, member) in Stream (self.active.items ()).filter (lambda kv: kv[1] is member).list ():
 				del self.active[pid]
+				if self.log: self.log (member, 'removed from active')
 			with Ignore (ValueError):
 				while True:
 					self.status.remove (member)
+					if self.log: self.log (member, 'removed from status')
 			return member
 		
 		def start (self) -> int:
-			def starter (member: Daemonic.Member) -> None:
+			def starter (member: Daemonic.Member[T]) -> None:
 				member.state = Daemonic.State.running
+				member.pid = os.getpid ()
+				member.launched = datetime.now ()
 				try:
+					if self.log: self.log (member, 'starting')
 					rc = member.method (*member.args, **member.kwargs)
+					if self.log: self.log (member, f'ending with {rc!r}')
 				except Exception as e:
 					logger.exception (f'{member}: failed due to: {e}')
+					if self.log: self.log (member, f'terminating by {e}')
 					rc = e
 				member.channel.put (rc)
 				member.state = Daemonic.State.dying
@@ -379,25 +472,31 @@ process), ``timeout'' is the time in seconds to max. wait. If this is
 				pid = self.daemon.spawn (starter, member)
 				if pid > 0:
 					member.state = Daemonic.State.running
+					member.pid = pid
+					member.launched = datetime.now ()
+					if self.log: self.log (member, 'spawnd')
 					self.active[pid] = member
 					self.status.append (member)
 					counter += 1
 				else:
+					if self.log: self.log (member, 'spawn failed')
 					self.scheduled.appendleft (member)
 					break
 			return counter
 		
-		def stop (self, member: Daemonic.Member, hard: bool = False) -> Daemonic.Member:
+		def stop (self, member: Daemonic.Member[T], hard: bool = False) -> Daemonic.Member[T]:
 			if member.state == Daemonic.State.scheduled:
 				with Ignore (ValueError):
 					while True:
 						self.scheduled.remove (member)
-			elif member.state == Daemonic.State.running:
+						if self.log: self.log (member, 'stop schedule')
+			elif member.state in (Daemonic.State.running, Daemonic.State.dying):
 				with Ignore (ValueError):
 					pid = Stream (self.active.items ()).filter (lambda kv:kv[1] is member).map (lambda kv: kv[0]).first ()
 					if pid > 0:
 						member.state = Daemonic.State.dying
 						self.daemon.term (pid, signal.SIGTERM if not hard else signal.SIGKILL)
+						if self.log: self.log (member, 'stop {how}'.format (how = 'hard' if hard else 'soft'))
 			return member
 
 		def wait (self, timeout: Union[None, int, float] = None) -> int:
@@ -415,6 +514,7 @@ process), ``timeout'' is the time in seconds to max. wait. If this is
 								member.state = Daemonic.State.terminated
 								member.status = status
 								counter += 1
+								if self.log: self.log (member, 'joined')
 						elif status.error:
 							break
 			return counter
@@ -424,6 +524,7 @@ process), ``timeout'' is the time in seconds to max. wait. If this is
 				member = self.scheduled.popleft ()
 				member.state = Daemonic.State.canceled
 				self.status.append (member)
+				if self.log: self.log (member, 'canceled')
 			
 		def term (self, hard_kill_delay: Union[None, int, float] = None) -> None:
 			self.cancel ()
@@ -434,11 +535,14 @@ process), ``timeout'' is the time in seconds to max. wait. If this is
 					if not self.daemon.term (pid, signr):
 						logger.warning (f'{pid}: failed to kill no (more) existing process')
 						del self.active[pid]
+						if self.log: self.log (member, 'term failed')
+					else:
+						if self.log: self.log (member, f'terminated with {signr}')
 				self.wait (hard_kill_delay)
 				signr = signal.SIGKILL
 				hard_kill_delay = None
 
-		def run (self, timeout: Union[None, int, float] = None, hard_kill_delay: Union[None, int, float] = None) -> List[Daemonic.Member]:
+		def run (self, timeout: Union[None, int, float] = None, hard_kill_delay: Union[None, int, float] = None) -> List[Daemonic.Member[T]]:
 			try:
 				with Timer (timeout) as timer:
 					while self.daemon.running and (self.scheduled or self.active):
@@ -450,20 +554,14 @@ process), ``timeout'' is the time in seconds to max. wait. If this is
 				self.term (hard_kill_delay)
 			return self.status
 
-	def member (self, method: Callable[..., Any], *args: Any, **kwargs: Any) -> Daemonic.Member:
-		"""Create a simple group member to be fed to the
-method ``group'' or an instance of ``Daemonic.Group'' with the method
-``add''"""
-		return Daemonic.Member (method, args, kwargs)
-	
-	def group (self, limit: Optional[int] = None, *members: Daemonic.Member) -> Daemonic.Group:
+	def group (self, limit: Optional[int] = None, *members: Daemonic.Member[T]) -> Daemonic.Group[T]:
 		"""Create a process group, i.e. a controller for
 several in parallel executing subprocesses. Optional the parameter
 ``limit'' definies the maximum number of parallel started
 subprocesses. Every further positonal argument must be an instance of
 ``Daemonic.Member'' and will be added as part of the process group. It
 is possible to add later more processes using the ``add'' method."""
-		group = Daemonic.Group (self, limit = limit)
+		group: Daemonic.Group[T] = Daemonic.Group (self, limit = limit)
 		Stream (members).each (lambda m: group.add (m))
 		return group
 

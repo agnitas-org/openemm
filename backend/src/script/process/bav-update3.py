@@ -16,11 +16,12 @@ from	datetime import datetime
 from	dataclasses import dataclass
 from	typing import Optional
 from	typing import Dict, List, NamedTuple, Set
-from	agn3.db import DB
+from	agn3.db import DBIgnore, DB
 from	agn3.definitions import base, fqdn, syscfg
 from	agn3.exceptions import error
 from	agn3.ignore import Ignore
 from	agn3.io import create_path, which
+from	agn3.log import log_limit
 from	agn3.mta import MTA
 from	agn3.parser import Unit
 from	agn3.runtime import Runtime
@@ -71,6 +72,7 @@ class BavUpdate (Runtime):
 	control_sendmail = os.path.join (base, 'bin', 'smctrl')
 	restart_sendmail = os.path.join (base, 'var', 'run', 'sendmail-control.sh')
 	sendmail_base = '/etc/mail'
+	valid_domain_pattern = re.compile ('^[0-9a-z][0-9a-z_+-]*(\\.[0-9a-z][0-9a-z_+-]*)+$', re.IGNORECASE)
 	def supports (self, option: str) -> bool:
 		return option not in ('dryrun', 'parameter')
 	
@@ -79,11 +81,19 @@ class BavUpdate (Runtime):
 		self.fqdn = socket.getfqdn ().lower ()
 		if not self.fqdn:
 			self.fqdn = fqdn
+	
+	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
+		parser.add_argument ('-D', '--delay', action = 'store', type = BavUpdate.unit.parse, default = self.delay, help = 'delay between each reread of database content')
+	
+	def use_arguments (self, args: argparse.Namespace) -> None:
+		self.delay = args.delay
+
+	def prepare (self) -> None:
 		self.filter_domain = syscfg.get_str ('filter-name', BavUpdate.default_filter_domain)
 		if self.filter_domain == BavUpdate.default_filter_domain:
-			with DB () as db:
+			with DBIgnore (), DB () as db:
 				rq = db.querys ('SELECT mailloop_domain FROM company_tbl WHERE company_id = 1')
-				if rq is not None and rq.mailloop_domain:
+				if rq is not None and self.valid_domain (rq.mailloop_domain):
 					self.filter_domain = rq.mailloop_domain
 		self.mta = MTA ()
 		self.domains: List[str] = []
@@ -103,12 +113,6 @@ class BavUpdate (Runtime):
 		except OSError as e:
 			logger.error (f'Unable to read directory {Autoresponder.directory}: {e}')
 
-	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
-		parser.add_argument ('-D', '--delay', action = 'store', type = BavUpdate.unit.parse, default = self.delay, help = 'delay between each reread of database content')
-	
-	def use_arguments (self, args: argparse.Namespace) -> None:
-		self.delay = args.delay
-
 	def executor (self) -> bool:
 		while self.running:
 			self.update ()
@@ -121,6 +125,9 @@ class BavUpdate (Runtime):
 	def file_reader (self, fname: str) -> List[str]:
 		with open (fname, errors = 'backslashreplace') as fd:
 			return [line.rstrip ('\r\n') for line in fd if not line[0] in '\n#']
+
+	def valid_domain (self, domain: Optional[str]) -> bool:
+		return domain is not None and self.valid_domain_pattern.match (domain) is not None
 
 	class Domain (NamedTuple):
 		name: str
@@ -168,7 +175,8 @@ class BavUpdate (Runtime):
 										var = line
 										val = default_value
 										rc.modified = True
-									if var not in [_c.name for _c in rc.content]:
+									#
+									if self.valid_domain (var) and var not in [_c.name for _c in rc.content]:
 										rc.content.append (BavUpdate.Domain (name = var, value = val))
 									else:
 										rc.modified = True
@@ -202,7 +210,7 @@ class BavUpdate (Runtime):
 				self.mtdom[d.name] = 0
 			#
 			def add_relay_domain (domain_to_add: str) -> None:
-				if domain_to_add and domain_to_add not in self.mtdom:
+				if self.valid_domain (domain_to_add) and domain_to_add not in self.mtdom:
 					relays.content.append (BavUpdate.Domain (name = domain_to_add, value = relay_default_value))
 					relays.modified = True
 					self.mtdom[domain_to_add] = 0
@@ -212,9 +220,9 @@ class BavUpdate (Runtime):
 					add_relay_domain (domain)
 			transport_default_value = 'mailloop:'
 			transports = find ('transport_maps', transport_default_value)
-			with DB () as db:
+			with DBIgnore (), DB () as db:
 				for row in db.query ('SELECT mailloop_domain FROM company_tbl WHERE mailloop_domain IS NOT NULL AND status = :status', {'status': 'active'}):
-					if row.mailloop_domain:
+					if self.valid_domain (row.mailloop_domain):
 						add_relay_domain (row.mailloop_domain.strip ().lower ())
 			transport_domains = set ([_c[0] for _c in transports.content])
 			for d in relays.content[:]:
@@ -319,7 +327,7 @@ class BavUpdate (Runtime):
 		address: str
 	def read_database (self, auto: List[Autoresponder]) -> List[str]:
 		rc: List[str] = []
-		with DB () as db:
+		with DBIgnore (), DB () as db:
 			company_list: List[int] = []
 			new_domains: Dict[str, BavUpdate.RID] = {}
 			forwards: List[BavUpdate.Forward] = []
@@ -330,7 +338,8 @@ class BavUpdate (Runtime):
 			rc.append (f'fbl@{self.filter_domain}\taccept:rid=unsubscribe')
 			for domain in self.domains:
 				if domain not in seen_domains:
-					rc.append (f'fbl@{domain}\talias:fbl@{self.filter_domain}')
+					if domain != self.filter_domain:
+						rc.append (f'fbl@{domain}\talias:fbl@{self.filter_domain}')
 					seen_domains.add (domain)
 			if self.filter_domain not in seen_domains:
 				new_domains[self.filter_domain] = BavUpdate.RID (rid = 0, domain = self.filter_domain)
@@ -338,7 +347,7 @@ class BavUpdate (Runtime):
 			#
 			missing = []
 			for row in db.query ('SELECT company_id, mailloop_domain FROM company_tbl WHERE status = :status', {'status': 'active'}):
-				if row.mailloop_domain:
+				if self.valid_domain (row.mailloop_domain):
 					ctab[row.company_id] = row.mailloop_domain
 					if row.mailloop_domain not in seen_domains:
 						rc.append (f'fbl@{row.mailloop_domain}\talias:fbl@{self.filter_domain}')
@@ -349,7 +358,7 @@ class BavUpdate (Runtime):
 					missing.append (row.company_id)
 				company_list.append (row.company_id)
 			if missing:
-				logger.debug ('Missing mailloop_domain for companies {companies}'.format (
+				logger.debug ('Missing (valid) mailloop_domain for companies {companies}'.format (
 					companies = Stream (missing).sorted ().join (', ')
 				))
 			#
@@ -366,9 +375,9 @@ class BavUpdate (Runtime):
 			):
 				if row.company_id not in company_list or row.rid is None:
 					if row.company_id not in company_list:
-						logger.debug ('{row}: ignore due to inactive company')
+						logger.debug (f'{row}: ignore due to inactive company')
 					elif row.rid is None:
-						logger.error ('{row}: ignore due to empty rid, should never happen!')
+						logger.error (f'{row}: ignore due to empty rid, should never happen!')
 					continue
 				#
 				row_id = f'{row.rid} {row.shortname} [{row.company_id}]'
@@ -448,6 +457,9 @@ class BavUpdate (Runtime):
 				)
 				logger.debug (f'{row_id}: add line: {line}')
 				rc.append (line)
+				for domain in domains:
+					if domain != self.filter_domain:
+						rc.append (f'{self.prefix}{row.rid}@{domain}\talias:{self.prefix}{row.rid}@{self.filter_domain}')
 				if aliases:
 					for alias in aliases:
 						rc.append (f'{alias}\talias:{self.prefix}{row.rid}@{self.filter_domain}')
@@ -473,10 +485,10 @@ class BavUpdate (Runtime):
 					fdomain = (forward.address.split ('@', 1)[-1]).lower ()
 					for domain in self.mtdom:
 						if domain == fdomain and forward.address not in accepted_forwards:
-							logger.warning (f'{forward.ird}: using address "{forward.address}" with local handled domain "{domain}"')
+							logger.warning (f'{forward.rid}: using address "{forward.address}" with local handled domain "{domain}"')
 					refuse = []
 					for (domain, new_domain) in ((_d, _n) for (_d, _n) in new_domains.items () if _d == fdomain):
-						logger.warning (f'{new_domain.rid}: try to add new domain for already existing forward address "{forward.address}" in {forward.rid}, refused')
+						log_limit (logger.warning, f'{new_domain.rid}: try to add new domain for already existing forward address "{forward.address}" in {forward.rid}, refused')
 						refuse.append (domain)
 					for domain in refuse:
 						del new_domains[domain]

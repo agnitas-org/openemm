@@ -23,7 +23,7 @@ from	.dblite import DBLite
 from	.definitions import base, host, program
 from	.exceptions import error
 from	.ignore import Ignore
-from	.io import CSVDefault, CSVReader
+from	.io import CSVDefault, CSVReader, CSVNamedReader, Line
 from	.parser import Unit, ParseTimestamp
 from	.stream import Stream
 from	.template import Template
@@ -434,19 +434,11 @@ consult mget and lget repective."""
 
 	def csvget (self,
 		var: str,
-		default: Optional[List[Tuple[Any, ...]]] = None,
 		dialect: Optional[str] = None
-	) -> Optional[List[Tuple[Any, ...]]]:
+	) -> List[Line]:
 		"""Retrieve the value for ``var'' as a CSV and parse it into a two dimensional array. Use ``default'' if ``var is not found"""
-		rc: Optional[List[Tuple[Any, ...]]]
-		try:
-			buf = StringIO (self[var])
-			rd = CSVReader (buf, dialect if dialect else CSVDefault)
-			rc = list (rd)
-			rd.close ()
-		except KeyError:
-			rc = default
-		return rc
+		with CSVNamedReader (StringIO (self[var]), dialect if dialect else CSVDefault) as rd:
+			return list (rd)
 		
 	def __pget (self,
 		code: Optional[str],
@@ -664,11 +656,19 @@ instead of using an in memory database. """
 	def filename (self) -> str:
 		"""Returns the default filename for the configuration"""
 		return os.path.join (base, 'scripts', f'{program}.cfg')
+	
+	def filenames (self) -> List[str]:
+		"""Returns a list of possible locations for a configuration filename for reading"""
+		return [_p for _p in (
+			self.filename (),
+			os.path.join (base, 'etc', f'{program}.cfg'),
+			os.path.join (base, f'.{program}.rc')
+		) if os.path.isfile (_p) and os.access (_p, os.R_OK)]
 		
 	def write (self, fname: str) -> None:
 		"""Write the configuration to ``fname''"""
 		fd = open (fname, 'w')
-		for section in sorted (self.sections):
+		for section in sorted (self.sections, key = lambda a: '' if a is None else a):
 			block = self.sections[section]
 			if section is None:
 				section = '*'
@@ -688,10 +688,14 @@ instead of using an in memory database. """
 		"""Read configuration from ``fname''"""
 		cur = self.sections[None]
 		block = None
+		fd: Optional[IO[Any]] = None
 		if stream is None:
-			fd: Optional[IO[Any]] = open (self.filename (), 'rt')
+			for path in self.filenames ():
+				self.read (path)
+			with Ignore (KeyError):
+				fd = StringIO (os.environ['{program}_CONFIG'.format (program = program.upper ())])
 		elif isinstance (stream, str):
-			fd = open (stream, 'rt')
+			fd = open (stream)
 		else:
 			fd = stream
 		fds: List[IO[Any]] = []
@@ -781,7 +785,7 @@ instead of using an in memory database. """
 			wr = XMLWriter (fd)
 			wr.start ()
 			wr.open ('config')
-			for section in sorted (self.sections):
+			for section in sorted (self.sections, key = lambda a: '' if a is None else a):
 				block = self.sections[section]
 				if section is None:
 					section = "*"

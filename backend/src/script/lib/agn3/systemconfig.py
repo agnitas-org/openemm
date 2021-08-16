@@ -74,7 +74,7 @@ file, if it is available. """
 				for line in (_l.strip () for _l in self.content.split ('\n')):
 					if cont is not None:
 						if line == '}':
-							self[cont] = ' '.join (cur)
+							self[cont] = '\n'.join (cur)
 							cont = None
 						elif line:
 							cur.append (line)

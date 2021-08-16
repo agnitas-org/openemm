@@ -15,6 +15,7 @@ from	types import TracebackType
 from	typing import Any, Optional, Callable
 from	typing import Type
 from	.definitions import program
+from	.stream import Stream
 #
 __all__ = ['Ignore', 'ignore', 'Experimental']
 #
@@ -31,11 +32,27 @@ except ...:
 If no exception are specified, all exceptions are ignored and loglevel
 is set to WARNING. This is general a bad idea and should be used with
 care."""
-	__slots__ = ['exceptions', 'on_exception']
-	def __init__ (self, *exceptions: Type[BaseException]) -> None:
+	__slots__ = ['exceptions', 'on_exception', 'template', 'loglevel', 'logexception']
+	def __init__ (self, *exceptions: Type[BaseException], **kwargs: Any) -> None:
 		self.exceptions = exceptions
 		self.on_exception: Optional[Callable[[Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]], None]] = None
-		
+		do_log = kwargs.get ('log')
+		if do_log or (do_log is None and ('template' in kwargs or 'loglevel' in kwargs or 'logexception' in kwargs)):
+			self.on_exception = self.__on_exception
+		self.template: str = kwargs.get ('template', 'caught and ignored: {exc_value}')
+		self.loglevel: int = kwargs.get ('loglevel', logging.DEBUG)
+		self.logexception: bool = kwargs.get ('logexception', False)
+	
+	def __str__ (self) -> str:
+		return '{class_name} ({exceptions}, log = {log}, template = {template!r}, loglevel = {loglevel}, logexception = {logexception!r})'.format (
+			class_name = self.__class__.__name__,
+			exceptions = Stream (self.exceptions).join (', '),
+			log = 'False' if self.on_exception is None else 'True',
+			template = self.template,
+			loglevel = logging.getLevelName (self.loglevel),
+			logexception = self.logexception
+		)
+
 	def __enter__ (self) -> Ignore:
 		return self
 		
@@ -43,13 +60,29 @@ care."""
 		if exc_type is not None:
 			try:
 				if not self.exceptions or exc_type in self.exceptions or len ([_e for _e in self.exceptions if issubclass (exc_type, _e)]) > 0:
-					if self.on_exception is not None and callable (self.on_exception):
+					if self.on_exception is not None:
 						self.on_exception (exc_type, exc_value, traceback)
 					return True
 			except Exception:
 				logger.exception ('ignore: failed during expection reporting')
 		return False
 
+	def __on_exception (self,
+		exc_type: Optional[Type[BaseException]],
+		exc_value: Optional[BaseException],
+		traceback: Optional[TracebackType]
+	) -> None:
+		logger.log (
+			self.loglevel,
+			self.template.format (
+				exc_type = exc_type,
+				exc_value = exc_value,
+				traceback = traceback,
+				self = self
+			),
+			exc_info = self.logexception
+		)
+		
 def ignore (callback: Callable[[], Any], default: Any, *exceptions: Type[BaseException]) -> Any:
 	with Ignore (*exceptions):
 		return callback ()
@@ -66,13 +99,9 @@ Instead of passing excpetions, use a speaking name as an argument to
 create an instance."""
 	__slots__ = ['name']
 	def __init__ (self, name: Optional[str] = None) -> None:
-		super ().__init__ ()
-		self.on_exception = self.__on_exception
+		super ().__init__ (
+			template = '{self.name}: failed in experimental code {exc_value}',
+			loglevel = logging.ERROR,
+			logexception = True
+		)
 		self.name = name if name is not None else program
-
-	def __on_exception (self,
-		exc_type: Optional[Type[BaseException]],
-		exc_value: Optional[BaseException],
-		traceback: Optional[TracebackType]
-	) -> None:
-		logger.exception (f'{self.name}: failed in experimental code {exc_value}')

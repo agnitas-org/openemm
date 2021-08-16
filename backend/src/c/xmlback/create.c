@@ -348,6 +348,10 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	/*
 	 * 4. clear up empty lines in header */
 	cleanup_header (blockmail);
+	/*
+	 * 5. optional sign mail */
+	if (rec -> dkim)
+		sign_mail (blockmail, NULL);
 	if (rbhead)
 		rblock_retrieve_content (rbhead, blockmail -> head);
 	if (st) {

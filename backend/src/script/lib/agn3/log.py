@@ -10,17 +10,55 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	sys, os, time
+import	sys, os, time, stat
 import	logging
+from	dataclasses import dataclass
+from	datetime import datetime, date
 from	traceback import format_exception
-from	datetime import datetime
 from	types import TracebackType
 from	typing import Any, Callable, Optional, Union
-from	typing import List, TextIO, Type
+from	typing import Dict, List, Set, TextIO, Type
 from	.definitions import base, host, program
 from	.exceptions import error
+from	.ignore import Ignore
+from	.io import create_path
 #
-__all__ = ['LogID', 'log', 'mark', 'interactive']
+__all__ = ['LogID', 'log', 'mark', 'log_limit', 'interactive']
+#
+class Limiter:
+	__slots__ = ['amount', 'summary', 'seen']
+	@dataclass
+	class Entry:
+		count: int
+		last: int
+		
+	def __init__ (self, amount: int = 1, summary: Optional[Callable[[date, int, str], None]] = None) -> None:
+		self.amount = amount
+		self.summary = summary
+		self.seen: Dict[str, Limiter.Entry] = {}
+
+	def __del__ (self) -> None:
+		if self.summary is not None:
+			for (message, entry) in sorted (self.seen.items (), key = lambda kv: (kv[1].last, kv[0])):
+				if entry.count > self.amount:
+					self.summary (date.fromordinal (entry.last), entry.count, message)
+
+	def __call__ (self, method: Callable[..., None], message: str) -> None:
+		today = datetime.now ().toordinal ()
+		try:
+			entry = self.seen[message]
+			if entry.last != today:
+				if entry.count > self.amount and self.summary is not None:
+					self.summary (date.fromordinal (entry.last), entry.count, message)
+				entry.count = 0
+				entry.last = today
+		except:
+			entry = self.seen[message] = Limiter.Entry (count = 0, last = today)
+		entry.count += 1
+		if entry.count <= self.amount:
+			method (message)
+
+log_limit = Limiter ()
 #
 class LogID:
 	__slots__ = ['ref', 'new_id', 'saved_id', 'saved', 'id_stack']
@@ -65,8 +103,9 @@ class LogID:
 		
 class _Log:
 	__slots__ = ['loglevel', 'outlevel', 'outstream', 'verbosity', 'host', 'name', 'path', 'intercept', 'last', 'custom_id']
+	log_directories_seen: Set[str] = set ()
 	def __init__ (self) -> None:
-		self.loglevel = logging.WARNING
+		self.loglevel = logging.INFO
 		self.outlevel = logging.WARNING
 		self.outstream: Optional[TextIO] = None
 		self.verbosity = 0
@@ -151,12 +190,27 @@ passed object."""
 				fd.close ()
 				self.last = int (time.time ())
 		except Exception as e:
-			sys.stderr.write ('LOGFILE write failed[{typ!r}, {e}, {fname}]: {s!r}'.format (
-				typ = type (e),
-				e = e,
-				fname = fname,
-				s = s
-			))
+			directory = os.path.dirname (fname)
+			if directory in self.log_directories_seen:
+				sys.stderr.write ('LOGFILE write failed[{typ!r}, {e}, {fname}]: {s!r}\n'.format (
+					typ = type (e),
+					e = e,
+					fname = fname,
+					s = s
+				))
+			else:
+				self.log_directories_seen.add (directory)
+				with Ignore (OSError):
+					st = os.stat (directory)
+					if stat.S_ISDIR (st.st_mode):
+						sys.stderr.write (f'{fname}: failed to write to logfile or log directory {directory}: {e}\n')
+					else:
+						sys.stderr.write (f'{directory}: expected a directory, access failed due to {e}\n')
+				try:
+					create_path (directory)
+					self.append (s)
+				except error as e:
+					sys.stderr.write (f'{directory}: failed to create missing log directory: {e}\n')
 
 	def add (self, record: logging.LogRecord) -> None:
 		"""add an entry to the logfile
@@ -238,3 +292,5 @@ def interactive (on: bool = True) -> None:
 	log.intercept = interceptor if on else None
 	sys.excepthook = _original_excepthook if on else _except
 
+if program == 'unset':
+	interactive ()

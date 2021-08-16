@@ -10,12 +10,23 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
+import	sys, argparse
 from	datetime import datetime, timedelta
 from	typing import Dict
 from	agn3.db import DB
 from	agn3.runtime import CLI
 #
 class InProgress (CLI):
+	__slots__ = ['interactive']
+	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
+		parser.add_argument (
+			'-i', '--interactive', action = 'store_true',
+			help = 'start in interactive mode to cleanup jobs'
+		)
+
+	def use_arguments (self, args: argparse.Namespace) -> None:
+		self.interactive = args.interactive
+
 	def executor (self) -> bool:
 		active = 0
 		with DB () as db:
@@ -67,6 +78,31 @@ class InProgress (CLI):
 						else:
 							status += ' (nothing created until now)'
 						print ('Mailing %s (%d) for Company %s (%d) %s' % (row.shortname, row.mailing_id, company, rqm.company_id, status))
+						if self.interactive:
+							answer = ''
+							while answer not in ['y', 'n']:
+								print ('Cleanup mailing? [y/n] ', end = '')
+								sys.stdout.flush ()
+								answer = sys.stdin.readline ().strip ().lower ()[:1]
+							if answer == 'y':
+								count = db.update (
+									'UPDATE maildrop_status_tbl '
+									'SET genstatus = :genstatus, genchange = current_timestamp '
+									'WHERE status_id = :status_id AND genstatus = :oldstatus',
+									{
+										'genstatus': 4,
+										'status_id': row.status_id,
+										'oldstatus': row.genstatus
+									}
+								)
+								db.sync (count == 1)
+								if count == 1:
+									print ('Mailing successful cleaned up')
+									active -= 1
+								else:
+									print (f'Failed to cleanup mailing, updated {count} rows instead of one')
+							else:
+								print ('Leave mailing untouched')
 		if active > 0:
 			print ('%d jobs still active' % active)
 			return False

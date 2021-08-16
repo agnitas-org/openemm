@@ -57,7 +57,6 @@ static output_t	output_table[] = { /*{{{*/
 	}
 	/*}}}*/
 };
-
 static var_t *
 parse_parm (const char *str) /*{{{*/
 {
@@ -119,10 +118,6 @@ parse_parm (const char *str) /*{{{*/
 	}
 	return base;
 }/*}}}*/
-
-/* this is a clear candidate for more trouble :-( */
-int __libc_enable_secure = 0;
-
 int
 main (int argc, char **argv) /*{{{*/
 {
@@ -142,6 +137,7 @@ main (int argc, char **argv) /*{{{*/
 	bool_t		force_ecs_uid;
 	char		*fqdn;
 	const char	*level;
+	time_t		pointintime;
 	var_t		*pparm;
 	log_t		*lg;
 	FILE		*errfp;
@@ -161,12 +157,13 @@ main (int argc, char **argv) /*{{{*/
 	force_ecs_uid = false;
 	fqdn = NULL;
 	level = NULL;
+	pointintime = 0;
 	setlocale (LC_ALL, "");
 	xmlInitParser ();
 	xmlInitializePredefinedEntities ();
 	xmlInitCharEncodingHandlers ();
 	json_set_escape_slashes (0);
-	while ((n = getopt (argc, argv, "VpqE:lru:as:egd:t:o:L:h")) != -1)
+	while ((n = getopt (argc, argv, "VpqE:lru:as:egd:t:o:L:T:h")) != -1)
 		switch (n) {
 		case 'V':
 # ifdef		EMM_VERSION			
@@ -230,6 +227,9 @@ main (int argc, char **argv) /*{{{*/
 		case 'L':
 			level = optarg;
 			break;
+		case 'T':
+			pointintime = atol (optarg);
+			break;
 		case 'h':
 		default:
 			fprintf (stderr, "Usage: %s [-h] [-V] [-L <loglevel>] [-D] [-v] [-p] [-q] [-E <file>] [-l] [-r] [-d <domain>] [-o <output>[:<parm>] <file(s)>\n", argv[0]);
@@ -251,6 +251,7 @@ main (int argc, char **argv) /*{{{*/
 			       "\t-g         force generation of extended click statistics UIDs\n"
 			       "\t-d <fqdn>  use this as my full qualified domain name\n"
 			       "\t-o <out>   defines the output behaviour for generated mails\n"
+			       "\t-T <time>  a point in time to use instead of current time (in epoch)\n"
 			       "\n"
 			       "Output options may be written behind the module name, separated by a colon;\n"
 			       "these options are in <variable>=<value> style and are separated by semicolons.\n"
@@ -293,9 +294,9 @@ main (int argc, char **argv) /*{{{*/
 		}
 	}
 	if (! fqdn)
-		fqdn = get_local_fqdn ();
+		fqdn = get_fqdn ();
 	st = true;
-	srandom (time (NULL));
+	srandom (pointintime ? pointintime : time (NULL));
 	for (n = optind; st && (n < argc); ++n) {
 		blockmail_t	*blockmail;
 		xmlDocPtr	doc;
@@ -317,6 +318,7 @@ main (int argc, char **argv) /*{{{*/
 			blockmail -> force_ecs_uid = force_ecs_uid;
 			blockmail -> convert_to_entities = convert_to_entities;
 			blockmail -> fqdn = fqdn;
+			blockmail -> pointintime = pointintime;
 			log_idclr (lg);
 			if (! blockmail -> outputdata)
 				log_out (lg, LV_ERROR, "Unable to initialize output method %s for %s", out -> name, argv[n]);

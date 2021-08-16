@@ -22,6 +22,8 @@ JAVA:
 bin mode=0755:
 	src/script/control/*
 	src/script/tools/activator
+	src/script/tools/dkim-creat
+	src/script/tools/dkim-mgr
 	src/script/tools/script-tag
 	src/script/tools/service.sh
 
@@ -39,6 +41,7 @@ lib:
 
 scripts mode=0755:
 	src/script/tools/activator3.py
+	src/script/tools/dkim-mgr3.py
 	src/script/lib/*.*
 	src/script/process/*.py
 	src/script/data/mailstatus3.tmpl	mode=0644

@@ -11,7 +11,7 @@
 #
 from	__future__ import annotations
 from	types import ModuleType
-from	typing import Any, Callable, Optional, Union
+from	typing import Any, Callable, Literal, Optional, Union
 from	typing import Dict, List, Tuple, Type
 
 class DBAPI:
@@ -25,6 +25,7 @@ class DBAPI:
 		BLOB: Any
 		BINARY: Any
 		ROWID: Any
+		paramstyle: Literal['qmark', 'numeric', 'named', 'format', 'pyformat']
 		class Error (Exception): ...
 		def connect (*args: Any, **kwargs: Any) -> DBAPI.Driver: ...
 	class Driver:

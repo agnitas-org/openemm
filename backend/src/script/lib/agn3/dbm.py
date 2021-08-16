@@ -10,13 +10,14 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, logging, time
+import	os, logging, time, signal, errno
 import	dbm.gnu
 from	types import TracebackType
 from	typing import Optional
-from	typing import Generator, Iterator, Tuple, Type
-from	.daemon import Daemonic
+from	typing import Generator, Iterator, Set, Tuple, Type
+from	.daemon import Signal, Daemonic
 from	.ignore import Ignore
+from	.stream import Stream
 #
 __all__ = ['DBM', 'dbmerror']
 #
@@ -25,14 +26,11 @@ logger = logging.getLogger (__name__)
 dbmerror = dbm.gnu.error
 class DBM:
 	__slots__ = ['dbf', 'path', 'mode']
-	def __init__ (self, path: str, mode: str) -> None:
+	def __init__ (self, path: str, mode: str = 'r') -> None:
 		self.path = path
-		self.mode = mode
-		self.__open ()
+		self.mode = Stream (mode).filter (lambda ch: ch in dbm.gnu.open_flags).join ('')
+		self.open ()
 
-	def __open (self) -> None:
-		self.dbf = dbm.gnu.open (self.path, self.mode)
-	
 	def __del__ (self) -> None:
 		with Ignore (AttributeError, dbm.gnu.error):
 			self.close ()
@@ -64,6 +62,10 @@ class DBM:
 	
 	def __contains__ (self, key: bytes) -> bool:
 		return key in self.dbf
+	
+	def open (self) -> None:
+		self.__validate_database_file ()
+		self.dbf = dbm.gnu.open (self.path, self.mode)
 	
 	def close (self) -> None:
 		self.dbf.close ()
@@ -111,10 +113,63 @@ class DBM:
 							except OSError as e:
 								logger.error (f'DBM: reorganize failed to remove {tempfile}: {e}')
 			Daemonic.call (reorg, self.path)
-			self.__open ()
+			self.open ()
 
 	def truncate (self) -> None:
 		self.close ()
 		with dbm.gnu.open (self.path, 'n'):
 			pass
-		self.__open ()
+		self.open ()
+
+	validation_seen: Set[str] = set ()
+	def __validate_database_file (self) -> None:
+		if self.path not in self.validation_seen and os.path.isfile (self.path):
+			with Signal (chld = signal.SIG_DFL):
+				pid = os.fork ()
+				if pid == 0:
+					ec = 0
+					try:
+						dbf = dbm.gnu.open (self.path, self.mode)
+						'' in dbf
+						dbf.close ()
+					except dbm.gnu.error as e:
+						if e.errno is None:
+							logger.warning (f'DBM: validation of {self.path} failed due to dbmerror: {e}')
+							ec = 1
+					os._exit (ec)
+				while True:
+					try:
+						(wait_pid, status) = os.waitpid (pid, 0)
+					except OSError as e:
+						if e.errno == errno.ECHILD:
+							logger.warning (f'DBM: validation of {self.path} failed due to missing sub process: {e}')
+							break
+						else:
+							logger.info (f'DBM: wait for validation subprocess for {self.path} failed: {e}')
+					else:
+						if wait_pid == pid:
+							if os.WIFEXITED (status):
+								exit_code = os.WEXITSTATUS (status)
+								if exit_code != 0 and os.path.isfile (self.path):
+									logger.warning (f'DBM: {self.path} seems to be invalid due to exit code {exit_code}, try to remove it')
+									try:
+										os.unlink (self.path)
+									except OSError as e:
+										logger.error (f'DBM: failed to remove {self.path}: {e}')
+									finally:
+										try:
+											dbf = dbm.gnu.open (self.path, 'n')
+										except Exception as e:
+											logger.error (f'DBM: try to recreate empty database {self.path} failed: {e}')
+										else:
+											logger.info (f'DBM: recreated empty database {self.path}')
+										finally:
+											with Ignore ():
+												dbf.close ()
+							elif os.WIFSIGNALED (status):
+								exit_signal = os.WTERMSIG (status)
+								logger.warning (f'DBM: validation process for {self.path} failed due to signal {exit_signal}')
+							else:
+								logger.warning (f'DBM: validation process for {self.path} failed tue to unknown exit status of {status}')
+							self.validation_seen.add (self.path)
+							break

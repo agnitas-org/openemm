@@ -25,10 +25,14 @@ from	.io import copen, CSVDefault, CSVWriter
 from	.parser import ParseTimestamp, Unit
 from	.stream import Stream
 #
-__all__ = ['DB', 'Row']
+__all__ = ['DBIgnore', 'DB', 'Row']
 #
 logger = logging.getLogger (__name__)
 #
+class DBIgnore (Ignore):
+	def __init__ (self, loglevel: int = logging.WARNING, logexception: bool = True) -> None:
+		super ().__init__ (error, loglevel = loglevel, logexception = logexception)
+
 class DB:
 	"""Higher level database abstraction class
 
@@ -36,7 +40,7 @@ This class is used to wrap a database driver and its connections to
 one class which provides some convinient methods for dtabase
 handling."""
 	__slots__ = [
-		'dbid', 'db', 'cursor', 'dblog',
+		'dbid', 'db', 'cursor',
 		'_last_error', 
 		'_table_cache', '_view_cache', '_synonym_cache', '_index_cache', '_tablespace_cache',
 		'_scratch_tables', '_scratch_number',
@@ -47,7 +51,6 @@ handling."""
 		self.dbid = dbid
 		self.db: Optional[Core] = None
 		self.cursor: Optional[Cursor] = None
-		self.dblog: Optional[Callable[[str], None]] = None
 		self._last_error: Optional[str] = None
 		self._table_cache: Dict[str, bool] = {}
 		self._view_cache: Dict[str, bool] = {}
@@ -94,6 +97,9 @@ handling."""
 			self._last_error = self.db.last_error ()
 		self.db = None
 		self.cursor = None
+	
+	def logging (self, log: Optional[Callable[[str], None]]) -> Core.LogState:
+		return self.check_open ().logging (log)
 		
 	def reset (self) -> None:
 		"""Resets (rollbacks) changes done"""
@@ -108,9 +114,6 @@ handling."""
 			raise error (f'{self.dbid}: failed to find valid driver: {e}') from e
 		except KeyError as e:
 			raise error (f'{self.dbid}: failed to find proper configuration: {e}') from e
-		with Ignore (AttributeError):
-			if callable (self.dblog):
-				db.log = self.dblog
 		return db
 		
 	def open (self) -> bool:
@@ -179,6 +182,10 @@ handling."""
 		with self.request () as cursor:
 			cursor.querys (f'SELECT * FROM {table} WHERE 1 = 0')
 			return cursor.description (normalize)
+
+	def setup_table_optimizer (self, table: str, estimate_percent: int = 30) -> None:
+		"""setup a newly created table according to the dbms requirements"""
+		self.check_open ().setup_table_optimizer (table, estimate_percent)
 
 	@property
 	def dbms (self) -> Optional[str]:
@@ -441,6 +448,7 @@ one."""
 							if self.dbms == 'oracle' and tablespace:
 								query += f' TABLESPACE {tablespace}'
 							cursor.execute (query)
+					self.setup_table_optimizer (table)
 				self._scratch_tables.append (table)
 				break
 		return table
@@ -493,14 +501,12 @@ files to limit the size of each file."""
 		self.check_open ()
 		cmap = conversion.copy () if conversion is not None else {}
 		driver = cast (Core, self.db).driver
-		conversion_defaults: List[Tuple[Tuple[Any, ...], Callable[[str, Any], Any]]] = [
-			((None, ), lambda h, v: str (v) if v is not None else v),
-			((driver.DATETIME, driver.TIMESTAMP), lambda h, v: v.isoformat () if v is not None else v)
-		]
-		for (tlist, convert) in conversion_defaults:
-			for typ in tlist:
-				if typ not in cmap:
-					cmap[typ] = convert
+		for (typ, convert) in [
+			(None, lambda h, v: str (v) if v is not None else v),
+			(driver.DATETIME, lambda h, v: v.isoformat () if v is not None else v)
+		]:
+			if typ not in cmap:
+				cmap[typ] = convert
 		if dialect is None:
 			dialect = CSVDefault
 		if checkpoint is None:

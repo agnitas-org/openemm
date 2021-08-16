@@ -12,12 +12,12 @@
 from	__future__ import annotations
 import	base64, re, keyword
 from	abc import abstractmethod
-from	collections import namedtuple
+from	collections import namedtuple, defaultdict
 from	itertools import zip_longest
 from	enum import Enum
 from	types import TracebackType
 from	typing import Any, Callable, Optional, Protocol, TypeVar, Union
-from	typing import Dict, Iterator, List, NamedTuple, Set, Tuple, Type
+from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Set, Tuple, Type
 from	typing import cast
 from	.dbapi import DBAPI
 from	.exceptions import error
@@ -34,29 +34,28 @@ class Row (Protocol):
 	def __getitem__ (self, item: int) -> Any: ...
 	def __iter__ (self) -> Iterator[Any]: ...
 
+class Paramstyle (Enum):
+	qmark = 0
+	named = 2
+	format = 3
+
 class Cursor:
 	"""Metaclass for database cursor
 
 this is the base class for a database specific cursor and should
 inherit this class. This class should not be instantiated by an
 application, use ``Core.cursor()'' instead."""
-	__slots__ = [
-		'db', 'autocommit', 'need_reformat', 'id', 'curs',
-		'rowtype', 'log'
-	]
-	def __init__ (self, db: Core, autocommit: bool, need_reformat: bool = False) -> None:
+	__slots__ = ['db', 'autocommit', 'id', 'curs', 'rowtype']
+	def __init__ (self, db: Core, autocommit: bool) -> None:
 		"""``db'' is the database specific subclass of Core.
 
 If ``autocommit'' is set, then every update is followed by a commit to
-write the content directly to the database. ``need_reformat'' should be
-set to True, if the database does not support named placeholder."""
+write the content directly to the database."""
 		self.db = db
 		self.autocommit = autocommit
-		self.need_reformat = need_reformat
 		self.id: Optional[str] = None
 		self.curs: Optional[DBAPI.Cursor] = None
 		self.rowtype: Optional[Type[Row]] = None
-		self.log = db.log
 
 	def __enter__ (self) -> Cursor:
 		return self
@@ -98,10 +97,10 @@ set to True, if the database does not support named placeholder."""
 		"""closes the current cursor"""
 		try:
 			self.db.release (self)
-			if self.log: self.log ('Cursor closed')
+			self.db.log ('Cursor closed')
 		except self.db.driver.Error as e:
 			self.db.lasterr = e
-			if self.log: self.log ('Cursor closing failed: {error}'.format (error = self.last_error ()))
+			self.db.log ('Cursor closing failed: {error}'.format (error = self.last_error ()))
 		self.curs = None
 
 	def open (self) -> bool:
@@ -111,14 +110,14 @@ set to True, if the database does not support named placeholder."""
 			try:
 				self.curs = self.db.get_cursor ()
 				if self.curs is not None:
-					if self.log: self.log ('Cursor opened')
+					self.db.log ('Cursor opened')
 				else:
-					if self.log: self.log ('Cursor open failed')
+					self.db.log ('Cursor open failed')
 			except self.db.driver.Error as e:
 				self.error (e)
-				if self.log: self.log ('Cursor opening failed: {error}'.format (error = self.last_error ()))
+				self.db.log ('Cursor opening failed: {error}'.format (error = self.last_error ()))
 		else:
-			if self.log: self.log ('Cursor opeing failed: no database available')
+			self.db.log ('Cursor opeing failed: no database available')
 		return self.curs is not None
 
 	class Field (NamedTuple):
@@ -129,6 +128,7 @@ set to True, if the database does not support named placeholder."""
 		precision: Optional[int] = None
 		scale: Optional[int] = None
 		null_ok: bool = True
+		trailing: Optional[Tuple[Any, ...]] = None
 	def description (self, normalize: bool = False) -> List[Any]:
 		"""returns the layout description of last query call
 
@@ -138,23 +138,19 @@ portable across different databases."""
 			return [
 				Cursor.Field (
 					name = _d[0].lower (),
-					typ = self.db.typ (_d[1]),
+					typ = self.db.typ (_d),
 					display_size = _d[2],
 					size = _d[3],
 					precision = _d[4],
 					scale = _d[5],
-					null_ok = bool (_d[6])
+					null_ok = bool (_d[6]),
+					trailing = tuple (_d[7:]) if len (_d) > 7 else None
 				) for _d in self.curs.description
 			] if normalize else self.curs.description
 		raise error ('no active query')
 
-	def __valid (self) -> None:
-		if self.curs is None:
-			if not self.open ():
-				raise error ('Unable to setup cursor: {error}'.format (error = self.last_error ()))
-
 	__valid_name = re.compile ('^[a-z][a-z0-9_]*$', re.IGNORECASE)
-	def __make_row (self, data: List[Any]) -> Row:
+	def make_row (self, data: List[Any]) -> Row:
 		if self.rowtype is None:
 			d = self.description ()
 			rowspec = ['_{n}'.format (n = _n + 1) for _n in range (len (data))] if d is None else [_d[0].lower () for _d in d]
@@ -180,7 +176,12 @@ portable across different databases."""
 				raise error ('query next failed: ' + self.last_error ())
 			if data is None:
 				break
-			yield self.__make_row (data)
+			yield self.make_row (data)
+
+	def __valid (self) -> None:
+		if self.curs is None:
+			if not self.open ():
+				raise error ('Unable to setup cursor: {error}'.format (error = self.last_error ()))
 
 	def set_output_size (self, *args: Any) -> None:
 		"""dbms specific method to handle LOBs in queries"""
@@ -204,25 +205,25 @@ portable across different databases."""
 		self.__valid ()
 		try:
 			if parameter is None:
-				if self.log: self.log (f'{what}: {statement}')
+				self.db.log (f'{what}: {statement}')
 				return self.executor (statement)
 			else:
 				if isinstance (parameter, dict):
-					if self.need_reformat:
+					if self.db.paramstyle in (Paramstyle.qmark, Paramstyle.format):
 						(statement, parameter_list) = self.db.reformat (statement, parameter)
-						if self.log: self.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = ', '.join ([f'{_p!r}' for _p in parameter_list])))
+						self.db.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = ', '.join ([f'{_p!r}' for _p in parameter_list])))
 						return self.executor (statement, parameter_list)
 					elif cleanup:
 						parameter = self.db.cleanup (statement, parameter)
-				if self.log: self.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = self.__parameter_format (statement, parameter)))
+				self.db.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = self.__parameter_format (statement, parameter)))
 				return self.executor (statement, parameter)
 		except self.db.driver.Error as e:
 			self.error (e)
-			if self.log:
+			if self.db.log:
 				if parameter is None:
-					self.log ('{what} {statement} failed: {error}'.format (what = what, statement = statement, error = self.last_error ()))
+					self.db.log ('{what} {statement} failed: {error}'.format (what = what, statement = statement, error = self.last_error ()))
 				else:
-					self.log ('{what} {statement} using {parameter!r} failed: {error}'.format (what = what, statement = statement, parameter = parameter, error = self.last_error ()))
+					self.db.log ('{what} {statement} using {parameter!r} failed: {error}'.format (what = what, statement = statement, parameter = parameter, error = self.last_error ()))
 			raise error ('{what} using statement {statement} {parameter!r} start failed: {error}'.format (
 				what = what.lower (),
 				statement = statement,
@@ -241,7 +242,7 @@ than are used in the query.
 This method return an iterable realizied by itself."""
 		self.rowtype = None
 		self.__execute ('Query', statement, parameter, cleanup)
-		if self.log: self.log ('Query started')
+		self.db.log ('Query started')
 		return self
 
 	def queryc (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> List[Row]:
@@ -249,20 +250,20 @@ This method return an iterable realizied by itself."""
 		if self.query (statement, parameter, cleanup) == self:
 			try:
 				data = cast (DBAPI.Cursor, self.curs).fetchall ()
-				return [self.__make_row (_d) for _d in data]
+				return [self.make_row (_d) for _d in data]
 			except self.db.driver.Error as e:
 				self.error (e)
-				if self.log:
+				if self.db.log:
 					if parameter is None:
-						self.log ('Queryc {statement} fetch failed: {error}'.format (statement = statement, error = self.last_error ()))
+						self.db.log ('Queryc {statement} fetch failed: {error}'.format (statement = statement, error = self.last_error ()))
 					else:
-						self.log ('Queryc {statement} using {parameter!r} fetch failed: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
+						self.db.log ('Queryc {statement} using {parameter!r} fetch failed: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
 				raise error ('query all failed: {error}'.format (error = self.last_error ()))
-		if self.log:
+		if self.db.log:
 			if parameter is None:
-				self.log ('Queryc {statement} failed: {error}'.format (statement = statement, error = self.last_error ()))
+				self.db.log ('Queryc {statement} failed: {error}'.format (statement = statement, error = self.last_error ()))
 			else:
-				self.log ('Queryc {statement} using {parameter} failed: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
+				self.db.log ('Queryc {statement} using {parameter} failed: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
 		raise error ('unable to setup query: {error}'.format (error = self.last_error ()))
 
 	def querys (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Optional[Row]:
@@ -277,29 +278,29 @@ This method return an iterable realizied by itself."""
 		if self.db is not None:
 			if self.db.db is not None:
 				try:
-					if self.log:
+					if self.db.log:
 						if commit:
-							self.log ('Sync: commit')
+							self.db.log ('Sync: commit')
 						else:
-							self.log ('Sync: rollback')
+							self.db.log ('Sync: rollback')
 					self.db.sync (commit)
-					if self.log:
+					if self.db.log:
 						if commit:
-							self.log ('Sync done commiting')
+							self.db.log ('Sync done commiting')
 						else:
-							self.log ('Sync done rollbacking')
+							self.db.log ('Sync done rollbacking')
 					rc = True
 				except self.db.driver.Error as e:
 					self.error (e)
-					if self.log:
+					if self.db.log:
 						if commit:
-							self.log ('Sync failed commiting')
+							self.db.log ('Sync failed commiting')
 						else:
-							self.log ('Sync failed rollbacking')
+							self.db.log ('Sync failed rollbacking')
 			else:
-				if self.log: self.log ('Sync failed: database not open')
+				self.db.log ('Sync failed: database not open')
 		else:
-			if self.log: self.log ('Sync failed: database not available')
+			self.db.log ('Sync failed: database not available')
 		return rc
 
 	def update (self,
@@ -317,9 +318,9 @@ This method return an iterable realizied by itself."""
 				except Exception as e:
 					if state == 0:
 						self.sync ()
-						if self.log: self.log (f'Failed to update due to {e}, sync and retry')
+						self.db.log (f'Failed to update due to {e}, sync and retry')
 					else:
-						if self.log: self.log (f'Failed to update even after sync and retry due to {e}')
+						self.db.log (f'Failed to update even after sync and retry due to {e}')
 						raise
 				else:
 					break
@@ -328,11 +329,11 @@ This method return an iterable realizied by itself."""
 		rows = cast (DBAPI.Cursor, self.curs).rowcount
 		if rows > 0 and (commit or self.autocommit):
 			if not self.sync ():
-				if self.log:
+				if self.db.log:
 					if parameter is None:
-						self.log ('Commit after execute failed for {statement}: {error}'.format (statement = statement, error = self.last_error ()))
+						self.db.log ('Commit after execute failed for {statement}: {error}'.format (statement = statement, error = self.last_error ()))
 					else:
-						self.log ('Commit after execute failed for {statement} using {parameter!r}: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
+						self.db.log ('Commit after execute failed for {statement} using {parameter!r}: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
 				raise error ('commit failed: {error}'.format (error = self.last_error ()))
 		return rows
 	
@@ -347,7 +348,7 @@ class DBType (Enum):
 	STRING = 0
 	BINARY = 1
 	NUMBER = 2
-	TIMESTAMP = 3
+	DATETIME = 3
 	ROWID = 4
 
 class Core:
@@ -355,7 +356,38 @@ class Core:
 
 this is the base class for all database specific drivers and should
 inherit this class. """
-	__slots__ = ['dbms', 'driver', 'cursor_class', 'db', 'lasterr', 'log', 'cursors', 'types', 'cache_reformat', 'cache_variables']
+	__slots__ = [
+		'dbms', 'driver', 'cursor_class', 'fallbacks',
+		'db', 'lasterr', 'logger', 'cursors', 'types', 'matches',
+		'cache_reformat', 'cache_variables', 'paramstyle'
+	]
+	class LogState:
+		__slots__ = ['db', 'logger', 'save', 'enabled']
+		def __init__ (self, db: Core, logger: Optional[Callable[[str], None]]) -> None:
+			self.db = db
+			self.logger = logger
+			self.save: Optional[Callable[[str], None]] = None
+			self.enabled = False
+
+		def __enter__ (self) -> Core.LogState:
+			self.enable ()
+			return self
+
+		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+			self.disable ()
+			return None
+		
+		def enable (self) -> None:
+			if not self.enabled:
+				self.save = self.db.logger
+				self.db.logger = self.logger
+				self.enabled = True
+		
+		def disable (self) -> None:
+			if self.enabled:
+				self.db.logger = self.save
+				self.enabled = False
+	
 	def __init__ (self, dbms: str, driver: DBAPI.Vendor, cursor_class: Type[Cursor]) -> None:
 		"""``dbms'' is the symbolic name, ``driver'' the real driver class and ``cursor_class'' based on Cursor
 
@@ -366,27 +398,30 @@ but can produce lots of output in prdocutive use."""
 		self.dbms = dbms
 		self.driver = driver
 		self.cursor_class = cursor_class
+		self.fallbacks = ['default']
 		self.db: Optional[DBAPI.Driver] = None
 		self.lasterr: Optional[Exception] = None
-		self.log: Optional[Callable[[str], None]] = None
+		self.logger: Optional[Callable[[str], None]] = None
 		self.cursors: List[Cursor] = []
 		self.types: Dict[Any, DBType] = {None: DBType.STRING}
+		self.matches: DefaultDict[DBType, List[Any]] = defaultdict (list)
 		self.cache_reformat: Dict[str, Tuple[str, List[Any]]] = {}
 		self.cache_variables: Dict[str, Set[str]] = {}
 		names: List[str]
+		try:
+			self.paramstyle = Paramstyle[self.driver.paramstyle]
+		except KeyError:
+			raise error (f'{driver.paramstyle}: not (yet) supported')
 		for (id, names) in [
+			(DBType.STRING, ['STRING', 'CLOB', 'NCHAR', 'NCLOB']),
 			(DBType.BINARY, ['BINARY', 'BLOB', 'LOB']),
 			(DBType.NUMBER, ['NUMBER', ]),
-			(DBType.TIMESTAMP, ['TIMESTAMP', 'DATETIME', 'DATE', 'TIME']),
+			(DBType.DATETIME, ['DATETIME', 'DATE', 'TIME', 'TIMESTAMP']),
 			(DBType.ROWID, ['ROWID', ])
 		]:
 			for name in names:
-				if name in driver.__dict__:
-					try:
-						for t in driver.__dict__[name]:
-							self.types[t] = id
-					except TypeError:
-						self.types[driver.__dict__[name]] = id
+				with Ignore (AttributeError):
+					self.matches[id].append (getattr (driver, name))
 
 	def __enter__ (self) -> Core:
 		return self
@@ -400,16 +435,33 @@ but can produce lots of output in prdocutive use."""
 			self.close ()
 		return None
 	
+	def logging (self, log: Optional[Callable[[str], None]]) -> Core.LogState:
+		return Core.LogState (self, log)
+	
 	def setup (self) -> None:
 		"""hook to add driver specific setup code"""
 		pass
-	
-	def typ (self, t: Any) -> DBType:
+
+	def log (self, message: str) -> None:
+		if self.logger is not None:
+			with Ignore ():
+				self.logger (message)
+
+	def typ (self, entry: Tuple[Any, ...]) -> DBType:
 		"""returns a normalized type of the database specific value type"""
+		t = entry[1]
 		try:
 			return self.types[t]
 		except KeyError:
-			return self.types[None]
+			try:
+				self.types[t] = (Stream (self.matches.items ())
+					.filter (lambda kv: Stream (kv[1]).filter (lambda v: bool (v == t)).count () > 0)
+					.map (lambda kv: kv[0])
+					.first (no = None)
+				)
+			except:
+				self.types[t] = self.types[None]
+			return self.types[t]
 
 	def error (self, errmsg: Any) -> None:
 		"""is called in error condition
@@ -427,7 +479,8 @@ have to use a database specific query, you can use this method to
 automatically select the query required for the currently used
 database. The known databases are detected by the used driver and are
 normalized to these names:
-	- mysql: for MySQL or MariaDB databases
+	- mysql: for MySQL databases
+	- mariadb: for MariaDB databases
 	- oracle: for Oracle RDBMs
 	- sqlite: for using a SQLite3 database
 
@@ -443,7 +496,23 @@ And to get the query to select the newly created ID:
 		mysql = 'SELECT last_insert_id()'
 	)
 """
-		return args[self.dbms]
+		key: Optional[str]
+		seen: Set[str] = set ()
+		for key in [self.dbms] + self.fallbacks:
+			seen.clear ()
+			while key is not None:
+				try:
+					result = args[key]
+					if isinstance (result, str) and result in args:
+						if result in seen:
+							raise ValueError (f'{result}: cyclic reference detected')
+						seen.add (result)
+						key = result
+					else:
+						return result
+				except KeyError:
+					key = None
+		raise KeyError (self.dbms)
 
 	__variable_pattern = re.compile ('\'[^\']*\'|:[a-z0-9_]+', re.IGNORECASE)
 	def reformat (self, statement: str, parameter: Dict[str, Any]) -> Tuple[str, List[Any]]:
@@ -454,13 +523,13 @@ And to get the query to select the newly created ID:
 		except KeyError:
 			def reformater (query: str, varlist: List[str]) -> Iterator[str]:
 				for (plain, match) in zip_longest (self.__variable_pattern.split (statement), self.__variable_pattern.findall (statement)):
-					yield plain.replace ('%', '%%')
+					yield plain.replace ('%', '%%') if self.paramstyle == Paramstyle.format else plain
 					if match is not None:
 						if match.startswith (':'):
 							varlist.append (match[1:])
-							yield '%s'
+							yield '%s' if self.paramstyle == Paramstyle.format else '?'
 						else:
-							yield match.replace ('%', '%%')
+							yield match.replace ('%', '%%') if self.paramstyle == Paramstyle.format else match
 			varlist = []
 			new_statement = ''.join (reformater (statement, varlist))
 			self.cache_reformat[statement] = (new_statement, varlist)
@@ -535,7 +604,7 @@ without transaction support this may be a NO-OP."""
 		"""closes database and all created cursors"""
 		if self.db is not None:
 			for c in self.cursors[:]:
-				if self.log is not None and c.id is not None:
+				if c.id is not None:
 					self.log (f'Closing pending cursor {c.id}')
 				with Ignore (self.driver.Error):
 					c.close ()
@@ -571,6 +640,10 @@ without transaction support this may be a NO-OP."""
 	def is_open (self) -> bool:
 		"""returns True, if database is open, else False"""
 		return self.db is not None
+
+	def version (self) -> Tuple[int, ...]:
+		"""Retrieve database version as tuple"""
+		return (0, )
 
 	def get_cursor (self) -> Any:
 		"""create a new cursor
@@ -617,8 +690,11 @@ closed and removed from the internal tracking."""
 			if cursor.curs:
 				cursor.curs.close ()
 				cursor.curs = None
-		elif self.log is not None and cursor.id is not None:
+		elif cursor.id is not None:
 			self.log (f'Try to release a not managed cursor {cursor.id}')
+	
+	def setup_table_optimizer (self, table: str, extimate_percent: int = 30) -> None:
+		"""setup a newly created table according to the dbms requirements"""
 
 	def stream (self, *args: Any, **kwargs: Any) -> Stream:
 		"""creates a stream using a dedicated cursor and using ``*args'' and ``**kwargs'' for Cursor.query()"""

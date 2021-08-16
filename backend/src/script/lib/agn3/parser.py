@@ -16,7 +16,7 @@ from	datetime import datetime
 from	io import StringIO
 from	itertools import takewhile, zip_longest
 from	typing import Any, Callable, Iterable, Optional, Protocol, Union
-from	typing import Dict, Iterator, List, NamedTuple, Type
+from	typing import Dict, Iterator, List, Match, NamedTuple, Type
 from	typing import cast
 from	.exceptions import error
 from	.ignore import Ignore
@@ -172,8 +172,9 @@ unit.parse ('2K 512B') -> 2560"""
 		with Ignore (ValueError):
 			rc = 0
 			scan = self.__eparse.scanner (expr)
+			m: Match[str]
 			for m in iter (scan.search, None):
-				(i, u) = m.groups ()
+				(i, u) = cast (Match[str], m).groups ()
 				if u:
 					mult = self.eunit[u]
 				else:

@@ -119,3 +119,13 @@ Primary used for logging."""
 		if not self.error:
 			return 'no error'
 		return ', '.join (self.error)
+
+	def as_datetime (self) -> datetime:
+		return datetime (
+			year = int (self.timestamp[:4]),
+			month = int (self.timestamp[4:6]),
+			day = int (self.timestamp[6:8]),
+			hour = int (self.timestamp[8:10]),
+			minute = int (self.timestamp[10:12]),
+			second = int (self.timestamp[12:])
+		)

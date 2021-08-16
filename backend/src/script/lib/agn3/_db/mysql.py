@@ -9,17 +9,13 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
-from	typing import Any
 from	..ignore import Ignore
 #
 with Ignore (ImportError):
 	try:
 		import	MySQLdb
-		mysql_driver: Any = MySQLdb
-	except ImportError:
-		from	mysql import connector
-		mysql_driver = connector
-		
+	except:
+		raise ImportError ()
 	from	typing import Any, Optional, Union
 	from	typing import Dict, List
 	from	typing import cast
@@ -30,9 +26,6 @@ with Ignore (ImportError):
 	class CursorMySQL (Cursor):
 		"""MySQL sepcific Cursor implementation"""
 		__slots__: List[str] = []
-		def __init__ (self, db: Core, autocommit: bool) -> None:
-			super ().__init__ (db, autocommit, True)
-
 		def querys (self, req: str, parm: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Optional[Row]:
 			rc = super ().querys (req, parm, cleanup)
 			if rc is not None:
@@ -45,7 +38,7 @@ with Ignore (ImportError):
 		"""MySQL specific Core implementation"""
 		__slots__ = ['host', 'user', 'passwd', 'name']
 		def __init__ (self, host: str, user: str, passwd: str, name: str) -> None:
-			super ().__init__ ('mysql', cast (DBAPI.Vendor, mysql_driver), CursorMySQL)
+			super ().__init__ ('mysql', cast (DBAPI.Vendor, MySQLdb), CursorMySQL)
 			self.host = host
 			self.user = user
 			self.passwd = passwd
@@ -65,26 +58,16 @@ with Ignore (ImportError):
 				port: Optional[int] = int (port_str)
 			except ValueError:
 				(host, port) = (self.host, None)
-			if self.driver.__name__ == 'mysql.connector':
-				config = {
-					'host': host,
-					'user': self.user,
-					'password': self.passwd,
-					'database': self.name,
-					'charset': 'utf8',
-					'use_unicode': True
-				}
-				if port is not None:
-					config['port'] = port
-				self.db = self.driver.connect (**config)
-			else:
-				utf8 = {
-					'charset': 'utf8',
-					'use_unicode': True
-				}
-				if port is not None:
-					self.db = self.driver.connect (host, self.user, self.passwd, self.name, port, **utf8)
-				else:
-					self.db = self.driver.connect (self.host, self.user, self.passwd, self.name, **utf8)
+			config = {
+				'host': host,
+				'user': self.user,
+				'password': self.passwd,
+				'database': self.name,
+				'charset': 'utf8',
+				'use_unicode': True
+			}
+			if port is not None:
+				config['port'] = port
+			self.db = self.driver.connect (**config)
 
-	mysql = Driver ('mysql', ['mariadb'], lambda cfg: MySQL (cfg ('host'), cfg ('user'), cfg ('password'), cfg ('name')))
+	mysql = Driver ('mysql', None, lambda cfg: MySQL (cfg ('host'), cfg ('user'), cfg ('password'), cfg ('name')))

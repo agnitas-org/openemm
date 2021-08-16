@@ -27,21 +27,31 @@ mid_maker_alloc (blockmail_t *blockmail) /*{{{*/
 		time_t		tim;
 		struct tm	*tt;
 		
-		time (& tim);
+		tim = blockmail_now (blockmail);
 		if (tt = gmtime (& tim)) {
-			m -> plen = snprintf (m -> prefix, sizeof (m -> prefix) - 1, "%04d%02d%02d%02d%02d%02d_%d",
+			m -> plen = snprintf (m -> prefix, sizeof (m -> prefix) - 1, "aa%04d%02d%02d%02d%02d%02d_%d",
 					      tt -> tm_year + 1900, tt -> tm_mon + 1, tt -> tm_mday,
 					      tt -> tm_hour, tt -> tm_min, tt -> tm_sec,
 					      blockmail -> licence_id);
 		} else {
-			m -> prefix[0] = '\0';
-			m -> plen = 0;
+			m -> plen = snprintf (m -> prefix, sizeof (m -> prefix) - 1, "aa");
 		}
 		m -> last_customer_id = -1;
 		m -> nr = 0;
 	}
 	return m;
 }/*}}}*/
+
+/* "V" and numeric values are excluded by purpose from this list as this is an indicator for BCC mails */
+# define	RANDOM_CHARACTERS	"ABCDEFGHIJKLMNOPQRSTUWXYZabcdefghijklmnopqrstuvwxyz"
+# define	pick()			(RANDOM_CHARACTERS[random () % (sizeof (RANDOM_CHARACTERS) - 1)])
+static void
+mid_maker_randomize (mmid_t *m) /*{{{*/
+{
+	m -> prefix[0] = pick ();
+	m -> prefix[1] = pick ();
+}/*}}}*/
+
 static void
 mid_maker_free (void *mp) /*{{{*/
 {
@@ -79,6 +89,7 @@ receiver_alloc (blockmail_t *blockmail, int data_blocks) /*{{{*/
 		r -> slist = NULL;
 		r -> chunks = 1;
 		r -> size = 0;
+		r -> dkim = false;
 		if ((! r -> message_id) || (! r -> rvdata) ||
 		    (! r -> encrypt)) {
 			r = receiver_free (r);
@@ -145,6 +156,7 @@ receiver_clear (receiver_t *r) /*{{{*/
 	r -> base_block = NULL;
 	r -> chunks = 1;
 	r -> size = 0;
+	r -> dkim = false;
 }/*}}}*/
 void
 receiver_set_data_l (receiver_t *rec, const char *key, long data) /*{{{*/
@@ -208,6 +220,7 @@ receiver_make_message_id (receiver_t *rec, blockmail_t *blockmail) /*{{{*/
 	if (m) {
 		char	*uid;
 		
+		mid_maker_randomize (m);
 		if (rec -> customer_id == m -> last_customer_id) {
 			int	n;
 			

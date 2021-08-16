@@ -146,6 +146,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 
 		b -> ltag = NULL;
 		b -> taglist_count = 0;
+		b -> clear_empty_dyn_block = false;
 
 		b -> gtag = NULL;
 		b -> globaltag_count = 0;
@@ -170,8 +171,10 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> receiver_count = 0;
 
 		b -> fqdn = NULL;
+		b -> pointintime = 0;
 		b -> xconv = NULL;
 		b -> mfrom = NULL;
+		b -> dkim = NULL;
 		b -> vip = NULL;
 		b -> onepix_template = NULL;
 		b -> offline_picture_prefix = NULL;
@@ -294,6 +297,8 @@ blockmail_free (blockmail_t *b) /*{{{*/
 
 		if (b -> mfrom)
 			free (b -> mfrom);
+		if (b -> dkim)
+			sdkim_free (b -> dkim);
 		if (b -> vip)
 			xmlBufferFree (b -> vip);
 		if (b -> onepix_template)
@@ -303,6 +308,11 @@ blockmail_free (blockmail_t *b) /*{{{*/
 		free (b);
 	}
 	return NULL;
+}/*}}}*/
+time_t
+blockmail_now (blockmail_t *b) /*{{{*/
+{
+	return b -> pointintime ? b -> pointintime : time (NULL);
 }/*}}}*/
 bool_t
 blockmail_count (blockmail_t *b, const char *mediatype, int subtype, int chunks, long bytes, int bcccount) /*{{{*/
@@ -594,6 +604,41 @@ blockmail_setup_mfrom (blockmail_t *b) /*{{{*/
 	}
 }/*}}}*/
 void
+blockmail_setup_dkim (blockmail_t *b) /*{{{*/
+{
+	var_t	*dom, *key, *ident, *sel, *col;
+	bool_t	r, z;
+	var_t	*tmp;
+	
+	dom = NULL;
+	key = NULL;
+	ident = NULL;
+	sel = NULL;
+	col = NULL;
+	r = false;
+	z = false;
+	for (tmp = b -> company_info; tmp; tmp = tmp -> next)
+		if (var_match (tmp, "_dkim_domain")) {
+			dom = tmp;
+		} else if (var_match (tmp, "_dkim_key")) {
+			key = tmp;
+		} else if (var_match (tmp, "_dkim_ident")) {
+			ident = tmp;
+		} else if (var_match (tmp, "_dkim_selector")) {
+			sel = tmp;
+		} else if (var_match (tmp, "_dkim_column")) {
+			col = tmp;
+		} else if (var_match (tmp, "_dkim_report")) {
+			if (tmp -> val && atob (tmp -> val))
+				r = true;
+		} else if (var_match (tmp, "_dkim_z")) {
+			if (tmp -> val && strchr (tmp -> val, b -> status_field))
+				z = true;
+		}
+	if (dom && key && sel)
+		b -> dkim = sdkim_alloc (b, dom -> val, key -> val, ident ? ident -> val : NULL, sel -> val, col ? col -> val : NULL, r, z);
+}/*}}}*/
+void
 blockmail_setup_vip_block (blockmail_t *b) /*{{{*/
 {
 	if (b -> smap) {
@@ -629,6 +674,10 @@ blockmail_setup_onepixel_template (blockmail_t *b) /*{{{*/
 void
 blockmail_setup_tagpositions (blockmail_t *b) /*{{{*/
 {
+	var_t	*tmp;
+	
+	if ((tmp = var_find (b -> company_info, "clear-empty-dyn-block")) && tmp -> val)
+		b -> clear_empty_dyn_block = atob (tmp -> val);
 	if (b -> ltag) {
 		int	n, m;
 		dyn_t	*d, *dd;

@@ -84,7 +84,8 @@ class Process:
 	def do_status (self) -> None:
 		(found, out, err) = self.do ('status')
 		if found and out is not None:
-			if out.split (None, 1)[0] not in self.known_statuses:
+			response = out.split (None, 1)
+			if not response or response[0] not in self.known_statuses:
 				raise service_error ('status command returned unknown status %s (known are %s)' % (out, ', '.join (self.known_statuses)), 'status', name = self.name, status = out)
 		self.status = self.plugin ('status', (), out)
 		self.comment = None

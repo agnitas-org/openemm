@@ -20,7 +20,6 @@ all:	bav
 
 bav:	libmilter.a $(OBJS1) ../lib/libagn.a
 	$(CC) $(LDFLAGS) $(OBJS1) -o $@ $(LIBS) -lmilter
-	strip -s $@
 
 ../lib/libagn.a:
 	$(MAKE) -C ../lib `basename $@`

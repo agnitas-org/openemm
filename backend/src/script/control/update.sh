@@ -29,7 +29,7 @@ stop)
 status)
 
 	if py3available; then
-		patternstatus 5 $command
+		patternstatus 6 $command
 	else
 		patternstatus 4 $command
 	fi

@@ -27,19 +27,15 @@ all:	qctrl smctrl config-query pathstrip
 
 qctrl:	$(OBJS1) ../lib/libagn.a
 	$(CC) $(LDFLAGS) -o $@ $(OBJS1) $(LIBS)
-	strip -s $@
 
 smctrl:	$(OBJS2) ../lib/libagn.a
 	$(CC) $(LDFLAGS) -o $@ $(OBJS2) $(LIBS) -lutil
-	strip -s $@
 
 config-query:	$(OBJS3) ../lib/libagn.a
 	$(CC) $(LDFLAGS) -o $@ $(OBJS3) $(LIBS)
-	strip -s $@
 
 pathstrip:	$(OBJS4)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS4)
-	strip -s $@
 
 ../lib/libagn.a:
 	@$(MAKE) -C ../lib `basename $@`

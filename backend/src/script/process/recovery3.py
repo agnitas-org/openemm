@@ -267,7 +267,7 @@ class Recovery (CLI): #{{{
 				logger.info ('Start backend using status_id %d for %s' % (m.status_id, self.__mailing_name (m.mailing_id)))
 				starter = agn3.emm.mailing.Mailing ()
 				if not starter.fire (status_id = m.status_id, cursor = self.db.cursor):
-					logger.error ('Failed to trigger mailing %d')
+					logger.error ('Failed to trigger mailing %d' % m.mailing_id)
 					self.report.append ('%s [%d]: Failed to trigger mailing' % (self.__mailing_name (m.mailing_id), m.mailing_id))
 					break
 				self.db.sync ()

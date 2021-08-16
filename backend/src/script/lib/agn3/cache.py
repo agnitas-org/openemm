@@ -10,7 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 import	time, collections
-from	typing import Generic, Optional, TypeVar
+from	typing import Generic, TypeVar, Union
 from	typing import Deque, Dict
 from	.parser import Unit
 #
@@ -40,7 +40,7 @@ entries."""
 			"""if the entry is still valid"""
 			return self.created + timeout >= now
 
-	def __init__ (self, limit: int = 0, timeout: Optional[int] = None) -> None:
+	def __init__ (self, limit: int = 0, timeout: Union[None, int, str] = None) -> None:
 		"""``limit'' is the maximum number of elements of the
 cache (use 0 for no limits) and ``timeout'' is the timeout for entries
 to be valid. ``timeout'' can either be specified as int in seconds or

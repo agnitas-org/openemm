@@ -1449,6 +1449,7 @@ parse_receivers (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 							rec -> mediatypes = extract_property (blockmail, node, "mediatypes");
 							if (parse_details (blockmail, doc, node -> children, rec)) {
 								st = true;
+								rec -> dkim = blockmail -> dkim && sdkim_should_sign (blockmail -> dkim, rec) ? true : false;
 								log_idpush (blockmail -> lg, "create", "->");
 								st = create_output (blockmail, rec);
 								if (blockmail -> eval)
@@ -1573,6 +1574,7 @@ parse_blockmail (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 			else if (! xmlstrcmp (node -> name, "receivers")) {
 				blockmail_setup_company_configuration (blockmail);
 				blockmail_setup_mfrom (blockmail);
+				blockmail_setup_dkim (blockmail);
 				blockmail_setup_vip_block (blockmail);
 				blockmail_setup_onepixel_template (blockmail);
 				blockmail_setup_tagpositions (blockmail);

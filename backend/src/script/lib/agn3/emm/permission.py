@@ -33,22 +33,22 @@ not."""
 				for (key, target) in self.permissions.items ():
 					if key == 'group':
 						query = (
-							'SELECT security_token FROM admin_group_permission_tbl '
+							'SELECT permission_name FROM admin_group_permission_tbl '
 							'WHERE admin_group_id IN (SELECT admin_group_id FROM admin_group_tbl WHERE company_id IN (0, :company_id))'
 						)
 					elif key == 'admin':
 						query = (
-							'SELECT security_token FROM admin_permission_tbl '
+							'SELECT permission_name FROM admin_permission_tbl '
 							'WHERE admin_id IN (SELECT admin_id FROM admin_tbl WHERE company_id IN (0, :company_id))'
 						)
 					elif key == 'company':
 						query = (
-							'SELECT security_token FROM company_permission_tbl '
+							'SELECT permission_name FROM company_permission_tbl '
 							'WHERE company_id IN (0, :company_id)'
 						)
 					for row in cursor.query (query, data):
-						if row.security_token is not None:
-							target.add (row.security_token)
+						if row.permission_name is not None:
+							target.add (row.permission_name)
 		if db is None:
 			mydb.close ()
 	

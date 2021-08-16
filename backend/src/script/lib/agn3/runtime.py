@@ -12,6 +12,7 @@
 import	sys, os, logging, argparse, time, signal
 from	collections import namedtuple
 from	dataclasses import dataclass
+from	traceback import print_exception
 from	typing import Any, Callable, Optional
 from	typing import List
 from	.config import Config
@@ -21,6 +22,7 @@ from	.lock import Lock
 from	.log import log
 from	.parser import Unit
 from	.process import Processtitle, Parallel
+from	.stream import Stream
 #
 __all__ = ['Runtime', 'CLI']
 #
@@ -118,9 +120,7 @@ def cleanup (self):
 			self.cfg = Config ()
 			self.cfg.setup_namespace (**kwargs)
 			self.cfg.enable_substitution ()
-			filename = self.cfg.filename ()
-			if os.path.isfile (filename):
-				self.cfg.read (filename)
+			self.cfg.read ()
 		self.ctx = Runtime.Context ()
 
 	def run (self, *args: Any, **kwargs: Any) -> Any:
@@ -142,6 +142,15 @@ def cleanup (self):
 		with Lock (id = self.ctx.lock_id, lazy = self.ctx.lock_lazy) as lck, log ('main'):
 			if lck is not None:
 				logger.info ('Starting up')
+				current_config = self.cfg.get_section (None)
+				current_config.update (self.cfg.get_section (host))
+				if current_config:
+					logger.info ('  with {config}'.format (
+						config = Stream (current_config.items ())
+							.sorted ()
+							.map (lambda kv: '{key}="{value}"'.format (key = kv[0], value = kv[1]))
+							.join (', ')
+					))
 				try:
 					def get_name (function: Callable[..., Any]) -> str:
 						try:
@@ -282,22 +291,22 @@ def cleanup (self):
 			self.cfg[option.option] = option.value
 	#
 	# Methods to be overwritten by client
-	def supports (self, option: str) -> bool:
-		return True
 	def setup (self) -> None:
 		pass
-	def prepare (self) -> None:
-		pass
-	def cleanup (self) -> None:
-		pass
+	def supports (self, option: str) -> bool:
+		return True
 	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
 		pass
 	def use_arguments (self, args: argparse.Namespace) -> None:
+		pass
+	def prepare (self) -> None:
 		pass
 	def executor (self) -> bool:
 		return False
 	def executors (self) -> Optional[List[Callable[[], bool]]]:
 		return None
+	def cleanup (self) -> None:
+		pass
 
 class CLI (Daemonic):
 	__slots__: List[str] = []
@@ -319,6 +328,7 @@ class CLI (Daemonic):
 			ok = self.executor ()
 		except Exception as e:
 			print (f'Execute failed due to: {e}', file = sys.stderr)
+			print_exception (*sys.exc_info ())
 			ok = False
 		self.cleanup (ok)
 		return ok
@@ -338,13 +348,13 @@ class CLI (Daemonic):
 	# Methods to be overwritten by client
 	def setup (self) -> None:
 		pass
-	def prepare (self) -> None:
-		pass
-	def cleanup (self, success: bool) -> None:
-		pass
 	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
 		pass
 	def use_arguments (self, args: argparse.Namespace) -> None:
 		pass
+	def prepare (self) -> None:
+		pass
 	def executor (self) -> bool:
 		return False
+	def cleanup (self, success: bool) -> None:
+		pass

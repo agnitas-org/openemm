@@ -14,12 +14,11 @@ import	logging
 import	os, signal, time, errno, re, subprocess
 import	multiprocessing
 from	abc import abstractmethod
-from	collections import namedtuple
 from	signal import Signals
 from	queue import Queue
 from	types import FrameType, TracebackType
 from	typing import Any, Callable, Optional, Union
-from	typing import Dict, Iterator, List, Set, Tuple, Type
+from	typing import Dict, Iterator, List, NamedTuple, Set, Tuple, Type
 from	.definitions import program, user
 from	.exceptions import error
 from	.ignore import Ignore
@@ -280,7 +279,17 @@ seconds to wait for children to terminate."""
 		"""Can be overwritten to log the activty of Family"""
 		pass
 
-Processstats = namedtuple ('Processstats', ['pid', 'ppid', 'user', 'group', 'etime', 'time', 'tty', 'size', 'comm', 'cmd'])
+class Processstats (NamedTuple):
+	pid: int
+	ppid: int
+	user: str
+	group: str
+	etime: int
+	time: int
+	tty: str
+	size: int
+	comm: str
+	cmd: str
 class Processentry:
 	"""Information about one process
 

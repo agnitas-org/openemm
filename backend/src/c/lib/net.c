@@ -11,41 +11,27 @@
 /** @file net.c
  * Network related routines.
  */
-# include	<string.h>
 # include	<netdb.h>
 # include	<sys/utsname.h>
 # include	"agn.h"
 
-/** Get full qualified domain name.
- * Retrieve the full qualified domain name for a given hostname
- * @param name the hostname
- * @return the fqdn on success, NULL otherwise
- */
-char *
-get_fqdn (const char *name) /*{{{*/
-{
-	char		*fqdn;
-	struct hostent	*hent;
-	
-	fqdn = NULL;
-	sethostent (0);
-	if ((hent = gethostbyname (name)) && hent -> h_name)
-		fqdn = strdup (hent -> h_name);
-	endhostent ();
-	return fqdn;
-}/*}}}*/
 /** Get full qualified domain name for current system.
  * Retrieve the fqdn for the local machine
  * @return the fqdn on success, NULL otherwise
  */
 char *
-get_local_fqdn (void) /*{{{*/
+get_fqdn (void) /*{{{*/
 {
 	char		*fqdn;
 	struct utsname	un;
+	struct hostent	*hent;
 	
 	fqdn = NULL;
-	if (uname (& un) != -1)
-		fqdn = get_fqdn (un.nodename);
+	if (uname (& un) != -1) {
+		sethostent (0);
+		if ((hent = gethostbyname (un.nodename)) && hent -> h_name)
+			fqdn = strdup (hent -> h_name);
+		endhostent ();
+	}
 	return fqdn;
 }/*}}}*/

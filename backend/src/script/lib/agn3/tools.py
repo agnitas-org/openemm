@@ -53,7 +53,16 @@ def atob (s: Any) -> bool:
 	if isinstance (s, int) or isinstance (s, float):
 		return bool (s)
 	if isinstance (s, str):
-		return bool (s) and s[0] in ['1', 'T', 't', 'Y', 'y', '+']
+		return bool (s) and {
+			'true': True,
+			'enabled': True,
+			'yes': True,
+			'on': True,
+			'false': False,
+			'off': False,
+			'no': False,
+			'disabled': False
+		}.get (s.lower (), s[0] in ['1', 'T', 't', 'Y', 'y', '+'])
 	return False
 
 def calc_hash (s: str) -> int:

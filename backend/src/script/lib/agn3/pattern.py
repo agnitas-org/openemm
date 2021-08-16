@@ -10,9 +10,9 @@
 ####################################################################################################################################################################################################################################################################
 #
 import	re
-from	typing import Pattern, Tuple
+from	typing import Tuple
 #
-__all__ = ['isnum', 'numkey', 'SQL_wildcard_transform', 'SQL_wildcard_compile']
+__all__ = ['isnum', 'numkey']
 #
 isnum_pattern = re.compile ('^[0-9]+$')
 def isnum (s: str) -> bool:
@@ -24,26 +24,3 @@ def numkey (s: str) -> Tuple[int, ...]:
 	if rc == ():
 		return (0, )
 	return rc
-	
-def SQL_wildcard_transform (s: str) -> str:
-	"""transforms a SQL wildcard expression to a regular expression"""
-	r = ''
-	needFinal = True
-	for ch in s:
-		needFinal = True
-		if ch in '$^*?()+[{]}|\\.':
-			r += f'\\{ch}'
-		elif ch == '%':
-			r += '.*'
-			needFinal = False
-		elif ch == '_':
-			r += '.'
-		else:
-			r += ch
-	if needFinal:
-		r += '$'
-	return r
-
-def SQL_wildcard_compile (s: str, reFlags: int = 0) -> Pattern[str]:
-	"""compiles a SQL wildcard expression as a regular expression"""
-	return re.compile (SQL_wildcard_transform (s), reFlags)

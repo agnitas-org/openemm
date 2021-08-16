@@ -14,6 +14,7 @@ from	__future__ import annotations
 import	os, re
 import	argparse, logging
 from	typing import Optional
+from	typing import List
 from	agn3.db import DB
 from	agn3.runtime import CLI
 from	agn3.stream import Stream
@@ -87,10 +88,7 @@ class ScriptTag (CLI):
 		with DB () as db, db.request () as cursor:
 			if not self.only_tags:
 				with open (self.filename) as fd:
-					code = fd.read ()
-				if code.startswith ('#!'):
-					code = code.split ('\n', 1)[-1]
-				code = re.split ('\n[^\n]*%%\n', code)[0]
+					code = self.cleanup_code (fd.read ())
 				rq = cursor.querys (
 					'SELECT tag_function_id, lang, description, code '
 					'FROM tag_function_tbl '
@@ -160,7 +158,7 @@ class ScriptTag (CLI):
 						rows = cursor.update (query, data)
 						if rows == 1:
 							if not self.quiet:
-								print ('{name}: code updated using language "{self.language}"')
+								print (f'{name}: code updated using language "{self.language}"')
 						else:
 							print ('{name}: FAILED to update code: {error}'.format (
 								name = name,
@@ -259,6 +257,25 @@ class ScriptTag (CLI):
 							rc = False
 			cursor.sync (not self.dryrun and rc)
 		return rc
+	
+	def cleanup_code (self, code: str) -> str:
+		if code.startswith ('#!'):
+			code = code.split ('\n', 1)[-1]
+		pattern_condition = re.compile ('#<.*>#$')
+		pattern_unittest = re.compile ('%%$')
+		output: List[str] = []
+		state = 0
+		for line in code.split ('\n'):
+			match = pattern_condition.search (line)
+			if match is not None:
+				state = 0
+			elif state == 0:
+				match = pattern_unittest.search (line)
+				if match is not None:
+					state = 1
+			if state == 0:
+				output.append (line)
+		return '\n'.join (output)
 #
 if __name__ == '__main__':
 	ScriptTag.main ()
