@@ -52,16 +52,23 @@ start)
 			while [ $count -lt 2 ] ; do
 				messagen "Sendmail instance .. "
 				pidf="-OPidFile=/var/run/sendmail-`basename $sdir`-${count}.pid"
-
-				$HOME/bin/smctrl -NNEVER -OQueueDirectory=$sdir $pidf -q60m
-				echo "$HOME/bin/smctrl -NNEVER -OQueueDirectory=$sdir $pidf -q60m" >> $ctrlfile
+				$HOME/bin/smctrl $SENDMAIL_DSN_OPT -OQueueDirectory=$sdir $pidf -q60m
+				echo "$HOME/bin/smctrl $SENDMAIL_DSN_OPT -OQueueDirectory=$sdir $pidf -q60m" >> $ctrlfile
 				count=`expr $count + 1`
 				message "$count started."
 			done
+			if [ -x $HOME/bin/qctrl ]; then
+				messagen "Starting qctrl .. "
+				$HOME/bin/qctrl -d 900 -L info move $qdir $sdir 'tries:10'
+				message "done."
+			fi
 		fi
 	fi
 	;;
 stop)
+	if [ -x $HOME/bin/qctrl ]; then
+		as=root terminator $HOME/bin/qctrl
+	fi
 	if [ "$MTA" = "sendmail" ]; then
 		if [ -d $sdir ]; then
 			messagen "Stopping sendmails .. "

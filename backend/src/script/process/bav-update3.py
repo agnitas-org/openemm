@@ -12,7 +12,6 @@
 #
 from	__future__ import annotations
 import	argparse, logging, os, time, socket, re
-from	datetime import datetime
 from	dataclasses import dataclass
 from	typing import Optional
 from	typing import Dict, List, NamedTuple, Set
@@ -30,45 +29,10 @@ from	agn3.tools import listsplit, silent_call, escape
 #
 logger = logging.getLogger (__name__)
 #
-class Autoresponder:
-	directory = os.path.join (base, 'var', 'lib')
-	def __init__ (self,
-		rid: int,
-		timestamp: datetime,
-		ar_mailing_id: Optional[int],
-		ar_security_token: Optional[str]
-	) -> None:
-		self.rid = rid
-		self.timestamp = timestamp
-		self.ar_mailing_id = ar_mailing_id
-		self.ar_security_token = ar_security_token
-		self.fname = os.path.join (self.directory, f'ar_{rid}.mail')
-		self.limit = os.path.join (self.directory, f'ar_{rid}.limit')
-
-	def write_file (self) -> None:
-		if self.ar_mailing_id and os.path.isfile (self.fname):
-			try:
-				os.unlink (self.fname)
-			except OSError as e:
-				logger.error (f'Unable to remove file {self.fname}: {e}')
-	
-	def remove_file (self) -> None:
-		for fname in self.fname, self.limit:
-			if os.path.isfile (fname):
-				try:
-					os.unlink (fname)
-				except OSError as e:
-					logger.error (f'Unable to remove file {fname}: {e}')
-#
 class BavUpdate (Runtime): 
 	unit = Unit ()
 	default_filter_domain = 'localhost'
 	config_filename = os.path.join (base, 'var', 'lib', 'bav.conf')
-	local_filename = os.path.join (base, 'var', 'lib', 'bav.conf-local')
-	rule_directory = os.path.join (base, 'var', 'lib')
-	rule_file = os.path.join (base, 'lib', 'bav.rule')
-	rule_pattern = re.compile ('bav_([0-9]+).rule')
-	rule_format = os.path.join (rule_directory, 'bav_{rid}.rule')
 	control_sendmail = os.path.join (base, 'bin', 'smctrl')
 	restart_sendmail = os.path.join (base, 'var', 'run', 'sendmail-control.sh')
 	sendmail_base = '/etc/mail'
@@ -89,7 +53,7 @@ class BavUpdate (Runtime):
 		self.delay = args.delay
 
 	def prepare (self) -> None:
-		self.filter_domain = syscfg.get_str ('filter-name', BavUpdate.default_filter_domain)
+		self.filter_domain = syscfg.get ('filter-name', BavUpdate.default_filter_domain)
 		if self.filter_domain == BavUpdate.default_filter_domain:
 			with DBIgnore (), DB () as db:
 				rq = db.querys ('SELECT mailloop_domain FROM company_tbl WHERE company_id = 1')
@@ -98,20 +62,10 @@ class BavUpdate (Runtime):
 		self.mta = MTA ()
 		self.domains: List[str] = []
 		self.mtdom: Dict[str, int] = {}
-		self.prefix = 'aml_'
+		self.prefixes = ['aml_', 'reply_']
+		self.prefix_pattern = re.compile ('^({p})[0-9]+@'.format (p = '|'.join ([re.escape (_p) for _p in self.prefixes])), re.IGNORECASE)
 		self.last = ''
-		self.autoresponder: List[Autoresponder] = []
 		self.read_mailertable ()
-		try:
-			files = os.listdir (Autoresponder.directory)
-			for fname in files:
-				if len (fname) > 8 and fname[:3] == 'ar_' and fname[-5:] == '.mail':
-					with Ignore (ValueError, OSError):
-						rid = int (fname[3:-5])
-						st = os.stat (os.path.join (Autoresponder.directory, fname))
-						self.autoresponder.append (Autoresponder (rid, datetime.fromtimestamp (st.st_ctime), None, None))
-		except OSError as e:
-			logger.error (f'Unable to read directory {Autoresponder.directory}: {e}')
 
 	def executor (self) -> bool:
 		while self.running:
@@ -125,7 +79,7 @@ class BavUpdate (Runtime):
 	def file_reader (self, fname: str) -> List[str]:
 		with open (fname, errors = 'backslashreplace') as fd:
 			return [line.rstrip ('\r\n') for line in fd if not line[0] in '\n#']
-
+	
 	def valid_domain (self, domain: Optional[str]) -> bool:
 		return domain is not None and self.valid_domain_pattern.match (domain) is not None
 
@@ -281,51 +235,10 @@ class BavUpdate (Runtime):
 				logger.error (f'Unable to read virtusertable: {e}')
 		return rc
 
-	def update_rules (self, rules: Dict[int, Dict[str, List[str]]]) -> None:
-		inuse: Set[int] = set ()
-		global_rule = None
-		for (rid, rule) in rules.items ():
-			if global_rule is None:
-				try:
-					with open (BavUpdate.rule_file) as fd:
-						global_rule = fd.read ()
-					if not global_rule.endswith ('\n'):
-						global_rule += '\n'
-				except IOError as e:
-					logger.error (f'Failed to open "{BavUpdate.rule_file}" for reading: {e}')
-			inuse.add (rid)
-			fname = self.rule_format.format (rid = rid)
-			try:
-				with open (fname, 'w') as fd:
-					if global_rule:
-						fd.write (global_rule)
-					for sect in sorted (rule):
-						fd.write (f'[{sect}]\n')
-						for line in rule[sect]:
-							fd.write (f'{line}\n')
-			except IOError as e:
-				logger.error (f'Failed to open "{fname}" for writing: {e}')
-		todel: List[str] = []
-		try:
-			for fname in os.listdir (BavUpdate.rule_directory):
-				m = self.rule_pattern.match (fname)
-				if m is not None:
-					rid = int (m.group (1))
-					if rid not in inuse:
-						todel.append (fname)
-			for fname in todel:
-				path = os.path.join (BavUpdate.rule_directory, fname)
-				try:
-					os.unlink (path)
-				except OSError as e:
-					logger.error (f'Failed to remove "{fname}": {e}')
-		except OSError as e:
-			logger.error (f'Failed to access rule_directory "{BavUpdate.rule_directory}": {e}')
-
 	class Forward (NamedTuple):
 		rid: int
 		address: str
-	def read_database (self, auto: List[Autoresponder]) -> List[str]:
+	def read_database (self) -> List[str]:
 		rc: List[str] = []
 		with DBIgnore (), DB () as db:
 			company_list: List[int] = []
@@ -335,7 +248,7 @@ class BavUpdate (Runtime):
 			accepted_forwards: Set[str] = set ()
 			ctab: Dict[int, str] = {}
 			#
-			rc.append (f'fbl@{self.filter_domain}\taccept:rid=unsubscribe')
+			rc.append (f'fbl@{self.filter_domain}\taccept:rid=fbl')
 			for domain in self.domains:
 				if domain not in seen_domains:
 					if domain != self.filter_domain:
@@ -362,7 +275,6 @@ class BavUpdate (Runtime):
 					companies = Stream (missing).sorted ().join (', ')
 				))
 			#
-			seen_rids: Set[int] = set ()
 			seen_filter_addresses: Dict[str, str] = {}
 			for row in db.query (
 				'SELECT rid, shortname, company_id, filter_address, '
@@ -381,12 +293,11 @@ class BavUpdate (Runtime):
 					continue
 				#
 				row_id = f'{row.rid} {row.shortname} [{row.company_id}]'
-				seen_rids.add (row.rid)
 				domains: List[str] = [self.filter_domain]
 				aliases: List[str] = []
 				if row.filter_address is not None:
 					for alias in listsplit (row.filter_address):
-						if not alias.startswith (self.prefix):
+						if self.prefix_pattern.match (alias) is None:
 							with Ignore (ValueError):
 								(local_part, domain_part) = alias.split ('@', 1)
 								normalized_alias = '{local_part}@{domain_part}'.format (
@@ -402,20 +313,14 @@ class BavUpdate (Runtime):
 										if domain_part not in self.mtdom and domain_part not in new_domains:
 											new_domains[domain_part] = BavUpdate.RID (rid = row.rid, domain = domain_part)
 									aliases.append (alias)
+						else:
+							log_limit (logger.info, f'{alias}: clashes with internal prefixes {self.prefixes}')
 				#
 				ar_enable = False
 				if row.ar_enable and row.autoresponder_mailing_id:
 					if not row.security_token:
 						logger.error (f'{row_id}: Autoresponder has mailing id, but no security token, not used')
 					else:
-						auto.append (
-							Autoresponder (
-								row.rid,
-								row.timestamp if row.timestamp is not None else datetime.now (),
-								row.autoresponder_mailing_id,
-								row.security_token
-							)
-						)
 						ar_enable = True
 				#
 				try:
@@ -449,43 +354,28 @@ class BavUpdate (Runtime):
 						extra.append (f'armid={row.autoresponder_mailing_id}')
 				if row.subscribe_enable and row.mailinglist_id and row.form_id:
 					extra.append (f'sub={row.mailinglist_id}:{row.form_id}')
-				line = '{prefix}{rid}@{domain}\taccept:{extra}'.format (
-					prefix = self.prefix,
-					rid = row.rid,
-					domain = self.filter_domain,
-					extra =','.join ([escape (_e) for _e in extra])
-				)
-				logger.debug (f'{row_id}: add line: {line}')
-				rc.append (line)
+				for prefix in self.prefixes:
+					rc.append ('{prefix}{rid}@{domain}\taccept:{extra}'.format (
+						prefix = prefix,
+						rid = row.rid,
+						domain = self.filter_domain,
+						extra =','.join ([escape (_e) for _e in extra])
+					))
 				for domain in domains:
 					if domain != self.filter_domain:
-						rc.append (f'{self.prefix}{row.rid}@{domain}\talias:{self.prefix}{row.rid}@{self.filter_domain}')
+						for prefix in self.prefixes:
+							rc.append (f'{prefix}{row.rid}@{domain}\talias:{prefix}{row.rid}@{self.filter_domain}')
 				if aliases:
 					for alias in aliases:
-						rc.append (f'{alias}\talias:{self.prefix}{row.rid}@{self.filter_domain}')
+						rc.append (f'{alias}\talias:{self.prefixes[0]}{row.rid}@{self.filter_domain}')
 						accepted_forwards.add (alias)
-			#
-			if seen_rids:
-				rules: Dict[int, Dict[str, List[str]]] = {}
-				for row in db.query ('SELECT rid, section, pattern FROM mailloop_rule_tbl'):
-					if row.rid in seen_rids:
-						try:
-							rule = rules[row.rid]
-						except KeyError:
-							rule = rules[row.rid] = {}
-						try:
-							sect = rule[row.section]
-						except KeyError:
-							sect = rule[row.section] = []
-						sect.append (row.pattern)
-				self.update_rules (rules)
 			#
 			for forward in forwards:
 				with Ignore (ValueError):
 					fdomain = (forward.address.split ('@', 1)[-1]).lower ()
 					for domain in self.mtdom:
 						if domain == fdomain and forward.address not in accepted_forwards:
-							logger.warning (f'{forward.rid}: using address "{forward.address}" with local handled domain "{domain}"')
+							log_limit (logger.warning, f'{forward.rid}: using address "{forward.address}" with local handled domain "{domain}"')
 					refuse = []
 					for (domain, new_domain) in ((_d, _n) for (_d, _n) in new_domains.items () if _d == fdomain):
 						log_limit (logger.warning, f'{new_domain.rid}: try to add new domain for already existing forward address "{forward.address}" in {forward.rid}, refused')
@@ -511,34 +401,6 @@ class BavUpdate (Runtime):
 				self.read_mailertable (new_domains)
 		return rc
 	
-	def read_local_files (self) -> List[str]:
-		try:
-			return self.file_reader (BavUpdate.local_filename)
-		except IOError as e:
-			logger.debug (f'Unable to read local file {BavUpdate.local_filename}: {e}')
-			return []
-	
-	def update_autoresponder (self, auto: List[Autoresponder]) -> None:
-		newlist: List[Autoresponder] = []
-		for new in auto:
-			found = None
-			for old in self.autoresponder:
-				if new.rid == old.rid:
-					found = old
-					break
-			if not found or new.timestamp > found.timestamp:
-				new.write_file ()
-				newlist.append (new)
-			else:
-				newlist.append (found)
-		for old in self.autoresponder:
-			for new in newlist:
-				if old.rid == new.rid:
-					break
-			else:
-				old.remove_file ()
-		self.autoresponder = newlist
-	
 	def rename_file (self, old_file: str, new_file: str) ->None:
 		try:
 			os.rename (old_file, new_file)
@@ -549,29 +411,26 @@ class BavUpdate (Runtime):
 			except OSError as e:
 				logger.warning (f'Failed to remove temp. file {old_file}: {e}')
 			raise error ('rename_file')
-
-	def update_config_file (self, new: str) -> None:
-		if new != self.last:
-			temp = '{config_filename}.{pid}'.format (
-				config_filename = BavUpdate.config_filename,
-				pid = os.getpid ()
-			)
+	
+	def update_file (self, path: str, content: str, last: str) -> None:
+		if content != last:
+			temp = '{path}.{pid:06d}'.format (path = path, pid = os.getpid ())
 			try:
 				with open (temp, 'w') as fd:
-					fd.write (new)
-				self.rename_file (temp, BavUpdate.config_filename)
-				self.last = new
+					fd.write (content)
+				self.rename_file (temp, path)
 			except IOError as e:
-				logger.error (f'Unable to write {temp}: {e}')
-				raise error ('update_config_file.open', e)
+				logger.error (f'{temp}: failed to write temp.file: {e}')
+				raise error (f'update_file.open {path}', e)
+
+	def update_config_file (self, content: str) -> None:
+		self.update_file (BavUpdate.config_filename, content, self.last)
+		self.last = content
 
 	def update (self) -> None:
 		try:
-			auto: List[Autoresponder] = []
 			new = self.read_mail_files ()
-			new += self.read_database (auto)
-			new += self.read_local_files ()
-			self.update_autoresponder (auto)
+			new += self.read_database ()
 			self.update_config_file ('\n'.join (new) + '\n')
 		except error as e:
 			logger.exception (f'Update failed: {e}')

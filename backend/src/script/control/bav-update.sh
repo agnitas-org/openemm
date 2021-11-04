@@ -12,19 +12,15 @@
 #
 . $HOME/scripts/config.sh
 #
-py3select $HOME/scripts/bav-update3.py $HOME/scripts/bav-update.py
+command=$HOME/scripts/bav-update3.py
 case "$1" in
 start)
 	active bav-update
 	shift
-	if py3available; then
-		starter $command -bw "$@"
-	else
-		starter $command "$@"
-	fi
+	starter $command -bw "$@"
 	;;
 stop)
-	softterm $commands
+	softterm $command
 	;;
 status)
 	patternstatus $command

@@ -10,7 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 
-CFLAGS	= '-DEMM_VERSION="OpenEMM 21.04.000.118"' -I. -I../lib -Iinclude
+CFLAGS	= '-DEMM_VERSION="OpenEMM 21.10.000.064"' -I. -I../lib -Iinclude
 LDFLAGS	= -L. -L../lib -Llib
 LIBS	= -lagn -lslang -lopendkim -lbsd -lresolv -llua -lssl -lcrypto -lxml2 -lz -lm
 SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c convert.c append.c \
@@ -18,7 +18,7 @@ SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c convert.
 	  postfix.c dcache.c receiver.c tag.c dyn.c media.c columns.c url.c link_resolve.c field.c dataset.c encrypt.c mailtrack.c \
 	  codec.c eval.c counter.c rblock.c misc.c sqllike.c data.c none.c \
 	  generate.c count.c preview.c head.c \
-	  strmap.c dkim.c uid.c alua.c tfunc.c tflua.c \
+	  strmap.c dkim.c spf.c uid.c alua.c tfunc.c tflua.c \
 	  grammar/parse.c grammar/transform.c
 OBJS	= $(SRCS:%.c=%.o)
 LOBJS	= luatc.o $(shell echo $(OBJS) | tr ' ' '\n' | egrep -v 'tflua.o|xmlback.o')

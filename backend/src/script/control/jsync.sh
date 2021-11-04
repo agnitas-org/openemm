@@ -13,5 +13,4 @@
 . $HOME/scripts/config.sh
 active jsync
 #
-py3select $HOME/scripts/jsync3.py $HOME/scripts/jsync.py
-exec $command "$@"
+exec $HOME/scripts/jsync3.py "$@"

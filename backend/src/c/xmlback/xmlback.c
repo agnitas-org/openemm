@@ -163,7 +163,7 @@ main (int argc, char **argv) /*{{{*/
 	xmlInitializePredefinedEntities ();
 	xmlInitCharEncodingHandlers ();
 	json_set_escape_slashes (0);
-	while ((n = getopt (argc, argv, "VpqE:lru:as:egd:t:o:L:T:h")) != -1)
+	while ((n = getopt (argc, argv, "VDpqE:lru:as:egd:t:o:L:T:h")) != -1)
 		switch (n) {
 		case 'V':
 # ifdef		EMM_VERSION			

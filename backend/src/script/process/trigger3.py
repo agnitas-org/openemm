@@ -289,7 +289,7 @@ class Main (Runtime):
 		return option != 'dryrun'
 
 	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
-		parser.add_argument ('-P', '--port', action = 'store', type = int, default = syscfg.get_int ('trigger-port', 8080))
+		parser.add_argument ('-P', '--port', action = 'store', type = int, default = syscfg.iget ('trigger-port', 8080))
 	
 	def use_arguments (self, args: argparse.Namespace) -> None:
 		self.port = args.port

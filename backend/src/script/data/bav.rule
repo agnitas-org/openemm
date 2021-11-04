@@ -14,7 +14,6 @@
 ^Subject: .*(DELIVER|RETURNED MAIL).*
 ^Return-Path:.*<>
 ^Precedence: bulk
-^Return-Path:.*<(MAILER-DA?EMON.*|(mailgun|mailout)@(.*\.)?agnitas\.de)>
 ^Subject:.*unsubscribe:[A-Za-z0-9]+(\.[A-Za-z0-9]+)+
 #
 #

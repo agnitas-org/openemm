@@ -33,7 +33,7 @@ and create an instance for it."""
 
 according to ``id'' the matching driver and the access parameter are
 selected from the database configuration."""
-		id = provided_id if provided_id is not None else syscfg.get_str ('dbid', 'emm')
+		id = provided_id if provided_id is not None else syscfg.get ('dbid', 'emm')
 		if cls.dbcfg is None:
 			cls.dbcfg = DBConfig ()
 		cfg = cls.dbcfg[id]

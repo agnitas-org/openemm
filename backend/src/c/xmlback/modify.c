@@ -460,6 +460,154 @@ modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t 
 	return true;
 }/*}}}*/
 
+static inline const byte_t *
+lskip (const byte_t *line, int *linelen) /*{{{*/
+{
+	while ((*linelen > 0) && isspace (*line))
+		++line, --*linelen;
+	return line;
+}/*}}}*/
+static inline void
+ltrim (const byte_t *line, int *linelen) /*{{{*/
+{
+	while ((*linelen > 0) && isspace (line[*linelen - 1]))
+		--*linelen;
+}/*}}}*/
+static char *
+find_sender_in_from_header (const byte_t *line, int linelen) /*{{{*/
+{
+	int	resultpos = -1;
+	int	resultlen = -1;
+	char	*rc;
+	int	n;
+	bool_t	bracket, quote;
+
+	line = lskip (line, & linelen);
+	if ((linelen > 0) && (line[0] == '(')) {
+		++line;
+		--linelen;
+		while ((linelen > 0) && (*line != ')'))
+			++line, --linelen;
+		if (linelen > 0) {
+			++line, --linelen;
+			line = lskip (line, & linelen);
+		}
+	}
+	if ((linelen > 0) && (line[linelen - 1] == ')')) {
+		--linelen;
+		while ((linelen > 0) && (line[linelen - 1] != '('))
+			--linelen;
+		if (linelen > 0) {
+			--linelen;
+			ltrim (line, & linelen);
+		}
+	}
+	for (n = 0, bracket = false, quote = false; n < linelen; ++n) {
+		if (bracket) {
+			if (line[n] == '>')
+				break;
+			++resultlen;
+		} else if (quote) {
+			if (line[n] == '"')
+				quote = false;
+		} else if (line[n] == '<') {
+			bracket = true;
+			resultpos = n + 1;
+			resultlen = 0;
+		} else if (line[n] == '"') {
+			quote = true;
+		}
+	}
+	if (resultpos == -1) {
+		ltrim (line, & linelen);
+		resultpos = 0;
+		resultlen = linelen;
+	}
+	if (rc = malloc (resultlen + 1)) {
+		memcpy (rc, line + resultpos, resultlen);
+		rc[resultlen] = '\0';
+	}
+	return rc;
+}/*}}}*/
+static void
+update_sender_in_header (block_t *block, const char *sender) /*{{{*/
+{
+	const xmlChar	*content = xmlBufferContent (block -> in);
+	int		length = xmlBufferLength (block -> in);
+	int		linepos = 0;
+	const xmlChar	*inptr = content;
+	int		inlen = length;
+	const xmlChar	*current;
+	int		clen;
+								
+	while (inlen > 0) {
+		if ((linepos == 0) && (*inptr == 'S')) {
+			++inptr, --inlen;
+			if ((inlen > 0) && (*inptr == '<')) {
+				++inptr, --inlen;
+				current = inptr;
+				while ((inlen > 0) && (*inptr != '>') && (*inptr != '\n'))
+					++inptr, --inlen;
+				if ((inlen > 0) && (*inptr == '>')) {
+					clen = inptr - current;
+					if ((strlen (sender) != clen) || memcmp (inptr, sender, clen)) {
+						xmlBufferAdd (block -> out, content, current - content);
+						xmlBufferCCat (block -> out, sender);
+						xmlBufferAdd (block -> out, inptr, inlen);
+						SWAP (block);
+					}
+				}
+			}
+			break;
+		} else {
+			if (*inptr == '\n')
+				linepos = 0;
+			else
+				++linepos;
+			++inptr, --inlen;
+		}
+	}
+}/*}}}*/
+static bool_t
+revalidate_mfrom (blockmail_t *blockmail, block_t *block) /*{{{*/
+{
+	bool_t		rc = false;
+
+	if ((block -> revalidation.source = buffer_realloc (block -> revalidation.source, xmlBufferLength (block -> in) + 1)) &&
+	    (block -> revalidation.target = buffer_realloc (block -> revalidation.target, buffer_length (block -> revalidation.source) + 128)) &&
+	    buffer_set (block -> revalidation.source, xmlBufferContent (block -> in), xmlBufferLength (block -> in)) &&
+	    flatten_header (block -> revalidation.target, block -> revalidation.source, true)) {
+		const byte_t	*ptr = buffer_content (block -> revalidation.target);
+		int		len = buffer_length (block -> revalidation.target);
+		const byte_t	*line;
+		int		linelen;
+		char		*sender;
+
+		rc = true;
+		while (len > 0) {
+			line = ptr;
+			while ((len > 0) && (*ptr != '\n'))
+				++ptr, --len;
+			linelen = ptr - line;
+			if (len > 0)
+				++ptr, --len;
+			if ((linelen > 5) && (! strncasecmp ((const char *) line, "from:", 5))) {
+				line += 5;
+				linelen -= 5;
+				line = lskip (line, & linelen);
+				if (sender = find_sender_in_from_header (line, linelen)) {
+					if (*sender && spf_is_valid (blockmail -> spf, sender)) {
+						update_sender_in_header (block, sender);
+					}
+					free (sender);
+				} else
+					rc = false;
+				break;
+			}
+		}
+	}
+	return rc;
+}/*}}}*/
 static bool_t
 collect_links (blockmail_t *blockmail, block_t *block, links_t *links) /*{{{*/
 {
@@ -965,6 +1113,9 @@ modify_output (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspe
 	bool_t	rc;
 	
 	rc = true;
+	if (rc && (block -> tid == TID_EMail_Head) && blockmail -> revalidate_mfrom) {
+		rc = revalidate_mfrom (blockmail, block);
+	}
 	if (rc && (block -> tid == TID_EMail_HTML) && links) {
 		rc = collect_links (blockmail, block, links);
 	}

@@ -14,10 +14,13 @@ from	__future__ import annotations
 import	logging, argparse
 import	sys, os, shlex
 from	typing import Any, Optional
-from	typing import List
+from	typing import Dict, List
 from	agn3.daemon import Daemonic, Watchdog, EWatchdog
-from	agn3.definitions import base, program
+from	agn3.definitions import base, program, syscfg
+from	agn3.emm.companyconfig import CompanyConfig
 from	agn3.exceptions import error
+from	agn3.ignore import Ignore
+from	agn3.io import expand_command
 from	agn3.lock import Lock
 from	agn3.log import log
 from	agn3.parser import Unit
@@ -58,7 +61,7 @@ class ExternalWatchdog (EWatchdog):
 							truncated = True
 						else:
 							truncated = False
-						lines = Stream.of (fd).remain (self.limit + 1).list ()
+						lines = Stream (fd).remain (self.limit + 1).list ()
 						if len (lines) > self.limit:
 							truncated = True
 						if truncated:
@@ -96,6 +99,7 @@ class Main (CLI):
 		parser.add_argument ('-o', '--output', action = 'store')
 		parser.add_argument ('-p', '--prior', action = 'store')
 		parser.add_argument ('-l', '--limit', action = 'store', type = int, default = 0)
+		parser.add_argument ('-n', '--namespace', action = 'append', default = [])
 		parser.add_argument ('command', nargs = '*')
 	
 	def use_arguments (self, args: argparse.Namespace) -> None:
@@ -113,12 +117,14 @@ class Main (CLI):
 		self.command = args.command
 		if not self.command:
 			raise error ('no command to start under watchdog control')
+		if args.namespace:
+			self.apply_namespaces (args.namespace)
 		if self.instance:
 			if self.instance == '-':
 				log.name = '{basename}-wd'.format (basename = os.path.basename (self.command[0]).split ('.', 1)[0])
 			else:
 				log.name = self.instance
-				
+	
 	def executor (self) -> bool:
 		wd = ExternalWatchdog (self.command, self.output)
 		if self.background and wd.push_to_background ():
@@ -136,5 +142,21 @@ class Main (CLI):
 				lock.unlock ()
 		return True
 	
+	def apply_namespaces (self, namespaces: List[str]) -> None:
+		ns: Dict[str, str] = {}
+		with CompanyConfig () as ccfg:
+			for entry in namespaces:
+				with Ignore (ValueError):
+					(target, configuration) = entry.split ('=', 1)
+					(class_name, name, syscfg_key, default) = configuration.strip ().split (None, 3)
+					try:
+						value = ccfg.get_config (class_name, name)
+					except KeyError:
+						value = syscfg.get (syscfg_key) if syscfg_key and syscfg_key != '-' else None
+						if value is None:
+							value = default
+					ns[target.strip ()] = value if value else ''
+		self.command = expand_command (self.command, ns)
+
 if __name__ == '__main__':
 	Main.main ()

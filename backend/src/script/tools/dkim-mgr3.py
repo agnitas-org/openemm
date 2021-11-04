@@ -15,6 +15,7 @@ import	sys, os, time
 import	DNS
 from	datetime import datetime
 from	typing import Optional
+from	typing import List
 from	agn3.db import DB
 from	agn3.exceptions import error
 from	agn3.parser import ParseTimestamp
@@ -166,8 +167,8 @@ class DKIM (CLI):
 			answer = DNS.Request ().req (name = dkim_domain, qtype = qtype)
 			text = (Stream (answer.answers)
 				.filter (lambda a: bool (a['typename'] == qtype))
-				.map (lambda a: a['data'])
-				.chain ()
+				.map_to (List[bytes], lambda a: a['data'])
+				.chain (bytes)
 				.map (lambda t: t.decode ('UTF-8', errors = 'backslashreplace'))
 				.join ()
 			)
@@ -214,7 +215,7 @@ class DKIM (CLI):
 				print ('Updating exiting record')
 				db.update (
 					'UPDATE dkim_key_tbl '
-					'SET domain_key = :key, valid_start = :vstart, valid_end = :vend, timestamp = current_timestamp '
+					'SET domain_key = :key, valid_start = :vstart, valid_end = :vend, timestamp = CURRENT_TIMESTAMP '
 					'WHERE company_id = :company_id AND domain = :domain AND selector = :selector',
 					data,
 					cleanup = True
@@ -232,7 +233,7 @@ class DKIM (CLI):
 							'INSERT INTO dkim_key_tbl '
 							'       (creation_date, timestamp, company_id, valid_start, valid_end, domain, selector, domain_key) '
 							'VALUES '
-							'       (current_timestamp, current_timestamp, :company_id, :vstart, :vend, :domain, :selector, :key)'
+							'       (CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, :company_id, :vstart, :vend, :domain, :selector, :key)'
 						)
 					),
 					data,

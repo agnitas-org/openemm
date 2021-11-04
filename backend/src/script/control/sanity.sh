@@ -13,5 +13,4 @@
 . $HOME/scripts/config.sh
 active sanity
 #
-py3select $HOME/scripts/sanity3.py $HOME/scripts/sanity.py
-exec $command "$@"
+exec $HOME/scripts/sanity3.py "$@"

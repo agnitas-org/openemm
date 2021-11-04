@@ -116,14 +116,15 @@ do_write (int fd, const void *buffer, int size) /*{{{*/
 	return size == 0 ? true : false;
 }/*}}}*/
 fsdb_result_t *
-fsdb_result_alloc (int size) /*{{{*/
+fsdb_result_alloc (int size, time_t updated) /*{{{*/
 {
 	fsdb_result_t	*r;
 	
 	if (r = (fsdb_result_t *) malloc (sizeof (fsdb_result_t)))
-		if (r -> value = malloc (size + 1))
+		if (r -> value = malloc (size + 1)) {
 			r -> vlen = size;
-		else {
+			r -> updated = updated;
+		} else {
 			free (r);
 			r = NULL;
 		}
@@ -154,7 +155,7 @@ fsdb_alloc (const char *base_path) /*{{{*/
 	bp_len = strlen (base_path);
 	f = NULL;
 	if ((bp_len + 256 < PATH_MAX) && (f = (fsdb_t *) malloc (sizeof (fsdb_t)))) {
-		strncpy (f -> path, base_path, bp_len);
+		memcpy (f -> path, base_path, bp_len);
 		f -> fptr = f -> path + bp_len;
 		if (*(f -> fptr) != '/')
 			*(f -> fptr++) = '/';
@@ -191,7 +192,7 @@ fsdb_get (fsdb_t *f, const char *key) /*{{{*/
 	if (convert_key (f, key) && ((fd = open (f -> path, O_RDONLY)) != -1)) {
 		struct stat	st;
 		
-		if ((fstat (fd, & st) != -1) && (r = fsdb_result_alloc (st.st_size))) {
+		if ((fstat (fd, & st) != -1) && (r = fsdb_result_alloc (st.st_size, st.st_mtime))) {
 			if (do_read (fd, r -> value, r -> vlen))
 				((char *) r -> value)[r -> vlen] = '\0';
 			else

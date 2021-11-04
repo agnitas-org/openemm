@@ -14,7 +14,7 @@
 #
 #
 #	1.) Configuration section
-java="java -Xms256m -Xmx1024m"
+java="java"
 if [ "$LOG_HOME" ] ; then
 	java="$java -Dlog.home=$LOG_HOME"
 fi
@@ -23,23 +23,35 @@ java="$java -Djava.security.egd=file:///dev/urandom"
 case "$1" in
 start)
 	active mailout
-
-	$HOME/bin/jsync.sh
+	if [ -x $HOME/bin/jsync.sh ]; then
+		$HOME/bin/jsync.sh
+	fi
 	base=${HOME}/JAVA
 	xmlrpc=org.agnitas.backend.MailoutServerXMLRPC
 	logfile=${base}/org/agnitas/backend/BACKEND_`date +%Y%m%d`.LOG
 	if [ ! -f $logfile ]; then
 		touch $logfile
 	fi
-	wd="$HOME/bin/watchdog.sh -imerger -r1800 -bo$logfile -p$HOME/bin/recovery.sh"
 	#
 	#	2.) Start backend
 	echo -n "Starting backend .. "
-	$wd -- $java $xmlrpc '*'
+	$HOME/bin/watchdog.sh \
+		-imerger \
+		-r1800 \
+		"-bo$logfile" \
+		"-p$HOME/bin/recovery.sh" \
+		"-nmemory=mailout java.memory merger:java-memory -Xms1g -Xmx4g" \
+		-- \
+		$java '$memory' $xmlrpc '*'
 	echo "done."
 	slogfile=${HOME}/log/backend.log
 	rm -f $slogfile
 	ln $logfile $slogfile
+	#
+	#	3.) Start exception watching process
+	if [ -x $HOME/bin/emerg.sh ]; then
+		$HOME/bin/emerg.sh start
+	fi
 	;;
 stop)
 	first="true"
@@ -50,7 +62,6 @@ stop)
 				echo "Looks like at least one mailing is currently in progress,"
 				echo "we will wait (and retry) until processing is finished."
 				first=""
-				svcout "waiting for finishing mail generation .. "
 			fi
 			sleep 5
 		else
@@ -58,6 +69,9 @@ stop)
 			break
 		fi
 	done
+	if [ -x $HOME/bin/emerg.sh ]; then
+		$HOME/bin/emerg.sh stop
+	fi
 	;;
 status)
 	patternstatus 2 "$java"

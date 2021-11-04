@@ -12,20 +12,16 @@
 #
 . $HOME/scripts/config.sh
 #
-py3select $HOME/scripts/trigger3.py $HOME/scripts/trigger.py
+command=$HOME/scripts/trigger3.py
 cd $HOME
 case "$1" in
 start)
 	active trigger
 	shift
-	if py3available ; then
-		starter $command -bw "$@"
-	else
-		starter $command "$@"
-	fi
+	starter $command -bw "$@"
 	;;
 stop)
-	softterm $commands
+	softterm $command
 	;;
 status)
 	patternstatus 2 $command

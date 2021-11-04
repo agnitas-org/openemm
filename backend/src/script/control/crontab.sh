@@ -13,5 +13,4 @@
 . $HOME/scripts/config.sh
 active crontab
 #
-py3select $HOME/scripts/crontab3.py $HOME/scripts/crontab.py
-exec $command "$@"
+exec $HOME/scripts/crontab3.py "$@"

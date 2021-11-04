@@ -238,8 +238,9 @@ typedef struct { /*{{{*/
  */
 typedef struct fsdb	fsdb_t;
 typedef struct { /*{{{*/
-	void	*value;			/* the value itself					*/
-	int	vlen;			/* the size of the value				*/
+	void	*value;			/* the value itself			*/
+	int	vlen;			/* the size of the value		*/
+	time_t	updated;		/* last time the value had been written	*/
 	/*}}}*/
 }	fsdb_result_t;
 	
@@ -327,6 +328,7 @@ typedef struct { /*{{{*/
 }	purl_t;
 
 extern buffer_t		*buffer_alloc (int nsize);
+extern buffer_t		*buffer_realloc (buffer_t *b, int nsize);
 extern buffer_t		*buffer_free (buffer_t *b);
 extern bool_t		buffer_valid (buffer_t *b);
 extern void		buffer_clear (buffer_t *b);
@@ -367,7 +369,8 @@ extern byte_t		*buffer_cut (buffer_t *b, long start, long length, long *rlength)
 extern const char	*buffer_string (buffer_t *b);
 extern char		*buffer_stealstring (buffer_t *b);
 extern char		*buffer_copystring (buffer_t *b);
-extern int		buffer_iseol (const buffer_t *b, int pos);
+extern int		buffer_peek (const buffer_t *b, int pos);
+extern void		buffer_poke (buffer_t *b, int pos, byte_t value);
 extern int		buffer_index (const buffer_t *b, const byte_t *content, int clen);
 extern int		buffer_indexsn (const buffer_t *b, const char *s, int slen);
 extern int		buffer_indexs (const buffer_t *b, const char *s);
@@ -442,7 +445,7 @@ extern int		fcache_find (fcache_t *fc, const char *name, int timeout);
 extern bool_t		fcache_save (fcache_t *fc, const char *name, int fd);
 extern bool_t		fcache_expire (fcache_t *fc, int expire);
 
-extern fsdb_result_t	*fsdb_result_alloc (int size);
+extern fsdb_result_t	*fsdb_result_alloc (int size, time_t updated);
 extern fsdb_result_t	*fsdb_result_free (fsdb_result_t *r);
 extern fsdb_t		*fsdb_alloc (const char *base_path);
 extern fsdb_t		*fsdb_free (fsdb_t *f);
@@ -495,6 +498,9 @@ extern lock_t		*lock_free (lock_t *l);
 extern bool_t		lock_lock (lock_t *l);
 extern void		lock_unlock (lock_t *l);
 
+extern int		callv (char *const *argv);
+extern int		call (const char *program, ...);
+
 extern daemon_t		*daemon_alloc (const char *prog, bool_t background, bool_t detach);
 extern daemon_t		*daemon_free (daemon_t *d);
 extern void		daemon_done (daemon_t *d);
@@ -502,6 +508,8 @@ extern bool_t		daemon_lstart (daemon_t *d, log_t *l, logmask_t lmask, const char
 extern bool_t		daemon_start (daemon_t *d, log_t *l);
 extern bool_t		daemon_sstart (daemon_t *d);
 
+extern void		timeout_disable (void);
+extern void		timeout_enable (void);
 extern bool_t		timeout_init (void);
 extern void		timeout_release (void);
 extern bool_t		timeout_exec (int seconds, void (*func) (void *), void *pd);
@@ -704,15 +712,21 @@ __buffer_stiffcrlf (buffer_t *b) /*{{{*/
 		return buffer_stiffcrlf (b);
 }/*}}}*/
 static inline int
-__buffer_iseol (const buffer_t *b, int pos) /*{{{*/
+__buffer_peek (const buffer_t *b, int pos) /*{{{*/
 {
-	if (pos < b -> length) {
-		if (b -> buffer[pos] == '\n')
-			return 1;
-		if ((b -> buffer[pos] == '\r') && (pos + 1 < b -> length) && (b -> buffer[pos + 1] == '\n'))
-			return 2;
-	}
-	return 0;
+	if (pos < 0)
+		pos = b -> length + pos;
+	if ((pos >= 0) && (pos < b -> length))
+		return b -> buffer[pos];
+	return -1;
+}/*}}}*/
+static inline void
+__buffer_poke (buffer_t *b, int pos, byte_t value) /*{{{*/
+{
+	if (pos < 0)
+		pos = b -> length + pos;
+	if ((pos >= 0) && (pos < b -> length))
+		b -> buffer[pos] = value;
 }/*}}}*/
 # define	buffer_valid		__buffer_valid
 # define	buffer_clear		__buffer_clear
@@ -723,6 +737,7 @@ __buffer_iseol (const buffer_t *b, int pos) /*{{{*/
 # define	buffer_stiffch		__buffer_stiffch
 # define	buffer_stiffnl		__buffer_stiffnl
 # define	buffer_stiffcrlf	__buffer_stiffcrlf
-# define	buffer_iseol		__buffer_iseol
+# define	buffer_peek		__buffer_peek
+# define	buffer_poke		__buffer_poke
 # endif		/* __OPTIMIZE__ */
 # endif		/* __LIB_AGN_H */

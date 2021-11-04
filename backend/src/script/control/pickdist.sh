@@ -12,20 +12,16 @@
 #
 . $HOME/scripts/config.sh
 #
-py3select $HOME/scripts/pickdist3.py $HOME/scripts/pickdist.py
+command=$HOME/scripts/pickdist3.py
 cd $HOME
 case "$1" in
 start)
 	active pickdist
 	shift
-	if py3available ; then
-		starter $command -bw "$@"
-	else
-		starter $command "$@"
-	fi
+	starter $command -bw "$@"
 	;;
 stop)
-	softterm $commands
+	softterm $command
 	;;
 status)
 	patternstatus $command

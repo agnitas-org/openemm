@@ -11,8 +11,10 @@
 #
 from	__future__ import annotations
 import	os, stat
+from	datetime import datetime
+from	types import TracebackType
 from	typing import Optional
-from	typing import Dict, Generator
+from	typing import Dict, Generator, NamedTuple, Type
 from	.definitions import base
 from	.ignore import Ignore
 from	.io import create_path
@@ -22,9 +24,13 @@ __all__ = ['FSDB']
 #
 class FSDB:
 	__slots__ = ['cache']
+	class Value (NamedTuple):
+		content: str
+		timestamp: datetime
+
 	path = os.path.join (base, 'var', 'fsdb')
 	def __init__ (self) -> None:
-		self.cache: Dict[str, Optional[str]] = {}
+		self.cache: Dict[str, Optional[FSDB.Value]] = {}
 
 	def clear (self) -> None:
 		self.cache.clear ()
@@ -34,6 +40,12 @@ class FSDB:
 			return self[key]
 		except KeyError:
 			return default
+
+	def __enter__ (self) -> FSDB:
+		return self
+
+	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+		return None
 
 	def __iter__ (self) -> Generator[str, None, None]:
 		depth = [FSDB.path]
@@ -51,6 +63,15 @@ class FSDB:
 							yield key
 
 	def __getitem__ (self, key: str) -> str:
+		return self.retrieve (key).content
+	
+	def __setitem__ (self, key: str, value: str) -> None:
+		self.store (key, value)
+	
+	def __delitem__ (self, key: str) -> None:
+		self.remove (key)
+
+	def retrieve (self, key: str) -> FSDB.Value:
 		with Ignore (KeyError):
 			value = self.cache[key]
 			if value is None:
@@ -59,32 +80,44 @@ class FSDB:
 		path = self.__convert_key_to_path (key)
 		if path is not None:
 			with Ignore (IOError, UnicodeDecodeError), open (path) as fd:
-				value = self.cache[key] = fd.read ()
+				content = fd.read ()
+				try:
+					timestamp = datetime.fromtimestamp (os.stat (fd.fileno ()).st_mtime)
+				except OSError:
+					timestamp = datetime.now ()
+				value = self.cache[key] = FSDB.Value (content, timestamp)
 				return value
 		self.cache[key] = None
 		raise KeyError (key)
 	
-	def __setitem__ (self, key: str, value: str) -> None:
+	def store (self, key: str, content: str) -> None:
 		path = self.__convert_key_to_path (key)
 		if path is not None:
 			with Ignore (KeyError):
 				del self.cache[key]
-			with Ignore (IOError, UnicodeDecodeError), open (path) as fd:
-				if fd.read () == value:
-					self.cache[key] = value
-					return
 			try:
-				with open (path, 'w') as fd:
-					fd.write (value)
-			except FileNotFoundError:
-				create_path (os.path.dirname (path))
-				with open (path, 'w') as fd:
-					fd.write (value)
-			self.cache[key] = value
+				with Ignore (IOError, UnicodeDecodeError), open (path) as fd:
+					if fd.read () == content:
+						with Ignore (OSError):
+							os.utime (fd.fileno ())
+						return
+				try:
+					with open (path, 'w') as fd:
+						fd.write (content)
+				except FileNotFoundError:
+					create_path (os.path.dirname (path))
+					with open (path, 'w') as fd:
+						fd.write (content)
+			finally:
+				try:
+					timestamp = datetime.fromtimestamp (os.stat (path).st_mtime)
+				except OSError:
+					timestamp = datetime.now ()
+				self.cache[key] = FSDB.Value (content, timestamp)
 		else:
 			raise ValueError (f'{key}: invalid key')
 	
-	def __delitem__ (self, key: str) -> None:
+	def remove (self, key: str) -> None:
 		path = self.__convert_key_to_path (key)
 		if path is not None:
 			with Ignore (KeyError):

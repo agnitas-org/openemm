@@ -10,7 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 import	time, collections
-from	typing import Generic, TypeVar, Union
+from	typing import Callable, Generic, Optional, TypeVar, Union
 from	typing import Deque, Dict
 from	.parser import Unit
 #
@@ -25,8 +25,55 @@ class Cache (Generic[K, V]):
 
 this class provides a generic caching implementation with limitiation
 of stored entries (LRU cache) and optional time based expiration of
-entries."""
-	__slots__ = ['limit', 'timeout', 'active', 'count', 'cache', 'cacheline']
+entries.
+
+Simple example:
+>>> c = Cache ()
+>>> c['a']
+Traceback (most recent call last):
+  ...
+KeyError: 'a'
+>>> c['a'] = 1
+>>> c['a']
+1
+
+With enabled limit of maximum entries:
+>>> c = Cache (limit = 1)
+>>> c['a'] = 1
+>>> c['a']
+1
+>>> c['b'] = 2
+>>> c['a']
+Traceback (most recent call last):
+  ...
+KeyError: 'a'
+>>> c['b']
+2
+
+With enabled timeout for values:
+>>> from time import sleep
+>>> c = Cache (timeout = 0.1)
+>>> c['a'] = 1
+>>> c['a']
+1
+>>> sleep (0.2)
+>>> c['a']
+Traceback (most recent call last):
+  ...
+KeyError: "'a': expired"
+>>> c['a'] = 1
+>>> len (c)
+1
+>>> len (c.cacheline)
+1
+>>> sleep (0.2)
+>>> c.expire ()
+>>> len (c)
+0
+>>> len (c.cacheline)
+0
+"""
+	__slots__ = ['limit', 'timeout', 'active', 'count', 'cache', 'cacheline', 'fill']
 	unit = Unit ()
 	class Entry (Generic[E]):
 		"""Represents a single caching entry"""
@@ -36,34 +83,42 @@ entries."""
 				self.created = time.time ()
 			self.value = value
 
-		def valid (self, now: float, timeout: int) -> bool:
+		def valid (self, now: float, timeout: Union[int, float]) -> bool:
 			"""if the entry is still valid"""
 			return self.created + timeout >= now
 
-	def __init__ (self, limit: int = 0, timeout: Union[None, int, str] = None) -> None:
+	def __init__ (self, limit: int = 0, timeout: Union[None, int, float, str] = None) -> None:
 		"""``limit'' is the maximum number of elements of the
 cache (use 0 for no limits) and ``timeout'' is the timeout for entries
-to be valid. ``timeout'' can either be specified as int in seconds or
-as a str using modfiers "s" for seconds, "m" for minutes, "h" for
-hours, "d" for days and "w" for weeks, e.g.:
+to be valid. ``timeout'' can either be specified as int or float in
+seconds or as a str using modfiers "s" for seconds, "m" for minutes,
+"h" for hours, "d" for days and "w" for weeks, e.g.:
+
 	30m: means 30 minutes 
 	2h30m: means 2 hours and 30 minutes
 	2h 30m: dito, spaces are ignored and can be inserted for better readability"""
 		self.limit = limit
-		self.timeout = self.unit.parse (timeout, -1)
-		self.active = self.timeout >= 0
+		self.timeout: Union[float, int] = timeout if isinstance (timeout, float) else self.unit.parse (timeout, -1)
+		self.active = self.timeout >= 0.0
 		self.count = 0
 		self.cache: Dict[K, Cache.Entry[V]] = {}
 		self.cacheline: Deque[K] = collections.deque ()
+		self.fill: Optional[Callable[[K], V]] = None
 
 	def __getitem__ (self, key: K) -> V:
-		e = self.cache[key]
-		if self.active and not e.valid (time.time (), self.timeout):
-			self.remove (key)
-			raise KeyError (f'{key!r}: expired')
-		self.cacheline.remove (key)
-		self.cacheline.append (key)
-		return e.value
+		try:
+			e = self.cache[key]
+			if self.active and not e.valid (time.time (), self.timeout):
+				self.remove (key)
+				raise KeyError (f'{key!r}: expired')
+			self.cacheline.remove (key)
+			self.cacheline.append (key)
+			return e.value
+		except KeyError:
+			if self.fill is not None:
+				self[key] = value = self.fill (key)
+				return value
+			raise
 
 	def __setitem__ (self, key: K, value: V) -> None:
 		if key in self.cache:

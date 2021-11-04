@@ -12,5 +12,4 @@
 #
 . $HOME/scripts/config.sh
 #
-py3select $HOME/scripts/script-tag3.py $HOME/scripts/script-tag.py
-exec $command "$@"
+exec $HOME/scripts/script-tag3.py "$@"

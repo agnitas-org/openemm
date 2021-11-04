@@ -13,5 +13,4 @@
 . $HOME/scripts/config.sh
 active recovery
 #
-py3select $HOME/scripts/recovery3.py $HOME/scripts/recovery.py
-starter $command "$@"
+starter $HOME/scripts/recovery3.py "$@"

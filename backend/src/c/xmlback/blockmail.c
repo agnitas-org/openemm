@@ -16,6 +16,21 @@
 
 # define	SYNC_POSTFIX		".SYNC"
 
+static var_t *
+company_info_find (blockmail_t *blockmail, const char *key) /*{{{*/
+{
+	var_t	*tmp;
+	char	*scratch;
+	
+	if (scratch = malloc (strlen (key) + 64)) {
+		sprintf (scratch, "%s[%d]", key, blockmail -> mailing_id);
+		tmp = var_find (blockmail -> company_info, scratch);
+		free (scratch);
+		if (tmp && tmp -> val)
+			return tmp;
+	}
+	return var_find (blockmail -> company_info, key);
+}/*}}}*/
 static bool_t
 open_syncfile (blockmail_t *b) /*{{{*/
 {
@@ -107,6 +122,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> company_id = -1;
 		b -> company_info = NULL;
 		b -> mailinglist_id = -1;
+		b -> mailinglist_name = NULL;
 		b -> mailing_id = -1;
 		b -> mailing_name = NULL;
 		b -> maildrop_status_id = -1;
@@ -174,7 +190,9 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> pointintime = 0;
 		b -> xconv = NULL;
 		b -> mfrom = NULL;
+		b -> revalidate_mfrom = false;
 		b -> dkim = NULL;
+		b -> spf = NULL;
 		b -> vip = NULL;
 		b -> onepix_template = NULL;
 		b -> offline_picture_prefix = NULL;
@@ -193,9 +211,10 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		    (! (b -> secret_sig = buffer_alloc (1024))) ||
 		    (! (b -> mtbuf[0] = xmlBufferCreate ())) ||
 		    (! (b -> mtbuf[1] = xmlBufferCreate ())) ||
-		    (! (b -> xconv = xconv_alloc (250))))
+		    (! (b -> xconv = xconv_alloc (250))) ||
+		    (! (b -> spf = spf_alloc ()))) {
 			b = blockmail_free (b);
-		else {
+		} else {
 			b -> head -> spare = 1024;
 			b -> body -> spare = 8192;
 			xmlBufferCCat (b -> mtbuf[0], "0");
@@ -238,6 +257,8 @@ blockmail_free (blockmail_t *b) /*{{{*/
 			string_map_done (b -> smap);
 		if (b -> company_info)
 			var_free_all (b -> company_info);
+		if (b -> mailinglist_name)
+			xmlBufferFree (b -> mailinglist_name);
 		if (b -> mailing_name)
 			xmlBufferFree (b -> mailing_name);
 		if (b -> senddate)
@@ -299,6 +320,8 @@ blockmail_free (blockmail_t *b) /*{{{*/
 			free (b -> mfrom);
 		if (b -> dkim)
 			sdkim_free (b -> dkim);
+		if (b -> spf)
+			spf_free (b -> spf);
 		if (b -> vip)
 			xmlBufferFree (b -> vip);
 		if (b -> onepix_template)
@@ -570,6 +593,12 @@ blockmail_setup_mfrom (blockmail_t *b) /*{{{*/
 	
 	if ((tmp = var_find (b -> company_info, "_envelope_from")) && tmp -> val) {
 		b -> mfrom = strdup (tmp -> val);
+		if ((tmp = var_find (b -> company_info, "_envelope_forced")) && tmp -> val && (! atob (tmp -> val))) {
+			b -> revalidate_mfrom = true;
+		}
+	}
+	if ((! b -> revalidate_mfrom) && (tmp = company_info_find (b, "revalidate-envelope-from")) && tmp -> val && atob (tmp -> val)) {
+		b -> revalidate_mfrom = true;
 	}
 	if ((! b -> mfrom) && b -> email.from) {
 		const xmlChar	*cont = xmlBufferContent (b -> email.from);
@@ -644,7 +673,7 @@ blockmail_setup_vip_block (blockmail_t *b) /*{{{*/
 	if (b -> smap) {
 		var_t	*tmp;
 
-		if ((tmp = var_find (b -> company_info, "vip")) && tmp -> val) {
+		if ((tmp = company_info_find (b, "vip")) && tmp -> val) {
 			int		vlen;
 			xmlBufferPtr	temp;
 
@@ -662,7 +691,7 @@ blockmail_setup_onepixel_template (blockmail_t *b) /*{{{*/
 {
 	var_t	*tmp;
 	
-	if ((tmp = var_find (b -> company_info, "onepixel-template")) && tmp -> val) {
+	if ((tmp = company_info_find (b, "onepixel-template")) && tmp -> val) {
 		if (b -> onepix_template)
 			xmlBufferEmpty (b -> onepix_template);
 		else
@@ -676,7 +705,7 @@ blockmail_setup_tagpositions (blockmail_t *b) /*{{{*/
 {
 	var_t	*tmp;
 	
-	if ((tmp = var_find (b -> company_info, "clear-empty-dyn-block")) && tmp -> val)
+	if ((tmp = company_info_find (b, "clear-empty-dyn-block")) && tmp -> val)
 		b -> clear_empty_dyn_block = atob (tmp -> val);
 	if (b -> ltag) {
 		int	n, m;
@@ -696,7 +725,7 @@ blockmail_setup_offline_picture_prefix (blockmail_t *b) /*{{{*/
 {
 	var_t	*tmp;
 	
-	if (tmp = var_find (b -> company_info, "offline-picture-prefix")) {
+	if (tmp = company_info_find (b, "offline-picture-prefix")) {
 		if (b -> offline_picture_prefix) {
 			free (b -> offline_picture_prefix);
 			b -> offline_picture_prefix = NULL;

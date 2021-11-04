@@ -12,20 +12,16 @@
 #
 . $HOME/scripts/config.sh
 #
-py3select $HOME/scripts/generate3.py $HOME/scripts/generate.py
+command=$HOME/scripts/generate3.py
 cd $HOME
 case "$1" in
 start)
 	active generate
 	shift
-	if py3available ; then
-		starter $command -b "$@"
-	else
-		starter $command "$@"
-	fi
+	starter $command -b "$@"
 	;;
 stop)
-	softterm $commands
+	softterm $command
 	;;
 status)
 	patternstatus 2 $command

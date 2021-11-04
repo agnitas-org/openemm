@@ -1,4 +1,3 @@
-#!/bin/sh
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
@@ -10,28 +9,10 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
-. $HOME/scripts/config.sh
+from	__future__ import annotations
+from	typing import Final
 #
-py3select $HOME/scripts/emerg3.py $HOME/scripts/emerg.py
-cd $HOME
-case "$1" in
-start)
-	active emerg
-	shift
-	if py3available ; then
-		starter $command -bw "$@"
-	else
-		starter $command "$@"
-	fi
-	;;
-stop)
-	softterm $commands
-	;;
-status)
-	patternstatus 2 $command
-	;;
-*)
-	echo "Usage: $0 [ start | stop | status ]"
-	exit 1
-	;;
-esac
+__all__ = ['Columns']
+#
+class Columns:
+	sys_encrypted_sending: Final[str] = 'sys_encrypted_sending'

@@ -13,7 +13,8 @@ from	__future__ import annotations
 import	os, re
 from	datetime import datetime
 from	typing import Final, Optional
-from	typing import Tuple
+from	typing import Match, Tuple
+from	typing import cast
 from	..definitions import base, fqdn, user, version
 from	..exceptions import error
 from	..ignore import Ignore
@@ -50,7 +51,7 @@ def require (version: str) -> None:
 		return (Stream (v.split ('.'))
 			.map (lambda e: reduce_to_num_pattern.search (e))
 			.filter (lambda m: m is not None)
-			.map (lambda m: int (m.group ()))
+			.map (lambda m: int (cast (Match[str], m).group ()))
 			.tuple ()
 		)
 	required_version = reduce_to_num (version)

@@ -63,7 +63,7 @@ mkpath (const char *start, ...) /*{{{*/
 			*ptr++ = PATH_SEP;
 			--room;
 		}
-		strncpy (ptr, elem, elen);
+		memcpy (ptr, elem, elen);
 		ptr += elen;
 		room -= elen;
 	}

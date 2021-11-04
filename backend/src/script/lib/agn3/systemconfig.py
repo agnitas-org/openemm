@@ -10,12 +10,16 @@
 ####################################################################################################################################################################################################################################################################
 #
 import	os, json
-from	typing import Any, Callable, Final, Optional, Union
+from	typing import Callable, Final, Optional, TypeVar, Union
 from	typing import Dict, KeysView, List
-from	typing import cast
+from	typing import overload
 from	.exceptions import error
 from	.stream import Stream
-from	.tools import atob
+from	.tools import atob, listsplit
+#
+__all__ = ['Systemconfig']
+#
+R = TypeVar ('R')
 #
 class Systemconfig:
 	"""Handling system specific configuration
@@ -108,7 +112,11 @@ file, if it is available. """
 	def keys (self) -> KeysView[str]:
 		"""Returns all available configuration variables"""
 		return self.cfg.keys ()
-	
+
+	@overload
+	def get (self, var: str, default: None = ...) -> Optional[str]: ...
+	@overload
+	def get (self, var: str, default: str) -> str: ...
 	def get (self, var: str, default: Optional[str] = None) -> Optional[str]:
 		"""Get configuration value with default fallback"""
 		try:
@@ -116,6 +124,10 @@ file, if it is available. """
 		except KeyError:
 			return default
 
+	@overload
+	def iget (self, var: str, default: None = ...) -> Optional[int]: ...
+	@overload
+	def iget (self, var: str, default: int) -> int: ...
 	def iget (self, var: str, default: Optional[int] = None) -> Optional[int]:
 		"""Get configuration value as integer with default fallback"""
 		try:
@@ -123,6 +135,10 @@ file, if it is available. """
 		except KeyError:
 			return default
 
+	@overload
+	def fget (self, var: str, default: None = ...) -> Optional[float]: ...
+	@overload
+	def fget (self, var: str, default: float) -> float: ...
 	def fget (self, var: str, default: Optional[float] = None) -> Optional[float]:
 		"""Get configuration value as float with default fallback"""
 		try:
@@ -130,6 +146,10 @@ file, if it is available. """
 		except KeyError:
 			return default
 
+	@overload
+	def bget (self, var: str, default: None = ...) -> Optional[bool]: ...
+	@overload
+	def bget (self, var: str, default: bool) -> bool: ...
 	def bget (self, var: str, default: Optional[bool] = None) -> Optional[bool]:
 		"""Get configuration value as boolean with default fallback"""
 		try:
@@ -137,53 +157,59 @@ file, if it is available. """
 		except KeyError:
 			return default
 
-	def lget (self, var: str, sep: str = ',', default: Optional[List[str]] = None) -> Optional[List[str]]:
+	@overload
+	def lget (self, var: str, default: None = ...) -> Optional[List[str]]: ...
+	@overload
+	def lget (self, var: str, default: List[str]) -> List[str]: ...
+	def lget (self, var: str, default: Optional[List[str]] = None) -> Optional[List[str]]:
 		"""Get configuration value as list with default fallback"""
 		try:
-			return [_v.strip () for _v in self[var].split (sep) if _v.strip ()]
+			return list (listsplit (self[var]))
 		except KeyError:
 			return default
-	
-	def get_str (self, var: str, default: str) -> str:
-		return cast (str, self.get (var, default))
-	def get_int (self, var: str, default: int) -> int:
-		return cast (int, self.iget (var, default))
-	def get_float (self, var: str, default: float) -> float:
-		return cast (float, self.fget (var, default))
-	def get_bool (self, var: str, default: bool) -> bool:
-		return cast (bool, self.bget (var, default))
-	def get_list (self, var: str, sep: str, default: List[str]) -> List[str]:
-		return cast (List[str], self.lget (var, sep, default))
 
-	def __user (self, var: str, default: Any, retriever: Callable[..., Any], **kwargs: Any) -> Any:
+	@overload
+	def __user (self, var: str, default: None, retriever: Callable[..., R]) -> Optional[R]: ...
+	@overload
+	def __user (self, var: str, default: R, retriever: Callable[..., R]) -> R: ...
+	def __user (self, var: str, default: Optional[R], retriever: Callable[..., R]) -> Optional[R]:
 		if self.user is None:
 			raise error ('"user" not set in Systemconfig instance')
-		rc = retriever (f'{var}-{self.user}', Systemconfig.__sentinel, **kwargs)
-		return rc if rc is not Systemconfig.__sentinel else retriever (var, default, **kwargs)
-		
+		rc = retriever (f'{var}-{self.user}', Systemconfig.__sentinel)
+		return rc if rc is not Systemconfig.__sentinel else retriever (var, default)
+
+	@overload
+	def user_get (self, var: str, default: None = ...) -> Optional[str]: ...
+	@overload
+	def user_get (self, var: str, default: str) -> str: ...
 	def user_get (self, var: str, default: Optional[str] = None) -> Optional[str]:
 		"""Get configuration, first try with user append with default fallback"""
-		return cast (Optional[str], self.__user (var, default, self.get))
+		return self.__user (var, default, self.get)
+	@overload
+	def user_iget (self, var: str, default: None = ...) -> Optional[int]: ...
+	@overload
+	def user_iget (self, var: str, default: int) -> int: ...
 	def user_iget (self, var: str, default: Optional[int] = None) -> Optional[int]:
-		return cast (Optional[int], self.__user (var, default, self.iget))
+		return self.__user (var, default, self.iget)
+	@overload
+	def user_fget (self, var: str, default: None = ...) -> Optional[float]: ...
+	@overload
+	def user_fget (self, var: str, default: float) -> float: ...
 	def user_fget (self, var: str, default: Optional[float] = None) -> Optional[float]:
-		return cast (Optional[float], self.__user (var, default, self.fget))
+		return self.__user (var, default, self.fget)
+	@overload
+	def user_bget (self, var: str, default: None = ...) -> Optional[bool]: ...
+	@overload
+	def user_bget (self, var: str, default: bool) -> bool: ...
 	def user_bget (self, var: str, default: Optional[bool] = None) -> Optional[bool]:
-		return cast (Optional[bool], self.__user (var, default, self.bget))
-	def user_lget (self, var: str, sep: str = ',', default: Optional[List[str]] = None) -> Optional[List[str]]:
-		return cast (Optional[List[str]], self.__user (var, default, self.lget, sep = sep))
+		return self.__user (var, default, self.bget)
+	@overload
+	def user_lget (self, var: str, default: None = ...) -> Optional[List[str]]: ...
+	@overload
+	def user_lget (self, var: str, default: List[str]) -> List[str]: ...
+	def user_lget (self, var: str, default: Optional[List[str]] = None) -> Optional[List[str]]:
+		return self.__user (var, default, self.lget)
 	
-	def user_get_str (self, var: str, default: str) -> str:
-		return cast (str, self.user_get (var, default))
-	def user_get_int (self, var: str, default: int) -> int:
-		return cast (int, self.user_iget (var, default))
-	def user_get_float (self, var: str, default: float) -> float:
-		return cast (float, self.user_fget (var, default))
-	def user_get_bool (self, var: str, default: bool) -> bool:
-		return cast (bool, self.user_bget (var, default))
-	def user_get_list (self, var: str, sep: str, default: List[str]) -> List[str]:
-		return cast (List[str], self.user_lget (var, sep, default))
-
 	def dump (self) -> None:
 		"""Display current configuration content"""
 		for (var, val) in self.cfg.items ():

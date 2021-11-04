@@ -591,13 +591,13 @@ fmt_sec2 (slang_date *sd, char *buf, int len) /*{{{*/
 static int
 fmt_ampm2 (slang_date *sd, char *buf, int len) /*{{{*/
 {
-	strncpy (buf, (sd -> hour >= 12 ? "PM" : "AM"), 2);
+	memcpy (buf, (sd -> hour >= 12 ? "PM" : "AM"), 2);
 	return 2;
 }/*}}}*/
 static int
 fmt_ampm4 (slang_date *sd, char *buf, int len) /*{{{*/
 {
-	strncpy (buf, (sd -> hour >= 12 ? "P.M." : "A.M."), 4);
+	memcpy (buf, (sd -> hour >= 12 ? "P.M." : "A.M."), 4);
 	return 4;
 }/*}}}*/
 typedef struct { /*{{{*/

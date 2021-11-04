@@ -322,6 +322,8 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t postproc, boo
 			blockmail -> owner_id = 1;
 			blockmail -> company_id = 2;
 			blockmail -> mailinglist_id = 3;
+			blockmail -> mailinglist_name = xmlBufferCreate ();
+			xmlBufferCat (blockmail -> mailinglist_name, (const xmlChar *) "Mailinglist");
 			blockmail -> mailing_id = 4;
 			blockmail -> mailing_name = xmlBufferCreate ();
 			xmlBufferCat (blockmail -> mailing_name, (const xmlChar *) "Mailing");
@@ -337,6 +339,7 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t postproc, boo
 			string_map_addsi (blockmail -> smap, "owner_id", blockmail -> owner_id);
 			string_map_addsi (blockmail -> smap, "company_id", blockmail -> company_id);
 			string_map_addsi (blockmail -> smap, "mailinglist_id", blockmail -> mailinglist_id);
+			string_map_addsb (blockmail -> smap, "mailinglist_name", blockmail -> mailinglist_name);
 			string_map_addsi (blockmail -> smap, "mailing_id", blockmail -> mailing_id);
 			string_map_addsb (blockmail -> smap, "mailing_name", blockmail -> mailing_name);
 			string_map_addsi (blockmail -> smap, "total_subscribers", blockmail -> total_subscribers);

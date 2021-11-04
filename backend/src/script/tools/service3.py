@@ -12,7 +12,7 @@
 #
 from	__future__ import annotations
 import	argparse, logging
-import	sys, os, time, fcntl
+import	sys, os, time
 import	shlex, subprocess, signal
 from	dataclasses import dataclass, field
 from	datetime import datetime
@@ -24,13 +24,13 @@ from	agn3.config import Config
 from	agn3.db import DB
 from	agn3.daemon import Signal
 from	agn3.definitions import licence, base, fqdn, user
+from	agn3.emm.activator import Activator
 from	agn3.emm.build import spec
 from	agn3.exceptions import error
 from	agn3.flow import Transaction
 from	agn3.log import log
 from	agn3.runtime import CLI
 from	agn3.tools import Plugin
-from	activator3 import Activator
 #
 logger = logging.getLogger (__name__)
 #
@@ -413,8 +413,10 @@ class Main (CLI):
 		cfg = Config ()
 		cfg.setup_namespace (id = self.id)
 		cfg.enable_substitution ()
-		if os.path.isfile (cfg.filename ()):
-			cfg.read ()
+		for filename in [self.config_filename, cfg.filename ()]:
+			if filename is not None and os.path.isfile (filename):
+				cfg.read (filename)
+				break
 		if self.config_source is not None:
 			cfg.read (StringIO (self.config_source))
 		elif self.config_filename is not None:
@@ -423,18 +425,7 @@ class Main (CLI):
 			cfg[option] = value
 		service = Service (cfg, self.id, self.parameter)
 		if service.sanity_check ():
-			serivce_filedescriptior_name = 'SVCFD'
-			fd: Optional[int] = None
-			if sys.stderr is not None:
-				try:
-					fd = fcntl.fcntl (sys.stderr.fileno (), fcntl.F_DUPFD)
-					os.environ[serivce_filedescriptior_name] = str (fd)
-				except OSError as e:
-					logger.warning (f'Failed to setup reporting FD: {e}')
 			service.execute ()
-			if fd is not None:
-				os.close (fd)
-				del os.environ[serivce_filedescriptior_name]
 		sys.exit (service.ec)
 
 if __name__ == '__main__':

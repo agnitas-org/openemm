@@ -32,6 +32,7 @@ with Ignore (ImportError):
 				with Ignore ():
 					while cast (DBAPI.Cursor, self.curs).fetchmany ():
 						pass
+				self.rowcount = 1
 			return rc
 
 	class MySQL (Core):

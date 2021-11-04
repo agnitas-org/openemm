@@ -17,12 +17,12 @@ from	datetime import datetime
 from	types import TracebackType
 from	typing import ClassVar, Final, Optional, Union
 from	typing import Deque, Dict, List, NamedTuple, Set, Tuple, Type
-from	typing import cast
 from	.db import DB
 from	.dbconfig import DBConfig
 from	.definitions import licence
 from	.emm.companyconfig import CompanyConfig
 from	.exceptions import error
+from	.log import log_limit
 from	.stream import Stream
 #
 __all__ = ['UID', 'UIDHandler']
@@ -235,17 +235,15 @@ class UIDHandler:
 		return result
 
 	def __make_signature (self, version: int, uid: UID, credential: UIDHandler.Credential) -> str:
-		sig: List[Union[int, str]]
+		sig: List[Union[int, str]] = []
 		if version == 2:
-			sig = (
-				cast (List[Union[int, str]], [uid.prefix] if uid.prefix else []) +
-				[version, uid.licence_id, uid.mailing_id, uid.customer_id, uid.url_id, credential.secret]
-			)
+			if uid.prefix:
+				sig.append (uid.prefix)
+			sig += [version, uid.licence_id, uid.mailing_id, uid.customer_id, uid.url_id, credential.secret]
 		elif version == 3:
-			sig = (
-				cast (List[Union[int, str]], [uid.prefix] if uid.prefix else []) +
-				[version, uid.licence_id, uid.mailing_id, uid.customer_id, uid.url_id, uid.bit_option, credential.secret]
-			)
+			if uid.prefix:
+				sig.append (uid.prefix)
+			sig += [version, uid.licence_id, uid.mailing_id, uid.customer_id, uid.url_id, uid.bit_option, credential.secret]
 		dig = hashlib.sha512 ()
 		dig.update (Stream (sig).join ('.').encode ('UTF-8'))
 		return base64.urlsafe_b64encode (dig.digest ()).decode ('us-ascii').replace ('=', '')
@@ -387,7 +385,7 @@ exception is thrown, if it is not valid."""
 				(company, mailing) = self.cache.find (uid)
 				return self.new_credential (mailing.creation_date.timestamp (), company.secret_key, company.enabled_uid_version, company.minimal_uid_version)
 			except error as e:
-				logger.warning (f'{uid}: failed to retrieve credentials: {e}')
+				log_limit (logger.warning, f'{uid}: failed to retrieve credentials: {e}')
 		raise error (f'missing credentials for {uid}')
 
 	def add_credential (self,

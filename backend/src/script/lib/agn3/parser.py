@@ -16,7 +16,7 @@ from	datetime import datetime
 from	io import StringIO
 from	itertools import takewhile, zip_longest
 from	typing import Any, Callable, Iterable, Optional, Protocol, Union
-from	typing import Dict, Iterator, List, Match, NamedTuple, Type
+from	typing import Dict, Iterator, List, NamedTuple, Type
 from	typing import cast
 from	.exceptions import error
 from	.ignore import Ignore
@@ -128,9 +128,14 @@ class Unit:
 
 Class to parse an expression containing common units. Custom unit
 convertion values can be added. Examples:
-unit = eagn.Unit ()
-unit.parse ('3m30') -> 210
-unit.parse ('2K 512B') -> 2560"""
+>>> unit = Unit ()
+>>> unit.parse ('30m')
+1800
+>>> unit.parse ('3m30')
+210
+>>> unit.parse ('2K 512B')
+2560
+"""
 	__slots__ = ['eunit']
 	__eparse = re.compile ('([+-]?[0-9]+)([a-z]*)[ \t]*', re.IGNORECASE)
 	__eunit = {
@@ -171,10 +176,8 @@ unit.parse ('2K 512B') -> 2560"""
 		#
 		with Ignore (ValueError):
 			rc = 0
-			scan = self.__eparse.scanner (expr)
-			m: Match[str]
-			for m in iter (scan.search, None):
-				(i, u) = cast (Match[str], m).groups ()
+			for m in self.__eparse.finditer (expr):
+				(i, u) = m.groups ()
 				if u:
 					mult = self.eunit[u]
 				else:
@@ -191,7 +194,7 @@ class Line (Protocol):
 
 class Field (NamedTuple):
 	name: str
-	converter: Callable[[str], Any]
+	converter: Optional[Callable[[str], Any]] = None
 	optional: bool = False
 	default: Optional[Callable[[], Any]] = None
 	source: Optional[str] = None
@@ -224,7 +227,7 @@ raise an ``error''. """
 	
 	def __call__ (self, line: Union[str, List[str]]) -> Line:
 		if isinstance (line, str):
-			elements = self.splitter (line)
+			elements = self.splitter (line.rstrip ('\r\n'))
 		else:
 			elements = line
 		if len (elements) < self.required_count or len (elements) > self.column_count:
@@ -237,13 +240,16 @@ raise an ``error''. """
 		try:
 			def convert (f: Field, e: Optional[str]) -> Any:
 				if e is not None:
-					return f.converter (e)
+					return f.converter (e) if f.converter is not None else e
 				if not f.optional:
 					raise error (f'{f.name}: missing value')
 				return f.default () if f.default is not None else None
 			return self.target_class (*tuple (convert (_f, _e) for (_f, _e) in zip_longest (self.fields, elements)))
 		except Exception as e:
 			raise error (f'{line}: failed to parse: {e}')
+	
+	def make (self, **kws: Any) -> Line:
+		return self.target_class (*tuple (kws.get (_f.name, _f.default () if _f.default is not None else None) for _f in self.fields))
 
 	def from_csv (self, source: Iterable[str], dialect: Union[None, str, csv.Dialect, Type[csv.Dialect]] = None, **kws: Any) -> Iterator[Line]:
 		rd = csv.reader (source, dialect = dialect, **kws) if dialect is not None else csv.reader (source, **kws)
@@ -285,7 +291,8 @@ target fields."""
 			tokens = line
 		def get (field: Field, tokens: Dict[str, str]) -> Any:
 			try:
-				return field.converter (tokens[field.source if field.source is not None else field.name])
+				value = tokens[field.source if field.source is not None else field.name]
+				return field.converter (value) if field.converter is not None else value
 			except KeyError:
 				if not field.optional:
 					raise

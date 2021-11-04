@@ -12,20 +12,16 @@
 #
 . $HOME/scripts/config.sh
 #
-py3select $HOME/scripts/direct-path3.py $HOME/scripts/direct-path.py
+command=$HOME/scripts/direct-path3.py
 cd $HOME
 case "$1" in
 start)
 	active direct-path
 	shift
-	if py3available; then
-		starter $command -b "$@"
-	else
-		starter $command "$@"
-	fi
+	starter $command -b "$@"
 	;;
 stop)
-	softterm $commands
+	softterm $command
 	;;
 status)
 	patternstatus 3 $command

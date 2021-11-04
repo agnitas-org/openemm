@@ -36,14 +36,16 @@ preview."""
 	def __str__ (self) -> str:
 		return '{name} <{parameter}>'.format (
 			name = self.__class__.__name__,
-			parameter = Stream.of (
-				('mailing', self.mailing_id),
-				('customer', self.customer_id),
-				('source', self.source),
-				('selector', self.selector))
-					.filter (lambda kv: kv[1] is not None)
-					.map (lambda kv: '{key}={value!r}'.format (key = kv[0], value = kv[1]))
-					.join (', ')
+			parameter = (Stream ([
+					('mailing', self.mailing_id),
+					('customer', self.customer_id),
+					('source', self.source),
+					('selector', self.selector)
+				])
+				.filter (lambda kv: kv[1] is not None)
+				.map (lambda kv: '{key}={value!r}'.format (key = kv[0], value = kv[1]))
+				.join (', ')
+			)
 		)
 
 	def __source (self, source: Optional[str]) -> Optional[str]:

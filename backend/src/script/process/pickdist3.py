@@ -95,7 +95,7 @@ class Pickdist (Runtime):
 				basenames.add (info.basename)
 				if info.is_ready ():
 					data.append (info)
-		for info in Stream (finals.values ()).chain ().filter (lambda i: i.mailid not in availables):
+		for info in Stream (finals.values ()).chain (METAFile).filter (lambda i: i.mailid not in availables):
 			logger.info ('No more data file for final %s found, archive it' % info.filename)
 			self.move (info.path, self.archive)
 		for info in Stream (stamps.values ()).filter (lambda i: i.basename not in basenames):
@@ -117,7 +117,7 @@ class Pickdist (Runtime):
 			with DBIgnore (), DB () as db:
 				invalids: Set[int] = set ()
 				for mailing in (Stream (ready)
-					.map (lambda i: i.mailing)
+					.map (lambda i: i.mailing_id)
 					.distinct ()
 					.sorted ()
 				):
@@ -137,13 +137,13 @@ class Pickdist (Runtime):
 						invalids.add (mailing)
 				if invalids:
 					for info in (Stream (ready)
-						.filter (lambda i: i.mailing in invalids)
+						.filter (lambda i: i.mailing_id in invalids)
 					):
 						self.move (info.path, self.deleted)
 						if info.stamp is not None:
 							self.move (info.stamp.path, self.deleted)
 					ready = (Stream (ready)
-						.filter (lambda i: i.mailing not in invalids)
+						.filter (lambda i: i.mailing_id not in invalids)
 						.list ()
 					)
 		if ready:

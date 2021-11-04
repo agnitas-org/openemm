@@ -27,7 +27,8 @@
 # undef		buffer_stiffch
 # undef		buffer_stiffnl
 # undef		buffer_stiffcrlf
-# undef		buffer_iseol
+# undef		buffer_peek
+# undef		buffer_poke
 # endif		/* __OPTIMIZE__ */
 
 static inline bool_t
@@ -67,6 +68,27 @@ buffer_alloc (int nsize) /*{{{*/
 			b = buffer_free (b);
 	}
 	return b;
+}/*}}}*/
+/** (Re)allocate a buffer
+ * if the passed buffer is not NULL, try to resize the buffer,
+ * otherwise allocate a new one. Returns the buffer pointer on
+ * success, NULL on failure.
+ * 
+ * The content of the buffer may be altered!
+ * 
+ * @param b the buffer to reallocate or NULL
+ * @param nsize the size to reallocate the buffer ot
+ * @return the buffer on success, NULL otherwise
+ */
+buffer_t *
+buffer_realloc (buffer_t *b, int nsize) /*{{{*/
+{
+	if (b) {
+		if (do_size (b, nsize))
+			return b;
+		buffer_free (b);
+	}
+	return buffer_alloc (nsize);
 }/*}}}*/
 /** Frees a buffer.
  * The memeory used by the buffer, if in use, and the struct
@@ -587,23 +609,27 @@ buffer_copystring (buffer_t *b) /*{{{*/
 	}
 	return rc;
 }/*}}}*/
-/** Checks for EOL.
- * The buffer is checked at given position, if there is an EOL condition.
- * The number of bytes marking the EOL condition is returned, if one is found
+/** Peek the byte at position
  * @param b the buffer to use
- * @param pos the position to check for EOL
- * @return 0, if no EOL condition is found, the length of the EOL condition otherwise
+ * @param pos the position to peek for (negative means count from the end)
+ * @return the byte value, or -1 if position is out of range
  */
 int
-buffer_iseol (const buffer_t *b, int pos) /*{{{*/
+buffer_peek (const buffer_t *b, int pos) /*{{{*/
 {
-	if (pos < b -> length) {
-		if (b -> buffer[pos] == '\n')
-			return 1;
-		if ((b -> buffer[pos] == '\r') && (pos + 1 < b -> length) && (b -> buffer[pos + 1] == '\n'))
-			return 2;
-	}
-	return 0;
+	if (pos < 0)
+		pos = b -> length + pos;
+	if ((pos >= 0) && (pos < b -> length))
+		return b -> buffer[pos];
+	return -1;
+}/*}}}*/
+void
+buffer_poke (buffer_t *b, int pos, byte_t value) /*{{{*/
+{
+	if (pos < 0)
+		pos = b -> length + pos;
+	if ((pos >= 0) && (pos < b -> length))
+		b -> buffer[pos] = value;
 }/*}}}*/
 /** Find content in buffer
  * @param b the buffer to search in

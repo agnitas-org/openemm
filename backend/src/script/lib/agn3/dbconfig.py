@@ -75,7 +75,7 @@ reads and stores configuration from a configuration file"""
 		if not os.path.isfile (self.path):
 			dbcfg = syscfg.get ('dbcfg')
 			if dbcfg is not None:
-				self.data[syscfg.get_str ('dbid', 'emm')] = DBConfig.DBRecord (self.default_id, dbcfg)
+				self.data[syscfg.get ('dbid', 'emm')] = DBConfig.DBRecord (self.default_id, dbcfg)
 				return
 		#
 		with open (self.path, 'r') as fd:

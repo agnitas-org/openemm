@@ -19,6 +19,7 @@ from	typing import Dict, List, NamedTuple, Pattern, Set
 from	agn3.db import DB
 from	agn3.definitions import base, fqdn, user
 from	agn3.email import EMail
+from	agn3.emm.companyconfig import CompanyConfig
 from	agn3.exceptions import error
 from	agn3.ignore import Ignore
 from	agn3.io import copen
@@ -204,7 +205,7 @@ class Recovery (CLI): #{{{
 		query = (
 			'SELECT status_id, mailing_id '
 			'FROM maildrop_status_tbl '
-			'WHERE genstatus = 2 AND status_field = \'R\' AND genchange > :expire AND genchange < current_timestamp'
+			'WHERE genstatus = 2 AND status_field = \'R\' AND genchange > :expire AND genchange < CURRENT_TIMESTAMP'
 		)
 		check_query = self.db.qselect (
 			oracle = 'SELECT count(*) FROM rulebased_sent_tbl WHERE mailing_id = :mid AND to_char (lastsent, \'YYYY-MM-DD\') = to_char (sysdate - 1, \'YYYY-MM-DD\')',
@@ -212,7 +213,7 @@ class Recovery (CLI): #{{{
 		)
 		update = (
 			'UPDATE maildrop_status_tbl '
-			'SET genstatus = 1, genchange = current_timestamp '
+			'SET genstatus = 1, genchange = CURRENT_TIMESTAMP '
 			'WHERE status_id = :sid'
 		)
 		for (status_id, mailing_id) in self.db.queryc (query, {'expire': expire}):
@@ -230,7 +231,7 @@ class Recovery (CLI): #{{{
 			self.db.sync ()
 		query = ('SELECT status_id, mailing_id, company_id, status_field, senddate '
 			 'FROM maildrop_status_tbl '
-			 'WHERE genstatus IN (1, 2) AND genchange > :expire AND genchange < current_timestamp AND status_field = \'W\'')
+			 'WHERE genstatus IN (1, 2) AND genchange > :expire AND genchange < CURRENT_TIMESTAMP AND status_field = \'W\'')
 		for (status_id, mailing_id, company_id, status_field, senddate) in self.db.queryc (query, {'expire': expire}):
 			if (self.restrict_to_mailings is None or mailing_id in self.restrict_to_mailings) and self.__mailing_valid (mailing_id):
 				check = self.__make_range (senddate, now)
@@ -374,6 +375,7 @@ class Recovery (CLI): #{{{
 				with open (template, 'r') as fd:
 					content = fd.read ()
 				ns = {
+					'user': user,
 					'host': fqdn,
 					'report': self.report,
 					'mails': mails
@@ -389,8 +391,9 @@ class Recovery (CLI): #{{{
 						subject = 'Recovery report for %s' % ns['host']
 					else:
 						subject = Template (subject).fill (ns)
-					sender = tmpl.property ('sender', f'{user}@{fqdn}')
-					receiver = tmpl.property ('receiver')
+					with CompanyConfig (db = self.db) as ccfg:
+						sender = ccfg.get_config ('recover-report', 'sender', tmpl.property ('sender', f'{user}@{fqdn}'))
+						receiver = ccfg.get_config ('recover-report', 'receiver', tmpl.property ('receiver'))
 					if receiver:
 						receiver = Template (receiver).fill (ns)
 						if self.dryrun:

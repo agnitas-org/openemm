@@ -12,5 +12,4 @@
 #
 . $HOME/scripts/config.sh
 #
-py3select $HOME/scripts/dkim-mgr3.py $HOME/scripts/dkim-mgr.py
-exec $command "$@"
+exec $HOME/scripts/dkim-mgr3.py "$@"

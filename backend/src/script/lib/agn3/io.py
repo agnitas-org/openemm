@@ -11,26 +11,27 @@
 #
 from	__future__ import annotations
 import	os, errno, time, stat, gzip, bz2, re, logging
-import	csv, codecs, hashlib
+import	csv, codecs, hashlib, shlex
 from	collections import namedtuple
 from	dataclasses import dataclass
 from	functools import partial
 from	io import StringIO
 from	types import TracebackType
-from	typing import Any, Callable, Optional, Union
+from	typing import Any, Callable, Iterable, Literal, Optional, Union
 from	typing import Dict, IO, Iterator, List, Pattern, Set, TextIO, Tuple, Type
-from	typing import cast
+from	typing import cast, overload
 from	.definitions import base, system
 from	.exceptions import error
 from	.ignore import Ignore
 from	.parser import Line, Field
 from	.pattern import isnum
 from	.stream import Stream
+from	.template import Placeholder
 #
 __all__ = [
 	'relink', 'which', 'mkpath', 'normalize_path', 'create_path',
 	'ArchiveDirectory', 'Filepos', 'Filesystem', 'file_access',
-	'copen', 'cstreamopen', 'gopen', 'fingerprint',
+	'copen', 'cstreamopen', 'gopen', 'fingerprint', 'expand_command',
 	'CSVDialects', 'CSVDefault',
 	'CSVWriter', 'CSVDictWriter',
 	'CSVReader', 'CSVDictReader', 'CSVAutoDictReader',
@@ -39,6 +40,13 @@ __all__ = [
 ]
 #
 logger = logging.getLogger (__name__)
+#
+_ReadText = Union[Literal['r'], Literal['rt']]
+_ReadBinary = Literal['rb']
+_ReadModes = Union[_ReadText, _ReadBinary]
+_WriteText = Union[Literal['w'], Literal['a'], Literal['x'], Literal['wt'], Literal['at'], Literal['xt']]
+_WriteBinary = Union[Literal['wb'], Literal['ab'], Literal['xb']]
+_modes = Union[_ReadText, _ReadBinary, _WriteText, _WriteBinary]
 #
 def relink (source: str, target: str, pattern: Optional[List[Pattern[str]]] = None) -> None:
 	"""Updateds symbolic links in target from source, optional only these files matching pattern"""
@@ -88,7 +96,8 @@ def which (program: str, *args: str) -> Optional[str]:
 ``args'' may contain more directories to search for if the programn
 can be expected in a known directory which is not part of $PATH.
 """
-	return cast (str, Stream (os.environ.get ('PATH', '').split (':') + list (args))
+	return cast (Optional[str], Stream (os.environ.get ('PATH', '').split (':') + list (args))
+		.distinct ()
 		.map (lambda p: os.path.join (p if p else os.path.curdir, program))
 		.filter (lambda p: os.access (p, os.X_OK))
 		.first (no = None)
@@ -392,34 +401,46 @@ permissions) while trying to determinate the access to the file."""
 					fail.append ([e, f'{cpath}: {e}'])
 	return (rc, fail)
 
-def force_text (mode: str) -> str:
-	if 'b' not in mode and 't' not in mode:
-		if 'w' in mode:
-			return mode.replace ('w', 'wt')
-		if 'r' in mode:
-			return mode.replace ('r', 'rt')
-		return f'rt{mode}'
+def force_text (mode: _modes) -> _modes:
+	if mode == 'r':
+		return 'rt'
+	elif mode == 'w':
+		return 'wt'
+	elif mode == 'a':
+		return 'at'
+	elif mode == 'x':
+		return 'xt'
 	return mode
 
-def copen (path: str, mode: str = 'r', errors: Optional[str] = None) -> IO[Any]:
+@overload
+def copen (path: str, mode: _ReadText = ..., errors: Optional[str] = ...) -> IO[str]: ...
+@overload
+def copen (path: str, mode: Union[_ReadBinary, _WriteBinary], errors: Optional[str] = ...) -> IO[bytes]: ...
+@overload
+def copen (path: str, mode: Union[_ReadText, _WriteText], errors: Optional[str] = ...) -> IO[str]: ...
+def copen (path: str, mode: _modes = 'r', errors: Optional[str] = None) -> Union[IO[str], IO[bytes]]:
 	"""Opens a file according to its extension
 
 this opens a file dependig of the extension of the filename (and if a
 the required module is available). Fall back to standard open() if no
 match is found."""
 	if path.endswith ('.gz'):
-		return gzip.open (path, force_text (mode), errors = errors)
+		return cast (IO[Any], gzip.open (path, force_text (mode), errors = errors))
 	elif path.endswith ('.bz2'):
 		return bz2.open (path, force_text (mode), errors = errors)
 	return open (path, mode, errors = errors)
 
-def cstreamopen (path: str, mode: str = 'r', errors: Optional[str] = None) -> Stream:
+@overload
+def cstreamopen (path: str, mode: _ReadText = ..., errors: Optional[str] = ...) -> Stream[str]: ...
+@overload
+def cstreamopen (path: str, mode: _ReadBinary, errors: Optional[str] = ...) -> Stream[bytes]: ...
+def cstreamopen (path: str, mode: _ReadModes = 'r', errors: Optional[str] = None) -> Union[Stream[str], Stream[bytes]]:
 	"""Openes a file for reading using copen and return a stream to process the file."""
 	def defer (o: Any) -> None:
 		o.close ()
-	return Stream.defer (copen (path, mode, errors), defer)
+	return cast (Union[Stream[str], Stream[bytes]], Stream.defer (copen (path, mode, errors), defer))
 
-def gopen (path: str, mode: str = 'r', errors: Optional[str] = None) -> IO[Any]:
+def gopen (path: str, mode: _modes = 'r', errors: Optional[str] = None) -> IO[Any]:
 	"""Tries to open a compressed version of a file, if available
 
 looks up, if there is a compressed version of the file available and
@@ -427,7 +448,7 @@ opens this, otherwiese falls back to the standard open()."""
 	for (ext, method) in ('.gz', gzip.open), ('.bz2', bz2.open):
 		npath = f'{path}{ext}'
 		if os.path.isfile (npath):
-			return method (npath, force_text (mode), errors = errors)
+			return cast (Callable[..., IO[Any]], method) (npath, force_text (mode), errors = errors)
 	return open (path, mode, errors = errors)
 
 def fingerprint (path: str) -> str:
@@ -436,6 +457,41 @@ def fingerprint (path: str) -> str:
 		for chunk in iter (partial (fd.read, 65536), b''):
 			fp.update (chunk)
 	return fp.hexdigest ()
+
+def expand_command (command: List[str], ns: Dict[str, str], macros: Optional[Dict[str, Callable[[str], str]]] = None) -> List[str]:
+	"""expand a list of strings with placeholder using namespace ``ns'' and ``macros''
+
+>>> cmd = ['this', 'is', 'a', '$test']
+>>> expand_command (cmd, {})
+Traceback (most recent call last):
+...
+agn3.exceptions.error: test: not found/parsable: 'test'
+>>> expand_command (cmd, {'test': 'Test'})
+['this', 'is', 'a', 'Test']
+>>> expand_command (cmd, {'test': 'great Test'})
+['this', 'is', 'a', 'great', 'Test']
+>>> expand_command (cmd, {'test': '"very great" Test'})
+['this', 'is', 'a', 'very great', 'Test']
+>>> expand_command (cmd + ['$test(super)'], {'test': 'great Test'}, {'test': lambda a: f'a very special {a} test'})
+['this', 'is', 'a', 'great', 'Test', 'a', 'very', 'special', 'super', 'test']
+>>> cmd = ['this', 'is', 'a', '$(test)']
+>>> expand_command (cmd, {'test': 3})
+['this', 'is', 'a', '3']
+>>> cmd = ['this', 'is', 'a', '$(test + 4)']
+>>> expand_command (cmd, {'test': 3})
+['this', 'is', 'a', '7']
+"""
+	ph = Placeholder ()
+	def processor () -> Iterable[str]:
+		for element in command:
+			expanded = ph (element, ns, macros)
+			if expanded != element:
+				if expanded:
+					for subelement in shlex.split (expanded):
+						yield subelement
+			else:
+				yield element
+	return list (processor ())
 
 class _CSVBase (csv.Dialect):
 	doublequote = True
@@ -556,7 +612,7 @@ with an empty one as supported by the standard "csv" module."""
 	def __del__ (self) -> None:
 		self.done ()
 
-	def open (self, stream: Union[str, IO[Any]], mode: str, bom_charset: Optional[str] = None) -> None:
+	def open (self, stream: Union[str, IO[Any]], mode: _modes, bom_charset: Optional[str] = None) -> None:
 		"""opens a stream for reading or writiing
 
 ``stream'' may either be a file like object or a string in the later
@@ -575,7 +631,7 @@ append mode it is only written, if the file had zero length on open)."""
 		else:
 			self.fd = stream
 			self.foreign = True
-		if not isinstance (stream, StringIO):
+		if not isinstance (stream, StringIO) and self.fd is not None:
 			self.bom = None
 			self.charset = None
 			if mode is None or 'r' in mode:
@@ -635,7 +691,7 @@ class _CSVWriter (CSVIO):
 	__slots__ = ['writer', 'header']
 	def __init__ (self,
 		stream: Union[str, IO[Any]],
-		mode: Optional[str],
+		mode: Optional[_modes],
 		bom_charset: Optional[str],
 		header: Optional[List[str]]
 	) -> None:
@@ -665,7 +721,7 @@ class CSVWriter (_CSVWriter):
 	def __init__ (self,
 		stream: Union[str, IO[Any]],
 		dialect: str,
-		mode: Optional[str] = None,
+		mode: Optional[_modes] = None,
 		bom_charset: Optional[str] = None,
 		header: Optional[List[str]] = None
 	) -> None:
@@ -681,7 +737,7 @@ class CSVDictWriter (_CSVWriter):
 		stream: Union[str, IO[Any]],
 		field_list: List[str],
 		dialect: str,
-		mode: Optional[str] = None,
+		mode: Optional[_modes] = None,
 		bom_charset: Optional[str] = None,
 		header: Optional[List[str]] = None,
 		relaxed: bool = False
@@ -718,7 +774,7 @@ class _CSVReader (CSVIO):
 	def read (self) -> Any:
 		return next (self.reader, None)
 	
-	def stream (self) -> Stream:
+	def stream (self) -> Stream[List[str]]:
 		return Stream.defer (self.reader, lambda o: self.close ())
 
 class CSVReader (_CSVReader):
@@ -781,7 +837,7 @@ class CSVNamedReader:
 				for field in fields:
 					index = header.index (field.name)
 					if index != -1:
-						converter[index] = field.converter
+						converter[index] = field.converter if field.converter is not None else lambda a: a
 				self.maker = convert_row
 			else:
 				self.maker = passthru_row
@@ -800,7 +856,7 @@ class CSVNamedReader:
 		r = self.csv.reader.read ()
 		return self.maker (r) if r is not None else None
 
-	def stream (self) -> Stream:
+	def stream (self) -> Stream[Line]:
 		return Stream.defer (self, lambda o: self.csv.close ())
 
 class CSVAuto:

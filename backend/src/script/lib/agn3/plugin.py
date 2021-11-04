@@ -13,7 +13,7 @@ from	__future__ import annotations
 import	os, re, logging
 import	imp, marshal
 from	configparser import RawConfigParser
-from	typing import Any, Callable, Optional, Union
+from	typing import Any, Callable, Iterable, Optional, Union
 from	typing import Dict, Generator, IO, List, Set, Tuple, Type
 from	typing import cast
 from	.definitions import base, program
@@ -422,7 +422,9 @@ found, no module is loaded at all.
 					self.address += '/'
 				self.address += path
 			self.remote = XMLRPCProxy (self.address, allow_none = True)
-			self.methods = set ([_m for _m in self.remote.system.listMethods () if not _m.startswith ('system.')])
+			remote_methods = self.remote.system.listMethods ()
+			if isinstance (remote_methods, Iterable):
+				self.methods = set (filter (lambda m: not m.startswith ('system.'), remote_methods))
 		
 		def __call__ (self, name: str) -> Callable[..., Any]:
 			method = name if name in self.methods else None

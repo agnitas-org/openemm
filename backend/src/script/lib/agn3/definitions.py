@@ -16,7 +16,7 @@ from	.systemconfig import Systemconfig
 __all__ = ['syscfg', 'licence', 'system', 'fqdn', 'host', 'base', 'user', 'home', 'program', 'version']
 #
 syscfg = Systemconfig ()
-licence = syscfg.get_int ('licence', -1)
+licence = syscfg.iget ('licence', -1)
 if licence == -1:
 	raise error ('no licence id found')
 #

@@ -10,14 +10,16 @@
 ####################################################################################################################################################################################################################################################################
 #
 import	os, stat, errno, logging
+from	importlib import import_module
 from	typing import Any, Callable, Optional, Union
 from	typing import Dict, List, NamedTuple, Set
 from	.definitions import base
 from	.exceptions import error
 from	.id import IDs
 from	.ignore import Ignore
-from	.io import create_path
+from	.io import which, create_path
 from	.log import log
+from	.tools import call
 #
 __all__ = ['Sanity', 'Report', 'File', 'Symlink']
 #
@@ -293,10 +295,32 @@ only ``errors'' leading to an exit code not equal 0. """
 				except KeyError:
 					r.error.append ('exec: no $PATH variable found')
 			if modules is not None:
+				pip = which ('pip')
+				virtual_env = os.environ.get ('VIRTUAL_ENV')
+				def installer (module: str, update: bool = False) -> None:
+					if virtual_env is None:
+						raise ImportError (f'{module}: not running in a virtual enviroment, missing modules are not installed on system installation')
+					if pip is None:
+						raise ImportError (f'{module}: no command for installation found')
+					n = call ([pip, '--quiet', '--no-input', '--exists-action', 'w', '--disable-pip-version-check', 'install'] + (['-U'] if update else []) + [module])
+					if n != 0:
+						what = 'update' if update else 'install'
+						raise ImportError (f'{module}: failed to {what}, {pip} returns {n}')
+					
 				for module in modules:
 					try:
 						preproc ('module', module)
-						__import__ (module)
+						for stage in 0, 1:
+							try:
+								import_module (module)
+								if stage == 0:
+									installer (module, True)
+							except ModuleNotFoundError:
+								if stage == 1:
+									raise
+								installer (module)
+							else:
+								break
 						postproc ('module', module)
 					except ImportError as e:
 						r.error.append (f'Module: {module} not importable: {e}')

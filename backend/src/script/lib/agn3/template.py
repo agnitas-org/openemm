@@ -10,9 +10,11 @@
 ####################################################################################################################################################################################################################################################################
 #
 import	re
-from	typing import Any, Optional
+from	typing import Any, Callable, Optional
 from	typing import Dict, Match
 from	.exceptions import error
+#
+__all__ = ['MessageCatalog', 'Template', 'Placeholder']
 #
 class MessageCatalog:
 	"""Message Catalog for templating
@@ -43,18 +45,27 @@ also shortcut versions for ${_['xxx']) can be written as _[xxx] and
 ${_ ('xxx')} can be written as _{xxx}.
 
 In a stand alone variante, this looks like this:
->>> m = MessageCatalog ('/some/file/name')
+	
+>>> m = MessageCatalog (None)
+>>> m['yes'] = 'Yes'
+>>> m['no'] = 'No'
 >>> m.set_lang ('de')
->>> print m['yes']
+>>> m['yes'] = 'Ja'
+>>> m['no'] = 'Nein'
+>>> m.set_lang (None)
+>>> print (m['yes'])
+Yes
+>>> print (m ('yes in your language is %(yes)'))
+yes in your language is Yes
+>>> m.set_lang ('de')
+>>> print (m['yes'])
 Ja
->>> print m ('yes')
-yes
->>> print m ('yes in your language is %(yes)')
+>>> print (m ('yes in your language is %(yes)'))
 yes in your language is Ja
->>> print m['unset']
+>>> print (m['unset'])
 *unset*
 >>> m.set_fill (None)
->>> print m['unset']
+>>> print (m['unset'])
 unset
 
 As you can see in the last example an unknown token is expanded to itself
@@ -501,3 +512,92 @@ from ``namespace'' for language ``lang'' by using the message catalog
 		result = result.replace ('\\\n', '')
 		self.namespace['result'] = result
 		return result
+
+class Placeholder:
+	"""replace simple placeholder in strings
+
+the replacement can either be elements from a mapping (namespace),
+user definied macros or evaluating an expression
+
+>>> ph = Placeholder ()
+>>> ph_lazy = Placeholder (lazy = True)
+>>> ns = {'test': 'Test'}
+>>> ph ('Das ist ein $test')
+Traceback (most recent call last):
+...
+agn3.exceptions.error: test: not found/parsable: 'test'
+>>> ph ('Das ist ein $test', ns)
+'Das ist ein Test'
+>>> ph_lazy ('Das ist ein $test')
+'Das ist ein $test'
+>>> ph_lazy ('Das ist ein $test', ns)
+'Das ist ein Test'
+>>> ph['a'] = 3
+>>> ph ('Das ist a plus 4: $(a + 4)')
+'Das ist a plus 4: 7'
+>>> ph ('Das ist $a plus 4: $(a + 4)')
+'Das ist 3 plus 4: 7'
+>>> ph ('Zu finden im Ticket $jira(LTS-690)', macros = {'jira': lambda s: f'https://jira.agnitas.de/browse/{s}'})
+'Zu finden im Ticket https://jira.agnitas.de/browse/LTS-690'
+"""
+	__slots__ = ['lazy', 'ns']
+	def __init__ (self, lazy: bool = False) -> None:
+		self.lazy = lazy
+		self.ns: Dict[str, Any] = {}
+	
+	def __setitem__ (self, option: str, value: Any) -> None:
+		self.ns[option] = value
+	
+	def __getitem__ (self, option: str) -> Any:
+		return self.ns[option]
+	
+	def __delitem__ (self, option: str) -> None:
+		del self.ns[option]
+	
+	parser = re.compile (
+		'\\$\\$|'
+		'\\$[a-z_][a-z_0-9]*(\\.[a-z_][a-z_0-9]*)*(\\([^)]*\\))?|'
+		'\\$\\{[^}]+\\}|'
+		'\\$\\([^)]+\\)',
+		re.IGNORECASE | re.MULTILINE
+	)
+	def __call__ (self, template: str, ns: Optional[Dict[str, Any]] = None, macros: Optional[Dict[str, Callable[[str], str]]] = None) -> str:
+		myns: Dict[str, Any]
+		if self.ns:
+			if ns:
+				myns = self.ns.copy ()
+				myns.update (ns)
+			else:
+				myns = self.ns
+		elif ns:
+			myns = ns
+		else:
+			myns = {}
+		#
+		def replacer (mtch: Match[str]) -> str:
+			s = mtch.group ()
+			if s == '$$':
+				return '$'
+			#
+			if s.startswith ('$(') and s.endswith (')'):
+				return str (eval (s[2:-1], ns if ns else myns, self.ns))
+			else:
+				if s.startswith ('${') and s.endswith ('}'):
+					option = s[2:-1]
+				else:
+					option = s[1:]
+				try:
+					if option.endswith (')'):
+						(macro, arg) = option[:-1].split ('(', 1)
+						if macros is not None:
+							return macros[macro] (arg)
+						else:
+							raise KeyError (macro)
+					else:
+						return str (myns[option])
+				except (ValueError, KeyError) as e:
+					if not self.lazy:
+						raise error (f'{option}: not found/parsable: {e}')
+					return s
+		#
+		return self.parser.sub (replacer, template)

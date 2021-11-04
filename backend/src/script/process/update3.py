@@ -26,10 +26,11 @@ from	agn3.db import DBIgnore, DB, Row
 from	agn3.dbm import DBM
 from	agn3.definitions import base, licence, syscfg
 from	agn3.email import EMail
+from	agn3.emm.columns import Columns
 from	agn3.emm.companyconfig import CompanyConfig
-from	agn3.emm.types import UserStatus
+from	agn3.emm.types import MediaType, UserStatus
 from	agn3.exceptions import error
-from	agn3.ignore import Ignore
+from	agn3.ignore import Ignore, Experimental
 from	agn3.io import create_path, cstreamopen
 from	agn3.log import log
 from	agn3.parameter import Parameter
@@ -184,7 +185,8 @@ class Update: #{{{
 	__slots__ = [
 		'basename', 'failpath', 'current', 'pid', 'lineno', 'log',
 		'check_for_duplicates', 'duplicate', 'tracker', 'tracker_age', 'tracker_expire',
-		'plugin'
+		'plugin',
+		'_mailings_to_company'
 	]
 	name = 'update'
 	path = '/dev/null'
@@ -202,7 +204,8 @@ class Update: #{{{
 		self.tracker = Tracker (os.path.join (base, 'var', 'run', f'update-{self.name}.track'))
 		self.tracker_age: Unit.Parsable = None
 		self.tracker_expire = 0
-	
+		self._mailings_to_company: Dict[int, Optional[int]] = {}
+
 	def setup (self) -> None:
 		self.plugin = UpdatePlugin (manager = LoggingManager)
 		if self.check_for_duplicates:
@@ -356,6 +359,20 @@ class Update: #{{{
 		self.plugin ().end (self, db.cursor, rc)
 		self.tracker.close ()
 		return rc
+
+	def mailing_to_company (self, db: DB, mailing_id: int) -> Optional[int]:
+		try:
+			return self._mailings_to_company[mailing_id]
+		except KeyError:
+			with db.request () as cursor:
+				rq = cursor.querys (
+					'SELECT company_id '
+					'FROM mailing_tbl '
+					'WHERE mailing_id = :mailing_id',
+					{'mailing_id': mailing_id}
+				)
+				self._mailings_to_company[mailing_id] = rq.company_id if rq is not None else None
+			return self._mailings_to_company[mailing_id]
 #}}}
 
 class Detail: #{{{
@@ -387,9 +404,10 @@ class Detail: #{{{
 class UpdateBounce (Update): #{{{
 	__slots__ = [
 		'mailing_map',
-		'igcount', 'sucount', 'sbcount', 'hbcount', 'blcount', 'rvcount', 'ccount',
+		'igcount', 'sucount', 'sbcount', 'hbcount', 'dupcount', 'blcount', 'rvcount', 'ccount',
 		'translate', 'delayed_processing', 'cache', 'succeeded',
-		'has_mailtrack', 'has_mailtrack_last_read'
+		'has_mailtrack', 'has_mailtrack_last_read', 'sys_encrypted_sending_enabled',
+		'ccfg'
 	]
 	name = 'bounce'
 	path = os.path.join (base, 'log', 'extbounce.log')
@@ -651,6 +669,7 @@ class UpdateBounce (Update): #{{{
 		self.sucount = 0
 		self.sbcount = 0
 		self.hbcount = 0
+		self.dupcount = 0
 		self.blcount = 0
 		self.rvcount = 0
 		self.ccount = 0
@@ -660,6 +679,8 @@ class UpdateBounce (Update): #{{{
 		self.succeeded: DefaultDict[int, int] = defaultdict (int)
 		self.has_mailtrack: Dict[int, bool] = {}
 		self.has_mailtrack_last_read = 0
+		self.sys_encrypted_sending_enabled: Cache[int, bool] = Cache (timeout = '30m')
+		self.ccfg: CompanyConfig = CompanyConfig ()
 	
 	def done (self) -> None:
 		self.delayed_processing.done ()
@@ -732,17 +753,6 @@ class UpdateBounce (Update): #{{{
 				rc.bounce_remark = f'bounce:{rc.detail} (from {dsn} using {rc.rule})'
 			return rc
 
-	def __map_mailing_to_company (self, db: DB, mailing_id: int) -> int:
-		try:
-			return self.mailing_map[mailing_id]
-		except KeyError:
-			rq = db.querys ('SELECT company_id FROM mailing_tbl WHERE mailing_id = :mailing_id', {'mailing_id': mailing_id})
-			if rq is None:
-				logger.error ('No company_id for mailing %d found' % mailing_id)
-				return 0
-			self.mailing_map[mailing_id] = rq.company_id
-			return self.mailing_map[mailing_id]
-
 	def __log_success (self, db: DB, company_id: int, now: int) -> bool:
 		if self.has_mailtrack_last_read + 300 < now:
 			temp: Dict[int, bool] = {}
@@ -753,7 +763,7 @@ class UpdateBounce (Update): #{{{
 		for check_company_id in (company_id, 0):
 			with Ignore (KeyError):
 				return self.has_mailtrack[check_company_id]
-		self.has_mailtrack[company_id] = syscfg.get_bool ('log-success', False)
+		self.has_mailtrack[company_id] = syscfg.bget ('log-success', False)
 		return self.has_mailtrack[company_id]
 
 	def __track_store (self, now: int, mailing: int, customer: int, detail: int) -> bool:
@@ -783,22 +793,30 @@ class UpdateBounce (Update): #{{{
 		self.sucount = 0
 		self.sbcount = 0
 		self.hbcount = 0
+		self.dupcount = 0
 		self.blcount = 0
 		self.rvcount = 0
 		self.ccount = 0
+		self.ccfg.db = db
+		self.ccfg.read ()
 		self.succeeded.clear ()
 		self.translate.clear ()
 		self.translate.setup (db)
+		self.sys_encrypted_sending_enabled.fill = partial (self.column_exists, db, Columns.sys_encrypted_sending)
 		self.plugin ().start_bounce (db.cursor, Detail)
 		return True
 
+	def column_exists (self, db: DB, column: str, company_id: int) -> bool:
+		layout = db.layout (f'customer_{company_id}_tbl', normalize = True)
+		return layout is not None and column in {_l.name for _l in layout}
+		
 	def update_end (self, db: DB) -> bool:
 		if self.succeeded:
 			logger.info ('Add {mails:,d} mails to {mailings:d} mailings'.format (mails = cast (int, sum (self.succeeded.values ())), mailings = len (self.succeeded)))
 			for mailing_id in sorted (self.succeeded):
 				db.update ('UPDATE mailing_tbl SET delivered = delivered + :success WHERE mailing_id = :mailing_id', {'success': self.succeeded[mailing_id], 'mailing_id': mailing_id})
 			db.sync ()
-		logger.info ('Found %d hardbounces, %d softbounces (%d written), %d successes, %d blacklisted, %d revoked, %d ignored in %d lines' % (self.hbcount, self.sbcount, (self.sbcount - self.ccount), self.sucount, self.blcount, self.rvcount, self.igcount, self.lineno))
+		logger.info ('Found %d hardbounces (%d duplicates), %d softbounces (%d written), %d successes, %d blacklisted, %d revoked, %d ignored in %d lines' % (self.hbcount, self.dupcount, self.sbcount, (self.sbcount - self.ccount), self.sucount, self.blcount, self.rvcount, self.igcount, self.lineno))
 		if self.delayed_processing:
 			with self.delayed_processing:
 				count = 0
@@ -812,6 +830,8 @@ class UpdateBounce (Update): #{{{
 						db.sync ()
 				db.sync ()
 				logger.info (f'Apply {count:,d} delayed processed bounces (where {success:,d} succeeded)')
+		self.sys_encrypted_sending_enabled.fill = None
+		self.ccfg.db = None
 		return True
 
 	def update_line (self, db: DB, line: str) -> bool:
@@ -827,8 +847,8 @@ class UpdateBounce (Update): #{{{
 			if record.mailing_id <= 0 or record.customer_id < 0:
 				logger.warning (f'Got line with invalid mailing or customer: {line}')
 				return False
-			company_id = self.__map_mailing_to_company (db, record.mailing_id)
-			if company_id <= 0:
+			company_id = self.mailing_to_company (db, record.mailing_id)
+			if not company_id:
 				logger.warning ('Cannot map mailing %d to company_id for line: %s' % (record.mailing_id, line))
 				return False
 			breakdown = UpdateBounce.Breakdown.new (record.dsn, record.info, company_id, self.translate)
@@ -845,6 +865,10 @@ class UpdateBounce (Update): #{{{
 					self.delayed_processing.add (now, line, record.mailing_id, record.media, record.customer_id)
 					return True
 				breakdown.timestamp = datetime.now ()
+			#
+			with Experimental ('https://jira.agnitas.de/browse/SAAS-2148'):
+				if breakdown.detail == Detail.Success or breakdown.detail in Detail.Hardbounces:
+					pass
 			#
 			if breakdown.detail == Detail.Success:
 				self.delayed_processing.drop (record.mailing_id, record.media, record.customer_id)
@@ -920,21 +944,84 @@ class UpdateBounce (Update): #{{{
 							}
 							if db.update (query, data, commit = True) == 1:
 								self.rvcount += 1
-						query = (
-							'UPDATE customer_%d_binding_tbl '
-							'SET user_status = :status, timestamp = :ts, user_remark = :remark, exit_mailing_id = :mailing '
-							'WHERE customer_id = :customer AND user_status = 1 AND mediatype = :media'
-							% company_id
-						)
-						data = {
-							'status': breakdown.bounce_type.value,
-							'remark': breakdown.bounce_remark,
-							'mailing': record.mailing_id,
-							'ts': breakdown.timestamp,
-							'customer': record.customer_id,
-							'media': record.media
-						}
-						db.update (query, data, commit = True)
+						if breakdown.detail == Detail.HardbounceNotEncrypted:
+							if self.sys_encrypted_sending_enabled[company_id]:
+								query = (
+									f'UPDATE customer_{company_id}_tbl '
+									f'SET {Columns.sys_encrypted_sending} = 0, timestamp = :ts '
+									'WHERE customer_id = :customer_id'
+								)
+								data = {
+									'customer_id': record.customer_id,
+									'ts': breakdown.timestamp
+								}
+								db.update (query, data, commit = True)
+						else:
+							query = (
+								'UPDATE customer_%d_binding_tbl '
+								'SET user_status = :status, timestamp = :ts, user_remark = :remark, exit_mailing_id = :mailing '
+								'WHERE customer_id = :customer_id AND user_status IN (1, 7) AND mediatype = :media'
+								% company_id
+							)
+							data = {
+								'status': breakdown.bounce_type.value,
+								'remark': breakdown.bounce_remark,
+								'mailing': record.mailing_id,
+								'ts': breakdown.timestamp,
+								'customer_id': record.customer_id,
+								'media': record.media
+							}
+							db.update (query, data, commit = True)
+							with Experimental ('EMM-5899'):
+								if (
+									breakdown.bounce_type == UserStatus.BOUNCE
+									and
+									record.media == MediaType.EMAIL.value
+									and
+									self.ccfg.get_company_info ('bounce-mark-duplicate', company_id = company_id, default = True, convert = lambda v: atob (v))
+								):
+									rq = db.querys (
+										'SELECT email '
+										f'FROM customer_{company_id}_tbl '
+										'WHERE customer_id = :customer_id',
+										{
+											'customer_id': record.customer_id
+										}
+									)
+									if rq is not None and rq.email:
+										email = rq.email
+										try:
+											localpart, domain = email.split ('@', 1)
+										except ValueError:
+											logger.info (f'{record.customer_id}: email "{email}" is not valid for duplicate check')
+										else:
+											#
+											#	find duplicate email addresses, ignoring case
+											#	in domain part, but obey case in local part
+											customer_ids: List[int] = []
+											for row in db.queryc (
+												'SELECT customer_id, email '
+												f'FROM customer_{company_id}_tbl '
+												'WHERE lower(email) = lower(:email)',
+												{
+													'email': email
+												}
+											):
+												if row.customer_id == record.customer_id:
+													continue
+												check_localpart = row.email.split ('@', 1)[0]
+												if check_localpart != localpart:
+													continue
+												data['customer_id'] = row.customer_id
+												if db.update (query, data) > 0:
+													logger.info (f'{record.customer_id}: marked as hardbounce due email "{row.email}" seems to be a duplicate of "{email}"')
+													customer_ids.append (record.customer_id)
+													self.dupcount += 1
+											db.sync ()
+											#
+											with Experimental ('https://jira.agnitas.de/browse/SAAS-2148'):
+												for customer_id in customer_ids:
+													pass
 					except error as e:
 						logger.error ('Unable to unsubscribe %r for company %d from database using %s: %s' % (data, company_id, query, e))
 						rc = False
@@ -949,7 +1036,11 @@ class UpdateBounce (Update): #{{{
 		return rc
 #}}}
 class UpdateAccount (Update): #{{{
-	__slots__ = ['tscheck', 'ignored', 'inserted', 'bccs', 'failed', 'status', 'changed', 'control_parser', 'data_parser', 'insert_query']
+	__slots__ = [
+		'tscheck', 'ignored', 'inserted', 'bccs', 'failed',
+		'status', 'changed',
+		'control_parser', 'data_parser', 'insert_query'
+	]
 	name = 'account'
 	path = os.path.join (base, 'log', 'account.log')
 	status_template: Final[str] = os.path.join (base, 'scripts', 'mailstatus3.tmpl')
@@ -962,6 +1053,7 @@ class UpdateAccount (Update): #{{{
 		active: bool = True
 		status_id: int = 0
 		mailing_id: int = 0
+		company_id: int = 0
 		in_production: bool = True
 		produced_mails: int = 0
 		created_mails: int = 0
@@ -1037,8 +1129,9 @@ class UpdateAccount (Update): #{{{
 				minfo.send_count += track['count']
 				logger.debug (f'Loaded entry {track!r}')
 			db.sync ()
-			for r in db.query ('SELECT mailing_id FROM maildrop_status_tbl WHERE status_id = :status', { 'status': status_id }):
-				minfo.mailing_id = r[0]
+			for r in db.query ('SELECT mailing_id, company_id FROM maildrop_status_tbl WHERE status_id = :status', { 'status': status_id }):
+				minfo.mailing_id = r.mailing_id
+				minfo.company_id = r.company_id
 				break
 			if minfo.mailing_id:
 				for r in db.queryc ('SELECT statmail_recp, deleted FROM mailing_tbl WHERE mailing_id = :mid', {'mid': minfo.mailing_id}):
@@ -1178,6 +1271,8 @@ class UpdateAccount (Update): #{{{
 						if r[0] == minfo.created_mails:
 							if (count := db.update ('UPDATE mailing_tbl SET work_status = \'mailing.status.sent\' WHERE mailing_id = :mid', { 'mid': minfo.mailing_id }, commit = True)) == 1:
 								logger.info ('Changed work status for mailing_id %d to sent' % minfo.mailing_id)
+								with Experimental ('https://jira.agnitas.de/browse/SAAS-2148'):
+									pass
 							elif count == 0:
 								logger.warning (f'Failed to change work status for mailing_id {minfo.mailing_id}: the mailing seems to be removed')
 							else:
@@ -1260,35 +1355,7 @@ class UpdateAccount (Update): #{{{
 			self.failed += 1
 		return False
 #}}}
-class UpdateWithCache (Update): #{{{
-	__slots__ = ['_cache', '_mailings_to_company']
-	def __init__ (self, limit: int = 0, timeout: str = '30m') -> None:
-		super ().__init__ ()
-		self._cache: Cache[str, Any] = Cache (limit = limit, timeout = timeout)
-		self._mailings_to_company: Dict[int, Optional[int]] = {}
-
-	def get (self, key: str, method: Callable[[], Any]) -> Any:
-		try:
-			return self._cache[key]
-		except KeyError:
-			value = self._cache[key] = method ()
-			return value
-			
-	def mailing_to_company (self, db: DB, mailing_id: int) -> Optional[int]:
-		try:
-			return self._mailings_to_company[mailing_id]
-		except KeyError:
-			with db.request () as cursor:
-				rq = cursor.querys (
-					'SELECT company_id '
-					'FROM mailing_tbl '
-					'WHERE mailing_id = :mailing_id',
-					{'mailing_id': mailing_id}
-				)
-				self._mailings_to_company[mailing_id] = rq.company_id if rq is not None else None
-			return self._mailings_to_company[mailing_id]
-#}}}
-class UpdateDeliver (UpdateWithCache): #{{{
+class UpdateDeliver (Update): #{{{
 	__slots__ = ['existing_deliver_tables', 'count']
 	name = 'deliver'
 	path = os.path.join (base, 'log', 'deliver.log')
@@ -1336,21 +1403,34 @@ class UpdateDeliver (UpdateWithCache): #{{{
 									'timestamp date,'
 									'line varchar2(4000)'
 									'){tablespace}'
-									.format (table = table, tablespace = (' TABLESPACE {tablespace}'.format (tablespace = tablespace)) if tablespace else '')
+									.format (
+										table = table,
+										tablespace = f' TABLESPACE {tablespace}' if tablespace else ''
+									)
 								)
 								db.execute (
 									'CREATE SEQUENCE {table}_seq NOCACHE'.format (table = table)
 								)
+								tablespace = db.find_tablespace ('DATA_CUST_INDEX')
+								db.execute (
+									'CREATE INDEX del{company_id}$tscid$idx ON {table} (timestamp, customer_id){tablespace}'.format (
+										company_id = company_id,
+										table = table,
+										tablespace = f' TABLESPACE {tablespace}' if tablespace else ''
+									)
+								)
 							else:
 								db.execute (
-									'CREATE TABLE {table} ('
+									f'CREATE TABLE {table} ('
 									'id int auto_increment primary key,'
 									'mailing_id int,'
 									'customer_id int,'
 									'timestamp datetime,'
 									'line varchar(4000)'
 									')'
-									.format (table = table)
+								)
+								db.execute (
+									f'CREATE INDEX del{company_id}$tscid$idx ON {table} (timestamp, customer_id)'
 								)
 							db.setup_table_optimizer (table)
 						self.existing_deliver_tables.add (table)
@@ -1406,7 +1486,7 @@ class UpdateMailtrack (Update): #{{{
 
 	def __init__ (self) -> None:
 		super ().__init__ ()
-		self.mailtrack_process_table = syscfg.get_str ('mailtrack-process-table', UpdateMailtrack.mailtrack_process_table_default)
+		self.mailtrack_process_table = syscfg.get ('mailtrack-process-table', UpdateMailtrack.mailtrack_process_table_default)
 		self.companies: DefaultDict[int, UpdateMailtrack.CompanyCounter] = defaultdict (UpdateMailtrack.CompanyCounter)
 		self.count = 0
 		self.insert_statement = (
@@ -1443,7 +1523,7 @@ class UpdateMailtrack (Update): #{{{
 						.format (table = self.mailtrack_process_table)
 					)
 				))
-				mailtrack_index_prefix = syscfg.get_str ('mailtrack-process-index-prefix', 'mtproc')
+				mailtrack_index_prefix = syscfg.get ('mailtrack-process-index-prefix', 'mtproc')
 				for (index_id, index_column) in [
 					('cid', 'company_id'),
 					('cuid', 'customer_id'),
@@ -1744,7 +1824,7 @@ class Main (Runtime):
 		self.single = args.single
 		self.delay = args.delay
 		available = dict ((_c.name, _c) for _c in globals ().values () if type (_c) is type and issubclass (_c, Update) and _c is not Update)
-		self.modules: List[Type[Update]] = [available[_m] for _m in args.parameter]
+		self.modules: List[Type[Update]] = [available[_m] for _m in args.parameter] if args.parameter else list (available.values ())
 		if self.single:
 			self.ctx.background = False
 			self.ctx.watchdog = False

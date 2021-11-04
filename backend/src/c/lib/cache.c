@@ -343,7 +343,7 @@ fcache_expire (fcache_t *fc, int expire) /*{{{*/
 		use = 0;
 		while (ent = readdir (dp)) {
 			rc = true;
-			strncpy (fc -> sptr, ent -> d_name, NAME_MAX);
+			memcpy (fc -> sptr, ent -> d_name, NAME_MAX);
 			if ((lstat (fc -> scratch, & st) != -1) && S_ISREG (st.st_mode) && (st.st_mtime + expire < now)) {
 				if (use >= size) {
 					size += 16;

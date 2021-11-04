@@ -340,6 +340,7 @@ parse_description (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{
 			} else if (! xmlstrcmp (node -> name, "mailinglist")) {
 				if (st = extract_numeric_property (blockmail, & val, node, "id"))
 					blockmail -> mailinglist_id = (int) val;
+				blockmail -> mailinglist_name = extract_xml_property (node, "name");
 			} else if (! xmlstrcmp (node -> name, "mailing")) {
 				if (st = extract_numeric_property (blockmail, & val, node, "id"))
 					blockmail -> mailing_id = (int) val;
@@ -369,6 +370,8 @@ parse_description (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{
 		string_map_addsi (blockmail -> smap, "owner_id", blockmail -> owner_id);
 		string_map_addsi (blockmail -> smap, "company_id", blockmail -> company_id);
 		string_map_addsi (blockmail -> smap, "mailinglist_id", blockmail -> mailinglist_id);
+		if (blockmail -> mailinglist_name)
+			string_map_addsb (blockmail -> smap, "mailinglist_name", blockmail -> mailinglist_name);
 		string_map_addsi (blockmail -> smap, "mailing_id", blockmail -> mailing_id);
 		if (blockmail -> mailing_name)
 			string_map_addsb (blockmail -> smap, "mailing_name", blockmail -> mailing_name);

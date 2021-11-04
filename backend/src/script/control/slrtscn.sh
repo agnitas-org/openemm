@@ -12,19 +12,15 @@
 #
 . $HOME/scripts/config.sh
 #
-py3select $HOME/scripts/slrtscn3.py $HOME/scripts/slrtscn.py
+command=$HOME/scripts/slrtscn3.py
 case "$1" in
 start)
 	active slrtscn
 	shift
-	if py3available; then
-		starter $command -b "$@"
-	else
-		starter $command "$@"
-	fi
+	starter $command -b "$@"
 	;;
 stop)
-	softterm $commands
+	softterm $command
 	;;
 status)
 	patternstatus $command

@@ -87,7 +87,7 @@ instances of mail creation"""
 		]
 		if self.mta == 'postfix':
 			generate += [
-				f'messageid-logfile={base}/log/messageid.log'
+				f'messageid-logfile={base}/var/run/messageid.log'
 			]
 		generate += [
 			'media=email'

@@ -13,5 +13,4 @@
 . $HOME/scripts/config.sh
 active softbounce
 #
-py3select $HOME/scripts/softbounce3.py $HOME/scripts/softbounce.py
-exec $command "$@"
+exec $HOME/scripts/softbounce3.py "$@"

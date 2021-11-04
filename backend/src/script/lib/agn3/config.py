@@ -13,13 +13,12 @@ from	__future__ import annotations
 import	os, re, time, json
 from	io import StringIO
 from	datetime import datetime
-from	collections import namedtuple
 from	dataclasses import make_dataclass
 from	typing import Any, Callable, Optional, Union
 from	typing import Dict, IO, Iterator, List, Set, Tuple, Type
-from	typing import cast
+from	typing import cast, overload
 from	.dbcore import Binary
-from	.dblite import DBLite
+from	.dblite import DBLite, Row
 from	.definitions import base, host, program
 from	.exceptions import error
 from	.ignore import Ignore
@@ -248,21 +247,18 @@ None to use the default "date"."""
 		rc = self.default_section
 		self.default_section = self.default_section_stack.pop (0)
 		return rc
-	
+
+	@overload
+	def get (self, var: str, default: None = ...) -> Optional[str]: ...
+	@overload
+	def get (self, var: str, default: str) -> str: ...
 	def get (self, var: str, default: Optional[str] = None) -> Optional[str]:
 		"""Retrieve the value for ``var'' as string, use ``default'' as default if ``var'' is not found"""
 		try:
 			return self[var]
 		except KeyError:
 			return default
-	
-	def get_str (self, var: str, default: str) -> str:
-		"""Like get(), but enforces a valid default value"""
-		try:
-			return self[var]
-		except KeyError:
-			return default
-	
+
 	def iget (self, var: str, default: int = 0) -> int:
 		"""Retrieve the value for ``var'' as integer, use ``default'' as default if ``var'' is not found"""
 		try:
@@ -289,6 +285,10 @@ None to use the default "date"."""
 		except KeyError:
 			return default
 	
+	@overload
+	def tget (self, var: str, default: None = ..., **kwargs: Any) -> Optional[str]: ...
+	@overload
+	def tget (self, var: str, default: str, **kwargs: Any) -> str: ...
 	def tget (self, var: str, default: Optional[str] = None, **kwargs: Any) -> Optional[str]:
 		"""Retrieve the value for ``var'' as str where the value is used as a template which is filled using the current namespace, use ``default'' as default if ``var'' is not found"""
 		val = self.get (var, default)
@@ -311,7 +311,11 @@ None to use the default "date"."""
 		if rc is None:
 			raise ValueError (f'unparsable date exprssion {s!r}')
 		return rc
-		
+
+	@overload
+	def dget (self, var: str, default: None = ...) -> Optional[datetime]: ...
+	@overload
+	def dget (self, var: str, default: Union[str, datetime]) -> datetime: ...
 	def dget (self, var: str, default: Union[None, str, datetime] = None) -> Optional[datetime]:
 		"""Retrieve the value for ``var'' as datetime.datetime, use ``default'' as default if ``var'' is not found"""
 		try:
@@ -348,7 +352,7 @@ None to use the default "date"."""
 				if modify is None:
 					rc = [_v.strip () for _v in rc]
 				elif callable (modify):
-					def modifier (v: Any) -> Any:
+					def modifier (v: str) -> Any:
 						try:
 							return cast (Callable[[str], Any], modify) (v)
 						except:
@@ -586,7 +590,7 @@ instead of using an in memory database. """
 				#
 				rows = db.stream ('SELECT {fields} FROM {table} ORDER BY rowid'.format (fields = ', '.join (fields), table = table)).list ()
 				db.close ()
-				if output == 'list':
+				if output in ('list', 'named'):
 					return rows
 				#
 				if output in ('dict', 'json'):
@@ -595,20 +599,17 @@ instead of using an in memory database. """
 						return json.dumps (temp)
 					return temp
 				#
-				if output in ('named', 'data'):
-					if output == 'named':
-						creator: Type[Any] = cast (Type[Any], namedtuple ('Row', fields))
-					else:
-						creator = make_dataclass ('Row', [(_n, _t) for (_n, _t) in zip (fields, types)])
+				if output == 'data':
+					creator = cast (Type[Row], make_dataclass ('Row', [(_n, _t) for (_n, _t) in zip (fields, types)]))
 					return Stream (rows).map (lambda row: creator (*row)).list ()
 				#
 				raise ValueError (f'{output}: not supported')
 		return None
 	
 	def keys (self) -> Iterator[str]:
-		return iter (Stream.of (self.sections.items ())
+		return iter (Stream (self.sections.items ())
 			.map (lambda kv: (('{section}.{name}'.format (section = kv[0], name = _v)) if kv[0] is not None else _v for _v in kv[1]))
-			.chain ()
+			.chain (str)
 		)
 
 	__internal = re.compile ('^__(.*)__$')

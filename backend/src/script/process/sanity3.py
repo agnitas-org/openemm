@@ -39,8 +39,6 @@ class OpenEMM (Sanity):
 				File (name = 'bin/qctrl', issuid = True, uid = 0, gid = 0)
 			], executables = [
 				'java'
-			], modules = [
-				'sqlite3'
 			], checks = [
 				self.__relink,
 				self.__db_sanity,

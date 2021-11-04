@@ -39,6 +39,7 @@ typedef struct { /*{{{*/
 	int		size;
 	buf_t		*statics;
 	char		*scratch;
+	int		scratch_size;
 	/*}}}*/
 }	config_t;
 static const char *
@@ -101,6 +102,7 @@ systemconfig_alloc (const char *fname) /*{{{*/
 		c -> size = 0;
 		c -> statics = NULL;
 		c -> scratch = NULL;
+		c -> scratch_size = 0;
 		if (env) {
 			if (! (c -> buf = strdup (env)))
 				ok = false;
@@ -306,20 +308,39 @@ const char *
 systemconfig_find (void *lc, const char *key) /*{{{*/
 {
 	config_t	*c = (config_t *) lc;
-	char		*dflt;
-	int		n;
 
 	if (c) {
-		if (c -> scratch)
-			free (c -> scratch);
-		if (c -> scratch = strdup (key)) {
-			if (dflt = strchr (c -> scratch, ':'))
-				*dflt++ = '\0';
-			if (c)
-				for (n = 0; n < c -> count; ++n)
-					if (! strcmp (c -> scratch, c -> e[n].key))
-						return c -> e[n].value;
-			return dflt;
+		int	new_scratch_size = strlen (key) + 1;
+		
+		if ((! c -> scratch) || (c -> scratch_size < new_scratch_size)) {
+			c -> scratch = realloc (c -> scratch, new_scratch_size);
+		}
+		if (c -> scratch) {
+			const char	*source;
+			char		*target;
+			char		*default_value;
+			int		n;
+			
+			for (source = key, target = c -> scratch, default_value = NULL; *source; ) {
+				if (default_value) {
+					*target++ = *source++;
+				} else if (*source == '\\') {
+					++source;
+					if (*source)
+						*target++ = *source++;
+				} else if (*source == ':') {
+					*target++ = '\0';
+					default_value = target;
+					++source;
+				} else {
+					*target++ = *source++;
+				}
+			}
+			*target = '\0';
+			for (n = 0; n < c -> count; ++n)
+				if (! strcmp (c -> scratch, c -> e[n].key))
+					return c -> e[n].value;
+			return default_value;
 		}
 	}
 	return NULL;

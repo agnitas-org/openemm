@@ -42,7 +42,7 @@ class AIO_StatdProxy (AIO_XMLRPCProtocol):
 def _target (hostname: str, user: Optional[str]) -> str:
 	port = syscfg.get (f'statd-port-{user}') if user is not None else None
 	if port is None:
-		port = syscfg.get_str ('statd-port', '8300')
+		port = syscfg.get ('statd-port', '8300')
 	parts = hostname.split (':', 1)
 	if len (parts) == 2:
 		(hostname, port) = parts

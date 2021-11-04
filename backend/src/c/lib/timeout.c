@@ -21,11 +21,22 @@ typedef struct { /*{{{*/
 	/*}}}*/
 }	timeout_t;
 static timeout_t	*timeout = NULL;
+static bool_t		timeout_enabled = true;
 
 static void
 timout_handler (int sig) /*{{{*/
 {
 	siglongjmp (timeout -> env, 1);
+}/*}}}*/
+void
+timeout_disable (void) /*{{{*/
+{
+	timeout_enabled = false;
+}/*}}}*/
+void
+timeout_enable (void) /*{{{*/
+{
+	timeout_enabled = true;
 }/*}}}*/
 bool_t
 timeout_init (void) /*{{{*/
@@ -54,20 +65,25 @@ bool_t
 timeout_exec (int seconds, void (*func) (void *), void *pd) /*{{{*/
 {
 	bool_t	rc;
-	
-	if (timeout_init ()) {
-		timeout -> seconds = seconds;
-		time (& timeout -> start);
-		if (!  sigsetjmp (timeout -> env, 0)) {
-			alarm (seconds);
-			(*func) (pd);
-			alarm (0);
-			rc = true;
+
+	if (timeout_enabled) {
+		if (timeout_init ()) {
+			timeout -> seconds = seconds;
+			time (& timeout -> start);
+			if (!  sigsetjmp (timeout -> env, 0)) {
+				alarm (seconds);
+				(*func) (pd);
+				alarm (0);
+				rc = true;
+			} else
+				rc = false;
+			timeout_release ();
 		} else
 			rc = false;
-		timeout_release ();
-	} else
-		rc = false;
+	} else {
+		(*func) (pd);
+		rc = true;
+	}
 	return rc;
 }/*}}}*/
 void
@@ -104,14 +120,16 @@ timeout_suspend (void) /*{{{*/
 void
 timeout_resume (void) /*{{{*/
 {
-	timeout_block ();
-	if (timeout) {
-		time (& timeout -> start);
-		if (timeout -> seconds > 0) {
-			alarm (timeout -> seconds);
-		} else {
-			kill (getpid (), SIGALRM);
+	if (timeout_enabled) {
+		timeout_block ();
+		if (timeout) {
+			time (& timeout -> start);
+			if (timeout -> seconds > 0) {
+				alarm (timeout -> seconds);
+			} else {
+				kill (getpid (), SIGALRM);
+			}
 		}
+		timeout_unblock ();
 	}
-	timeout_unblock ();
 }/*}}}*/

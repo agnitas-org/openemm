@@ -14,10 +14,11 @@ import	socket, logging
 import	socketserver, urllib.parse, base64
 import	xmlrpc.server, xmlrpc.client
 import	aiohttp_xmlrpc.client
+from	datetime import datetime
 from	signal import Signals
 from	threading import Thread
 from	types import FrameType, TracebackType
-from	typing import Any, Callable, Optional, Protocol, Union
+from	typing import Any, Callable, Iterable, Optional, Protocol, Union
 from	typing import Dict, List, NamedTuple, Tuple, Type
 from	typing import cast
 from	.config import Config
@@ -28,6 +29,8 @@ from	.ignore import Ignore
 __all__ = ['XMLRPCProxy', 'XMLRPCError', 'XMLRPC', 'XMLRPCClient', 'XMLRPCCall']
 #
 logger = logging.getLogger (__name__)
+#
+_marshallable = Union[None, bool, int, float, str, bytes, Tuple[Any, ...], List[Any], Dict[Any, Any], datetime]
 #
 XMLRPCProxy = xmlrpc.client.ServerProxy
 XMLRPCError = xmlrpc.client.Error
@@ -249,7 +252,7 @@ server.run ()
 				request = request
 			))
 		
-		def _dispatch (self, method: str, params: Tuple[Any, ...]) -> Any:
+		def _dispatch (self, method: str, params: Iterable[_marshallable]) -> _marshallable:
 			try:
 				rc = super ()._dispatch (method, params)
 				logger.debug (f'INVOKE {method} {params!r} = {rc!r}')

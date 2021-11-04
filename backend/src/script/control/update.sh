@@ -11,28 +11,19 @@
 ####################################################################################################################################################################################################################################################################
 . $HOME/scripts/config.sh
 #
-py3select $HOME/scripts/update3.py $HOME/scripts/update.py
+command=$HOME/scripts/update3.py
 case "$1" in
 start)
 	active update
 	shift
-
-	if py3available; then
-		starter $command -bw "$@" account mailtrack bounce deliver release
-	else
-		starter $command "$@" account mailtrack bounce deliver
-	fi
+	starter $command -bw "$@"
 	;;
 stop)
-	softterm $commands
+	softterm $command
 	;;
 status)
-
-	if py3available; then
-		patternstatus 6 $command
-	else
-		patternstatus 4 $command
-	fi
+	shift
+	patternstatus `$command -i -bw "$@"` $command
 	;;
 *)
 	echo "Usage: $0 [ start | stop | status ]"

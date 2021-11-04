@@ -39,11 +39,11 @@ T = TypeVar ('T')
 Handler = Union[Callable[[Signals, FrameType], None], int, Handlers, None]
 class Signal:
 	__slots__ = ['saved']
-	known_signals: Dict[str, Signals] = (Stream.of (signal.__dict__.items ())
+	known_signals: Dict[str, Signals] = (Stream (signal.__dict__.items ())
 		.filter (lambda kv: isinstance (kv[1], Signals))
 		.dict ()
 	)
-	known_handlers: Dict[str, Handlers] = (Stream.of (signal.__dict__.items ())
+	known_handlers: Dict[str, Handlers] = (Stream (signal.__dict__.items ())
 		.filter (lambda kv: isinstance (kv[1], Handlers))
 		.dict ()
 	)
@@ -91,7 +91,7 @@ class Signal:
 			raise KeyError (sig)
 		
 	def restore (self) -> None:
-		Stream.of (self.saved.items ()).each (lambda kv: signal.signal (kv[0], kv[1]))
+		Stream (self.saved.items ()).each (lambda kv: signal.signal (kv[0], kv[1]))
 		self.clear ()
 	
 	def clear (self) -> None:
@@ -125,12 +125,19 @@ class Signal:
 
 class Timer:
 	__slots__ = ['timeout', 'start']
-	def __init__ (self, timeout: Union[None, int, float]) -> None:
-		self.timeout = timeout if timeout is None else float (timeout) 
+	unit = Unit ()
+	def __init__ (self, timeout: Union[None, int, float, str]) -> None:
+		self.timeout: Optional[float]
+		if timeout is None or isinstance (timeout, float):
+			self.timeout = timeout
+		elif isinstance (timeout, str):
+			self.timeout = float (self.unit.parse (timeout))
+		else:
+			self.timeout = float (timeout)
 		self.start: Optional[float] = None
 		
 	def __enter__ (self) -> Timer:
-		self.start = time.time ()
+		self.restart ()
 		return self
 
 	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
@@ -147,6 +154,31 @@ class Timer:
 				return remain
 			return None
 		raise error ('timer not started')
+	
+	def restart (self) -> None:
+		self.start = time.time ()
+
+	def reached (self, on_reach: Optional[Callable[[], None]] = None) -> bool:
+		if self.timeout is not None:
+			if self.start is not None:
+				rc = time.time () - self.start > self.timeout
+				if on_reach is not None and rc:
+					on_reach ()
+				return rc
+			else:
+				raise error ('timer not started')
+		raise error ('Timer: no timeout specified')
+
+	@staticmethod
+	def guard (timeout: int, method: Callable[[], T]) -> T:
+		def handler (sig: Signals, stack: FrameType) -> None:
+			raise Timeout ()
+		with Signal (signal.SIGALRM, handler):
+			try:
+				signal.alarm (timeout)
+				return method ()
+			finally:
+				signal.alarm (0)
 		
 class Daemonic:
 	"""Base class for daemon processes
@@ -160,6 +192,7 @@ should be subclassed and extended for the process to implement."""
 		devnull = os.devnull
 	except AttributeError:
 		devnull = '/dev/null'
+	unit = Unit ()
 	@classmethod
 	def call (cls, method: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
 		"""Call a method in a subprocess, return process status"""
@@ -423,6 +456,7 @@ is called at the exit of the context manager.
 		def __iter__ (self) -> Generator[Daemonic.Member[T], None, None]:
 			for member in [_s for _s in self.status if _s.state in (Daemonic.State.terminated, Daemonic.State.canceled)]:
 				yield member
+				self.status.remove (member)
 
 		def stats (self) -> Daemonic.Stats[T]:
 			return Daemonic.Stats (
@@ -430,6 +464,13 @@ is called at the exit of the context manager.
 				active = list (self.active.values ()),
 				ended = list (self)
 			)
+
+		def is_active (self) -> bool:
+			return bool (self.scheduled or self.active)
+		
+		def is_idle (self) -> bool:
+			return not self.is_active ()
+			
 		def add (self, member: Daemonic.Member[T]) -> Daemonic.Member[T]:
 			member.state = Daemonic.State.scheduled
 			self.scheduled.append (member)
@@ -502,9 +543,9 @@ is called at the exit of the context manager.
 		def wait (self, timeout: Union[None, int, float] = None) -> int:
 			counter = 0
 			with Ignore (Timeout), Timer (timeout) as timer:
-				while self.scheduled or self.active:
+				while self.is_active ():
 					self.start ()
-					status = self.daemon.join (timeout = timer ())
+					status = self.daemon.join (timeout = timer () if timeout is None or timeout > 0.0 else 0)
 					if status is not None:
 						if status.pid:
 							with Ignore (KeyError):
@@ -545,7 +586,7 @@ is called at the exit of the context manager.
 		def run (self, timeout: Union[None, int, float] = None, hard_kill_delay: Union[None, int, float] = None) -> List[Daemonic.Member[T]]:
 			try:
 				with Timer (timeout) as timer:
-					while self.daemon.running and (self.scheduled or self.active):
+					while self.daemon.running and self.is_active ():
 						if self.scheduled:
 							self.start ()
 						if self.active:
@@ -719,9 +760,8 @@ to restrart a subprocess which has terminated unexpected.
 been terminated and is still active to kill it the hard way.
 ``maxIncarnation'', if not None, is the maximum number of restarts for
 a process until the watchdog gives up."""
-		unit = Unit ()
-		restart_delay = unit.parse (restart_delay, 60)
-		termination_delay = unit.parse (termination_delay, 10)
+		restart_delay = self.unit.parse (restart_delay, 60)
+		termination_delay = self.unit.parse (termination_delay, 10)
 		joblist = [jobs] if isinstance (jobs, self.Job) else jobs
 		hb = None
 		for job in joblist:

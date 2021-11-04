@@ -43,6 +43,8 @@ block_alloc (void) /*{{{*/
 		b -> bout = NULL;
 		DO_ZERO (b, tagpos);
 		b -> sorted = NULL;
+		b -> revalidation.source = NULL;
+		b -> revalidation.target = NULL;
 		b -> inuse = false;
 	}
 	return b;
@@ -78,6 +80,10 @@ block_free (block_t *b) /*{{{*/
 		DO_FREE (b, tagpos);
 		if (b -> sorted)
 			free (b -> sorted);
+		if (b -> revalidation.source)
+			buffer_free (b -> revalidation.source);
+		if (b -> revalidation.target)
+			buffer_free (b -> revalidation.target);
 		free (b);
 	}
 	return NULL;

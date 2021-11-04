@@ -38,7 +38,7 @@ export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
 verbose=1
 quiet=0
-version="21.04.000.118"
+version="21.10.000.064"
 licence="`$BASE/bin/config-query licence`"
 system="`uname -s`"
 host="`uname -n | cut -d. -f1`"
@@ -86,7 +86,7 @@ if [ "$JBASE" ] && [ -d $JBASE ] ; then
 	fi
 fi
 # .. and for others ..
-for other in python python2 python3 perl sqlite ; do
+for other in python2 python3 perl sqlite ; do
 	path="$softwarebase/$other"
 	if [ -d $path/bin ] ; then
 		PATH="$path/bin:$PATH"
@@ -197,14 +197,6 @@ error() {
 		echo "$*" 1>&2
 	fi
 }
-svcout() {
-	if [ "$SVCFD" ]; then
-		echo -n "$@" 1>&$SVCFD
-		if [ $? -ne 0 ]; then
-			export SVCFD=
-		fi
-	fi
-}
 epoch() {
 	date '+%s'
 }
@@ -285,6 +277,13 @@ call() {
 		rm $__tmp
 	fi
 	return $__rc
+}
+#
+onErrorSendMail () {
+	__rc=$?
+	if [ $__rc -ne 0 ]; then
+		mailsend -s "[ERROR] `date +%Y%m%d` $0 [on `uname -n`]" -m "$@" config-query alert-mail
+	fi
 }
 #
 setupVirtualEnviron() {
@@ -372,16 +371,6 @@ py3available() {
 }
 py3required() {
 	py3available || die "Please install a python3 version 3.8 or later to ${softwarebase}/python3"
-}
-command=""
-commands=""
-py3select() {
-	if py3available && [ -x "$1" ]; then
-		command="$1"
-	else
-		command="$2"
-	fi
-	commands="$@"
 }
 #
 getproc() {

@@ -30,7 +30,6 @@ T = TypeVar ('T')
 #
 class Row (Protocol):
 	def __getattr__ (self, attr: str) -> Any: ...
-	def __setattr__ (self, attr: str, value: Any) -> None: ...
 	def __getitem__ (self, item: int) -> Any: ...
 	def __iter__ (self) -> Iterator[Any]: ...
 
@@ -45,7 +44,7 @@ class Cursor:
 this is the base class for a database specific cursor and should
 inherit this class. This class should not be instantiated by an
 application, use ``Core.cursor()'' instead."""
-	__slots__ = ['db', 'autocommit', 'id', 'curs', 'rowtype']
+	__slots__ = ['db', 'autocommit', 'id', 'curs', 'rowtype', 'rowcount']
 	def __init__ (self, db: Core, autocommit: bool) -> None:
 		"""``db'' is the database specific subclass of Core.
 
@@ -56,6 +55,7 @@ write the content directly to the database."""
 		self.id: Optional[str] = None
 		self.curs: Optional[DBAPI.Cursor] = None
 		self.rowtype: Optional[Type[Row]] = None
+		self.rowcount = 0
 
 	def __enter__ (self) -> Cursor:
 		return self
@@ -176,6 +176,7 @@ portable across different databases."""
 				raise error ('query next failed: ' + self.last_error ())
 			if data is None:
 				break
+			self.rowcount += 1
 			yield self.make_row (data)
 
 	def __valid (self) -> None:
@@ -195,7 +196,7 @@ portable across different databases."""
 	def __parameter_format (self, statement: str, parameter: Union[List[Any], Dict[str, Any]]) -> str:
 		try:
 			if isinstance (parameter, dict):
-				return Stream.of (self.__ph.findall (statement)).map (lambda ph: '{name}={value!r}'.format (name = ph, value = parameter[ph])).join (', ')
+				return Stream (self.__ph.findall (statement)).map (lambda ph: '{name}={value!r}'.format (name = ph, value = parameter[ph])).join (', ')
 			else:
 				return Stream (parameter).map (lambda v: f'{v!r}').join (', ')
 		except Exception as e:
@@ -203,6 +204,7 @@ portable across different databases."""
 	
 	def __execute (self, what: str, statement: str, parameter: Union[None, List[Any], Dict[str, Any]], cleanup: bool) -> int:
 		self.__valid ()
+		self.rowcount = 0
 		try:
 			if parameter is None:
 				self.db.log (f'{what}: {statement}')
@@ -249,8 +251,9 @@ This method return an iterable realizied by itself."""
 		"""See query, but returns a cached version of the query. Use with care on large result sets!"""
 		if self.query (statement, parameter, cleanup) == self:
 			try:
-				data = cast (DBAPI.Cursor, self.curs).fetchall ()
-				return [self.make_row (_d) for _d in data]
+				data = [self.make_row (_d) for _d in cast (DBAPI.Cursor, self.curs).fetchall ()]
+				self.rowcount = len (data)
+				return data
 			except self.db.driver.Error as e:
 				self.error (e)
 				if self.db.log:
@@ -326,8 +329,8 @@ This method return an iterable realizied by itself."""
 					break
 		else:
 			self.__execute ('Update', statement, parameter, cleanup)
-		rows = cast (DBAPI.Cursor, self.curs).rowcount
-		if rows > 0 and (commit or self.autocommit):
+		self.rowcount = cast (DBAPI.Cursor, self.curs).rowcount
+		if self.rowcount > 0 and (commit or self.autocommit):
 			if not self.sync ():
 				if self.db.log:
 					if parameter is None:
@@ -335,14 +338,18 @@ This method return an iterable realizied by itself."""
 					else:
 						self.db.log ('Commit after execute failed for {statement} using {parameter!r}: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
 				raise error ('commit failed: {error}'.format (error = self.last_error ()))
-		return rows
+		return self.rowcount
 	
 	def execute (self, statement: str) -> int:
 		return self.__execute ('Execute', statement, None, False)
 	
-	def stream (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Stream:
+	def stream (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Stream[Row]:
 		"""creates a stream using this cursor and using ``*args'' and ``**kwargs'' for Cursor.query()"""
 		return Stream (self.query (statement, parameter, cleanup))
+
+	def streamc (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Stream[Row]:
+		"""creates a stream using this cursor and using ``*args'' and ``**kwargs'' for Cursor.queryc()"""
+		return Stream (self.queryc (statement, parameter, cleanup))
 
 class DBType (Enum):
 	STRING = 0
@@ -541,8 +548,8 @@ And to get the query to select the newly created ID:
 		try:
 			varlist = self.cache_variables[query]
 		except KeyError:
-			varlist = (Stream (self.__variable_pattern.findall (query))
-				.filter (lambda p: cast (str, p).startswith (':'))
+			varlist = (Stream[str] (self.__variable_pattern.findall (query))
+				.filter (lambda p: p.startswith (':'))
 				.map (lambda p: p[1:])
 				.set ()
 			)
@@ -696,10 +703,17 @@ closed and removed from the internal tracking."""
 	def setup_table_optimizer (self, table: str, extimate_percent: int = 30) -> None:
 		"""setup a newly created table according to the dbms requirements"""
 
-	def stream (self, *args: Any, **kwargs: Any) -> Stream:
+	def stream (self, *args: Any, **kwargs: Any) -> Stream[Row]:
 		"""creates a stream using a dedicated cursor and using ``*args'' and ``**kwargs'' for Cursor.query()"""
 		cursor = self.cursor ()
 		return Stream.defer (cursor.query (*args, **kwargs), lambda o: cursor.close ())
+
+	def streamc (self, *args: Any, **kwargs: Any) -> Stream[Row]:
+		"""creates a stream using a dedicated cursor and using ``*args'' and ``**kwargs'' for Cursor.queryc()"""
+		cursor = self.cursor ()
+		result = cursor.queryc (*args, **kwargs)
+		cursor.close ()
+		return Stream (result)
 
 	@abstractmethod
 	def connect (self) -> None:

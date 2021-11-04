@@ -10,15 +10,17 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, time, shutil, errno, logging
+import	os, time, shutil, errno, logging, json
+from	datetime import datetime
 from	sched import scheduler
 from	signal import Signals
 from	types import FrameType, TracebackType
 from	typing import Any, Callable, Optional, Union
-from	typing import Iterator, List, TextIO, Tuple, Type
+from	typing import Dict, Iterator, List, TextIO, Tuple, Type
 from	.daemon import Watchdog
 from	.definitions import base
 from	.exceptions import error
+from	.ignore import Ignore
 from	.io import file_access
 from	.log import log
 from	.parser import Unit
@@ -31,7 +33,27 @@ class Batch:
 	"""Handling of batch files
 
 This class provides a frame work for batch processing using a file"""
-	__slots__ = ['path', 'directory', 'filename', 'instance_unique']
+	__slots__ = ['path', 'directory', 'filename', 'instance_unique', 'encoder', 'decoder']
+	class Encoder (json.JSONEncoder):
+		def default (self, obj: Any) -> Any:
+			if isinstance (obj, datetime):
+				return {
+					'__type__': 'datetime',
+					'__value__': [obj.year, obj.month, obj.day, obj.hour, obj.minute, obj.second]
+				}
+			return super ().default (obj)
+	class Decoder (json.JSONDecoder):
+		def __init__ (self) -> None:
+			super ().__init__ (object_hook = self._object_hook)
+
+		_decoders: Dict[str, Callable[[Batch.Decoder, Dict[str, Any], Any], Any]] = {
+			'datetime': lambda d, o, v: datetime (*v)
+		}
+		def _object_hook (self, obj: Dict[str, Any]) -> Any:
+			with Ignore ():
+				return self._decoders[obj['__type__']] (self, obj, obj['__value__'])
+			return obj
+		
 	batch_unique = 0
 	def __init__ (self, path: str) -> None:
 		"""``path'' is the file to use for data exchange"""
@@ -40,23 +62,33 @@ This class provides a frame work for batch processing using a file"""
 		self.filename = os.path.basename (path)
 		Batch.batch_unique += 1
 		self.instance_unique = [Batch.batch_unique, 0]
+		self.encoder = Batch.Encoder ()
+		self.decoder = Batch.Decoder ()
 	#
-	# Producer (simple, ey)
+	# Producers (simple, ey)
 	def write (self, s: str) -> None:
 		"""write a line to the file"""
 		with open (self.path, 'a') as fd:
 			fd.write (f'{s}\n')
-	
+
+	def write_object (self, obj: Any) -> None:
+		"""write an object (if serializable using json) to the file"""
+		representation = self.encoder.encode (obj)
+		if '\n' in representation:
+			raise ValueError ('resulting object contains newline')
+		self.write (representation)
+		
 	#
 	# Consumer (rest of the class)
 	class Temp: #{{{
-		__slots__ = ['orig', 'base_target', 'path', 'fail', 'fd']
-		def __init__ (self, orig: str, base_target: str) -> None:
+		__slots__ = ['orig', 'base_target', 'path', 'fail', 'fd', 'decoder']
+		def __init__ (self, orig: str, base_target: str, decoder: Batch.Decoder) -> None:
 			self.orig = orig
 			self.base_target = base_target
 			self.path: Optional[str] = None
 			self.fail = False
 			self.fd: Optional[TextIO] = None
+			self.decoder = decoder
 			
 		def __del__ (self) -> None:
 			if not self.fail:
@@ -148,6 +180,17 @@ This class provides a frame work for batch processing using a file"""
 				for line in self.fd:
 					yield line.strip ()
 				self.close ()
+		
+		def read_object (self) -> Any:
+			if self.fd is not None:
+				line = self.fd.readline ()
+				if line:
+					return self.decoder.decode (line)
+			return None
+		
+		def objects (self) -> Iterator[Any]:
+			for line in self:
+				yield self.decoder.decode (line)
 
 		def __save (self, what: str, s: str) -> None:
 			now = time.localtime ()
@@ -178,7 +221,7 @@ further handling of the processed file:
 	- success(s): writes the string ``s'' to agnitas style data logfile for successful processed lines
 	- failure(s): writes the string ``s'' to agnitas style data logfile for failed processed lines
 """
-		rc = Batch.Temp (self.path, self.filename.split ('.')[0])
+		rc = Batch.Temp (self.path, self.filename.split ('.')[0], decoder = self.decoder)
 		if os.path.isfile (self.path):
 			temp: Optional[str] = None
 			while temp is None:

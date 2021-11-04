@@ -12,59 +12,54 @@
 #
 from	__future__ import annotations
 import	logging, argparse
-import	os, signal
+import	os, signal, shutil
 import	time, json
+from	collections import defaultdict
 from	datetime import datetime
 from	dataclasses import dataclass
 from	types import FrameType
 from	typing import Any, Callable, Optional
-from	typing import Dict, List, NamedTuple, Tuple, Type
+from	typing import DefaultDict, Dict, List, NamedTuple, Tuple, Type
 from	typing import cast
 from	agn3.daemon import Daemonic
 from	agn3.db import DB
-from	agn3.definitions import base, host, program
+from	agn3.definitions import base, host, program, syscfg
+from	agn3.emm.activator import Activator
 from	agn3.emm.companyconfig import CompanyConfig
+from	agn3.emm.rulebased import Rulebased as RulebasedMailing
 from	agn3.emm.mailing import Mailing
+from	agn3.emm.metafile import METAFile
 from	agn3.ignore import Ignore
+from	agn3.io import ArchiveDirectory
 from	agn3.flow import Schedule, Jobqueue
-from	agn3.parser import Unit
+from	agn3.log import log, log_limit
+from	agn3.parser import ParseTimestamp, Unit, Line, Field, Tokenparser
 from	agn3.process import Processtitle
+from	agn3.report import Report
 from	agn3.runtime import Runtime
 from	agn3.stream import Stream
-from	agn3.tools import Range
-from	activator3 import Activator
+from	agn3.tools import listsplit, Range
 #
 logger = logging.getLogger (__name__)
 #
-class Entry: #{{{
-	__slots__ = ['name', 'companyID', 'mailingID', 'statusID', 'statusField', 'sendDate', 'genDate', 'genChange', 'startDate']
-	def __init__ (self,
-		name: Optional[str],
-		companyID: int,
-		mailingID: int,
-		statusID: int,
-		statusField: str,
-		sendDate: datetime,
-		genDate: datetime,
-		genChange: datetime,
-		startDate: Optional[datetime] = None
-	) -> None:
-		self.name: str = f'#(statusID) {statusID}' if name is None else name
-		self.companyID = companyID
-		self.mailingID = mailingID
-		self.statusID = statusID
-		self.statusField = statusField
-		self.sendDate = sendDate
-		self.genDate = genDate
-		self.genChange = genChange
-		self.startDate = startDate
-	
-	def __repr__ (self) -> str:
-		return 'Entry (%r, %r, %r, %r, %r, %r, %r, %r, %r)' % (self.name, self.companyID, self.mailingID, self.statusID, self.statusField, self.sendDate, self.genDate, self.genChange, self.startDate)
-	__str__ = __repr__
+@dataclass
+class Entry:
+	name: str
+	company_id: int
+	company_name: str
+	mailing_id: int
+	mailing_name: str
+	status_id: int
+	status_field: str
+	senddate: datetime
+	gendate: datetime
+	genchange: datetime
+	startdate: Optional[datetime] = None
 #}}}
 class Task: #{{{
 	name = 'task'
+	interval: str
+	priority: int
 	immediately = False
 	def __init__ (self, ref: ScheduleGenerate) -> None:
 		self.ref = ref
@@ -115,6 +110,8 @@ class Sending (Task): #{{{
 		self.pending: Optional[List[int]] = None
 		self.pending_path = os.path.join (base, 'var', 'run', 'generate-%s.pending' % self.name)
 		self.load_pending ()
+		self.datareader = log.datareader ('generate')
+		self.generated: DefaultDict[int, List[Line]] = defaultdict (list)
 	
 	def load_pending (self) -> None:
 		if os.path.isfile (self.pending_path):
@@ -130,13 +127,13 @@ class Sending (Task): #{{{
 				logger.debug ('saved pending: %r' % (pending, ))
 	
 	def add_to_queue (self, entry: Entry) -> None:
-		self.in_queue[entry.statusID] = entry
+		self.in_queue[entry.status_id] = entry
 		logger.debug ('%s: added to queue' % entry.name)
 	
 	def remove_from_queue (self, entry: Entry) -> None:
 		with Ignore (KeyError):
 			removed_entry = entry
-			del self.in_queue[entry.statusID]
+			del self.in_queue[entry.status_id]
 			logger.debug ('%s: removed from queue' % removed_entry.name)
 
 	def is_active (self) -> bool:
@@ -146,12 +143,12 @@ class Sending (Task): #{{{
 		query = (
 			'UPDATE maildrop_status_tbl '
 			'SET genstatus = :newStatus, genchange = :now '
-			'WHERE status_id = :statusID'
+			'WHERE status_id = :status_id'
 		)
 		data = {
 			'newStatus': new_status,
 			'now': datetime.now (),
-			'statusID': status_id
+			'status_id': status_id
 			}
 		if old_status is not None:
 			query += ' AND genstatus = :oldStatus'
@@ -185,49 +182,43 @@ class Sending (Task): #{{{
 					'FROM maildrop_status_tbl '
 					'WHERE status_id IN (%s)'
 					% (Stream (self.in_progress.values ())
-						.map (lambda e: e.statusID)
+						.map (lambda e: e.status_id)
 						.join (', '),
 					)
 				):
 					seen.add (row.status_id)
 					entry = self.in_progress.pop (row.status_id)
-					if row.genstatus in (3, 4) or (row.genstatus == 1 and row.genchange > entry.genChange):
-						duration = int ((row.genchange - entry.startDate).total_seconds ())
-						logger.info ('%s: generation finished after %s' % (entry.name, duration_format (duration)))
-					elif entry.startDate is not None:
-						duration = int ((now - entry.startDate).total_seconds ())
+					if row.genstatus in (3, 4) or (row.genstatus == 1 and row.genchange > entry.genchange):
+						logger.info ('{name}: generation finished after {duration}'.format (
+							name = entry.name,
+							duration = duration_format (int ((row.genchange - entry.startdate).total_seconds ()) if entry.startdate is not None else 0)
+						))
+						self.finished_entry (entry, self.find_generate_status (entry))
+					elif entry.startdate is not None:
+						duration = int ((now - entry.startdate).total_seconds ())
 						if row.genstatus == 1:
 							if duration >= startup:
 								logger.warning ('%s: startup time exceeded, respool entry' % entry.name)
-								if self.db.update (
-									'DELETE FROM rulebased_sent_tbl WHERE mailing_id = :mailingID',
-									{
-										'mailingID': entry.mailingID
-									},
-									commit = True
-								) > 0:
-									logger.info ('%s: entry from rulebased_sent_tbl had been removed' % entry.name)
-								else:
-									logger.info ('%s: no entry in rulebased_sent_tbl found to remove' % entry.name)
-								self.add_to_queue (entry)
+								if self.reschedule_entry (entry):
+									self.add_to_queue (entry)
 							else:
 								logger.debug ('%s: during startup since %s up to %s' % (entry.name, duration_format (duration), duration_format (startup)))
-								self.in_progress[entry.statusID] = entry
+								self.in_progress[entry.status_id] = entry
 						elif row.genstatus == 2:
-							if duration > expire:
+							if expire and duration > expire and self.expired_entry (entry):
 								logger.info ('%s: creation exceeded expiration time, leave it running' % entry.name)
 							else:
 								logger.debug ('%s: still in generation for %s up to %s' % (entry.name, duration_format (duration), duration_format (expire)))
-								self.in_progress[entry.statusID] = entry
+								self.in_progress[entry.status_id] = entry
 						else:
 							logger.error ('%s: unexpected genstatus %s, leave it alone' % (entry.name, row.genstatus))
 					else:
-						logger.warning (f'{entry}: unset startDate, but had been started, startDate set to {now}')
-						entry.startDate = now
+						logger.warning (f'{entry}: unset startdate, but had been started, startdate set to {now}')
+						entry.startdate = now
 				self.db.sync ()
-				for entry in Stream (self.in_progress.values ()).filter (lambda e: e.statusID not in seen).list ():
+				for entry in Stream (self.in_progress.values ()).filter (lambda e: e.status_id not in seen).list ():
 					logger.warning ('%s: maildrop status entry vanished, remove from observing' % entry.name)
-					self.in_progress.pop (entry.statusID)
+					self.in_progress.pop (entry.status_id)
 				self.title ()
 			#
 			if len (self.in_progress) < parallel and self.in_queue:
@@ -242,17 +233,17 @@ class Sending (Task): #{{{
 						if not mailing.active ():
 							logger.error ('%s: merger not active, abort' % entry.name)
 							break
-						if self.ref.islocked (entry.companyID) and entry.statusField != 'T':
-							logger.debug ('%s: company %d is locked' % (entry.name, entry.companyID))
+						if self.ref.islocked (entry.company_id) and entry.status_field != 'T':
+							logger.debug ('%s: company %d is locked' % (entry.name, entry.company_id))
 							continue
 						if not self.start_entry (entry):
 							logger.debug ('%s: start denied' % entry.name)
 							continue
 						self.remove_from_queue (entry)
 						if self.ready_to_send (now, entry):
-							if mailing.fire (status_id = entry.statusID, cursor = self.db.cursor):
-								entry.startDate = now
-								self.in_progress[entry.statusID] = entry
+							if mailing.fire (status_id = entry.status_id, cursor = self.db.cursor):
+								entry.startdate = now
+								self.in_progress[entry.status_id] = entry
 								logger.info ('%s: started' % entry.name)
 								if len (self.in_progress) >= parallel:
 									break
@@ -262,7 +253,36 @@ class Sending (Task): #{{{
 									self.add_to_queue (entry)
 					self.db.sync ()
 					self.title ()
+		if not self.is_active ():
+			logger.info (f'{self.name} batch finished')
+		else:
+			logger.info ('{name} sending active with {in_queue} mailings queued and {in_progress} mailings currently in process'.format (
+				name = self.name,
+				in_queue = len (self.in_queue),
+				in_progress = len (self.in_progress)
+			))
 		return self.is_active ()
+	
+	tokenparser = Tokenparser (
+		Field ('company_id', source = 'company', converter = int),
+		Field ('mailinglist_id', source = 'mailinglist', converter = int),
+		Field ('mailing_id', source = 'mailing', converter = int),
+		Field ('count', converter = int),
+		Field ('status_field'),
+		Field ('timestamp', converter = ParseTimestamp (), optional = True)
+	)
+	def find_generate_status (self, entry: Entry) -> Optional[Line]:
+		for line in self.datareader (entry.startdate):
+			with Ignore ():
+				record = self.tokenparser (line)
+				self.generated[record.mailing_id].append (record)
+		try:
+			return cast (Line, (Stream (self.generated[entry.mailing_id])
+				.filter (lambda l: bool (l.status_field == entry.status_field))
+				.last ()
+			))
+		except (KeyError, ValueError):
+			return None
 	#
 	# to overwrite
 	def collect_entries_for_sending (self) -> None:
@@ -273,6 +293,12 @@ class Sending (Task): #{{{
 		return True
 	def resume_entry (self, entry: Entry) -> bool:
 		return False
+	def reschedule_entry (self, entry: Entry) -> bool:
+		return True
+	def finished_entry (self, entry: Entry, status: Optional[Line]) -> None:
+		pass
+	def expired_entry (self, entry: Entry) -> bool:
+		return True
 #}}}
 class Rulebased (Sending): #{{{
 	name = 'rulebased'
@@ -280,7 +306,7 @@ class Rulebased (Sending): #{{{
 	immediately = True
 	priority = 3
 	defaults = {
-		'expire':	'10m',
+		'expire':	'4h',
 		'parallel':	'4',
 		'startup':	'5m'
 	}
@@ -292,23 +318,18 @@ class Rulebased (Sending): #{{{
 		
 	def ready_to_send (self, now: datetime, entry: Entry) -> bool:
 		ready = False
-		rq = self.db.querys (
-			'SELECT lastsent '
-			'FROM rulebased_sent_tbl '
-			'WHERE mailing_id = :mailingID',
-			{
-				'mailingID': entry.mailingID
-			}
-		)
-		if rq is None or rq.lastsent is None or rq.lastsent.toordinal () != now.toordinal ():
-			new = rq is None
+		rulebased = RulebasedMailing (self.db)
+		mailing = rulebased.retrieve (entry.mailing_id)
+		if mailing.lastsent.toordinal () == now.toordinal ():
+			logger.warning (f'{entry.name}: unexpected this mailing had been generated this day')
+		else:
 			for state in 1, 2:
 				rq = self.db.querys (
 					'SELECT genchange '
 					'FROM maildrop_status_tbl '
-					'WHERE status_id = :statusID',
+					'WHERE status_id = :status_id',
 					{
-						'statusID': entry.statusID
+						'status_id': entry.status_id
 					}
 				)
 				if rq is None:
@@ -317,43 +338,103 @@ class Rulebased (Sending): #{{{
 					self.db.update (
 						'UPDATE maildrop_status_tbl '
 						'SET genchange = :now '
-						'WHERE status_id = :statusID',
+						'WHERE status_id = :status_id',
 						{
 							'now': now,
-							'statusID': entry.statusID
+							'status_id': entry.status_id
 						},
 						commit = True
 					)
 				else:
 					break
 			if rq is not None and rq.genchange is not None:
-				entry.genChange = rq.genchange
-				count = self.db.update (
-					'INSERT INTO rulebased_sent_tbl (mailing_id, lastsent) VALUES (:mailingID, :now)'
-						if new else
-					'UPDATE rulebased_sent_tbl SET lastsent = :now WHERE mailing_id = :mailingID',
-					{
-						'mailingID': entry.mailingID,
-						'now': now
-					},
-					commit = True
-				)
-				if count == 1:
+				entry.genchange = rq.genchange
+				mailing.clearance = False
+				mailing.lastsent = now
+				if rulebased.store (mailing):
+					logger.debug (f'{entry.name}: lastsent date set, ready for generation')
 					ready = True
 				else:
-					logger.error ('%s: failed to %s entry in rulebased_sent_tbl' % (entry.name, 'set' if new else 'update'))
+					logger.error (f'{entry.name}: failed to set lastsent date')
 			else:
 				logger.error ('%s: failed to query current genchange' % entry.name)
-		else:
-			logger.warning ('%s: unexpected this mailing had been generated this day' % entry.name)
 		self.db.sync ()
 		return ready
 
 	def start_entry (self, entry: Entry) -> bool:
-		return Stream (self.in_progress.values ()).filter (lambda e: bool (e.companyID == entry.companyID)).count () == 0
+		return Stream (self.in_progress.values ()).filter (lambda e: bool (e.company_id == entry.company_id)).count () == 0
 			
 	def resume_entry (self, entry: Entry) -> bool:
 		return True
+
+	def reschedule_entry (self, entry: Entry) -> bool:
+		rulebased = RulebasedMailing (self.db)
+		mailing = rulebased.retrieve (entry.mailing_id)
+		mailing.lastsent = None
+		if not rulebased.store (mailing):
+			logger.error (f'{entry.name}: failed to reset lastsent date for reschedule')
+			return False
+		logger.info (f'{entry.name}: ready for reschedule')
+		return True
+		
+	def finished_entry (self, entry: Entry, status: Optional[Line]) -> None:
+		rq = self.db.querys (
+			'SELECT clearance_email, clearance_threshold, deleted '
+			'FROM mailing_tbl '
+			'WHERE mailing_id = :mailing_id',
+			{
+				'mailing_id': entry.mailing_id
+			}
+		)
+		if rq is None:
+			logger.warning (f'{entry.name}: no more found in database, refuse clearance')
+		elif rq.deleted is not None and rq.deleted != 0:
+			logger.warning (f'{entry.name}: mail is marked as deleted, refuse clearance')
+		elif status is not None and rq.clearance_threshold is not None and status.count >= rq.clearance_threshold and (emails := list (listsplit (rq.clearance_email))):
+			logger.info (f'{entry.name}: recipient count {status.count:,d} exceeds threshold {rq.clearance_threshold:,d}, inform "{rq.clearance_email}", refuse clearance')
+			self.send_threshold_exceeds_message (entry, status, rq.clearance_threshold, emails)
+		else:
+			rulebased = RulebasedMailing (self.db)
+			mailing = rulebased.retrieve (entry.mailing_id)
+			mailing.clearance = True
+			if not rulebased.store (mailing):
+				logger.error (f'{entry.name}: failed to provide clearance for mailing')
+			else:
+				logger.debug (f'{entry.name}: clearance for mailing provided')
+	
+	def expired_entry (self, entry: Entry) -> bool:
+		rq = self.db.querys (
+			'SELECT clearance '
+			'FROM rulebased_sent_tbl '
+			'WHERE mailing_id = :mailing_id',
+			{
+				'mailing_id': entry.mailing_id
+			}
+		)
+		if rq is None:
+			logger.warning (f'{entry.name}: entry in rulebased_sent_tbl vanished, continue expiration')
+			return True
+		#
+		if rq.clearance:
+			logger.info (f'{entry.name}: clearance already granted, continue expiration')
+			return True
+		log_limit (logger.warning, f'{entry.name}: entry is ready to expire, but still no clearance granted, postpone expiration', duration = '30m')
+		return False
+
+	def send_threshold_exceeds_message (self, entry: Entry, status: Line, threshold: int, emails: List[str]) -> None:
+		if not Report ('clearance').create (
+			recipients = emails,
+			carbon_copies = syscfg.lget ('clearance-cc', []),
+			blind_carbon_copies = syscfg.lget ('clearance-bcc', []),
+			namespace = {
+				'entry': entry,
+				'status': status,
+				'threshold': threshold
+			}
+		):
+			logger.error (f'{entry.name}: failed to send clearance request')
+		else:
+			logger.debug (f'{entry.name}: clearance request sent to {emails}')
 
 	def collect_entries_for_sending (self) -> None:
 		now = datetime.now ()
@@ -362,16 +443,16 @@ class Rulebased (Sending): #{{{
 			'SELECT md.status_id, md.status_field, md.senddate, md.gendate, md.genchange, md.company_id, '
 			'       co.shortname AS company_name, co.status, '
 			'       mt.mailing_id, mt.shortname AS mailing_name, mt.deleted, '
-			'       rb.lastsent '
+			'       rb.lastsent, rb.clearance '
 			'FROM maildrop_status_tbl md '
 			'     INNER JOIN company_tbl co ON (co.company_id = md.company_id) '
 			'     INNER JOIN mailing_tbl mt ON (mt.mailing_id = md.mailing_id) '
 			'     LEFT OUTER JOIN rulebased_sent_tbl rb ON (rb.mailing_id = md.mailing_id) '
-			'WHERE md.genstatus = :genStatus AND md.status_field = :statusField AND md.senddate <= :now'
+			'WHERE md.genstatus = :genStatus AND md.status_field = :status_field AND md.senddate <= :now'
 		)
 		data = {
 			'genStatus': 1,
-			'statusField': 'R',
+			'status_field': 'R',
 			'now': now
 		}
 		for row in self.db.queryc (query, data):
@@ -384,7 +465,24 @@ class Rulebased (Sending): #{{{
 			#
 			# 2.) Skip already sent mails for today
 			if row.lastsent is not None and row.lastsent.toordinal () == today:
-				logger.debug ('%s: already sent today' % msg)
+				if not row.clearance:
+					if row.status_id not in self.in_progress:
+						logger.info (f'{msg}: no clearance available, add it for further processing')
+						self.in_progress[row.status_id] = Entry (
+							name = msg,
+							company_id = row.company_id,
+							company_name = row.company_name,
+							mailing_id = row.mailing_id,
+							mailing_name = row.mailing_name,
+							status_id = row.status_id,
+							status_field = row.status_field,
+							senddate = row.senddate,
+							gendate = row.gendate,
+							genchange = row.genchange,
+							startdate = now
+						)
+				else:
+					logger.debug (f'{msg}: already sent today')
 				continue
 			#
 			# 3.) Skip already queued mails
@@ -418,25 +516,49 @@ class Rulebased (Sending): #{{{
 					logger.debug ('%s: mailing marked as deleted' % msg)
 				self.invalidate_maildrop_entry (row.status_id)
 				continue
-			self.add_to_queue (Entry (msg, row.company_id, row.mailing_id, row.status_id, row.status_field, row.senddate, row.gendate, row.genchange))
+			#
+			# 8.) Skip mailingings without a clearance and stale blocks
+			if row.clearance is not None and row.clearance == 0:
+				if not self.clear_stale_blocks (row.mailing_id):
+					logger.debug (f'{msg}: no clearance to send')
+					continue
+			self.add_to_queue (Entry (msg, row.company_id, row.company_name, row.mailing_id, row.mailing_name, row.status_id, row.status_field, row.senddate, row.gendate, row.genchange))
+		#
 		self.db.sync ()
+	
+	def clear_stale_blocks (self, mailing_id: int) -> bool:
+		blocks = (Stream (os.listdir (METAFile.meta_directory))
+			.map (lambda f: METAFile (os.path.join (METAFile.meta_directory, f)))
+			.filter (lambda m: m.valid and m.mailing_id == mailing_id and m.extension != 'xml')
+			.sorted (key = lambda m: m.filename)
+			.list ()
+		)
+		failures = 0
+		for block in blocks:
+			try:
+				shutil.move (block.path, os.path.join (ArchiveDirectory.make (METAFile.outdated_directory), block.filename))
+			except OSError as e:
+				logger.warning (f'{block.path}: failed to move to {METAFile.outdated_directory}: {e}')
+				failures += 1
+		return failures == 0
 #}}}
 class Worldmailing (Sending): #{{{
 	name = 'generate'
 	interval = '15m'
 	priority = 4
 	def ready_to_send (self, now: datetime, entry: Entry) -> bool:
-		if not self.change_genstatus (entry.statusID, old_status = 0, new_status = 1):
+		if not self.change_genstatus (entry.status_id, old_status = 0, new_status = 1):
 			logger.error ('%s: failed to update maildrop status table' % entry.name)
 			return False
 		#
-		entry.genChange = self.db.stream (
-			'SELECT genchange FROM maildrop_status_tbl WHERE status_id = :statusID',
-			{
-				'statusID': entry.statusID
-			}
-		).map (lambda r: r[0]).first (no = None)
-		if entry.genChange is None:
+		try:
+			entry.genchange = self.db.stream (
+				'SELECT genchange FROM maildrop_status_tbl WHERE status_id = :status_id',
+				{
+					'status_id': entry.status_id
+				}
+			).map_to (datetime, lambda r: r.genchange).first ()
+		except ValueError:
 			logger.error ('%s: failed to query current gen change' % entry.name)
 			if not self.resume_entry (entry):
 				return False
@@ -444,7 +566,7 @@ class Worldmailing (Sending): #{{{
 		return True
 
 	def resume_entry (self, entry: Entry) -> bool:
-		if not self.change_genstatus (entry.statusID, old_status = 1, new_status = 0):
+		if not self.change_genstatus (entry.status_id, old_status = 1, new_status = 0):
 			logger.critical ('%s: failed to revert status id from 1 to 0' % entry.name)
 			return False
 		else:
@@ -467,7 +589,7 @@ class Worldmailing (Sending): #{{{
 		if self.ref.oldest >= 0:
 			limit = now.fromordinal (now.toordinal () - self.ref.oldest)
 		for row in self.db.queryc (query, {'now': now}):
-			msg = 'Mailing "%s" (mailingID=%d, statusID=%d, statusField=%r, company=%s, companyID=%d)' % (
+			msg = 'Mailing "%s" (mailing_id=%d, status_id=%d, status_field=%r, company=%s, company_id=%d)' % (
 				row.mailing_name, row.mailing_id, 
 				row.status_id, row.status_field,
 				row.company_name, row.company_id
@@ -498,7 +620,7 @@ class Worldmailing (Sending): #{{{
 				if row.status_id in self.in_queue:
 					logger.info ('%s: already queued' % msg)
 				else:
-					self.add_to_queue (Entry (msg, row.company_id, row.mailing_id, row.status_id, row.status_field, row.senddate, row.gendate, row.genchange))
+					self.add_to_queue (Entry (msg, row.company_id, row.company_name, row.mailing_id, row.mailing_name, row.status_id, row.status_field, row.senddate, row.gendate, row.genchange))
 					logger.info ('%s: added to queue' % msg)
 			else:
 				if row.status_id in self.in_queue:
@@ -544,7 +666,7 @@ class ScheduleGenerate (Schedule): #{{{
 		self.locks: Dict[int, int] = {}
 		self.processtitle = Processtitle ('$original [$title]')
 	
-	def readConfiguration (self) -> None:
+	def read_configuration (self) -> None:
 		ccfg = CompanyConfig ()
 		ccfg.read ()
 		self.config = (Stream (ccfg.scan_config (class_names = ['generate'], single_value = True))
@@ -560,32 +682,32 @@ class ScheduleGenerate (Schedule): #{{{
 	
 	def configuration (self, key: str, name: Optional[str] = None, default: Any = None, convert: Optional[Callable[[Any], Any]] = None) -> Any:
 		return (
-			Stream.of (
+			Stream ([
 				('%s:%s[%s]' % (name, key, host)) if name is not None else None,
 				'%s[%s]' % (key, host),
 				('%s:%s' % (name, key)) if name is not None else None,
 				key
-			)
+			])
 			.filter (lambda k: k is not None and k in self.config)
-			.map (lambda k: self.config[k])
+			.map (lambda k: self.config[cast (str, k)])
 			.first (no = default, finisher = lambda v: v if convert is None or v is None else convert (v))
 		)
 	
-	def allow (self, companyID: int) -> bool:
-		return self.companies is None or companyID in self.companies
+	def allow (self, company_id: int) -> bool:
+		return self.companies is None or company_id in self.companies
 
 	def title (self, info: Optional[str] = None) -> None:
 		self.processtitle ('schedule%s' % ((' %s' % info) if info else ''))
 
 	def reload (self, sig: signal.Signals, stack: FrameType) -> None:
-		self.readConfiguration ()
+		self.read_configuration ()
 		
 	def status (self, sig: signal.Signals, stack: FrameType) -> None:
 		self.show_status ()
 	
 	def show_status (self) -> None:
-		logger.info ('Currently blocked companies: %s' % (Stream.of (self.locks.items ()).map (lambda kv: '%s=%r' % kv).join (', ') if self.locks else 'none', ))
-		for (name, queue) in Stream.of (self.control.queued.items ()).map (lambda kv: ('queued prio %d' % kv[0], kv[1])).list () + [('running', self.control.running)]:
+		logger.info ('Currently blocked companies: %s' % (Stream (self.locks.items ()).map (lambda kv: '%s=%r' % kv).join (', ') if self.locks else 'none', ))
+		for (name, queue) in Stream (self.control.queued.items ()).map (lambda kv: ('queued prio %d' % kv[0], kv[1])).list () + [('running', self.control.running)]:
 			logger.info ('Currently %d %s processes' % (len (queue), name))
 			for entry in queue:
 				logger.info ('  %s%s' % (entry.description, (' (%d)' % entry.pid if entry.pid is not None else '')))
@@ -605,8 +727,8 @@ class ScheduleGenerate (Schedule): #{{{
 
 	def start (self) -> None:
 		self.title ()
-		self.readConfiguration ()
-		(Stream.of (self.modules.values ())
+		self.read_configuration ()
+		(Stream (self.modules.values ())
 			.sorted (key = lambda task: task.priority)
 			.each (lambda task: self.every (
 				task.name,
@@ -627,7 +749,7 @@ class ScheduleGenerate (Schedule): #{{{
 			))
 		)
 		def configurator () -> bool:
-			self.readConfiguration ()
+			self.read_configuration ()
 			return True
 		def stopper () -> bool:
 			while self.control.running:
@@ -645,9 +767,9 @@ class ScheduleGenerate (Schedule): #{{{
 		super ().term ()
 		if self.control.running:
 			self.title ('in termination')
-			(Stream.of (self.control.running)
+			(Stream (self.control.running)
 				.peek (lambda p: logger.info ('Sending terminal signal to %s' % p.description))
-				.each (lambda p: self.control.subprocess.term (p.pid))
+				.each (lambda p: self.control.subprocess.term (cast (int, p.pid)))
 			)
 			while self.control.running:
 				logger.info ('Waiting for %d remaining child processes' % len (self.control.running))
@@ -663,7 +785,7 @@ class ScheduleGenerate (Schedule): #{{{
 			if not rc.pid:
 				break
 			#
-			w = (Stream.of (self.control.running)
+			w = (Stream (self.control.running)
 				.filter (lambda r: bool (r.pid == rc.pid))
 				.first (no = None)
 			)
@@ -708,7 +830,7 @@ class ScheduleGenerate (Schedule): #{{{
 				break
 			logger.debug ('%s: process finished' % pending.description)
 		while self.control.queued and len (self.control.running) < self.processes:
-			prio = Stream.of (self.control.queued.keys ()).sorted ().first ()
+			prio = Stream (self.control.queued.keys ()).sorted ().first ()
 			w = self.control.queued[prio].pop (0)
 			if not self.control.queued[prio]:
 				del self.control.queued[prio]
@@ -755,7 +877,7 @@ class ScheduleGenerate (Schedule): #{{{
 			self.every ('pending', False, '1m', 0, self.pendings, ())
 
 	def lockTitle (self) -> None:
-		self.title (Stream.of (self.locks.items ())
+		self.title (Stream (self.locks.items ())
 			.map (lambda kv: '%s=%r' % kv)
 			.join (', ', lambda s: ('active locks %s' % s) if s else s)
 		)
@@ -819,7 +941,7 @@ class Generate (Runtime):
 	
 	def executor (self) -> bool:
 		with Activator () as activator:
-			modules = (Stream.of (globals ().values ())
+			modules = (Stream (globals ().values ())
 				.filter (lambda module: type (module) is type and issubclass (module, Task) and hasattr (module, 'interval'))
 				.filter (lambda module: bool (activator.check (['%s-%s' % (program, module.name)])))
 				.map (lambda module: (module.name, module))
@@ -828,7 +950,7 @@ class Generate (Runtime):
 		logger.info ('Active modules: %s' % ', '.join (sorted (modules.keys ())))
 		schedule = ScheduleGenerate (modules, self.oldest, self.processes)
 		if self.modules:
-			schedule.readConfiguration ()
+			schedule.read_configuration ()
 			for name in self.modules:
 				if name not in modules:
 					print ('** %s not known' % name)

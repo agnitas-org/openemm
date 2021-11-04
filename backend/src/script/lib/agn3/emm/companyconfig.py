@@ -9,19 +9,95 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
+from	__future__ import annotations
 import	time
 from	collections import defaultdict
 from	types import TracebackType
 from	typing import Any, Callable, Iterable, Optional, Union
-from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Tuple, Type
+from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Set, Tuple, Type
 from	..config import Config
-from	..db import DB
-from	..definitions import host, fqdn, user
-from	..exceptions import error
+from	..db import DB, TempDB
+from	..definitions import user, host, fqdn
 from	..ignore import Ignore
 from	..tools import listsplit, listjoin
 #
-__all__ = ['CompanyConfig']
+__all__ = ['Selection', 'CompanyConfig']
+#
+class Selection:
+	"""select an option from a hostname expression
+
+the precedence of the hostname expressions are:
+- <user>@<fqdn>
+- <user>@<host>
+- <user>@
+- <fqdn>
+- <host>
+- None
+
+>>> s = Selection ()
+>>> cfg = {}
+>>> s.pick (cfg)
+Traceback (most recent call last):
+...
+KeyError
+>>> cfg[None] = 'default'
+>>> s.pick (cfg)
+'default'
+>>> cfg[f'{host}'] = 'host'
+>>> s.pick (cfg)
+'host'
+>>> cfg[f'{fqdn}'] = 'fqdn'
+>>> s.pick (cfg)
+'fqdn'
+>>> cfg[f'{user}@'] = 'user'
+>>> s.pick (cfg)
+'user'
+>>> cfg[f'{user}@{host}'] = 'user@host'
+>>> s.pick (cfg)
+'user@host'
+>>> cfg[f'{user}@{fqdn}'] = 'user@fqdn'
+>>> s.pick (cfg)
+'user@fqdn'
+>>> None in s
+True
+>>> host in s
+True
+>>> fqdn in s
+True
+>>> f'{user}@' in s
+True
+>>> f'{user}@{host}' in s
+True
+>>> f'{user}@{fqdn}' in s
+True
+>>> f'{user}-{fqdn}' in s
+False
+>>> '' in s
+False
+>>> set () in s
+False
+>>> {None} in s
+True
+>>> {f'{user}@'} in s
+True
+>>> {None, host, fqdn, f'{user}@', f'{user}@{host}', f'{user}@{fqdn}'} in s
+True
+>>> {None, host, fqdn, f'{user}@', f'{user}@{host}', f'{user}@{fqdn}', ''} in s
+True
+"""
+	__slots__: List[str] = []
+	__selections = [f'{user}@{fqdn}', f'{user}@{host}', f'{user}@', fqdn, host, None]
+	__selections_set = set (__selections)
+	def pick (self, collection: Dict[Optional[str], str]) -> str:
+		for selection in self.__selections:
+			with Ignore (KeyError):
+				return collection[selection]
+		raise KeyError ()
+	
+	def __contains__ (self, hostname: Union[None, str, Set[Optional[str]]]) -> bool:
+		if isinstance (hostname, set):
+			return bool (self.__selections_set.intersection (hostname))
+		return hostname in self.__selections_set
 #
 class ConfigValue (NamedTuple):
 	class_name: str
@@ -40,27 +116,6 @@ more convinient way to query these parameter and is also faster when
 querying several paramater."""
 	__slots__ = ['db', 'reread', 'last', 'company_id', 'company_info', 'config']
 	__sentinel = object ()
-	class TempDB:
-		__slots__ = ['db', 'use']
-		def __init__ (self, db: Optional[DB]) -> None:
-			self.db = db
-			self.use: DB = db if db is not None else DB ()
-		
-		def __enter__ (self) -> DB:
-			if self.use.isopen ():
-				return self.use
-			if self.db is not None:
-				self.db = None
-				self.use = DB ()
-				if self.use.isopen ():
-					return self.use
-			raise error ('failed to open database: {error}'.format (error = self.use.last_error ()))
-
-		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
-			if self.use != self.db:
-				self.use.close ()
-			return None
-		
 	def __init__ (self, db: Optional[DB] = None, reread: Optional[int] = None) -> None:
 		"""``cursor'' is an open database cursor to use
 (otherwise the database will be opened on demand), ``reread'' can be
@@ -75,6 +130,13 @@ refreshed from the database.
 		self.company_info: DefaultDict[int, Dict[str, str]] = defaultdict (dict)
 		self.config: Dict[Tuple[str, str], str] = {}
 	
+	def __enter__ (self) -> CompanyConfig:
+		self.read ()
+		return self
+		
+	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+		return None
+
 	def __reread (self, now: Union[int, float]) -> None:
 		self.company_info.clear ()
 		self.config.clear ()
@@ -82,15 +144,9 @@ refreshed from the database.
 			if s is not None:
 				s = s.strip ()
 			return None if not s else s.lower ()
-		
-		selections = [f'{user}@{fqdn}', f'{user}@{host}', f'{user}@', fqdn, host, None]
-		def pick (collection: Dict[Optional[str], str]) -> str:
-			for selection in selections:
-				with Ignore (KeyError):
-					return collection[selection]
-			raise KeyError ()
-
-		with CompanyConfig.TempDB (self.db) as db, db.request () as cursor:
+		selection = Selection ()
+		#
+		with TempDB (self.db) as db, db.request () as cursor:
 			collect1: DefaultDict[Tuple[int, str], Dict[Optional[str], str]] = defaultdict (dict)
 			for row in cursor.query (
 				'SELECT company_id, cname, cvalue, hostname '
@@ -100,7 +156,7 @@ refreshed from the database.
 					collect1[(row.company_id, row.cname)][asnull (row.hostname)] = row.cvalue if row.cvalue is not None else ''
 			for ((company_id, name), value) in collect1.items ():
 				with Ignore (KeyError):
-					self.company_info[company_id][name] = pick (value)
+					self.company_info[company_id][name] = selection.pick (value)
 			#
 			collect2: DefaultDict[Tuple[str, str], Dict[Optional[str], str]] = defaultdict (dict)
 			for row in cursor.query (
@@ -111,7 +167,7 @@ refreshed from the database.
 					collect2[(row.cls, row.name)][asnull (row.hostname)] = row.value
 			for (key, value) in collect2.items ():
 				with Ignore (KeyError):
-					self.config[key] = pick (value)
+					self.config[key] = selection.pick (value)
 			self.last = now
 	
 	def __check (self, force: bool = False) -> None:
@@ -234,7 +290,7 @@ is stored in the section with the company_id as its name."""
 		return rc
 
 	def write_config (self, class_name: str, name: str, value: str, description: str, hostname: Optional[str] = None) -> bool:
-		with CompanyConfig.TempDB (self.db) as db, db.request () as cursor:
+		with TempDB (self.db) as db, db.request () as cursor:
 			data = {
 				'class': class_name,
 				'name': name
@@ -256,7 +312,7 @@ is stored in the section with the company_id as its name."""
 			if rq is not None:
 				if rq.value != value and cursor.update (
 					'UPDATE config_tbl '
-					'SET value = :value, change_date = current_timestamp '
+					'SET value = :value, change_date = CURRENT_TIMESTAMP '
 					f'WHERE class = :class AND name = :name AND {hostname_clause}',
 					data
 				) != 1:
@@ -267,7 +323,7 @@ is stored in the section with the company_id as its name."""
 					'INSERT INTO config_tbl '
 					'       (class, name, value, description, hostname, creation_date, change_date) '
 					'VALUES '
-					f'       (:class, :name, :value, :description, {hostname_value}, current_timestamp, current_timestamp)',
+					f'       (:class, :name, :value, :description, {hostname_value}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
 					data
 				) != 1:
 					return False
@@ -279,7 +335,7 @@ is stored in the section with the company_id as its name."""
 	def update_config (self, class_name: str, name: str, values: Union[str, List[str]], description: str, hostname: Optional[str] = None) -> bool:
 		use_values: List[str] = [values] if isinstance (values, str) else values
 		new_values = use_values
-		with CompanyConfig.TempDB (self.db) as db, db.request () as cursor:
+		with TempDB (self.db) as db, db.request () as cursor:
 			data = {
 				'class': class_name,
 				'name': name
@@ -315,7 +371,7 @@ is stored in the section with the company_id as its name."""
 		description: Optional[str] = None,
 		hostname: Optional[str] = None
 	) -> bool:
-		with CompanyConfig.TempDB (self.db) as db, db.request () as cursor:
+		with TempDB (self.db) as db, db.request () as cursor:
 			data = {
 				'company_id': company_id,
 				'cname': f'{name}[{index}]' if index is not None else name
@@ -341,7 +397,7 @@ is stored in the section with the company_id as its name."""
 				description_assignment = ''
 			if (rq is not None and (rq.cvalue == value or cursor.update (
 				'UPDATE company_info_tbl '
-				f'SET cvalue = :cvalue, timestamp = current_timestamp{description_assignment} '
+				f'SET cvalue = :cvalue, timestamp = CURRENT_TIMESTAMP{description_assignment} '
 				f'WHERE company_id = :company_id AND cname = :cname AND {hostname_clause}',
 				data,
 				cleanup = True
@@ -349,7 +405,7 @@ is stored in the section with the company_id as its name."""
 				'INSERT INTO company_info_tbl '
 				'       (company_id, cname, cvalue, description, creation_date, timestamp, hostname) '
 				'VALUES '
-				f'       (:company_id, :cname, :cvalue, :description, current_timestamp, current_timestamp, {hostname_value})',
+				f'       (:company_id, :cname, :cvalue, :description, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, {hostname_value})',
 				data
 			) == 1:
 				db.sync ()

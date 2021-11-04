@@ -454,6 +454,7 @@ iflua_setup_context (iflua_t *il) /*{{{*/
 	setifield (il -> blockmail -> licence_id, "licence_id");
 	setifield (il -> blockmail -> company_id, "company_id");
 	setifield (il -> blockmail -> mailinglist_id, "mailinglist_id");
+	setxfield (il -> blockmail -> mailinglist_name, "mailinglist_name");
 	setifield (il -> blockmail -> mailing_id, "mailing_id");
 	setxfield (il -> blockmail -> mailing_name, "mailing_name");
 	setifield (il -> blockmail -> maildrop_status_id, "status_id");

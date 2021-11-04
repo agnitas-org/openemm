@@ -13,7 +13,9 @@
 static bool_t
 final_eol (buffer_t *dest) /*{{{*/
 {
-	if ((dest -> length > 0) && (! buffer_iseol (dest, dest -> length - 1)))
+	int	n;
+	
+	if (((n = buffer_peek (dest, -1)) != -1) && (n != '\n'))
 		return buffer_appendnl (dest);
 	return true;
 }/*}}}*/

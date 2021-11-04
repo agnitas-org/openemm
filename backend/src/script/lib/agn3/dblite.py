@@ -12,11 +12,11 @@
 from	__future__ import annotations
 from	typing import Optional
 from	typing import List
-from	.db import DB
+from	.db import DB, Row
 from	.dbcore import Core
 from	._db.sqlite import Layout, SQLite3
 #
-__all__ = ['DBLite', 'DB', 'Layout']
+__all__ = ['DBLite', 'DB', 'Row', 'Layout']
 #
 class DBLite (DB):
 	__slots__ = ['_path', '_layout', '_lock']

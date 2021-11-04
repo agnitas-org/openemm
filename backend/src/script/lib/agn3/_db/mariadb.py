@@ -87,6 +87,7 @@ with Ignore (ImportError):
 				with Ignore ():
 					while cast (DBAPI.Cursor, self.curs).fetchmany ():
 						pass
+				self.rowcount = 1
 			return rc
 		
 		def find_mapper (self, name: str, typ: Any) -> Callable[[Any], Any]:

@@ -50,8 +50,8 @@ use the default), ``port'' is the port the merger listens to (or None
 to use the default 8080). ``timeout'' is the communication (socket)
 timeout in seconds and ``retries'' is the number of attempts to try
 starting a mailing if a failure occurs."""
-		self.merger = merger if merger is not None else syscfg.get_str ('merger-address', '127.0.0.1')
-		self.port = port if port is not None else syscfg.get_int ('trigger-port', 8080)
+		self.merger = merger if merger is not None else syscfg.get ('merger-address', '127.0.0.1')
+		self.port = port if port is not None else syscfg.iget ('trigger-port', 8080)
 		self.timeout = timeout if timeout is not None else 30
 		self.retries = retries if retries is not None else 3
 		self.rpc = cast (TriggerProxy, XMLRPCClient (Config (host = self.merger, port = self.port)))
@@ -60,7 +60,7 @@ starting a mailing if a failure occurs."""
 		"""Checks if the merger itself is ready and active"""
 		def cbActive () -> bool:
 			return self.rpc.is_active ()
-		return self.__rpc (cbActive, limit_retries = 1)
+		return self.__rpc ('active', cbActive, limit_retries = 1)
 
 	def fire (self, status_id: int, cursor: Optional[Cursor] = None) -> bool:
 		"""Start a regular mailing, use keyword arguments for options:
@@ -150,7 +150,7 @@ starting a mailing if a failure occurs."""
 					else:
 						logger.info (f'{mailing_name}: genchange not changed, retry starting mailing after a second')
 			return (rc, retries)
-		rc = self.__rpc (cbStart, retry = cbRetry)
+		rc = self.__rpc ('invoke', cbStart, retry = cbRetry)
 		#
 		if rc and cursor is not None and genchange is not None:
 			startup = 30
@@ -171,6 +171,7 @@ starting a mailing if a failure occurs."""
 		return rc
 		
 	def __rpc (self,
+		name: str,
 		callback: Callable[[], bool],
 		retry: Optional[Callable[[int], Tuple[bool, int]]] = None,
 		limit_retries: Optional[int] = None
@@ -186,9 +187,10 @@ starting a mailing if a failure occurs."""
 				if self.timeout > 0:
 					socket.setdefaulttimeout (self.timeout)
 				rc = callback ()
-				(logger.info if rc else logger.warning) ('Call to merger {merger} results in {result}'.format (
+				(logger.info if rc else logger.warning) ('Call to merger {merger} results in {result} for {name}'.format (
 					merger = self.merger,
-					result = str (rc).lower ()
+					result = str (rc).lower (),
+					name = name
 				))
 			except XMLRPCError as e:
 				logger.error (f'Failed to communicate with merger {self.merger}: {e}')

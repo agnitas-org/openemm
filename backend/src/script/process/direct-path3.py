@@ -30,10 +30,10 @@ logger = logging.getLogger (__name__)
 class Processor:
 	__slots__ = ['incoming', 'archive', 'recover', 'queues', 'cur', 'mta']
 	def __init__ (self) -> None:
-		self.incoming = syscfg.get_str ('direct-path-incoming', os.path.join (base, 'DIRECT'))
-		self.archive = syscfg.get_str ('direct-path-archive', os.path.join (base, 'ARCHIVE'))
-		self.recover = syscfg.get_str ('direct-path-recover', os.path.join (base, 'RECOVER'))
-		self.queues = syscfg.get_list ('direct-path-queues', ',', Stream (os.listdir (base))
+		self.incoming = syscfg.get ('direct-path-incoming', os.path.join (base, 'DIRECT'))
+		self.archive = syscfg.get ('direct-path-archive', os.path.join (base, 'ARCHIVE'))
+		self.recover = syscfg.get ('direct-path-recover', os.path.join (base, 'RECOVER'))
+		self.queues = syscfg.lget ('direct-path-queues', default = Stream (os.listdir (base))
 			.filter (lambda f: bool (f.startswith ('QUEUE')))
 			.map (lambda f: os.path.join (base, f))
 			.filter (lambda p: os.path.isdir (p) and not os.path.isfile (os.path.join (p, '.ignore')))

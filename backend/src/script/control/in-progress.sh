@@ -12,5 +12,4 @@
 #
 . $HOME/scripts/config.sh
 #
-py3select $HOME/scripts/in-progress3.py $HOME/scripts/in-progress.py
-exec $command "$@"
+exec $HOME/scripts/in-progress3.py "$@"

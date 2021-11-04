@@ -9,6 +9,7 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
+#
 from	__future__ import annotations
 import	os, re, subprocess, errno, logging
 from	enum import Enum
@@ -29,23 +30,70 @@ __all__ = [
 	'Progress'
 ]
 #
-def atoi (s: Any, ibase: int = 10, default: int = 0) -> int:
+def atoi (s: Any, base: int = 10, default: int = 0) -> int:
 	"""Lazy parses a value into an integer
 
 parses input parameter as numeric value, use default if it is not
 parsable.
+
+>>> atoi (10)
+10
+>>> atoi ('A')
+0
+>>> atoi ('A', base = 16)
+10
+>>> atoi (3.14159)
+3
+>>> atoi (None)
+0
+>>> atoi (True)
+1
+>>> atoi (False)
+0
+>>> atoi (object ())
+0
+>>> atoi (object (), default = -1)
+-1
 """
-	if isinstance (s, int):
-		return s
-	if isinstance (s, float):
+	if isinstance (s, int) or isinstance (s, float):
 		return int (s)
 	try:
-		return int (s, ibase)
+		return int (s, base)
 	except (ValueError, TypeError):
 		return default
 
 def atob (s: Any) -> bool:
-	"""Interprets a value as a boolean"""
+	"""Interprets a value as a boolean
+
+>>> atob (0)
+False
+>>> atob (1)
+True
+>>> atob (-1)
+True
+>>> atob (None)
+False
+>>> atob (3.14159)
+True
+>>> atob (0.0)
+False
+>>> atob (0.1)
+True
+>>> atob ('enabled')
+True
+>>> atob ('disabled')
+False
+>>> atob ('1')
+True
+>>> atob ('2')
+False
+>>> atob ('0')
+False
+>>> atob (object ())
+False
+>>> atob ([1, 2, 3])
+False
+"""
 	if s is None:
 		return False
 	if isinstance (s, bool):
@@ -62,11 +110,23 @@ def atob (s: Any) -> bool:
 			'off': False,
 			'no': False,
 			'disabled': False
-		}.get (s.lower (), s[0] in ['1', 'T', 't', 'Y', 'y', '+'])
+		}.get (s.lower (), s[:1] in {'1', '+'})
 	return False
 
 def calc_hash (s: str) -> int:
-	"""Simple hash value generator"""
+	"""Simple hash value generator
+
+>>> calc_hash ('')
+0
+>>> calc_hash ('A')
+65
+>>> calc_hash ('Abc')
+928115
+>>> calc_hash ('agnitas.de')
+468064859189097289471
+>>> calc_hash (' ' * 200)
+3459356304011571232903234033358723824931423566398556401012622596295213306933979148491444274326958590815363474846712218619683967266047508692094211384251125494722890670500752065384832639040151937319873047291700080457594364574425353940370233534086318223685841766026347041089066337484081114576380174284539979053600760549205271685617367429391303958596948422501611308711132779941001449034333819801239026197870385972527328
+"""
 	
 	rc = 0
 	for ch in s.encode ('UTF-8'):
@@ -77,8 +137,14 @@ def sizefmt (n: int, flip: int = 10) -> str:
 	"""Converts the number n to a readable form of memory sizes.
 
 Use flip to avoid a too rough rounding of the value, e.g.:
-sizefmt (8999) --> '8999 Byte'
-sizefmt (8999, 1) --> '8.79 kByte'
+>>> sizefmt (1)
+'1 Byte'
+>>> sizefmt (8999)
+'8999 Byte'
+>>> sizefmt (8999, flip = 1)
+'8.79 kByte'
+>>> sizefmt (2 ** 24)
+'16.00 MByte'
 """
 	sizetab = [
 		(1024 * 1024 * 1024 * 1024, 'TByte'),
@@ -159,7 +225,76 @@ class Range:
 
 This class takes a generic expression, which is a comma separated list
 of single expressions. Each single expression may be prefixed by an
-exclamation mark to exclude these values. 
+exclamation mark to exclude these values.
+
+>>> r = Range (None)
+>>> 3 in r
+False
+>>> 0 in r
+False
+>>> -1 in r
+False
+>>> r = Range ('*')
+>>> 3 in r
+True
+>>> 0 in r
+True
+>>> -1 in r
+True
+>>> r = Range ('!*')
+>>> 3 in r
+False
+>>> 0 in r
+False
+>>> -1 in r
+False
+>>> r = Range ('10-30, 50-100')
+>>> 0 in r
+False
+>>> 9 in r
+False
+>>> 10 in r
+True
+>>> 30 in r
+True
+>>> 31 in r
+False
+>>> 49 in r
+False
+>>> 50 in r
+True
+>>> 100 in r
+True
+>>> 101 in r
+False
+>>> r = Range ('10-30, !20')
+>>> 9 in r
+False
+>>> 10 in r
+True
+>>> 30 in r
+True
+>>> 31 in r
+False
+>>> 20 in r
+False
+>>> 19 in r
+True
+>>> 21 in r
+True
+>>> r = Range ('!10-20', low = 1, high = 100)
+>>> 1 in r
+True
+>>> 10 in r
+False
+>>> 20 in r
+False
+>>> 100 in r
+True
+>>> 0 in r
+False
+>>> 101 in r
+False
 """
 	__slots__ = ['slices', 'low', 'high', 'default', 'only_inverse']
 	class Slice:
@@ -202,7 +337,7 @@ no single expression matched.
 		self.low = low
 		self.high = high
 		self.default = default
-		self.only_inverse = None
+		self.only_inverse: Optional[bool] = None
 		if expr:
 			for e in listsplit (expr):
 				if e.startswith ('!'):
@@ -234,7 +369,10 @@ no single expression matched.
 				self.slices.insert (0, self.Slice (False, low, high))
 
 	def __contains__ (self, val: int) -> bool:
-		rc = self.default or bool (self.only_inverse)
+		if self.only_inverse:
+			rc = (self.low is None or val >= self.low) and (self.high is None or val <= self.high)
+		else:
+			rc = self.default
 		for slice in self.slices:
 			if val in slice:
 				rc = not slice.inverse
@@ -247,7 +385,7 @@ no single expression matched.
 		return f'{self.__class__.__name__} ({self})'
 		
 	def __str__ (self) -> str:
-		return (Stream.of (self.slices)
+		return (Stream (self.slices)
 			.map (lambda s: str (s))
 			.join (', ')
 		)
@@ -466,9 +604,10 @@ formated or $rawcount for unformated current count) and offering
 			self.show ()
 		return self.count
 		
-	def fin (self) -> None:
+	def fin (self) -> int:
 		"""Show final value, if not yet being showed"""
 		self.show (True)
+		return self.count
 	#
 	# Compatibility for Stream.progress
 	def tick (self, elem: Any) -> None:
@@ -484,3 +623,4 @@ formated or $rawcount for unformated current count) and offering
 	def handle (self) -> None:
 		"""Hook for more action, e.g. a database commit, when show() is invoked"""
 		pass
+

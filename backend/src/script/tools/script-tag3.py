@@ -74,7 +74,7 @@ class ScriptTag (CLI):
 		self.language = args.language
 		self.company_id = args.company_id
 		self.description = args.description
-		self.tags = Stream (args.tags).map (lambda t: listsplit (t)).chain ().list ()
+		self.tags = Stream (args.tags).map (listsplit).chain (str).list ()
 		self.only_tags = args.only_tags
 		self.filename = args.filename[0]
 		
@@ -108,12 +108,12 @@ class ScriptTag (CLI):
 							'INSERT INTO tag_function_tbl '
 							'       (tag_function_id, company_id, creation_date, timestamp, name, lang, description, code) '
 							'VALUES '
-							'       (tag_function_tbl_seq.nextval, :company_id, current_timestamp, current_timestamp, :name, :lang, :tdesc, :code)'
+							'       (tag_function_tbl_seq.nextval, :company_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, :name, :lang, :tdesc, :code)'
 						), mysql = (
 							'INSERT INTO tag_function_tbl '
 							'       (company_id, creation_date, timestamp, name, lang, description, code) '
 							'VALUES '
-							'       (:company_id, current_timestamp, current_timestamp, :name, :lang, :tdesc, :code)'
+							'       (:company_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, :name, :lang, :tdesc, :code)'
 						)
 					)
 					if self.dryrun:
@@ -147,7 +147,7 @@ class ScriptTag (CLI):
 						extra = ''
 					query = (
 						'UPDATE tag_function_tbl '
-						f'SET code = :code, lang = :lang, timestamp = current_timestamp{extra} '
+						f'SET code = :code, lang = :lang, timestamp = CURRENT_TIMESTAMP{extra} '
 						'WHERE tag_function_id = :fid'
 					)
 					if self.dryrun:
@@ -195,12 +195,12 @@ class ScriptTag (CLI):
 							'INSERT INTO tag_tbl '
 							'       (tag_id, tagname, selectvalue, type, company_id, description, timestamp) '
 							'VALUES '
-							'       (tag_tbl_seq.nextval, :tname, :cdesc, :type, :company_id, :tdesc, current_timestamp)'
+							'       (tag_tbl_seq.nextval, :tname, :cdesc, :type, :company_id, :tdesc, CURRENT_TIMESTAMP)'
 						), mysql = (
 							'INSERT INTO tag_tbl '
 							'       (tagname, selectvalue, type, company_id, description, change_date) '
 							'VALUES '
-							'       (:tname, :cdesc, :type, :company_id, :tdesc, current_timestamp)'
+							'       (:tname, :cdesc, :type, :company_id, :tdesc, CURRENT_TIMESTAMP)'
 						)
 					)
 					if self.dryrun:
@@ -234,11 +234,11 @@ class ScriptTag (CLI):
 					query = cursor.qselect (
 						oracle = (
 							'UPDATE tag_tbl '
-							f'SET selectvalue = :cdesc, timestamp = current_timestamp{extra} '
+							f'SET selectvalue = :cdesc, timestamp = CURRENT_TIMESTAMP{extra} '
 							'WHERE tag_id = :tid'
 						), mysql = (
 							'UPDATE tag_tbl '
-							f'SET selectvalue = :cdesc, change_date = current_timestamp{extra} '
+							f'SET selectvalue = :cdesc, change_date = CURRENT_TIMESTAMP{extra} '
 							'WHERE tag_id = :tid'
 						)
 					)

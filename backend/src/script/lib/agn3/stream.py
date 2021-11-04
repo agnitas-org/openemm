@@ -11,45 +11,33 @@
 #
 from	__future__ import annotations
 import	sys, re
-from	functools import partial, reduce
+from	functools import reduce
 from	collections import Counter, Iterable, Iterator, deque, defaultdict
 from	itertools import filterfalse, dropwhile, takewhile, islice, chain
 from	types import TracebackType
-from	typing import Any, Optional, Callable, Reversible, Sized, Union
-from	typing import DefaultDict, Dict, List, Match, Pattern, Set, Tuple, Type
-from	typing import cast
+from	typing import Any, Callable, Optional, Reversible, Sized, TypeVar, Union
+from	typing import DefaultDict, Dict, Generic, List, Match, Pattern, Set, Tuple, Type
+from	typing import cast, overload
 import	typing
-
-class Stream:
+from	.exceptions import error
+#
+__all__ = ['Stream']
+#
+T = TypeVar ('T')
+O = TypeVar ('O')
+#
+class Stream (Generic[T]):
 	"""Stream implementation as inspired by Java 1.8
 
 Original based on pystreams but as this project seems to be abandoned
 a subset of these methods are implemented here by giving up parallel
 execution at all."""
 	__slots__ = ['iterator']
-	__sentinel = object ()
+	__sentinel = cast (T, object ())
 	@classmethod
-	def of (cls, *args: Any) -> Stream:
-		"""Creates a stream from an iterable object or a list of items"""
-		if len (args) == 1:
-			if args[0] is None:
-				return cls (())
-			try:
-				return cls (args[0])
-			except TypeError:
-				pass
-		elif len (args) > 1 and callable (args[0]):
-			if len (args) > 2:
-				method: Callable[[], Any] = partial (args[0], *args[1:-1])
-			else:
-				method = args[0]
-			return cls (iter (method, args[-1]))
-		return cls (args)
-	
-	@classmethod
-	def defer (cls, obj: Iterable[Any], defer: Optional[Callable[[Iterable[Any]], None]] = None) -> Stream:
+	def defer (cls, obj: Iterable[T], defer: Optional[Callable[[Iterable[T]], None]] = None) -> Stream[T]:
 		"""Create a stream from an iterable ``obj'' and defer cleanup to the end"""
-		def provider (obj: Iterable[Any], defer: Optional[Callable[[Iterable[Any]], None]]) -> Iterator[Any]:
+		def provider (obj: Iterable[T], defer: Optional[Callable[[Iterable[T]], None]]) -> Iterator[T]:
 			try:
 				for elem in obj:
 					yield elem
@@ -58,27 +46,32 @@ execution at all."""
 					defer (obj)
 				else:
 					del obj
-		return cls.of (provider (obj, defer))
+		return cls (provider (obj, defer))
 
 	@classmethod
-	def empty (cls) -> Stream:
-		"""Creates an empty stream"""
-		return cls.of ()
-	
+	def concat (cls, *args: Iterable[T]) -> Stream[T]:
+		def concater (args: Iterable[Iterable[T]]) -> Iterator[T]:
+			for element in args:
+				for subelement in element:
+					yield subelement
+		return cls (concater (args))
+
 	@classmethod
-	def concat (cls, *args: Iterable[Any]) -> Stream:
-		"""Create a new stream by concaternate all streams from ``args''"""
-		return cls (args).chain ()
-	
-	@classmethod
-	def merge (cls, *args: Any) -> Stream:
+	def merge (cls, *args: Union[T, Iterable[T]]) -> Stream[T]:
 		"""Like concat, but use items which are not iterable as literal to the target stream"""
-		return cls ((_a if isinstance (_a, (Iterable, Iterator)) else [_a] for _a in args)).chain ()
+		def merger (args: Tuple[Union[Iterable[T], T], ...]) -> Iterator[T]:
+			for element in args:
+				if isinstance (element, Iterable):
+					for subelement in element:
+						yield subelement
+				else:
+					yield element
+		return cls (merger (args))
 			
 	@classmethod
-	def range (cls, *args: Any, **kwargs: Any) -> Stream:
-		"""Creaste a new stream using range (``args'' and ``kwargs'' are pased to xrange)"""
-		return cls (range (*args, **kwargs))
+	def range (cls, *args: Any, **kwargs: Any) -> Stream[int]:
+		"""Creaste a new stream using range (``args'' and ``kwargs'' are pased to range)"""
+		return cast (Type[Stream[int]], cls) (range (*args, **kwargs))
 	
 	@staticmethod
 	def ifelse (value: Any,	predicate: Optional[Callable[[Any], bool]] = None, mapper: Any = None, alternator: Any = None) -> Any:
@@ -124,11 +117,14 @@ execution at all."""
 			value = (executors.pop (0)) (value)
 		return finalizer (value) if finalizer is not None else value
 	
-	@classmethod
-	def multi (cls, *methods: Callable[..., Any]) -> Callable[..., Any]:
+	@staticmethod
+	def multi (*methods: Callable[..., Any]) -> Callable[..., Any]:
 		"""execute multi methods and return the result of the last one, work around for lambda limitations"""
 		def multier (*args: Any, **kwargs: Any) -> Any:
-			return cls (methods).map (lambda m: m (*args, **kwargs)).last (no = None)
+			value = None
+			for method in methods:
+				value = method (*args, **kwargs)
+			return value
 		return multier
 	
 	@staticmethod
@@ -143,7 +139,7 @@ returning the final value"""
 			return value
 		return multichainer
 	
-	def __init__ (self, iterator: Iterable[Any]) -> None:
+	def __init__ (self, iterator: Iterable[T]) -> None:
 		self.iterator = iter (iterator)
 
 	def __str__ (self) -> str:
@@ -155,64 +151,88 @@ returning the final value"""
 	def __len__ (self) -> int:
 		return self.count ()
 		
-	def __iter__ (self) -> Iterator[Any]:
+	def __iter__ (self) -> Iterator[T]:
 		return self.iterator
 		
-	def __reversed__ (self) -> Iterator[Any]:
+	def __reversed__ (self) -> Iterator[T]:
 		try:
-			return reversed (cast (Reversible[Any], self.iterator))
+			return reversed (cast (Reversible[T], self.iterator))
 		except TypeError:
 			return reversed (list (self.iterator))
 
-	def __enter__ (self) -> Stream:
+	def __enter__ (self) -> Stream[T]:
 		return self
 
 	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
 		return None
 	
-	def __contains__ (self, o: Any) -> bool:
+	def __contains__ (self, o: T) -> bool:
 		return sum ((1 for _o in self.iterator if _o == o)) > 0
 
-	def new (self, iterator: Iterable[Any]) -> Stream:
+	def new (self, iterator: Iterable[O]) -> Stream[O]:
 		"""Create a new stream using ``iterator''"""
-		return self.__class__ (iterator)
+		return cast (Type[Stream[O]], self.__class__) (iterator)
 	#
 	# Intermediates
 	#
-	def filter (self, predicate: Callable[[Any], bool]) -> Stream:
+	def filter (self, predicate: Callable[[T], bool]) -> Stream[T]:
 		"""Create a new stream for each element ``predicate'' returns True"""
 		return self.new (filter (predicate, self.iterator))
 		
-	def exclude (self, predicate: Callable[[Any], bool]) -> Stream:
+	def exclude (self, predicate: Callable[[T], bool]) -> Stream[T]:
 		"""Create a new stream excluding each element ``prdicate'' returns True"""
 		return self.new (filterfalse (predicate, self.iterator))
 		
+	def error (self,
+		predicate: Callable[[T], bool],
+		exception: Union[None, str, Exception, Callable[[T], Exception]] = None
+	) -> Stream[T]:
+		"""Raise an error, if ``predicate'' returns False"""
+		def check_for_error (e: Any) -> bool:
+			if predicate (e):
+				if exception is not None:
+					if isinstance (exception, str):
+						if '{element}' in exception:
+							raise error (exception.format (element = e))
+						raise error (exception)
+					elif isinstance (exception, Exception):
+						raise exception
+					raise exception (e)
+				raise error (str (e))
+			return True
+		#
+		return self.new (filter (check_for_error, self.iterator))
+
 	def regexp (self,
 		pattern: Union[str, Pattern[str]],
 		flags: int = 0,
-		key: Optional[Callable[[Any], Any]] = None,
-		predicate: Optional[Callable[[Pattern[str], Match[str], Any], Any]] = None
-	) -> Stream:
+		key: Optional[Callable[[T], str]] = None,
+		predicate: Optional[Callable[[Pattern[str], Match[str], T], T]] = None
+	) -> Stream[T]:
 		"""Create a new stream for each element matching
 regular expression ``pattern''. ``flags'' is passed to re.compile. If
 ``predicate'' is not None, this must be a callable which accepts three
 arguments, the compiled regular expression, the regular expression
 matching object and the element itself."""
 		expression = re.compile (pattern, flags) if isinstance (pattern, str) else pattern
-		def regexper () -> Iterator[Any]:
+		def regexper () -> Iterator[T]:
 			for elem in self.iterator:
-				m = expression.match (key (elem) if key is not None else elem)
+				m = expression.match (key (elem) if key is not None else str (elem))
 				if m is not None:
 					yield predicate (expression, m, elem) if predicate is not None else elem
 		return self.new (regexper ())
 	
-	def map (self, predicate: Callable[[Any], Any]) -> Stream:
+	def map (self, predicate: Callable[[T], O]) -> Stream[O]:
 		"""Create a new stream for each element mapped with ``predicate''"""
 		return self.new ((predicate (_v) for _v in self.iterator))
 	
-	def distinct (self, key: Optional[Callable[[Any], Any]] = None) -> Stream:
+	def map_to (self, t: Type[O], predicate: Callable[[T], Any]) -> Stream[O]:
+		"""Like map, but passing a type as a hint for the return type of predicate for type checking"""
+		return self.new ((cast (O, predicate (_v)) for _v in self.iterator))
+	
+	def distinct (self, key: Optional[Callable[[T], Any]] = None) -> Stream[T]:
 		"""Create a new stream eleminating duplicate elements. If ``key'' is not None, it is used to build the key for checking identical elements"""
-		def distincter () -> Iterator[Any]:
+		def distincter () -> Iterator[T]:
 			seen: Set[Any] = set ()
 			for elem in self.iterator:
 				keyvalue = key (elem) if key is not None else elem
@@ -221,15 +241,15 @@ matching object and the element itself."""
 					yield elem
 		return self.new (distincter ())
 		
-	def sorted (self, key: Optional[Callable[[Any], Any]] = None, reverse: bool = False) -> Stream:
+	def sorted (self, key: Optional[Callable[[T], Any]] = None, reverse: bool = False) -> Stream[T]:
 		"""Create a new stream with sorted elements ``key'' and ``reverse'' are passed to sorted()"""
-		return self.new (sorted (self.iterator, key = key, reverse = reverse))
+		return self.new (sorted (cast (Iterable, self.iterator), key = key, reverse = reverse))
 		
-	def reversed (self) -> Stream:
+	def reversed (self) -> Stream[T]:
 		"""Create a new stream in reverse order"""
 		return self.new (reversed (self))
 		
-	def peek (self, predicate: Union[None, str, Callable[[Any], Any]] = None) -> Stream:
+	def peek (self, predicate: Union[None, str, Callable[[T], Any]] = None) -> Stream[T]:
 		"""Create a new stream while executing ``predicate'' for each element
 
 If predicate is None or a string, then each object is printed to
@@ -241,7 +261,7 @@ string, otherwise with a generic 'Peek'"""
 		else:
 			predicater = predicate
 		return self.filter (lambda v: predicater (v) or True)
-
+	
 	class Progress:
 		__slots__: List[str] = []
 		def tick (self, elem: Any) -> None:
@@ -273,14 +293,14 @@ string, otherwise with a generic 'Peek'"""
 			progress = p
 		return progress
 
-	def progress (self, p: Union[str, Stream.Progress], checkpoint: Optional[int] = None) -> Stream:
+	def progress (self, p: Union[str, Stream.Progress], checkpoint: Optional[int] = None) -> Stream[T]:
 		"""Create a new stream which copies the stream calling
-the instance of ``p'' (an instance of agn.Stream.Progress or a string)
+the instance of ``p'' (an instance of Stream.Progress or a string)
 on each iteration. If ``p'' is a string, then ``checkpoint'' is an
 optional integer value which specifies in which intervals the a
 progression messsages is emitted'"""
 		progress = self.__progress (p, checkpoint)
-		def progressor () -> Iterator[Any]:
+		def progressor () -> Iterator[T]:
 			count = 0
 			for elem in self.iterator:
 				count += 1
@@ -289,14 +309,22 @@ progression messsages is emitted'"""
 			progress.final (count)
 		return self.new (progressor ())
 
-	def __functions (self, *args: Any) -> Tuple[List[Tuple[Callable[[Any], bool], Callable[[Any], Any]]], Optional[Callable[[Any], Any]]]:
-		conditions: List[Tuple[Callable[[Any], bool], Callable[[Any], Any]]] = []
+	def __functions (self,
+		condition: Callable[[T], bool],
+		modifier: Callable[[T], O],
+		*args: Union[Callable[[T], bool], Callable[[T], O]]
+	) -> Tuple[List[Tuple[Callable[[T], bool], Callable[[T], O]]], Optional[Callable[[T], O]]]:
+		conditions: List[Tuple[Callable[[T], bool], Callable[[T], O]]] = [(condition, modifier)]
 		while len (args) > 1:
-			conditions.append ((args[0], args[1]))
+			conditions.append ((cast (Callable[[T], bool], args[0]), cast (Callable[[T], O], args[1])))
 			args = args[2:]
-		return (conditions, args[0] if args else None)
-		
-	def switch (self, *args: Any) -> Stream:
+		return (conditions, cast (Callable[[T], O], args[0]) if args else None)
+
+	def switch (self,
+		condition: Callable[[T], bool],
+		modifier: Callable[[T], O],
+		*args: Union[Callable[[T], bool], Callable[[T], O]]
+	) -> Stream[O]:
 		"""Create a new stream for using mulitple condition/mapping pairs.
 
 If an odd number of arguments are passed, the last one is considered
@@ -306,7 +334,7 @@ mapping is added to the new stream. No further mapping is applied. If
 a default mapping is used and no other condition/mapping pair has
 matched, this mapping is called for the element, otherwise the element
 is added unmapped to the new stream."""
-		(conditions, default) = self.__functions (*args)
+		(conditions, default) = self.__functions (condition, modifier, *args)
 		def switcher (elem: Any) -> Any:
 			for (predicate, callback) in conditions:
 				if predicate (elem):
@@ -314,41 +342,41 @@ is added unmapped to the new stream."""
 			return default (elem) if default else elem
 		return self.new ((switcher (_e) for _e in self.iterator))
 	
-	def snap (self, target: List[Any]) -> Stream:
+	def snap (self, target: List[T]) -> Stream[T]:
 		"""Create a new stream saving each element in ``target'' (which must provide an append method)"""
 		return self.peek (lambda v: target.append (v))
 		
-	def dropwhile (self, predicate: Callable[[Any], bool]) -> Stream:
+	def dropwhile (self, predicate: Callable[[T], bool]) -> Stream[T]:
 		"""Create a new stream ignore all elements where ``predicate'' returns False up to first match"""
 		return self.new (dropwhile (predicate, self.iterator))
 	
-	def takewhile (self, predicate: Callable[[Any], bool]) -> Stream:
+	def takewhile (self, predicate: Callable[[T], bool]) -> Stream[T]:
 		"""Create a new stream as long as ``predicate'' returns the first time False"""
 		return self.new (takewhile (predicate, self.iterator))
 	
-	def limit (self, size: Optional[int]) -> Stream:
+	def limit (self, size: Optional[int]) -> Stream[T]:
 		"""Create a new stream with a maximum of ``size'' elements"""
 		if size is None:
 			return self.new (self.iterator)
 		return self.new (islice (self.iterator, 0, size))
 		
-	def skip (self, size: Optional[int]) -> Stream:
+	def skip (self, size: Optional[int]) -> Stream[T]:
 		"""Create a new stream where the first ``size'' elements are skipped"""
 		if size is None:
 			return self.new (self.iterator)
 		return self.new (islice (self.iterator, size, None))
 	
-	def remain (self, size: Optional[int]) -> Stream:
+	def remain (self, size: Optional[int]) -> Stream[T]:
 		"""Create a new stream which contains the remaining ``size'' elements"""
 		if size is None:
 			return self.new (self.iterator)
 		return self.new (deque (self.iterator, maxlen = size))
 	
-	def slice (self, *args: int) -> Stream:
+	def slice (self, *args: int) -> Stream[T]:
 		"""Create a new stream selecting slice(*``args'')"""
 		return self.new (islice (self.iterator, *args))
 	
-	def chain (self) -> Stream:
+	def chain (self, t: Type[O]) -> Stream[O]:
 		"""Create a new stream flatten the elements of the stream."""
 		return self.new (chain.from_iterable (self.iterator))
 	#
@@ -358,7 +386,7 @@ is added unmapped to the new stream."""
 		"""Dismiss all elements to terminate the stream"""
 		deque (self.iterator, maxlen = 0)
 
-	def reduce (self, predicate: Callable[[Any, Any], Any], identity: Any = __sentinel) -> Any:
+	def reduce (self, predicate: Callable[[T, T], T], identity: T = __sentinel) -> T:
 		"""Reduce the stream by applying ``predicate''. If ``identity'' is available, use this as the initial value"""
 		if identity is self.__sentinel:
 			return reduce (predicate, self.iterator)
@@ -369,7 +397,7 @@ is added unmapped to the new stream."""
 			raise ValueError (f'no value available for Stream.{where}: empty result set')
 		return no
 		
-	def __position (self, finisher:  Optional[Callable[[Any], Any]], no: Any, position: Callable[[Any], int], where: str) -> Any:
+	def __position (self, finisher: Optional[Callable[[T], Any]], no: Any, position: Callable[[int], int], where: str) -> Any:
 		collect: DefaultDict[Any, int] = defaultdict (int)
 		for elem in self.iterator:
 			collect[elem] += 1
@@ -378,7 +406,15 @@ is added unmapped to the new stream."""
 			return value if finisher is None else finisher (value)
 		return self.__checkNo (no, where)
 
-	def first (self, finisher: Optional[Callable[[Any], Any]] = None, no: Any = __sentinel) -> Any:
+	@overload
+	def first (self, finisher: None = ..., no: T = ...) -> T: ...
+	@overload
+	def first (self, finisher: None = ..., no: Any = ...) -> Any: ...
+	@overload
+	def first (self, finisher: Callable[[T], T], no: T = ...) -> T: ...
+	@overload
+	def first (self, finisher: Callable[[T], O], no: O = ...) -> O: ...
+	def first (self, finisher: Optional[Callable[[T], Any]] = None, no: Any = __sentinel) -> Any:
 		"""Returns the first element, ``no'' if stream is empty. ``finisher'', if not None, is called on a found element"""
 		try:
 			rc = next (self.iterator)
@@ -386,41 +422,75 @@ is added unmapped to the new stream."""
 			return rc if finisher is None else finisher (rc)
 		except StopIteration:
 			return self.__checkNo (no, 'first')
-	
-	def last (self, finisher: Optional[Callable[[Any], Any]] = None, no: Any = __sentinel) -> Any:
+
+	@overload
+	def last (self, finisher: None = ..., no: T = ...) -> T: ...
+	@overload
+	def last (self, finisher: None = ..., no: Any = ...) -> Any: ...
+	@overload
+	def last (self, finisher: Callable[[T], T], no: T = ...) -> T: ...
+	@overload
+	def last (self, finisher: Callable[[T], O], no: O = ...) -> O: ...
+	def last (self, finisher: Optional[Callable[[T], Any]] = None, no: Any = __sentinel) -> Any:
 		"""Returns the last element, ``no'' if stream is empty. ``finisher'', if not None, is called on a found element"""
 		rc = deque (self.iterator, maxlen = 1)
 		if len (rc):
 			return rc[0] if finisher is None else finisher (rc[0])
 		return self.__checkNo (no, 'last')
 
-	def most (self, finisher: Optional[Callable[[Any], Any]] = None, no: Any = __sentinel) -> Any:
+	@overload
+	def most (self, finisher: None = ..., no: T = ...) -> T: ...
+	@overload
+	def most (self, finisher: None = ..., no: Any = ...) -> Any: ...
+	@overload
+	def most (self, finisher: Callable[[T], T], no: T = ...) -> T: ...
+	@overload
+	def most (self, finisher: Callable[[T], O], no: O = ...) -> O: ...
+	def most (self, finisher: Optional[Callable[[T], Any]] = None, no: Any = __sentinel) -> Any:
 		"""Returns the element with the most often occurance, ``no'' if stream is empty. ``finisher'', if not None, is called on a found element"""
 		return self.__position (finisher, no, lambda c: -1, 'most')
 	
-	def least (self, finisher: Optional[Callable[[Any], Any]] = None, no: Any = __sentinel) -> Any:
+	@overload
+	def least (self, finisher: None = ..., no: T = ...) -> T: ...
+	@overload
+	def least (self, finisher: None = ..., no: Any = ...) -> Any: ...
+	@overload
+	def least (self, finisher: Callable[[T], T], no: T = ...) -> T: ...
+	@overload
+	def least (self, finisher: Callable[[T], O], no: O = ...) -> O: ...
+	def least (self, finisher: Optional[Callable[[T], Any]] = None, no: Any = __sentinel) -> Any:
 		"""Returns the element with the least often occurance, ``no'' if stream is empty. ``finisher'', if not None, is called on a found element"""
 		return self.__position (finisher, no, lambda c: 0, 'least')
 	
-	def sum (self) -> int:
+	def sum (self, start: Optional[int] = None) -> int:
 		"""Returns the sum of the stream"""
-		return sum (self.iterator)
-	
+		if start is not None:
+			return sum (cast (Iterable, self.iterator), start)
+		return sum (cast (Iterable, self.iterator))
+
+	@overload
+	def min (self, no: T = ...) -> T: ...
+	@overload
+	def min (self, no: None = ...) -> Optional[T]: ...
 	def min (self, no: Any = __sentinel) -> Any:
 		"""Returns the minimum value of the stream"""
 		try:
-			return min (self.iterator)
+			return min (cast (Iterable, self.iterator))
 		except ValueError:
 			return self.__checkNo (no, 'min')
 
+	@overload
+	def max (self, no: T = ...) -> T: ...
+	@overload
+	def max (self, no: None = ...) -> Optional[T]: ...
 	def max (self, no: Any = __sentinel) -> Any:
 		"""Returns the maximum value of the stream"""
 		try:
-			return max (self.iterator)
+			return max (cast (Iterable, self.iterator))
 		except ValueError:
 			return self.__checkNo (no, 'max')
 	
-	def count (self, *args: Any) -> int:
+	def count (self, *args: T) -> int:
 		"""Without arguments returns the number of elements or return all elements which are part of ``args''"""
 		if len (args) == 0:
 			try:
@@ -429,14 +499,14 @@ is added unmapped to the new stream."""
 				return sum ((1 for _ in self.iterator))
 		return sum ((1 for _v in self.iterator if _v in args))
 	
-	def counter (self) -> typing.Counter[Any]:
+	def counter (self) -> typing.Counter[T]:
 		return Counter (self.iterator)
 		
-	def any (self, predicate: Callable[[Any], bool] = bool) -> bool:
+	def any (self, predicate: Callable[[T], bool] = bool) -> bool:
 		"""Return True if at least one element matches ``predicate''"""
 		return sum ((1 for _v in self.iterator if predicate (_v))) > 0
 		
-	def all (self, predicate: Callable[[Any], bool] = bool) -> bool:
+	def all (self, predicate: Callable[[T], bool] = bool) -> bool:
 		"""Return True if all element match ``predicate''"""
 		counter = [0]
 		def predicate_and_count (v: Any) -> bool:
@@ -445,11 +515,16 @@ is added unmapped to the new stream."""
 		matches = sum ((1 for _v in self.iterator if predicate_and_count (_v)))
 		return matches == counter[0]
 
-	def each (self, predicate: Callable[[Any], Any]) -> None:
+	def each (self, predicate: Callable[[T], Any]) -> None:
 		"""Calls ``predicate'' on each element of the stream like java forEach()"""
 		deque (filter (predicate, self.iterator), maxlen = 0)
 	
-	def dispatch (self, *args: Any, exclusive: bool = False) -> None:
+	def dispatch (self,
+		condition: Callable[[T], bool],
+		modifier: Callable[[T], O],
+		*args: Union[Callable[[T], bool], Callable[[T], O]],
+		exclusive: bool = False
+	) -> None:
 		"""``args'' is a list of filter/handler functions
 
 If the number of arguments is odd, then the last method is called if
@@ -459,7 +534,7 @@ the dispatching for this element ends. If the keyword argument
 exclusive is False (the default), then each method where the filter
 matches (and also the default method, if available) are called for
 each element. """
-		(conditions, default) = self.__functions (*args)
+		(conditions, default) = self.__functions (condition, modifier, *args)
 		def dispatcher (elem: Any) -> bool:
 			for (predicate, callback) in conditions:
 				if predicate (elem):
@@ -471,23 +546,23 @@ each element. """
 			return False
 		deque (filter (dispatcher, self.iterator), maxlen = 0)
 	
-	def list (self) -> List[Any]:
+	def list (self) -> List[T]:
 		"""Returns the stream as a list like java asList()"""
 		return list (self.iterator)
 
-	def tuple (self) -> Tuple[Any, ...]:
+	def tuple (self) -> Tuple[T, ...]:
 		"""Returns the stream as a tuple"""
 		return tuple (self.iterator)
 
-	def set (self) -> Set[Any]:
+	def set (self) -> Set[T]:
 		"""Returns the stream as set"""
 		return set (self.iterator)
 	
 	def dict (self) -> Dict[Any, Any]:
 		"""Returns the stream as a dictionary"""
-		return dict (self.iterator)
+		return dict (cast (Iterable, self.iterator))
 	
-	def deque (self) -> typing.Deque[Any]:
+	def deque (self) -> typing.Deque[T]:
 		"""Return the stream as collections.deque"""
 		return deque (self.iterator)
 	
@@ -495,7 +570,7 @@ each element. """
 		"""Returns a dict of grouped elements as separated by ``predicate'', optional modify the final dict by ``finisher''."""
 		rc: DefaultDict[Any, List[Any]] = defaultdict (list)
 		if predicate is None:
-			for (key, value) in self.iterator:
+			for (key, value) in cast (Iterable, self.iterator):
 				rc[key].append (value)
 		else:
 			for elem in self.iterator:
@@ -521,7 +596,7 @@ each element. """
 			
 	def collect (self,
 		supplier: Any,
-		accumulator: Optional[Callable[[Any, Any], Any]] = None,
+		accumulator: Optional[Callable[[Any, Any], None]] = None,
 		finisher: Optional[Callable[[Any, int], Any]] = None,
 		progress: Union[None, str, Stream.Progress] = None,
 		checkpoint: Optional[int] = None
@@ -567,3 +642,14 @@ progression. See method ``progress'' for further details."""
 		if progressor:
 			progressor.final (counter)
 		return collector.finisher (s, counter)
+
+	def collect_to (self,
+		t: Type[O],
+		supplier: Any,
+		accumulator: Optional[Callable[[Any, T], None]] = None,
+		finisher: Optional[Callable[[Any, int], O]] = None,
+		progress: Union[None, str, Stream.Progress] = None,
+		checkpoint: Optional[int] = None
+	) -> O:
+		"""Like collect, but passing a type as a hint for the return type for type checking"""
+		return cast (O, self.collect (supplier, accumulator, finisher, progress, checkpoint))

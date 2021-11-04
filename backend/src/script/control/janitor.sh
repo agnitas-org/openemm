@@ -13,5 +13,4 @@
 . $HOME/scripts/config.sh
 active janitor
 #
-py3select $HOME/scripts/janitor3.py $HOME/scripts/janitor.py
-exec $command "$@"
+exec $HOME/scripts/janitor3.py "$@"

@@ -220,12 +220,13 @@ class Scanner:
 			if self.provider_log and dsn and dsn.count ('.') == 2:
 				try:
 					with open (self.provider_log, 'a') as fd:
-						fd.write ('%d;%s;%s;%s;%s\n' % (
+						fd.write ('%d;%s;%s;%s;%s%s\n' % (
 							time.mktime (timestamp.timetuple ()) if timestamp else time.time (),
 							fqdn,
 							dsn,
 							relay,
-							recipient.strip ('<>').split ('@')[-1]
+							recipient.strip ('<>').split ('@')[-1],
+							(f';{reason}' if not dsn.startswith ('2') else '')
 						))
 				except IOError as e:
 					logger.exception (f'Unable to write {self.provider_log}: {e}')
@@ -416,7 +417,7 @@ class ScannerSendmail (Scanner):
 #
 class ScannerPostfix (Scanner):
 	__slots__ = ['uid']
-	messageid_log = os.path.join (base, 'log', 'messageid.log')
+	messageid_log = os.path.join (base, 'var', 'run', 'messageid.log')
 	tracker_path = os.path.join (base, 'var', 'run', 'scanner-postfix.track3')
 	SEC_MESSAGEID: Final[str] = 'message-id'
 	
@@ -626,7 +627,7 @@ class Slrtscn (Runtime):
 		)
 		parser.add_argument (
 			'-P', '--provider-log',
-			action = 'store', default = normalize_path (syscfg.get_str ('provider-log', os.path.join (base, 'log', 'provider.log'))),
+			action = 'store', default = normalize_path (syscfg.get ('provider-log', os.path.join (base, 'log', 'provider.log'))),
 			help = 'Filename to store provider information ro',
 			dest = 'provider_log'
 		)

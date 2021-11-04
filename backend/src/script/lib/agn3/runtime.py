@@ -9,18 +9,20 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
-import	sys, os, logging, argparse, time, signal
+import	sys, os, logging, argparse, time, signal, json
 from	collections import namedtuple
 from	dataclasses import dataclass
 from	traceback import print_exception
 from	typing import Any, Callable, Optional
-from	typing import List
+from	typing import Dict, List
 from	.config import Config
 from	.daemon import Daemonic, Watchdog
-from	.definitions import host, program
+from	.definitions import host, program, syscfg
+from	.exceptions import error
+from	.ignore import Ignore
 from	.lock import Lock
 from	.log import log
-from	.parser import Unit
+from	.parameter import Parameter
 from	.process import Processtitle, Parallel
 from	.stream import Stream
 #
@@ -28,6 +30,60 @@ __all__ = ['Runtime', 'CLI']
 #
 logger = logging.getLogger (__name__)
 #
+def _expand_inline (args: List[str], enviroment: Optional[Dict[str, str]] = None) -> List[str]:
+	"""Expands element starting with an '@' from an enviroment variable or a file
+
+>>> _expand_inline (['this', 'is', '@(sample)', 'test'], {})
+Traceback (most recent call last):
+...
+agn3.exceptions.error: @(sample): specified enviroment not found
+>>> _expand_inline (['this', 'is', '@(sample)', 'test'], {'sample': '-?\\n--target=destination\\nfile1\\nfile2\\n'})
+['this', 'is', '-?', '--target=destination', 'file1', 'file2', 'test']
+>>> import json
+>>> _expand_inline (['this', 'is', '@(sample)', 'test'], {'sample': json.dumps (['very', 'great', 'example'])})
+['this', 'is', 'very', 'great', 'example', 'test']
+>>> _expand_inline (['this', 'is', '@(sample)', 'test'], {'sample': json.dumps (['very', 'great', 'example', ['even', 'better']])})
+['this', 'is', 'very', 'great', 'example', 'even', 'better', 'test']
+>>> _expand_inline (['this', 'is', '@(sample)', 'test'], {'sample': json.dumps (['very', 'great', 'example', {'even': 'better'}])})
+['this', 'is', 'very', 'great', 'example', 'even', 'better', 'test']
+>>> _expand_inline (['this', 'is', '@(sample)', 'test'], {'sample': json.dumps (['very', 'great', 'example', {'even': 'better', 'noone': None}])})
+['this', 'is', 'very', 'great', 'example', 'even', 'better', 'noone', 'test']
+"""
+	expanded: List[str] = []
+	for arg in args:
+		if arg.startswith ('@'):
+			if arg.startswith ('@(') and arg.endswith (')'):
+				try:
+					content = (enviroment if enviroment is not None else os.environ)[arg[2:-1]]
+				except KeyError:
+					raise error (f'{arg}: specified enviroment not found')
+			else:
+				try:
+					with open (arg[1:]) as fd:
+						content = fd.read ()
+				except IOError as e:
+					raise error (f'{arg}: failed to read file: {e}')
+			try:
+				def parsing (parsed: Any) -> None:
+					if isinstance (parsed, list):
+						for element in parsed:
+							parsing (element)
+					elif isinstance (parsed, dict):
+						for (option, value) in parsed.items ():
+							expanded.append (option)
+							if value is not None:
+								parsing (value)
+					else:
+						expanded.append (str (parsed))
+				
+				parsing (json.loads (content))
+				
+			except json.decoder.JSONDecodeError:
+				expanded += content.strip ().split ('\n')
+		else:
+			expanded.append (arg)
+	return expanded
+
 class Runtime (Watchdog):
 	"""class Runtime (Watchdog)
 
@@ -101,6 +157,7 @@ def cleanup (self):
 		processtitle: Processtitle = Processtitle ()
 		verbose: int = 0
 		dryrun: bool = False
+		expected_instances: int = 0
 		lock_lazy: bool = False
 		lock_id: Optional[str] = None
 		background: bool = False
@@ -121,6 +178,9 @@ def cleanup (self):
 			self.cfg.setup_namespace (**kwargs)
 			self.cfg.enable_substitution ()
 			self.cfg.read ()
+			with Ignore (KeyError):
+				for (option, value) in Parameter (syscfg[f'option:{program}']).items ():
+					self.cfg[option] = value
 		self.ctx = Runtime.Context ()
 
 	def run (self, *args: Any, **kwargs: Any) -> Any:
@@ -130,6 +190,17 @@ def cleanup (self):
 			self.setup ()
 		with log ('argparse'):
 			self.__argument_parsing ()
+		#
+		executors = self.executors ()
+		if self.ctx.expected_instances:
+			count = 1 if self.ctx.watchdog else 0
+			if executors is not None:
+				count += len (executors)
+			else:
+				count += 1
+			print (count, flush = True)
+			return True
+		#
 		if self.ctx.background:
 			if self.push_to_background ():
 				logger.info ('Started background daemon process')
@@ -157,7 +228,6 @@ def cleanup (self):
 							return function.__name__
 						except AttributeError:
 							return str (function)
-					executors = self.executors ()
 					if self.ctx.watchdog:
 						self.ctx.processtitle ('watchdog')
 						if executors is not None:
@@ -229,12 +299,10 @@ def cleanup (self):
 			
 	def __argument_parsing (self) -> None:
 		Option = namedtuple ('Option', ['option', 'value'])
-		unit = Unit ()
 		parser = argparse.ArgumentParser (
 			description = self.program_description,
 			epilog = self.program_epilog,
 			formatter_class = argparse.RawDescriptionHelpFormatter,
-			fromfile_prefix_chars = '@',
 			add_help = False
 		)
 		parser.add_argument ('-h', '-?', '--help', action = 'help', help = 'shows help and exits')
@@ -244,21 +312,22 @@ def cleanup (self):
 		parser.add_argument ('-c', '--config', action = 'store', help = 'read configuration from specified file')
 		if self.supports ('dryrun'):
 			parser.add_argument ('-n', '--dryrun', action = 'store_true', default = self.ctx.dryrun, help = 'switch to dry run mode, if supported')
+		parser.add_argument ('-i', '--expected-instances', action = 'store_true', default = self.ctx.dryrun, help = 'display expected instances for choosen invocation', dest = 'expected_instances')
 		if self.supports ('background'):
 			parser.add_argument ('-b', '--background', action = 'store_true', default = self.ctx.background, help = 'start process in background')
 		if self.supports ('watchdog'):
 			parser.add_argument ('-w', '--watchdog', action = 'store_true', default = self.ctx.watchdog, help = 'start under watchdog control')
-			parser.add_argument ('-g', '--restart-delay', action = 'store', type = unit, default = self.ctx.restart_delay, dest = 'restart_delay')
-			parser.add_argument ('-t', '--termination-delay', action = 'store', type = unit, default = self.ctx.termination_delay, dest = 'termination_delay')
+			parser.add_argument ('-g', '--restart-delay', action = 'store', type = self.unit, default = self.ctx.restart_delay, dest = 'restart_delay')
+			parser.add_argument ('-t', '--termination-delay', action = 'store', type = self.unit, default = self.ctx.termination_delay, dest = 'termination_delay')
 			parser.add_argument ('-f', '--max-incarnations', action = 'store', type = int, default = self.ctx.max_incarnations, dest = 'max_incarnations')
-			parser.add_argument ('-r', '--heartbeat', action = 'store', type = unit, default = self.ctx.heartbeat)
+			parser.add_argument ('-r', '--heartbeat', action = 'store', type = self.unit, default = self.ctx.heartbeat)
 		parser.add_argument ('-z', '--lock-lazy', action = 'store_true', default = self.ctx.lock_lazy, dest = 'lock_lazy')
 		parser.add_argument ('-l', '--lock-id', action = 'store', default = self.ctx.lock_id, dest = 'lock_id')
 		parser.add_argument ('-o', '--option', action = 'append', default = [], type = lambda v: Option (*tuple (v.split ('=', 1))))
 		if self.supports ('parameter'):
 			parser.add_argument ('parameter', nargs = '*', help = 'command line parameter')
 		self.add_arguments (parser)
-		args = parser.parse_args ()
+		args = parser.parse_args (args = _expand_inline (sys.argv[1:]))
 		self.use_arguments (args)
 		self.ctx.verbose = args.verbose - args.quiet
 		if self.ctx.verbose < 0:
@@ -277,6 +346,7 @@ def cleanup (self):
 			self.cfg.read (args.config)
 		if self.supports ('dryrun'):
 			self.ctx.dryrun = args.dryrun
+		self.ctx.expected_instances = args.expected_instances
 		if self.supports ('background'):
 			self.ctx.background = args.background
 		if self.supports ('watchdog'):
@@ -318,7 +388,7 @@ class CLI (Daemonic):
 		rt = cls ()
 		sys.exit (0 if rt.run () else 1)
 
-	def run (self) -> Any:
+	def run (self) -> bool:
 		#
 		self.setup ()
 		self.__argument_parsing ()
@@ -338,12 +408,11 @@ class CLI (Daemonic):
 			description = self.program_description,
 			epilog = self.program_epilog,
 			formatter_class = argparse.RawDescriptionHelpFormatter,
-			fromfile_prefix_chars = '@',
 			add_help = False
 		)
 		parser.add_argument ('-h', '-?', '--help', action = 'help', help = 'shows help and exits')
 		self.add_arguments (parser)
-		self.use_arguments (parser.parse_args ())
+		self.use_arguments (parser.parse_args (args = _expand_inline (sys.argv[1:])))
 	#
 	# Methods to be overwritten by client
 	def setup (self) -> None:

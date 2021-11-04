@@ -88,7 +88,7 @@ a default database driver is created for database access."""
 								'INSERT INTO datasource_description_tbl ('
 								'            description, company_id, sourcegroup_id, timestamp'
 								') VALUES ('
-								'            :description, :company_id, :source_group, current_timestamp'
+								'            :description, :company_id, :source_group, CURRENT_TIMESTAMP'
 								')'
 							)
 						)

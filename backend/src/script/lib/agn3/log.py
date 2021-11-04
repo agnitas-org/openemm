@@ -13,51 +13,39 @@ from	__future__ import annotations
 import	sys, os, time, stat
 import	logging
 from	dataclasses import dataclass
-from	datetime import datetime, date
+from	datetime import datetime, timedelta
 from	traceback import format_exception
 from	types import TracebackType
 from	typing import Any, Callable, Optional, Union
-from	typing import Dict, List, Set, TextIO, Type
+from	typing import Dict, Generator, List, Set, TextIO, Type
 from	.definitions import base, host, program
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import create_path
+from	.parser import Unit
 #
 __all__ = ['LogID', 'log', 'mark', 'log_limit', 'interactive']
 #
 class Limiter:
-	__slots__ = ['amount', 'summary', 'seen']
-	@dataclass
-	class Entry:
-		count: int
-		last: int
+	__slots__ = ['seen']
+	unit = Unit ()
+	def __init__ (self) -> None:
+		self.seen: Dict[str, datetime] = {}
+	
+	def __call__ (self, method: Callable[[str], None], message: str, *, key: Optional[str] = None, duration: Unit.Parsable = None) -> None:
+		now = datetime.now ()
+		with Ignore (KeyError):
+			expire = self.seen[key if key is not None else message]
+			if expire > now:
+				return
+		#
+		method (message)
+		if duration is None:
+			expire = datetime.fromordinal (now.toordinal () + 1)
+		else:
+			expire = now + timedelta (seconds = self.unit.parse (duration))
+		self.seen[key if key is not None else message] = expire
 		
-	def __init__ (self, amount: int = 1, summary: Optional[Callable[[date, int, str], None]] = None) -> None:
-		self.amount = amount
-		self.summary = summary
-		self.seen: Dict[str, Limiter.Entry] = {}
-
-	def __del__ (self) -> None:
-		if self.summary is not None:
-			for (message, entry) in sorted (self.seen.items (), key = lambda kv: (kv[1].last, kv[0])):
-				if entry.count > self.amount:
-					self.summary (date.fromordinal (entry.last), entry.count, message)
-
-	def __call__ (self, method: Callable[..., None], message: str) -> None:
-		today = datetime.now ().toordinal ()
-		try:
-			entry = self.seen[message]
-			if entry.last != today:
-				if entry.count > self.amount and self.summary is not None:
-					self.summary (date.fromordinal (entry.last), entry.count, message)
-				entry.count = 0
-				entry.last = today
-		except:
-			entry = self.seen[message] = Limiter.Entry (count = 0, last = today)
-		entry.count += 1
-		if entry.count <= self.amount:
-			method (message)
-
 log_limit = Limiter ()
 #
 class LogID:
@@ -112,7 +100,7 @@ class _Log:
 		self.host = host
 		self.name = program
 		self.path = os.environ.get ('LOG_HOME', os.path.join (base, 'var', 'log'))
-		self.intercept: Optional[Callable[[logging.LogRecord], None]] = None
+		self.intercept: Optional[Callable[[logging.LogRecord, str], None]] = None
 		#
 		self.last = 0
 		self.custom_id: Optional[str] = None
@@ -220,13 +208,13 @@ output methods, write logfile to file or defined output stream.
 
 If ``self.intercept'' is not None, this method is called instead. This
 can be used to avoid writing logfiles for interactive applications."""
+		lid = self.custom_id if self.custom_id else record.module
+		if self.verbosity > 1:
+			lid += f' ({record.name}.{record.funcName}:{record.lineno})'
 		if self.intercept is not None:
-			self.intercept (record)
+			self.intercept (record, lid)
 		elif record.levelno >= self.loglevel or (record.levelno >= self.outlevel and self.outstream is not None):
 			now = datetime.now ()
-			lid = self.custom_id if self.custom_id else record.module
-			if self.verbosity > 1:
-				lid += f' ({record.name}.{record.funcName}:{record.lineno})'
 			prefix = f'[{now.day:02d}.{now.month:02d}.{now.year:04d}  {now.hour:02d}:{now.minute:02d}:{now.second:02d}] {record.process} {record.levelname}/{lid}'
 			messages = [record.getMessage () + '\n']
 			if record.exc_info is not None and type (record.exc_info) is tuple and len (record.exc_info) == 3:
@@ -241,6 +229,41 @@ can be used to avoid writing logfiles for interactive applications."""
 				if record.levelno >= self.outlevel and self.outstream is not None:
 					self.outstream.write (output_string)
 					self.outstream.flush ()
+
+	class Datareader:
+		@dataclass
+		class Track:
+			path: str
+			position: int = 0
+			@classmethod
+			def new (cls, name: str, timestamp: datetime) -> _Log.Datareader.Track:
+				return cls (path = log.data_filename (name = name, ts = timestamp))
+
+		__slots__ = ['name', 'track']
+		def __init__ (self, name: str) -> None:
+			self.name = name
+			self.track: Dict[int, _Log.Datareader.Track] = {}
+		
+		def __call__ (self, reference: Optional[datetime] = None) -> Generator[str, None, None]:
+			now = datetime.now ()
+			now_ordinal = now.toordinal ()
+			ref_ordinal = reference.toordinal () if reference is not None else now_ordinal
+			for offset in (-1, 0, 1):
+				current = ref_ordinal + offset
+				if current <= now_ordinal:
+					try:
+						track = self.track[current]
+					except KeyError:
+						track = self.track[current] = _Log.Datareader.Track.new (self.name, datetime.fromordinal (current))
+					with Ignore (IOError), open (track.path, 'rb') as fd:
+						if track.position > 0:
+							fd.seek (track.position)
+						for line in fd:
+							yield line.decode ('UTF-8', errors = 'backslashreplace')
+							track.position += len (line)
+
+	def datareader (self, name: str) -> _Log.Datareader:
+		return _Log.Datareader (name)
 
 class _RootHandler (logging.Handler):
 	__slots__ = ['log', 'last']
@@ -286,8 +309,13 @@ _original_excepthook = sys.excepthook
 sys.excepthook = _except
 
 def interactive (on: bool = True) -> None:
-	def interceptor (record: logging.LogRecord) -> None:
-		sys.stderr.write ('{message}\n'.format (message = record.getMessage ()))
+	def interceptor (record: logging.LogRecord, lid: str) -> None:
+		sys.stderr.write ('{process} {level}/{lid} {message}\n'.format (
+			process = record.process,
+			level = record.levelname,
+			lid = lid,
+			message = record.getMessage ()
+		))
 		sys.stderr.flush ()
 	log.intercept = interceptor if on else None
 	sys.excepthook = _original_excepthook if on else _except

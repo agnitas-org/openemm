@@ -25,7 +25,7 @@ from	.io import copen, CSVDefault, CSVWriter
 from	.parser import ParseTimestamp, Unit
 from	.stream import Stream
 #
-__all__ = ['DBIgnore', 'DB', 'Row']
+__all__ = ['Row', 'DBIgnore', 'DB', 'TempDB']
 #
 logger = logging.getLogger (__name__)
 #
@@ -280,10 +280,15 @@ queryc() and a querys() method is also available using the cache."""
 		"""Excecute a statement on the database"""
 		return self.check_open_cursor ().execute (statement)
 
-	def stream (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Stream:
+	def stream (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Stream[Row]:
 		if self._cache is not None:
 			return Stream (self.query (statement, parameter, cleanup))
 		return self.check_open ().stream (statement, parameter, cleanup)
+	
+	def streamc (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Stream[Row]:
+		if self._cache is not None:
+			return Stream (self.queryc (statement, parameter, cleanup))
+		return self.check_open ().streamc (statement, parameter, cleanup)
 
 	def exists_table (self, table_name: str, cachable: bool = False) -> bool:
 		"""Check database if ``table_name'' exists as table, if ``cachable'' is True, cache the result for faster future access"""
@@ -744,3 +749,25 @@ if it had not existed."""
 		if rc is not None:
 			return rc
 		raise error ('failed to create checkpoint: {last_error}'.format (last_error = self.last_error ()))
+
+class TempDB:
+	__slots__ = ['db', 'use']
+	def __init__ (self, db: Optional[DB]) -> None:
+		self.db = db
+		self.use: DB = db if db is not None else DB ()
+		
+	def __enter__ (self) -> DB:
+		if self.use.isopen ():
+			return self.use
+		if self.db is not None:
+			self.db = None
+			self.use = DB ()
+			if self.use.isopen ():
+				return self.use
+		raise error ('failed to open database: {error}'.format (error = self.use.last_error ()))
+
+	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+		if self.use != self.db:
+			self.use.close ()
+		return None
+		

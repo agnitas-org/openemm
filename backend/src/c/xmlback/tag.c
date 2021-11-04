@@ -471,13 +471,16 @@ tag_parse (tag_t *t, blockmail_t *blockmail) /*{{{*/
 							sprintf (dbuf, "%ld", (long) blockmail_now (blockmail));
 							xmlBufferEmpty (t -> value);
 							xmlBufferCCat (t -> value, dbuf);
-						}
-						else if ((! strcmp (cur -> val, "MFROM")) || (! strcmp (cur -> val, "RPATH"))) {
-							const char	*user;
+						} else if ((! strcmp (cur -> val, "MFROM")) || (! strcmp (cur -> val, "RPATH"))) {
 							const char	*mfrom;
-							struct passwd	*pw;
 							
-							if (blockmail -> fqdn) {
+							if ((mfrom = find_default (t)) && ((! blockmail -> fqdn) || spf_is_valid (blockmail -> spf, mfrom))) {
+								xmlBufferEmpty (t -> value);
+								xmlBufferCCat (t -> value, mfrom);
+							} else {
+								const char	*user;
+								struct passwd	*pw;
+
 								user = NULL;
 								setpwent ();
 								if (pw = getpwuid (getuid ()))
@@ -497,9 +500,6 @@ tag_parse (tag_t *t, blockmail_t *blockmail) /*{{{*/
 								xmlBufferCCat (t -> value, "@");
 								xmlBufferCCat (t -> value, blockmail -> fqdn);
 								endpwent ();
-							} else if (mfrom = find_default (t)) {
-								xmlBufferEmpty (t -> value);
-								xmlBufferCCat (t -> value, mfrom);
 							}
 							if (! strcmp (cur -> val, "RPATH"))
 								t -> proc = proc_alloc_mfrom (t, blockmail);

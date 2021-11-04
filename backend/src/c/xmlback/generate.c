@@ -191,43 +191,6 @@ create_bcc_head (buffer_t *target, blockmail_t *blockmail, const char *bcc, int 
 	}
 	return rc && found_receiver && found_message_id && found_to;
 }/*}}}*/
-static bool_t
-flatten_header (buffer_t *target, buffer_t *header) /*{{{*/
-{
-	bool_t		rc;
-	const byte_t	*head = buffer_content (header);
-	int		hlen = buffer_length (header);
-	const byte_t	*ptr;
-	int		pos, len;
-
-	rc = true;
-	buffer_clear (target);
-	pos = 0;
-	while (rc && (pos < hlen)) {
-		ptr = head + pos;
-		while (pos < hlen && (head[pos] != '\n'))
-			++pos;
-		if (pos < hlen)
-			++pos;
-		len = (head + pos) - ptr;
-		if (isspace (*ptr)) {
-			rc = buffer_append (target, ptr, len);
-		} else if (*ptr == 'H') {
-			++ptr, --len;
-			if (*ptr == '?') {
-				++ptr, --len;
-				while ((len > 0) && (*ptr != '?'))
-					++ptr, --len;
-				if (len > 0)
-					++ptr, --len;
-			}
-			rc = buffer_append (target, ptr, len);
-		}
-	}
-	if (rc)
-		rc = buffer_appendch (target, '\n');
-	return rc;
-}/*}}}*/
 
 typedef struct { /*{{{*/
 	char	*dir;		/* the spool directory			*/
@@ -1258,7 +1221,7 @@ sendmail_inject_mail (blockmail_t *blockmail, sendmail_t *s, gen_t *g, receiver_
 			buffer_t	*flatten;
 
 			if (flatten = buffer_alloc (buffer_length (header))) {
-				st = flatten_header (flatten, header);
+				st = flatten_header (flatten, header, false);
 				if (st) {
 					st = write_content (fds[1], buffer_content (flatten), buffer_length (flatten), nl, nllen);
 					if (! st)

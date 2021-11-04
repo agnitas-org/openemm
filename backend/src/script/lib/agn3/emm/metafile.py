@@ -13,7 +13,7 @@ import	re, time, os
 from	datetime import datetime
 from	typing import Union
 from	typing import List
-from	..definitions import licence
+from	..definitions import base, licence
 from	..ignore import Ignore
 #
 __all__ = ['METAFile']
@@ -25,9 +25,16 @@ this class can help to interpret the filenames of files created by the
 merger which contains serveral informations."""
 	__slots__ = [
 		'valid', 'error', 'path', 'directory', 'filename', 'extension', 'basename',
-		'licence', 'company', 'timestamp', 'mailid', 'mailing', 'blocknr', 'blockid',
+		'licence_id', 'company_id', 'timestamp', 'mailid', 'mailing_id', 'blocknr', 'blockid',
 		'single'
 	]
+	temp_directory = os.path.join (base, 'var', 'spool', 'TEMP')
+	sideshow_directory = os.path.join (base, 'var', 'spool', 'SIDESHOW')
+	meta_directory = os.path.join (base, 'var', 'spool', 'META')
+	archive_directory = os.path.join (base, 'var', 'spool', 'ARCHIVE')
+	recover_directory = os.path.join (base, 'var', 'spool', 'RECOVER')
+	deleted_directory = os.path.join (base, 'var', 'spool', 'DELETED')
+	outdated_directory = os.path.join (base, 'var', 'spool', 'OUTDATED')
 	splitter = re.compile ('[^0-9]+')
 	def __init__ (self, path: str) -> None:
 		"""Sets the path to the XML file
@@ -51,17 +58,17 @@ filename."""
 			n = parts[0].find ('-')
 			if n != -1:
 				try:
-					self.licence = int (parts[0][n + 1:])
+					self.licence_id = int (parts[0][n + 1:])
 				except ValueError:
-					self.licence = -1
+					self.licence_id = -1
 					self.__error (f'Unparsable licence ID in "{parts[0]}" found')
 			else:
-				self.licence = licence
+				self.licence_id = licence
 			cinfo = parts[2].split ('-')
 			try:
-				self.company = int (cinfo[0])
+				self.company_id = int (cinfo[0])
 			except ValueError:
-				self.company = -1
+				self.company_id = -1
 				self.__error (f'Unparseable company ID in "{parts[2]}" found')
 			self.timestamp = self.__parse_timestamp (parts[1])
 			self.mailid = parts[3]
@@ -70,7 +77,7 @@ filename."""
 				self.__error (f'Unparseable mailing ID in "{parts[3]}" found')
 			else:
 				try:
-					self.mailing = int (mparts[-1])
+					self.mailing_id = int (mparts[-1])
 				except ValueError:
 					self.__error (f'Unparseable mailing ID in mailid "{self.mailid}" found')
 			try:

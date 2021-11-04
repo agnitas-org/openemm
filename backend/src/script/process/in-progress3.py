@@ -87,7 +87,7 @@ class InProgress (CLI):
 							if answer == 'y':
 								count = db.update (
 									'UPDATE maildrop_status_tbl '
-									'SET genstatus = :genstatus, genchange = current_timestamp '
+									'SET genstatus = :genstatus, genchange = CURRENT_TIMESTAMP '
 									'WHERE status_id = :status_id AND genstatus = :oldstatus',
 									{
 										'genstatus': 4,

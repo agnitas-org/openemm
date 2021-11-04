@@ -281,7 +281,7 @@ that all of them had been crossed.
 			self.active = 1
 		
 		def match (self, key: str) -> bool:
-			return self.key == key
+			return self.key is None or self.key == key
 	
 	class PointRe (Point):
 		__slots__ = ['regexp']
@@ -360,7 +360,7 @@ that all of them had been crossed.
 	
 	def __init__ (self) -> None:
 		super ().__init__ ()
-		self.dispatch: Dict[str, List[XMLReader.Point]] = {}
+		self.dispatch: Dict[Optional[str], List[XMLReader.Point]] = {}
 		self.borders: Dict[str, List[XMLReader.Point]] = {}
 		self.dispatch_regex: List[XMLReader.Point] = []
 		self.dispatch_callback: List[XMLReader.Point] = []
@@ -386,7 +386,7 @@ that all of them had been crossed.
 			point.active = 0
 	
 	def add_handler (self,
-		key: str,
+		key: Optional[str],
 		enter: Optional[Callable[[str, str, Dict[str, str]], Any]],
 		leave: Optional[Callable[[str, str, Dict[str, str], Optional[str]], Any]],
 		border: Optional[str] = None
@@ -464,8 +464,9 @@ that all of them had been crossed.
 		key = '.'.join (elem)
 		self.level = self.Level (key, name, attrs)
 		self.stage.append (self.level)
-		if key in self.dispatch:
-			self.level.add_points (self.dispatch[key])
+		for exact in [None, key]:
+			if exact in self.dispatch:
+				self.level.add_points (self.dispatch[exact])
 		while elem:
 			elem.pop ()
 			wkey = '.'.join (elem) + '.'

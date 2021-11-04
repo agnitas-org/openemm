@@ -68,6 +68,9 @@ class EMail (IDs):
 	@staticmethod
 	def from_string (content: str) -> EmailMessage:
 		return cast (EmailMessage, email.message_from_string (content, policy = email.policy.default))
+	@staticmethod
+	def from_bytes (content: bytes) -> EmailMessage:
+		return cast (EmailMessage, email.message_from_bytes (content, policy = email.policy.default))
 	nofold_policy = EmailPolicy (refold_source = 'none')
 	@staticmethod
 	def as_string (msg: EmailMessage, unixfrom: bool) -> str:
@@ -702,9 +705,13 @@ overwritten to implement further logic for resolving the customer."""
 	def __parse_header (self, payload: EmailMessage) -> None:
 		for header in ['message-id', 'references', 'in-reply-to']:
 			try:
-				self.__find_message_id (payload[header])
+				value = payload[header]
+				try:
+					self.__find_message_id (value)
+				except Exception as e:
+					logger.warning (f'{header}: cannot find header due to: {e}')
 			except Exception as e:
-				logger.warning (f'{header}: cannot find header due to: {e}')
+				logger.debug (f'{header}: ignore invalid header: {e}')
 		self.__find_subject (payload['subject'])
 		self.__find_list_unsubscribe (payload['list-unsubscribe'])
 	

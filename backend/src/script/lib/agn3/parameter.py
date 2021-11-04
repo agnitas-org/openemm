@@ -14,10 +14,12 @@ import	re, json
 from	typing import Any, Callable, Optional
 from	typing import Dict, ItemsView, KeysView, List, NamedTuple, ValuesView
 from	typing import cast
+from	.exceptions import error
+from	.ignore import Ignore
 from	.stream import Stream
 from	.tools import atob
 
-__all__ = ['Parameter', 'MailingParameter']
+__all__ = ['Parameter', 'SimpleParameter', 'MailingParameter']
 #
 class Parameter:
 	"""Parsing comma separated list of key value pairs
@@ -182,6 +184,27 @@ method is missing, the default method is used """
 		"""Clear out all data"""
 		self.data.clear ()
 
+class SimpleParameter (Parameter):
+	"""Handle simple parameter constructs without quotes"""
+	__slots__: List[str] = []
+	def __simple_decode (self, ctx: Dict[str, Any], s: str, target: Dict[str, str]) -> None:
+		for entry in s.split (','):
+			with Ignore (ValueError):
+				(key, value) = entry.split ('=', 1)
+				target[key.strip ()] = value.strip ()
+
+	def __simple_encode (self, ctx: Dict[str, Any], source: Dict[str, str]) -> str:
+		return (Stream (source.items ())
+			.error (lambda kv: ',' in kv[0] or ',' in kv[1], lambda e: error (f'no comma allowed for SimpleParameter in key "{e[0]}" or value "{e[1]}"'))
+			.map (lambda kv: f'{kv[0]}={kv[1]}')
+			.join (',')
+		)
+		
+	def __init__ (self, s: Optional[str] = None) -> None:
+		super ().__init__ ()
+		self.add_method (None, self.__simple_decode, self.__simple_encode)
+		if s is not None:
+			self.loads (s)
 
 class MailingParameter (Parameter):
 	"""Derivated class to handle format as found in mailing_mt_tbl"""

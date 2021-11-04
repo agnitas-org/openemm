@@ -223,6 +223,10 @@ struct block { /*{{{*/
 	DO_DECL (tagpos);		/* all tags with position in ..	*/
 					/* .. content			*/
 	tagpos_t	**sorted;	/* for output sorted tagpos	*/
+	struct {
+		buffer_t	*source;	/* source copy ..	*/
+		buffer_t	*target;	/* .. and target for ..	*/
+	}		revalidation;	/* .. revalidation of mfrom	*/
 	bool_t		inuse;		/* required during generation	*/
 	/*}}}*/
 };
@@ -416,6 +420,7 @@ struct blockmail { /*{{{*/
 	int		company_id;
 	var_t		*company_info;
 	int		mailinglist_id;
+	xmlBufferPtr	mailinglist_name;
 	int		mailing_id;
 	xmlBufferPtr	mailing_name;
 	int		maildrop_status_id;
@@ -495,8 +500,12 @@ struct blockmail { /*{{{*/
 	xconv_t		*xconv;
 	/* envelope address */
 	char		*mfrom;
+	/* revalidate envelope from by header from */
+	bool_t		revalidate_mfrom;
 	/* DKIM sign message */
 	void		*dkim;
+	/* validation of SPF */
+	void		*spf;
 	/* for VIP exploder, the parsed block */
 	xmlBufferPtr	vip;
 	/* optional template for onepixel link */
@@ -793,6 +802,7 @@ extern head_t		*head_alloc (void);
 extern head_t		*head_free (head_t *h);
 extern void		head_add (head_t *h, const char *str, int len);
 extern void		head_trim (head_t *h);
+extern bool_t		flatten_header (buffer_t *target, buffer_t *header, bool_t fold);
 
 extern void		*sdkim_alloc (blockmail_t *blockmail, const char *domain, const char *key, const char *ident,
 				      const char *selector, const char *column, bool_t enable_report, bool_t enable_debug);
@@ -800,6 +810,10 @@ extern void		*sdkim_free (void *sp);
 extern bool_t		sdkim_should_sign (void *sp, receiver_t *rec);
 extern char		*sdkim_sign (blockmail_t *blockmail, head_t *head, buffer_t *body);
 extern void		sign_mail (blockmail_t *blockmail, buffer_t *header);
+
+extern void		*spf_alloc (void);
+extern void		*spf_free (void *sp);
+extern bool_t		spf_is_valid (void *sp, const char *address);
 
 /*
  * some support routines

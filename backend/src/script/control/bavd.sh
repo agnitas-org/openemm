@@ -11,19 +11,15 @@
 ####################################################################################################################################################################################################################################################################
 . $HOME/scripts/config.sh
 #
-py3select $HOME/scripts/bavd3.py $HOME/scripts/bavd.py
+command=$HOME/scripts/bavd3.py
 case "$1" in
 start)
 	active bavd
 	shift
-	if py3available; then
-		starter $command -bw "$@"
-	else
-		starter $command "$@"
-	fi
+	starter $command -bw "$@"
 	;;
 stop)
-	softterm $commands
+	softterm $command
 	;;
 status)
 	patternstatus $command
