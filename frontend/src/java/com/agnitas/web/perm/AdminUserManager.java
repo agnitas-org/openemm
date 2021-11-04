@@ -12,7 +12,7 @@ package com.agnitas.web.perm;
 
 import static org.agnitas.util.AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.SessionScope;

@@ -9,6 +9,7 @@
 <%@ page import="com.agnitas.beans.ProfileField" %>
 <%@ page import="com.agnitas.web.ComRecipientAction" %>
 <%@ page import="com.agnitas.web.ComRecipientForm" %>
+<%@ page import="org.agnitas.emm.core.recipient.RecipientUtils" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -280,28 +281,26 @@
                                                 <c:when test="${not empty _agnTbl_allowed_values and isWritable}">
                                                     <div class="col-sm-8" data-field="date-split">
                                                         <c:set var="selectedDateIso"><bean:write name="recipientForm" property="${propName}"/></c:set>
-                                                        <fmt:parseDate var="selectedDate" value="${selectedDateIso}" pattern="${columnValueDatePattern}"/>
-                                                        <c:set var="selectedDateMilliseconds" value="${selectedDate.time}"/>
+                                                        <c:set var="selectedDateStr" value="${RecipientUtils.formatRecipientDateValue(sessionScope['emm.admin'], selectedDateIso)}"/>
 
-                                                        <agn:agnSelect property="${propName}" value="${selectedDateMilliseconds}" styleClass="form-control js-select" data-field-date-split="">
+                                                        <agn:agnSelect property="${propName}" value="${selectedDateStr}" styleClass="form-control js-select" data-field-date-split="">
                                                             <c:if test="${_agnTbl_nullable == 1}">
                                                                 <html:option value="">NULL</html:option>
                                                             </c:if>
 
                                                             <c:set var="selectedDateIsAllowed" value="false"/>
                                                             <c:forEach var="allowedValue" items="${_agnTbl_allowed_values}">
-                                                                <fmt:parseDate var="allowedDate" value="${allowedValue}" pattern="${allowedValueDatePattern}"/>
-                                                                <c:set var="allowedDateMilliseconds" value="${allowedDate.time}"/>
-                                                                <html:option value="${allowedDateMilliseconds}">${fn:escapeXml(allowedValue)}</html:option>
+                                                                <c:set var="formattedValue" value="${RecipientUtils.formatRecipientDateValue(sessionScope['emm.admin'], allowedValue)}"/>
+                                                                <html:option value="${formattedValue}">${fn:escapeXml(formattedValue)}</html:option>
 
-                                                                <c:if test="${selectedDateMilliseconds == allowedDateMilliseconds}">
+                                                                <c:if test="${selectedDateStr eq formattedValue}">
                                                                     <c:set var="selectedDateIsAllowed" value="true"/>
                                                                 </c:if>
                                                             </c:forEach>
 
                                                             <!-- If a selected (currently stored in DB) date value isn't present among allowed values -->
                                                             <c:if test="${not selectedDateIsAllowed}">
-                                                                <html:option value="${selectedDateMilliseconds}"><fmt:formatDate value="${selectedDate}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}" /></html:option>
+                                                                <html:option value="${selectedDateStr}">${selectedDateStr}</html:option>
                                                             </c:if>
                                                         </agn:agnSelect>
                                                     </div>
@@ -331,35 +330,35 @@
                                                 <c:when test="${not empty _agnTbl_allowed_values and isWritable}">
                                                     <div class="col-sm-8" data-field="date-split">
                                                         <c:set var="selectedDateIso"><bean:write name="recipientForm" property="${propName}"/></c:set>
-                                                        <fmt:parseDate var="selectedDate" value="${selectedDateIso}" pattern="${columnValueDatePattern}"/>
-                                                        <c:set var="selectedDateMilliseconds" value="${selectedDate.time}"/>
+                                                        <c:set var="selectedDateStr" value="${RecipientUtils.formatRecipientDateTimeValue(sessionScope['emm.admin'], selectedDateIso)}"/>
 
-                                                        <agn:agnSelect property="${propName}" value="${selectedDateMilliseconds}" styleClass="form-control js-select" data-field-date-split="">
+                                                        <agn:agnSelect property="${propName}" value="${selectedDateStr}" styleClass="form-control js-select" data-field-date-split="">
                                                             <c:if test="${_agnTbl_nullable == 1}">
                                                                 <html:option value="">NULL</html:option>
                                                             </c:if>
 
                                                             <c:set var="selectedDateIsAllowed" value="false"/>
                                                             <c:forEach var="allowedValue" items="${_agnTbl_allowed_values}">
-                                                                <fmt:parseDate var="allowedDate" value="${allowedValue}" pattern="${allowedValueDatePattern}"/>
-                                                                <c:set var="allowedDateMilliseconds" value="${allowedDate.time}"/>
-                                                                <html:option value="${allowedDateMilliseconds}">${fn:escapeXml(allowedValue)}</html:option>
+                                                                <c:set var="formattedValue" value="${RecipientUtils.formatRecipientDateTimeValue(sessionScope['emm.admin'], allowedValue)}"/>
+                                                                <html:option value="${formattedValue}">${fn:escapeXml(formattedValue)}</html:option>
 
-                                                                <c:if test="${selectedDateMilliseconds == allowedDateMilliseconds}">
+                                                                <c:if test="${selectedDateStr eq formattedValue}">
                                                                     <c:set var="selectedDateIsAllowed" value="true"/>
                                                                 </c:if>
                                                             </c:forEach>
 
                                                             <!-- If a selected (currently stored in DB) date value isn't present among allowed values -->
                                                             <c:if test="${not selectedDateIsAllowed}">
-                                                                <html:option value="${selectedDateMilliseconds}"><fmt:formatDate value="${selectedDate}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}" /></html:option>
+                                                                <html:option value="${selectedDateStr}">${selectedDateStr}</html:option>
                                                             </c:if>
                                                         </agn:agnSelect>
                                                     </div>
                                                 </c:when>
                                                 <c:otherwise>
 	                                                <div class="col-sm-8">
-	                                               		<html:text property="${propName}" styleClass="form-control" readonly="${not isWritable}" />
+                                                        <c:set var="selectedDateTime"><bean:write name="recipientForm" property="${propName}"/></c:set>
+                                                        <c:set var="formattedDateTime" value="${RecipientUtils.formatRecipientDateTimeValue(sessionScope['emm.admin'], selectedDateTime)}"/>
+                                                        <input type="text" name="${propName}" value="${formattedDateTime}" class="form-control" ${not isWritable ? 'readonly="readonly"' : ''}/>
 													</div>
                                                 </c:otherwise>
                                             </c:choose>
@@ -399,7 +398,7 @@
                                                     </c:when>
                                                    <c:when test="${_agnTbl_column_name == 'DATASOURCE_ID' or _agnTbl_column_name == 'datasource_id' or _agnTbl_column_name == 'latest_datasource_id' or _agnTbl_column_name == 'LATEST_DATASOURCE_ID'}">
                                                        <c:set var="importExportUrl" value="importexport/datasource/list.action"/>
-                                                        <a href="${importExportUrl}"><html:text property="${propName}" styleClass="form-control" readonly="${not isWritable}"/></a>
+                                                        <a href="${importExportUrl}"><html:text property="${propName}" styleClass="form-control" style="cursor: pointer" readonly="${not isWritable}"/></a>
                                                     </c:when>
                                                     <c:otherwise>
                                                         <html:text property="${propName}" styleClass="form-control" readonly="${not isWritable}"/>

@@ -172,12 +172,13 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 			total += amount;
 		}
 
-		for (Map<String, Object> row : result) {
-			int mailtype = ((Number) row.get("mailtype")).intValue();
-			int amount = ((Number) row.get("amount")).intValue();
-			returnList.add(new RecipientMailtypeRow(mailtype, Math.round(100 * amount / total)));
+		if (total > 0) {
+			for (Map<String, Object> row : result) {
+				int mailtype = ((Number) row.get("mailtype")).intValue();
+				int amount = ((Number) row.get("amount")).intValue();
+				returnList.add(new RecipientMailtypeRow(mailtype, Math.round(100 * amount / total)));
+			}
 		}
-
 		return returnList;
 	}
 	

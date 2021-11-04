@@ -10,15 +10,11 @@
 
 package org.agnitas.web.forms;
 
-import java.io.Serializable;
-
-public interface FormSearchParams<E> extends Serializable {
-
+public interface FormSearchParams<E> {
     String RESTORE_PARAM_NAME = "restoreSearchParams";
     String RESET_PARAM_NAME = "resetSearchParams";
 
     void storeParams(E form);
     void restoreParams(E form);
     void resetParams();
-
 }

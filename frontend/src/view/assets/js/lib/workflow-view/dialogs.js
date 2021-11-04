@@ -8,7 +8,8 @@
         confirmSaveBeforePdfGenerating: confirmSaveBeforePdfGeneratingDialog,
         confirmTestingStartStop: confirmTestingStartStop,
         confirmMailingDataTransfer: confirmMailingDataTransfer,
-        confirmOwnWorkflowExpanding: confirmOwnWorkflowExpanding
+        confirmOwnWorkflowExpanding: confirmOwnWorkflowExpanding,
+        confirmCopy: confirmCopy
     };
 
     function activationDialog(onSuccess, mailingNames) {
@@ -111,8 +112,12 @@
         });
     }
 
-    function confirmTestingStartStop(newStatus) {
-        return Confirm.createFromTemplate({isStart: newStatus === Def.constants.statusTesting, shortname: Def.shortname, newStatus: newStatus}, 'testing-modal');
+    function confirmTestingStartStop(isStartTesting) {
+        return Confirm.createFromTemplate({startTesting: isStartTesting, shortname: Def.shortname}, 'testing-modal');
+    }
+
+    function confirmCopy(hasContent) {
+        return Confirm.createFromTemplate({hasContent: hasContent === true}, 'workflow-copy-modal');
     }
 
     AGN.Lib.WM.Dialogs = Dialogs;

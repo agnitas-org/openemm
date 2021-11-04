@@ -17,7 +17,7 @@
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
                     <h4 class="modal-title">
-                        <mvc:message code="mailinglist.delete.recipientsOf" />${deleteForm.shortname}
+                        <mvc:message code="mailinglist.delete.recipientsOf"/> ${deleteForm.shortname}
                     </h4>
                 </div>
 

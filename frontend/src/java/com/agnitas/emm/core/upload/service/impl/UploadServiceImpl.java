@@ -113,7 +113,7 @@ public class UploadServiceImpl implements UploadService {
     }
 
     @Override
-    public void uploadFiles(UploadFileDescription description, List<MultipartFile> files, Popups popups, ComAdmin admin) {
+    public void uploadFiles(UploadFileDescription description, List<MultipartFile> files, Popups popups, final ComAdmin admin) {
     	long uploadSizeBytes = uploadDao.getCurrentUploadOverallSizeBytes(description.getCompanyId());
     	long maximumOverallSizeBytes = configService.getLongValue(ConfigValue.UploadMaximumOverallSizeBytes, description.getCompanyId());
     	if (uploadSizeBytes > maximumOverallSizeBytes) {
@@ -140,7 +140,7 @@ public class UploadServiceImpl implements UploadService {
 
         files.stream()
                 .map(file -> saveFile(file, description))
-                .forEach(this::sendNotification);
+                .forEach(data -> sendNotification(data, admin));
     }
 
     @Override
@@ -183,12 +183,12 @@ public class UploadServiceImpl implements UploadService {
         return emails;
     }
 
-    private void sendNotification(UploadData data) {
+    private void sendNotification(UploadData data, final ComAdmin admin) {
         Locale aLoc = data.getLocale();
         int companyID = data.getCompanyID();
 
         String shortname = companyDao.getCompany(companyID).getShortname();
-        String contactMail = data.getContactMail();
+        String contactMail = data.getContactMail() != null ? data.getContactMail() : admin.getEmail();
         String filename = data.getFilename();
         String sendToEmail = data.getSendtoMail();
 
@@ -202,7 +202,7 @@ public class UploadServiceImpl implements UploadService {
                 .append(I18nString.getLocaleString("upload.mail.file", aLoc, filename));
 
         if (StringUtils.isNotBlank(sendToEmail)) {
-            javaMailService.sendEmail(data.getContactMail(), null, null, null, null,
+            javaMailService.sendEmail(companyID, contactMail, null, contactMail, null, null,
                     data.getSendtoMail(), null, subject, message.toString(), message.toString(), "UTF-8");
         }
     }
@@ -229,6 +229,7 @@ public class UploadServiceImpl implements UploadService {
         pageUploadData.setDeleteDate(deleteDate);
     }
 
+    // TODO: GWUA-4801 replace magic "pdf" or "csv" extension string by constant or enum
     @Override
     public List<UploadData> getUploadsByExtension(ComAdmin admin, String extension) {
         return uploadDao.getOverviewListByExtention(admin, Collections.singletonList(Objects.requireNonNull(extension)));

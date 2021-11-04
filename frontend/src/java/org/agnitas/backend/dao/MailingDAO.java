@@ -42,6 +42,8 @@ public class MailingDAO {
 	private int mailingType;
 	private String workStatus;
 	private int priority;
+	private String contentType;
+	private String mailerset;
 	private boolean frequencyCounterDisabled;
 	private boolean isWorkflowMailing;
 	private List<Media> media;
@@ -75,6 +77,10 @@ public class MailingDAO {
 				mailingType = dbase.asInt(row.get("mailing_type"));
 				workStatus = dbase.asString(row.get("work_status"));
 				priority = dbase.asInt(row.get("priority"), -1);
+				contentType = dbase.asString (row.get ("content_type"));
+				if (row.containsKey("mailerset")) {
+					mailerset = dbase.asString(row.get ("mailerset"));
+				}
 				if (row.containsKey("freq_counter_disabled")) {
 					frequencyCounterDisabled = dbase.asInt(row.get("freq_counter_disabled")) == 1;
 				}
@@ -224,6 +230,14 @@ public class MailingDAO {
 	public int priority() {
 		return priority;
 	}
+	
+	public String contentType () {
+		return contentType;
+	}
+	
+	public String mailerset () {
+		return mailerset;
+	}
 
 	public boolean frequencyCounterDisabled() {
 		return frequencyCounterDisabled;
@@ -268,6 +282,26 @@ public class MailingDAO {
 					      "mailingID", mailingID);
 			if (count > 0) {
 				workStatus = newWorkStatus;
+			}
+		}
+		return count > 0;
+	}
+
+	/**
+	 * set the mailerset for this mailing
+	 */
+	public boolean mailerset (DBase dbase, String newMailerset) throws SQLException {
+		int	count = 0;
+		
+		try (DBase.With with = dbase.with ()) {
+			count = dbase.update (with.jdbc (),
+					      "UPDATE mailing_tbl " +
+					      "SET mailerset = :mailerset " +
+					      "WHERE mailing_id = :mailingID",
+					      "mailerset", newMailerset,
+					      "mailingID", mailingID);
+			if (count > 0) {
+				mailerset = newMailerset;
 			}
 		}
 		return count > 0;

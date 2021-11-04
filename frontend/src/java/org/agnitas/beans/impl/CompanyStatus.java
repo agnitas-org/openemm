@@ -15,7 +15,8 @@ public enum CompanyStatus {
 	LOCKED("locked"),
 	TODELETE("todelete"),
 	DELETION_IN_PROGRESS("deletion in progress"),
-	DELETED("deleted");
+	DELETED("deleted"),
+	TORESET("toreset");
 
 	public final String dbValue;
 	

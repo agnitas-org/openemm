@@ -203,12 +203,18 @@
 				</c:if>
 
 				<c:if test="${not isReadonly}">
+                    <label class="control-label">
+                        <bean:message key="profile.import.additionalDefaults"/>
+                    </label>
 					<div class="table-responsive">
 						<table class="table table-bordered table-form">
 							<thead>
 								<tr>
-									<th colspan="3"><bean:message key="profile.import.additionalDefaults"/></th>
-								</tr>
+									<th></th>
+                                    <th><bean:message key="import.DbColumn"/></th>
+                                    <th><bean:message key="settings.Default_Value"/></th>
+                                    <th></th>
+                                </tr>
 							</thead>
 							<tbody>
 								<td>
@@ -217,8 +223,20 @@
 										<html:option value="function"><bean:message key="function"/></html:option>
 									</html:select>
 								</td>
+                                <td>
+                                    <select name="newColumnMappingName" class="form-control js-select">
+                                        <option value="<%= ColumnMapping.DO_NOT_IMPORT %>">
+                                            <bean:message key="import.column.skip"/>
+                                        </option>
+                                        <c:forEach var="dbColumn" items="${importProfileColumnsForm.dbColumns}">
+                                            <c:if test="${dbColumn != mapping.databaseColumn}">
+                                                <option value="${dbColumn}">${dbColumn}</option>
+                                            </c:if>
+                                        </c:forEach>
+                                    </select>
+                                </td>
 								<td>
-									<html:text styleId="recipient-import-new-column" styleClass="form-control" property="newColumn" />
+									<html:text styleId="recipient-import-new-column" styleClass="form-control" property="newColumnMappingValue" />
 								</td>
 								<td class="table-actions">
 									<button type="button" class="btn btn-regular btn-secondary" data-form-persist="add: 'add'" data-form-submit-static>

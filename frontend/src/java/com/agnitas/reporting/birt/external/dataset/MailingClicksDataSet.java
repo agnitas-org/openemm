@@ -38,9 +38,9 @@ public class MailingClicksDataSet extends BIRTDataSet {
 		if (result.size() > 0) {
 			ClickingRecipientsRow tmp = new ClickingRecipientsRow();
 			tmp.setCategory("clicking recipients");
-			tmp.setClicking_recpients(((Number) result.get(0).get("clicking_recipients")).intValue());
+			tmp.setClicking_recipients(((Number) result.get(0).get("clicking_recipients")).intValue());
 			if (totalSent != 0) {
-				tmp.setClicking_recipients_percent((float) FormatTools.roundDecimal(tmp.getClicking_recpients() * 1.0f / totalSent, 1));
+				tmp.setClicking_recipients_percent((float) FormatTools.roundDecimal(tmp.getClicking_recipients() * 1.0f / totalSent, 1));
 			}
 			list.add(tmp);
 		}

@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import com.agnitas.beans.Mailing;
 import org.agnitas.util.AgnUtils;

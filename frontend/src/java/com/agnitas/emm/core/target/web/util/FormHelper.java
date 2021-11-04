@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.target.web.util;
 
 import com.agnitas.beans.ComTarget;
+import com.agnitas.emm.core.target.form.TargetEditForm;
 import com.agnitas.emm.core.target.web.QueryBuilderTargetGroupForm;
 
 /**
@@ -29,6 +30,14 @@ public final class FormHelper {
 
 	public static final void formPropertiesToTargetGroup(final ComTarget target, final QueryBuilderTargetGroupForm form) {
 		target.setId(form.getTargetID());
+		target.setAdminTestDelivery(form.isUseForAdminAndTestDelivery());
+		target.setEQL(form.getEql());
+		target.setTargetDescription(form.getDescription());
+		target.setTargetName(form.getShortname());
+	}
+
+	public static final void formPropertiesToTargetGroup(final ComTarget target, final TargetEditForm form) {
+		target.setId(form.getTargetId());
 		target.setAdminTestDelivery(form.isUseForAdminAndTestDelivery());
 		target.setEQL(form.getEql());
 		target.setTargetDescription(form.getDescription());

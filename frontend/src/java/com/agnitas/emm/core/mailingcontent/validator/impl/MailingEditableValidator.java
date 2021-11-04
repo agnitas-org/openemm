@@ -10,26 +10,29 @@
 
 package com.agnitas.emm.core.mailingcontent.validator.impl;
 
+import java.util.Objects;
+
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
 import com.agnitas.web.mvc.Popups;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 
 @Component
 @Order(0)
 public class MailingEditableValidator implements DynTagValidator {
-    private MaildropService maildropService;
 
-    public MailingEditableValidator(MaildropService maildropService) {
-        this.maildropService = maildropService;
+    private MailingPropertiesRules mailingPropertiesRules;
+
+    public MailingEditableValidator(final MailingPropertiesRules rules) {
+    	this.mailingPropertiesRules = Objects.requireNonNull(rules, "MailingPropertiesRules is null");
     }
 
     @Override
-    public boolean validate(DynTagDto dynTagDto, Popups popups, ComAdmin admin) {
+    public final boolean validate(final DynTagDto dynTagDto, final Popups popups, final ComAdmin admin) {
         if (!isMailingGridEditable(dynTagDto.getMailingId(), admin)) {
             popups.alert("status_changed");
             return false;
@@ -38,11 +41,7 @@ public class MailingEditableValidator implements DynTagValidator {
         return true;
     }
 
-    private boolean isMailingGridEditable(int mailingID, ComAdmin admin) {
-        if (maildropService.isActiveMailing(mailingID, admin.getCompanyID())) {
-            return admin.permissionAllowed(Permission.MAILING_CONTENT_CHANGE_ALWAYS);
-        } else {
-            return true;
-        }
+    private final boolean isMailingGridEditable(final int mailingID, final ComAdmin admin) {
+    	return this.mailingPropertiesRules.isMailingContentEditable(mailingID, admin);
     }
 }

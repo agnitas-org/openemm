@@ -24,9 +24,9 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.emm.core.commons.password.PasswordCheck;
@@ -59,6 +59,7 @@ import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComEmmLayoutBaseDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.service.ComWebStorage;
 
 /**
@@ -79,6 +80,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
 	protected ComEmmLayoutBaseDao layoutBaseDao;
 	private LoginTrackServiceRequestHelper loginTrackHelper;
 	protected ConfigService configService;
+	protected ComLogonService logonService;
 
 	/** Password check and error reporter. */
 	private PasswordCheck passwordCheck;
@@ -138,7 +140,12 @@ public class ComUserSelfServiceAction extends DispatchAction {
     public void setWebStorage(WebStorage webStorage) {
         this.webStorage = webStorage;
     }
-	
+
+    @Required
+	public void setLogonService(ComLogonService logonService) {
+		this.logonService = logonService;
+	}
+
 	// ----------------------------------------------------------------------------------------------------------------
 	// Business Logic
 	
@@ -217,7 +224,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
 				if (StringUtils.isNotBlank(adminForm.getCompanyName())) {
 					admin.setCompanyName(adminForm.getCompanyName());
 				} else {
-					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.invalid.companyname"));
+					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.name.is.empty"));
 				}
 				
 				// Set new Email
@@ -293,7 +300,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
                 session.setAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMINPREFERENCES, adminPreferences);
 				session.setAttribute("emmLayoutBase", layoutBaseDao.getEmmLayoutBase(admin.getCompanyID(), admin.getLayoutBaseID()));
 				session.setAttribute("emm.locale", admin.getLocale());
-				session.setAttribute(org.apache.struts.Globals.LOCALE_KEY, admin.getLocale());
+				logonService.updateSessionsLanguagesAttributes(admin);
                 fillRequestWithOriginalValues(request, admin);
 
 				ActionMessages actionMessages = new ActionMessages();

@@ -120,18 +120,23 @@
         <div class="tile-content tile-content-forms">
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label" for="mailing_name"><bean:message key="default.Name"/></label>
+                    <label class="control-label" for="mailing_name">
+                        <c:set var="nameMsg"><bean:message key="default.Name"/></c:set>
+                        ${nameMsg}
                 </div>
                 <div class="col-sm-8">
-                    <html:text styleId="mailing_name" styleClass="form-control" property="shortname" maxlength="99" size="42"/>
+                    <agn:agnText styleId="mailing_name" styleClass="form-control" property="shortname" maxlength="99" size="42" placeholder="${nameMsg}"/>
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label" for="mailing_name"><bean:message key="default.description"/></label>
+                    <label class="control-label" for="mailing_name">
+                        <c:set var="descriptionMsg"><bean:message key="default.description"/></c:set>
+                        ${descriptionMsg}
+                    </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:textarea styleId="mailing_description" styleClass="form-control" property="description" rows="5" cols="32"/>
+                    <agn:agnTextarea styleId="mailing_description" styleClass="form-control" property="description" rows="5" cols="32" placeholder="${descriptionMsg}"/>
                 </div>
             </div>
         </div>

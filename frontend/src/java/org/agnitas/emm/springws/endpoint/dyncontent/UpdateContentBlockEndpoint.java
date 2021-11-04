@@ -12,11 +12,13 @@ package org.agnitas.emm.springws.endpoint.dyncontent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.agnitas.emm.core.dyncontent.service.ContentModel;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.UpdateContentBlockRequest;
 import org.agnitas.emm.springws.jaxb.UpdateContentBlockResponse;
@@ -28,18 +30,24 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class UpdateContentBlockEndpoint extends BaseEndpoint {
 
-	private DynamicTagContentService dynamicTagContentService;
+	private final DynamicTagContentService dynamicTagContentService;
+	private final MailingEditableCheck mailingEditableCheck;
 
-	public UpdateContentBlockEndpoint(DynamicTagContentService dynamicTagContentService) {
-		this.dynamicTagContentService = dynamicTagContentService;
+	public UpdateContentBlockEndpoint(DynamicTagContentService dynamicTagContentService, final MailingEditableCheck mailingEditableCheck) {
+		this.dynamicTagContentService = Objects.requireNonNull(dynamicTagContentService);
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
 	}
 
 	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateContentBlockRequest")
 	public @ResponsePayload UpdateContentBlockResponse updateContentBlock(@RequestPayload UpdateContentBlockRequest request) throws Exception {
-		UpdateContentBlockResponse response = new UpdateContentBlockResponse();
+		final int companyId = Utils.getUserCompany();
 		
-		ContentModel model = new ContentModel();
-		model.setCompanyId(Utils.getUserCompany());
+		this.mailingEditableCheck.requireMailingForContentBlockEditable(request.getContentID(), companyId);
+		
+		final UpdateContentBlockResponse response = new UpdateContentBlockResponse();
+		
+		final ContentModel model = new ContentModel();
+		model.setCompanyId(companyId);
 		model.setContentId(request.getContentID());
 		model.setTargetId(request.getTargetID());
 		model.setOrder(request.getOrder());

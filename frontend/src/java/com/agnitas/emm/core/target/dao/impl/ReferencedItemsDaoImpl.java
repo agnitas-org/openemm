@@ -125,7 +125,7 @@ public class ReferencedItemsDaoImpl extends BaseDaoImpl implements ReferencedIte
 
 	@Override
 	public final List<TargetLight> listTargetGroupsReferencingProfileField(final int companyID, final String visibleShortname) {
-		final String sql = "SELECT DISTINCT * FROM dyn_target_tbl WHERE target_id IN (SELECT target_ref FROM target_ref_profilefield_tbl WHERE company_ref=? AND name=?)";
+		final String sql = "SELECT DISTINCT * FROM dyn_target_tbl WHERE target_id IN (SELECT target_ref FROM target_ref_profilefield_tbl WHERE company_ref=? AND LOWER(name) = LOWER(?))";
 		
 		return select(LOGGER, sql, TargetLightRowMapper.INSTANCE, companyID, visibleShortname);
 	}

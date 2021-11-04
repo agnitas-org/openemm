@@ -10,8 +10,7 @@
 
 package org.agnitas.ecs.backend.service;
 
-import org.agnitas.ecs.backend.dao.EmbeddedClickStatDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import com.agnitas.emm.ecs.web.HeatmapStatInfo;
 
 /**
  * Service class that handles creation of Embedded click statistics
@@ -43,18 +42,7 @@ public interface EmbeddedClickStatService {
 	 * @param mode	  ECS mode
 	 * @param companyId id of company
 	 * @return mailing HTML content + hidden fields that will be used by ECS-page javascript
-	 * @throws Exception 
+	 * @throws Exception
 	 */
-	String addStatsInfo(String content, int mode, int mailingId, @VelocityCheck int companyId) throws Exception;
-	
-	String addStatsInfo(String content, int mode, int mailingId, @VelocityCheck int companyId, int deviceType) throws Exception;
-
-	/**
-	 * Setter for Dao that handles color values for different percentage values for ECS
-	 *
-	 * @param ecsDao dao object
-	 */
-	void setEmbeddedClickStatDao(EmbeddedClickStatDao ecsDao);
-
-    UrlMaker getURLMaker(String program, int mailingId, String option) throws Exception;
+	HeatmapStatInfo getStatsInfo(int viewMode, int mailingId, int companyId, int deviceType) throws Exception;
 }

@@ -56,6 +56,7 @@ import com.agnitas.emm.core.company.enums.Sector;
 import com.agnitas.emm.core.company.form.CompanyCreateForm;
 import com.agnitas.emm.core.company.form.CompanyViewForm;
 import com.agnitas.emm.core.company.service.ComCompanyService;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.logon.common.HostAuthenticationCookieExpirationSettings;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.premium.web.SpecialPremiumFeature;
@@ -77,6 +78,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     private AdminService adminService;
     private BounceFilterService bounceFilterService;
     protected ComCompanyDao companyDao;
+    private CompanyTokenService companyTokenService;
 
     @Override
     public boolean initTables(int companyID) {
@@ -166,6 +168,10 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         addExecutiveAdmin(company.getId(), executiveAdminId);
         
         createStandardBounceFilter(company.getId(), TimeZone.getTimeZone(form.getCompanySettingsDto().getTimeZone()));
+        
+        // Create random token
+        companyTokenService.assignRandomToken(company.getId(), false);
+        
         return company.getId();
     }
 
@@ -266,6 +272,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         company.setSecretKey(RandomStringUtils.randomAscii(32));
         company.setSector(settingsDto.getSector());
         company.setBusiness(settingsDto.getBusiness());
+        company.setMaxAdminMails(settingsDto.getMaxAdminMails());
     }
 
     private void saveConfigValues(ComAdmin admin, int companyId, CompanySettingsDto settings) {
@@ -302,10 +309,22 @@ public class ComCompanyServiceImpl implements ComCompanyService {
             configService.writeOrDeleteIfDefaultValue(ConfigValue.CleanRecipientsWithoutBinding, companyId, String.valueOf(settings.isHasRecipientsCleanup()), "set cleaning of recipients without binding by AdminID:" + admin.getAdminID());
         }
 
-        if (settings.isHasRecipientsAnonymisation() != configService.getBooleanValue(ConfigValue.CleanRecipientsData, companyId)) {
-        	configService.writeOrDeleteIfDefaultValue(ConfigValue.CleanRecipientsData, companyId, String.valueOf(settings.isHasRecipientsAnonymisation()), "set recipient anonymisation by AdminID:" + admin.getAdminID());
+        if (admin.permissionAllowed(Permission.CLEANUP_RECIPIENT_DATA)) {
+	        if (settings.getRecipientAnonymization() != configService.getBooleanAsInteger(ConfigValue.CleanRecipientsData, companyId, 30, -1)) {
+	        	configService.writeOrDeleteIfDefaultValue(ConfigValue.CleanRecipientsData, companyId, String.valueOf(settings.getRecipientAnonymization()), "set recipient anonymisation by AdminID:" + admin.getAdminID());
+	        }
         }
-
+        if (admin.permissionAllowed(Permission.CLEANUP_RECIPIENT_TRACKING) || admin.permissionAllowed(Permission.CLEANUP_RECIPIENT_DATA)) {
+	        if (settings.getRecipientCleanupTracking() != configService.getIntegerValue(ConfigValue.CleanTrackingData, companyId)) {
+	        	configService.writeOrDeleteIfDefaultValue(ConfigValue.CleanTrackingData, companyId, String.valueOf(settings.getRecipientCleanupTracking()), "set recipient tracking cleanup by AdminID:" + admin.getAdminID());
+	        }
+        }
+        if (admin.permissionAllowed(Permission.CLEANUP_RECIPIENT_DATA)) {
+	        if (settings.getRecipientDeletion() != configService.getIntegerValue(ConfigValue.DeleteRecipients, companyId)) {
+	        	configService.writeOrDeleteIfDefaultValue(ConfigValue.DeleteRecipients, companyId, String.valueOf(settings.getRecipientDeletion()), "set recipient deletion by AdminID:" + admin.getAdminID());
+	        }
+        }
+        
         if (settings.isHasTrackingVeto() != configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, companyId)) {
             configService.writeOrDeleteIfDefaultValue(ConfigValue.AnonymizeTrackingVetoRecipients, companyId, String.valueOf(settings.isHasTrackingVeto()), "set anonymisation of tracking veto recipients by AdminID:" + admin.getAdminID());
         }
@@ -321,14 +340,10 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	        if (settings.getStatisticsExpireDays() > 0) {
 	        	configService.writeOrDeleteIfDefaultValue(ConfigValue.ExpireStatistics, companyId, Integer.toString(Math.min(expireMaximum, settings.getStatisticsExpireDays())), "set expire statistics value by AdminID:" + admin.getAdminID());
 	        }
-    	} else {
-    		configService.writeOrDeleteIfDefaultValue(ConfigValue.ExpireStatistics, companyId, configService.getValue(ConfigValue.ExpireStatisticsMax), "set expire statistics max value by AdminID:" + admin.getAdminID());
     	}
         
         if (admin.permissionAllowed(Permission.MAILING_EXPIRE)) {
         	configService.writeOrDeleteIfDefaultValue(ConfigValue.ExpireRecipient, companyId, Integer.toString(settings.getRecipientExpireDays()), "set expire recipient value by AdminID:" + admin.getAdminID());
-        } else {
-        	configService.writeOrDeleteIfDefaultValue(ConfigValue.ExpireRecipient, companyId, configService.getValue(ConfigValue.ExpireRecipient), "set expire recipient by AdminID:" + admin.getAdminID());
         }
         
         
@@ -348,7 +363,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         // Password expire days
         final Optional<PasswordExpireSettings> optional = PasswordExpireSettings.findByDays(companySettings.getPasswordExpireDays());
         
-		if(optional.isPresent()) {
+		if (optional.isPresent()) {
 			final PasswordExpireSettings settings = optional.get();
 			
 	    	configService.writeOrDeleteIfDefaultValue(ConfigValue.UserPasswordExpireDays, companyID, Integer.toString(settings.getExpireDays()), "changed expiration days of passwords by AdminID:" + adminID);
@@ -546,12 +561,30 @@ public class ComCompanyServiceImpl implements ComCompanyService {
                     .append(")");
         }
 
-        boolean oldRecipientAnonymiseSettings = configService.getBooleanValue(ConfigValue.CleanRecipientsData, newCompany.getCompanyInfoDto().getId());
-        if (oldRecipientAnonymiseSettings != newCompany.getCompanySettingsDto().isHasRecipientsAnonymisation()) {
+        int oldRecipientAnonymiseSettings = configService.getBooleanAsInteger(ConfigValue.CleanRecipientsData, newCompany.getCompanyInfoDto().getId(), 30, -1);
+        if (oldRecipientAnonymiseSettings != newCompany.getCompanySettingsDto().getRecipientAnonymization()) {
         	description.append(" Recipients Anonymisation (")
             .append(oldRecipientAnonymiseSettings)
             .append(" changed to ")
-            .append(newCompany.getCompanySettingsDto().isHasRecipientsAnonymisation())
+            .append(newCompany.getCompanySettingsDto().getRecipientAnonymization())
+            .append(")");
+        }
+        
+        int oldRecipientCleanupTracking = configService.getIntegerValue(ConfigValue.CleanTrackingData, newCompany.getCompanyInfoDto().getId());
+        if (oldRecipientCleanupTracking != newCompany.getCompanySettingsDto().getRecipientCleanupTracking()) {
+        	description.append(" Recipients tracking cleanup (")
+            .append(oldRecipientCleanupTracking)
+            .append(" changed to ")
+            .append(newCompany.getCompanySettingsDto().getRecipientCleanupTracking())
+            .append(")");
+        }
+        
+        int oldRecipientDeletion = configService.getIntegerValue(ConfigValue.DeleteRecipients, newCompany.getCompanyInfoDto().getId());
+        if (oldRecipientDeletion != newCompany.getCompanySettingsDto().getRecipientDeletion()) {
+        	description.append(" Recipients deletion (")
+            .append(oldRecipientDeletion)
+            .append(" changed to ")
+            .append(newCompany.getCompanySettingsDto().getRecipientDeletion())
             .append(")");
         }
 
@@ -633,4 +666,8 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 		return PasswordPolicies.findByName(policyName);
 	}
 
+	@Required
+	public final void setCompanyTokenService(final CompanyTokenService service) {
+		this.companyTokenService = Objects.requireNonNull(service, "CompanyTokenService is null");
+	}
 }

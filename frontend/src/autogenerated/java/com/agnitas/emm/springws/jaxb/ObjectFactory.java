@@ -11,10 +11,10 @@
 
 package com.agnitas.emm.springws.jaxb;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.annotation.XmlElementDecl;
-import javax.xml.bind.annotation.XmlRegistry;
 import javax.xml.namespace.QName;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.annotation.XmlElementDecl;
+import jakarta.xml.bind.annotation.XmlRegistry;
 
 
 /**
@@ -45,19 +45,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetMailingContentResponse }
-     * 
-     */
-    public GetMailingContentResponse createGetMailingContentResponse() {
-        return new GetMailingContentResponse();
-    }
-
-    /**
      * Create an instance of {@link MailingSummaryStatisticResultResponse }
      * 
      */
     public MailingSummaryStatisticResultResponse createMailingSummaryStatisticResultResponse() {
         return new MailingSummaryStatisticResultResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetMailingContentResponse }
+     * 
+     */
+    public GetMailingContentResponse createGetMailingContentResponse() {
+        return new GetMailingContentResponse();
     }
 
     /**
@@ -69,51 +69,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link AddTargetGroupResponse }
-     * 
-     */
-    public AddTargetGroupResponse createAddTargetGroupResponse() {
-        return new AddTargetGroupResponse();
-    }
-
-    /**
-     * Create an instance of {@link MailingSummaryStatisticJobRequest }
-     * 
-     */
-    public MailingSummaryStatisticJobRequest createMailingSummaryStatisticJobRequest() {
-        return new MailingSummaryStatisticJobRequest();
-    }
-
-    /**
      * Create an instance of {@link SetSubscriberBindingWithActionRequest }
      * 
      */
     public SetSubscriberBindingWithActionRequest createSetSubscriberBindingWithActionRequest() {
         return new SetSubscriberBindingWithActionRequest();
-    }
-
-    /**
-     * Create an instance of {@link UpdateTargetGroupResponse }
-     * 
-     */
-    public UpdateTargetGroupResponse createUpdateTargetGroupResponse() {
-        return new UpdateTargetGroupResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetFullviewUrlResponse }
-     * 
-     */
-    public GetFullviewUrlResponse createGetFullviewUrlResponse() {
-        return new GetFullviewUrlResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetMailingContentResponse.Items }
-     * 
-     */
-    public GetMailingContentResponse.Items createGetMailingContentResponseItems() {
-        return new GetMailingContentResponse.Items();
     }
 
     /**
@@ -125,75 +85,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link MailingSummaryStatisticResultResponse.Items }
+     * Create an instance of {@link MailingSummaryStatisticJobRequest }
      * 
      */
-    public MailingSummaryStatisticResultResponse.Items createMailingSummaryStatisticResultResponseItems() {
-        return new MailingSummaryStatisticResultResponse.Items();
-    }
-
-    /**
-     * Create an instance of {@link UpdateMailingContentRequest }
-     * 
-     */
-    public UpdateMailingContentRequest createUpdateMailingContentRequest() {
-        return new UpdateMailingContentRequest();
-    }
-
-    /**
-     * Create an instance of {@link CreateDataSourceRequest }
-     * 
-     */
-    public CreateDataSourceRequest createCreateDataSourceRequest() {
-        return new CreateDataSourceRequest();
-    }
-
-    /**
-     * Create an instance of {@link SendServiceMailRequest }
-     * 
-     */
-    public SendServiceMailRequest createSendServiceMailRequest() {
-        return new SendServiceMailRequest();
-    }
-
-    /**
-     * Create an instance of {@link CopyMailingRequest }
-     * 
-     */
-    public CopyMailingRequest createCopyMailingRequest() {
-        return new CopyMailingRequest();
-    }
-
-    /**
-     * Create an instance of {@link GetFullviewUrlRequest }
-     * 
-     */
-    public GetFullviewUrlRequest createGetFullviewUrlRequest() {
-        return new GetFullviewUrlRequest();
-    }
-
-    /**
-     * Create an instance of {@link UpdateMailingContentResponse }
-     * 
-     */
-    public UpdateMailingContentResponse createUpdateMailingContentResponse() {
-        return new UpdateMailingContentResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetMailingContentRequest }
-     * 
-     */
-    public GetMailingContentRequest createGetMailingContentRequest() {
-        return new GetMailingContentRequest();
-    }
-
-    /**
-     * Create an instance of {@link SendServiceMailResponse }
-     * 
-     */
-    public SendServiceMailResponse createSendServiceMailResponse() {
-        return new SendServiceMailResponse();
+    public MailingSummaryStatisticJobRequest createMailingSummaryStatisticJobRequest() {
+        return new MailingSummaryStatisticJobRequest();
     }
 
     /**
@@ -205,6 +101,62 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link MailingSummaryStatisticResultRequest }
+     * 
+     */
+    public MailingSummaryStatisticResultRequest createMailingSummaryStatisticResultRequest() {
+        return new MailingSummaryStatisticResultRequest();
+    }
+
+    /**
+     * Create an instance of {@link MailingSummaryStatisticResultResponse.Items }
+     * 
+     */
+    public MailingSummaryStatisticResultResponse.Items createMailingSummaryStatisticResultResponseItems() {
+        return new MailingSummaryStatisticResultResponse.Items();
+    }
+
+    /**
+     * Create an instance of {@link GetMailingContentRequest }
+     * 
+     */
+    public GetMailingContentRequest createGetMailingContentRequest() {
+        return new GetMailingContentRequest();
+    }
+
+    /**
+     * Create an instance of {@link GetMailingContentResponse.Items }
+     * 
+     */
+    public GetMailingContentResponse.Items createGetMailingContentResponseItems() {
+        return new GetMailingContentResponse.Items();
+    }
+
+    /**
+     * Create an instance of {@link UpdateMailingContentRequest }
+     * 
+     */
+    public UpdateMailingContentRequest createUpdateMailingContentRequest() {
+        return new UpdateMailingContentRequest();
+    }
+
+    /**
+     * Create an instance of {@link UpdateMailingContentResponse }
+     * 
+     */
+    public UpdateMailingContentResponse createUpdateMailingContentResponse() {
+        return new UpdateMailingContentResponse();
+    }
+
+    /**
+     * Create an instance of {@link CreateDataSourceRequest }
+     * 
+     */
+    public CreateDataSourceRequest createCreateDataSourceRequest() {
+        return new CreateDataSourceRequest();
+    }
+
+    /**
      * Create an instance of {@link CreateDataSourceResponse }
      * 
      */
@@ -213,19 +165,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link AddTargetGroupRequest }
+     * Create an instance of {@link SendServiceMailRequest }
      * 
      */
-    public AddTargetGroupRequest createAddTargetGroupRequest() {
-        return new AddTargetGroupRequest();
+    public SendServiceMailRequest createSendServiceMailRequest() {
+        return new SendServiceMailRequest();
     }
 
     /**
-     * Create an instance of {@link MailingSummaryStatisticResultRequest }
+     * Create an instance of {@link SendServiceMailResponse }
      * 
      */
-    public MailingSummaryStatisticResultRequest createMailingSummaryStatisticResultRequest() {
-        return new MailingSummaryStatisticResultRequest();
+    public SendServiceMailResponse createSendServiceMailResponse() {
+        return new SendServiceMailResponse();
     }
 
     /**
@@ -237,6 +189,22 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link UpdateTargetGroupResponse }
+     * 
+     */
+    public UpdateTargetGroupResponse createUpdateTargetGroupResponse() {
+        return new UpdateTargetGroupResponse();
+    }
+
+    /**
+     * Create an instance of {@link CopyMailingRequest }
+     * 
+     */
+    public CopyMailingRequest createCopyMailingRequest() {
+        return new CopyMailingRequest();
+    }
+
+    /**
      * Create an instance of {@link CopyMailingResponse }
      * 
      */
@@ -245,19 +213,35 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link StatisticValue }
+     * Create an instance of {@link AddTargetGroupRequest }
      * 
      */
-    public StatisticValue createStatisticValue() {
-        return new StatisticValue();
+    public AddTargetGroupRequest createAddTargetGroupRequest() {
+        return new AddTargetGroupRequest();
     }
 
     /**
-     * Create an instance of {@link StatisticEntry }
+     * Create an instance of {@link AddTargetGroupResponse }
      * 
      */
-    public StatisticEntry createStatisticEntry() {
-        return new StatisticEntry();
+    public AddTargetGroupResponse createAddTargetGroupResponse() {
+        return new AddTargetGroupResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetFullviewUrlRequest }
+     * 
+     */
+    public GetFullviewUrlRequest createGetFullviewUrlRequest() {
+        return new GetFullviewUrlRequest();
+    }
+
+    /**
+     * Create an instance of {@link GetFullviewUrlResponse }
+     * 
+     */
+    public GetFullviewUrlResponse createGetFullviewUrlResponse() {
+        return new GetFullviewUrlResponse();
     }
 
     /**
@@ -277,6 +261,22 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link StatisticValue }
+     * 
+     */
+    public StatisticValue createStatisticValue() {
+        return new StatisticValue();
+    }
+
+    /**
+     * Create an instance of {@link StatisticEntry }
+     * 
+     */
+    public StatisticEntry createStatisticEntry() {
+        return new StatisticEntry();
+    }
+
+    /**
      * Create an instance of {@link MailingContent }
      * 
      */
@@ -293,8 +293,12 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}}
+     * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}
      * 
+     * @param value
+     *     Java instance representing xml element's value.
+     * @return
+     *     the new instance of {@link JAXBElement }{@code <}{@link String }{@code >}
      */
     @XmlElementDecl(namespace = "http://agnitas.com/ws/schemas", name = "Error")
     public JAXBElement<String> createError(String value) {

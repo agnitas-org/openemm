@@ -16,10 +16,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -81,7 +81,7 @@ public abstract class ImportBaseFileAction extends StrutsActionBase {
      * @param request The HTTP request we are processing. Should contain parameters "remove_file" or "upload_file".
      * @param res     The HTTP response we are creating
      * @throws java.io.IOException            if an input/output error occurs
-     * @throws javax.servlet.ServletException if a servlet exception occurs
+     * @throws jakarta.servlet.ServletException if a servlet exception occurs
      * @return destination to logon page if user is not logged in or NULL
      */
     @Override

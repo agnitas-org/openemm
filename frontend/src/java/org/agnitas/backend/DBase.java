@@ -60,7 +60,7 @@ public class DBase {
 	private static final int RETRY = 5;
 
 	/**
-	 * If not set from outside, Backend will try to create its own datasource from emm.properties data
+	 * If not set from outside, Backend will try to create its own datasource from dbcfg data
 	 */
 	public static DataSource DATASOURCE = null;
 	/**
@@ -151,7 +151,7 @@ public class DBase {
 		public DBDatasource() {
 			cache = new HashMap<>();
 			seen = new HashSet<>();
-			log = new Log("jdbc", Log.INFO);
+			log = new Log("jdbc", Log.INFO, 0);
 
 			Appender app = new DBaseAppender(log);
 
@@ -275,7 +275,7 @@ public class DBase {
 		this.data = data;
 
 		synchronized (lock) {
-			// Only create a new Datasource from emm.properties-Data, if none has been injected by EMM or OpenEMM
+			// Only create a new Datasource from dbcfg data, if none has been injected by EMM or OpenEMM
 			dsPool.setup(data.dbPoolsize(), data.dbPoolgrow());
 			if (DATASOURCE == null) {
 				DATASOURCE = dsPool.request(data.dbDriver(), data.dbConnect(), data.dbLogin(), data.dbPassword());
@@ -949,9 +949,14 @@ public class DBase {
 		Connection	conn = DATASOURCE.getConnection();
 		
 		try {
+			if (conn.getAutoCommit ()) {
+				conn.setAutoCommit (false);
+			}
 			conn.commit ();
 		} catch (SQLException e) {
-			// do nothing, some driver/version bailing out when commit() is called on autocommit enabled connection
+			data.logging (Log.WARNING, "db", "new connections: commit fails even auto commit had been turned off: " + e.toString ());
+		} finally {
+			conn.setAutoCommit (true);
 		}
 		return conn;
 	}
@@ -1126,7 +1131,7 @@ public class DBase {
 	}
 
 	private NamedParameterJdbcTemplate validateJdbc(NamedParameterJdbcTemplate jdbc) throws SQLException {
-		Retry<NamedParameterJdbcTemplate> r = new Retry<NamedParameterJdbcTemplate>("jdbc", this, null, jdbc) {
+		Retry<NamedParameterJdbcTemplate> r = new Retry<>("jdbc", this, null, jdbc) {
 			@Override
 			public void execute() throws SQLException {
 				int delay = 0;
@@ -1142,8 +1147,12 @@ public class DBase {
 							data.logging(Log.ERROR, "db", "Got old, invalid connections while trying to get a new one, abort");
 							break;
 						}
+						if (delay == 0) {
+							break;
+						}
 					}
 					try {
+						show("VAL", nullQuery, null);
 						(new DBAccessSingle<Integer>(data, priv)).query(nullQuery);
 					} catch (Throwable t) {
 						data.logging(Log.ERROR, "db", "connection invalid (" + t.toString() + "), reset " + (delay > 0 ? "after waitung " + delay + " seconds" : "now"));
@@ -1177,7 +1186,7 @@ public class DBase {
 	private int doQueryInt(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> packed) throws SQLException {
 		show("QYI", q, packed);
 
-		Retry<Object> r = new Retry<Object>("queryInt", this, jdbc) {
+		Retry<Object> r = new Retry<>("queryInt", this, jdbc) {
 			@Override
 			public void execute() throws SQLException {
 				priv = (new DBAccessSingle<Integer>(data, jdbc)).query(q, packed);
@@ -1192,7 +1201,7 @@ public class DBase {
 	private long doQueryLong(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> packed) throws SQLException {
 		show("QYL", q, packed);
 
-		Retry<Object> r = new Retry<Object>("queryLong", this, jdbc) {
+		Retry<Object> r = new Retry<>("queryLong", this, jdbc) {
 			@Override
 			public void execute() throws SQLException {
 				priv = (new DBAccessSingle<Long>(data, jdbc)).query(q, packed);
@@ -1207,7 +1216,7 @@ public class DBase {
 	private String doQueryString(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> packed) throws SQLException {
 		show("QYS", q, packed);
 
-		Retry<String> r = new Retry<String>("queryString", this, jdbc) {
+		Retry<String> r = new Retry<>("queryString", this, jdbc) {
 			@Override
 			public void execute() throws SQLException {
 				priv = (new DBAccessSingle<String>(data, jdbc)).query(q, packed);
@@ -1222,7 +1231,7 @@ public class DBase {
 	private Map<String, Object> doQuerys(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> packed) throws SQLException {
 		show("QYM", q, packed);
 
-		Retry<Map<String, Object>> r = new Retry<Map<String, Object>>("queryMap", this, jdbc) {
+		Retry<Map<String, Object>> r = new Retry<>("queryMap", this, jdbc) {
 			@Override
 			public void execute() throws SQLException {
 				try {
@@ -1241,7 +1250,7 @@ public class DBase {
 	private List<Map<String, Object>> doQuery(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> packed) throws SQLException {
 		show("QLM", q, packed);
 
-		Retry<List<Map<String, Object>>> r = new Retry<List<Map<String, Object>>>("queryList", this, jdbc) {
+		Retry<List<Map<String, Object>>> r = new Retry<>("queryList", this, jdbc) {
 			@Override
 			public void execute() throws SQLException {
 				priv = jdbc.queryForList(q, packed);
@@ -1257,7 +1266,7 @@ public class DBase {
 	private int doUpdate(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> packed) throws SQLException {
 		show("UPD", q, packed);
 
-		Retry<Integer> r = new Retry<Integer>("update", this, jdbc) {
+		Retry<Integer> r = new Retry<>("update", this, jdbc) {
 			@Override
 			public void execute() throws SQLException {
 				priv = jdbc.update(q, packed);
@@ -1272,7 +1281,7 @@ public class DBase {
 	private void doExecute(NamedParameterJdbcTemplate jdbc, String q) throws SQLException {
 		show("EXE", q, null);
 
-		Retry<Object> r = new Retry<Object>("execute", this, jdbc) {
+		Retry<Object> r = new Retry<>("execute", this, jdbc) {
 			@Override
 			public void execute() throws SQLException {
 				jdbc.getJdbcOperations().execute(q);

@@ -10,10 +10,12 @@
 
 package com.agnitas.emm.core.bounce.web;
 
+import static com.agnitas.web.mvc.Pollable.DEFAULT_TIMEOUT;
+
 import java.net.IDN;
 import java.util.concurrent.Callable;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
@@ -66,8 +68,6 @@ public class BounceFilterController {
     private static final String ACTIONBASED_MAILINGS = "actionBasedMailings";
     private static final String FILTER_EMAIL_ADDRESS_DEFAULT = "filterEmailAddressDefault";
     private static final String IS_ALLOWED_MAILLOOP_DOMAIN = "isAllowedMailloopDomain";
-
-    public static final long DEFAULT_TIMEOUT = 1000L;
 
     private final BounceFilterService bounceFilterService;
     private final ComMailingBaseService mailingService;

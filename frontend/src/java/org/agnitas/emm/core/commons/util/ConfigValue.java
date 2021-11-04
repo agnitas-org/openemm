@@ -41,6 +41,8 @@ public class ConfigValue {
 	public static final ConfigValue IsBetaInstance = new ConfigValue("beta.version", "false");
 	/** Remove versionsign from emm application sites **/
 	public static final ConfigValue IsLiveInstance = new ConfigValue("live.version", "true");
+	/** Show install date beneath menu **/
+	public static final ConfigValue ShowApplicationVersionWithDate = new ConfigValue("ApplicationVersion.ShowWithDate", "false");
 
 	public static final ConfigValue SystemSaltFile = new ConfigValue("system.salt.file", "${HOME}/conf/keys/emm.salt");
 
@@ -79,6 +81,8 @@ public class ConfigValue {
 	public static final ConfigValue MailingSizeWarningThresholdBytes = new ConfigValue("company.mailingSizeWarningThresholdBytes", "2097152");
 	/** The mailing size (in Bytes) that should trigger an error message (Default 10 MB) **/
 	public static final ConfigValue MailingSizeErrorThresholdBytes = new ConfigValue("company.mailingSizeErrorThresholdBytes", "10485760");
+	/** Contraints in prevent_tabl_drop are created (true) or left out (false) **/
+	public static final ConfigValue UsePreventTableDropConstraint = new ConfigValue("company.usePreventTableDropConstraint", "true");
 	
 	public static final ConfigValue CampaignEnableTargetGroups = new ConfigValue("campaign-enable-target-groups", "false");
 
@@ -110,10 +114,10 @@ public class ConfigValue {
 
 	public static final ConfigValue Linkchecker_Linktimeout = new ConfigValue("linkchecker.linktimeout", "30000");
 	public static final ConfigValue Linkchecker_Threadcount = new ConfigValue("linkchecker.threadcount", "25");
-	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0");
+	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0");
 
 	public static final ConfigValue Predelivery_Litmusapikey = new ConfigValue("predelivery.litmusapikey");
-	public static final ConfigValue Predelivery_Litmusapiurl = new ConfigValue("predelivery.litmusapiurl");
+	public static final ConfigValue Predelivery_Litmusapiurl = new ConfigValue("predelivery.litmusapiurl", "https://soap.litmusapp.com/soap/api");
 	public static final ConfigValue Predelivery_Litmuspassword = new ConfigValue("predelivery.litmuspassword");
 	public static final ConfigValue Predelivery_LitmusGuidPrefix = new ConfigValue("litmus.GuidPrefix");
 	public static final ConfigValue Predelivery_LitmusStatusUrl = new ConfigValue("predelivery.litmusstatusurl", "https://status.litmus.com/");
@@ -156,9 +160,9 @@ public class ConfigValue {
 	public static final ConfigValue SupervisorBinding_Expire = new ConfigValue("system.SupervisorBinding.Expire", "365");
 	public static final ConfigValue SupervisorGrant_Expire = new ConfigValue("system.SupervisorGrant.Expire", "180");
 	public static final ConfigValue Report_Expire = new ConfigValue("system.Report.Expire", "365");
-	public static final ConfigValue ExportReport_Expire = new ConfigValue("system.ExportReport.Expire", "90");
+	public static final ConfigValue ExportReport_Expire = new ConfigValue("system.ExportReport.Expire", "30");
 
-	public static final ConfigValue DontWriteLatestDatasourceId = new ConfigValue("system.DontWriteLatestDatasourceId");
+	public static final ConfigValue SecureTransportLayerProtocol = new ConfigValue("network.protocol.secureTransportLayer", "SSL");
 
 	/** Default SFTP Server and credentials (encrypted) */
 	public static final ConfigValue DefaultSftpServerAndCredentials = new ConfigValue("company.default_sftp_server_and_credentials");
@@ -373,6 +377,7 @@ public class ConfigValue {
 
 	public static final ConfigValue DBCleaner_Send_Statistics_Mail = new ConfigValue("dbcleaner.send_statistics_mail", "true");
 	public static final ConfigValue CleanMasterCompany = new ConfigValue("clean.mastercompany", "false");
+	public static final ConfigValue CompanyDSGVOCleaner = new ConfigValue("company.dsgvocleaner", "-1");
 	
 	public static final ConfigValue PushNotificationsEnabled = new ConfigValue("webpush.push_notification");
 	public static final ConfigValue PushNotificationProviderCredentials = new ConfigValue("webpush.provider_credentials");
@@ -385,18 +390,17 @@ public class ConfigValue {
 	public static final ConfigValue PushNotificationSftpEncryptedSshKeyPassphrase = new ConfigValue("webpush.sftp.sshkey.passphrase_encrypted");
 	public static final ConfigValue PushNotificationClickTrackingUrl = new ConfigValue("webpush.click_tracking_url");								// Must be complete URL containing "[push-uid]" as placeholder for Push UID
 	public static final ConfigValue PushNotificationOpenTrackingUrl = new ConfigValue("webpush.open_tracking_url");									// Must be complete URL containing "[push-uid]" as placeholder for Push UID
-	public static final ConfigValue PushNotificationRecipientTrackingUrlPattern = new ConfigValue("webpush.recipient_tracking.url");						// Must be complete URL containing "[tracking-id]" as placeholder
 	public static final ConfigValue PushNotificationMaxRedirectTokenGenerationAttempts = new ConfigValue("webpush.recipient_tracking.max_redirect_token_generation_attempts", "5");
 	public static final ConfigValue PushNotificationMaxRedirectTokenAge = new ConfigValue("webpush.recipient_tracking.max_redirect_token_age", "300");
 	public static final ConfigValue PushNotificationMaxTrackingIdGenerationAttempts = new ConfigValue("webpush.recipient_tracking.max_tracking_id_generation_attempts", "5");
 	public static final ConfigValue PushNotificationVapidPublicKey =  new ConfigValue("webpush.vapid.key.public");
 	public static final ConfigValue PushNotificationVapidPrivateKey =  new ConfigValue("webpush.vapid.key.private");
 	public static final ConfigValue PushNotificationVapidSubject =  new ConfigValue("webpush.vapid.subject");
-	public static final ConfigValue PushNotificationEnableTrackingCookie = new ConfigValue("webpush.enableTrackingCookie", "false");
 
 	public static final ConfigValue LogonIframeUrlEnglish = new ConfigValue("logon.iframe.url.en");
 	public static final ConfigValue LogonIframeUrlGerman = new ConfigValue("logon.iframe.url.de");
 	public static final ConfigValue SkipLogonIframeUrlCheck = new ConfigValue("logon.iframe.url.skipCheck", "false");
+	public static final ConfigValue ShowLogonSplashScreen = new ConfigValue("logon.showSplashScreen", "true");
 
 	public static final ConfigValue CleanupBindingsOfDeletedMailinglists = new ConfigValue("cleanup.bindings_of_deleted_mailinglists");
 	
@@ -459,10 +463,16 @@ public class ConfigValue {
 
 	/** Maximum size of restful request data (in Bytes). (Default 1 MB) **/
 	public static final ConfigValue MaxRestfulRequestDataSize = new ConfigValue("restful.maxRestfulRequestDataSize", Integer.toString(1024 * 1024)); // 1 MB
+	public static final ConfigValue EnableRestfulQuotas = new ConfigValue("restful.enableQuota", "false");
+	public static final ConfigValue DefaultRestfulApiCallLimits = new ConfigValue("restful.quota.default_api_call_limits", "864000/P1D;2400/PT1M");
+	public static final ConfigValue RestfulApiCostsCacheRetentionSeconds = new ConfigValue("restful.quota.costs_cache_retention_seconds", "300");
+
 
 	public static final ConfigValue CleanRecipientsWithoutBinding = new ConfigValue("cleanup.deleteRecipientsWithoutBinding", "false");
-	public static final ConfigValue CleanRecipientsData = new ConfigValue("cleanup.deleteRecipientsData", "false");
+	public static final ConfigValue CleanRecipientsData = new ConfigValue("cleanup.deleteRecipientsData", "-1");
 	public static final ConfigValue CleanMailingData = new ConfigValue("cleanup.deleteMailingData", "true");
+	public static final ConfigValue CleanTrackingData = new ConfigValue("cleanup.deleteTrackingData", "-1");
+	public static final ConfigValue DeleteRecipients = new ConfigValue("cleanup.deleteRecipients", "-1");
 	
 	/**
 	 * Values allowed: none, warning, error
@@ -512,7 +522,7 @@ public class ConfigValue {
 	public static final ConfigValue OptimzedMailingGenerationStatus = new ConfigValue("omg:is-enabled");
 
 	public static final ConfigValue UserFormCssLocation = new ConfigValue("userform.css.url", "https://rdir.de/content/1/basic/forms");
-	
+
 	/** Do not read this value by configservice, so it is not cached **/
 	public static final ConfigValue JobQueueExecute = new ConfigValue("jobqueue.execute", "0");
 	
@@ -532,6 +542,9 @@ public class ConfigValue {
 		
 		/** Login block time in seconds (Web UI). */
 		public static final ConfigValue WebuiIpBlockTimeSeconds = new ConfigValue("loginTracking.webui.ipBlockTimeSeconds", "60");
+		
+		/** Enable / disable login tracking in webservices. */
+		public static final ConfigValue LoginTrackingWebserviceEnabled = new ConfigValue("loginTracking.webservices.enabled", "true");
 		
 		/** Maximum number of failed logins (webservices). */
 		public static final ConfigValue LoginTrackingWebservicesMaxFailedAttempts = new ConfigValue("loginTracking.webservices.maxFails", "10");
@@ -562,7 +575,7 @@ public class ConfigValue {
 		public static final ConfigValue WebservicesUrl = new ConfigValue("webservices.url");
 
 		/** Default settings for API call limits. Current: 1.000 per hour and 10 per seconds. */
-		public static final ConfigValue DefaultApiCallLimits = new ConfigValue("webservice.default_api_call_limits", "1000/PT1H;10/PT1S");
+		public static final ConfigValue DefaultApiCallLimits = new ConfigValue("webservice.default_api_call_limits", "864000/P1D;2400/PT1M");
 
 		public static final ConfigValue WebserviceCostsCacheRetentionSeconds = new ConfigValue("webservice.costs_cache_retention_seconds", "300");
 	}
@@ -571,6 +584,9 @@ public class ConfigValue {
 
 		/** Switch to enable webhook interface. */
 		public static final ConfigValue WebhooksEnabled = new ConfigValue("webhooks.enabled", "false");
+		
+		/** Maximum number of entries in a single webhook message delivery package. */
+		public static final ConfigValue WebhooksMessagePacketSizeLimit = new ConfigValue("webhooks.messagePacketSizeLimit", "10000");
 
 		/** Maximum number of retry attempts. */
 		public static final ConfigValue MaximumRetryCount = new ConfigValue("webhooks.retries.maxCount", "10");
@@ -585,25 +601,25 @@ public class ConfigValue {
 		public static final ConfigValue ConnectTimeoutMillis = new ConfigValue("webhooks.transport.connectTimeoutMillis", "10000");
 
 		public static final ConfigValue MessageRetentionTimeSeconds = new ConfigValue("webhooks.messages.retentionSeconds", "86400");
-		
+
+		public static final ConfigValue MessageGenerationGracePeriodSeconds = new ConfigValue("webhooks.messageGeneration.gracePeriodSeconds", "10");
 	}
 	
 	/**
 	 * Collection of config value for development purpose only.
 	 */
 	public static final class Development {
-		// TODO Remove after rollout EMM-3332
-		public static final ConfigValue UseBackendMailingPreview = new ConfigValue("development.use_backend_mailing_preview", "true");
-		
-		// TODO Remove after rollout EMM-7992
-		public static final ConfigValue UseNewBlacklistWildcards = new ConfigValue("development.use_new_blacklist_wildcards", "true");
-		
-		// TODO Remove after rollout EMM-7975
-		public static final ConfigValue UseNewLitmusPolling = new ConfigValue("development.use_new_litmus_polling", "false");
-
-		public static final ConfigValue CopyMailingMeasureTiming = new ConfigValue("development.CopyMailing.measureTiming", "false");
-		
 		public static final ConfigValue UseNewWebserviceRateLimiting = new ConfigValue("development.useNewWebserviceRateLimiting", "false");
+		
+		public static final ConfigValue EnableCheckForEditableMailing = new ConfigValue("development.webservices.enableMailingEditableCheck", "false");
+		
+		public static final ConfigValue VelocityUseRecipientApiClass = new ConfigValue("development.velocity.useRecipientApiClass", "false");
+		public static final ConfigValue VelocityUseBindingEntryApiClass = new ConfigValue("development.velocity.useBindingEntryApiClass", "false");
+		public static final ConfigValue VelocityUseMailingDaoApiClass = new ConfigValue("development.velocity.useMailingDaoApiClass", "false");
+		public static final ConfigValue VelocityUseMailingApiClass = new ConfigValue("development.velocity.useMailingApiClass", "false");
+
+		public static final ConfigValue RestfulDisableForcedReactivation = new ConfigValue("development.restful.disableForcedReactivation", "false");
+
 	}
 	
 	// Fallback values for backend
@@ -632,6 +648,16 @@ public class ConfigValue {
 	 * This Key allows the DKIM key deactivation in backend for special companies
 	 */
 	public static final ConfigValue DkimGlobalActivation = new ConfigValue("dkim-global-key", "true");
+
+	/**
+	 * This Key allows the DKIM key deactivation in backend for special companies
+	 */
+	public static final ConfigValue DkimLocalActivation = new ConfigValue("dkim-local-key", "true");
+	
+	/**
+	 * This Key enables backend MIA data generation
+	 */
+	public static final ConfigValue MiaEnabled = new ConfigValue("mia:is-enabled", "false");
 
 	public static final ConfigValue ExpireStatistics = new ConfigValue("expire.statistics", "1100");
 
@@ -687,6 +713,21 @@ public class ConfigValue {
 	public static final ConfigValue MaxmiumMailinglistApproval = new ConfigValue("mailinglist.maxmiumMailinglistApproval", "-1");
 	
 	public static final ConfigValue MailtrackExtended = new ConfigValue("mailtrack-extended", "false");
+
+	public static final ConfigValue ActopUnsubscribeExtended = new ConfigValue("actop.unsubscribe.extended", "true");
+
+	public static final ConfigValue RedirectTrackingPointToMigrated = new ConfigValue("trackingpoint.redirectToMigrated", "false");
+
+	public static final ConfigValue CompanyTokenLength = new ConfigValue("company.tokenLength", "32");
+	
+	public static final ConfigValue DeepTrackingCookieSameSitePolicy = new ConfigValue("deeptracking.cookie.sameSitePolicy", null);
+
+	public static final ConfigValue RefreshBounceloadAddresses = new ConfigValue("RefreshBounceloadAddresses", "true");
+
+	public static final ConfigValue DbMaximumDeadlockRetries = new ConfigValue("database.MaximumDeadlockRetries", "3");
+	public static final ConfigValue DbDeadlockRetriesWaitSeconds = new ConfigValue("database.DeadlockRetriesWaitSeconds", "10");
+
+	public static final ConfigValue ExtendedRestfulLogging = new ConfigValue("restful.ExtendedLogging", "false");
 	
 	private final String name;
 	private final String defaultValue;
@@ -715,6 +756,10 @@ public class ConfigValue {
 		}
 
 		LIST_OF_ALL_CONFIGVALUES.add(this);
+	}
+	
+	public final String getName() {
+		return this.name;
 	}
 
 	@Override

@@ -126,7 +126,11 @@ By default a `GET` HTTP method is used. But you can specify an HTTP method to us
           var $scriptMessages = $resp.all('[data-message]');
 
           if ($errorMessage.exists()) {
-            $('body').append($errorMessage);
+            if($errorMessage.is('script[type="text/x-mustache-template"]')) {
+              $('body').append(_.template($errorMessage.html()));
+            } else {
+              $('body').append($errorMessage);
+            }
             isDefault = false;
           } else if ($scriptMessages.exists()) {
             Page.render(jqxhr.responseText);

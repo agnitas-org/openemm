@@ -13,7 +13,7 @@ package com.agnitas.emm.mobilephone.service;
 import com.agnitas.emm.mobilephone.MobilephoneNumber;
 
 /**
- * Interface for checking mobile phone numbers against a whitelist. 
+ * Interface for checking mobile phone numbers against a whitelist.
  */
 public interface MobilephoneNumberWhitelist {
 

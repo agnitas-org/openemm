@@ -1,0 +1,20 @@
+.btn {
+  @include button-size(5px, 10px, 13px, 18px);
+}
+
+label {
+  color: inherit;
+}
+
+.radio-group label {
+  margin-left: 5px;
+}
+
+.checkbox-group label input {
+  margin-right: 5px;
+}
+
+.form-group {
+  margin-right: inherit;
+  margin-left: inherit;
+}

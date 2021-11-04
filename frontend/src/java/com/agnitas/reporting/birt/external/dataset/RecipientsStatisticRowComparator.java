@@ -12,9 +12,9 @@ package com.agnitas.reporting.birt.external.dataset;
 
 import java.util.Comparator;
 
-public class RecipientsStatisticRowComparator implements Comparator<RecipientsStatisticRow> {
+public class RecipientsStatisticRowComparator implements Comparator<RecipientsStatisticCommonRow> {
 	@Override
-	public int compare(RecipientsStatisticRow row1, RecipientsStatisticRow row2) {
+	public int compare(RecipientsStatisticCommonRow row1, RecipientsStatisticCommonRow row2) {
 		if (row1 != null && row2 != null) {
 			if (row1.getMailingListName() != null && row2.getMailingListName() != null) {
 				return row1.getMailingListName().compareTo(row2.getMailingListName());

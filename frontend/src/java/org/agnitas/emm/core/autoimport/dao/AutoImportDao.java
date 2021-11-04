@@ -40,9 +40,9 @@ public interface AutoImportDao {
 
 	void changeActiveStatus(int autoImportId, int companyId, boolean active);
 
-	void updateAutoImport(AutoImport autoImport, @VelocityCheck int companyId) throws Exception;
+	void updateAutoImport(AutoImport autoImport) throws Exception;
 
-	void createAutoImport(AutoImport autoImport, @VelocityCheck int companyId) throws Exception;
+	void createAutoImport(AutoImport autoImport) throws Exception;
 
 	List<AutoImport> getAutoImportsToRun(int maximumParallelAutoImports, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 

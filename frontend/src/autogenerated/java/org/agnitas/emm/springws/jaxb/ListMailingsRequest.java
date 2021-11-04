@@ -11,10 +11,14 @@
 
 package org.agnitas.emm.springws.jaxb;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import java.util.Date;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlSchemaType;
+import jakarta.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 
 /**
@@ -23,21 +27,379 @@ import javax.xml.bind.annotation.XmlType;
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType>
- *   &lt;complexContent>
- *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *     &lt;/restriction>
- *   &lt;/complexContent>
- * &lt;/complexType>
+ * &lt;complexType&gt;
+ *   &lt;complexContent&gt;
+ *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+ *       &lt;all&gt;
+ *         &lt;element name="filter" minOccurs="0"&gt;
+ *           &lt;complexType&gt;
+ *             &lt;complexContent&gt;
+ *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+ *                 &lt;all&gt;
+ *                   &lt;element name="sentBefore" minOccurs="0"&gt;
+ *                     &lt;complexType&gt;
+ *                       &lt;complexContent&gt;
+ *                         &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+ *                           &lt;all&gt;
+ *                             &lt;element name="timestamp" type="{http://www.w3.org/2001/XMLSchema}dateTime"/&gt;
+ *                             &lt;element name="inclusive" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/&gt;
+ *                           &lt;/all&gt;
+ *                         &lt;/restriction&gt;
+ *                       &lt;/complexContent&gt;
+ *                     &lt;/complexType&gt;
+ *                   &lt;/element&gt;
+ *                   &lt;element name="sentAfter" minOccurs="0"&gt;
+ *                     &lt;complexType&gt;
+ *                       &lt;complexContent&gt;
+ *                         &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+ *                           &lt;all&gt;
+ *                             &lt;element name="timestamp" type="{http://www.w3.org/2001/XMLSchema}dateTime"/&gt;
+ *                             &lt;element name="inclusive" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/&gt;
+ *                           &lt;/all&gt;
+ *                         &lt;/restriction&gt;
+ *                       &lt;/complexContent&gt;
+ *                     &lt;/complexType&gt;
+ *                   &lt;/element&gt;
+ *                   &lt;element name="mailingStatus" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/&gt;
+ *                 &lt;/all&gt;
+ *               &lt;/restriction&gt;
+ *             &lt;/complexContent&gt;
+ *           &lt;/complexType&gt;
+ *         &lt;/element&gt;
+ *       &lt;/all&gt;
+ *     &lt;/restriction&gt;
+ *   &lt;/complexContent&gt;
+ * &lt;/complexType&gt;
  * </pre>
  * 
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "")
+@XmlType(name = "", propOrder = {
+
+})
 @XmlRootElement(name = "ListMailingsRequest")
 @SuppressWarnings("all")
 public class ListMailingsRequest {
 
+    protected ListMailingsRequest.Filter filter;
+
+    /**
+     * Gets the value of the filter property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link ListMailingsRequest.Filter }
+     *     
+     */
+    public ListMailingsRequest.Filter getFilter() {
+        return filter;
+    }
+
+    /**
+     * Sets the value of the filter property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link ListMailingsRequest.Filter }
+     *     
+     */
+    public void setFilter(ListMailingsRequest.Filter value) {
+        this.filter = value;
+    }
+
+
+    /**
+     * <p>Java class for anonymous complex type.
+     * 
+     * <p>The following schema fragment specifies the expected content contained within this class.
+     * 
+     * <pre>
+     * &lt;complexType&gt;
+     *   &lt;complexContent&gt;
+     *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+     *       &lt;all&gt;
+     *         &lt;element name="sentBefore" minOccurs="0"&gt;
+     *           &lt;complexType&gt;
+     *             &lt;complexContent&gt;
+     *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+     *                 &lt;all&gt;
+     *                   &lt;element name="timestamp" type="{http://www.w3.org/2001/XMLSchema}dateTime"/&gt;
+     *                   &lt;element name="inclusive" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/&gt;
+     *                 &lt;/all&gt;
+     *               &lt;/restriction&gt;
+     *             &lt;/complexContent&gt;
+     *           &lt;/complexType&gt;
+     *         &lt;/element&gt;
+     *         &lt;element name="sentAfter" minOccurs="0"&gt;
+     *           &lt;complexType&gt;
+     *             &lt;complexContent&gt;
+     *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+     *                 &lt;all&gt;
+     *                   &lt;element name="timestamp" type="{http://www.w3.org/2001/XMLSchema}dateTime"/&gt;
+     *                   &lt;element name="inclusive" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/&gt;
+     *                 &lt;/all&gt;
+     *               &lt;/restriction&gt;
+     *             &lt;/complexContent&gt;
+     *           &lt;/complexType&gt;
+     *         &lt;/element&gt;
+     *         &lt;element name="mailingStatus" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/&gt;
+     *       &lt;/all&gt;
+     *     &lt;/restriction&gt;
+     *   &lt;/complexContent&gt;
+     * &lt;/complexType&gt;
+     * </pre>
+     * 
+     * 
+     */
+    @XmlAccessorType(XmlAccessType.FIELD)
+    @XmlType(name = "", propOrder = {
+
+    })
+    public static class Filter {
+
+        protected ListMailingsRequest.Filter.SentBefore sentBefore;
+        protected ListMailingsRequest.Filter.SentAfter sentAfter;
+        protected String mailingStatus;
+
+        /**
+         * Gets the value of the sentBefore property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link ListMailingsRequest.Filter.SentBefore }
+         *     
+         */
+        public ListMailingsRequest.Filter.SentBefore getSentBefore() {
+            return sentBefore;
+        }
+
+        /**
+         * Sets the value of the sentBefore property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link ListMailingsRequest.Filter.SentBefore }
+         *     
+         */
+        public void setSentBefore(ListMailingsRequest.Filter.SentBefore value) {
+            this.sentBefore = value;
+        }
+
+        /**
+         * Gets the value of the sentAfter property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link ListMailingsRequest.Filter.SentAfter }
+         *     
+         */
+        public ListMailingsRequest.Filter.SentAfter getSentAfter() {
+            return sentAfter;
+        }
+
+        /**
+         * Sets the value of the sentAfter property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link ListMailingsRequest.Filter.SentAfter }
+         *     
+         */
+        public void setSentAfter(ListMailingsRequest.Filter.SentAfter value) {
+            this.sentAfter = value;
+        }
+
+        /**
+         * Gets the value of the mailingStatus property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getMailingStatus() {
+            return mailingStatus;
+        }
+
+        /**
+         * Sets the value of the mailingStatus property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setMailingStatus(String value) {
+            this.mailingStatus = value;
+        }
+
+
+        /**
+         * <p>Java class for anonymous complex type.
+         * 
+         * <p>The following schema fragment specifies the expected content contained within this class.
+         * 
+         * <pre>
+         * &lt;complexType&gt;
+         *   &lt;complexContent&gt;
+         *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+         *       &lt;all&gt;
+         *         &lt;element name="timestamp" type="{http://www.w3.org/2001/XMLSchema}dateTime"/&gt;
+         *         &lt;element name="inclusive" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/&gt;
+         *       &lt;/all&gt;
+         *     &lt;/restriction&gt;
+         *   &lt;/complexContent&gt;
+         * &lt;/complexType&gt;
+         * </pre>
+         * 
+         * 
+         */
+        @XmlAccessorType(XmlAccessType.FIELD)
+        @XmlType(name = "", propOrder = {
+
+        })
+        public static class SentAfter {
+
+            @XmlElement(required = true, type = String.class)
+            @XmlJavaTypeAdapter(DateAdapter.class)
+            @XmlSchemaType(name = "dateTime")
+            protected Date timestamp;
+            protected Boolean inclusive;
+
+            /**
+             * Gets the value of the timestamp property.
+             * 
+             * @return
+             *     possible object is
+             *     {@link String }
+             *     
+             */
+            public Date getTimestamp() {
+                return timestamp;
+            }
+
+            /**
+             * Sets the value of the timestamp property.
+             * 
+             * @param value
+             *     allowed object is
+             *     {@link String }
+             *     
+             */
+            public void setTimestamp(Date value) {
+                this.timestamp = value;
+            }
+
+            /**
+             * Gets the value of the inclusive property.
+             * 
+             * @return
+             *     possible object is
+             *     {@link Boolean }
+             *     
+             */
+            public Boolean isInclusive() {
+                return inclusive;
+            }
+
+            /**
+             * Sets the value of the inclusive property.
+             * 
+             * @param value
+             *     allowed object is
+             *     {@link Boolean }
+             *     
+             */
+            public void setInclusive(Boolean value) {
+                this.inclusive = value;
+            }
+
+        }
+
+
+        /**
+         * <p>Java class for anonymous complex type.
+         * 
+         * <p>The following schema fragment specifies the expected content contained within this class.
+         * 
+         * <pre>
+         * &lt;complexType&gt;
+         *   &lt;complexContent&gt;
+         *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+         *       &lt;all&gt;
+         *         &lt;element name="timestamp" type="{http://www.w3.org/2001/XMLSchema}dateTime"/&gt;
+         *         &lt;element name="inclusive" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/&gt;
+         *       &lt;/all&gt;
+         *     &lt;/restriction&gt;
+         *   &lt;/complexContent&gt;
+         * &lt;/complexType&gt;
+         * </pre>
+         * 
+         * 
+         */
+        @XmlAccessorType(XmlAccessType.FIELD)
+        @XmlType(name = "", propOrder = {
+
+        })
+        public static class SentBefore {
+
+            @XmlElement(required = true, type = String.class)
+            @XmlJavaTypeAdapter(DateAdapter.class)
+            @XmlSchemaType(name = "dateTime")
+            protected Date timestamp;
+            protected Boolean inclusive;
+
+            /**
+             * Gets the value of the timestamp property.
+             * 
+             * @return
+             *     possible object is
+             *     {@link String }
+             *     
+             */
+            public Date getTimestamp() {
+                return timestamp;
+            }
+
+            /**
+             * Sets the value of the timestamp property.
+             * 
+             * @param value
+             *     allowed object is
+             *     {@link String }
+             *     
+             */
+            public void setTimestamp(Date value) {
+                this.timestamp = value;
+            }
+
+            /**
+             * Gets the value of the inclusive property.
+             * 
+             * @return
+             *     possible object is
+             *     {@link Boolean }
+             *     
+             */
+            public Boolean isInclusive() {
+                return inclusive;
+            }
+
+            /**
+             * Sets the value of the inclusive property.
+             * 
+             * @param value
+             *     allowed object is
+             *     {@link Boolean }
+             *     
+             */
+            public void setInclusive(Boolean value) {
+                this.inclusive = value;
+            }
+
+        }
+
+    }
 
 }

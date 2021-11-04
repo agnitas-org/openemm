@@ -13,14 +13,14 @@ package com.agnitas.web.forms;
 import java.util.Collection;
 import java.util.Date;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.struts.action.ActionMapping;
 
 import com.agnitas.beans.ComPredeliveryProvider;
 
-// TODO Not longer used?
+// TODO Not longer used? GWUA-4803 delete when migration is finished
 public class ComPredeliveryForm extends StrutsFormBase {
 
 	private static final long serialVersionUID = -7395594021916269872L;

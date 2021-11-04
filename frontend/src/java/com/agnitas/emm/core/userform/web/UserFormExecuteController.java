@@ -14,9 +14,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
+import java.util.Objects;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.ViciousFormDataException;
@@ -33,6 +34,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.beans.ComCompany;
 import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.emm.core.commons.web.ParameterOverwritingHttpServletRequestWrapper;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
+import com.agnitas.emm.core.company.service.UnknownCompanyTokenException;
 import com.agnitas.emm.core.userform.exception.BlacklistedDeviceException;
 import com.agnitas.emm.core.userform.service.UserFormExecutionResult;
 import com.agnitas.emm.core.userform.service.UserFormExecutionService;
@@ -43,17 +47,33 @@ import com.agnitas.web.ComSupportForm;
 @Controller
 @RequestMapping("/")
 public class UserFormExecuteController {
+	
+	/** Name of request parameter containing company ID. */
+	public static final String COMPANY_ID_PARAMETER_NAME = "agnCI";
+	
+	/** Name of request parameter containing company token. */
+	public static final String COMPANY_TOKEN_PARAMETER_NAME = "agnCTOKEN";
+	
+	/** Name of request parameter containing form name. */
+	public static final String FORM_NAME_PARAMETER_NAME = "agnFN";
+	
+	public static final String USE_SESSION_PARAMETER_NAME = "agnUseSession";
 
+	/** The logger. */
 	private static final Logger logger = Logger.getLogger(UserFormExecuteController.class);
 
 	protected ConfigService configService;
 	private UserFormExecutionService userFormExecutionService;
 	protected ComCompanyDao companyDao;
+	
+	/** Service dealing with company tokens. */
+	private final CompanyTokenService companyTokenService;
 
-	public UserFormExecuteController(ConfigService configService, UserFormExecutionService userFormExecutionService, ComCompanyDao companyDao) {
+	public UserFormExecuteController(final ConfigService configService, final UserFormExecutionService userFormExecutionService, final ComCompanyDao companyDao, final CompanyTokenService companyTokenService) {
 		this.configService = configService;
 		this.userFormExecutionService = userFormExecutionService;
 		this.companyDao = companyDao;
+		this.companyTokenService = Objects.requireNonNull(companyTokenService, "CompanyTokenService is null");
 	}
 
 	/**
@@ -62,7 +82,9 @@ public class UserFormExecuteController {
 	 * @throws IOException
 	 */
 	@RequestMapping("/form.action")
-	public String executeForm(HttpServletRequest request, @RequestParam(value = "file", required = false) MultipartFile file, HttpServletResponse response) throws IOException {
+	public String executeForm(HttpServletRequest originalRequest, @RequestParam(value = "file", required = false) MultipartFile file, HttpServletResponse response) throws IOException {
+		final ParameterOverwritingHttpServletRequestWrapper request = new ParameterOverwritingHttpServletRequestWrapper(originalRequest);
+		
 		// Validate the request parameters specified by the user
 		final CaseInsensitiveMap<String, Object> params = new CaseInsensitiveMap<>();
 		if (file != null) {
@@ -77,9 +99,11 @@ public class UserFormExecuteController {
 			// Spring Filter in web.xml only sets request encoding charset
 			response.setCharacterEncoding(request.getCharacterEncoding());
 
-			final boolean useSession = AgnUtils.interpretAsBoolean(request.getParameter("agnUseSession"));
-			final String formName = request.getParameter("agnFN");
-			final int companyID = Integer.parseInt(request.getParameter("agnCI"));
+			final boolean useSession = AgnUtils.interpretAsBoolean(request.getParameter(USE_SESSION_PARAMETER_NAME));
+			final String formName = request.getParameter(FORM_NAME_PARAMETER_NAME);
+			final int companyID = determineCompanyId(request);
+			
+			request.setParameter(COMPANY_ID_PARAMETER_NAME, Integer.toString(companyID));
 
 			final UserFormExecutionResult result = userFormExecutionService.executeForm(companyID, formName, request, params, useSession);
 			String responseContent = result.responseContent;
@@ -105,6 +129,14 @@ public class UserFormExecuteController {
 			response.setContentType("text/plain");
 			response.getOutputStream().write("No service".getBytes(StandardCharsets.UTF_8));
 			return null;
+		} catch(final UnknownCompanyTokenException e) {
+			if(logger.isInfoEnabled()) {
+				logger.info(String.format("Company token '%s' not found", e.getToken()));
+			}
+			
+			// We could not determine company ID from token, so we cannot determine if support button should be shown.
+			request.setAttribute("SHOW_SUPPORT_BUTTON", false);
+			return "form_not_found";
 		} catch (FormNotFoundException formNotFoundEx) {
 			final ComSupportForm supportForm = new ComSupportForm();
 
@@ -122,14 +154,22 @@ public class UserFormExecuteController {
 			request.setAttribute("supportForm", supportForm);
 
 			// Check, that "agnFN" and "agnCI" parameters are both present
-			if (request.getParameter("agnFN") != null && !request.getParameter("agnFN").equals("") && request.getParameter("agnCI") != null
-					&& !request.getParameter("agnCI").equals("")) {
+			if (request.getParameter(FORM_NAME_PARAMETER_NAME) != null && !request.getParameter(FORM_NAME_PARAMETER_NAME).equals("") && request.getParameter(COMPANY_ID_PARAMETER_NAME) != null
+					&& !request.getParameter(COMPANY_ID_PARAMETER_NAME).equals("")) {
 				try {
-					final int companyID = Integer.parseInt(request.getParameter("agnCI"));
+					final int companyID = determineCompanyId(request);
 					final ComCompany company = companyDao.getCompany(companyID);
 
 					request.setAttribute("SHOW_SUPPORT_BUTTON", company != null && CompanyStatus.ACTIVE == company.getStatus());
 
+					return "form_not_found";
+				} catch(final UnknownCompanyTokenException e) {
+					if(logger.isInfoEnabled()) {
+						logger.info(String.format("Company token '%s' not found", e.getToken()));
+					}
+					
+					// We could not determine company ID from token, so we cannot determine if support button should be shown.
+					request.setAttribute("SHOW_SUPPORT_BUTTON", false);
 					return "form_not_found";
 				} catch (final Exception e) {
 					logger.warn("Error viewing form-not-found message", e);
@@ -145,6 +185,16 @@ public class UserFormExecuteController {
 		} catch (Exception e) {
 			logger.error("execute()", e);
 			return I18nString.getLocaleString("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
+		}
+	}
+	
+	private final int determineCompanyId(final HttpServletRequest request) throws UnknownCompanyTokenException {
+		final String companyToken = request.getParameter(COMPANY_TOKEN_PARAMETER_NAME);
+
+		if(companyToken != null) {
+			return this.companyTokenService.findCompanyByToken(companyToken).getId();
+		} else {
+			return Integer.parseInt(request.getParameter(COMPANY_ID_PARAMETER_NAME));
 		}
 	}
 }

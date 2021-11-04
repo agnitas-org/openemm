@@ -4,38 +4,18 @@ AGN.Lib.Controller.new('recipient-list-new', function () {
     Modal = AGN.Lib.Modal,
     Form = AGN.Lib.Form,
     Messages = AGN.Lib.Messages,
-    JsonMessages = AGN.Lib.JsonMessages,
     Storage = AGN.Lib.Storage;
+
+  var initialRules;
+  var searchFieldsUpdatingRequired = false;
 
   Action.new({'qb:invalidrules': '#targetgroup-querybuilder'}, function() {
       Messages(t('defaults.error'), t('querybuilder.errors.invalid_definition'), 'alert');
   });
 
-  function checkAndRedirect(link, recipientId, checkLimitAccessUrl, viewUrl) {
-    checkLimitAccessUrl = checkLimitAccessUrl.replace('{RECIPIENT_ID}', recipientId);
-    $.ajax({
-        url: checkLimitAccessUrl,
-        type: 'POST'
-    }).done(function(response) {
-      if (response && response.hasOwnProperty('accessAllowed')) {
-        var accessible = response.accessAllowed;
-
-        if (accessible) {
-          JsonMessages({}, true);
-          window.location.href = viewUrl.replace('{RECIPIENT_ID}', recipientId);
-        } else {
-          Messages(t('Error'), t('error.recipient.restricted'), 'alert');
-        }
-      } else {
-        console.error('Could not check access for recipient with id: ' + recipientId);
-      }
-    }).fail(function () {
-        console.error('Could not check access for recipient with id: ' + recipientId);
-    });
-  }
-
   this.addDomInitializer('recipient-list-new', function ($scope) {
     var config = this.config;
+    searchFieldsUpdatingRequired = false;
     initialRules = $.extend({}, JSON.parse(config.initialRules));
 
     $('#basicSearch').on('click', function () {
@@ -65,14 +45,6 @@ AGN.Lib.Controller.new('recipient-list-new', function () {
       $('#target-group-save-button').toggleClass('hidden', !containsNotEmptyRule());
     });
 
-    $scope.on('click', '.js-table .table-link a', function(e) {
-      e.preventDefault();
-      e.preventViewLoad = true;
-      var link = $(this);
-      var recipientId = link.closest('tr').find('[data-recipient-id]').data('recipient-id');
-      checkAndRedirect(link, recipientId, config.CHECK_LIMITACCESS_URL, config.VIEW_URL);
-    });
-
     var basicSearchActive = $('#basicSearch').hasClass('tab active');
     var advancedSearchActive = $('#advancedSearch').hasClass('tab active');
     var duplicateAnalysisActive = $('#duplicateAnalysis').hasClass('tab active');
@@ -88,9 +60,29 @@ AGN.Lib.Controller.new('recipient-list-new', function () {
     }
   });
 
+  //necessary to support keydown event submit
+  this.addAction({enterdown: 'search-recipient'}, function() {
+    searchFieldsUpdatingRequired = true;
+  });
+
   this.addAction({validation: 'search-recipient'}, function() {
-    if (this.data && this.data.ignore_qb_validation) {
+    if (searchFieldsUpdatingRequired) {
+      var validationOptions = this.data;
+      this.data =  _.merge({}, validationOptions, {ignore_qb_validation: false, skip_empty: false});
+    } else if (this.data && this.data.ignore_qb_validation) {
       resetNotAppliedRules();
+    }
+  });
+
+  this.addAction({submission: 'search-recipient'}, function() {
+    if (searchFieldsUpdatingRequired) {
+      var isAdvancedSearch = $('input[name=advancedSearch]').val();
+      if (isAdvancedSearch == true) {
+        updateBasicFieldsBasedOnQbRules();
+      } else {
+        updateQbRulesBasedOnBasicFields();
+      }
+      submitForm($(this.el), {ignore_qb_validation: false});
     }
   });
 
@@ -98,6 +90,7 @@ AGN.Lib.Controller.new('recipient-list-new', function () {
     var api = getQbApi();
     api.clearErrors();
     api.setRules(initialRules);
+    updateBasicFieldsBasedOnQbRules();
   }
 
   this.addAction({click: 'target-group-save'}, function() {
@@ -208,15 +201,59 @@ AGN.Lib.Controller.new('recipient-list-new', function () {
     submitForm($(this.el), {ignore_qb_validation: false});
   });
 
+  /**
+   * @deprecated remove after GWUA-4769 test successfully
+   */
   this.addAction({click: 'refresh-basic-search'}, function () {
     updateQbRulesBasedOnBasicFields();
     submitForm($(this.el), {ignore_qb_validation: false});
   });
 
+  /**
+   * @deprecated remove after GWUA-4769 test successfully
+   */
   this.addAction({click: 'refresh-advanced-search'}, function () {
     updateBasicFieldsBasedOnQbRules();
     submitForm($(this.el), {ignore_qb_validation: false});
   });
+
+  this.addAction({click: 'createNewTarget'}, function() {
+    getQbApi().clearErrors();
+    var form = Form.get($(this.el));
+    var isValid = form.validate(_.merge({}, form.validatorOptions, {ignore_qb_validation: false, skip_empty: false}));
+
+    if (isValid) {
+      AGN.Lib.Confirm.createFromTemplate({rules: form.get$().find('[name="searchQueryBuilderRules"]').val()}, 'new-targetgroup-modal')
+        .done(function(resp) {
+          form.updateHtml(resp);
+        });
+    }
+  });
+
+  this.addAction({change: 'change-mailinglist-id'}, function() {
+    var mlId = $(this.el).select2('val');
+    disabledMlDependentFields(mlId == '-1');
+  });
+
+  this.addAction({click: 'refresh-basic-search-new'}, function () {
+    updateQbRulesBasedOnBasicFields();
+    disableIndependentFields(false);
+    submitForm($(this.el), {ignore_qb_validation: false});
+  });
+
+  this.addAction({click: 'refresh-advanced-search-new'}, function() {
+    updateBasicFieldsBasedOnQbRules();
+    disableIndependentFields(true);
+    submitForm($(this.el), {ignore_qb_validation: false});
+  });
+
+  function disableIndependentFields(isAdvanced) {
+    var prefix = isAdvanced ? '' : '_advanced';
+    var fieldsToDisable = ['#search_mailinglist', '#search_targetgroup', '#search_recipient_type', '#search_recipient_state'];
+    fieldsToDisable.forEach(function(selector) {
+      $(selector + prefix).prop('disabled', true);
+    })
+  }
 
   function updateQbRulesBasedOnBasicFields() {
     var fieldsMap = {
@@ -272,9 +309,9 @@ AGN.Lib.Controller.new('recipient-list-new', function () {
 
   function addOrReplaceRules(rules, recursively) {
     var api = getQbApi();
-    var qbRules = api.getRules({allow_invalid: true, skip_empty: true});
 
     return rules.reduce(function (accumulator, rule) {
+      var qbRules = api.getRules({allow_invalid: true, skip_empty: true});
       if (rule.id) {
         if (rule.value) {
           return api.setOrReplaceRule(qbRules, rule, recursively) === true || accumulator;

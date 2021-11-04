@@ -35,7 +35,7 @@
 				<isset property="javaVersion" />
 			</not>
 			<then>
-				<property name="javaVersion" value="1.8" />
+				<property name="javaVersion" value="11" />
 			</then>
 		</if>
 		<echo message="Using Java version ${javaVersion}" /> 

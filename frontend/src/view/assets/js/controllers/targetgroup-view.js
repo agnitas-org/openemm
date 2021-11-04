@@ -8,13 +8,12 @@ AGN.Lib.Controller.new('target-group-view', function ($scope) {
   });
 
   this.addDomInitializer('target-group-view', function () {
-    var $form = Form.getWrapper($(this.el));
+    var $el = $(this.el);
 
-    $form.on('click', '[data-toggle-tab]', function (e) {
+    $('[data-toggle-tab]').on('click', function (e) {
       //skip empty rule to proper validation while toggling between tabs
-      var form = AGN.Lib.Form.get($form);
-      form.validatorOptions = $.extend(form.validatorOptions, {skip_empty: true});
-      if (!form.valid()) {
+      var isValid = Form.get($el).validate({skip_empty: true});
+      if (!isValid) {
         e.preventDefault();
         return false;
       }
@@ -25,16 +24,16 @@ AGN.Lib.Controller.new('target-group-view', function ($scope) {
       var element = this.el,
         form = AGN.Lib.Form.get($(element));
 
-      form.setValueOnce('method', 'viewEQL');
-      form.submit();
-    });
+      form.setValueOnce('viewFormat', 'EQL');
+      form.submit('', {skip_empty: true});
+  });
 
   this.addAction({click: 'switch-tab-viewQB'}, function() {
     var element = this.el,
       form = AGN.Lib.Form.get($(element));
 
-    form.setValueOnce('method', 'viewQB');
-    form.submit();
+    form.setValueOnce('viewFormat', 'QUERY_BUILDER');
+    form.submit('', {skip_empty: true});
   });
 
   this.addAction({click: 'save-wizard-target'}, function() {

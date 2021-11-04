@@ -794,7 +794,33 @@
 	</xs:element>
 
 	<xs:element name="ListMailingsRequest">
-		<xs:complexType />
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="filter" minOccurs="0" maxOccurs="1">
+					<xs:complexType>
+						<xs:all>
+							<xs:element name="sentBefore" minOccurs="0" maxOccurs="1">
+								<xs:complexType>
+									<xs:all>
+										<xs:element name="timestamp" type="xs:dateTime" minOccurs="1" maxOccurs="1" />
+										<xs:element name="inclusive" type="xs:boolean" minOccurs="0" maxOccurs="1"  />
+									</xs:all>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="sentAfter" minOccurs="0" maxOccurs="1">
+								<xs:complexType>
+									<xs:all>
+										<xs:element name="timestamp" type="xs:dateTime" minOccurs="1" maxOccurs="1" />
+										<xs:element name="inclusive" type="xs:boolean" minOccurs="0" maxOccurs="1"  />
+									</xs:all>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="mailingStatus" type="xs:string" minOccurs="0" maxOccurs="1" />
+						</xs:all>
+					</xs:complexType>
+				</xs:element>
+			</xs:all>
+		</xs:complexType>
 	</xs:element>
 	<xs:element name="ListMailingsResponse">
 		<xs:complexType>

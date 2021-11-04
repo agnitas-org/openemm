@@ -1,5 +1,5 @@
-<%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowMailing" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowMailing" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
@@ -70,7 +70,7 @@
                 </label>
             </div>
             <div class="col-sm-8">
-                <select class="form-control" name="blocksize" styleId="mailType">
+                <select class="form-control" name="blocksize" id="mailType">
                     <option value="0"><bean:message key="mailing.unlimited"/></option>
                     <option value="500000">500.000</option>
                     <option value="250000">250.000</option>

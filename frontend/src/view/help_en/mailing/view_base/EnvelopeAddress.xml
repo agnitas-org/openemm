@@ -1,5 +1,4 @@
 <HelpBalloon>
-<!-- -*- scope: openemm -*- -->
 	<title><![CDATA[Envelope e-mail]]></title>
 	<content><![CDATA[The envelope address is the sender address of an e-mail server and is set by system admnistration by default.
 	<br><br>

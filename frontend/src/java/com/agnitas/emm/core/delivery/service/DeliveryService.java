@@ -10,13 +10,16 @@
 
 package com.agnitas.emm.core.delivery.service;
 
-import net.sf.json.JSONArray;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+
+import com.agnitas.beans.ComAdmin;
+
+import net.sf.json.JSONArray;
 
 public interface DeliveryService {
 
     JSONArray getDeliveriesInfo(@VelocityCheck int companyId, int mailingId, int customerId);
 
-    boolean checkIfDeliveryTableIsInDb(@VelocityCheck int companyId);
+    boolean isDeliveryHistoryEnabled(ComAdmin admin);
 
 }

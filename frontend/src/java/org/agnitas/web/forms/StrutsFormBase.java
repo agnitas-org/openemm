@@ -16,7 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.AgnUtils;
@@ -345,6 +345,8 @@ public class StrutsFormBase extends ActionForm {
 
 			if (!isParameterExcludedForUnsafeHtmlTagCheck(paramName, request)) {
 				getHtmlCheckErrors(paramName, request.getParameterValues(paramName), errors);
+			} else {			
+				getHtmlUnsupportedTagsErrors(paramName, request.getParameterValues(paramName), errors);
 			}
 		}
 
@@ -371,6 +373,31 @@ public class StrutsFormBase extends ActionForm {
 		try {
 			/** Class to check strings for possible XSS code. */
 			HtmlXSSPreventer.checkString(text);
+		} catch(final XSSHtmlException e) {
+			errors.addAll(e.getErrors());
+		}
+	}
+	
+	/**
+	 * 
+	 * @see RequestParameterXssPreventerHelper
+	 */
+	@Deprecated
+	protected void getHtmlUnsupportedTagsErrors(final String paramName, final String[] textArray, final Set<HtmlCheckError> errors) {
+		for(final String text : textArray) {
+			getHtmlUnsupportedTagsErrors(paramName, text, errors);
+		}
+	}
+	
+	/**
+	 * 
+	 * @see RequestParameterXssPreventerHelper
+	 */
+	@Deprecated
+	protected void getHtmlUnsupportedTagsErrors(final String paramName, final String text, final Set<HtmlCheckError> errors) {
+		try {
+			/** Class to check strings for possible XSS code. */
+			HtmlXSSPreventer.checkUnsupportedTags(text);
 		} catch(final XSSHtmlException e) {
 			errors.addAll(e.getErrors());
 		}

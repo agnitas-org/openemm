@@ -374,7 +374,7 @@
                                                         sortProperty="target_expression"
                                                         headerClass="js-table-sort js-filter-target-group">
                                             <c:forEach var="targetgroup" items="${mailingStat.targetgroups}">
-                                                <c:url var="viewTargetUrl" value="/targetQB.do?method=show&targetID=${targetgroup.target_id}"/>
+                                                <c:url var="viewTargetUrl" value="/target/${targetgroup.target_id}/view.action"/>
                                                 <a href="${viewTargetUrl}">
                                                     <span class="multiline-auto">${targetgroup.target_name}</span>
                                                 </a>

@@ -48,8 +48,35 @@ public final class EmmActionOperationErrors {
 		/** A hugh number of requests are detected, request got blocked. */
 		FLOODING,
 		
+		/** No customer ID given or ID 0 given. */
 		MISSING_CUSTOMER_ID,
-		MISSING_MAILING_ID
+		
+		/** No mailing ID given or ID 0 given. */
+		MISSING_MAILING_ID,
+		
+		/** No profile fields have been read. */
+		NO_RECIPIENT_PROFILE_FIELDS_READ,
+		
+		/** Not an active recipient. */
+		RECIPIENT_NOT_ACTIVE,
+		
+		/** Address of mail receiver blacklisted. */
+		RECEIVER_ADDRESS_BLACKLISTED,
+		
+		/** Address of mail sender blacklisted. */
+		SENDER_ADDRESS_BLACKLISTED,
+		
+		/** Reply address of mail blacklisted. */
+		REPLY_ADDRESS_BLACKLISTED,
+		
+		/** Sending service mail blocked by request parameter. */
+		SERVICE_MAIL_MANUALLY_BLOCKED,
+		
+		/** No recipient for given ID. */
+		UNKNOWN_RECIPIENT,
+		
+		/** No sender address given. */
+		NO_SENDER_ADDRESS
 	}
 	
 	/** Set of codes representing errors occurred during processing. */

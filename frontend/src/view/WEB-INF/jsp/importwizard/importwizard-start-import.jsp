@@ -1,5 +1,6 @@
-<%@ page import="org.agnitas.web.ImportProfileAction" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page import="org.agnitas.web.ImportProfileAction" %>
+
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -60,11 +61,12 @@
                                <bean:message key="import.wizard.uploadCsvFile"/>
                            </span>
                     </label>
-                    <html:select property="attachmentCsvFileID" styleClass="form-control" styleId="attachment_csv_file_id" disabled="true">
+
+                    <agn:agnSelect property="attachmentCsvFileID" styleClass="form-control" styleId="attachment_csv_file_id" disabled="true" data-show-by-checkbox="#useCsvUpload">
                         <c:forEach var="csvFile" items="${newImportWizardForm.csvFiles}">
                              <html:option value="${csvFile.uploadID}">${csvFile.filename}</html:option>
                         </c:forEach>
-                    </html:select>
+                    </agn:agnSelect>
                 </div>
 
                 <div class="form-group">

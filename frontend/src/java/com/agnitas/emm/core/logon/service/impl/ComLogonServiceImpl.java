@@ -474,7 +474,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 			mailContentHtml = I18nString.getLocaleString("passwordReset.mail.body.html", locale, passwordResetLink, admin.getUsername(), admin.getFirstName(), admin.getFullname());
 		}
 		
-		javaMailService.sendEmail(admin.getEmail(), mailSubject, mailContentText, mailContentHtml);
+		javaMailService.sendEmail(admin.getCompanyID(), admin.getEmail(), mailSubject, mailContentText, mailContentHtml);
 	}
 	
 	private void checkLicense() {
@@ -610,7 +610,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 			mailContentHtml = I18nString.getLocaleString("user.welcome.mail.body.html", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
 		}
 		
-		javaMailService.sendEmail(admin.getEmail(), mailSubject, mailContentText, mailContentHtml);
+		javaMailService.sendEmail(admin.getCompanyID(), admin.getEmail(), mailSubject, mailContentText, mailContentHtml);
 		return new SimpleServiceResult(true);
 	}
 	

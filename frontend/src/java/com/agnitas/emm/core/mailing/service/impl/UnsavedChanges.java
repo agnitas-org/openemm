@@ -12,7 +12,7 @@ package com.agnitas.emm.core.mailing.service.impl;
 
 import org.springframework.stereotype.Component;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingStatisticsDao;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.emm.core.mailing.service.CalculationRecipients;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
@@ -21,22 +21,21 @@ import com.agnitas.emm.core.target.service.ComTargetService;
 
 @Component
 public class UnsavedChanges implements CalculationRecipients<CalculationRecipientsConfig> {
-
-    private ComMailingDao mailingDao;
+    private MailingStatisticsDao mailingStatisticsDao;
     private ComMailingBaseService mailingBaseService;
     private ComTargetService targetService;
 
-    public UnsavedChanges(ComMailingDao mailingDao, ComMailingBaseService mailingBaseService, ComTargetService targetService) {
-        this.mailingDao = mailingDao;
+    public UnsavedChanges(ComMailingBaseService mailingBaseService, ComTargetService targetService, MailingStatisticsDao mailingStatisticsDao) {
         this.mailingBaseService = mailingBaseService;
         this.targetService = targetService;
+        this.mailingStatisticsDao = mailingStatisticsDao;
     }
 
     @Override
     public int calculate(CalculationRecipientsConfig config) throws Exception {
         if (config.getFollowUpMailing() > 0) {
             String sqlTargetExpression = targetService.getSQLFromTargetExpression(TargetExpressionUtils.makeTargetExpression(config.getTargetGroupIds(), config.isConjunction()), config.getSplitId(), config.getCompanyId());
-            return mailingDao.getFollowUpStat(config.getFollowUpMailing(), config.getFollowUpType(), config.getCompanyId(), sqlTargetExpression);
+            return mailingStatisticsDao.getFollowUpStat(config.getFollowUpMailing(), config.getFollowUpType(), config.getCompanyId(), sqlTargetExpression);
         }
         return mailingBaseService.calculateRecipients(config.getCompanyId(), config.getMailingListId(), config.getSplitId(), config.getTargetGroupIds(), config.isConjunction());
     }

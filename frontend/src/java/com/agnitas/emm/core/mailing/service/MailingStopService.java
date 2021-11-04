@@ -12,6 +12,8 @@ package com.agnitas.emm.core.mailing.service;
 
 import java.util.Date;
 
+import com.agnitas.beans.ComAdmin;
+
 /**
  * Service to stop delivery / generation of mailings. 
  */
@@ -33,13 +35,13 @@ public interface MailingStopService {
 	 * 
 	 * @throws MailingStopServiceException on errors processing stop request
 	 */
-	public boolean stopMailing(final int companyID, final int mailingID, final boolean includeUnscheduled) throws MailingStopServiceException;
+	boolean stopMailing(final int companyID, final int mailingID, final boolean includeUnscheduled) throws MailingStopServiceException;
 	
-	public boolean resumeMailing(final int companyID, final int mailingID) throws MailingStopServiceException;
+	boolean resumeMailing(final int companyID, final int mailingID) throws MailingStopServiceException;
 	
-	public int copyMailingForResume(final int companyID, final int mailingID, final String shortnameOfCopy, final String descriptionOfCopy) throws MailingStopServiceException;
+	int copyMailingForResume(final ComAdmin admin, final int mailingID) throws MailingStopServiceException;
 	
-	public boolean isStopped(final int mailingID);
+	boolean isStopped(final int mailingID);
 	
 	/**
 	 * Checks if generation / delivery of mailing can be stopped.
@@ -51,7 +53,7 @@ public interface MailingStopService {
 	 * 
 	 * @return <code>true</code> if mailing can be stopped
 	 */
-	public boolean canStopMailing(final int companyID, final int mailingID);
+	boolean canStopMailing(final int companyID, final int mailingID);
 	
 	/**
 	 * Checks if generation / delivery of mailing can be resumed.

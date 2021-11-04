@@ -95,7 +95,7 @@
                         <c:set target="${options}" property="3" value="${option}"/>
 
                         <c:set target="${option}" property="url" value="#"/>
-                        <c:set target="${option}" property="extraAttributes" value="data-action='workflowCopyBtn'"/>
+                        <c:set target="${option}" property="extraAttributes" value="data-action='workflow-copy'"/>
                         <c:set target="${option}" property="icon" value="icon-copy"/>
                         <c:set target="${option}" property="name">
                             <mvc:message code="button.Copy"/>
@@ -136,7 +136,7 @@
                 <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
                     <c:set target="${options}" property="1" value="${option}"/>
                     <c:set target="${option}" property="url" value="#"/>
-                    <c:set target="${option}" property="extraAttributes" value="id='toggle-statistic-btn' data-action='workflowStatsBtn'"/>
+                    <c:set target="${option}" property="extraAttributes" value="id='toggle-statistic-btn' data-action='toggle-statistic'"/>
                     <c:set target="${option}" property="icon" value="icon-fa5 icon-fa5-chart-bar far"/>
                     <c:set target="${option}" property="name">
                         <span class="text"><mvc:message code="workflow.fadeInStatistics"/></span>
@@ -164,7 +164,7 @@
                         <c:set target="${option}" property="url">
                             <c:url value="/workflow/${workflowForm.workflowId}/confirmDelete.action"/>
                         </c:set>
-                        <c:set target="${option}" property="extraAttributes" value="data-confirm"/>
+                        <c:set target="${option}" property="extraAttributes" value="data-confirm=''"/>
                         <c:set target="${option}" property="icon" value="icon-fa5 icon-fa5-trash-alt far"/>
                         <c:set target="${option}" property="name">
                             <mvc:message code="button.Delete"/>
@@ -180,7 +180,7 @@
             <c:set target="${itemActionsSettings}" property="3" value="${itemAction}"/>
 
             <c:set target="${itemAction}" property="btnCls" value="btn btn-regular btn-inverse"/>
-            <c:set target="${itemAction}" property="extraAttributes" value="data-form-target='#workflowForm' data-action='workflowSaveBtn'"/>
+            <c:set target="${itemAction}" property="extraAttributes" value="data-form-target='#workflowForm' data-action='workflow-save'"/>
             <c:set target="${itemAction}" property="iconBefore" value="icon-save"/>
             <c:set target="${itemAction}" property="name">
                 <mvc:message code="button.Save"/>

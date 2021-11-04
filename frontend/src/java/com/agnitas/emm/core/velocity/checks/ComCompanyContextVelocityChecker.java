@@ -20,6 +20,7 @@ import com.agnitas.emm.core.commons.hierarchy.CompanyHierarchyCache;
  * if the company ID used in the script and the company ID, in which the script is running,
  * have the same hierarchical root company.
  */
+@Deprecated // After completion of EMM-8360, this class can be removed without replacement
 public class ComCompanyContextVelocityChecker extends CompanyContextVelocityChecker {
 
 	/** The logger. */

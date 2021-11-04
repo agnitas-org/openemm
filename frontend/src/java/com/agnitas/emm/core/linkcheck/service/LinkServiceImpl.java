@@ -32,12 +32,9 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.util.NetworkUtil;
 import org.agnitas.util.PubID;
 import org.agnitas.util.TimeoutLRUMap;
 import org.agnitas.util.UnclosedTagException;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -77,11 +74,12 @@ public class LinkServiceImpl implements LinkService {
 	private static final String RDIRLINK_SEARCH_STRING = "r.html?uid=";
 	private static final Pattern INVALID_HREF_WITH_WHITESPACE_PATTERN = Pattern.compile("\\shref\\s*=\\s*(\"|')\\s", Pattern.CASE_INSENSITIVE);
 	private static final Pattern INVALID_SRC_WITH_WHITESPACE_PATTERN = Pattern.compile("\\ssrc\\s*=\\s*(\"|')\\s", Pattern.CASE_INSENSITIVE);
+    private static final int MAX_LINK_LENGTH = 2000;
 	
 	/**
 	 * Pattern that matches the subtext before an URL.
 	 * Subtext must end with &quot;xmlns=&quot; or &quot;xmlns:&lt;somename&gt;=&quot; followed by an
-	 * optional &quot; or &apos;. 
+	 * optional &quot; or &apos;.
 	 */
 	private static final Pattern XMLNS_PATTERN = Pattern.compile(".*xmlns(?::\\p{Alnum}+)?\\s*=\\s*(?:\"|')?$", Pattern.MULTILINE + Pattern.DOTALL);
 
@@ -413,32 +411,37 @@ public class LinkServiceImpl implements LinkService {
 	private final void doLinkChecks(final LinkScanContext context) {
 		
 		// Do not check URLs that are values of attributes "xmlns" or "xmlns:<...>"
-		if(linkCheckIsNamespace(context)) {
+		if (linkCheckIsNamespace(context)) {
 			return;
 		}
 		
 		// Skip links with schema no starting with "http:" or "https:"
-		if(linkCheckIsProtocolSchemaPresent(context) && !linkCheckIsHttpOrHttpsSchema(context)) {
+		if (linkCheckIsProtocolSchemaPresent(context) && !linkCheckIsHttpOrHttpsSchema(context)) {
 			return;
 		}
 		
-		if(linkCheckIsLocalUrl(context)) {
+		if (linkCheckIsLocalUrl(context)) {
 			context.getLocalLinks().add(new ErrorneousLink("error.mailing.url.local", context.getStart(), context.getLinkUrl()));
 			return;
 		}
 
-		if(linkCheckUrlContainsBlanks(context)) {
+        if (!isValidLinkLength(context)) {
+            context.getFoundErrorneousLinks().add(new ErrorneousLink("GWUA.error.mailing.url.maxLength", context.getStart(), context.getLinkUrl()));
+            return;
+        }
+		
+		if (linkCheckUrlContainsBlanks(context)) {
 			context.getFoundErrorneousLinks().add(new ErrorneousLink("error.mailing.url.blank", context.getStart(), context.getLinkUrl()));
 			return;
 		}
 		
-		if(linkCheckHasMultipleProtocols(context)) {
+		if (linkCheckHasMultipleProtocols(context)) {
 			context.getFoundErrorneousLinks().add(new ErrorneousLink("error.mailing.url.multipleProtocols", context.getStart(), context.getLinkUrl()));
 			return;
 		}
 		
 		// Checks depending on whether link refers to an image or not
-		if(linkCheckIsImageUrl(context)) {
+		if (linkCheckIsImageUrl(context)) {
 			// URLs refers to image
 			doImageLinkCheck(context);
 		} else {
@@ -448,7 +451,7 @@ public class LinkServiceImpl implements LinkService {
 	}
 	
 	private final void doNonImageLinkCheck(final LinkScanContext context) {
-		if(linkCheckContainsAgnFormTag(context)) { // In some cases, the agnFORM tags cannot be resolved, so we must exclude them here
+		if (linkCheckContainsAgnFormTag(context)) { // In some cases, the agnFORM tags cannot be resolved, so we must exclude them here
 			
 		} else if (linkCheckContainsAgnTagOrGridPhTag(context)) {
 			context.getFoundNotTrackableLinks().add(context.getLinkUrl());
@@ -460,12 +463,12 @@ public class LinkServiceImpl implements LinkService {
 			link.setShortname(getTitleForLink(context));
 			context.getFoundTrackableLinks().add(link);
 			
-			if(linkCheckIsInsecureProtocol(context)) {
+			if (linkCheckIsInsecureProtocol(context)) {
 				context.getLinkWarnings().add(new LinkWarning(WarningType.INSECURE, context.getLinkUrl()));
 			}
 		} else if (!linkCheckIsAnchor(context)) {
 			context.getLocalLinks().add(new ErrorneousLink("error.mailing.url.local", context.getStart(), context.getLinkUrl()));
-		}		
+		}
 	}
 	
 	private final void doImageLinkCheck(final LinkScanContext context) {
@@ -473,16 +476,16 @@ public class LinkServiceImpl implements LinkService {
 			// No hash tags in image links allowed
 			context.getFoundErrorneousLinks().add(new ErrorneousLink("error.mailing.imagelink.hash", context.getStart(), context.getLinkUrl()));
 		} else {
-			if(!linkCheckIsProtocolSchemaPresent(context) || linkCheckIsHttpOrHttpsSchema(context)) {
+			if (!linkCheckIsProtocolSchemaPresent(context) || linkCheckIsHttpOrHttpsSchema(context)) {
 				context.getFoundImages().add(context.getLinkUrl());
 				
-				if(linkCheckIsInsecureProtocol(context)) {
+				if (linkCheckIsInsecureProtocol(context)) {
 					context.getLinkWarnings().add(new LinkWarning(WarningType.INSECURE, context.getLinkUrl()));
 				}
 			} else if (linkCheckContainsAgnTagOrGridPhTag(context)) {
 				context.getFoundImages().add(context.getLinkUrl());
 
-				if(linkCheckIsInsecureProtocol(context)) {
+				if (linkCheckIsInsecureProtocol(context)) {
 					context.getLinkWarnings().add(new LinkWarning(WarningType.INSECURE, context.getLinkUrl()));
 				}
 			} else {
@@ -523,7 +526,7 @@ public class LinkServiceImpl implements LinkService {
 	}
 	
 	private final boolean linkCheckIsHttpOrHttpsSchema(final LinkScanContext context) {
-		return "http".equalsIgnoreCase(context.getProtocolSchema()) 
+		return "http".equalsIgnoreCase(context.getProtocolSchema())
 				|| "https".equalsIgnoreCase(context.getProtocolSchema());
 	}
 	
@@ -535,6 +538,10 @@ public class LinkServiceImpl implements LinkService {
 		// Check on URLs with AGN tags replaced, because AGN tags are allowed to contain blanks.
 		return context.getLinkUrlWithAgnTagsReplaced().trim().contains(" ");
 	}
+
+    private boolean isValidLinkLength(final LinkScanContext context) {
+        return context.getLinkUrl().trim().length() <= MAX_LINK_LENGTH;
+    }
 	
 	private final boolean linkCheckHasMultipleProtocols(final LinkScanContext context) {
 		final Matcher matcher = DOUBLE_PROTOCOL_SCHEMA_PATTERN.matcher(context.getLinkUrl());
@@ -678,64 +685,62 @@ public class LinkServiceImpl implements LinkService {
 			text = text.replaceAll("\\[agnUNSUBSCRIBE\\]", agnTagService.resolve(tag, companyID, mailingID, mailinglistID, 0));
 		}
 		
-		// TODO: Resolve all agnForm-Tags with their different form names separately
-		if (text.contains("[agnFORM")) {
+		int latestAgnFormTagPosition = -1;
+		while (text.contains("[agnFORM")) {
 			try {
 				TagDetails tag;
 				int startIndexOfAgnFormTag = text.indexOf("[agnFORM");
+
+				if (latestAgnFormTagPosition >= 0 && latestAgnFormTagPosition == startIndexOfAgnFormTag) {
+					logger.error(String.format("Error while detecting agnFORM tags: deadlock"));
+					break;
+				}
+				latestAgnFormTagPosition = startIndexOfAgnFormTag;
+				
 				int endIndexOfAgnFormTag = text.indexOf("]", startIndexOfAgnFormTag + 8);
 
 				if (endIndexOfAgnFormTag == -1) {
 					// if the Tag-Closing Bracket is missing, throw an exception
 					throw new UnclosedTagException(0, "agnFORM");
-				} else {
-					endIndexOfAgnFormTag++;
-					tag = new TagDetailsImpl();
-					tag.setTagName("agnFORM");
-					tag.setStartPos(startIndexOfAgnFormTag);
-					tag.setEndPos(endIndexOfAgnFormTag);
-					tag.setFullText(text.substring(startIndexOfAgnFormTag, endIndexOfAgnFormTag));
 				}
-				int startIndexOfFormName = StringUtil.firstIndexOf(tag.getFullText(), '\'', '"') + 1;
-				int endIndexOfFormName = StringUtil.firstIndexOf(tag.getFullText(), startIndexOfFormName, '\'', '"');
-				tag.setName(tag.getFullText().substring(startIndexOfFormName, endIndexOfFormName));
-				text = text.replaceAll("\\[agnFORM\\s+name=(?:(?:\"|').*?(?:\"|')|[^\\]\\s]+)\\s*\\]", agnTagService.resolve(tag, companyID, mailingID, mailinglistID, 0));
+				
+				endIndexOfAgnFormTag++;
+				tag = new TagDetailsImpl();
+				tag.setTagName("agnFORM");
+				tag.setStartPos(startIndexOfAgnFormTag);
+				tag.setEndPos(endIndexOfAgnFormTag);
+				tag.setFullText(text.substring(startIndexOfAgnFormTag, endIndexOfAgnFormTag));
 
-				if (text.contains("[agnFORM")) {
-					logger.error(String.format("scanForLinks: Html-text has an unresolved agnFORM-Tag [%s]", text));
+				int startIndexOfFormName = StringUtil.firstIndexOf(tag.getFullText(), 8, '\'', '"');
+				
+				if (startIndexOfFormName == -1) {
+					// if the name attribute value is missing, throw an exception
+					throw new Exception("agnFORM name attribute start is missing or invalid");
 				}
+				
+				char nameAttributeEndChar = tag.getFullText().charAt(startIndexOfFormName);
+				
+				startIndexOfFormName++;
+				
+				int endIndexOfFormName = StringUtil.firstIndexOf(tag.getFullText(), startIndexOfFormName, nameAttributeEndChar);
+				
+				if (endIndexOfFormName == -1) {
+					// if the name attribute value is missing, throw an exception
+					throw new Exception("agnFORM name attribute end is missing or invalid");
+				}
+				
+				tag.setName(tag.getFullText().substring(startIndexOfFormName, endIndexOfFormName));
+				text = text.replaceAll("\\[agnFORM\\s+name=(\"" + tag.getName() + "\"|'" + tag.getName() + "')\\s*/?\\]", agnTagService.resolve(tag, companyID, mailingID, mailinglistID, 0));
 			} catch (Exception e) {
 				logger.error("scanForLinks", e);
 			}
 		}
-		return text;
-	}
 
-	@SuppressWarnings("unused")
-	private String getMimeTypeOfLinkdata(String linkUrl) {
-		GetMethod get = null;
-		try {
-			HttpClient httpClient = new HttpClient();
-			NetworkUtil.setHttpClientProxyFromSystem(httpClient, linkUrl);
-			httpClient.getParams().setParameter("http.connection.timeout", 5000);
-
-			get = new GetMethod(linkUrl);
-			get.setFollowRedirects(true);
-
-			int returnCode = httpClient.executeMethod(get);
-			if (returnCode == 200) {
-				return get.getResponseHeader("Content-Type").getValue();
-			} else {
-				return "Unknown due to: ReturnCode " + returnCode;
-			}
-		} catch (Exception e) {
-			logger.error("getMimeTypeOfLinkdata: " + e.getMessage(), e);
-			return "Unknown MimeType due to: " + e.getMessage();
-		} finally {
-			if (get != null) {
-				get.releaseConnection();
-			}
+		if (text.contains("[agnFORM")) {
+			logger.error(String.format("scanForLinks: Html-text has an unresolved agnFORM-Tag [%s]", text));
 		}
+		
+		return text;
 	}
 
 	@Override

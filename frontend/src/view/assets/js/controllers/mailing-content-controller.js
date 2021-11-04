@@ -5,6 +5,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
   var mailingContent;
   var preparedTableEntryTemplate;
   var isMailingExclusiveLockingAcquired;
+  var isEditableMailing;
 
   var $tableBody;
 
@@ -13,6 +14,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     preparedTableEntryTemplate = Template.prepare('mailing-content-table-entry-template');
 
     isMailingExclusiveLockingAcquired = this.config.isMailingExclusiveLockingAcquired;
+    isEditableMailing = this.config.isEditableMailing;
     var dynTagsMap = this.config.dynTagsMap;
     var targetGroups = this.config.targetGroupList;
     var interestGroups = this.config.interestGroupList;
@@ -41,7 +43,8 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
             saveUrl: AGN.url('/mailingcontent/save.action'),
             DynTagObject: DynTag,
             isFullHtmlTags: dynTag.name == 'HTML-Version',
-            showHTMLEditor: isHtmlContentBlock
+            showHTMLEditor: isHtmlContentBlock,
+            isEditableMailing: isEditableMailing
           }, 'content-editor-template');
 
           promise.done(function(dynBlock) {

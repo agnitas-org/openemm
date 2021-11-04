@@ -12,7 +12,7 @@ package com.agnitas.emm.core.mimetypes.dao;
 
 import java.util.List;
 
-import javax.activation.MimeType;
+import jakarta.activation.MimeType;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.apache.log4j.Logger;

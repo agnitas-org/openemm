@@ -45,7 +45,7 @@ public class XmlRequestResponse extends BaseRequestResponse {
 	@Override
 	public String getString() throws Exception {
 		try {
-			DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilderFactory docBuilderFactory = XmlUtilities.newXxeProtectedDocumentBuilderFactory();
 			if (docBuilderFactory == null) {
 				throw new Exception("Cannot create request response data: DocumentBuilderFactory.newInstance was null");
 			}

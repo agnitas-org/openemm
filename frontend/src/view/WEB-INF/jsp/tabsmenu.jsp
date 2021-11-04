@@ -56,6 +56,7 @@
                 <c:if test="${not empty _navigation_hideForToken}">
                     <emm:ShowByPermission token="${_navigation_hideForToken}">
                         <c:set var="showTabsItem" value="false"/>
+                        <c:set var="showUpsellingPage" value="false"/>
                     </emm:ShowByPermission>
                 </c:if>
 

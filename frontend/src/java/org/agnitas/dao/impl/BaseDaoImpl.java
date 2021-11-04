@@ -207,7 +207,7 @@ public abstract class BaseDaoImpl {
 			logger.error("Error: " + e.getMessage() + "\nSQL: " + statement, e);
 		}
 		if (javaMailService != null) {
-			javaMailService.sendExceptionMail("SQL: " + statement + "\nParameter: " + getParameterStringList(parameter), e);
+			javaMailService.sendExceptionMail(0, "SQL: " + statement + "\nParameter: " + getParameterStringList(parameter), e);
 		} else {
 			logger.error("Missing javaMailService. So no erroremail was sent.");
 		}
@@ -635,7 +635,7 @@ public abstract class BaseDaoImpl {
 						String errorText = "Execute statement reached final timeout of " + timeoutSeconds + " seconds after " + tryCount + " attempts.\n" + statement;
 						logger.error(errorText);
 						if (javaMailService != null) {
-							javaMailService.sendExceptionMail("Execute statement reached final timeout of " + timeoutSeconds + " seconds after " + tryCount + " attempts.\nSQL: " + statement, new Exception());
+							javaMailService.sendExceptionMail(0, "Execute statement reached final timeout of " + timeoutSeconds + " seconds after " + tryCount + " attempts.\nSQL: " + statement, new Exception());
 						} else {
 							logger.error("Missing javaMailService. So no erroremail was sent.");
 						}
@@ -873,6 +873,10 @@ public abstract class BaseDaoImpl {
 			return touchedLines;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, "BatchUpdateParameterList(Size: " + values.size() + ")");
+
+			if (values != null && values.size() > 0 && values.get(0) != null) {
+				logger.error("Error: " + e.getMessage() + "\nSQL: " + statement + "\nFirstBatchParameterList: " + getParameterStringList(values.get(0)), e);
+			}
 			throw e;
 		}
 	}
@@ -1000,6 +1004,9 @@ public abstract class BaseDaoImpl {
 					insertParameterTypes[i] = Types.NULL;
 				} else if (parameter[i] instanceof Integer) {
 					insertParameterTypes[i] = Types.INTEGER;
+				} else if (parameter[i] instanceof Boolean) {
+					insertParameterTypes[i] = Types.INTEGER;
+					parameter[i] = ((Boolean) parameter[i]) ? 1: 0;
 				} else if (parameter[i] instanceof Double) {
 					insertParameterTypes[i] = Types.DOUBLE;
 				} else if (parameter[i] instanceof Float) {

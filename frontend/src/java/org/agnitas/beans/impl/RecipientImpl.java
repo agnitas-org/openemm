@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
@@ -29,6 +29,7 @@ import org.agnitas.beans.factory.BindingEntryFactory;
 import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
+import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.ColumnInfoService;
 import org.agnitas.util.AgnUtils;
@@ -54,7 +55,7 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 public class RecipientImpl implements Recipient {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComAdminDaoImpl.class);
-	
+
 	protected ColumnInfoService columnInfoService;
 	protected ComRecipientDao recipientDao;
 	protected BlacklistService blacklistService;
@@ -68,29 +69,29 @@ public class RecipientImpl implements Recipient {
 	protected Map<String, String> custDBStructure;
 	protected CaseInsensitiveMap<String, Object> custParameters = new CaseInsensitiveMap<>();
 	protected boolean changeFlag = false;
-	
+
 	private DateFormat dateFormat = new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT);
-	
+
 	/**
 	 * Instantiates new (unconfigured) {@link RecipientImpl} object.
-	 * 
+	 *
 	 * Do not use this anymore! Replace any instantiation by usage of {@link RecipientFactory}.
-	 * 
+	 *
 	 * @Deprecated
-	 * 
+	 *
 	 * @see RecipientFactory#newRecipient(int)
 	 */
 	public RecipientImpl() {
 		// Nothing to do here
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
 
 	public void setRecipientDao(ComRecipientDao recipientDao) {
 		this.recipientDao = recipientDao;
 	}
-	
+
 	public void setBindingEntryDao(ComBindingEntryDao bindingEntryDao) {
 		this.bindingEntryDao = bindingEntryDao;
 	}
@@ -106,21 +107,26 @@ public class RecipientImpl implements Recipient {
 	public void setRecipientFactory(RecipientFactory recipientFactory) {
 		this.recipientFactory = recipientFactory;
 	}
-	
+
 	public void setBlacklistService(BlacklistService blacklistService) {
 		this.blacklistService = blacklistService;
 	}
-	
+
 	// ----------------------------------------------------------------------------------------------------------------
 	// Business Logic
-	
+
 	@Override
 	public void setDateFormatForProfileFieldConversion(final DateFormat dateFormat) {
 		if(dateFormat != null) {
 			this.dateFormat = dateFormat;
 		}
 	}
-	
+
+	@Override
+	public DateFormat getDateFormat() {
+		return dateFormat;
+	}
+
 	@Override
 	public boolean blacklistCheck() {
 		String email = (String) getCustParameters().get("email");
@@ -132,8 +138,18 @@ public class RecipientImpl implements Recipient {
 
 	@Override
 	public boolean updateInDB() {
-		return recipientDao.updateInDB(this);
+		try {
+			return recipientDao.updateInDbWithException(this);
+		} catch (Exception e) {
+			return false;
+		}
 	}
+	
+	@Override
+	public boolean updateInDbWithException() throws Exception {
+		return recipientDao.updateInDbWithException(this);
+	}
+	
 
 	@Override
 	public int findByColumn(String col, String value) {
@@ -171,10 +187,19 @@ public class RecipientImpl implements Recipient {
 
 	@Override
 	public int insertNewCust() {
+		try {
+			return insertNewCustWithException();
+		} catch(final Exception e) {
+			return 0;
+		}
+	}
+	
+	@Override
+	public int insertNewCustWithException() throws Exception {
 		Object gender = getCustParameters().get("gender");
 		Object firstname = getCustParameters().get("firstname");
 		Object lastname = getCustParameters().get("lastname");
-		
+
 		if (gender == null || (gender instanceof String && StringUtils.isBlank((String) gender))) {
 			throw new ViciousFormDataException("Cannot create customer, because customer data is missing or invalid: gender is empty");
 		} else if (firstname != null && firstname instanceof String && (((String) firstname).toLowerCase().contains("http:") || ((String) firstname).toLowerCase().contains("https:"))) {
@@ -182,8 +207,9 @@ public class RecipientImpl implements Recipient {
 		} else if (lastname != null && lastname instanceof String && (((String) lastname).toLowerCase().contains("http:") || ((String) lastname).toLowerCase().contains("https:"))) {
 			throw new ViciousFormDataException("Cannot create customer, because customer data field \"lastname\" contains http link data");
 		}
+
+		return recipientDao.insertNewCustWithException(this);
 		
-		return recipientDao.insertNewCust(this);
 	}
 
 	@Override
@@ -198,7 +224,7 @@ public class RecipientImpl implements Recipient {
 				throw new RuntimeException("Invalid data type for customerID");
 			}
 		}
-		
+
 		return customerID;
 	}
 
@@ -226,7 +252,7 @@ public class RecipientImpl implements Recipient {
 	public void setListBindings(Map<Integer, Map<Integer, BindingEntry>> listBindings) {
 		this.listBindings = listBindings;
 	}
-	
+
 	@Override
 	public Map<String, String> getCustDBStructure() {
 		if (custDBStructure == null && companyID > 0) {
@@ -250,7 +276,7 @@ public class RecipientImpl implements Recipient {
 	public String getCustParameters(String key) {
 		return getCustParametersNotNull(key);
 	}
-	
+
 	@Override
 	public boolean hasCustParameter(String key) {
 		return custParameters.get(key) != null;
@@ -300,18 +326,18 @@ public class RecipientImpl implements Recipient {
 	public String getLastname() {
 		return (String) custParameters.get("lastname");
 	}
-	
+
 	@Override
 	public Timestamp getTimestamp() {
 		return ((Timestamp) custParameters.get("timestamp"));
 	}
-	
+
 
 	/**
 	 * Load structure of Customer-Table for the given Company-ID in member
 	 * variable "companyID". Load profile data into map. Has to be done before
 	 * working with customer-data in class instance
-	 * 
+	 *
 	 * @return true on success
 	 */
 	@Override
@@ -330,52 +356,30 @@ public class RecipientImpl implements Recipient {
 
 	/**
 	 * Indexed setter for property custParameters.
-	 * 
-	 * @param aKey
+	 *
+	 * @param key
 	 *            identifies field in customer-record, must be the same like in
 	 *            Database
 	 * @param custParameter
 	 *            New value of the property at <CODE>aKey</CODE>.
 	 */
 	@Override
-	public void setCustParameters(String aKey, String custParameter) {
-		String key = aKey;
-		String aValue = null;
+	public void setCustParameters(String key, String custParameter) {
+		final String trimmedkey = RecipientUtils.removeColumnSupplementalSuffix(key);
 
-		if (key.toUpperCase().endsWith(ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY)) {
-			key = key.substring(0, key.length() - ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY.length());
-		}
-		if (key.toUpperCase().endsWith(ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH)) {
-			key = key.substring(0, key.length() - ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH.length());
-		}
-		if (key.toUpperCase().endsWith(ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR)) {
-			key = key.substring(0, key.length() - ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR.length());
-		}
-		if (key.toUpperCase().endsWith(ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR)) {
-			key = key.substring(0, key.length() - ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR.length());
-		}
-		if (key.toUpperCase().endsWith(ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE)) {
-			key = key.substring(0, key.length() - ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE.length());
-		}
-		if (key.toUpperCase().endsWith(ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND)) {
-			key = key.substring(0, key.length() - ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND.length());
-		}
+		if (getCustDBStructure().containsKey(trimmedkey)) {
+			String value = (String) custParameters.getOrDefault(key, "");
 
-		if (getCustDBStructure().containsKey(key)) {
-			aValue = null;
-			if (custParameters.get(aKey) != null) {
-				aValue = (String) custParameters.get(aKey);
-			}
-			if (!StringUtils.equals(custParameter, aValue)) {
+			if (!StringUtils.equals(custParameter, value)) {
 				changeFlag = true;
-				custParameters.put(aKey, custParameter);
+				custParameters.put(key, custParameter);
 			}
 		}
 	}
 
 	/**
 	 * Setter for property custParameters.
-	 * 
+	 *
 	 * @param custParameters
 	 *            New value of property custParameters.
 	 */
@@ -393,13 +397,14 @@ public class RecipientImpl implements Recipient {
 	 * Check security of a request parameter. Checks the given string for
 	 * certain patterns that could be used for exploits.
 	 */
-	private boolean isSecure(String value) {
+	@Override
+	public boolean isSecure(String value) {
 		return !value.contains("<");
 	}
 
 	/**
 	 * Copy a date from reqest to database values.
-	 * 
+	 *
 	 * @param req
 	 *            a Map of request parameters (name/value pairs).
 	 * @param name
@@ -408,7 +413,8 @@ public class RecipientImpl implements Recipient {
 	 *            a suffix for the parameters in the map.
 	 * @return true when the copying was successful.
 	 */
-	private boolean copyDate(Map<String, Object> req, String name, String suffix) {
+	@Override
+	public boolean copyDateFromRequest(Map<String, Object> req, String name, String suffix) {
 		String[] field = { ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR, ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE, ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND };
 		String s = null;
 
@@ -421,26 +427,27 @@ public class RecipientImpl implements Recipient {
 				setCustParameters(fieldname, s);
 			}
 		}
-		
+
 		String dateValueFieldname = name + suffix;
 		if (req.get(dateValueFieldname) != null) {
 			// Date field delivered as single value without explicit format
 			setCustParameters(dateValueFieldname, (String) req.get(dateValueFieldname));
 		}
-		
+
 		return true;
 	}
 
 	/**
 	 * Check if the given name is allowed for requests. This is used to ensure
 	 * that system columns are not changed by form requests.
-	 * 
+	 *
 	 * @param name
 	 *            the name to check for allowance.
 	 * @return true when field may be writen.
 	 */
-	private boolean isAllowedName(String name) {
-		name = name.toLowerCase();
+	@Override
+	public boolean isAllowedName(String name) {
+		name = StringUtils.lowerCase(name);
 		if (name.startsWith("agn")) {
 			return false;
 		}
@@ -455,7 +462,7 @@ public class RecipientImpl implements Recipient {
 
 	/**
 	 * Updates customer data by analyzing given HTTP-Request-Parameters
-	 * 
+	 *
 	 * @return true on success
 	 * @param suffix
 	 *            Suffix appended to Database-Column-Names when searching for
@@ -466,11 +473,11 @@ public class RecipientImpl implements Recipient {
 	@Override
 	public boolean importRequestParameters(Map<String, Object> requestParameters, String suffix) {
 		CaseInsensitiveMap<String, Object> caseInsensitiveParameters = new CaseInsensitiveMap<>(requestParameters);
-		
+
 		if (suffix == null) {
 			suffix = "";
 		}
-		
+
 		for (Entry<String, String> entry : getCustDBStructure().entrySet()) {
 			String colType = entry.getValue();
 			String name = entry.getKey().toUpperCase();
@@ -498,7 +505,7 @@ public class RecipientImpl implements Recipient {
 						}
 					}
 				} else {
-					copyDate(caseInsensitiveParameters, entry.getKey(), suffix);
+					copyDateFromRequest(caseInsensitiveParameters, entry.getKey(), suffix);
 				}
 			} else if (caseInsensitiveParameters.get(name + suffix) != null) {
 				String aValue = (String) caseInsensitiveParameters.get(name + suffix);
@@ -532,7 +539,7 @@ public class RecipientImpl implements Recipient {
 	/**
 	 * Updates internal Datastructure for Mailinglist-Bindings of this customer
 	 * by analyzing HTTP-Request-Parameters
-	 * 
+	 *
 	 * @return true on success
 	 * @param tafWriteBack
 	 *            if true, eventually existent TAF-Information will be written
@@ -543,11 +550,11 @@ public class RecipientImpl implements Recipient {
 	 *            true means use Double-Opt-In
 	 * @throws Exception
 	 */
-	
-	
+
+
 	/**
 	 * function of tafWriteBack was removed with TellaFriend feature (EMM-5308)
-	 * 
+	 *
 	 * @deprecated updateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn, String remoteAddr) instead.
 	 */
 	@Deprecated
@@ -555,7 +562,7 @@ public class RecipientImpl implements Recipient {
 	public void updateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn, boolean tafWriteBack, String remoteAddr, String referrer) throws Exception {
 		updateBindingsFromRequest(params, doubleOptIn, remoteAddr, referrer);
 	}
-	
+
 	@Override
 	public void updateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn, String remoteAddr, String referrer) throws Exception {
 		@SuppressWarnings("unchecked")
@@ -568,26 +575,26 @@ public class RecipientImpl implements Recipient {
 		} catch (Exception e) {
 			mailingID = 0;
 		}
-		
+
 		// Requests without any "agnSUBSCRIBE"-parameter are still valid
 		// Those are used for updating the users data only without any new subscription
-		
+
 		for (Entry<String, Object> entry : requestParameters.entrySet()) {
 			if (StringUtils.startsWithIgnoreCase(entry.getKey(), "agnSUBSCRIBE")) {
 				String postfix = "";
-				
+
 				int mediatype;
 				int subscribeStatus;
 				BindingEntry aEntry = null;
 				if (entry.getKey().length() > "agnSUBSCRIBE".length()) {
 					postfix = entry.getKey().substring("agnSUBSCRIBE".length());
 				}
-				
+
 				String agnSubscribeString = (String) entry.getValue();
 				if (StringUtils.isBlank(agnSubscribeString)) {
 					throw new Exception("Mandatory subscribeStatus (form-param: agnSUBSCRIBE) is missing: " + getRequestParameterString(params));
 				}
-				
+
 				try {
 					subscribeStatus = Integer.parseInt(agnSubscribeString);
 				} catch (Exception e) {
@@ -601,7 +608,7 @@ public class RecipientImpl implements Recipient {
 				if (StringUtils.isBlank(agnMailinglistString)) {
 					throw new Exception("Mandatory mailinglistID (form-param: agnMAILINGLIST) is missing: " + getRequestParameterString(params));
 				}
-				
+
 				int mailinglistID;
 				try {
 					mailinglistID = Integer.parseInt(agnMailinglistString);
@@ -624,7 +631,7 @@ public class RecipientImpl implements Recipient {
 			}
 		}
 	}
-	
+
 	private final void doUpdateBindings(final boolean doubleOptIn, final int mediatype, final int mailinglistID, final int mailingID, BindingEntry aEntry, final int subscribeStatus, final String remoteAddr, final String referrer) throws Exception {
 		// find BindingEntry or create new one
 		Map<Integer, BindingEntry> mList = listBindings.get(mailinglistID);
@@ -731,7 +738,7 @@ public class RecipientImpl implements Recipient {
 
 	/**
 	 * function of tafWriteBack was removed with TellaFriend feature (EMM-5308)
-	 * 
+	 *
 	 * @deprecated updateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn) instead.
 	 */
 	@Deprecated
@@ -739,7 +746,7 @@ public class RecipientImpl implements Recipient {
 	public void updateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn, boolean tafWriteBack) throws Exception {
 		updateBindingsFromRequest(params, doubleOptIn);
 	}
-	
+
 	@Override
 	public void updateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn) throws Exception {
 		if (params.containsKey("_request") && params.get("_request") != null) {
@@ -755,7 +762,7 @@ public class RecipientImpl implements Recipient {
 	/**
 	 * Iterates through already loaded Mailinglist-Informations and checks if
 	 * subscriber is active on at least one mailinglist
-	 * 
+	 *
 	 * @return true if subscriber is active on a mailinglist
 	 */
 	@Override
@@ -775,7 +782,7 @@ public class RecipientImpl implements Recipient {
 
 	/**
 	 * Checks if E-Mail-Adress given in customerData-HashMap is valid
-	 * 
+	 *
 	 * @return true if E-Mail-Adress is valid
 	 */
 	@Override
@@ -788,23 +795,23 @@ public class RecipientImpl implements Recipient {
 	public final boolean isDoNotTrackMe() {
 		/*
 		 * Implemented rules:
-		 * 
+		 *
 		 * 1. If "sys_tracking_veto" unset (-> null) : Tracking allowed (method returns false)
 		 * 2. If "sys_tracking_veto" set (-> not null) :
 		 *    a) if set to 0 : Tracking allowed (method returns false)
 		 *    b) if set to <> 0: Tracking not allowed (method returns true)
 		 */
 		final String value = getCustParameters(ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK);
-		
+
 		final int flagValue = StringUtils.isEmpty(value) ? 0 : Integer.parseInt(value);
-		
+
 		return flagValue != 0;
 	}
-	
+
 	public static final boolean isDoNotTrackMe(final Map<String, Object> profileFields) {
 		/*
 		 * Implemented rules:
-		 * 
+		 *
 		 * 1. If "sys_tracking_veto" unset (-> null) : Tracking allowed (method returns false)
 		 * 2. If "sys_tracking_veto" set (-> not null) :
 		 *    a) if set to 0 : Tracking allowed (method returns false)
@@ -813,28 +820,17 @@ public class RecipientImpl implements Recipient {
 
 		final Object valueOrNull = profileFields.get(ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK);
 		final String value = valueOrNull != null ? valueOrNull.toString() : "";
-		
+
 		final int flagValue = StringUtils.isEmpty(value) ? 0 : Integer.parseInt(value);
-		
+
 		return flagValue != 0;
 	}
-	
+
 	@Override
 	public final void setDoNotTrackMe(final boolean doNotTrack) {
 		this.setCustParameters(ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK, doNotTrack ? "1" : "0");
 	}
 
-	@Override
-	public BindingEntry getBindingsByMailinglist(int mailinglistId, int type) {
-		Map<Integer, BindingEntry> entries = getAllMailingLists().getOrDefault(mailinglistId, new HashMap<>());
-		BindingEntry statusEntry = entries.getOrDefault(type, new BindingEntryImpl());
-		statusEntry.setMediaType(type);
-		statusEntry.setCustomerID(customerID);
-		statusEntry.setMailinglistID(mailinglistId);
-
-		return statusEntry;
-	}
-	
 	/**
 	 * String representation for easier debugging
 	 */
@@ -849,5 +845,16 @@ public class RecipientImpl implements Recipient {
 			" Mailtype: " + (custParameters == null ? "" : custParameters.get("mailtype")) +
 			" Bindings: " + (listBindings == null ? 0 : listBindings.size()) +
 			" ChangeFlag: " + changeFlag;
+	}
+
+	@Override
+	public BindingEntry getBindingsByMailinglist(int mailinglistId, int type) {
+		Map<Integer, BindingEntry> entries = getAllMailingLists().getOrDefault(mailinglistId, new HashMap<>());
+		BindingEntry statusEntry = entries.getOrDefault(type, new BindingEntryImpl());
+		statusEntry.setMediaType(type);
+		statusEntry.setCustomerID(customerID);
+		statusEntry.setMailinglistID(mailinglistId);
+
+		return statusEntry;
 	}
 }

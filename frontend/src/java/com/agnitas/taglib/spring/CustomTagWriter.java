@@ -12,8 +12,8 @@ package com.agnitas.taglib.spring;
 
 import java.io.Writer;
 
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.PageContext;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.PageContext;
 
 import org.springframework.web.servlet.tags.form.TagWriter;
 

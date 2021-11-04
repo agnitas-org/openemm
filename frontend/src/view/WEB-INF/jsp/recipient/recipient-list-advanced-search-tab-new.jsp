@@ -36,10 +36,10 @@
                                        property="listID" titleKey="default.All"
                                        data-action="change-ml-field-advanced"
                                        data-form-change="0">
-                            <c:if test="${not hasAnyDisabledMailingLists}">
-                                <agn:agnOption value="-1"><bean:message key="default.none"/></agn:agnOption>
-                            </c:if>
                             <html:option value="0" key="default.All"/>
+                            <c:if test="${not hasAnyDisabledMailingLists}">
+                                <agn:agnOption value="-1"><bean:message key="No_Mailinglist"/></agn:agnOption>
+                            </c:if>
                             <c:forEach var="mailinglist" items="${mailinglists}">
                                 <html:option value="${mailinglist.id}">${mailinglist.shortname}</html:option>
                             </c:forEach>

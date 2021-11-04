@@ -16,18 +16,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.log4j.Logger;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
@@ -38,17 +34,15 @@ import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
-import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import com.agnitas.mailing.preview.service.MailingPreviewService;
 
-public class ActionOperationGetArchiveListImpl implements EmmActionOperation, ApplicationContextAware {
+public class ActionOperationGetArchiveListImpl implements EmmActionOperation {
 	
 	/**
 	 * The logger.
 	 */
 	private static final Logger logger = Logger.getLogger(ActionOperationGetArchiveListImpl.class);
 
-	private ApplicationContext applicationContext;
 	private ExtensibleUIDService uidService;
 	private ComMailingDao mailingDao;
 	private ComCompanyDao companyDao;
@@ -85,7 +79,6 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation, Ap
         }
 
         final int licenseID = this.configService.getLicenseID();
-        final boolean useNewMailingPreview = this.configService.getBooleanValue(ConfigValue.Development.UseBackendMailingPreview, companyID);
         ComExtensibleUID uid = UIDFactory.from(licenseID, companyID, customerID);
 
         try {
@@ -101,11 +94,9 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation, Ap
 	                    mailingids.add(Integer.toString(tmpMailingID));
 	                    shortnames.put(Integer.toString(tmpMailingID), (String) map.get("shortname"));
 	                    
-	                    final String subject = useNewMailingPreview
-	                    		? mailingPreviewService.renderPreviewFor(tmpMailingID, customerID, aType.getSubject())
-	                    	    : aMailing.getPreview(aType.getSubject(), MailingPreviewHelper.INPUT_TYPE_HTML, customerID, applicationContext);
+	                    final String subject = mailingPreviewService.renderPreviewFor(tmpMailingID, customerID, aType.getSubject());
 	                    
-	                    subjects.put(Integer.toString(tmpMailingID), subject);		
+	                    subjects.put(Integer.toString(tmpMailingID), subject);
 	                    		
 	                    uid = UIDFactory.copyWithNewMailingID(uid, tmpMailingID);
 	                    
@@ -164,11 +155,5 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation, Ap
 	@Required
 	public final void setMailingPreviewService(final MailingPreviewService service) {
 		this.mailingPreviewService = Objects.requireNonNull(service, "MailingPreviewService is null");
-	}
-	
-	@Required
-	@Override
-	public final void setApplicationContext(final ApplicationContext con) throws BeansException {
-		this.applicationContext = Objects.requireNonNull(con, "Application context cannot be null");
 	}
 }

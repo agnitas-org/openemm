@@ -12,6 +12,7 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   var saveUrl;
   var DynTagObject;
   var showHTMLEditor;
+  var isEditableMailing;
 
   // ui elements
   var $selectableContainer;
@@ -33,6 +34,7 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
     saveUrl = config.saveUrl;
     DynTagObject = config.DynTagObject;
     showHTMLEditor = config.showHTMLEditor;
+    isEditableMailing = config.isEditableMailing;
 
     $selectableContainer = $('#content_area');
     $orderedArea = $('#ordered_area');
@@ -157,7 +159,8 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
           selectedContentBlock: selectedContentBlockId,
           editorType: getActiveEditor(),
           isFullHtmlTags: currentDynTag.name == 'HTML-Version',
-          showHTMLEditor: showHTMLEditor
+          showHTMLEditor: showHTMLEditor,
+          isEditableMailing: isEditableMailing
         }, 'enlarged-content-editor-template');
 
       promise.done(function (response) {

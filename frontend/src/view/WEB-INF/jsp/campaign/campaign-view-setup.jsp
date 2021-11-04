@@ -1,4 +1,4 @@
-<%@ page import="org.agnitas.web.CampaignAction" %>
+<%@ page import="com.agnitas.web.CampaignAction" %>
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>

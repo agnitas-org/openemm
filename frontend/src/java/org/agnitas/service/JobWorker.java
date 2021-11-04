@@ -168,7 +168,7 @@ public abstract class JobWorker implements Runnable {
 				String subject = "Error in JobQueue Job " + job.getDescription() + "(" + job.getId() + ") on host '" + AgnUtils.getHostName() + "'";
 				String errorText = t.getClass().getSimpleName() + ": " + t.getMessage() + "\n" + AgnUtils.getStackTraceString(t);
 				try {
-					mailNotificationService.sendNotificationMailWithDuplicateRetention(job.getEmailOnError(), subject, errorText);
+					mailNotificationService.sendNotificationMailWithDuplicateRetention(0, job.getEmailOnError(), subject, errorText);
 				} catch (Exception e) {
 					logger.error("Cannot send email with jobqueue error:\n" + subject + "\n" + errorText, e);
 				}

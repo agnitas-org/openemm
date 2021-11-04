@@ -18,6 +18,7 @@ import com.agnitas.emm.core.mobile.bean.DeviceClass;
 public interface CommonKeys {
 
 	String ACTIVE = "recipient.MailingState1";
+	String ACTIVE_STATUS = "default.status.active";
 	int ACTIVE_INDEX = 1;
 	
 	// indices represent the position in the report
@@ -54,11 +55,16 @@ public interface CommonKeys {
 	int REVENUE_INDEX = 11;
     int REVENUE_SHIFTED_INDEX = 110;
     String BOUNCES = "statistic.Bounces";
+    String BOUNCES_STATUS = "recipient.MailingState2";
 	int BOUNCES_INDEX = 12;
     String CLICKERS_TO_BUYERS_RATIO = "statistic.revenue.conversion.buyer.clicker";
     int CLICKERS_TO_BUYERS_RATIO_INDEX = 37;
     String RECIPIENTS_TO_BUYERS_RATIO = "statistic.revenue.conversion.buyer.recipients";
     int RECIPIENTS_TO_BUYERS_RATIO_INDEX = 38;
+    String WAITING_FOR_CONFIRM = "birt.recipient.notConfirmed";
+	int WAITING_FOR_CONFIRM_INDEX = 41;
+	String BLACKLISTED = "recipient.MailingState6";
+	int BLACKLISTED_INDEX = 42;
 
     // pc/mobile data
     String OPENERS_TRACKED = "statistic.opener.measure";

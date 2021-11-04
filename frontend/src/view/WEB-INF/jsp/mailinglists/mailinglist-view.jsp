@@ -27,14 +27,12 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="shortname" class="control-label">
-                        <mvc:message code="Name"/>
+                        <mvc:message var="nameMsg" code="default.Name"/>
+                        ${nameMsg}
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <c:set var="namePlaceholder">
-                        <mvc:message code="Name"/>
-                    </c:set>
-                    <mvc:text path="shortname" cssClass="form-control" id="shortname" placeholder="${namePlaceholder}"/>
+                    <mvc:text path="shortname" cssClass="form-control" id="shortname" placeholder="${nameMsg}"/>
                 </div>
             </div>
 
@@ -43,14 +41,12 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="description" class="control-label">
-                        <mvc:message code="default.description" />
+                        <mvc:message var="descriptionMsg" code="default.description"/>
+                        ${descriptionMsg}
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <c:set var="descriptionPlaceholder">
-                        <mvc:message code="default.description"/>
-                    </c:set>
-                    <mvc:textarea path="description" id="description" cssClass="form-control" rows="5" placeholder="${descriptionPlaceholder}"/>
+                    <mvc:textarea path="description" id="description" cssClass="form-control" rows="5" placeholder="${descriptionMsg}"/>
                 </div>
             </div>
 

@@ -86,7 +86,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
         }
 
         Pattern compile = Pattern.compile("[\"?*)(+%]");
-        return compile.matcher(searchQuery).find();
+        return compile.matcher(searchQuery).find() || reservedLiteralsConfig.isContainsDateBaseDependentControlCharacters(searchQuery);
     }
 
     private String generateSpecificQuery(String[] tokens) throws FulltextSearchQueryException {
@@ -105,8 +105,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
             } else if (token.equals(DOUBLE_QUOTES)) {
                 matchingIndex = getMatchingIndex(tokens, i, DOUBLE_QUOTES);
                 checkMatchingIndex(i, matchingIndex, QUOTES_ERROR);
-                token = Arrays.stream(Arrays.copyOfRange(tokens, i + 1, matchingIndex))
-                        .collect(Collectors.joining(StringUtils.EMPTY));
+                token = String.join(StringUtils.EMPTY, Arrays.copyOfRange(tokens, i + 1, matchingIndex));
                 operandStack.push(DOUBLE_QUOTES + reservedLiteralsConfig.escapeWord(token) + DOUBLE_QUOTES);
                 i = matchingIndex;
             } else if (operators.containsKey(token)) {
@@ -127,6 +126,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
 
     private String applyDatabaseSpecificOperators(LinkedList<String> operandStack, LinkedList<Operator> operatorStack) {
         List<String> operands = new ArrayList<>();
+        operandStack = operandStack.stream().map(this::applyWordProcessors).collect(Collectors.toCollection(LinkedList::new));
         while (operatorStack.size() != 0) {
             Operator operator = operatorStack.pop();
             while (operands.size() != operator.getOperandsCount()) {
@@ -136,7 +136,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
             operandStack.push(operator.process(operands));
             operands.clear();
         }
-        return applyWordProcessors(operandStack.stream().collect(Collectors.joining()));
+        return StringUtils.join(operandStack, "");
     }
 
     private String applyWordProcessors(String word) {
@@ -164,7 +164,11 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
     }
 
     private String sanitize(String query) {
-        return StringUtils.isNotBlank(query) ? query.replaceAll(SANITIZE_REGEX, WHITESPACE).trim() : StringUtils.EMPTY;
+        if (StringUtils.isNotBlank(query)) {
+            return reservedLiteralsConfig.sanitize(query.replaceAll(SANITIZE_REGEX, WHITESPACE).trim());
+        } else {
+            return StringUtils.EMPTY;
+        }
     }
 
     private void checkMatchingIndex(int start, int matchingIndex, String error) throws FulltextSearchQueryException {

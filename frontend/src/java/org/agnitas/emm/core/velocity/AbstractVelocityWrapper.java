@@ -10,11 +10,10 @@
 
 package org.agnitas.emm.core.velocity;
 
-import java.io.IOException;
 import java.io.Writer;
 import java.util.Map;
 
-import org.agnitas.util.EventHandler;
+import org.agnitas.emm.core.velocity.event.StrutsActionMessageEventHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.velocity.VelocityContext;
@@ -28,15 +27,13 @@ import org.apache.velocity.util.introspection.Uberspect;
 public class AbstractVelocityWrapper implements VelocityWrapper {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger( AbstractVelocityWrapper.class);
+	private static final transient Logger logger = Logger.getLogger(AbstractVelocityWrapper.class);
 
 	/** Velocity engine. */
 	private final VelocityEngine engine;
 	
 	/** Company ID in which the script is executed. */
 	private final int contextCompanyId;
-	
-	private final String velocityLogDir;
 	
 	/**
 	 * Creates a new Velocity instance with given Uberspector.
@@ -46,15 +43,14 @@ public class AbstractVelocityWrapper implements VelocityWrapper {
 	 * 
 	 * @throws Exception on errors initializing Velocity
 	 */
-	protected AbstractVelocityWrapper( int companyId, UberspectDelegateTargetFactory factory, String velocityLogDir) throws Exception {
+	protected AbstractVelocityWrapper(int companyId, UberspectDelegateTargetFactory factory) throws Exception {
 		this.contextCompanyId = companyId;
-		this.velocityLogDir = velocityLogDir;
 		this.engine = createEngine( companyId, factory);
 	}
 	
 	/**
 	 * Creates a new Velocity engine. If an Uberspector class is defined, this class will
-	 * be used for tracking the company context.  
+	 * be used for tracking the company context.
 	 * 
 	 * @param companyId ID of the company for that the scripts are executed
 	 * @param factory factory to create the Uberspect delegate target
@@ -66,22 +62,21 @@ public class AbstractVelocityWrapper implements VelocityWrapper {
 	private VelocityEngine createEngine( int companyId, UberspectDelegateTargetFactory factory) throws Exception {
 		VelocityEngine ve = new VelocityEngine();
 		
-		ve.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.SimpleLog4JLogSystem");
-		ve.setProperty(RuntimeConstants.RUNTIME_LOG, velocityLogDir + "/velocity.log");
 		ve.setProperty(RuntimeConstants.INPUT_ENCODING, "UTF-8");
-		ve.setProperty(RuntimeConstants.OUTPUT_ENCODING, "UTF-8");
 		ve.setProperty(RuntimeConstants.EVENTHANDLER_INCLUDE, "org.agnitas.emm.core.velocity.IncludeParsePreventionHandler");
 		
 		Uberspect uberspectDelegateTarget = factory.newDelegateTarget( companyId);
 		
 		if( uberspectDelegateTarget != null) {
-			if( logger.isInfoEnabled())
+			if( logger.isInfoEnabled()) {
 				logger.info( "Setting uberspect delegate target: " + uberspectDelegateTarget.getClass().getCanonicalName());
+			}
 			
 			ve.setProperty( RuntimeConstants.UBERSPECT_CLASSNAME, UberspectDelegate.class.getCanonicalName());
 			ve.setProperty( UberspectDelegate.DELEGATE_TARGET_PROPERTY_NAME, uberspectDelegateTarget);
-		} else
+		} else {
 			logger.warn( "SECURITY LEAK: No uberspector defined");
+		}
 		
 		try {
 			ve.init();
@@ -96,16 +91,16 @@ public class AbstractVelocityWrapper implements VelocityWrapper {
 	}
 
 	@Override
-	public VelocityResult evaluate(Map<?, ?> params, String template, Writer writer, int formId, int actionId) throws IOException {
+	public VelocityResult evaluate(Map<String, Object> params, String template, Writer writer, int formId, int actionId) {
 		String logTag = createLogTag( getCompanyId(), formId, actionId);
 		
 		return evaluate( params, template, writer, logTag);
 	}
 	
 	@Override
-	public VelocityResult evaluate( Map<?, ?> params, String template, Writer writer, String logTag) throws IOException {
+	public VelocityResult evaluate( Map<String, Object> params, String template, Writer writer, String logTag) {
         VelocityContext context = new VelocityContext(params);
-        EventHandler velocityEH = new EventHandler(context);
+        StrutsActionMessageEventHandler velocityEH = new StrutsActionMessageEventHandler(context);
         
         String nonNullTemplate = StringUtils.defaultString( template);
         
@@ -133,15 +128,17 @@ public class AbstractVelocityWrapper implements VelocityWrapper {
 		}
 		
 		if( formId != 0) {
-			if( companyId != 0)
+			if( companyId != 0) {
 				buffer.append( ", ");
+			}
 			buffer.append( "form ID ");
 			buffer.append( formId);
 		}
 		
 		if( actionId != 0) {
-			if( companyId != 0 || formId != 0)
+			if( companyId != 0 || formId != 0) {
 				buffer.append( ", ");
+			}
 			buffer.append( "action ID ");
 			buffer.append( actionId);
 		}

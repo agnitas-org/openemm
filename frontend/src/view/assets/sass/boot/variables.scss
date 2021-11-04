@@ -110,6 +110,9 @@ $c-blue-21: #30aadb;
 // btn-info bgc
 $c-blue-22: #338dc7;
 
+// star checkbox
+$c-blue-23: #66aad5;
+
 // btn-primary bgc
 $c-blue-27: #0071b9;
 
@@ -167,11 +170,11 @@ $preview-clients:(
 
 
 // mailings
-$c-mailing-new          : #66aad5;
+$c-mailing-new          : $c-blue-23;
 $c-mailing-active       : #64a70b;
 $c-mailing-canceled     : $c-red-02;
 $c-mailing-disable      : $c-gray-44;
-$c-mailing-edit         : #66aad5;
+$c-mailing-edit         : $c-blue-23;
 $c-mailing-ready        : #aacf79;
 $c-mailing-scheduled    : #83b93c;
 $c-mailing-sending      : #64a70b;
@@ -248,11 +251,11 @@ $mailing-state-icons:(
 );
 
 // Push Notifications
-$c-push-new               : #66aad5;
+$c-push-new               : $c-blue-23;
 $c-push-active            : #64a70b;
 $c-push-canceled          : $c-red-02;
 $c-push-disable           : $c-gray-44;
-$c-push-edit              : #66aad5;
+$c-push-edit              : $c-blue-23;
 $c-push-ready             : #aacf79;
 $c-push-scheduled         : #83b93c;
 $c-push-sending           : #64a70b;
@@ -306,7 +309,7 @@ $auto-optimization-state-icons:(
 );
 
 // Campaigns (Workflow Manager)
-$c-campaign-open             : #66aad5;
+$c-campaign-open             : $c-blue-23;
 $c-campaign-active           : #109e4d;
 $c-campaign-inactive         : #707173;
 $c-campaign-completed        : #387c00;

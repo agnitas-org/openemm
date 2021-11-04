@@ -2,19 +2,6 @@
   var Confirm = AGN.Lib.Confirm,
       Page  = {};
 
-  function renderMessages($resp) {
-    $resp.all('script[data-message][type="text/html"]')
-      .appendTo($(document.body));
-
-    $resp.all('script[data-message][type="text/javascript"]').each(function() {
-      try {
-        eval($(this).html());
-      } catch (exception) {
-        console.debug(exception);
-      }
-    });
-  }
-
   function getValidMethod(method) {
     if (method) {
       method = method.toUpperCase();
@@ -94,7 +81,7 @@
       if ($e.exists()) {
         var deferred = $.Deferred();
 
-        renderMessages($resp);
+        AGN.Lib.RenderMessages($resp);
 
         Confirm.create($resp);
         deferred.resolve(Confirm.get($resp));
@@ -106,10 +93,10 @@
         if ($e.exists()) {
           return Page.reload($e.data('load'), true)
             .done(function() {
-              renderMessages($resp);
+              AGN.Lib.RenderMessages($resp);
             });
         } else {
-          renderMessages($resp);
+          AGN.Lib.RenderMessages($resp);
         }
       }
     }

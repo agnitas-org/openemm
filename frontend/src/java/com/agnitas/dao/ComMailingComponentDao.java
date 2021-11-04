@@ -37,7 +37,9 @@ public interface ComMailingComponentDao extends MailingComponentDao {
 	Map<Integer, String> getImageNames(@VelocityCheck int companyId, int mailingId, boolean includeExternalImages);
 
 	boolean exists(int mailingID, int companyID, int componentID);
-	
+
+	boolean attachmentExists(int companyId, int mailingId, String name, int targetId);
+
 	boolean deleteMailingComponentsByCompanyID(int companyID);
 	
 	void deleteMailingComponentsByMailing(int mailingID);

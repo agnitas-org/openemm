@@ -31,6 +31,17 @@ public class ComCompanyImpl extends CompanyImpl implements ComCompany {
 	private int business;
 	private int parentCompanyId;
 	private String contactTech;
+	private int maxAdminMails;
+	
+	@Override
+	public int getMaxAdminMails() {
+		return maxAdminMails;
+	}
+	
+	@Override
+	public void setMaxAdminMails(int maxAdminMails) {
+		this.maxAdminMails = maxAdminMails;
+	}
 
 	@Override
 	public int getStatAdmin() {

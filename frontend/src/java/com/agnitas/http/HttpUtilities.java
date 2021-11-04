@@ -74,11 +74,11 @@ public class HttpUtilities {
 	 * @return
 	 * @throws Exception
 	 */
-	public static HttpResponse executeHttpRequest(final HttpRequest httpRequest) throws Exception {
-		return executeHttpRequest(httpRequest, null);
+	public static HttpResponse executeHttpRequest(final HttpRequest httpRequest, final String secureTransportLayerProtocol) throws Exception {
+		return executeHttpRequest(httpRequest, null, secureTransportLayerProtocol);
 	}
 
-	public static HttpResponse executeHttpRequest(final HttpRequest httpRequest, final Proxy proxy) throws Exception {
+	public static HttpResponse executeHttpRequest(final HttpRequest httpRequest, final Proxy proxy, final String secureTransportLayerProtocol) throws Exception {
 		try {
 			String requestedUrl = httpRequest.getUrlWithProtocol();
 
@@ -256,7 +256,7 @@ public class HttpUtilities {
 							httpResponseContent.append(httpResponseContentLine);
 						}
 						return new HttpResponse(httpResponseCode, httpResponseContent.toString(), urlConnection.getContentType(), headers, cookiesMap);
-					} catch (@SuppressWarnings("unused") final Exception e) {
+					} catch (final Exception e) {
 						return new HttpResponse(httpResponseCode, null, null, headers, cookiesMap);
 					}
 				}
@@ -265,7 +265,7 @@ public class HttpUtilities {
 				final String redirectUrl = urlConnection.getHeaderField("Location");
 				if (StringUtils.isNotBlank(redirectUrl)) {
 					final HttpRequest redirectedHttpRequest = new HttpRequest(httpRequest.getRequestMethod(), redirectUrl);
-					return executeHttpRequest(redirectedHttpRequest);
+					return executeHttpRequest(redirectedHttpRequest, secureTransportLayerProtocol);
 				} else {
 					throw new Exception("Redirection url was empty");
 				}
@@ -280,7 +280,7 @@ public class HttpUtilities {
 						httpResponseContent.append(httpResponseContentLine);
 					}
 					return new HttpResponse(httpResponseCode, httpResponseContent.toString(), urlConnection.getContentType(), headers, cookiesMap);
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				} catch (final Exception e) {
 					return new HttpResponse(httpResponseCode, null, null, headers, cookiesMap);
 				}
 			}
@@ -369,7 +369,7 @@ public class HttpUtilities {
 		URL netUrl;
 		try {
 			netUrl = new URL(url);
-		} catch (@SuppressWarnings("unused") final MalformedURLException e) {
+		} catch (final MalformedURLException e) {
 			return null;
 		}
 		return netUrl.getHost();
@@ -613,4 +613,5 @@ public class HttpUtilities {
 			return value.replace(";", "%3B").replace("=", "%3D");
 		}
 	}
+
 }

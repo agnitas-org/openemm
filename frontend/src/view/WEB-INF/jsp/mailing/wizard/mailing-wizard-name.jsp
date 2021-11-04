@@ -59,22 +59,24 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label" for="mailing.shortname">
-                            <bean:message key="default.Name"/>
+                            <c:set var="nameMsg"><bean:message key="default.Name"/></c:set>
+                            ${nameMsg}
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <html:text styleId="mailing.shortname" styleClass="form-control" property="mailing.shortname" />
+                        <agn:agnText styleId="mailing.shortname" styleClass="form-control" property="mailing.shortname" placeholder="${nameMsg}"/>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label" for="mailing.description">
-                            <bean:message key="default.description"/>
+                            <c:set var="descriptionMsg"><bean:message key="default.description"/></c:set>
+                            ${descriptionMsg}
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <html:textarea styleId="mailing.description" styleClass="form-control v-resizable" property="mailing.description"/>
+                        <agn:agnTextarea styleId="mailing.description" styleClass="form-control v-resizable" property="mailing.description" placeholder="${descriptionMsg}"/>
                     </div>
                 </div>
                 <c:if test="${isEnableTrackingVeto}">

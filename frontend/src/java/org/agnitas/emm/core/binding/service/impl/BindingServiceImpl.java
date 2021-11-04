@@ -65,7 +65,7 @@ public abstract class BindingServiceImpl implements BindingService {
 	@Required
 	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
-	}	
+	}
 	
 	protected abstract BindingEntry getBindingEntry();
 
@@ -91,7 +91,7 @@ public abstract class BindingServiceImpl implements BindingService {
 			throw new RecipientNotExistException();
 		}
 		if (model.getExitMailingId() != 0 && !mailingDao.exist(model.getExitMailingId(), model.getCompanyId())) {
-			throw new MailingNotExistException();
+			throw new MailingNotExistException(model.getCompanyId(), model.getExitMailingId());
 		}
 		
 		// Check, that user status has valid value
@@ -104,9 +104,9 @@ public abstract class BindingServiceImpl implements BindingService {
 		BindingEntry binding = bindingEntryDao.get(model.getCustomerId(), model.getCompanyId(), model.getMailinglistId(), model.getMediatype());
         if(binding == null) {
             binding = getBindingEntry();
-            binding.setCustomerID(model.getCustomerId()); 
-            binding.setMailinglistID(model.getMailinglistId()); 
-            binding.setMediaType(model.getMediatype()); 
+            binding.setCustomerID(model.getCustomerId());
+            binding.setMailinglistID(model.getMailinglistId());
+            binding.setMediaType(model.getMediatype());
         }
         binding.setUserStatus(model.getStatus());
         binding.setUserType(model.getUserType());

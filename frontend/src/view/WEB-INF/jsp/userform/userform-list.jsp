@@ -92,8 +92,6 @@
         <c:url var="deleteLink" value="/webform/${entry['id']}/confirmDelete.action"/>
         <c:set target="${entry}" property="delete" value="${deleteLink}"/>
 
-        <c:set target="${entry}" property="webformUrl"
-               value="${fn:replace(userFormURLPattern, '{user-form-name}', entry['name'])}"/>
     </c:forEach>
 
     <c:set var="isDeletionAllowed" value="false"/>
@@ -113,14 +111,14 @@
                 {
                     "headerName": "<mvc:message code='Form'/>",
                     "editable": false,
-                    "cellAction": "goTo",
+                    "cellRenderer": "StringCellRenderer",
                     "field": "name",
                     "type": "textCaseInsensitiveColumn"
                 },
                 {
                     "headerName": "<mvc:message code='Description'/>",
                     "editable": false,
-                    "cellAction": "goTo",
+                    "cellRenderer": "StringCellRenderer",
                     "field": "description",
                     "type": "textCaseInsensitiveColumn"
                 },
@@ -128,7 +126,6 @@
                     "headerName": "<mvc:message code='userform.usesActions'/>",
                     "editable": false,
                     "suppressMenu": true,
-                    "cellAction": "goTo",
                     "field": "actionNames",
                     "cellStyle": {"textAlign": "center"},
                     "cellRenderer": "MustacheTemplateCellRender",
@@ -139,13 +136,12 @@
                     "headerName": "<mvc:message code='default.url'/>",
                     "editable": false,
                     "suppressMenu": true,
-                    "cellAction": "goTo",
+                    "cellRenderer": "StringCellRenderer",
                     "field": "webformUrl"
                 },
                 {
                     "headerName": "<mvc:message code='default.creationDate'/>",
                     "editable": false,
-                    "cellAction": "goTo",
                     "field": "creationDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",
@@ -155,7 +151,6 @@
                 {
                     "headerName": "<mvc:message code='default.changeDate'/>",
                     "editable": false,
-                    "cellAction": "goTo",
                     "field": "changeDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",

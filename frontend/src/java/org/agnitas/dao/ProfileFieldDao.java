@@ -21,6 +21,8 @@ import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 
 public interface ProfileFieldDao {
+	boolean isOracleDB();
+	
     /**
      * Loads profile field by company id and column name.
      *

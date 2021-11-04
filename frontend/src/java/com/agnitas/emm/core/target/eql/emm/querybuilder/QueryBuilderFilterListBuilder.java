@@ -63,7 +63,15 @@ public class QueryBuilderFilterListBuilder {
 	}
 
 	private void createIndependentFilters(final List<ProfileField> profileFields, final ComAdmin admin) {
-		profileFields.addAll(queryBuilderConfiguration.getIndependentFields(AgnUtils.isMailTrackingAvailable(admin)));
+		TargetRuleKey[] excludedRulesKeys;
+
+		if (AgnUtils.isMailTrackingAvailable(admin)) {
+			excludedRulesKeys = new TargetRuleKey[]{TargetRuleKey.FINISHED_AUTOEXPORT};
+		} else {
+			excludedRulesKeys = new TargetRuleKey[]{TargetRuleKey.RECEIVED_MAILING, TargetRuleKey.FINISHED_AUTOEXPORT};
+		}
+
+		profileFields.addAll(queryBuilderConfiguration.getIndependentFieldsExcluding(excludedRulesKeys));
 	}
 
 	/**

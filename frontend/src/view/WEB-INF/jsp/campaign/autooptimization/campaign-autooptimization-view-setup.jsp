@@ -17,7 +17,7 @@
 <c:set var="STATUS_SCHEDULED" value="<%=ComOptimization.STATUS_SCHEDULED%>" scope="page" />
 
 <emm:CheckLogon />
-<emm:Permission token="campaign.autoopt" />
+<emm:Permission token="campaign.change" />
 	
 <c:set var="admin" value="${emm.admin}" scope="request" />
 <c:set var="sessionID" value="${pageContext.session.id}" scope="request"/>

@@ -19,19 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
-
-import javax.servlet.http.HttpSession;
+import java.util.*;
 
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
@@ -83,7 +71,7 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.emm.core.admin.service.AdminService;
@@ -124,6 +112,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.module.SimpleSerializers;
 
+import jakarta.servlet.http.HttpSession;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -163,7 +152,7 @@ public class WorkflowController {
     private AutoImportService autoImportService;
     private AutoExportService autoExportService;
     private ComWorkflowDataParser workflowDataParser;
-    private ComCampaignDao campaignDao;
+    private CampaignDao campaignDao;
     private ComMailingDeliveryStatService deliveryStatService;
     private ComMailingComponentDao componentDao;
     private GenerationPDFService generationPDFService;
@@ -182,7 +171,7 @@ public class WorkflowController {
     public WorkflowController(ComWorkflowService workflowService, ComWorkflowValidationService validationService,
                               ComWorkflowActivationService workflowActivationService, ComWorkflowStatisticsService workflowStatisticsService,
                               @Autowired(required = false) AutoImportService autoImportService, @Autowired(required = false) AutoExportService autoExportService, ComWorkflowDataParser workflowDataParser,
-                              ComCampaignDao campaignDao, ComMailingDeliveryStatService deliveryStatService, ComMailingComponentDao componentDao,
+                              CampaignDao campaignDao, ComMailingDeliveryStatService deliveryStatService, ComMailingComponentDao componentDao,
                               GenerationPDFService generationPDFService, ComCompanyDao companyDao, ConfigService configService,
                               WebStorage webStorage, MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService,
                               ConversionService conversionService, MailingService mailingService, ComOptimizationService optimizationService, AdminService adminService,
@@ -230,32 +219,28 @@ public class WorkflowController {
 
     @RequestMapping("/{id:\\d+}/view.action")
     public String view(ComAdmin admin, @PathVariable int id, Model model,
-                       @RequestParam(name = "forwardParams", required = false) String forwardParams) throws Exception {
-        if(id == 0) {
+                       @RequestParam(name = "forwardParams", required = false) String forwardParams, Popups popups) throws Exception {
+        if (id == 0) {
             return "redirect:/workflow/create.action";
         }
 
-        WorkflowForm form = null;
-        if(model.asMap().containsKey("workflowForm")) {
-            form = (WorkflowForm) model.asMap().get("mailinglistForm");
-        } else {
+        if (!model.containsAttribute("workflowForm")) {
             Workflow workflow = workflowService.getWorkflow(id, admin.getCompanyID());
-            if (Objects.nonNull(workflow)) {
+            WorkflowForm form = new WorkflowForm();
+
+            if (workflow == null) {
+                // Given identifier is invalid.
+                popups.alert("Error");
+            } else {
                 form = conversionService.convert(workflow, WorkflowForm.class);
-
+                writeUserActivityLog(admin, "workflow view", getWorkflowDescription(form));
             }
-        }
 
-        if (form == null) {
-            form = new WorkflowForm();
-        } else {
-            writeUserActivityLog(admin, "mailing list view", getWorkflowDescription(form));
+            model.addAttribute("workflowForm", form);
+            setAutoOptData(admin, form, model);
         }
 
         prepareViewPage(admin, model);
-        model.addAttribute("workflowForm", form);
-        setAutoOptData(admin, form, model);
-        
         model.addAllAttributes(AgnUtils.getParamsMap(forwardParams));
 
         return "workflow_view";
@@ -451,7 +436,7 @@ public class WorkflowController {
 
             List<WorkflowIcon> icons = newWorkflow.getWorkflowIcons();
             if (StringUtils.isNotEmpty(forwardName)) {
-                return getForward(forwardName, forwardParams, forwardTargetItemId, newWorkflow.getWorkflowId(), icons, redirectModel);
+                return getForward(forwardName, forwardParams, forwardTargetItemId, newWorkflow.getWorkflowId(), icons, redirectModel, admin);
             }
             
             errors.addAll(validateWorkflow(admin, icons, newWorkflow.getWorkflowId(), newStatus));
@@ -472,7 +457,7 @@ public class WorkflowController {
 
             if (StringUtils.isNotEmpty(forwardName)) {
                 return getForward(forwardName, forwardParams, forwardTargetItemId, existingWorkflow.getWorkflowId(),
-                        existingWorkflow.getWorkflowIcons(), redirectModel);
+                        existingWorkflow.getWorkflowIcons(), redirectModel, admin);
             }
 
             if (validateStatusTransition(existingStatus, newStatus, errors)) {
@@ -791,9 +776,9 @@ public class WorkflowController {
     }
 
     private String getForward(String forwardName, String forwardParams, String forwardTargetItemId, int workflowId,
-                                    List<WorkflowIcon> icons, Model model) {
+                                    List<WorkflowIcon> icons, Model model, ComAdmin admin) {
         
-        String redirectUrl = getRedirectUrl(forwardName);
+        String redirectUrl = getRedirectUrl(forwardName, forwardTargetItemId, admin);
         
         if (StringUtils.isEmpty(redirectUrl)) {
             return "redirect:/workflow/" + workflowId + "/view.action";
@@ -867,7 +852,7 @@ public class WorkflowController {
         workflowForm.setWorkflowSchema(workflowDataParser.serializeWorkflowIcons(icons));
     }
 
-    private String getRedirectUrl(String forwardName) {
+    private String getRedirectUrl(String forwardName, String forwardTargetItemId, ComAdmin admin) {
         switch (StringUtils.defaultString(forwardName)) {
             case FORWARD_USERFORM_CREATE:
                 return "/webform/new.action";
@@ -881,10 +866,11 @@ public class WorkflowController {
     
             case FORWARD_TARGETGROUP_CREATE:
             case FORWARD_TARGETGROUP_CREATE_QB:
-                return "/targetQB.do?method=create";
+                return "/target/create.action";
+
             case FORWARD_TARGETGROUP_EDIT:
             case FORWARD_TARGETGROUP_EDIT_QB:
-                return "/targetQB.do?method=show";
+                return "/target/" + forwardTargetItemId + "/view.action";
                 
             case FORWARD_ARCHIVE_CREATE:
                 return "/campaign.do?action=4";
@@ -1518,8 +1504,7 @@ public class WorkflowController {
     
     private void setAutoOptData(ComAdmin admin, WorkflowForm form, Model model) {
         model.addAttribute("isTotalStatisticAvailable", workflowStatisticsService.isTotalStatisticAvailable(Workflow.WorkflowStatus.valueOf(form.getStatus().name()), form.getWorkflowIcons()));
-        model.addAttribute("autoOptData",
-                optimizationService.getOptimizationLight(admin.getCompanyID(), form.getWorkflowId()));
+        model.addAttribute("autoOptData", optimizationService.getOptimizationLight(admin.getCompanyID(), form.getWorkflowId()));
     }
     
 }

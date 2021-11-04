@@ -84,6 +84,8 @@ public final class QueryBuilderTargetGroupForm extends StrutsFormBase {
 
 	private String statisticUrl;
 
+	private boolean valid;
+	
 	// ----------------------------------------------------------------------------------------------------- property "targetID"	
 	public final void setTargetID(final int id) {
 		this.targetID = id;
@@ -263,4 +265,12 @@ public final class QueryBuilderTargetGroupForm extends StrutsFormBase {
 	public void setComplexityGrade(TargetComplexityGrade complexityGrade) {
 		this.complexityGrade = complexityGrade;
 	}
+
+    public boolean isValid() {
+        return valid;
+    }
+
+    public void setValid(boolean valid) {
+        this.valid = valid;
+    }
 }

@@ -12,28 +12,48 @@ package com.agnitas.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.agnitas.beans.DynamicTagContent;
+import org.agnitas.dao.DynamicTagContentDao;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.DynamicTagImpl;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.dao.impl.ComMailingDaoImpl.DynamicTagContentRowMapper;
+import com.agnitas.dao.impl.ComMailingDaoImpl.DynamicTagRowMapper;
 
 public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 	private static final transient Logger logger = Logger.getLogger(DynamicTagDaoImpl.class);
+	
+	private DynamicTagContentDao dynamicTagContentDao;
+
+	@Required
+	public void setDynamicTagContentDao(DynamicTagContentDao dynamicTagContentDao) {
+		this.dynamicTagContentDao = dynamicTagContentDao;
+	}
 	
 	@Override
 	public List<DynamicTag> getNameList(@VelocityCheck int companyId, int mailingId) {
@@ -170,4 +190,242 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 			dynNamesIdsMap.put(rs.getString("dyn_name"), rs.getInt("dyn_name_id"));
 		}
 	}
+
+    @Override
+    public DynamicTag getDynamicTag(int dynNameId, @VelocityCheck int companyId) {
+        final String sqlGetTags = "SELECT company_id, mailing_id, dyn_name_id, dyn_name, dyn_group, interest_group, no_link_extension " +
+                "FROM dyn_name_tbl " +
+                "WHERE company_id = ? AND dyn_name_id = ? AND deleted = 0";
+
+        final String sqlGetContents = "SELECT company_id, mailing_id, dyn_content_id, dyn_name_id, target_id, dyn_order, dyn_content " +
+                "FROM dyn_content_tbl " +
+                "WHERE company_id = ? AND dyn_name_id = ? " +
+                "ORDER BY dyn_order, dyn_content_id ASC";
+
+        final DynamicTag tag = selectObjectDefaultNull(logger, sqlGetTags, new DynamicTagRowMapper(), companyId, dynNameId);
+
+        if (tag != null) {
+            // Retrieve content entries for the tag.
+            select(logger, sqlGetContents, new DynamicTagContentRowMapper(), companyId, dynNameId)
+                    .forEach(tag::addContent);
+        }
+
+        return tag;
+    }
+
+    @Override
+    public List<DynamicTag> getDynamicTags(final int mailingId, @VelocityCheck final int companyId, final boolean includeDeletedDynTags) {
+        final String sqlGetTags = "SELECT company_id, mailing_id, dyn_name_id, dyn_name, dyn_group, interest_group, no_link_extension " +
+                "FROM dyn_name_tbl " +
+                "WHERE company_id = ? AND mailing_id = ? AND (deleted = 0 OR 1 = ?) " +
+                "ORDER BY dyn_group, dyn_name ASC";
+
+        final String sqlGetContents = "SELECT c.company_id, c.mailing_id, c.dyn_content_id, c.dyn_name_id, c.target_id, c.dyn_order, c.dyn_content " +
+                "FROM dyn_content_tbl c " +
+                "JOIN dyn_name_tbl n ON n.dyn_name_id = c.dyn_name_id AND n.company_id = ? AND n.mailing_id = ? " +
+                "WHERE c.company_id = ? AND c.mailing_id = ? AND (n.deleted = 0 OR 1 = ?) " +
+                "ORDER BY c.dyn_order, c.dyn_content_id ASC";
+
+        final List<DynamicTag> tags = select(logger, sqlGetTags, new DynamicTagRowMapper(), companyId, mailingId, includeDeletedDynTags ? 1 : 0);
+
+        if (tags.size() > 0) {
+            final Map<Integer, Map<Integer, DynamicTagContent>> contentMapsMap = new HashMap<>();
+
+            for (final DynamicTag tag : tags) {
+                final Map<Integer, DynamicTagContent> contentMap = new LinkedHashMap<>();
+                tag.setDynContent(contentMap);
+                contentMapsMap.put(tag.getId(), contentMap);
+            }
+
+            // Retrieve contents for all the tags.
+            final List<DynamicTagContent> contents = select(logger, sqlGetContents, new DynamicTagContentRowMapper(), companyId, mailingId, companyId, mailingId, includeDeletedDynTags ? 1 : 0);
+
+            for (final DynamicTagContent dynamicTagContent : contents) {
+                contentMapsMap.get(dynamicTagContent.getDynNameID()).put(dynamicTagContent.getDynOrder(), dynamicTagContent);
+            }
+        }
+
+        return tags;
+    }
+
+    @Override
+    @DaoUpdateReturnValueCheck
+    public void deleteAllDynTags(final int mailingId) {
+        update(logger, "DELETE FROM dyn_content_tbl WHERE dyn_name_id IN (SELECT dyn_name_id FROM dyn_name_tbl WHERE mailing_id = ?)", mailingId);
+        update(logger, "DELETE FROM dyn_name_tbl WHERE mailing_id = ?", mailingId);
+    }
+
+    /**
+     * Deletes all dyn content by dyn tag name
+	 * @param mailingId
+	 * @param companyId
+	 * @param dynName
+     * @return true if at least con row was affected otherwise return false
+     */
+    @Override
+    @DaoUpdateReturnValueCheck
+    public boolean cleanupContentForDynName(int mailingId, int companyId, String dynName) {
+        return cleanupContentForDynNames(mailingId, companyId, Collections.singletonList(dynName));
+    }
+
+    /**
+     * Deletes all dyn content by dyn tag name
+	 * @param mailingId
+	 * @param companyId
+	 * @param dynName
+     * @return true if at least con row was affected otherwise return false
+     */
+    @Override
+    @DaoUpdateReturnValueCheck
+    public boolean cleanupContentForDynNames(int mailingId, int companyId, List<String> dynNames) {
+        if (dynNames.isEmpty()) {
+            return true;
+        }
+
+        final String deleteContentSQL = "DELETE from dyn_content_tbl" +
+                " WHERE mailing_id = ? AND company_id = ? AND dyn_name_id IN " +
+                " (SELECT dyn_name_id FROM dyn_name_tbl WHERE mailing_id = ? AND company_id = ? " +
+                " AND " + makeBulkInClauseForString("dyn_name", dynNames) + ")";
+
+        return update(logger, deleteContentSQL, mailingId, companyId, mailingId, companyId) > 0;
+    }
+
+    @Override
+    public void updateDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception {
+        if (CollectionUtils.isEmpty(dynamicTags)) {
+            return;
+        } else {
+            List<Object[]> parameterList = dynamicTags.stream().map(tag -> new Object[]{
+                    tag.getDynName(),
+                    tag.getGroup(),
+                    tag.getDynInterestGroup(),
+                    tag.isDisableLinkExtension() ? 1 : 0,
+                    mailingID,
+                    companyID,
+                    tag.getId()
+            }).collect(Collectors.toList());
+
+            final String updateSql = "UPDATE dyn_name_tbl SET change_date = current_timestamp, dyn_name = ?, dyn_group = ?, interest_group = ?, deleted = 0, no_link_extension = ? WHERE mailing_id = ? AND company_id = ? AND dyn_name_id = ?";
+            batchupdate(logger, updateSql, parameterList);
+
+            dynamicTagContentDao.saveDynamicTagContent(companyID, mailingID, encodingCharset, dynamicTags);
+        }
+    }
+
+	@Override
+    @DaoUpdateReturnValueCheck
+    public void saveDynamicTags(final Mailing mailing, final Map<String, DynamicTag> dynTags) throws Exception {
+        int companyId = mailing.getCompanyID();
+        int mailingId = mailing.getId();
+
+        List<String> dynNames = dynTags.values().stream()
+                .map(DynamicTag::getDynName)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toList());
+
+        Map<String, Integer> dynNamesToIdsMap = getDynTagIdsByName(companyId, mailingId, dynNames);
+
+        List<DynamicTag> dynTagsForUpdate = new ArrayList<>();
+        List<DynamicTag> dynTagsForCreation = new ArrayList<>();
+
+        for (final DynamicTag tag : dynTags.values()) {
+            if (StringUtils.isBlank(tag.getDynName())) {
+                if (tag.getId() > 0) {
+                    logger.warn("Could not update dynName ID " + tag.getId());
+                    dynNamesToIdsMap.entrySet().stream().filter(entry -> entry.getValue() == tag.getId())
+                            .map(Entry::getKey).findAny()
+                            .ifPresent(tag::setDynName);
+                } else {
+                    logger.warn("Could not create a dynamic tag without an assigned name for mailingID: " + mailing.getId());
+                }
+            }
+
+            if (StringUtils.isNotBlank(tag.getDynName())) {
+                int tagId = tag.getId();
+                if (tagId <= 0) {
+                    tagId = dynNamesToIdsMap.getOrDefault(tag.getDynName(), 0);
+                    tag.setId(tagId);
+                }
+
+                tag.setCompanyID(companyId);
+                tag.setMailingID(mailingId);
+                if (tagId > 0) {
+                    dynTagsForUpdate.add(tag);
+                } else {
+                    dynTagsForCreation.add(tag);
+                }
+            }
+        }
+
+        String mailingCharset = "UTF-8";
+        if (mailing.getEmailParam() != null) {
+        	mailingCharset = mailing.getEmailParam().getCharset();
+        }
+        
+        createDynamicTags(companyId, mailingId, mailingCharset, dynTagsForCreation);
+        updateDynamicTags(companyId, mailingId, mailingCharset, dynTagsForUpdate);
+    }
+
+	@Override
+    public void createDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception {
+        if (CollectionUtils.isEmpty(dynamicTags)) {
+            return;
+        } else {
+            if (isOracleDB()) {
+                dynamicTags.forEach(tag -> tag.setId(selectInt(logger, "SELECT dyn_name_tbl_seq.NEXTVAL FROM DUAL")));
+
+                List<Object[]> parameterList = dynamicTags.stream().map(tag -> new Object[]{
+                        mailingID,
+                        companyID,
+                        tag.getId(),
+                        tag.getGroup(),
+                        tag.getDynName(),
+                        tag.getDynInterestGroup(),
+                        tag.isDisableLinkExtension() ? 1 : 0
+                }).collect(Collectors.toList());
+                batchupdate(logger,
+                        "INSERT INTO dyn_name_tbl (mailing_id, company_id, dyn_name_id, dyn_group, dyn_name, interest_group, no_link_extension) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        parameterList);
+            } else {
+                List<Object[]> parameterList = dynamicTags.stream().map(tag -> new Object[]{
+                        mailingID,
+                        companyID,
+                        tag.getGroup(),
+                        tag.getDynName(),
+                        tag.getDynInterestGroup(),
+                        tag.isDisableLinkExtension() ? 1 : 0
+                }).collect(Collectors.toList());
+
+                int[] generatedKeys = batchInsertIntoAutoincrementMysqlTable(logger, "dyn_name_id",
+                        "INSERT INTO dyn_name_tbl (mailing_id, company_id, dyn_group, dyn_name, interest_group, no_link_extension, creation_date) VALUES (?, ?, ?, ?, ?, ?, current_timestamp)",
+                        parameterList);
+
+                for (int i = 0; i < generatedKeys.length && i < dynamicTags.size(); i++) {
+                    dynamicTags.get(i).setId(generatedKeys[i]);
+                }
+            }
+
+            dynamicTagContentDao.saveDynamicTagContent(companyID, mailingID, encodingCharset, dynamicTags);
+        }
+    }
+
+	@Override
+    public void removeAbsentDynContent(DynamicTag oldDynamicTag, DynamicTag newDynamicTag) {
+        List<Integer> idForRemoving = getIdForRemoving(oldDynamicTag, newDynamicTag);
+        idForRemoving.forEach(contentId -> {
+        	dynamicTagContentDao.deleteContentFromMailing(oldDynamicTag.getCompanyID(), oldDynamicTag.getMailingID(), contentId);
+        });
+    }
+
+    private List<Integer> getIdForRemoving(DynamicTag oldDynamicTag, DynamicTag newDynamicTag) {
+        Set<Integer> oldIds = oldDynamicTag.getDynContent().values().stream()
+                .map(DynamicTagContent::getId)
+                .collect(Collectors.toSet());
+
+        Set<Integer> newIds = newDynamicTag.getDynContent().values().stream()
+                .map(DynamicTagContent::getId)
+                .collect(Collectors.toSet());
+
+        return oldIds.stream().filter(oldId -> !newIds.contains(oldId)).collect(Collectors.toList());
+    }
 }

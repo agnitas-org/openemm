@@ -233,3 +233,15 @@ td.cell-as-link a {
     padding: 10px;
     display: block;
 }
+
+.info_box {
+    margin: 10px 0;
+    border: 1px solid #e2e3e3;
+    color: #338dc7;
+    padding: 15px 30px;
+    font-size: 14px;
+}
+
+body.dark-theme .info_box {
+    border: 1px solid #666;
+}

@@ -19,8 +19,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.annotation.Resource;
-
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
@@ -38,14 +36,14 @@ import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.agnitas.beans.ComCampaign;
+import com.agnitas.beans.Campaign;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
@@ -53,7 +51,8 @@ import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.json.JsonWriter;
-import com.agnitas.util.TimingLogger;
+
+import jakarta.annotation.Resource;
 
 public class MailingExporterImpl extends ActionExporter implements MailingExporter {
 	/** The logger. */
@@ -75,24 +74,11 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 	protected MediatypesDao mediatypesDao;
 	
 	@Resource(name="CampaignDao")
-	protected ComCampaignDao campaignDao;
-
-	@Override
-	public void exportMailingToJson(int companyID, int mailingID, OutputStream output, boolean exportUnusedImages) throws Exception {
-		exportMailingToJson(null, companyID, mailingID, output, exportUnusedImages);
-	}
+	protected CampaignDao campaignDao;
 	
 	@Override
-	public void exportMailingToJson(final TimingLogger timingLogger, int companyID, int mailingID, OutputStream output, boolean exportUnusedImages) throws Exception {
-		if(timingLogger != null) {
-			timingLogger.log("Entered MailingExporter.exportMailingToJson()");
-		}
-		
+	public void exportMailingToJson(int companyID, int mailingID, OutputStream output, boolean exportUnusedImages) throws Exception {
 		Mailing mailing = mailingDao.getMailing(mailingID, companyID);
-		
-		if(timingLogger != null) {
-			timingLogger.log("Read mailing from DB");
-		}
 		
 		Set<Integer> targetIDs = new HashSet<>();
 		Set<Integer> actionIDs = new HashSet<>();
@@ -100,28 +86,16 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 		try (JsonWriter writer = new JsonWriter(output, "UTF-8")) {
 			writer.openJsonObject();
 			
-			exportMailingData(timingLogger, companyID, mailing, targetIDs, actionIDs, writer, exportUnusedImages);
+			exportMailingData(companyID, mailing, targetIDs, actionIDs, writer, exportUnusedImages);
 			
 			writer.closeJsonObject();
 		} catch (Exception e) {
 			logger.error("Error in mailing export: " + e.getMessage(), e);
 			throw e;
 		}
-		
-		if(timingLogger != null) {
-			timingLogger.log("Leaving MailingExporter.exportMailingToJson()");
-		}
-	}
-
-	protected void exportMailingData(int companyID, Mailing mailing, Set<Integer> targetIDs, Set<Integer> actionIDs, JsonWriter writer, boolean exportUnusedImages) throws Exception, MediatypesDaoException, IOException {
-		exportMailingData(null, companyID, mailing, targetIDs, actionIDs, writer, exportUnusedImages);
 	}
 	
-	protected void exportMailingData(final TimingLogger timingLogger, int companyID, Mailing mailing, Set<Integer> targetIDs, Set<Integer> actionIDs, JsonWriter writer, boolean exportUnusedImages) throws Exception, MediatypesDaoException, IOException {
-		if(timingLogger != null) {
-			timingLogger.log("Entered MailingExporter.exportMailingData()");
-		}
-		
+	protected void exportMailingData(int companyID, Mailing mailing, Set<Integer> targetIDs, Set<Integer> actionIDs, JsonWriter writer, boolean exportUnusedImages) throws Exception, MediatypesDaoException, IOException {
 		Set<String> usedImageComponentNames = new HashSet<>();
 		
 		writeJsonObjectAttribute(writer, "version", EXPORT_JSON_VERSION);
@@ -137,10 +111,6 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 		}
 		
 		Mailinglist mailinglist = mailinglistDao.getMailinglist(mailing.getMailinglistID(), mailing.getCompanyID());
-		
-		if(timingLogger != null) {
-			timingLogger.log("Read mailinglist from DB");
-		}
 
 		writeJsonObjectAttribute(writer, "mailinglist_id", mailinglist.getId());
 		writeJsonObjectAttributeWhenNotNullOrBlank(writer, "mailinglist_shortname", mailinglist.getShortname());
@@ -172,7 +142,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 
 		if (mailing.getCampaignID() > 0) {
 			writeJsonObjectAttribute(writer, "campaign_id", mailing.getCampaignID());
-			ComCampaign campaign = campaignDao.getCampaign(mailing.getCampaignID(), companyID);
+			Campaign campaign = campaignDao.getCampaign(mailing.getCampaignID(), companyID);
 			if (campaign == null) {
 				throw new Exception("Found non existing campaign_id defined for mailing: " + mailing.getId());
 			}
@@ -180,24 +150,12 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 			writeJsonObjectAttribute(writer, "campaign_description", campaign.getDescription());
 		}
 		
-		if(timingLogger != null) {
-			timingLogger.log("Read campaign from DB");
-		}
-		
 		writeJsonObjectAttribute(writer, "creation_date", mailing.getCreationDate());
 
 		writer.openJsonObjectProperty("mediatypes");
 		writer.openJsonArray();
 		
-		if(timingLogger != null) {
-			timingLogger.log("Start reading media type data");
-		}
-		
 		for (Mediatype mediatype : mediatypesDao.loadMediatypes(mailing.getId(), mailing.getCompanyID()).values()) {
-			if(timingLogger != null) {
-				timingLogger.log(String.format("Start handling media type data (%s)", mediatype.getMediaType()));
-			}
-			
 			writer.openJsonObject();
 			
 			writeJsonObjectAttribute(writer, "type", mediatype.getMediaType().name());
@@ -227,15 +185,8 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 			writer.closeJsonObject();
 		}
 		writer.closeJsonArray();
-		if(timingLogger != null) {
-			timingLogger.log("Finished reading media type data");
-		}
 		
 		if (mailing.getParameters() != null && mailing.getParameters().size() > 0) {
-			if(timingLogger != null) {
-				timingLogger.log("Start reading mailing parameters");
-			}
-
 			writer.openJsonObjectProperty("parameters");
 			writer.openJsonArray();
 			for (ComMailingParameter mailingParameter : mailing.getParameters()) {
@@ -251,17 +202,9 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 				writer.closeJsonObject();
 			}
 			writer.closeJsonArray();
-			
-			if(timingLogger != null) {
-				timingLogger.log("Finished reading mailing parameters");
-			}
 		}
 		
 		if (!exportUnusedImages) {
-			if(timingLogger != null) {
-				timingLogger.log("Start exporting images");
-			}
-			
 			// Scan for agnIMAGE-Tags
 			if (mailing.getDynTags() != null && mailing.getDynTags().size() > 0) {
 				for (DynamicTag dynamicTag : mailing.getDynTags().values()) {
@@ -281,17 +224,9 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 					}
 				}
 			}
-
-			if(timingLogger != null) {
-				timingLogger.log("Finished exporting images");
-			}
 		}
 
 		if (mailing.getComponents() != null && mailing.getComponents().size() > 0) {
-			if(timingLogger != null) {
-				timingLogger.log("Start exporting mailing components");
-			}
-			
 			writer.openJsonObjectProperty("components");
 			writer.openJsonArray();
 			for (MailingComponent component : mailing.getComponents().values()) {
@@ -304,7 +239,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 					if (StringUtils.isNotBlank(component.getDescription())) {
 						writeJsonObjectAttributeWhenNotNullOrBlank(writer, "description", component.getDescription());
 					}
-					writeJsonObjectAttribute(writer, "type", mailingComponentType.name());
+					writeJsonObjectAttribute(writer, "type", mailingComponentType.getCode());
 					if (component.getTargetID() > 0) {
 						writeJsonObjectAttribute(writer, "target_id", component.getTargetID());
 						targetIDs.add(component.getTargetID());
@@ -329,17 +264,9 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 				}
 			}
 			writer.closeJsonArray();
-			
-			if(timingLogger != null) {
-				timingLogger.log("Finished exporting mailing components");
-			}
 		}
 
 		if (mailing.getDynTags() != null && mailing.getDynTags().size() > 0) {
-			if(timingLogger != null) {
-				timingLogger.log("Started exporting DynTags");
-			}
-			
 			writer.openJsonObjectProperty("contents");
 			writer.openJsonArray();
 			for (DynamicTag dynamicTag : mailing.getDynTags().values()) {
@@ -371,17 +298,9 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 				writer.closeJsonObject();
 			}
 			writer.closeJsonArray();
-			
-			if(timingLogger != null) {
-				timingLogger.log("Finished exporting DynTags");
-			}
 		}
 
 		if (mailing.getTrackableLinks() != null && mailing.getTrackableLinks().size() > 0) {
-			if(timingLogger != null) {
-				timingLogger.log("Started exporting trackable links");
-			}
-			
 			writer.openJsonObjectProperty("links");
 			writer.openJsonArray();
 			for (TrackableLink trackableLink : mailing.getTrackableLinks().values()) {
@@ -414,17 +333,9 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 				writer.closeJsonObject();
 			}
 			writer.closeJsonArray();
-			
-			if(timingLogger != null) {
-				timingLogger.log("Finished exporting trackable links");
-			}
 		}
 		
 		if (targetIDs.size() > 0) {
-			if(timingLogger != null) {
-				timingLogger.log("Started exporting target groups");
-			}
-			
 			writer.openJsonObjectProperty("targets");
 			writer.openJsonArray();
 			for (int targetID : targetIDs) {
@@ -442,21 +353,9 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 				}
 			}
 			writer.closeJsonArray();
-
-			if(timingLogger != null) {
-				timingLogger.log("Finished exporting target groups");
-			}
-		}
-
-		if(timingLogger != null) {
-			timingLogger.log("Started exporting actions");
 		}
 
 		exportActions(writer, companyID, actionIDs);
-		
-		if(timingLogger != null) {
-			timingLogger.log("Finished exporting actions");
-		}
 	}
 	
 	protected List<Integer> getInvolvedTargetIdsFromTargetExpression(String targetExpression) {

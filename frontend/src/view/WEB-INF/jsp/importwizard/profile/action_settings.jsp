@@ -18,6 +18,7 @@
 
 <%--@elvariable id="importProfileForm" type="org.agnitas.web.forms.ImportProfileForm"--%>
 <%--@elvariable id="isCustomerIdImportNotAllowed" type="java.lang.Boolean"--%>
+<%--@elvariable id="isUserHasPermissionForSelectedMode" type="java.lang.Boolean"--%>
 
 <html:hidden property="numberOfRowsChanged"/>
 
@@ -38,7 +39,7 @@
             </div>
             <div class="col-sm-8">
                 <agn:agnSelect styleId="import_mode_select" styleClass="form-control" property="profile.importMode"
-                               data-action="mode-select-change" data-field-vis="">
+                               data-action="mode-select-change" data-field-vis="" disabled="${!isUserHasPermissionForSelectedMode && !isNewProfile}">
                     <c:forEach var="importMode" items="${importProfileForm.importModes}">
                         <c:if test="${importMode == importModeUpdateOnly}">
                             <c:set var="hideAttr" value="#selectMailTypeFormGroup"/>
@@ -114,7 +115,6 @@
 	                </label>
 	            </div>
 	            <div class="col-sm-8">
-	                <html:hidden property="__STRUTS_CHECKBOX_profile.updateAllDuplicates" value="false"/>
 	                <label data-form-change class="toggle">
 	                    <html:checkbox styleId="import_duplicates" property="profile.updateAllDuplicates" />
 	                    <div class="toggle-control"></div>
@@ -152,29 +152,24 @@
                     <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/ProcessImportAction.xml" tabindex="-1" type="button"></button>
                 </label>
             </div>
-            <div class="col-sm-8">
-				<emm:ShowByPermission token="import.preprocessing">
-	                <html:select styleId="import_processaction" styleClass="form-control" property="profile.importProcessActionID">
-	                	<html:option value="0">
-	                        <bean:message key="none"/>
-	                    </html:option>
+            <c:set var="isPreprocessingAllowed" value="false"/>
+            <emm:ShowByPermission token="import.preprocessing">
+                <c:set var="isPreprocessingAllowed" value="true"/>
+            </emm:ShowByPermission>
+            <div class="col-sm-8" data-tooltip="${isPreprocessingAllowed ? '' : notAllowedMsg}">
+                <html:select styleId="import_processaction" styleClass="form-control" property="profile.importProcessActionID" disabled="${!isPreprocessingAllowed}">
+                    <html:option value="0">
+                        <bean:message key="none"/>
+                    </html:option>
 
-						<c:if test="${importProfileForm.importProcessActions.size() > 0}">
-		                    <c:forEach var="importProcessAction" items="${importProfileForm.importProcessActions}">
-		                        <html:option value="${importProcessAction.importactionID}">
-		                            ${importProcessAction.name}
-		                        </html:option>
-		                    </c:forEach>
-	        			</c:if>
-	                </html:select>
-				</emm:ShowByPermission>
-				<emm:HideByPermission token="import.preprocessing">
-	                <html:select styleId="import_processaction" styleClass="form-control" property="profile.importProcessActionID" disabled="true">
-	                	<html:option value="0">
-	                        <bean:message key="none"/>
-	                    </html:option>
-	                </html:select>
-				</emm:HideByPermission>
+                    <c:if test="${importProfileForm.importProcessActions.size() > 0}">
+                        <c:forEach var="importProcessAction" items="${importProfileForm.importProcessActions}">
+                            <html:option value="${importProcessAction.importactionID}">
+                                ${importProcessAction.name}
+                            </html:option>
+                        </c:forEach>
+                    </c:if>
+                </html:select>
             </div>
         </div>
 

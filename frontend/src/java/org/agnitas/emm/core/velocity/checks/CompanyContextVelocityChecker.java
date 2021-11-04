@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
  * Implementation of {@link VelocityChecker} performing a check on company IDs
  * used in scripts.
  */
+@Deprecated // After completion of EMM-8360, this class can be removed without replacement
 public class CompanyContextVelocityChecker implements VelocityChecker {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(CompanyContextVelocityChecker.class);

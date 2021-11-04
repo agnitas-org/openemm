@@ -51,4 +51,6 @@ public interface UserGroupService {
 	Collection<AdminGroup> getAdminGroupsByCompanyIdAndDefault(int companyID, AdminGroup adminGroup);
 
 	AdminGroup getAdminGroup(int userGroupId, int companyID);
+
+    int copyUserGroup(int id, ComAdmin admin) throws Exception;
 }

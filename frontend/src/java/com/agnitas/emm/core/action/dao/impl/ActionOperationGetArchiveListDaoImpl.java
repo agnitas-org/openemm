@@ -30,15 +30,15 @@ public class ActionOperationGetArchiveListDaoImpl extends AbstractActionOperatio
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationGetArchiveListParameters operation) {
-		update(logger, "insert into actop_get_archive_list_tbl (action_operation_id, campaign_id) values (?,?)", 
-				operation.getId(), 
+		update(logger, "insert into actop_get_archive_list_tbl (action_operation_id, campaign_id) values (?,?)",
+				operation.getId(),
 				operation.getCampaignID());
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processUpdateOperation(ActionOperationGetArchiveListParameters operation) {
-		update(logger, "update actop_get_archive_list_tbl set campaign_id=? where action_operation_id=?", 
+		update(logger, "update actop_get_archive_list_tbl set campaign_id=? where action_operation_id=?",
 				operation.getCampaignID(),
 				operation.getId());
 	}

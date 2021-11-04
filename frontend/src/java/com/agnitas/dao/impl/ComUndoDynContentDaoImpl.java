@@ -32,7 +32,7 @@ public class ComUndoDynContentDaoImpl extends BaseDaoImpl implements ComUndoDynC
 		"(dyn_content_id, dyn_name_id, target_id, dyn_order, dyn_content, mailing_id, company_id, undo_id) " +
 		"(SELECT dyn_content_tbl.dyn_content_id, dyn_content_tbl.dyn_name_id, dyn_content_tbl.target_id, dyn_content_tbl.dyn_order, dyn_content_tbl.dyn_content, dyn_content_tbl.mailing_id, dyn_content_tbl.company_id,? FROM dyn_content_tbl WHERE mailing_id = ?)";
 	
-	private static final String SELECT_CONTENTLIST_STATMENT = 
+	private static final String SELECT_CONTENTLIST_STATMENT =
 		"SELECT undo_dyn_content_tbl.*, dyn_name_tbl.dyn_name " +
 		"FROM undo_dyn_content_tbl, dyn_name_tbl " +
 		"WHERE undo_dyn_content_tbl.mailing_id = ? " +
@@ -55,7 +55,7 @@ public class ComUndoDynContentDaoImpl extends BaseDaoImpl implements ComUndoDynC
 		"DELETE FROM undo_dyn_content_tbl " +
 		"WHERE mailing_id = ? AND undo_id <= ?";
 	
-	private static final String DELETE_ADDED_CONTENT = 
+	private static final String DELETE_ADDED_CONTENT =
 		"DELETE FROM dyn_content_tbl " +
 		"WHERE mailing_id = ? " +
 		"AND dyn_content_id NOT IN (" +
@@ -66,7 +66,7 @@ public class ComUndoDynContentDaoImpl extends BaseDaoImpl implements ComUndoDynC
 
 	// --------------------------------------------------------------------------------------------------------------------------------------- JDBC helper
 	
-	private final RowMapper<ComUndoDynContent> undoDynContentRowMapper = new RowMapper<ComUndoDynContent>() {
+	private final RowMapper<ComUndoDynContent> undoDynContentRowMapper = new RowMapper<>() {
 		@Override
 		public ComUndoDynContent mapRow(ResultSet resultSet, int rowNum) throws SQLException {
 			ComUndoDynContentImpl undoContent = new ComUndoDynContentImpl();
@@ -85,7 +85,7 @@ public class ComUndoDynContentDaoImpl extends BaseDaoImpl implements ComUndoDynC
 		}
 	};
 
-	// --------------------------------------------------------------------------------------------------------------------------------------- business logic	
+	// --------------------------------------------------------------------------------------------------------------------------------------- business logic
 	
 	@Override
 	@DaoUpdateReturnValueCheck

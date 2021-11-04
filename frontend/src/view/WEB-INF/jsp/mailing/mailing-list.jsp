@@ -936,7 +936,7 @@
                                         <c:when test="${field == 'TARGET_GROUPS'}">
                                             <display:column titleKey="Target-Groups" headerClass="js-table-sort">
                                                 <logic:iterate name="mailing" property="targetgroups" id="targetgroup">
-                                                    <html:link page="/target.do?action=${ACTION_VIEW}&targetID=${targetgroup.target_id}"><span class="multiline-auto">${targetgroup.target_name}</span></html:link>
+                                                    <a href="<c:url value='/target/${targetgroup.target_id}/view.action'/>"><span class="multiline-auto">${targetgroup.target_name}</span></a>
                                                     <br/>
                                                 </logic:iterate>
                                             </display:column>

@@ -16,7 +16,7 @@ import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;

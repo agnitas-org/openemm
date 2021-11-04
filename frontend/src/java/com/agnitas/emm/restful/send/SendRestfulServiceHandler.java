@@ -11,9 +11,9 @@
 package com.agnitas.emm.restful.send;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -24,43 +24,44 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.TimeZone;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import org.agnitas.beans.BindingEntry;
+import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.Recipient;
+import org.agnitas.beans.impl.BindingEntryImpl;
+import org.agnitas.beans.impl.RecipientImpl;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.DateUtil;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.agnitas.util.MailoutClient;
+import org.agnitas.util.importvalues.Gender;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.impl.MaildropEntryImpl;
+import com.agnitas.dao.ComBindingEntryDao;
+import com.agnitas.dao.ComDatasourceDescriptionDao;
 import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
-import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.restful.BaseRequestResponse;
@@ -70,17 +71,22 @@ import com.agnitas.emm.restful.ResponseType;
 import com.agnitas.emm.restful.RestfulClientException;
 import com.agnitas.emm.restful.RestfulServiceHandler;
 import com.agnitas.json.Json5Reader;
+import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
 import com.agnitas.mailing.preview.service.MailingPreviewService;
 import com.agnitas.util.ClassicTemplateGenerator;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 /**
  * This restful service is available at:
  * https://<system.url>/restful/send
  */
-public class SendRestfulServiceHandler implements RestfulServiceHandler, ApplicationContextAware {
+public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	private static final transient Logger logger = Logger.getLogger(SendRestfulServiceHandler.class);
 	
 	public static final String NAMESPACE = "send";
@@ -88,19 +94,15 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 	protected UserActivityLogDao userActivityLogDao;
 	protected MailingService mailingService;
 	protected ComMailingDao mailingDao;
-	protected ComRecipientDao recipientDao;
+	protected RecipientService recipientService;
 	protected MailinglistDao mailinglistDao;
 	protected MaildropService maildropService;
 	protected ClassicTemplateGenerator classicTemplateGenerator;
 	protected SendActionbasedMailingService sendActionbasedMailingService;
 	protected ConfigService configService;
 	protected MailingPreviewService mailingPreviewService;
-	
-	/**
-	 * @deprecated Replace this general dependency by specific bean references
-	 */
-	@Deprecated
-	private ApplicationContext applicationContext;
+	protected ComDatasourceDescriptionDao datasourceDescriptionDao;
+	protected ComBindingEntryDao bindingEntryDao;
 
 	@Required
 	public final void setConfigService(final ConfigService service) {
@@ -128,8 +130,8 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 	}
 	
 	@Required
-	public void setRecipientDao(ComRecipientDao recipientDao) {
-		this.recipientDao = recipientDao;
+	public void setRecipientService(RecipientService recipientService) {
+		this.recipientService = recipientService;
 	}
 	
 	@Required
@@ -152,9 +154,14 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 		this.sendActionbasedMailingService = sendActionbasedMailingService;
 	}
 
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
+	@Required
+	public void setDatasourceDescriptionDao(final ComDatasourceDescriptionDao datasourceDescriptionDao) {
+		this.datasourceDescriptionDao = datasourceDescriptionDao;
+	}
+
+	@Required
+	public void setBindingEntryDao(final ComBindingEntryDao bindingEntryDao) {
+		this.bindingEntryDao = bindingEntryDao;
 	}
 
 	@Override
@@ -164,17 +171,17 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, String requestDataFilePath, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			throw new RestfulClientException("Invalid http request method 'GET'. Only 'PUT' or 'POST' are supported for 'send'.");
 		} else if (requestMethod == RequestMethod.DELETE) {
 			throw new RestfulClientException("Invalid http request method 'DELETE'. Only 'PUT' or 'POST' are supported for 'send'.");
-		} else if (requestDataFilePath == null || new File(requestDataFilePath).length() <= 0) {
+		} else if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
 			restfulResponse.setError(new RestfulClientException("Missing request data"), ErrorCode.REQUEST_DATA_ERROR);
 		} else if (requestMethod == RequestMethod.POST) {
-			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(sendMailing(request, new File(requestDataFilePath), admin)));
+			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(sendMailing(request, requestData, requestDataFile, admin, extendedLogging)));
 		} else if (requestMethod == RequestMethod.PUT) {
-			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(sendMailing(request, new File(requestDataFilePath), admin)));
+			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(sendMailing(request, requestData, requestDataFile, admin, extendedLogging)));
 		} else {
 			throw new RestfulClientException("Invalid http request method");
 		}
@@ -188,7 +195,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 	 * @return
 	 * @throws Exception
 	 */
-	protected Object sendMailing(HttpServletRequest request, File requestDataFile, ComAdmin admin) throws Exception {
+	protected Object sendMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin, boolean extendedLogging) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_SEND_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_SEND_SHOW.toString() + "'");
 		}
@@ -213,11 +220,13 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 		int blockSize = 0;
 		int customerID = 0;
 		String customerEmail = null;
+		boolean alwaysCreateRecipient = false;
+		List<String> keyColumns = new ArrayList<>(Arrays.asList(new String[] { "email" }));
 		int userStatus = 0;
 		
-		Map<String, String> profileDataOverrides = null;
+		JsonObject profileData = null;
 		
-		try (InputStream inputStream = new FileInputStream(requestDataFile)) {
+		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 				JsonNode jsonNode = jsonReader.read();
 				if (JsonDataType.OBJECT == jsonNode.getJsonDataType()) {
@@ -275,13 +284,30 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 							}
 						} else if ("data".equals(entry.getKey())) {
 							if (entry.getValue() != null && entry.getValue() instanceof JsonObject) {
-								JsonObject profileData = (JsonObject) entry.getValue();
-								profileDataOverrides = new HashMap<>();
-								for (Entry<String, Object> item : profileData.entrySet()) {
-									profileDataOverrides.put(item.getKey(), item.getValue() == null ? "" : item.getValue().toString());
-								}
+								profileData = (JsonObject) entry.getValue();
 							} else {
 								throw new RestfulClientException("Invalid data type for 'data'. JsonObject expected");
+							}
+						} else if ("keyColumns".equals(entry.getKey())) {
+							if (entry.getValue() != null && entry.getValue() instanceof String) {
+								keyColumns = AgnUtils.splitAndTrimList((String) entry.getValue());
+							} else if (entry.getValue() != null && entry.getValue() instanceof JsonArray) {
+								keyColumns = new ArrayList<>();
+								for (Object keyColumn : (JsonArray) entry.getValue()) {
+									if (keyColumn != null && keyColumn instanceof String) {
+										keyColumns.add((String) keyColumn);
+									} else {
+										throw new RestfulClientException("Invalid data type for 'keyColumns'. String or Array of Strings expected");
+									}
+								}
+							} else {
+								throw new RestfulClientException("Invalid data type for 'keyColumns'. String or Array of Strings expected");
+							}
+						} else if ("alwaysCreateRecipient".equals(entry.getKey())) {
+							if (entry.getValue() != null && entry.getValue() instanceof Boolean) {
+								alwaysCreateRecipient = (Boolean) entry.getValue();
+							} else {
+								throw new RestfulClientException("Invalid data type for 'alwaysCreateRecipient'. Boolean expected");
 							}
 						} else {
 							throw new RestfulClientException("Invalid property '" + entry.getKey() + "' for 'send'");
@@ -292,13 +318,28 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 		}
 		
 		if (maildropStatus == null) {
-			throw new RestfulClientException("Missing property value for 'send_type'. String 'W', 'A', 'T', 'E' or 'R' expected");
+			MailingTypes mailingType = MailingTypes.getByCode(mailingDao.getMailingType(mailingID));
+			if (mailingType == MailingTypes.NORMAL) {
+				maildropStatus = MaildropStatus.WORLD;
+			} else if (mailingType == MailingTypes.ACTION_BASED) {
+				maildropStatus = MaildropStatus.ACTION_BASED;
+			} else if (mailingType == MailingTypes.DATE_BASED) {
+				maildropStatus = MaildropStatus.DATE_BASED;
+			} else if (mailingType == MailingTypes.INTERVAL) {
+				maildropStatus = MaildropStatus.ON_DEMAND;
+			} else {
+				throw new RestfulClientException("Missing property value for 'send_type'. String 'W', 'A', 'T', 'E' or 'R' expected");
+			}
 		} else if (customerID != 0 && StringUtils.isNotBlank(customerEmail)) {
 			throw new RestfulClientException("Colliding parameters customer_id and email detected. Only one of both is allowed");
 		}
 		
+		if (customerID == 0 && profileData != null && profileData.size() > 0) {
+			customerID = createRecipient(admin.getCompanyID(), mailingID, keyColumns, profileData, alwaysCreateRecipient);
+		}
+
 		if (customerID == 0 && StringUtils.isNotBlank(customerEmail)) {
-			List<Integer> result = recipientDao.getRecipientIDs(admin.getCompanyID(), "email", customerEmail);
+			List<Integer> result = recipientService.getRecipientIds(admin.getCompanyID(), "email", customerEmail);
 			if (result.size() > 1) {
 				throw new RestfulClientException("More than one recipient found for this email address");
 			} else if (result.size() < 1) {
@@ -308,10 +349,10 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 			}
 		}
 		
-		return sendMailing(admin, maildropStatus, mailingID, sendDate, stepping, blockSize, customerID, userStatus, profileDataOverrides);
+		return sendMailing(admin, maildropStatus, mailingID, sendDate, stepping, blockSize, customerID, userStatus, profileData);
 	}
-	
-    protected String sendMailing(ComAdmin admin, MaildropStatus maildropStatus, int mailingID, Date sendDate, int stepping, int blockSize, int customerID, int userStatus, Map<String, String> profileDataOverrides) throws Exception {
+
+	protected String sendMailing(ComAdmin admin, MaildropStatus maildropStatus, int mailingID, Date sendDate, int stepping, int blockSize, int customerID, int userStatus, JsonObject profileData) throws Exception {
 		boolean adminSend = false;
 		boolean testSend = false;
 		boolean worldSend = false;
@@ -319,8 +360,6 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 		java.util.Date genDate = new java.util.Date();
 		int startGen = 1;
 		MaildropEntry maildropEntry = new MaildropEntryImpl();
-		
-		final boolean useBackendPreview = configService.getBooleanValue(ConfigValue.Development.UseBackendMailingPreview, admin.getCompanyID());
 
 		switch (maildropStatus) {
 			case ADMIN:
@@ -364,6 +403,15 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 				worldSend = true;
 				break;
 	
+			case ON_DEMAND:
+				// Interval mailing
+				if (customerID > 0) {
+					return "Enlisted recipient for interval mailing. CustomerID: " + customerID;
+				} else {
+					// Activate intervall mailing
+				}
+				break;
+
 			default:
 				break;
 		}
@@ -382,17 +430,13 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 		}
 
 		// check syntax of mailing by generating dummy preview
-		preview = useBackendPreview
-				? this.mailingPreviewService.renderTextPreview(mailing.getId(), customerID)
-				: mailing.getPreview(mailing.getTextTemplate().getEmmBlock(), MailingPreviewHelper.INPUT_TYPE_HTML, 0, applicationContext);
+		preview = this.mailingPreviewService.renderTextPreview(mailing.getId(), customerID);
 		if (StringUtils.isBlank(preview)) {
 			if (mailingService.isTextVersionRequired(admin.getCompanyID(), mailingID)) {
 				throw new RestfulClientException("Mandatory TEXT version is missing in mailing");
 			}
 		}
-		preview = useBackendPreview
-				? this.mailingPreviewService.renderHtmlPreview(mailing.getId(), customerID)
-				: mailing.getPreview(mailing.getHtmlTemplate().getEmmBlock(), MailingPreviewHelper.INPUT_TYPE_HTML, 0, applicationContext);
+		preview = this.mailingPreviewService.renderHtmlPreview(mailing.getId(), customerID);
 		boolean isHtmlMailing = false;
 		MediatypeEmail emailMediaType = (MediatypeEmail) mailing.getMediatypes().get(MediaTypes.EMAIL.getMediaCode());
 		if (emailMediaType != null && (emailMediaType.getMailFormat() == MailType.HTML.getIntValue() || emailMediaType.getMailFormat() == MailType.HTML_OFFLINE.getIntValue())) {
@@ -402,21 +446,17 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 			throw new RestfulClientException("Mandatory HTML version is missing in mailing");
 		}
 		
-		preview = useBackendPreview
-				? this.mailingPreviewService.renderPreviewFor(mailing.getId(), customerID, mailing.getEmailParam().getSubject())
-				: mailing.getPreview(mailing.getEmailParam().getSubject(), MailingPreviewHelper.INPUT_TYPE_HTML, 0, applicationContext);
+		preview = this.mailingPreviewService.renderPreviewFor(mailing.getId(), customerID, mailing.getEmailParam().getSubject());
 		if (StringUtils.isBlank(mailing.getEmailParam().getSubject())) {
 			throw new RestfulClientException("Mailing subject is too short");
 		}
 		
-		preview = useBackendPreview
-				? this.mailingPreviewService.renderPreviewFor(mailing.getId(), customerID, mailing.getEmailParam().getFromAdr())
-				: mailing.getPreview(mailing.getEmailParam().getFromAdr(), MailingPreviewHelper.INPUT_TYPE_HTML, 0, applicationContext);
+		preview = this.mailingPreviewService.renderPreviewFor(mailing.getId(), customerID, mailing.getEmailParam().getFromAdr());
 		if (preview.trim().length() == 0) {
 			throw new RestfulClientException("Mandatory mailing sender address is missing");
 		}
 
-		if (maildropStatus == MaildropStatus.ACTION_BASED) {
+		if (maildropStatus == MaildropStatus.ACTION_BASED || maildropStatus == MaildropStatus.ON_DEMAND) {
 			if (!maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
 				maildropEntry.setGenStatus(startGen);
 				maildropEntry.setGenDate(genDate);
@@ -450,8 +490,12 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 					if (userStatusList != null) {
 						mailgunOptions.withAllowedUserStatus(userStatusList);
 					}
-					
-					if (profileDataOverrides != null && profileDataOverrides.size() > 0) {
+
+					if (profileData != null && profileData.size() > 0) {
+						Map<String, String> profileDataOverrides = new HashMap<>();
+						for (Entry<String, Object> item : profileData.entrySet()) {
+							profileDataOverrides.put(item.getKey(), item.getValue() == null ? "" : item.getValue().toString());
+						}
 						mailgunOptions.withProfileFieldValues(profileDataOverrides);
 					}
 	
@@ -523,6 +567,96 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler, Applica
 			}
 		}
     }
+
+    private int createRecipient(int companyID, int mailingID, List<String> keyColumns, JsonObject profileData, boolean alwaysCreateRecipient) throws Exception {
+		LightweightMailing mailing = mailingService.getLightweightMailing(companyID, mailingID);
+
+		if (mailing == null) {
+			throw new RestfulClientException("Cannot find mailing: " + mailingID);
+		}
+
+		int mailinglistID = mailingDao.getMailinglistId(mailingID, companyID);
+
+		String title = (String) profileData.get("title");
+		String email = (String) profileData.get("email");
+		String firstName = (String) profileData.get("firstname");
+		String lastName = (String) profileData.get("lastname");
+
+		int gender = Gender.getGenderByDefaultGenderMapping(title).getStorageValue();
+
+		Map<String, Object> dataMap = new HashMap<>();
+		if (keyColumns != null && keyColumns.size() > 0) {
+			for (String keyColumn : keyColumns) {
+				dataMap.put(keyColumn, profileData.get(keyColumn));
+			}
+		} else {
+			dataMap.put("email", email);
+		}
+
+		// Check if this customer is already blocked
+		List<Recipient> existingRecipientList;
+		try {
+			existingRecipientList = recipientService.findRecipientByData(companyID, dataMap);
+		} catch (Exception e) {
+			throw new RestfulClientException("Recipient search failed: " +  e.getMessage(), e);
+		}
+		for (Recipient recipient : existingRecipientList) {
+			if (!alwaysCreateRecipient) {
+				return recipient.getCustomerID();
+			}
+			BindingEntry bindingEntry;
+			try {
+				bindingEntry = recipientService.getMailinglistBinding(companyID, recipient.getCustomerID(), mailinglistID, MediaTypes.EMAIL.getMediaCode());
+			} catch (Exception e) {
+				throw new RestfulClientException("Cannot read recipient subscription status: " + e.getMessage(), e);
+			}
+			if (bindingEntry != null && bindingEntry.getUserStatus() != UserStatus.Active.getStatusCode()) {
+				throw new RestfulClientException("Recipient is already unsubscribed");
+			}
+		}
+
+		// Create new customer
+		int datasourceID = 0;
+		final DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription(1, companyID, "RestfulService");
+		if (datasourceDescription != null) {
+			datasourceID = datasourceDescription.getId();
+		}
+
+		final Recipient recipient = new RecipientImpl();
+		recipient.setCompanyID(companyID);
+		recipient.getCustParameters().put("title", title);
+		recipient.getCustParameters().put("email", email.toLowerCase());
+		recipient.getCustParameters().put("firstname", firstName);
+		recipient.getCustParameters().put("lastname", lastName);
+		recipient.getCustParameters().put("gender", Integer.toString(gender));
+		recipient.getCustParameters().put("mailtype", "1");
+		recipient.getCustParameters().put("datasource_id", Integer.toString(datasourceID));
+		recipient.getCustParameters().put("mailing_id", mailingID);
+
+		// set all other optional data
+		for (Entry<String, Object> entry : profileData.entrySet()) {
+			if (!"title".equals(entry.getKey()) && !"email".equals(entry.getKey()) && !"firstname".equals(entry.getKey()) && !"lastname".equals(entry.getKey())) {
+				recipient.getCustParameters().put(entry.getKey(), entry.getValue());
+			}
+		}
+
+		int customerID = recipientService.saveNewCustomer(recipient);
+		if (customerID <= 0) {
+			throw new RestfulClientException("Cannot create customer");
+		} else {
+			// Logon new customer to mailinglist
+			final BindingEntry bindingEntry = new BindingEntryImpl();
+			bindingEntry.setCustomerID(customerID);
+			bindingEntry.setMailinglistID(mailinglistID);
+			bindingEntry.setMediaType(MediaTypes.EMAIL.getMediaCode());
+			bindingEntry.setUserRemark("Added by restful service CollectedDelivery");
+			bindingEntry.setUserStatus(UserStatus.Active.getStatusCode());
+			bindingEntry.setUserType(UserType.World.getTypeCode());
+			bindingEntryDao.insertNewBinding(bindingEntry, companyID);
+
+			return customerID;
+		}
+	}
 
 	@Override
 	public ResponseType getResponseType() {

@@ -16,7 +16,6 @@ package org.agnitas.emm.core.velocity;
  * by company IDs.
  */
 public interface VelocityWrapperFactory {
-	
 	/**
 	 * Returns a {@link VelocityWrapper} that runs in the context of the given company ID.
 	 * 
@@ -26,5 +25,5 @@ public interface VelocityWrapperFactory {
 	 * 
 	 * @throws Exception on errors creating a new instance
 	 */
-	public VelocityWrapper getWrapper( int companyId) throws Exception; 
+	public VelocityWrapper getWrapper( int companyId) throws Exception;
 }

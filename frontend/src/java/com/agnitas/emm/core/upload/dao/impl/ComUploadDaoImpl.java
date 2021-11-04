@@ -429,12 +429,8 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 					if (rs.next()) {
 						final Blob blob = rs.getBlob("payload");
 		
-						try {
-							try(final InputStream inStream = blob.getBinaryStream()) {
-								IOUtils.copy(inStream, stream);
-							}
-						} finally {
-							blob.free();
+						try(final InputStream inStream = blob.getBinaryStream()) {
+							IOUtils.copy(inStream, stream);
 						}
 					} else {
 						logger.warn("No data found for upload ID " + uploadId);

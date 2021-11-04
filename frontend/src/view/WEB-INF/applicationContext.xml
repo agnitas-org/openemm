@@ -5,33 +5,34 @@
  	This file contains only Spring environment setup.
   -->
 <beans
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:p="http://www.springframework.org/schema/p"
-	xmlns:context="http://www.springframework.org/schema/context"
-	xmlns="http://www.springframework.org/schema/beans"
-	xsi:schemaLocation="
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:p="http://www.springframework.org/schema/p"
+		xmlns:context="http://www.springframework.org/schema/context"
+		xmlns="http://www.springframework.org/schema/beans"
+		xmlns:cache="http://www.springframework.org/schema/cache"
+		xmlns:aop="http://www.springframework.org/schema/aop"
+		xsi:schemaLocation="
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans.xsd
 		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context.xsd">
+		http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd
+		http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd">
 
 	<context:component-scan base-package="org.agnitas, com.agnitas">
 		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
 		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
 	</context:component-scan>
 
-	<!-- ========================= GENERAL DEFINITIONS ========================= -->
+    <cache:annotation-driven />
+    <cache:annotation-driven cache-manager="requestCacheManager" />
 
-	<!-- Configurer that replaces ${...} placeholders with values from properties files -->
-	<!-- (in this case, mail and JDBC related properties) -->
-	<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-		<property name="locations">
-			<list>
-				<value>classpath:emm.properties</value>
-			</list>
-		</property>
-		<property name="ignoreUnresolvablePlaceholders" value="true" />
+    <bean id="cacheManager" class="org.springframework.cache.concurrent.ConcurrentMapCacheManager"/>
+	<bean id="requestCacheManager" class="org.springframework.cache.concurrent.ConcurrentMapCacheManager" scope="request">
+		<aop:scoped-proxy/>
 	</bean>
+
+	<!-- ========================= GENERAL DEFINITIONS ========================= -->
 
 	<bean id="modelValidator" class="org.agnitas.emm.core.validator.ModelValidator">
 		<constructor-arg type="java.lang.String" value="validator-rules.xml" />

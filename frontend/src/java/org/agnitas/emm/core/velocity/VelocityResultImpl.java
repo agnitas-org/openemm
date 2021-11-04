@@ -10,7 +10,7 @@
 
 package org.agnitas.emm.core.velocity;
 
-import org.agnitas.util.EventHandler;
+import org.agnitas.emm.core.velocity.event.StrutsActionMessageEventHandler;
 import org.apache.struts.action.ActionErrors;
 
 /**
@@ -22,7 +22,7 @@ class VelocityResultImpl implements VelocityResult {
 	private final boolean successful;
 	
 	/** Velocity event handler collecting error messages. */
-	private final EventHandler eventHandler;
+	private final StrutsActionMessageEventHandler eventHandler;
 	
 	/**
 	 * Creates a new VelocityresultImpl.
@@ -30,7 +30,7 @@ class VelocityResultImpl implements VelocityResult {
 	 * @param successful true, if executing of script was successful
 	 * @param eventHandler Event handler that collected the script errors
 	 */
-	public VelocityResultImpl( boolean successful, EventHandler eventHandler) {
+	public VelocityResultImpl( boolean successful, StrutsActionMessageEventHandler eventHandler) {
 		this.successful = successful;
 		this.eventHandler = eventHandler;
 	}

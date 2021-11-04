@@ -519,11 +519,6 @@
     var type = node.getType();
     if (Def.NODE_TYPES_MAILING.includes(type) || Def.NODE_TYPES_IMPORT_EXPORT.includes(type)) {
       //if title exists don't update for mailing and import/export nodes
-      if (Def.NODE_TYPE_FOLLOWUP_MAILING === type) {
-        //TODO: delete this clause after old version removed
-        // (saved title for followup mailing differs displayed one in old version)
-        return false;
-      }
       return !!node.getTitle();
     }
 

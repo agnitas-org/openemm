@@ -10,9 +10,9 @@
 
 package org.agnitas.backend;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
@@ -32,10 +32,10 @@ public class BackendDatasourceInitializationContextListener implements ServletCo
 			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
 			DBase.DATASOURCE = (DataSource) applicationContext.getBean("dataSource");
 			if (DBase.DATASOURCE == null) {
-				logger.error("Datasource in DBase for Backend was empty. Backend will try to create its own datasource from emm.properties data");
+				logger.error("Datasource in DBase for Backend was empty. Backend will try to create its own datasource");
 			}
 		} catch (Exception e) {
-			logger.error("Cannot set Datasource in DBase for Backend. Backend will try to create its own datasource from emm.properties data", e);
+			logger.error("Cannot set Datasource in DBase for Backend. Backend will try to create its own datasource", e);
 		}
 	}
 

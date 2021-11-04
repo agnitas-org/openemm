@@ -17,9 +17,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 
 import com.agnitas.messages.DBMessagesResource;
 import com.agnitas.messages.I18nString;
+import com.agnitas.reporting.birt.external.dataset.BIRTDataSet;
 
 public class BirtMessagesPropertiesContextListener implements ServletContextListener {
 
@@ -44,6 +45,8 @@ public class BirtMessagesPropertiesContextListener implements ServletContextList
     		if (ConfigService.getInstance().getBooleanValue(ConfigValue.IsLiveInstance)) {
     			createMessagesPropertiesFiles(servletContext);
     		}
+			
+			new BIRTDataSet().resetTempDatabase();
 		} catch (Exception e) {
 			logger.error("MessagesPropertiesGeneratorContextListener init: " + e.getMessage(), e);
 		}

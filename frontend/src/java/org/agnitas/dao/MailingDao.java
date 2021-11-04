@@ -277,17 +277,6 @@ public interface MailingDao {
 	boolean checkMailingReferencesTemplate(int templateID, @VelocityCheck int companyID) throws Exception;
 
     /**
-     * Deletes all dyn content by dyn tag name
-	 * @param mailingId
-	 * @param companyId
-	 * @param dynName
-     * @return true if at least con row was affected otherwise return false
-     */
-	boolean cleanupContentForDynName(int mailingId, int companyId, String dynName);
-    boolean cleanupContentForDynNames(int mailingId, int companyId, List<String> dynNames);
-
-
-    /**
      * Checks the existence of mailing in the database
      *
      * @param mailingID

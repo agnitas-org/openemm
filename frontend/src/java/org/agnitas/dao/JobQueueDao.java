@@ -16,40 +16,42 @@ import java.util.List;
 import org.agnitas.service.JobDto;
 
 public interface JobQueueDao {
-	public List<JobDto> readUpcomingJobsForExecution();
+	List<JobDto> readUpcomingJobsForExecution();
 	
-	public JobDto getJob(int id);
+	JobDto getJob(int id);
 	
-	public JobDto getJob(String description);
+	JobDto getJob(String description);
 	
-	public boolean initJobStart(int id, Date nextStart);
+	boolean initJobStart(int id, Date nextStart);
 
-	public boolean initJobStart(int id, Date nextStart, boolean manuallyOverride);
+	boolean initJobStart(int id, Date nextStart, boolean manuallyOverride);
 	
-	public int resetJobsForCurrentHost();
+	int resetJobsForCurrentHost();
 	
 	/**
 	 * Update the jobs status only and ignore the parameters
 	 */
-	public boolean updateJob(JobDto job);
+	boolean updateJob(JobDto job);
 	
-	public boolean deleteJob(int id);
+	boolean deleteJob(int id);
 	
-	public List<JobDto> selectErrorneousJobs();
+	List<JobDto> selectErrorneousJobs();
 	
-	public List<JobDto> getAllActiveJobs();
+	List<JobDto> getAllActiveJobs();
 	
-	public List<JobDto> getHangingJobs(Date timeLimit);
+	List<JobDto> getHangingJobs(Date timeLimit);
 	
-	public void writeJobResult(int job_id, Date time, String result, int durationInSeconds, String hostname);
+	void writeJobResult(int job_id, Date time, String result, int durationInSeconds, String hostname);
 	
-	public boolean setStartCompanyForNextCleanupStart(int currentCompanyID);
+	boolean setStartCompanyForNextCleanupStart(int currentCompanyID);
 	
-	public int getStartCompanyForCleanup();
+	int getStartCompanyForCleanup();
 	
-	public boolean deleteCleanupStartEntry();
+	boolean deleteCleanupStartEntry();
 
-	public boolean updateJobStatus(JobDto job);
+	boolean updateJobStatus(JobDto job);
 
-	public void acknowledgeErrorneousJob(int idToAcknowledge);
+	void acknowledgeErrorneousJob(int idToAcknowledge);
+
+	void storeDynamicJobParameter(int jobID, String parameterName, String parameterValue);
 }

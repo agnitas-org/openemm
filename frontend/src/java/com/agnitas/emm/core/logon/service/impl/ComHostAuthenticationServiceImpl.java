@@ -177,7 +177,7 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 		String message = messageTemplate.replace(USERNAME_PLACEHOLDER, admin.getUsername()).replace(SECURITY_CODE_PLACEHOLDER, securityCode).replace("\\n", "\n");
 
 		try {
-			boolean result = javaMailService.sendEmail(admin.getEmail(), subject, message, HtmlUtils.replaceLineFeedsForHTML(message));
+			boolean result = javaMailService.sendEmail(admin.getCompanyID(), admin.getEmail(), subject, message, HtmlUtils.replaceLineFeedsForHTML(message));
 			if (!result) {
 				logger.error("Unable to send email with security code?");
 				throw new CannotSendSecurityCodeException("Error sending mail with security code");
@@ -209,7 +209,7 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 		String message = messageTemplate.replace(USERNAME_PLACEHOLDER, admin.getUsername()).replace(SECURITY_CODE_PLACEHOLDER, securityCode).replace("\\n", "\n");
 
 		try {
-			boolean result = javaMailService.sendEmail(supervisor.getEmail(), subject, message, HtmlUtils.replaceLineFeedsForHTML(message));
+			boolean result = javaMailService.sendEmail(admin.getCompanyID(), supervisor.getEmail(), subject, message, HtmlUtils.replaceLineFeedsForHTML(message));
 
 			if (!result) {
 				logger.error("Unable to send email with security code?");

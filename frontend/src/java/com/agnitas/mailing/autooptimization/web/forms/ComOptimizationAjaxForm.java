@@ -13,7 +13,7 @@ package com.agnitas.mailing.autooptimization.web.forms;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.web.forms.StrutsFormBase;

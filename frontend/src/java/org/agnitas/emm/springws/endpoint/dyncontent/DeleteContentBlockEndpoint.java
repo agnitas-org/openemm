@@ -12,12 +12,15 @@ package org.agnitas.emm.springws.endpoint.dyncontent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.agnitas.emm.core.dyncontent.service.ContentModel;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
 import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.exception.MailingNotEditableException;
 import org.agnitas.emm.springws.jaxb.DeleteContentBlockRequest;
 import org.agnitas.emm.springws.jaxb.DeleteContentBlockResponse;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -28,21 +31,27 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class DeleteContentBlockEndpoint extends BaseEndpoint {
 
-	private DynamicTagContentService dynamicTagContentService;
+	private final DynamicTagContentService dynamicTagContentService;
+	private final MailingEditableCheck mailingEditableCheck;
 
-	public DeleteContentBlockEndpoint(DynamicTagContentService dynamicTagContentService) {
-		this.dynamicTagContentService = dynamicTagContentService;
+	public DeleteContentBlockEndpoint(DynamicTagContentService dynamicTagContentService, final MailingEditableCheck mailingEditableCheck) {
+		this.dynamicTagContentService = Objects.requireNonNull(dynamicTagContentService);
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
 	}
 
 	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteContentBlockRequest")
-	public @ResponsePayload DeleteContentBlockResponse deleteContentBlock(@RequestPayload DeleteContentBlockRequest request) {
-		DeleteContentBlockResponse response = new DeleteContentBlockResponse();
+	public @ResponsePayload DeleteContentBlockResponse deleteContentBlock(@RequestPayload DeleteContentBlockRequest request) throws MailingNotEditableException {
+		final int companyId = Utils.getUserCompany();
+		
+		this.mailingEditableCheck.requireMailingForContentBlockEditable(request.getContentID(), companyId);
+		
+		final DeleteContentBlockResponse response = new DeleteContentBlockResponse();
 
-		ContentModel model = new ContentModel();
-		model.setCompanyId(Utils.getUserCompany());
+		final ContentModel model = new ContentModel();
+		model.setCompanyId(companyId);
 		model.setContentId(request.getContentID());
 
-		List<UserAction> userActions = new ArrayList<>();
+		final List<UserAction> userActions = new ArrayList<>();
 		response.setValue(dynamicTagContentService.deleteContent(model, userActions));
 		Utils.writeLog(userActivityLogService, userActions);
 

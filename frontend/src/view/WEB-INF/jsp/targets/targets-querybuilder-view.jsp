@@ -1,8 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
 <%@page import="org.agnitas.target.ConditionalOperator" %>
 <%@page import="org.agnitas.util.AgnUtils"%>
-<%@page import="org.agnitas.web.TargetForm"%>
-<%@page import="com.agnitas.web.ComTargetAction"%>
 <%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn"%>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
@@ -13,16 +11,6 @@
 
 <%--@elvariable id="editTargetForm" type="com.agnitas.emm.core.target.web.QueryBuilderTargetGroupForm"--%>
 <%--@elvariable id="mailTrackingAvailable" type="java.lang.Boolean"--%>
-
-<c:set var="ACTION_SAVE" 						value="<%= ComTargetAction.ACTION_SAVE %>" 						scope="page" />
-<c:set var="ACTION_CLONE" 						value="<%= ComTargetAction.ACTION_CLONE %>" 					scope="page" />
-<c:set var="ACTION_BULK_DELETE" 				value="<%= ComTargetAction.ACTION_CONFIRM_DELETE %>" 			scope="page" />
-<c:set var="ACTION_VIEW" 						value="<%= ComTargetAction.ACTION_VIEW %>" 						scope="page" />
-<c:set var="ACTION_CREATE_ML" 					value="<%= ComTargetAction.ACTION_CREATE_ML %>" 				scope="page" />
-<c:set var="ACTION_DELETE_RECIPIENTS_CONFIRM" 	value="<%= ComTargetAction.ACTION_DELETE_RECIPIENTS_CONFIRM %>" scope="page" />
-<c:set var="ACTION_LOCK" 						value="<%= ComTargetAction.ACTION_LOCK_TARGET_GROUP %>" 		scope="page" />
-<c:set var="ACTION_UNLOCK" 						value="<%= ComTargetAction.ACTION_UNLOCK_TARGET_GROUP %>" 		scope="page" />
-
 
 <c:set var="OPERATOR_IS" value="<%= ConditionalOperator.IS.getOperatorCode() %>" scope="page" />
 <c:set var="OPERATOR_MOD" value="<%= ConditionalOperator.MOD.getOperatorCode() %>" scope="page" />
@@ -60,12 +48,16 @@
 
 <%--@elvariable id="QueryBuilderTargetGroupForm"--%>
 
-<agn:agnForm action="/targetQB" id="targetForm" data-form="resource" data-controller="target-group-view" data-initializer="target-group-view">
+<agn:agnForm action="/targetQB" id="targetForm" data-form="resource"
+			 data-controller="target-group-view"
+			 data-initializer="target-group-view"
+			 data-validator-options="skip_empty: false">
 	<html:hidden property="targetID" />
 	<html:hidden property="format" />
 	<html:hidden property="workflowForwardParams" />
 	<html:hidden property="workflowId" />
 	<html:hidden property="locked" />
+	<html:hidden property="queryBuilderFilters" />
 	<html:hidden property="method" value="save" />
 
 
@@ -79,21 +71,23 @@
 			<div class="form-group">
 				<div class="col-sm-4">
 					<label class="control-label" for="shortname">
-						<bean:message key="Name"/>
+						<c:set var="nameMsg"><bean:message key="default.Name"/></c:set>
+						${nameMsg}
 					</label>
 				</div>
 				<div class="col-sm-8">
-					<html:text styleId="shortname" styleClass="form-control" property="shortname" maxlength="99" size="42" readonly="${editTargetForm.locked}"/>
+					<agn:agnText styleId="shortname" styleClass="form-control" property="shortname" maxlength="99" size="42" readonly="${editTargetForm.locked}" placeholder="${nameMsg}"/>
 				</div>
 			</div>
 			<div class="form-group">
 				<div class="col-sm-4">
 					<label class="control-label" for="description">
-						<bean:message key="default.description" />
+						<c:set var="descriptionMsg"><bean:message key="default.description"/></c:set>
+						${descriptionMsg}
 					</label>
 				</div>
 				<div class="col-sm-8">
-					<html:textarea styleId="description" styleClass="form-control" property="description" rows="5" cols="32" readonly="${editTargetForm.locked}"/>
+					<agn:agnTextarea styleId="description" styleClass="form-control" property="description" rows="5" cols="32" readonly="${editTargetForm.locked}" placeholder="${descriptionMsg}"/>
 				</div>
 			</div>
 			<div class="form-group">
@@ -152,7 +146,13 @@
 				</li>
 			</ul>
 		</div>
-
+        
+        <c:if test="${not editTargetForm.valid}">
+            <div class="alert-line well">
+                <i class="icon icon-exclamation-circle"></i><strong><bean:message key="target.group.invalid"/></strong>
+            </div>
+        </c:if>
+        
 		<div class="tile-content tile-content-forms">
 			<c:if test="${editTargetForm.format == 'qb'}">
 				<div id="tab-targetgroupQueryBuilderEditor" ${QB_EDITOR_DIV_SHOW_STATE} data-initializer="target-group-query-builder">

@@ -12,9 +12,6 @@ package com.agnitas.web;
 
 import java.util.Collection;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.MailingWizardAction;
@@ -32,8 +29,13 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.form.TargetEditForm;
 import com.agnitas.emm.core.target.web.QueryBuilderTargetGroupForm;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Implementation of <strong>Action</strong> that handles Mailings
@@ -106,29 +108,40 @@ public class ComMailingWizardAction extends MailingWizardAction {
 
         return mapping.findForward("messages");
     }
-	
+
 	public ActionForward newTarget(ActionMapping mapping, ActionForm form,
-			HttpServletRequest request, HttpServletResponse response) throws Exception {
+								   HttpServletRequest request, HttpServletResponse response) throws Exception {
 		if (!AgnUtils.isUserLoggedIn(request)) {
 			return mapping.findForward("logon");
 		}
 
 		ComAdmin admin = AgnUtils.getAdmin(request);
 
-        QueryBuilderTargetGroupForm targetForm = (QueryBuilderTargetGroupForm) request.getSession().getAttribute("editTargetForm");
-        if (targetForm != null) {
-			targetForm.setTargetID(0);
-			targetForm.setShortname("");
-			targetForm.setDescription("");
-			targetForm.setFormat("qb");
-			targetForm.setEql("");
-			targetForm.setQueryBuilderRules("[]");
+		if(admin.permissionAllowed(Permission.TARGET_QB_MIGRATION)) {
+			request.setAttribute("editTargetForm", new TargetEditForm());
+		} else {
+			QueryBuilderTargetGroupForm targetForm = (QueryBuilderTargetGroupForm) request.getSession().getAttribute("editTargetForm");
+			if (targetForm != null) {
+				targetForm.setTargetID(0);
+				targetForm.setShortname("");
+				targetForm.setDescription("");
+				targetForm.setFormat("qb");
+				targetForm.setEql("");
+				targetForm.setQueryBuilderRules("[]");
+			}
 		}
 
 		request.setAttribute("mailTrackingAvailable", AgnUtils.isMailTrackingAvailable(admin));
 		request.setAttribute("queryBuilderFilters", filterListBuilder.buildFilterListJson(admin));
 
 		return mapping.findForward("newTarget");
+	}
+
+	public ActionForward viewTarget(ActionMapping mapping, ActionForm form,
+								   HttpServletRequest request, HttpServletResponse response) throws Exception {
+		MailingWizardForm wizardForm = (MailingWizardForm) form;
+		request.getRequestDispatcher("/target/" + wizardForm.getViewTargetId() + "/view.action?isMailingWizard=true").forward(request, response);
+		return null;
 	}
 
 }

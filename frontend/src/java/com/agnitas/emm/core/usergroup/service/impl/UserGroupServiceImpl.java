@@ -12,10 +12,12 @@ package com.agnitas.emm.core.usergroup.service.impl;
 
 import static com.agnitas.emm.core.admin.web.PermissionsOverviewData.ROOT_ADMIN_ID;
 import static com.agnitas.emm.core.admin.web.PermissionsOverviewData.ROOT_GROUP_ID;
+import static com.agnitas.emm.core.usergroup.web.UserGroupController.NEW_USER_GROUP_ID;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -37,11 +40,14 @@ import com.agnitas.emm.core.company.service.ComCompanyService;
 import com.agnitas.emm.core.permission.service.PermissionService;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 import com.agnitas.emm.core.usergroup.service.UserGroupService;
+import com.agnitas.messages.I18nString;
 import com.agnitas.service.ExtendedConversionService;
 
 public class UserGroupServiceImpl implements UserGroupService {
     
     private static final Logger logger = Logger.getLogger(UserGroupServiceImpl.class);
+
+    private static final int USER_FORM_NAME_MAX_LENGTH = 99;
 
     private ComAdminGroupDao userGroupDao;
     private ComCompanyService companyService;
@@ -264,4 +270,21 @@ public class UserGroupServiceImpl implements UserGroupService {
 	public AdminGroup getAdminGroup(int userGroupId, int companyID) {
 		return userGroupDao.getAdminGroup(userGroupId, companyID);
 	}
+
+    @Override
+    public int copyUserGroup(final int id, final ComAdmin admin) throws Exception {
+        UserGroupDto group = getUserGroup(admin, id);
+        if (group == null) {
+            throw new IllegalArgumentException("userGroup == null (invalid id)");
+        }
+
+        group.setUserGroupId(NEW_USER_GROUP_ID);
+        group.setShortname(generateUserGroupCopyName(group.getShortname(), admin.getCompanyID(), admin.getLocale()));
+        return saveUserGroup(admin, group);
+    }
+
+    private String generateUserGroupCopyName(String name, int companyId, Locale locale) {
+        return AgnUtils.getUniqueCloneName(name, I18nString.getLocaleString("mailing.CopyOf", locale) + " ", 
+                USER_FORM_NAME_MAX_LENGTH, newName -> userGroupDao.adminGroupExists(companyId, newName) > 0);
+    }
 }

@@ -60,9 +60,9 @@
 	<bean id="CalendarComment" class="com.agnitas.emm.core.calendar.beans.impl.ComCalendarCommentImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Campaign -->
-	<bean id="CampaignFactory" class="com.agnitas.beans.factory.impl.ComCampaignFactory" />
+	<bean id="CampaignFactory" class="com.agnitas.beans.factory.impl.CampaignFactory" />
 
-	<bean id="Campaign" class="com.agnitas.beans.impl.ComCampaignImpl" scope="prototype" />
+	<bean id="Campaign" class="com.agnitas.beans.impl.CampaignImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Companies -->
 	<bean id="CompanyDaoCache" class="org.agnitas.emm.core.commons.daocache.CompanyDaoCache">
@@ -104,7 +104,6 @@
 	<bean id="EcsService" class="com.agnitas.ecs.service.impl.EcsServiceImpl">
 		<property name="generationPDFService" ref="GenerationPDFService"/>
 		<property name="recipientDao" ref="RecipientDao"/>
-		<property name="mailingDao" ref="MailingDao"/>
 		<property name="embeddedClickStatDao" ref="EmbeddedClickStatDao"/>
 		<property name="configService" ref="ConfigService" />
 	</bean>
@@ -115,11 +114,8 @@
 <!-- ============================================================================================================================== EMM action operations -->
 	<bean id="ActionOperationFactory" class="com.agnitas.beans.factory.impl.ComActionOperationFactoryImpl" />
 
-<!-- ============================================================================================================================== Export -->
-	<bean id="ExportPredef" class="org.agnitas.beans.impl.ExportPredefImpl" scope="prototype" />
-
 <!-- ============================================================================================================================== Import -->
-	<bean id="CustomerImportStatus" class="org.agnitas.beans.impl.CustomerImportStatusImpl" scope="prototype" />
+	<bean id="ImportStatus" class="org.agnitas.beans.impl.ImportStatusImpl" scope="prototype" />
 
 	<bean id="ImportProfile" class="org.agnitas.beans.impl.ImportProfileImpl" scope="prototype" />
 
@@ -218,7 +214,6 @@
 		<property name="columnInfoService" ref="ColumnInfoService" />
 		<property name="bindingEntryFactory" ref="BindingEntryFactory" />
 		<property name="blacklistService" ref="BlacklistService"/>
-		<!-- Do not have to set RecipientFactory. The factory knows itself ;) -->
 		<property name="bindingEntryDao" ref="BindingEntryDao" />
 	</bean>
 
@@ -338,7 +333,6 @@
 	<bean id="VelocityWrapperFactory" class="com.agnitas.emm.core.velocity.ComVelocityWrapperFactoryImpl">
 		<property name="velocityWrapperCache" ref="VelocityWrapperCache" />
 		<property name="uberspectDelegateTargetFactory" ref="UberspectDelegateTargetFactory" />
-		<property name="configService" ref="ConfigService" />
 	</bean>
 		
 	<bean id="VelocityDirectiveScriptValidator" class="org.agnitas.emm.core.velocity.scriptvalidator.VelocityDirectiveScriptValidator" />
@@ -630,63 +624,8 @@ Euer freundlicher EMM
 		<property name="profileFieldHashTagSupport" ref="ProfileFieldHashTagSupport" />
 	</bean>
 
-	<bean id="oracleFulltextSearchReservedLiterals" class="com.agnitas.emm.core.commons.database.fulltext.impl.OracleFulltextSearchReservedLiteralsConfig">
-		<constructor-arg>
-			<list value-type="java.lang.Character">
-				<value>;</value>
-				<value>,</value>
-				<value>&amp;</value>
-				<value>=</value>
-				<value>{</value>
-				<value>}</value>
-				<value>[</value>
-				<value>]</value>
-				<value>-</value>
-				<value>~</value>
-				<value>|</value>
-				<value>$</value>
-				<value>!</value>
-				<value>&gt;</value>
-				<value>_</value>
-			</list>
-		</constructor-arg>
-		<constructor-arg>
-			<list value-type="java.lang.String">
-				<value>ABOUT</value>
-				<value>ACCUM</value>
-				<value>AND</value>
-				<value>BT</value>
-				<value>BTG</value>
-				<value>BTI</value>
-				<value>BTP</value>
-				<value>EQUIV</value>
-				<value>FUZZY</value>
-				<value>HASPATH</value>
-				<value>INPATH</value>
-				<value>MDATA</value>
-				<value>MINUS</value>
-				<value>NEAR</value>
-				<value>NOT</value>
-				<value>NT</value>
-				<value>NTG</value>
-				<value>NTI</value>
-				<value>NTP</value>
-				<value>OR</value>
-				<value>PT</value>
-				<value>RT</value>
-				<value>SQE</value>
-				<value>SYN</value>
-				<value>TR</value>
-				<value>TRSYN</value>
-				<value>TT</value>
-				<value>WITHIN</value>
-			</list>
-		</constructor-arg>
-	</bean>
-
 	<bean id="fulltextSearchReservedLiteralsFactory" class="com.agnitas.emm.core.commons.database.fulltext.impl.factory.FulltextSearchReservedLiteralsFactoryImpl">
 		<property name="databaseConfiguration" ref="databaseConfiguration"/>
-		<property name="oracleReservedLiteralsConfig" ref="oracleFulltextSearchReservedLiterals"/>
 	</bean>
 
 	<bean id="databaseConfiguration" class="com.agnitas.emm.core.commons.database.configuration.DatabaseConfigurationImpl">
@@ -757,4 +696,8 @@ Euer freundlicher EMM
 	<bean id="blacklistModelValidator" class="org.agnitas.emm.core.blacklist.service.validation.BlacklistModelValidator">
 		<constructor-arg value="validator-messages"/>
 	</bean>
+
+    <bean id="contentModelValidator" class="com.agnitas.emm.core.dyncontent.service.validation.ContentModelValidator">
+        <constructor-arg value="validator-messages"/>
+    </bean>
 </beans>

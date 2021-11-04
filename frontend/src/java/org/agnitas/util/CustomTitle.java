@@ -18,8 +18,6 @@ import java.util.regex.Pattern;
 
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.log.LogChute;
 //
 // One should not access runtime directly, I know :-(
 
@@ -27,70 +25,7 @@ import org.apache.velocity.runtime.log.LogChute;
  * This class provides the mechanism to use a VelocityScript in title
  * configuration to be used by the agnTITLE tag family.
  */
-public class CustomTitle implements LogChute {
-	/** Colect velocity error output */
-	private StringBuffer	logTo = null;
-	
-	/**
-	 * Initialize the runtime service, needs to be implemented,
-	 * but does nothing
-	 * 
-	 * @param rs         the RuntimeServices instance to initialize from
-	 * @throws Exception as required by the interface, no exception is raised by this method
-	 */
-	@Override
-	public void init (RuntimeServices rs) throws Exception {
-		// nothing to do
-	}
-
-	/**
-	 * Collect possible warnings and errors to own buffer
-	 * 
-	 * @param logLevel   the loglevel of the provided message
-	 * @param logMessage the message to log itself
-	 */
-	@Override
-	public void log (int logLevel, String logMessage) {
-		if (logTo != null) {
-			String	label;
-
-			if (logLevel == LogChute.WARN_ID) {
-				label = "WARNING";
-			} else if (logLevel == LogChute.ERROR_ID) {
-				label = "ERROR";
-			} else {
-				label = null;
-			}
-			if (label != null) {
-				logTo.append ("[" + label + "]: " + logMessage + "\n");
-			}
-		}
-	}
-	
-	/**
-	 * Collect possible warnings and errors triggered by a Throwable
-	 * instance. The throwable instnace is ignored here.
-	 * 
-	 * @param logLevel   the loglevel of the provided message
-	 * @param logMessage the message to log itself
-	 * @param t          the Throwable instance 
-	 */
-	@Override
-	public void log (int logLevel, String logMessage, Throwable t) {
-		log (logLevel, logMessage);
-	}
-	
-	/**
-	 * Tell the runtime system to just log warnings and errors
-	 *
-	 * @param level the level to check if it is enabled
-	 * @return      true, for warning and error levels, false otherwise
-	 */
-	@Override
-	public boolean isLevelEnabled (int level) {
-		return (level == LogChute.WARN_ID) || (level == LogChute.ERROR_ID);
-	}
-
+public class CustomTitle {
 	/** The magic character sequence to recognize a custom title */
 	public static final String	  SCRIPT_ID = "#<>#";
 	/** The provided titleText itself, e.g. the velocity script */
@@ -139,12 +74,11 @@ public class CustomTitle implements LogChute {
 	public String makeTitle (int titleType, int gender, String title, String firstname, String lastname, Map <String, String> columns, StringBuffer error) {
 		String	rc = null;
 		
-		logTo = error;
 		try {
 			VelocityEngine	ve = new VelocityEngine ();
 			VelocityContext	vc = new VelocityContext ();
 		
-			ve.setProperty (VelocityEngine.RUNTIME_LOG_LOGSYSTEM, this);
+//			ve.setProperty (VelocityEngine.RUNTIME_LOG_LOGSYSTEM, this);
 			ve.setProperty (VelocityEngine.VM_LIBRARY, "");
 			ve.init ();
 
@@ -163,7 +97,7 @@ public class CustomTitle implements LogChute {
 				error.append ("CustomTitle: \"" + titleText + "\" leads to " + e.toString () + "\n");
 			}
 		}
-		logTo = null;
+
 		return rc;
 	}
 

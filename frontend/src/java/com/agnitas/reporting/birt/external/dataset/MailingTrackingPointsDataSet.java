@@ -376,7 +376,7 @@ public class MailingTrackingPointsDataSet extends BIRTDataSet {
 	}
 
 	private Collection<TrackingPointDef> extractTrackingPointsDefByType(Collection<TrackingPointDef> inputCollection, final int trackingPointType) {
-		Predicate<TrackingPointDef> predicate = new Predicate<TrackingPointDef>() {
+		Predicate<TrackingPointDef> predicate = new Predicate<>() {
 			@Override
 			public boolean evaluate(TrackingPointDef trackingPointDef) {
 				return trackingPointDef.getType() == trackingPointType ? true : false;

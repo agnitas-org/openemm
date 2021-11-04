@@ -132,7 +132,7 @@ public class MailingComponentImpl implements MailingComponent {
 	@Override
 	public void setEmmBlock(String emmBlock, String mimeType) {
 		// Only store one of type of data: emmblock or binblock
-		// Exemption: Personalized PDF attachments require emmblock and binblock to be filled with different files
+		// Exception: Personalized PDF attachments require emmblock and binblock to be filled with different files
 		// Clear datatype only if this is the only set datatype
 		// binblock sometimes contains an array "byte[1] = {0}", which also signals empty binary data
 		if (StringUtils.isNotEmpty(emmBlock) || (binaryBlock == null || binaryBlock.length <= 1) || "application/pdf".equalsIgnoreCase(mimeType)) {

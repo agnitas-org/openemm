@@ -1,6 +1,10 @@
 <%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
+<%--@elvariable id="isMailingGrid" type="java.lang.Boolean"--%>
+<%--@elvariable id="isFullscreenTileSizingDisabled" type="java.lang.Boolean"--%>
+<%--@elvariable id="footerItems" type="java.util.List"--%>
+
 <tiles:importAttribute/>
 
 <c:choose>
@@ -14,7 +18,7 @@
                  <c:if test="${not isFullscreenTileSizingDisabled}">
                  data-sizing="scroll" data-scroll-retain=""
                  </c:if>
-                    >
+            >
                 <tiles:insert attribute="content"/>
             </div>
 

@@ -13,11 +13,14 @@ package com.agnitas.emm.core.deeptracking.web;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
+
+import com.agnitas.web.cookies.SameSiteCookie;
+import com.agnitas.web.cookies.SameSiteCookiePolicy;
 
 /**
  * Utility class for working with deep tracking cookie.
@@ -87,12 +90,12 @@ public final class DeepTrackingCookieUtil {
 	 * 
 	 * @see Cookie#setMaxAge(int)
 	 */
-	public static final void addTrackingCookie(final HttpServletResponse response, final int maximumAge, final int companyID, final long deepTrackingSession, final String deepTrackingUID) {
+	public static final void addTrackingCookie(final HttpServletResponse response, final int maximumAge, final int companyID, final long deepTrackingSession, final String deepTrackingUID, final SameSiteCookiePolicy sameSite) {
 		if(maximumAge != 0) {
 			final String sessionIDString = Long.toHexString(deepTrackingSession);
 			final String cookieValue = String.format("%s_%s", sessionIDString, deepTrackingUID);
 			
-			addCookie(response, companyID, maximumAge, cookieValue);
+			addCookie(response, companyID, maximumAge, cookieValue, sameSite);
 		} else {
 			removeTrackingCookie(response, companyID);
 		}
@@ -106,7 +109,7 @@ public final class DeepTrackingCookieUtil {
 	 * @param companyID company ID
 	 */
 	public static final void removeTrackingCookie(final HttpServletResponse response, final int companyID) {
-		addCookie(response, companyID, 0, "");
+		addCookie(response, companyID, 0, "", null);
 	}
 	
 	/**
@@ -117,11 +120,16 @@ public final class DeepTrackingCookieUtil {
 	 * @param maxAge maximum age
 	 * @param value cookie value
 	 */
-	private static final void addCookie(final HttpServletResponse response, final int companyID, final int maxAge, final String value) {
-		final Cookie cookie = new Cookie(cookieName(companyID), value);
-		cookie.setMaxAge(maxAge);
+	private static final void addCookie(final HttpServletResponse response, final int companyID, final int maxAge, final String value, final SameSiteCookiePolicy sameSite) {
+		final SameSiteCookie cookie = new SameSiteCookie(cookieName(companyID), value)
+			.setMaxAge(maxAge)
+			.setSecure(sameSite == SameSiteCookiePolicy.NONE);  // SameSite=None requires Secure-attribute (see https://developer.mozilla.org/de/docs/Web/HTTP/Headers/Set-Cookie/SameSite#samesitenone_requires_secure)
 		
-		response.addCookie(cookie);
+		if(sameSite != null) {
+			cookie.setSameSite(sameSite);
+		}
+		
+		cookie.addHeader(response);		// Emit Set-Cookie header for this cookie
 	}
 	
 	/**

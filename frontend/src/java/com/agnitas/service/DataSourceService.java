@@ -15,6 +15,8 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.datasource.bean.DataSource;
 
+import net.sf.json.JSONArray;
+
 public interface DataSourceService {
 
     int createDataSource(int companyId, int dsGroup, String dsDescription, String uri);
@@ -22,4 +24,6 @@ public interface DataSourceService {
     boolean rolloutCreationDataSource(int dataSourceId, String username, int companyId);
 
     PaginatedListImpl<DataSource> getPaginatedDataSources(@VelocityCheck int companyId, String sortColumn, int pageNumber, int pageSize, String direction);
+
+    JSONArray getDataSourcesJson(final int companyId);
 }

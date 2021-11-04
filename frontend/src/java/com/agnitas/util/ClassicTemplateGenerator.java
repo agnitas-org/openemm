@@ -13,7 +13,7 @@ package com.agnitas.util;
 import java.util.Enumeration;
 import java.util.Vector;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;

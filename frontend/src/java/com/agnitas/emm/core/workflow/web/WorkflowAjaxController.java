@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.Campaign;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
@@ -28,8 +27,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Campaign;
 import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.dao.CampaignDao;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import com.agnitas.web.perm.annotations.PermissionMapping;
@@ -41,13 +41,13 @@ public class WorkflowAjaxController {
     private ComWorkflowService workflowService;
     private AutoImportService autoImportService;
     private AutoExportService autoExportService;
-    private ComCampaignDao campaignDao;
+    private CampaignDao campaignDao;
     private MailinglistApprovalService mailinglistApprovalService;
 
     public WorkflowAjaxController(ComWorkflowService workflowService,
                                   @Autowired(required = false) AutoImportService autoImportService,
                                   @Autowired(required = false) AutoExportService autoExportService,
-                                  ComCampaignDao campaignDao,
+                                  CampaignDao campaignDao,
                                   MailinglistApprovalService mailinglistApprovalService) {
         this.workflowService = workflowService;
         this.autoImportService = autoImportService;

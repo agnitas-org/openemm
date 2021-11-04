@@ -93,8 +93,6 @@ public class TitleImpl implements Title, Serializable {
 
     @Override
 	public int hashCode() {
-	Integer i=new Integer((companyID*100)+this.Id);
-
-        return i.hashCode();
+    	return (companyID * 100) + this.Id;
     }
 }

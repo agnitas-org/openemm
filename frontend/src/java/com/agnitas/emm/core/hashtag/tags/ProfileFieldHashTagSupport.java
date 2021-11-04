@@ -18,6 +18,7 @@ import java.util.Objects;
 
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.factory.RecipientFactory;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -31,9 +32,11 @@ public class ProfileFieldHashTagSupport {
 	
 	/** Factory creating new recipients. */
 	private final RecipientFactory recipientFactory;
+	private final RecipientService recipientService;
 	
-	public ProfileFieldHashTagSupport(final RecipientFactory recipientFactory) {
+	public ProfileFieldHashTagSupport(final RecipientFactory recipientFactory, RecipientService recipientService) {
 		this.recipientFactory = Objects.requireNonNull(recipientFactory, "Recipient factory is null");
+		this.recipientService = Objects.requireNonNull(recipientService, "Recipient service is null");
 	}
 	
 	public final String evaluateExpression(final HashTagContext context, final String expression) throws HashTagException {
@@ -78,7 +81,7 @@ public class ProfileFieldHashTagSupport {
 
 		cust.setDateFormatForProfileFieldConversion(dateFormat);
 		cust.setCustomerID(context.getCustomerId());
-		cust.getCustomerDataFromDb();
+		cust.setCustParameters(recipientService.getCustomerDataFromDb(context.getCompanyID(), context.getCustomerId(), cust.getDateFormat()));
 
 		return doHandleAccess(expression, cust, context);
 	}

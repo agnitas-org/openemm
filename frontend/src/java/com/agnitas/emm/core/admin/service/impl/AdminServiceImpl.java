@@ -431,7 +431,7 @@ public class AdminServiceImpl implements AdminService {
 			logger.info("saveAdmin: admin " + form.getAdminID());
 		}
 		
-		if(passwordChanged) {
+		if (passwordChanged) {
 			this.passwordChangedNotifier.notifyAdminAboutChangedPassword(savingAdmin);
 		}
 

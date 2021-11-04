@@ -13,7 +13,6 @@ package com.agnitas.dao.impl.mapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.agnitas.util.DbUtilities;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.TargetLight;
@@ -42,10 +41,7 @@ public class TargetLightRowMapper implements RowMapper<TargetLight> {
             readTarget.setComponentHide(resultSet.getBoolean("component_hide"));
             readTarget.setComplexityIndex(resultSet.getInt("complexity"));
             readTarget.setValid(!resultSet.getBoolean("invalid"));
-
-            if (DbUtilities.resultsetHasColumn(resultSet, "invalid")) {
-                readTarget.setValid(!resultSet.getBoolean("invalid"));
-            }
+            readTarget.setFavorite(resultSet.getBoolean("favorite"));
 
             return readTarget;
         } catch (Exception e) {

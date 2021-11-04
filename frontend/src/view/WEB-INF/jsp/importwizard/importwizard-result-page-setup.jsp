@@ -52,10 +52,17 @@
         <c:set target="${element0}" property="iconBefore" value="icon-share"/>
         <c:set target="${element0}" property="type" value="href"/>
         <c:set target="${element0}" property="url">
-            <html:rewrite page="/recipient.do">
-                <html:param name="action" value="${ACTION_LIST}"/>
-                <html:param name="latestDataSourceId" value="${newImportWizardForm.datasourceId}"/>
-            </html:rewrite>
+            <emm:HideByPermission token="recipient.rollback">
+                <c:url value="/recipient/list.action">
+                    <c:param name="latestDataSourceId" value="${newImportWizardForm.datasourceId}"/>
+                </c:url>
+            </emm:HideByPermission>
+            <emm:ShowByPermission token="recipient.rollback">
+                <html:rewrite page="/recipient.do">
+                    <html:param name="action" value="${ACTION_LIST}"/>
+                    <html:param name="latestDataSourceId" value="${newImportWizardForm.datasourceId}"/>
+                </html:rewrite>
+            </emm:ShowByPermission>
         </c:set>
         <c:set target="${element0}" property="name">
             <bean:message key="button.Finish"/>

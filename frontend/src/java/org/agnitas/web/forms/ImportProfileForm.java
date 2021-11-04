@@ -17,9 +17,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import javax.mail.internet.InternetAddress;
-import javax.servlet.http.HttpServletRequest;
-
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.Mailinglist;
@@ -45,6 +42,9 @@ import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+
+import jakarta.mail.internet.InternetAddress;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Form class that incapsulates the data of import profile
@@ -194,6 +194,8 @@ public class ImportProfileForm extends StrutsFormBase {
 	public void reset(ActionMapping map, HttpServletRequest request) {
 		super.reset(map, request);
 		profile = new ImportProfileImpl();
+		profile.setUpdateAllDuplicates(false); // Use false as default for not transmitted checkbox value
+		profile.setAutoMapping(false); // Use false as default for not transmitted checkbox value
 		mailinglists = new HashSet<>();
 		setNumberOfRows(-1);
 	}

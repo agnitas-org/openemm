@@ -46,6 +46,7 @@ import java.util.zip.ZipOutputStream;
 
 import javax.sql.DataSource;
 
+import org.agnitas.beans.ExportColumnMapping;
 import org.agnitas.util.CaseInsensitiveSet;
 import org.agnitas.util.CsvWriter;
 import org.agnitas.util.DbUtilities;
@@ -73,6 +74,8 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 	
 	protected String selectStatement = null;
 	protected List<String> excludedColumns = null;
+	protected List<ExportColumnMapping> columnMappings = null;
+
 	protected List<Object> selectParameters = null;
 
 	protected boolean done = true;
@@ -422,7 +425,17 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 	
 							// Write headers
 					    	if (csvFileHeaders != null) {
-					    		if (csvFileHeaders.size() > 0) {
+					    		if (columnMappings != null && columnMappings.size() > 0) {
+					    			List<String> csvFileHeadersToWrite = new ArrayList<>();
+					    			for (ExportColumnMapping columnMapping : columnMappings) {
+					    				if (columnMapping.getFileColumn() != null) {
+					    					csvFileHeadersToWrite.add(columnMapping.getFileColumn());
+					    				} else {
+					    					csvFileHeadersToWrite.add(columnMapping.getDbColumn());
+					    				}
+					    			}
+					    			csvWriter.writeValues(csvFileHeadersToWrite);
+					    		} else if (csvFileHeaders.size() > 0) {
 					    			csvWriter.writeValues(csvFileHeaders);
 						    	} else {
 						    		csvFileHeaders = columnLabels;
@@ -434,19 +447,52 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 							while (resultSet.next()) {
 								List<String> values = new ArrayList<>();
 								
-								for (int columnIndex = 1; columnIndex <= metaData.getColumnCount(); columnIndex++) {
-									String columnName = metaData.getColumnName(columnIndex);
-									if (excludedColumnsSet == null || !excludedColumnsSet.contains(columnName)) {
-										Object value = convertValue(metaData, resultSet, columnIndex);
+								if (columnMappings != null && columnMappings.size() > 0) {
+									for (ExportColumnMapping columnMapping : columnMappings) {
+										boolean isIncludedInSelect = false;
+										for (int columnIndex = 1; columnIndex <= metaData.getColumnCount(); columnIndex++) {
+											String columnName = metaData.getColumnName(columnIndex);
+											String columnLabel = metaData.getColumnLabel(columnIndex);
+											if (columnName.equalsIgnoreCase(columnMapping.getDbColumn()) || (columnLabel != null && columnLabel.equalsIgnoreCase(columnMapping.getDbColumn()))) {
+												isIncludedInSelect = true;
+												Object value = convertValue(metaData, resultSet, columnIndex);
+												
+												if (value == null) {
+													values.add(columnMapping.getDefaultValue());
+												} else if (value instanceof String) {
+													if (((String) value).length() == 0) {
+														values.add(columnMapping.getDefaultValue());
+													} else {
+														values.add((String) value);
+													}
+												} else if (value instanceof Number && decimalFormat != null) {
+													values.add(decimalFormat.format(value));
+												} else {
+													values.add(value.toString());
+												}
+												break;
+											}
+										}
 										
-										if (value == null) {
-											values.add(nullValueText);
-										} else if (value instanceof String) {
-											values.add((String) value);
-										} else if (value instanceof Number && decimalFormat != null) {
-											values.add(decimalFormat.format(value));
-										} else {
-											values.add(value.toString());
+										if (!isIncludedInSelect) {
+											values.add(columnMapping.getDefaultValue());
+										}
+					    			}
+								} else {
+									for (int columnIndex = 1; columnIndex <= metaData.getColumnCount(); columnIndex++) {
+										String columnName = metaData.getColumnName(columnIndex);
+										if (excludedColumnsSet == null || !excludedColumnsSet.contains(columnName)) {
+											Object value = convertValue(metaData, resultSet, columnIndex);
+											
+											if (value == null) {
+												values.add(nullValueText);
+											} else if (value instanceof String) {
+												values.add((String) value);
+											} else if (value instanceof Number && decimalFormat != null) {
+												values.add(decimalFormat.format(value));
+											} else {
+												values.add(value.toString());
+											}
 										}
 									}
 								}

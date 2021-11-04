@@ -331,27 +331,25 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
         }
 
         // get mailings names and send dates
-        String query =
-                "SELECT " +
-                "  mail.mailing_id, " +
-                "  mail.shortname   mailing_name, " +
-                "  MAX(md.senddate) scheduled_send_time, " +
-                "  MAX(ma.timestamp) send_date " +
-                "FROM mailing_tbl mail LEFT JOIN maildrop_status_tbl md " +
-                "    ON md.mailing_id = mail.mailing_id " +
-                "  LEFT JOIN mailing_account_tbl ma " +
-                "    ON ma.mailing_id = mail.mailing_id " +
-                "WHERE mail.mailing_id IN (" + StringUtils.join(mailingIds, ',') + ") AND mail.company_id = ? " +
-                "GROUP BY mail.shortname, mail.mailing_id";
+		String query =
+			"SELECT"
+			+ " mail.mailing_id,"
+			+ " mail.shortname AS mailing_name,"
+			+ " MAX(md.senddate) AS scheduled_send_time,"
+			+ " MAX(ma.timestamp) AS send_date"
+			+ " FROM mailing_tbl mail"
+			+ " LEFT JOIN maildrop_status_tbl md ON md.mailing_id = mail.mailing_id"
+			+ " LEFT JOIN mailing_account_tbl ma ON ma.mailing_id = mail.mailing_id AND ma.status_field NOT IN ('A', 'T')"
+			+ " WHERE mail.mailing_id IN (" + StringUtils.join(mailingIds, ", ") + ") AND mail.company_id = ?"
+			+ " GROUP BY mail.shortname, mail.mailing_id";
         List<Map<String, Object>> resultList = select(logger, query, companyId);
         for (Map<String, Object> map : resultList) {
             String mailingName = (String) map.get("mailing_name");
             Date sendDate = (Date) map.get("send_date");
             Date scheduledSendTime = (Date) map.get("scheduled_send_time");
             int mailingId = ((Number) map.get("mailing_id")).intValue();
-            String insert = "UPDATE tmp_report_aggregation_" + tempTableID + "_tbl SET mailing_name = ?, send_date = ?, scheduled_send_time = ?, " +
-                    "assigned_targets = ? where mailing_id = ?";
-            updateEmbedded(logger, insert, mailingName, sendDate, scheduledSendTime, mailingTargets.get(mailingId), mailingId);
+            updateEmbedded(logger, "UPDATE tmp_report_aggregation_" + tempTableID + "_tbl SET mailing_name = ?, send_date = ?, scheduled_send_time = ?, assigned_targets = ? where mailing_id = ?",
+            	mailingName, sendDate, scheduledSendTime, mailingTargets.get(mailingId), mailingId);
         }
 	}
 
@@ -552,7 +550,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
             
             row.setOrderRule(allCategories.indexOf(row.getCategoryindex()));
 
-            row.setRate(new BigDecimal(100 * row.getRate()).setScale(2, RoundingMode.DOWN).doubleValue());
+            row.setRate(BigDecimal.valueOf(100 * row.getRate()).setScale(2, RoundingMode.DOWN).doubleValue());
             row.setRowNum(rowNum);
         }
 

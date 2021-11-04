@@ -82,6 +82,20 @@
     }
   };
 
+  var RenderMessages = function ($resp) {
+    $resp.all('script[data-message][type="text/html"]')
+      .appendTo($(document.body));
+
+    $resp.all('script[data-message][type="text/javascript"]').each(function() {
+      try {
+        eval($(this).html());
+      } catch (exception) {
+        console.debug(exception);
+      }
+    });
+  }
+  
   AGN.Lib.Messages = Messages;
   AGN.Lib.JsonMessages = JsonMessages;
+  AGN.Lib.RenderMessages = RenderMessages;
 })();

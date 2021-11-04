@@ -44,6 +44,13 @@
                       data-resource-selector="#logon-form"
                       data-form-focus="username"
                       data-disable-controls="input-mask">
+
+                <script id="config:logon" type="application/json">
+                    {
+                        "SHOW_TAB_HINT": ${SHOW_TAB_HINT}
+                    }
+                </script>
+                
                 <div class="l-form form-vertical" role="main">
                     <div class="form-group l-logo-box">
                         <img class="l-left-logo" src="${agnitasEmmLogoSvgSrc}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngSrc}'" alt="Logo">
@@ -130,6 +137,9 @@
                     </script>
                 </div>
             </mvc:form>
+            <div id="logon-copyright">
+                <p><s:message code="default.Copyright"/></p>
+            </div>
         </div>
 
         <div class="l-frame-wrapper" id="l-frame-wrapper">

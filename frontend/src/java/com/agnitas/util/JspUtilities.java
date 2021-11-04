@@ -12,8 +12,8 @@ package com.agnitas.util;
 
 import java.util.Collection;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.JspException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.jsp.JspException;
 
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;

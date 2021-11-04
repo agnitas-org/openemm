@@ -1,4 +1,4 @@
-(function() {
+(function($) {
   var Popover = {};
 
   var placementFunction = function(balloon, element) {
@@ -68,13 +68,15 @@
   };
 
   Popover.validate = function() {
-    $('.popover').each(function() {
+    $('.popover').each(function () {
       var popover = $(this).data('bs.popover');
-      if (popover) {
-        popover.validate();
+      if (popover && popover.$element) {
+        if (!$.contains(document.body, popover.$element[0])) {
+          popover.destroy();
+        }
       }
     });
   };
 
   AGN.Lib.Popover = Popover;
-})();
+})(jQuery);

@@ -14,13 +14,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.ViciousFormDataException;
+import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -32,7 +34,6 @@ import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.beans.ComCompany;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComDatasourceDescriptionDao;
-import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
@@ -54,18 +55,15 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 	private ExtensibleUIDService uidService;
 	private ComCompanyDao companyDao;
 	private ComDatasourceDescriptionDao datasourceDescriptionDao;
-	private ComRecipientDao recipientDao;
+	private RecipientService recipientService;
 	private PushSubscriptionService pushSubscriptionService;	// Can be set to null
 	private MobilephoneNumberWhitelist mobilephoneNumberWhitelist;
+
+	protected BlacklistService blacklistService;
 
 	private BeanLookupFactory beanLookupFactory;
 	private ConfigService configService;
 	
-	/**
-	 * Private constructor to prevent invalid instantiation
-	 */
-	private ActionOperationSubscribeCustomerImpl() {}
-
 	private int getDatasourceID(int companyID, String form) {
 		String description = "Form: " + form;
 		DatasourceDescription dsDescription = datasourceDescriptionDao.getByDescription(4, companyID, description);
@@ -88,7 +86,7 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		final Recipient recipient = beanLookupFactory.getBeanRecipient();
 		
 		recipient.setCompanyID(companyID);
-		recipient.loadCustDBStructure();
+		recipient.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
 
 		if(customerID != null) {
 			recipient.setCustomerID(customerID);
@@ -111,7 +109,7 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 					}
 					actionOperationErrors.addErrorCode(ErrorCode.MISSING_KEY_VALUE);
 				} else {
-					recipient.findByKeyColumn(op.getKeyColumn(), keyVal);
+					recipientService.findByKeyColumn(recipient, op.getKeyColumn(), keyVal);
 				}
 			}
 		}
@@ -168,7 +166,7 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 
 		// when a customer id was found, load
 		if (aCust.getCustomerID() != 0) {
-			aCust.getCustomerDataFromDb();
+			aCust.setCustParameters(recipientService.getCustomerDataFromDb(companyID, aCust.getCustomerID(), aCust.getDateFormat()));
 		} else {
 			// Check if gender parameter has a valid value set
 			if (isBlankOrNotNumber((String) reqParams.get("gender"))) {
@@ -195,22 +193,24 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		}
 
 		// copy the request parameters into the customer
-		if (!aCust.importRequestParameters(reqParams, null)) {
+		if (!recipientService.importRequestParameters(aCust, reqParams, null)) {
 			return false;
 		}
 
 		// is the email valid and not blacklisted?
-		if(!aCust.emailValid()) {
+
+		if(!AgnUtils.isEmailValid(aCust.getEmail())) {
 			actionOperationErrors.addErrorCode(ErrorCode.EMAIL_ADDRESS_INVALID);
 			return false;
 		}
-		if (aCust.blacklistCheck()) {
+
+		if (blacklistService.blacklistCheck(aCust.getEmail(), aCust.getCompanyID())) {
 			actionOperationErrors.addErrorCode(ErrorCode.EMAIL_ADDRESS_NOT_ALLOWED);
 			return false; // abort, EMAIL is not allowed
 		}
 
 		try {
-			if (!aCust.updateInDB()) {
+			if (!recipientService.updateRecipientInDB(aCust)) {
 				// return error on failure
 				return false;
 			}
@@ -218,23 +218,23 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 			throw dataException;
 		} catch (Exception e) {
 			logger.error("Cannot create customer: " + e.getMessage(), e);
-			beanLookupFactory.getBeanJavaMailService().sendExceptionMail("Cannot create customer: " + e.getMessage(), e);
+			beanLookupFactory.getBeanJavaMailService().sendExceptionMail(companyID, "Cannot create customer: " + e.getMessage(), e);
 			return false;
 		}
 		
 		aCust.setCustParameters(reqParams);
-		recipientDao.updateDataSource(aCust);
+		recipientService.updateDataSource(aCust);
 
-		aCust.loadAllListBindings();
+		aCust.setListBindings(recipientService.getMailinglistBindings(companyID, aCust.getCustomerID()));
 		try {
-			aCust.updateBindingsFromRequest(params, op.isDoubleOptIn(), request == null ? null : request.getRemoteAddr(), HttpUtils.getReferrer(request));
+			recipientService.updateBindingsFromRequest(aCust, params, op.isDoubleOptIn(), request == null ? null : request.getRemoteAddr(), HttpUtils.getReferrer(request));
 		} catch (ViciousFormDataException dataException) {
 			// Delete the customer, which has vicious data (hacker?)
-			aCust.deleteCustomerDataFromDb();
+			recipientService.deleteCustomerDataFromDb(companyID, aCust.getCustomerID());
 			throw dataException;
 		} catch (Exception e) {
 			logger.error("Cannot create customer binding: " + e.getMessage(), e);
-			beanLookupFactory.getBeanJavaMailService().sendExceptionMail("Cannot create customer binding: " + e.getMessage(), e);
+			beanLookupFactory.getBeanJavaMailService().sendExceptionMail(companyID, "Cannot create customer binding: " + e.getMessage(), e);
 			return false;
 		}
 
@@ -297,10 +297,16 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		this.datasourceDescriptionDao = Objects.requireNonNull(dao, "Datasource description DAO cannot be null");
 	}
 
-	public final void setRecipientDao(final ComRecipientDao dao) {
-		this.recipientDao = Objects.requireNonNull(dao, "Recipient DAO cannot be null");
+	@Required
+	public void setRecipientService(RecipientService recipientService) {
+		this.recipientService = Objects.requireNonNull(recipientService, "Recipient Service cannot be null");
 	}
-	
+
+	@Required
+	public void setBlacklistService(BlacklistService blacklistService) {
+		this.blacklistService = Objects.requireNonNull(blacklistService, "Blacklist Service cannot be null");
+	}
+
 	public final void setBeanLookupFactory(final BeanLookupFactory factory) {
 		this.beanLookupFactory = Objects.requireNonNull(factory, "Bean lookup factory cannot be null");
 	}
@@ -314,9 +320,6 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		this.configService = Objects.requireNonNull(service, "Config service cannot be null");
 	}
 	
-	/**
-	 * 
-	 */
 	@Required
 	public final void setMobilephoneNumberWhitelist(final MobilephoneNumberWhitelist whitelist) {
 		this.mobilephoneNumberWhitelist = Objects.requireNonNull(whitelist, "Mobilephone whitelist is null");

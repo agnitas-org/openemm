@@ -24,7 +24,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.FileResponseBody;

@@ -1,5 +1,4 @@
 <HelpBalloon>
-<!-- -*- scope: openemm -*- -->
 	<title><![CDATA[Envelope-E-Mail]]></title>
 	<content><![CDATA[Die Envelope-Adresse ist die Absenderadresse eines E-Mail-Servers und wird standardm&auml;ßig von der Systemadministration gesetzt.<br><br>
 	<b>Wichtig:</b> Sollten Sie eine eigene Envelope-Adresse verwenden wollen, dann muss f&uuml;r die Domain der Envelope-Adresse ein g&uuml;ltiger A-Record im Domain Name System (DNS) vorhanden sein.

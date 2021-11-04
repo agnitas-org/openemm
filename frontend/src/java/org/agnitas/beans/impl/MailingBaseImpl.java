@@ -21,6 +21,7 @@ public class MailingBaseImpl implements MailingBase {
 	protected int mailinglistID;
 	protected int id;
 	protected int companyID;
+	private boolean isGridMailing;
 	protected int campaignID;
 	protected boolean onlyPostType;
 	private Mailinglist mailinglist;
@@ -134,7 +135,7 @@ public class MailingBaseImpl implements MailingBase {
 
 	@Override
 	public void setMailinglist(Mailinglist mailinglist) {
-		this.mailinglist = mailinglist;		
+		this.mailinglist = mailinglist;
 	}
 
 	@Override
@@ -144,7 +145,7 @@ public class MailingBaseImpl implements MailingBase {
 
 	@Override
 	public void setSenddate(Date sendDate) {
-		this.sendDate = sendDate;		
+		this.sendDate = sendDate;
 	}
 
 	@Override
@@ -165,5 +166,15 @@ public class MailingBaseImpl implements MailingBase {
 	@Override
 	public void setOnlyPostType(boolean isOnlyPostType) {
 		this.onlyPostType = isOnlyPostType;
+	}
+
+	@Override
+	public void setGridMailing(boolean isGridMailing) {
+		this.isGridMailing = isGridMailing;
+	}
+
+	@Override
+	public boolean isGridMailing() {
+		return isGridMailing;
 	}
 }

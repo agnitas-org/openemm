@@ -69,12 +69,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.crypto.Cipher;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
-import javax.servlet.ServletRequest;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
 
 import org.agnitas.beans.AdminPreferences;
 import org.agnitas.beans.Company;
@@ -102,6 +96,13 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
 import com.agnitas.util.Version;
+
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.jsp.PageContext;
 
 public class AgnUtils {
 
@@ -877,6 +878,9 @@ public class AgnUtils {
 		if (attribute == null) {
 			return null;
 		}
+		
+		// Remove optional blanks
+		attribute = attribute.replaceAll("\\s+=\\s+", "=");
 
 		// now extract the parameter.
 		attribute = attribute.replace(attributeName + "=", "");
@@ -1481,16 +1485,16 @@ public class AgnUtils {
 			throw new NumberFormatException("Not a number: '" + numberString + "'");
 		} else if (numberString.contains(".")) {
 			if (numberString.length() < 10) {
-				return new Float(numberString);
+				return Float.parseFloat(numberString);
 			} else {
 				BigDecimal value = new BigDecimal(numberString);
-				boolean isFloat = new BigDecimal(Float.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Float.MAX_VALUE)) == -1;
+				boolean isFloat = BigDecimal.valueOf(Float.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigDecimal.valueOf(Float.MAX_VALUE)) < 0;
 				if (isFloat) {
-					return new Float(numberString);
+					return Float.parseFloat(numberString);
 				} else {
-					boolean isDouble = new BigDecimal(Double.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Double.MAX_VALUE)) == -1;
+					boolean isDouble = BigDecimal.valueOf(Double.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) < 0;
 					if (isDouble) {
-						return new Double(numberString);
+						return Double.parseDouble(numberString);
 					} else {
 						return value;
 					}
@@ -1498,16 +1502,16 @@ public class AgnUtils {
 			}
 		} else {
 			if (numberString.length() < 10) {
-				return new Integer(numberString);
+				return Integer.parseInt(numberString);
 			} else {
 				BigDecimal value = new BigDecimal(numberString);
-				boolean isInteger = new BigDecimal(Integer.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Integer.MAX_VALUE)) == -1;
+				boolean isInteger = BigDecimal.valueOf(Integer.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) < 0;
 				if (isInteger) {
-					return new Integer(numberString);
+					return Integer.parseInt(numberString);
 				} else {
-					boolean isLong = new BigDecimal(Long.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Long.MAX_VALUE)) == -1;
+					boolean isLong = BigDecimal.valueOf(Long.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigDecimal.valueOf(Long.MAX_VALUE)) < 0;
 					if (isLong) {
-						return new Long(numberString);
+						return Long.parseLong(numberString);
 					} else {
 						return value;
 					}
@@ -2343,11 +2347,8 @@ public class AgnUtils {
 					lineNumber++;
 				}
 				return lineNumber;
-			} catch (IOException e) {
-				e.printStackTrace();
-				return -1;
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error("Error when trying to get line number", e);
 				return -1;
 			}
 		}
@@ -3330,8 +3331,11 @@ public class AgnUtils {
 	 * Changes of "null" to "empty String" and vice versa are ignored
 	 */
 	public static boolean stringValueChanged(String valueOriginal, String valueNew) {
-		return StringUtils.isEmpty(valueOriginal) != StringUtils.isEmpty(valueOriginal)
-			&& StringUtils.equals(valueOriginal, valueNew);
+		if (StringUtils.isEmpty(valueOriginal) && StringUtils.isEmpty(valueNew)) {
+			return false;
+		} else {
+			return !StringUtils.equals(valueOriginal, valueNew);
+		}
 	}
 
 	public static double round(double value, int scale) {

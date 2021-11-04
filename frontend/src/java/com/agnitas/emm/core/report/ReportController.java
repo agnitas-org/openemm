@@ -56,25 +56,25 @@ public class ReportController {
 
     private final RecipientReportService recipientReportService;
 
-    @javax.annotation.Resource
+    @jakarta.annotation.Resource
     private RecipientStatusHistoryDtoConverter recipientStatusHistoryConverter;
 
-    @javax.annotation.Resource
+    @jakarta.annotation.Resource
     private RecipientMailingHistoryDtoConverter recipientMailingHistoryDtoConverter;
 
-    @javax.annotation.Resource
+    @jakarta.annotation.Resource
     private RecipientRetargetingHistoryDtoConverter recipientRetargetingHistoryDtoConverter;
 
-    @javax.annotation.Resource
+    @jakarta.annotation.Resource
     private RecipientDeviceHistoryDtoConverter recipientDeviceHistoryDtoConverter;
 
-    @javax.annotation.Resource
+    @jakarta.annotation.Resource
     private RecipientEntityDtoConverter recipientEntityDtoConverter;
 
-    @javax.annotation.Resource
+    @jakarta.annotation.Resource
     private RecipientEntityDtoPrinter recipientEntityDtoPrinter;
 
-    @javax.annotation.Resource(name = "txtTableGenerator")
+    @jakarta.annotation.Resource(name = "txtTableGenerator")
     private TableGenerator txtTableGenerator;
 
     public ReportController(RecipientReportService recipientReportService) {

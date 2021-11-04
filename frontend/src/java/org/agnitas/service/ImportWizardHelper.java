@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import org.agnitas.beans.CustomerImportStatus;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.util.Blacklist;
 import org.agnitas.util.CsvColInfo;
 import org.agnitas.util.ImportUtils.ImportErrorType;
@@ -50,7 +50,7 @@ public interface ImportWizardHelper {
 	 * 
 	 * @return Value of property status.
 	 */
-	public abstract CustomerImportStatus getStatus();
+	public abstract ImportStatus getStatus();
 
 	/**
 	 * Setter for property charset.
@@ -58,7 +58,7 @@ public interface ImportWizardHelper {
 	 * @param status
 	 *            New value of property status.
 	 */
-	public abstract void setStatus(CustomerImportStatus status);
+	public abstract void setStatus(ImportStatus status);
 
 	/**
 	 * Getter for property csvAllColumns.

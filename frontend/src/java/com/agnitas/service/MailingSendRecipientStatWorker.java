@@ -18,16 +18,19 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingStatisticsDao;
 
 public class MailingSendRecipientStatWorker implements Callable<Map<Integer, Integer>>, Serializable {
 	private static final long serialVersionUID = 1866393658794265093L;
 
 	private ComMailingDao mailingDao;
+	private MailingStatisticsDao mailingStatisticsDao;
     private int mailingId;
     private int companyId;
 
-    public MailingSendRecipientStatWorker(ComMailingDao mailingDao, int mailingId, @VelocityCheck int companyId) {
+    public MailingSendRecipientStatWorker(ComMailingDao mailingDao, MailingStatisticsDao mailingStatisticsDao, int mailingId, @VelocityCheck int companyId) {
         this.mailingDao = mailingDao;
+        this.mailingStatisticsDao = mailingStatisticsDao;
         this.mailingId = mailingId;
         this.companyId = companyId;
     }
@@ -35,6 +38,6 @@ public class MailingSendRecipientStatWorker implements Callable<Map<Integer, Int
     @Override
 	public Map<Integer, Integer> call() throws Exception {
         Mailing mailing = mailingDao.getMailing(mailingId, companyId);
-        return mailingDao.getSendStats(mailing, companyId);
+        return mailingStatisticsDao.getSendStats(mailing, companyId);
     }
 }

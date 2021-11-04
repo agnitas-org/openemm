@@ -13,11 +13,6 @@
 <c:set var="ACTION_MOVE_MEDIA_DOWN" value="<%= ComMailingBaseAction.ACTION_MOVE_MEDIA_DOWN %>"/>
 <c:set var="ACTION_MOVE_MEDIA_UP" value="<%= ComMailingBaseAction.ACTION_MOVE_MEDIA_UP %>"/>
 
-<c:set var="isMailingEditable" value="${not mailingBaseForm.worldMailingSend}"/>
-<emm:ShowByPermission token="mailing.content.change.always">
-    <c:set var="isMailingEditable" value="${true}"/>
-</emm:ShowByPermission>
-
 <c:if test="${not mailingBaseForm.isMailingGrid}">
     <div class="tile" data-action="scroll-to">
         <div class="tile-header">
@@ -46,7 +41,7 @@
                                     <c:if test="${mediaTypeName eq 'email'}">
                                         <emm:ShowByPermission token="${mediaType.requiredPermission}">
                                             <li class="list-group-item checkbox">
-                                                <c:if test="${isMailingEditable}">
+                                                <c:if test="${IS_MAILING_EDITABLE}">
                                                     <input type="hidden" name="__STRUTS_CHECKBOX_useMediaType[${mediaTypeCode}]" value="false"/>
                                                 </c:if>
                                                 <label>
@@ -61,11 +56,11 @@
                                     <c:if test="${mediaTypeName eq 'email'}">
                                         <emm:ShowByPermission token="mediatype.email">
                                             <li class="list-group-item checkbox">
-                                                <c:if test="${isMailingEditable}">
+                                                <c:if test="${IS_MAILING_EDITABLE}">
                                                     <input type="hidden" name="__STRUTS_CHECKBOX_useMediaType[${mediaTypeCode}]" value="false"/>
                                                 </c:if>
                                                 <label>
-                                                    <agn:agnCheckbox property="useMediaType[${mediaTypeCode}]" value="true" disabled="${not isMailingEditable}" data-action="change-media" />
+                                                    <agn:agnCheckbox property="useMediaType[${mediaTypeCode}]" value="true" disabled="${not IS_MAILING_EDITABLE}" data-action="change-media" />
                                                     <bean:message key="mailing.MediaType.email"/>
                                                 </label>
                                                 <c:if test="${mailingBaseForm.useMediaType[mediaTypeCode]}">

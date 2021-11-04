@@ -16,6 +16,8 @@ import java.util.Map;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+import com.agnitas.beans.DynamicTag;
+
 public interface DynamicTagContentDao {
 	void saveDynamicContent(DynamicTagContent dynamicTagContent, String mailingCharset);
 
@@ -68,4 +70,8 @@ public interface DynamicTagContentDao {
 	boolean isContentValueNotEmpty(@VelocityCheck int companyId, int mailingId, int dynNameId);
 	
 	Map<Integer, List<Integer>> getExistingDynContentForDynName(@VelocityCheck int companyId, int mailingId, List<Integer> dynamicTags);
+
+	void saveDynamicTagContent(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception;
+
+	boolean deleteContentFromMailing(int companyId, int mailingId, int contentId);
 }

@@ -4,6 +4,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="ACTION_LIST" value="<%= ExportWizardAction.ACTION_LIST %>" />
 <c:set var="ACTION_VIEW" value="<%= ExportWizardAction.ACTION_VIEW %>" />
@@ -41,15 +42,16 @@
                     <display:column class="table-actions">
                         <html:link styleClass="hidden js-row-show" titleKey="export.ExportEdit"
                                    page="/exportwizard.do?action=${ACTION_VIEW}&exportPredefID=${exportwizard.id}"/>
-
-                        <c:set var="exportDeleteMessage" scope="page">
-                            <bean:message key="export.ExportDelete"/>
-                        </c:set>
-                        <agn:agnLink class="btn btn-regular btn-alert js-row-delete"
-                                     data-tooltip="${exportDeleteMessage}"
-                                     page="/exportwizard.do?action=${ACTION_CONFIRM_DELETE}&exportPredefID=${exportwizard.id}">
-                            <i class="icon icon-trash-o"></i>
-                        </agn:agnLink>
+						<emm:ShowByPermission token="export.delete">
+	                        <c:set var="exportDeleteMessage" scope="page">
+	                            <bean:message key="export.ExportDelete"/>
+	                        </c:set>
+	                        <agn:agnLink class="btn btn-regular btn-alert js-row-delete"
+	                                     data-tooltip="${exportDeleteMessage}"
+	                                     page="/exportwizard.do?action=${ACTION_CONFIRM_DELETE}&exportPredefID=${exportwizard.id}">
+	                            <i class="icon icon-trash-o"></i>
+	                        </agn:agnLink>
+	                	</emm:ShowByPermission>
                     </display:column>
                 </display:table>
             </div>

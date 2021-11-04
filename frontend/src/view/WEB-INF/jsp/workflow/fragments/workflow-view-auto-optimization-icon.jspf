@@ -1,5 +1,0 @@
-
-                        <emm:ShowByPermission token="campaign.autoopt" ignoreException="true">
-                            <div class="toolbarButtonLeft js-draggable-button" data-type="scABTest" title="<bean:message key='mailing.autooptimization'/>"></div>
-                            <div class="leftMenuLabel"><bean:message key="workflow.sampleCampaign.ABTest"/></div>
-                        </emm:ShowByPermission>

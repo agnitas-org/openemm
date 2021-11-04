@@ -10,10 +10,13 @@
 
 package org.agnitas.emm.springws.endpoint.component;
 
+import java.util.Objects;
+
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.UpdateAttachmentRequest;
 import org.agnitas.emm.springws.jaxb.UpdateAttachmentResponse;
@@ -27,13 +30,17 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 public class UpdateAttachmentEndpoint extends BaseEndpoint {
 
 	private ComponentService componentService;
+	private final MailingEditableCheck mailingEditableCheck;
 
-	public UpdateAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService) {
+	public UpdateAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService, final MailingEditableCheck mailingEditableCheck) {
 		this.componentService = componentService;
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
 	}
 
 	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateAttachmentRequest")
 	public @ResponsePayload UpdateAttachmentResponse updateAttachment(@RequestPayload UpdateAttachmentRequest request) throws Exception {
+		this.mailingEditableCheck.requireMailingForComponentEditable(request.getComponentID(), Utils.getUserCompany());
+		
 		UpdateAttachmentResponse response = new UpdateAttachmentResponse();
 
 		ComponentModel model = new ComponentModel();
@@ -47,4 +54,5 @@ public class UpdateAttachmentEndpoint extends BaseEndpoint {
 		componentService.updateComponent(model);
 		return response;
 	}
+
 }

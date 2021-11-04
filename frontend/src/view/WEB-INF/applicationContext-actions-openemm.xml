@@ -18,21 +18,6 @@
 	<context:component-scan base-package="org.agnitas" />
 	<context:component-scan base-package="com.agnitas" />
 
-	<bean name="/target" class="com.agnitas.web.ComTargetAction">
-		<property name="columnInfoService" ref="ColumnInfoService" />
-		<property name="recipientDao" ref="RecipientDao" />
-		<property name="targetFactory" ref="TargetFactory" />
-		<property name="targetService" ref="targetService" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="configService" ref="ConfigService" />
-		<property name="trackableLinkDao" ref="TrackableLinkDao" />
-		<property name="birtReportDao" ref="BirtReportDao" />
-		<property name="eqlFacade" ref="EqlFacade" />
-		<property name="webStorage" ref="WebStorage" />
-		<property name="mailingService" ref="MailingService" />
-		<property name="targetEqlQueryBuilder" ref="TargetEqlQueryBuilder" />
-	</bean>
-
 	<bean name="/mailingsend" class="com.agnitas.web.ComMailingSendActionBasic">
 		<property name="targetDao" ref="TargetDao" />
 		<property name="mailingDao" ref="MailingDao" />
@@ -72,6 +57,8 @@
 		<property name="mailingStopService" ref="MailingStopService" />
 		<property name="mediatypeFactory" ref="MediatypeFactory"/>
 		<property name="mailingPreviewService" ref="MailingPreviewService" />
+		<property name="mailingStatisticsDao" ref="MailingStatisticsDao" />
+		<property name="mailingParameterDao" ref="MailingParameterDao" />
 	</bean>
 
 	<bean name="/importprofile" class="org.agnitas.web.ImportProfileAction">
@@ -98,6 +85,7 @@
 		<property name="exportPredefService" ref="ExportPredefService" />
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
 		<property name="recipientExportWorkerFactory" ref="RecipientExportWorkerFactory" />
+        <property name="columnInfoService" ref="ColumnInfoService"/>
 	</bean>
 
 	<bean name="/recipient" class="com.agnitas.web.ComRecipientAction">

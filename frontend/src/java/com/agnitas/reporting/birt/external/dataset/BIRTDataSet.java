@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,7 @@ import javax.sql.DataSource;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Mediatype;
 import org.agnitas.dao.MailingStatus;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
@@ -52,7 +54,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.incrementer.MySQLMaxValueIncrementer;
 
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.emm.core.JavaMailService;
@@ -292,7 +293,8 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 					period = 1 + BigDecimal.valueOf(TimeUnit.DAYS.convert(edt.getTime() - sdt.getTime(), TimeUnit.MILLISECONDS)).intValue();
 				}
 			} catch (ParseException e) {
-				e.printStackTrace();
+				logger.error("Error calculating period", e);
+
 				period = 0;
 			}
 		}
@@ -329,7 +331,8 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 			try {
 				return formater.parse(startDate);
 			} catch (ParseException e) {
-				e.printStackTrace();
+				logger.error("Error parsing start date", e);
+
 				return null;
 			}
 		}
@@ -338,7 +341,8 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 			try {
 				return formater.parse(stopDate);
 			} catch (ParseException e) {
-				e.printStackTrace();
+				logger.error("Error parsing stop date", e);
+
 				return null;
 			}
 		}
@@ -456,16 +460,33 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return StringUtils.join(leftClause, " AND " , rightClause);
 	}
 	
-	protected int getNextTmpID() {
+	protected int getNextTmpID() throws Exception {
+		String statement = "VALUES (NEXT VALUE FOR birt_report_tmp_tbl_seq)";
 		try {
-			if (isOracleDB()) {
-				return selectInt(logger, "SELECT birt_report_tmp_tbl_seq.NEXTVAL FROM DUAL");
-			} else {
-				return new MySQLMaxValueIncrementer(getDataSource(), "birt_report_tmp_tbl_seq", "value").nextIntValue();
-			}
+			logSqlStatement(logger, "EMBEDDED: " + statement);
+			return getEmbeddedJdbcTemplate().queryForObject(statement, Integer.class);
 		} catch (Exception e) {
-			logger.error("Could not get next tmpID from database ! ", e);
-			return -1;
+			resetTempDatabase();
+			return selectEmbeddedInt(logger, statement);
+		}
+	}
+	
+	public void resetTempDatabase() {
+		try {
+			logger.info("Resetting temporary database (derby)");
+			List<String> existingTables = selectEmbedded(logger, "SELECT t.tablename FROM sys.systables t, sys.sysschemas s WHERE t.schemaid = s.schemaid AND t.tabletype = 'T'", new StringRowMapper());
+			for (String existingTable : existingTables) {
+				executeEmbedded(logger, "DROP TABLE " + existingTable);
+			}
+			
+			try {
+				getEmbeddedJdbcTemplate().execute("DROP SEQUENCE birt_report_tmp_tbl_seq RESTRICT");
+			} catch (Exception e) {
+				// Cannot cleanup old birt_report_tmp_tbl_seq in derby db, because it does not exist. For the first start of EMM statistics this is ok.
+			}
+			executeEmbedded(logger, "CREATE SEQUENCE birt_report_tmp_tbl_seq AS INT START WITH 1 MAXVALUE 999999 CYCLE");
+		} catch (Exception e) {
+			logger.error("Could not reset temp database", e);
 		}
 	}
 	
@@ -526,7 +547,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		for (Map<String, Object> row : result) {
 			int mailingId = ((Number) row.get("mailing_id")).intValue();
 			if (expireMap.get(mailingId) == null) {
-				int mailAge = ((Number) row.get("mail_age")).intValue();
+				int mailAge = Optional.ofNullable((Number) row.get("mail_age")).orElse(0).intValue();
 				expireMap.put(mailingId, bounceExpire < mailAge);
 			}
 		}
@@ -785,7 +806,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	
 	@Override
 	protected void logSqlError(Exception e, Logger childClassLogger, String statement, Object... parameter) {
-		getJavaMailService().sendExceptionMail("SQL: " + statement + "\nParameter: " + getParameterStringList(parameter), e);
+		getJavaMailService().sendExceptionMail(0, "SQL: " + statement + "\nParameter: " + getParameterStringList(parameter), e);
     	if (parameter != null && parameter.length > 0) {
     		childClassLogger.error("Error: " + e.getMessage() + "\nSQL:" + statement + "\nParameter: " + getParameterStringList(parameter), e);
     	} else {

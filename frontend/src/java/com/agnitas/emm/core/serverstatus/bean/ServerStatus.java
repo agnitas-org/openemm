@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -130,8 +131,8 @@ public class ServerStatus {
         return dbVersionStatuses;
     }
     
-    public static ServerStatus.StatusBuilder builder(String version, String installPath, Locale locale) {
-        return new ServerStatus.StatusBuilder(version, installPath, locale);
+    public static ServerStatus.StatusBuilder builder(String version, String installPath, Locale locale, final ConfigService configService) {
+        return new ServerStatus.StatusBuilder(version, installPath, locale, configService);
     }
     
     public static class StatusBuilder {
@@ -152,11 +153,13 @@ public class ServerStatus {
         private String dbType;
         private String dbUrl;
         private boolean dbConnectStatus;
+        private final ConfigService configService;
     
-        public StatusBuilder(String version, String installPath, Locale locale) {
+        public StatusBuilder(String version, String installPath, Locale locale, final ConfigService configService) {
             this.version = version;
             this.installPath = installPath;
             this.locale = locale;
+            this.configService = Objects.requireNonNull(configService);
         }
         
         public ServerStatus.StatusBuilder dateTimeSettings(SimpleDateFormat dateFormatToUse, Date startupTimeToUse, Date expirationTimeToUse) {
@@ -200,7 +203,6 @@ public class ServerStatus {
                 locale = Locale.ENGLISH;
             }
             
-            ConfigService configService = ConfigService.getInstance();
             serverStatus.licenseName = "\"" + configService.getValue(ConfigValue.System_License_Holder) + "\" (ID: " + configService.getValue(ConfigValue.System_Licence) + ", Type: " + configService.getValue(ConfigValue.System_License_Type) + ")";
             
             serverStatus.hostName = AgnUtils.getHostName();

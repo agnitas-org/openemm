@@ -48,10 +48,11 @@ public final class MobilephoneNumber {
 	private static final String normalizeAndCheck(final String s) throws NumberFormatException {
 		final String withoutSpaces = s.replace(" ", "");
 		
-		if(PATTERN.matcher(withoutSpaces).matches())
+		if(PATTERN.matcher(withoutSpaces).matches()) {
 			return withoutSpaces;
-		else
+		} else {
 			throw new NumberFormatException("Invalid mobile phone format");
+		}
 	}
 	
 	@Override

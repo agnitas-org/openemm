@@ -23,7 +23,7 @@ public enum RecipientType {
 		
 		private final String letter;
 		
-		private RecipientType(String letter) {
+		RecipientType(String letter) {
 			this.letter = letter;
 		}
 		

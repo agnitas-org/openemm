@@ -63,30 +63,25 @@
     <tiles:putList name="footerItems">
         <tiles:add>
             <button type="button" class="btn btn-large btn-primary pull-right"
-                    data-form-target='#trackableLinkForm'
-                    data-form-set='everyPositionLink: false'
+                    data-form-target="#trackableLinkForm"
+                    data-form-set="everyPositionLink: false"
                     data-action="save">
 
                 <span class="text">
                     <bean:message key="button.Save"/>
                 </span>
-                    <%--<i class="icon icon-save"></i>--%>
             </button>
         </tiles:add>
     </tiles:putList>
 
     <tiles:put name="content" type="string">
-        <c:if test="${trackableLinkForm.isMailingGrid}">
-            <div class="tile-content-padded">
-        </c:if>
-
+        <c:set var="tileContent">
         <div class="row">
             <div class="col-xs-12 row-1-1"
                  data-view-block="col-xs-12 row-1-1"
                  data-view-split="col-md-6"
                  data-view-hidden="col-xs-12 row-1-1"
                  data-controller="trackable-link-list">
-
                 <agn:agnForm id="trackableLinkForm" action="/tracklink.do" data-form="search">
                     <html:hidden property="mailingID" />
                     <html:hidden property="action" />
@@ -94,7 +89,6 @@
                     <html:hidden property="everyPositionLink" />
 
                     <div data-form-content data-action="scroll-to">
-
                         <div class="tile">
                             <div class="tile-header">
                                 <a href="#" class="headline" data-toggle-tile="#tile-trackableLinkEditOne">
@@ -102,156 +96,164 @@
                                     <bean:message key="TrackableLink.edit.one" />
                                 </a>
                                 <emm:ShowByPermission token="mailing.extend_trackable_links">
-					            	<ul class="tile-header-actions">
-                                    	<li class="dropdown">
-                                        	<a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                            	<i class="icon icon-pencil"></i>
-                                              	<span class="text"><bean:message key="bulkAction"/></span>
-                                              	<i class="icon icon-caret-down"></i>
-                                          	</a>
+                                <ul class="tile-header-actions">
+                                    <li class="dropdown">
+                                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                            <i class="icon icon-pencil"></i>
+                                            <span class="text"><bean:message key="bulkAction"/></span>
+                                            <i class="icon icon-caret-down"></i>
+                                        </a>
 
-                                          	<ul class="dropdown-menu">
-                                           		<li>
-                                                	<a href="#" data-form-confirm="${ACTION_SHOW_BULK_ACTIONS}">
-                                                    	<span class="text"><bean:message key="TrackableLink.edit"/></span>
-                                                  	</a>
-                                              	</li>
-                                              	<li>
-                                                	<a href="#" data-form-confirm="${ACTION_CONFIRM_BULK_CLEAR_EXTENSIONS}">
-                                                    	<span class="text"><bean:message key="ClearAllProperties"/></span>
-                                                  	</a>
-                                              	</li>
-                                          	</ul>
-                                  		</li>
-					              	</ul>
-								</emm:ShowByPermission>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a href="#" data-form-confirm="${ACTION_SHOW_BULK_ACTIONS}">
+                                                    <span class="text"><bean:message key="TrackableLink.edit"/></span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="#" data-form-confirm="${ACTION_CONFIRM_BULK_CLEAR_EXTENSIONS}">
+                                                    <span class="text"><bean:message key="ClearAllProperties"/></span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                                </emm:ShowByPermission>
                             </div>
                             <div id="tile-trackableLinkEditOne" class="tile-content">
                                 <div class="table-wrapper">
-                                <display:table class="table table-bordered table-striped table-hover js-table"
-                                               id="link"
-                                               list="${paginatedTrackableLinks}"
-                                               sort="external"
-                                               excludedParams="*"
-                                               requestURI="/tracklink.do?action=${ACTION_LIST}"
-                                               partialList="false"
-                                               decorator="com.agnitas.emm.core.trackablelinks.web.TrackableLinkDecorator">
+                                    <display:table class="table table-bordered table-striped table-hover js-table"
+                                                   id="link"
+                                                   list="${paginatedTrackableLinks}"
+                                                   sort="external"
+                                                   excludedParams="*"
+                                                   requestURI="/tracklink.do?action=${ACTION_LIST}"
+                                                   partialList="false"
+                                                   decorator="com.agnitas.emm.core.trackablelinks.web.TrackableLinkDecorator">
 
-                                    <!-- Prevent table controls/headers collapsing when the table is empty -->
-                                    <display:setProperty name="basic.empty.showtable" value="true"/>
+                                        <!-- Prevent table controls/headers collapsing when the table is empty -->
+                                        <display:setProperty name="basic.empty.showtable" value="true"/>
 
-                                    <display:setProperty name="paging.banner.placement" value="bottom"/>
-                                    <display:setProperty name="basic.msg.empty_list" value=""/>
-                                    <display:setProperty name="paging.banner.no_items_found" value=""/>
-                                    <display:setProperty name="basic.msg.empty_list_row" value=""/>
-
-                                    <c:choose>
-                                        <c:when test="${trackableLinkForm.isMailingGrid}">
-                                            <c:url var="editSingleLink" value="/tracklink.do">
-                                                <c:param name="action" value="${ACTION_VIEW}"/>
-                                                <c:param name="linkID" value="${link.id}"/>
-                                                <c:param name="mailingID" value="${link.mailingID}"/>
-                                                <c:param name="isMailingGrid" value="true"/>
-                                                <c:param name="templateId" value="${templateId}"/>
-                                            </c:url>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <c:url var="editSingleLink" value="/tracklink.do">
-                                                <c:param name="action" value="${ACTION_VIEW}"/>
-                                                <c:param name="linkID" value="${link.id}"/>
-                                                <c:param name="mailingID" value="${link.mailingID}"/>
-                                            </c:url>
-                                        </c:otherwise>
-                                    </c:choose>
-                                    
-                                    <display:column class="js-checkable" sortable="false" title="<input type='checkbox' data-form-bulk='bulkID' data-action='select-link'/>">
-                                        <agn:agnCheckbox property="bulkID[${link.id}]" data-action="select-link"/>
-                                    </display:column>
-
-                                    <display:column headerClass="js-table-sort" titleKey="URL" sortable="true" sortProperty="fullUrlWithExtensions">
-                                        <span class="multiline-sm-400 multiline-min-sm-150">
-                                            <a href="${link.fullUrlWithExtensions}" class="badge icon icon-share-square-o" target="_blank">
-                                            </a>
-                                            <c:if test="${link.urlModified}">
-                                                <span class="badge badge-alert">
-                                                    <bean:message key="mailing.trackablelinks.url_changed" />
-                                                </span>
-                                            </c:if>
-                                            <c:if test="${not empty link}">
-                                                ${link.fullUrlWithExtensions}
-                                            </c:if>
-                                        </span>
-                                    </display:column>
-
-                                    <display:column headerClass="js-table-sort" class="align-top" titleKey="Description" sortable="true" sortProperty="description">
-                                        <agn:agnText property="linkItemName[${link.id}]" styleClass="form-control"/>
-                                    </display:column>
-
-                                    <display:column class="align-top" titleKey="Trackable" sortable="false">
-                                        <agn:agnSelect property="linkItemTrackable[${link.id}]" styleClass="form-control">
-                                            <agn:agnOption value="${TRACKABLE_NONE}"><bean:message key="mailing.Not_Trackable" /></agn:agnOption>
-                                            <agn:agnOption value="${TRACKABLE_ONLY_TEXT}"><bean:message key="Only_Text_Version" /></agn:agnOption>
-                                            <agn:agnOption value="${TRACKABLE_ONLY_HTML}"><bean:message key="Only_HTML_Version" /></agn:agnOption>
-                                            <agn:agnOption value="${TRACKABLE_TEXT_HTML}"><bean:message key="Text_and_HTML_Version" /></agn:agnOption>
-                                        </agn:agnSelect>
-                                    </display:column>
-
-                                    <display:column class="align-top" titleKey="action.Action" sortable="false">
-                                        <agn:agnSelect property="linkItemAction[${link.id}]" styleClass="form-control js-select">
-                                            <agn:agnOption value="0"><bean:message key="settings.No_Action" /></agn:agnOption>
-                                            <logic:iterate id="action" name="notFormActions" scope="request">
-                                                <agn:agnOption value="${action.id}">${action.shortname}</agn:agnOption>
-                                            </logic:iterate>
-                                        </agn:agnSelect>
-                                    </display:column>
-
-                                    <display:column class="js-checkable align-center" titleKey="AdminLink" sortable="false">
-                                        <label class="toggle">
-                                            <agn:agnCheckbox property="adminLink[${link.id}]"/>
-                                            <div class="toggle-control"></div>
-                                        </label>
-                                    </display:column>
-
-                                    <c:set var="deepTrackingTitle">
-                                        <bean:message key="deeptracking"/>
-                                        <button class="icon icon-help" data-help="help_${helplanguage}/mailing/trackable_links/TrackingCookie.xml" tabindex="-1" type="button"></button>
-                                    </c:set>
-
-                                    <display:column class="align-top" sortable="false" title="${deepTrackingTitle}">
-                                        <agn:agnSelect property="linkItemDeepTracking[${link.id}]" styleClass="form-control">
-                                            <agn:agnOption value="0"><bean:message key="TrackableLink.deepTrack.non" /></agn:agnOption>
-                                            <agn:agnOption value="1"><bean:message key="TrackableLink.deepTrack.cookie" /></agn:agnOption>
-                                        </agn:agnSelect>
-                                        <a href="${editSingleLink}" class="hidden js-row-show"></a>
-                                    </display:column>
+                                        <display:setProperty name="paging.banner.placement" value="bottom"/>
+                                        <display:setProperty name="basic.msg.empty_list" value=""/>
+                                        <display:setProperty name="paging.banner.no_items_found"><div></display:setProperty> <%-- HTML breaks without this tag--%>
+                                        <display:setProperty name="basic.msg.empty_list_row" value=""/>
 
 
-                                    <emm:ShowByPermission token="mailing.extend_trackable_links">
-                                        <display:column class="align-top" titleKey="mailing.extend_trackable_link" sortable="false">
-                                            <c:if test="${not empty link}">
-                                                <c:set var="linkExtensionCount" value="${link.linkExtensionCount}"/>
-                                            </c:if>
-                                            <c:choose>
-                                                <c:when test="${linkExtensionCount > 0}">
-                                                    <span class="badge badge-success">
-                                                        <bean:message key="default.Yes" /> (${linkExtensionCount})
+                                        <display:column class="js-checkable" sortable="false" title="<input type='checkbox' data-form-bulk='bulkID' data-action='select-link'/>">
+                                            <agn:agnCheckbox property="bulkID[${link.id}]" data-action="select-link"/>
+                                        </display:column>
+
+                                        <display:column headerClass="js-table-sort" titleKey="URL" sortable="true" sortProperty="fullUrlWithExtensions">
+                                            <span class="multiline-sm-400 multiline-min-sm-150">
+                                                <a href="${link.fullUrlWithExtensions}" class="badge icon icon-share-square-o" target="_blank">
+                                                </a>
+                                                <c:if test="${link.urlModified}">
+                                                    <span class="badge badge-alert">
+                                                        <bean:message key="mailing.trackablelinks.url_changed" />
                                                     </span>
+                                                </c:if>
+                                                <c:if test="${not empty link}">
+                                                    ${link.fullUrlWithExtensions}
+                                                </c:if>
+                                            </span>
+                                        </display:column>
+
+                                        <display:column headerClass="js-table-sort" class="align-top" titleKey="Description" sortable="true" sortProperty="description">
+                                            <agn:agnText property="linkItemName[${link.id}]" styleClass="form-control"/>
+                                        </display:column>
+
+                                        <display:column class="align-top" titleKey="Trackable" sortable="false">
+                                            <c:choose>
+                                                <c:when test="${link.usage ge 0}">
+                                                    <agn:agnSelect property="linkItemTrackable[${link.id}]" styleClass="form-control">
+                                                        <agn:agnOption value="${TRACKABLE_NONE}"><bean:message key="mailing.Not_Trackable" /></agn:agnOption>
+                                                        <agn:agnOption value="${TRACKABLE_ONLY_TEXT}"><bean:message key="Only_Text_Version" /></agn:agnOption>
+                                                        <agn:agnOption value="${TRACKABLE_ONLY_HTML}"><bean:message key="Only_HTML_Version" /></agn:agnOption>
+                                                        <agn:agnOption value="${TRACKABLE_TEXT_HTML}"><bean:message key="Text_and_HTML_Version" /></agn:agnOption>
+                                                    </agn:agnSelect>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <span class="badge">
-                                                        <bean:message key="No" />
-                                                    </span>
+                                                    <bean:message key="Text_and_HTML_Version" />
                                                 </c:otherwise>
                                             </c:choose>
                                         </display:column>
-                                        <c:set var="EXTEND_LINK_ACTION" value="${ACTION_SET_EXTEND_LINKS}" scope="page" />
-                                    </emm:ShowByPermission>
 
-                                </display:table>
+                                        <display:column class="align-top" titleKey="action.Action" sortable="false">
+                                            <agn:agnSelect property="linkItemAction[${link.id}]" styleClass="form-control js-select">
+                                                <agn:agnOption value="0"><bean:message key="settings.No_Action" /></agn:agnOption>
+                                                <logic:iterate id="action" name="notFormActions" scope="request">
+                                                    <agn:agnOption value="${action.id}">${action.shortname}</agn:agnOption>
+                                                </logic:iterate>
+                                            </agn:agnSelect>
+                                        </display:column>
+
+                                        <display:column class="js-checkable align-center" titleKey="AdminLink" sortable="false">
+                                            <label class="toggle">
+                                                <agn:agnCheckbox property="adminLink[${link.id}]"/>
+                                                <div class="toggle-control"></div>
+                                            </label>
+                                        </display:column>
+
+                                        <c:set var="deepTrackingTitle">
+                                            <bean:message key="deeptracking"/>
+                                            <button class="icon icon-help" data-help="help_${helplanguage}/mailing/trackable_links/TrackingCookie.xml" tabindex="-1" type="button"></button>
+                                        </c:set>
+
+                                        <display:column class="align-top" sortable="false" title="${deepTrackingTitle}">
+                                            <agn:agnSelect property="linkItemDeepTracking[${link.id}]" styleClass="form-control">
+                                                <agn:agnOption value="0"><bean:message key="TrackableLink.deepTrack.non" /></agn:agnOption>
+                                                <agn:agnOption value="1"><bean:message key="TrackableLink.deepTrack.cookie" /></agn:agnOption>
+                                            </agn:agnSelect>
+                                        </display:column>
+
+                                        <emm:ShowByPermission token="mailing.extend_trackable_links">
+                                            <display:column class="align-top" titleKey="mailing.extend_trackable_link" sortable="false">
+                                                <c:if test="${not empty link}">
+                                                    <c:set var="linkExtensionCount" value="${link.linkExtensionCount}"/>
+                                                </c:if>
+                                                <c:choose>
+                                                    <c:when test="${linkExtensionCount > 0}">
+                                                        <span class="badge badge-success">
+                                                            <bean:message key="default.Yes" /> (${linkExtensionCount})
+                                                        </span>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span class="badge">
+                                                            <bean:message key="No" />
+                                                        </span>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </display:column>
+                                            <c:set var="EXTEND_LINK_ACTION" value="${ACTION_SET_EXTEND_LINKS}" scope="page" />
+                                        </emm:ShowByPermission>
+
+                                        <display:column class="hidden" headerClass="hidden">
+                                            <c:choose>
+                                                <c:when test="${trackableLinkForm.isMailingGrid}">
+                                                    <c:url var="editSingleLink" value="/tracklink.do">
+                                                        <c:param name="action" value="${ACTION_VIEW}"/>
+                                                        <c:param name="linkID" value="${link.id}"/>
+                                                        <c:param name="mailingID" value="${link.mailingID}"/>
+                                                        <c:param name="isMailingGrid" value="true"/>
+                                                        <c:param name="templateId" value="${templateId}"/>
+                                                    </c:url>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <c:url var="editSingleLink" value="/tracklink.do">
+                                                        <c:param name="action" value="${ACTION_VIEW}"/>
+                                                        <c:param name="linkID" value="${link.id}"/>
+                                                        <c:param name="mailingID" value="${link.mailingID}"/>
+                                                    </c:url>
+                                                </c:otherwise>
+                                            </c:choose>
+                                            <a href="${editSingleLink}" class="hidden js-row-show"></a>
+                                        </display:column>
+
+                                    </display:table>
                                 </div>
                             </div>
                             <!-- Tile Content END -->
-
                         </div>
                         <!-- Tile END -->
 
@@ -264,7 +266,6 @@
                             </div>
 
                             <div id="tile-trackableLinkEditAll" class="tile-content tile-content-forms" data-action="elem-edited">
-
                                 <%@include file="trackablelinks/fragments/settings/link-extensions.jspf" %>
 
                                 <div class="form-group">
@@ -351,18 +352,13 @@
                                         <html:text property="intelliAdIdString" maxlength="500" styleId="intelliAdIdString" styleClass="form-control" />
                                     </div>
                                 </div>
-
                             </div>
                             <!-- Tile Content END -->
-
                         </div>
                         <!-- Tile END -->
-
                     </div>
-
                 </agn:agnForm>
             </div>
-            <!-- Col END -->
 
             <emm:ShowByPermission token="mailing.send.show">
                 <%--@elvariable id="mailingBaseForm" type="org.agnitas.web.forms.MailingBaseForm"--%>
@@ -375,11 +371,22 @@
                     <div data-load="${onLoadUrl}" data-load-target="#preview"></div>
                 </div>
             </emm:ShowByPermission>
-        </div>
 
-        <c:if test="${trackableLinkForm.isMailingGrid}">
-            </div>
-        </c:if>
+        </div>
+    </c:set>
+
+
+        <c:choose>
+            <c:when test="${trackableLinkForm.isMailingGrid}">
+                <div class="tile-content-padded">
+                    ${tileContent}
+                </div>
+            </c:when>
+
+            <c:otherwise>
+                ${tileContent}
+            </c:otherwise>
+        </c:choose>
     </tiles:put>
 </tiles:insert>
 

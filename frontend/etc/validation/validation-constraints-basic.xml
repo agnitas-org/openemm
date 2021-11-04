@@ -5,7 +5,7 @@
                      version="2.0">
     <bean class="org.agnitas.emm.core.mailinglist.service.MailinglistModel">
         <field name="companyId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{company.id}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailinglist.service.MailinglistModel$AddGroup</value>
@@ -16,7 +16,7 @@
             </constraint>
         </field>
         <field name="shortname">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{shortname}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailinglist.service.MailinglistModel$AddGroup</value>
@@ -25,7 +25,7 @@
             </constraint>
         </field>
         <field name="mailinglistId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{mailinglist.id}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailinglist.service.MailinglistModel$UpdateGroup</value>
@@ -35,78 +35,9 @@
         </field>
     </bean>
     
-    <bean class="org.agnitas.emm.core.dyncontent.service.ContentModel">
-        <field name="companyId">
-            <constraint annotation="javax.validation.constraints.Positive">
-                <message>err.isPositive{company.id}</message>
-                <groups>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$DeleteGroup</value>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$GetGroup</value>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$UpdateGroup</value>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$ListContentBlocksOrNamesGroup</value>
-                </groups>
-            </constraint>
-        </field>
-        <field name="contentId">
-            <constraint annotation="javax.validation.constraints.Positive">
-                <message>err.isPositive{content.id}</message>
-                <groups>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$DeleteGroup</value>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$GetGroup</value>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$UpdateGroup</value>
-                </groups>
-            </constraint>
-        </field>
-        <field name="mailingId">
-            <constraint annotation="javax.validation.constraints.Positive">
-                <message>err.isPositive{mailing.id}</message>
-                <groups>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$ListContentBlocksOrNamesGroup</value>
-                </groups>
-            </constraint>
-        </field>
-        <field name="blockName">
-            <constraint annotation="javax.validation.constraints.NotBlank">
-                <message>err.required{blockName}</message>
-                <groups>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$AddGroup</value>
-                </groups>
-            </constraint>
-        </field>
-        <field name="targetId">
-            <constraint annotation="javax.validation.constraints.PositiveOrZero">
-                <message>err.isPositiveOrZero{target.id}</message>
-                <groups>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$UpdateGroup</value>
-                </groups>
-            </constraint>
-        </field>
-        <field name="order">
-            <constraint annotation="javax.validation.constraints.Positive">
-                <message>err.isPositive{order}</message>
-                <groups>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$UpdateGroup</value>
-                </groups>
-            </constraint>
-        </field>
-        <field name="content">
-            <constraint annotation="javax.validation.constraints.NotBlank">
-                <message>err.required{content}</message>
-                <groups>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.dyncontent.service.ContentModel$UpdateGroup</value>
-                </groups>
-            </constraint>
-        </field>
-    </bean>
-
     <bean class="org.agnitas.emm.core.mailing.service.MailingModel">
         <field name="companyId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{company.id}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
@@ -120,7 +51,7 @@
             </constraint>
         </field>
         <field name="shortname">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{shortname}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
@@ -128,7 +59,7 @@
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$UpdateGroup</value>
                 </groups>
             </constraint>
-            <constraint annotation="javax.validation.constraints.Size">
+            <constraint annotation="jakarta.validation.constraints.Size">
                 <message>err.maxLength{shortname}{99}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
@@ -138,7 +69,7 @@
             </constraint>
         </field>
         <field name="mailinglistId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{mailinglist.id}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
@@ -157,7 +88,7 @@
             </constraint>
         </field>
         <field name="targetModeString">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{targetMode}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
@@ -173,7 +104,7 @@
             </constraint>
         </field>
         <field name="mailingTypeString">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{mailingType}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
@@ -189,7 +120,7 @@
             </constraint>
         </field>
         <field name="subject">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{subject}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
@@ -198,14 +129,14 @@
             </constraint>
         </field>
         <field name="senderAddress">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{senderAddress}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$UpdateGroup</value>
                 </groups>
             </constraint>
-            <constraint annotation="javax.validation.constraints.Email">
+            <constraint annotation="jakarta.validation.constraints.Email">
                 <message>err.isEmail{senderAddress}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
@@ -214,14 +145,14 @@
             </constraint>
         </field>
         <field name="replyToAddress">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{replyToAddress}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$UpdateGroup</value>
                 </groups>
             </constraint>
-            <constraint annotation="javax.validation.constraints.Email">
+            <constraint annotation="jakarta.validation.constraints.Email">
                 <message>err.isEmail{replyToAddress}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
@@ -230,7 +161,7 @@
             </constraint>
         </field>
         <field name="charset">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{charset}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
@@ -239,7 +170,7 @@
             </constraint>
         </field>
         <field name="formatString">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{format}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
@@ -255,7 +186,7 @@
             </constraint>
         </field>
         <field name="onePixelString">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{onePixel}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddGroup</value>
@@ -271,7 +202,7 @@
             </constraint>
         </field>
         <field name="templateId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{template.id}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$AddFromTemplateGroup</value>
@@ -279,7 +210,7 @@
             </constraint>
         </field>
         <field name="mailingId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{mailing.id}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$GetGroup</value>
@@ -289,7 +220,7 @@
             </constraint>
         </field>
         <field name="maildropStatusString">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{maildropStatus}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$SendGroup</value>
@@ -303,7 +234,7 @@
             </constraint>
         </field>
         <field name="sendDate">
-            <constraint annotation="javax.validation.constraints.NotNull">
+            <constraint annotation="jakarta.validation.constraints.NotNull">
                 <message>err.required{sendDate}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$SendGroup</value>
@@ -311,7 +242,7 @@
             </constraint>
         </field>
         <field name="blocksize">
-            <constraint annotation="javax.validation.constraints.PositiveOrZero">
+            <constraint annotation="jakarta.validation.constraints.PositiveOrZero">
                 <message>err.isPositiveOrZero{blocksize}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$SendGroup</value>
@@ -319,7 +250,7 @@
             </constraint>
         </field>
         <field name="stepping">
-            <constraint annotation="javax.validation.constraints.PositiveOrZero">
+            <constraint annotation="jakarta.validation.constraints.PositiveOrZero">
                 <message>err.isPositiveOrZero{stepping}</message>
                 <groups>
                     <value>org.agnitas.emm.core.mailing.service.MailingModel$SendGroup</value>
@@ -330,7 +261,7 @@
 
     <bean class="org.agnitas.emm.core.binding.service.BindingModel">
         <field name="companyId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{company.id}</message>
                 <groups>
                     <value>org.agnitas.emm.core.binding.service.BindingModel$SetGroup</value>
@@ -340,7 +271,7 @@
             </constraint>
         </field>
         <field name="customerId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{customer.id}</message>
                 <groups>
                     <value>org.agnitas.emm.core.binding.service.BindingModel$SetGroup</value>
@@ -350,7 +281,7 @@
             </constraint>
         </field>
         <field name="mailinglistId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{mailinglist.id}</message>
                 <groups>
                     <value>org.agnitas.emm.core.binding.service.BindingModel$SetGroup</value>
@@ -359,7 +290,7 @@
             </constraint>
         </field>
         <field name="mediatype">
-            <constraint annotation="javax.validation.constraints.Min">
+            <constraint annotation="jakarta.validation.constraints.Min">
                 <message>err.intRange{mediatype}{0}{4}</message>
                 <groups>
                     <value>org.agnitas.emm.core.binding.service.BindingModel$SetGroup</value>
@@ -367,7 +298,7 @@
                 </groups>
                 <element name="value">0</element>
             </constraint>
-            <constraint annotation="javax.validation.constraints.Max">
+            <constraint annotation="jakarta.validation.constraints.Max">
                 <message>err.intRange{mediatype}{0}{4}</message>
                 <groups>
                     <value>org.agnitas.emm.core.binding.service.BindingModel$SetGroup</value>
@@ -377,13 +308,13 @@
             </constraint>
         </field>
         <field name="userType">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{userType}</message>
                 <groups>
                     <value>org.agnitas.emm.core.binding.service.BindingModel$SetGroup</value>
                 </groups>
             </constraint>
-            <constraint annotation="javax.validation.constraints.Size">
+            <constraint annotation="jakarta.validation.constraints.Size">
                 <message>err.maxLength{userType}{1}</message>
                 <groups>
                     <value>org.agnitas.emm.core.binding.service.BindingModel$SetGroup</value>
@@ -392,7 +323,7 @@
             </constraint>
         </field>
         <field name="remark">
-            <constraint annotation="javax.validation.constraints.Size">
+            <constraint annotation="jakarta.validation.constraints.Size">
                 <message>err.maxLength{remark}{150}</message>
                 <groups>
                     <value>org.agnitas.emm.core.binding.service.BindingModel$SetGroup</value>
@@ -401,7 +332,7 @@
             </constraint>
         </field>
         <field name="exitMailingId">
-            <constraint annotation="javax.validation.constraints.PositiveOrZero">
+            <constraint annotation="jakarta.validation.constraints.PositiveOrZero">
                 <message>err.isPositiveOrZero{exit.mailing.id}</message>
                 <groups>
                     <value>org.agnitas.emm.core.binding.service.BindingModel$SetGroup</value>
@@ -412,7 +343,7 @@
     
     <bean class="org.agnitas.emm.core.recipient.service.RecipientModel">
         <field name="companyId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{company.id}</message>
                 <groups>
                     <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
@@ -422,7 +353,7 @@
             </constraint>
         </field>
         <field name="customerId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{customer.id}</message>
                 <groups>
                     <value>org.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
@@ -431,13 +362,13 @@
             </constraint>
         </field>
         <getter name="gender">
-            <constraint annotation="javax.validation.constraints.NotNull">
+            <constraint annotation="jakarta.validation.constraints.NotNull">
                 <message>err.required{gender}</message>
                 <groups>
                     <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
                 </groups>
             </constraint>
-            <constraint annotation="javax.validation.constraints.Min">
+            <constraint annotation="jakarta.validation.constraints.Min">
                 <message>err.intRange{gender}{0}{5}</message>
                 <groups>
                     <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
@@ -445,7 +376,7 @@
                 </groups>
                 <element name="value">0</element>
             </constraint>
-            <constraint annotation="javax.validation.constraints.Max">
+            <constraint annotation="jakarta.validation.constraints.Max">
                 <message>err.intRange{gender}{0}{5}</message>
                 <groups>
                     <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
@@ -455,13 +386,13 @@
             </constraint>
         </getter>
         <getter name="email">
-            <constraint annotation="javax.validation.constraints.NotBlank">
+            <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{email}</message>
                 <groups>
                     <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
                 </groups>
             </constraint>
-            <constraint annotation="javax.validation.constraints.Email">
+            <constraint annotation="jakarta.validation.constraints.Email">
                 <message>err.isEmail{email}</message>
                 <groups>
                     <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
@@ -470,13 +401,13 @@
             </constraint>
         </getter>
         <getter name="mailtype">
-            <constraint annotation="javax.validation.constraints.NotNull">
+            <constraint annotation="jakarta.validation.constraints.NotNull">
                 <message>err.required{mailtype}</message>
                 <groups>
                     <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
                 </groups>
             </constraint>
-            <constraint annotation="javax.validation.constraints.Min">
+            <constraint annotation="jakarta.validation.constraints.Min">
                 <message>err.intRange{mailtype}{0}{2}</message>
                 <groups>
                     <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
@@ -484,7 +415,7 @@
                 </groups>
                 <element name="value">0</element>
             </constraint>
-            <constraint annotation="javax.validation.constraints.Max">
+            <constraint annotation="jakarta.validation.constraints.Max">
                 <message>err.intRange{mailtype}{0}{2}</message>
                 <groups>
                     <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
@@ -497,12 +428,12 @@
     
     <bean class="org.agnitas.emm.core.dynname.service.NameModel">
         <field name="companyId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{company.id}</message>
             </constraint>
         </field>
         <field name="mailingId">
-            <constraint annotation="javax.validation.constraints.Positive">
+            <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{mailing.id}</message>
             </constraint>
         </field>

@@ -1,0 +1,20 @@
+This directory contains all libs used in EMM code (productive, testing, ...) 
+migrated to JakartaEE.
+
+To migrate libs, just run migrate-libs.sh.
+
+(I know, that not all libraries use JEE classes, but for faster switching to JakartaEE
+all libs are processed by the migration tool. Libs, that do not use JEE are not changed
+by this tool.)
+
+
+As long as code is compiled against Tomcat 9 runtime libraries, nothing must be changed.
+
+After switching to Tomcat 10 runtime libraries, the libs in ${project-base}/lib/ and 
+${project-base}/lib_testing/ must replaced by the corresponding files in 
+${project-base}/lib_jakartaee/lib and ${project-base}/lib_jakartaee/lib_testing/.
+
+Switching to Tomcat 10 also requires changes in the EMM source code:
+Simply replace all occurances of
+- "import jakarta.servlet" by "import jakarta.servlet" and
+- "import jakarta.mail" by "import jakarta.mail"

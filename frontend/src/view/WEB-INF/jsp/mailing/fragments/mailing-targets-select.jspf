@@ -62,10 +62,7 @@
                         <c:set var="targetLink" value=""/>
                         <c:if test="${not target.accessLimitation}">
                             <%-- Build link to target group editor --%>
-                            <c:url var="targetLink" value="/targetQB.do">
-                                <c:param name="method" value="show"/>
-                                <c:param name="targetID" value="${target.id}"/>
-                            </c:url>
+                            <c:url var="targetLink" value="/target/${target.id}/view.action" />
                         </c:if>
 
                         <agn:agnOption value="${target.id}"
@@ -102,10 +99,7 @@
                         <c:set var="targetLink" value=""/>
                         <c:if test="${not target.accessLimitation}">
                             <%-- Build link to target group editor --%>
-                            <c:url var="targetLink" value="/targetQB.do">
-                                <c:param name="method" value="show"/>
-                                <c:param name="targetID" value="${target.id}"/>
-                            </c:url>
+                            <c:url var="targetLink" value="/target/${target.id}/view.action" />
                         </c:if>
 
                         <agn:agnOption value="${target.id}"

@@ -354,4 +354,8 @@ public interface ImportProfile {
 	void setMailinglistsAll(boolean allMailinglists);
 	
 	boolean isMailinglistsAll();
+
+    Map<Integer, String> getGenderMappingsToSave();
+
+    void setGenderMappingsToSave(Map<Integer, String> genderMappingsToSave);
 }

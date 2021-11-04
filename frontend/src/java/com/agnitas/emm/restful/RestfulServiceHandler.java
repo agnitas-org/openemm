@@ -10,9 +10,11 @@
 
 package com.agnitas.emm.restful;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
@@ -20,9 +22,13 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.ComAdmin;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 public interface RestfulServiceHandler {
 	ResponseType getResponseType();
-	void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, String requestDataTempFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod) throws Exception;
+	void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataTempFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception;
 	RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception;
 	static String[] getRestfulContext(HttpServletRequest request, String namespace, int minimumItems, int maximumItems) throws Exception {
 		String requestUri = request.getRequestURI();
@@ -58,6 +64,14 @@ public interface RestfulServiceHandler {
 			} else {
 				return restfulContext;
 			}
+		}
+	}
+	
+	static InputStream getRequestDataStream(byte[] requestData, File requestDataFile) throws FileNotFoundException {
+		if (requestData != null) {
+			return new ByteArrayInputStream(requestData);
+		} else {
+			return new FileInputStream(requestDataFile);
 		}
 	}
 }

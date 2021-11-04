@@ -46,6 +46,7 @@ It is also possible to sync several elements at once - simply chain the selector
 (function(){
 
   var Action = AGN.Lib.Action;
+  var FormBuilder = AGN.Lib.FormBuilder.FormBuilder;
 
   Action.new({'click change': '[data-sync-from]'}, function() {
     var sources = this.el.data('sync-from').split(/,\s?/),
@@ -56,19 +57,22 @@ It is also possible to sync several elements at once - simply chain the selector
           $target = $(targets[index]),
           val = $source.val(),
           id = $target.attr('id'),
-          editor = $target.data('_editor');
+          editor = $target.data('_editor'),
+        select = $target.data('select2');
 
       if (window.CKEDITOR && CKEDITOR.instances[id]) {
         CKEDITOR.instances[id].setData(val);
       } else if (editor) {
-         editor.val(val);
+        editor.val(val);
+      } else if(select) {
+        $target.select2('val', val);
+      } else if(FormBuilder.isCreated('#' + id)) {
+        FormBuilder.get('#' + id).setJson(FormBuilder.get(source).getJson());
       } else {
         $target.val(val);
       }
 
     })
-
-
   });
 
   // prevent navigation on full sync action links

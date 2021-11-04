@@ -27,6 +27,7 @@ import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.blacklist.service.validation.BlacklistModelValidator;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -207,7 +208,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 	
 	@Override
 	public boolean blacklistCheck(String email, @VelocityCheck int companyId) {
-		return blacklistDao.blacklistCheck(email, companyId);
+		return blacklistDao.blacklistCheck(StringUtils.trimToEmpty(email), companyId);
 	}
 	
 	@Override

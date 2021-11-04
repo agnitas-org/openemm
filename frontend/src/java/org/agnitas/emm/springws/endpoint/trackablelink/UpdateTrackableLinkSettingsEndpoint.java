@@ -12,8 +12,10 @@ package org.agnitas.emm.springws.endpoint.trackablelink;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.UpdateTrackableLinkSettingsRequest;
 import org.agnitas.emm.springws.jaxb.UpdateTrackableLinkSettingsRequest.LinkExtensions;
@@ -32,14 +34,18 @@ import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 @Endpoint
 public class UpdateTrackableLinkSettingsEndpoint extends BaseEndpoint {
 
-    private ComTrackableLinkService trackableLinkService;
+    private final ComTrackableLinkService trackableLinkService;
+    private final MailingEditableCheck mailingEditableCheck;
 
-    public UpdateTrackableLinkSettingsEndpoint(ComTrackableLinkService trackableLinkService) {
-        this.trackableLinkService = trackableLinkService;
+    public UpdateTrackableLinkSettingsEndpoint(ComTrackableLinkService trackableLinkService, final MailingEditableCheck mailingEditableCheck) {
+        this.trackableLinkService = Objects.requireNonNull(trackableLinkService);
+        this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
     }
 
     @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateTrackableLinkSettingsRequest")
     public @ResponsePayload UpdateTrackableLinkSettingsResponse updateTrackableLinkSettingsResponse(@RequestPayload UpdateTrackableLinkSettingsRequest request) throws Exception {
+    	this.mailingEditableCheck.requireMailingForTrackableLinkEditable(request.getUrlID(), Utils.getUserCompany());
+    	
         UpdateTrackableLinkSettingsResponse response = new UpdateTrackableLinkSettingsResponse();
 
         TrackableLinkModel trackableLinkModel = getTrackableLinkModel(request);

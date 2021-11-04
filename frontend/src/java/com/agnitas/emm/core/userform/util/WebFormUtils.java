@@ -21,8 +21,6 @@ public class WebFormUtils {
     private static final String IMAGE_SRC_PATTERN_NO_CACHE = "{rdir-domain}formImage/nc/{license-id}/{company-id}/{form-id}/{name}";
     private static final String IMAGE_THUMBNAIL_PATTERN = "{rdir-domain}formImage/thb/{company-id}/{form-id}/{name}";
 
-    private static final String FORM_FULL_VIEW_PATTERN = "{rdir-domain}form.action?agnCI={company-id}&agnFN={user-form-name}&agnUID={uid}";
-
 	/**
 	 * Gets the form image link.
 	 *
@@ -34,6 +32,7 @@ public class WebFormUtils {
 	 * @param noCache the no caching
 	 * @return the form image link
 	 */
+    @Deprecated // TODO Unused?
 	public static String getFormImageLink(String rdirDomain, int licenceId, @VelocityCheck int companyId, int formId, String formName, boolean noCache) {
 		return getImageSrcPattern(rdirDomain, licenceId, companyId, formId, noCache)
             .replace("{name}", formName);
@@ -48,9 +47,30 @@ public class WebFormUtils {
 	 * @param formName the name
 	 * @param noCache the no caching
 	 * @return the form image link
+	 * 
+	 * @see #getFormImageLink(String, int, int, String, boolean, ConfigService)
 	 */
+    @Deprecated // TODO Unused?
 	public static String getFormImageLink(String rdirDomain, int companyId, int formId, String formName, boolean noCache) {
-		int licenseId = ConfigService.getInstance().getLicenseID();
+		return getFormImageLink(rdirDomain, companyId, formId, formName, noCache, ConfigService.getInstance());
+	}
+
+    /**
+	 * Gets the form image link without licenceId
+	 *
+	 * @param rdirDomain the rdir domain
+	 * @param companyId the company id
+	 * @param formId the form id
+	 * @param formName the name
+	 * @param noCache the no caching
+	 * @param configService configuration service
+	 * 
+	 * @return the form image link
+	 */
+    @Deprecated // TODO Unused?
+	public static String getFormImageLink(String rdirDomain, int companyId, int formId, String formName, boolean noCache, final ConfigService configService) {
+		final int licenseId = configService.getLicenseID();
+		
 		return getFormImageLink(rdirDomain, licenseId, companyId, formId, formName, noCache);
 	}
 
@@ -62,9 +82,28 @@ public class WebFormUtils {
 	 * @param formId the form id
 	 * @param name the name
 	 * @return the form image link
+	 * 
+	 * @see #getFormImageThumbnailLink(String, int, int, String, ConfigService)
 	 */
-	public static String getFormImageThumbnailLink(String rdirDomain, int companyId, int formId, String name) {
-		int licenceId = ConfigService.getInstance().getLicenseID();
+    @Deprecated // TODO Unused?
+	public static String getFormImageThumbnailLink(final String rdirDomain, final int companyId, final int formId, final String name) {
+		return getFormImageThumbnailLink(rdirDomain, companyId, formId, name, ConfigService.getInstance());
+	}
+
+	/**
+	 * Gets the form image thumbnail link.
+	 *
+	 * @param rdirDomain the rdir domain
+	 * @param companyId the company id
+	 * @param formId the form id
+	 * @param name the name
+	 * @param configService configuration service
+	 * @return the form image link
+	 */
+    @Deprecated // TODO Unused?
+	public static String getFormImageThumbnailLink(String rdirDomain, int companyId, int formId, String name, final ConfigService configService) {
+		final int licenceId = configService.getLicenseID();
+		
 		return getImageSrcPattern(IMAGE_THUMBNAIL_PATTERN, rdirDomain, licenceId, companyId, formId)
 				.replace("{name}", name);
 	}
@@ -88,16 +127,4 @@ public class WebFormUtils {
                 .replace("{rdir-domain}", getNormalizedRdirDomain(rdirDomain))
                 .replace("{company-id}", Integer.toString(companyId));
     }
-
-    public static String getFormFullViewLink(String rdirDomain, @VelocityCheck int companyId, String formName, String uid) {
-		return getFormFullViewPattern(rdirDomain, companyId, uid)
-				.replace("{user-form-name}", formName);
-	}
-
-    public static String getFormFullViewPattern(String rdirDomain, @VelocityCheck int companyId, String uid) {
-		return FORM_FULL_VIEW_PATTERN
-				.replace("{rdir-domain}", getNormalizedRdirDomain(rdirDomain))
-				.replace("{company-id}", Integer.toString(companyId))
-				.replace("{uid}", uid);
-	}
 }

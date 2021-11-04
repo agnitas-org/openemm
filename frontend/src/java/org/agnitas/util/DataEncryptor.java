@@ -60,7 +60,6 @@ public class DataEncryptor {
 		} else {
 			saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
 		}
-		@SuppressWarnings("unchecked")
 		List<String> lines = FileUtils.readLines(new File(saltFilePath), "UTF-8");
 		String encryptorPasswordString = lines.get(0).replace("“", "\""); // Replace some not allowed non-ascii password chars
 		encryptorPassword = encryptorPasswordString.toCharArray();

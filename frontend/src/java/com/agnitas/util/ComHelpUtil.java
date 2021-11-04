@@ -12,7 +12,7 @@ package com.agnitas.util;
 
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.dao.DocMappingDao;
 import org.agnitas.emm.core.commons.util.ConfigService;

@@ -10,8 +10,41 @@
 
 package com.agnitas.emm.core.action.operations;
 
+import java.util.Set;
+
 public class ActionOperationUnsubscribeCustomerParameters extends AbstractActionOperationParameters {
+
+    private Set<Integer> mailinglistIds;
+    
+    private boolean allMailinglistsSelected;
+    
+    private boolean additionalMailinglists;
+    
 	public ActionOperationUnsubscribeCustomerParameters() {
 		super(ActionOperationType.UNSUBSCRIBE_CUSTOMER);
 	}
+
+    public Set<Integer> getMailinglistIds() {
+        return mailinglistIds;
+    }
+
+    public void setMailinglistIds(Set<Integer> mailinglistIds) {
+        this.mailinglistIds = mailinglistIds;
+    }
+    
+    public boolean isAllMailinglistsSelected() {
+        return allMailinglistsSelected;
+    }
+
+    public void setAllMailinglistsSelected(boolean allMailinglistsSelected) {
+        this.allMailinglistsSelected = allMailinglistsSelected;
+    }
+
+    public boolean isAdditionalMailinglists() {
+        return additionalMailinglists;
+    }
+
+    public void setAdditionalMailinglists(boolean additionalMailinglists) {
+        this.additionalMailinglists = additionalMailinglists;
+    }
 }

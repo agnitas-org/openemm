@@ -234,6 +234,16 @@
 
                     <display:column class="table-actions">
                         <a href="${adminViewUrl}" class="js-row-show hidden" title="<mvc:message code='settings.admin.edit'/> "></a>
+							<emm:ShowByPermission token="admin.delete">
+                            	<c:choose>
+                                	<c:when test="${admin.passwordExpired}">
+                                    	<mvc:message var="adminBanMessage" code="settings.admin.ban.tooltip" />
+                                    	<a href="${adminDeleteUrl}" class="btn btn-regular btn-alert js-row-delete" data-tooltip="${adminBanMessage}">
+                                        	<i class="icon icon-ban"></i>
+                                    	</a>
+                                	</c:when>
+                            	</c:choose>
+                            </emm:ShowByPermission>
                         <emm:ShowByPermission token="admin.sendWelcome">
 	                       	<mvc:message var="passwordSendMessage" code="password.send" />
     	                    <a href="${adminSendUrl}" class="btn btn-regular btn-alert js-row-delete" data-tooltip="${passwordSendMessage}">
@@ -241,15 +251,6 @@
             	            </a>
             	        </emm:ShowByPermission>
                         <emm:ShowByPermission token="admin.delete">
-                            <c:choose>
-                                <c:when test="${admin.passwordExpired}">
-                                    <mvc:message var="adminBanMessage" code="settings.admin.ban.tooltip" />
-                                    <a href="${adminDeleteUrl}" class="btn btn-regular btn-alert js-row-delete" data-tooltip="${adminBanMessage}">
-                                        <i class="icon icon-ban"></i>
-                                    </a>
-                                </c:when>
-                            </c:choose>
-
                             <mvc:message var="adminDeleteMessage" code="settings.admin.delete" />
                             <a href="${adminDeleteUrl}" class="btn btn-regular btn-alert js-row-delete" data-tooltip="${adminDeleteMessage}">
                                 <i class="icon icon-trash-o"></i>

@@ -52,7 +52,7 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
 					deliveryStatistic = new DeliveryStat();
 				}
 		        deliveryStatistic.setTotalMails(deliveryStatDao.getTotalMails(mailingID));
-		        deliveryStatistic.setCancelable(false);
+		        deliveryStatistic.setCancelable(triggerdialogService.canStopMailing(companyID, mailingID));
 		        deliveryStatistic.setStopped(false);
 		        deliveryStatistic.setResumable(false);
 			} catch (Exception e) {

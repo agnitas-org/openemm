@@ -12,11 +12,13 @@ package org.agnitas.emm.springws.endpoint.dyncontent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.agnitas.emm.core.dyncontent.service.ContentModel;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddContentBlockRequest;
 import org.agnitas.emm.springws.jaxb.AddContentBlockResponse;
@@ -28,25 +30,31 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class AddContentBlockEndpoint extends BaseEndpoint {
 
-	private DynamicTagContentService dynamicTagContentService;
+	private final DynamicTagContentService dynamicTagContentService;
+	private final MailingEditableCheck mailingEditableCheck;
 
-	public AddContentBlockEndpoint(DynamicTagContentService dynamicTagContentService) {
-		this.dynamicTagContentService = dynamicTagContentService;
+	public AddContentBlockEndpoint(DynamicTagContentService dynamicTagContentService, final MailingEditableCheck mailingEditableCheck) {
+		this.dynamicTagContentService = Objects.requireNonNull(dynamicTagContentService);
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
 	}
 
 	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddContentBlockRequest")
 	public @ResponsePayload AddContentBlockResponse addContentBlock(@RequestPayload AddContentBlockRequest request) throws Exception {
-		AddContentBlockResponse response = new AddContentBlockResponse();
+		final int companyID = Utils.getUserCompany();
 		
-		ContentModel model = new ContentModel();
-		model.setCompanyId(Utils.getUserCompany());
+		this.mailingEditableCheck.requireMailingEditable(request.getMailingID(), companyID);
+		
+		final AddContentBlockResponse response = new AddContentBlockResponse();
+		
+		final ContentModel model = new ContentModel();
+		model.setCompanyId(companyID);
 		model.setMailingId(request.getMailingID());
 		model.setBlockName(request.getBlockName());
 		model.setTargetId(request.getTargetID());
 		model.setOrder(request.getOrder());
 		model.setContent(request.getContent());
 
-		List<UserAction> userActions = new ArrayList<>();
+		final List<UserAction> userActions = new ArrayList<>();
 		response.setContentID(dynamicTagContentService.addContent(model, userActions));
 		Utils.writeLog(userActivityLogService, userActions);
 

@@ -17,6 +17,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.target.eql.codegen.DataType;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderOperator;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
 
@@ -24,13 +25,7 @@ public class DateRuleConverter extends GenericRuleConverter {
 
     public static final int MIN_EXPECTED_SIZE = 1;
 
-    private static final String GRAVE_ACCENT = "`";
-
     private static final String SINGLE_QUOTE = "'";
-
-    private static final String WHITESPACE = " ";
-
-    private static final String DATE_FORMAT = " DATEFORMAT ";
 
     private static final String TODAY = "TODAY";
 
@@ -60,8 +55,19 @@ public class DateRuleConverter extends GenericRuleConverter {
             }
         }
 
-        return GRAVE_ACCENT + node.getId() + GRAVE_ACCENT + WHITESPACE + operator +
-                WHITESPACE + value + DATE_FORMAT + SINGLE_QUOTE + valuesList.pollLast() + SINGLE_QUOTE;
+        boolean addEmptyFieldCheck = node.isIncludeEmpty() &&
+                QueryBuilderOperator.NEQ.queryBuilderName().equals(node.getOperator());
+
+        String ruleClause = String.format("`%s` %s %s DATEFORMAT '%s'", node.getId(), operator, value, valuesList.pollLast());
+
+        if (addEmptyFieldCheck) {
+            return String.format("(%s OR `%s` IS EMPTY)",
+                    ruleClause,
+                    node.getId());
+        } else {
+            return ruleClause;
+        }
+
     }
 
     @Override

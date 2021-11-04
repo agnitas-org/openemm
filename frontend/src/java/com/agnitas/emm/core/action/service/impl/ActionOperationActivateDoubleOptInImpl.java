@@ -13,7 +13,7 @@ package com.agnitas.emm.core.action.service.impl;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.dao.UserStatus;

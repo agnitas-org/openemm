@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import org.agnitas.beans.CustomerImportStatus;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.Recipient;
 import org.agnitas.service.ImportWizardHelper;
 import org.agnitas.util.AgnUtils;
@@ -47,7 +47,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ImportWizardHelperImpl.class);
 
-	private CustomerImportStatus status = null;
+	private ImportStatus status = null;
 	private final GregorianCalendar borderDate = new GregorianCalendar(1000, 0, 1);	// The Date is 01.01.1000
 
 	/**
@@ -218,7 +218,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	 * @see org.agnitas.service.impl.ImportWizardHelper#getStatus()
 	 */
 	@Override
-	public CustomerImportStatus getStatus() {
+	public ImportStatus getStatus() {
 		return status;
 	}
 
@@ -226,7 +226,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	 * @see org.agnitas.service.impl.ImportWizardHelper#setStatus(org.agnitas.beans.CustomerImportStatus)
 	 */
 	@Override
-	public void setStatus(CustomerImportStatus status) {
+	public void setStatus(ImportStatus status) {
 		this.status = status;
 	}
 
@@ -419,7 +419,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 					if (aInfo.getName().equalsIgnoreCase("email")) {
 						aValue = aValue.toLowerCase();
 					}
-					if (status.getDoubleCheck() != CustomerImportStatus.DOUBLECHECK_NONE
+					if (status.getDoubleCheck() != ImportStatus.DOUBLECHECK_NONE
 							&& status.getKeycolumn().equalsIgnoreCase(aInfo.getName())) {
 						if (uniqueValues.add(aValue) == false) {
                             if (addErrors) {

@@ -17,7 +17,7 @@ public class ActionOperationServiceMailParameters extends AbstractActionOperatio
 	private String fromAddress;
 	private String replyAddress;
 	private int mailtype;
-	private String htmlMail;	
+	private String htmlMail;
 
 	public ActionOperationServiceMailParameters() {
 		super(ActionOperationType.SERVICE_MAIL);

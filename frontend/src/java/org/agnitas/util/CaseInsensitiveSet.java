@@ -27,6 +27,12 @@ public class CaseInsensitiveSet extends HashSet<String> {
 		addAll(collection);
 	}
 	
+	public CaseInsensitiveSet(String[] values) {
+		for (String value : values) {
+			add(value.toLowerCase());
+		}
+	}
+
 	@Override
 	public boolean contains(Object object) {
 		if (object == null) {

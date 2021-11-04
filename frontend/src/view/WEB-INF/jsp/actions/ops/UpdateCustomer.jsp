@@ -26,7 +26,9 @@
         <%@ include file="UpdateCustomer-trackpoint.jspf" %>
         <div class="form-group">
             <div class="col-sm-4">
-                <label class="control-label"><mvc:message code="Column_Name"/></label>
+                <label class="control-label"><mvc:message code="Column_Name"/> 
+                    <button class="icon icon-help" data-help="help_${helplanguage}/trigger/ProfilefieldMod.xml" tabindex="-1" type="button"></button>
+                </label>
             </div>
             <div class="col-sm-8">
                 <table class="table table-bordered table-form">

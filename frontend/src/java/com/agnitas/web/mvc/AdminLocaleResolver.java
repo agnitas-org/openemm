@@ -13,7 +13,7 @@ package com.agnitas.web.mvc;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.util.AgnUtils;
 import org.springframework.context.i18n.LocaleContext;

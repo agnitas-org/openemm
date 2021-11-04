@@ -48,19 +48,31 @@
         <c:set target="${itemActionsSettings}" property="0" value="${element0}"/>
         <c:set target="${element0}" property="btnCls" value="btn btn-regular btn-inverse"/>
         <c:set target="${element0}" property="url"/>
-        <c:set target="${element0}" property="extraAttributes" value="data-form-target='#exportWizardForm' data-form-set='action: ${ACTION_COLLECT_DATA}' data-form-submit"/>
+        <emm:ShowByPermission token="export.ownColumns">
+            <c:set target="${element0}" property="extraAttributes" value="data-form-target='#exportWizardForm' data-form-set='action: ${ACTION_COLLECT_DATA}' data-action='collect-data'"/>
+        </emm:ShowByPermission>
+        <emm:HideByPermission token="export.ownColumns">
+            <c:set target="${element0}" property="extraAttributes" value="data-form-target='#exportWizardForm' data-form-set='action: ${ACTION_COLLECT_DATA}' data-form-submit"/>
+        </emm:HideByPermission>
         <c:set target="${element0}" property="iconBefore" value="icon-eye"/>
         <c:set target="${element0}" property="name">
             <bean:message key="Evaluate"/>
         </c:set>
     </jsp:useBean>
-    <jsp:useBean id="element1" class="java.util.LinkedHashMap" scope="request">
-        <c:set target="${itemActionsSettings}" property="1" value="${element1}"/>
-        <c:set target="${element1}" property="btnCls" value="btn btn-regular btn-secondary"/>
-        <c:set target="${element1}" property="iconBefore" value="icon-save"/>
-        <c:set target="${element1}" property="extraAttributes" value="data-form-target='#exportWizardForm' data-form-set='action: ${ACTION_SAVE}' data-form-submit"/>
-        <c:set target="${element1}" property="name">
-            <bean:message key="button.Save"/>
-        </c:set>
-    </jsp:useBean>
+    <emm:ShowByPermission token="export.change">
+	    <jsp:useBean id="element1" class="java.util.LinkedHashMap" scope="request">
+	        <c:set target="${itemActionsSettings}" property="1" value="${element1}"/>
+	        <c:set target="${element1}" property="btnCls" value="btn btn-regular btn-secondary"/>
+	        <c:set target="${element1}" property="iconBefore" value="icon-save"/>
+            <emm:ShowByPermission token="export.ownColumns">
+                <c:set target="${element1}" property="extraAttributes" value="data-form-target='#exportWizardForm' data-form-set='action: ${ACTION_SAVE}' data-action='save'"/>
+            </emm:ShowByPermission>
+            <emm:HideByPermission token="export.ownColumns">
+	            <c:set target="${element1}" property="extraAttributes" value="data-form-target='#exportWizardForm' data-form-set='action: ${ACTION_SAVE}' data-form-submit"/>
+            </emm:HideByPermission>
+            <c:set target="${element1}" property="name">
+	            <bean:message key="button.Save"/>
+	        </c:set>
+	    </jsp:useBean>
+	</emm:ShowByPermission>
 </jsp:useBean>

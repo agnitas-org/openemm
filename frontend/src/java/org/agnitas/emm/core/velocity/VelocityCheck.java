@@ -20,6 +20,7 @@ import java.lang.annotation.Target;
  */
 @Retention( RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
+@Deprecated // After completion of EMM-8360, this class can be removed without replacement
 public @interface VelocityCheck {
 	
 	/**

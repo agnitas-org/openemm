@@ -10,8 +10,8 @@
 
 package org.agnitas.emm.springws.handlers;
 
-import javax.xml.bind.ValidationEvent;
-import javax.xml.bind.ValidationEventHandler;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.ValidationEventHandler;
 
 public class ValidationHandler implements ValidationEventHandler {
     @Override

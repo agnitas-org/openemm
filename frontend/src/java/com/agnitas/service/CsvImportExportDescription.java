@@ -302,6 +302,11 @@ public class CsvImportExportDescription {
 			importDataColumns = new ArrayList<>();
 			try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(importFile), getEncoding())) {
 				jsonReader.readNextToken();
+
+				while (jsonReader.getCurrentToken() != null && jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+					jsonReader.readNextToken();
+				}
+				
 				if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
 					throw new Exception("Json data does not contain expected JsonArray");
 				}
@@ -382,11 +387,16 @@ public class CsvImportExportDescription {
 			try {
 				if (getZipPassword() == null) {
 					InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile));
-					ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-					if (zipEntry == null) {
-						throw new ImportException(false, "error.unzip.noEntry");
-					} else {
-						return dataInputStream;
+					try {
+						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
+						if (zipEntry == null) {
+							throw new ImportException(false, "error.unzip.noEntry");
+						} else {
+							return dataInputStream;
+						}
+					} catch (Exception e) {
+						dataInputStream.close();
+						throw e;
 					}
 				} else {
 					ZipFile zipFile = new ZipFile(importFile);

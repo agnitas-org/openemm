@@ -451,6 +451,7 @@
     AGN.Lib.WM.Definitions = {
         KEY_ENTER: 13,
         KEY_SHIFT: 16,
+        KEY_CTRL: 17,
         KEY_SPACE: 32,
         KEY_DELETE: 46,
 
@@ -587,6 +588,16 @@
 
         TITLE_MAX_TARGETS: 2,
         TITLE_MAX_REPORTS: 2,
+
+        PDF_SIZE: 'A4',
+        PDF_ORIENTATION: 'landscape',
+
+        PAGE_DIMENSIONS: {
+            'A4': {
+                width: 800,
+                height: 1360
+            }
+        },
 
         ICONS_CONFIG: ICONS_CONFIG,
 

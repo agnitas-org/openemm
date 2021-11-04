@@ -1,37 +1,61 @@
-<%@ page language="java" import="com.agnitas.web.ComTargetAction" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<c:set var="ACTION_DELETE_RECIPIENTS" value="<%= ComTargetAction.ACTION_DELETE_RECIPIENTS %>"/>
+<emm:Permission token="recipient.delete"/>
+
+<%--@elvariable id="targetIdToDeleteRecipients" type="java.lang.Integer"--%>
+<%--@elvariable id="numberOfRecipients" type="java.lang.Integer"--%>
 
 <div class="modal">
     <div class="modal-dialog">
         <div class="modal-content">
-            <html:form action="/target">
-                <html:hidden property="action" value="${ACTION_DELETE_RECIPIENTS}"/>
-                <html:hidden property="targetID"/>
-                <input type="hidden" id="kill" name="kill" value=""/>
+            <mvc:form servletRelativeAction="/target/${targetIdToDeleteRecipients}/delete/recipients.action"
+                      method="POST">
+
                 <div class="modal-header">
-                    <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal"><i aria-hidden="true" class="icon icon-times-circle"></i><span class="sr-only"><bean:message key="button.Cancel"/></span></button>
-                    <h4 class="modal-title"><bean:message key="target.delete.recipients"/></h4>
+                    <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal">
+                        <i aria-hidden="true" class="icon icon-times-circle"></i>
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                    <h4 class="modal-title"><mvc:message code="target.delete.recipients"/></h4>
                 </div>
                 <div class="modal-body">
-                    <bean:message key="target.delete.recipients.question" arg0="${targetForm.numOfRecipients}" />&nbsp;
+                    <c:choose>
+                        <c:when test="${numberOfRecipients > 0}">
+                            <mvc:message code="target.delete.recipients.question" arguments="${numberOfRecipients}" />
+                        </c:when>
+                        <c:otherwise>
+                            <mvc:message code="target.delete.empty" />
+                        </c:otherwise>
+                    </c:choose>
                 </div>
                 <div class="modal-footer">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal">
-                            <i class="icon icon-times"></i>
-                            <span class="text"><bean:message key="button.Cancel"/></span>
-                        </button>
-                        <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal" data-form-set="kill: true">
-                            <i class="icon icon-check"></i>
-                            <span class="text"><bean:message key="button.Delete"/></span>
-                        </button>
+                        <c:choose>
+                            <c:when test="${numberOfRecipients > 0}">
+                                <button type="button" class="btn btn-default btn-large js-confirm-negative"
+                                        data-dismiss="modal">
+                                    <i class="icon icon-times"></i>
+                                    <span class="text"><mvc:message code="button.Cancel"/></span>
+                                </button>
+                                <button type="button" class="btn btn-primary btn-large js-confirm-positive"
+                                        data-dismiss="modal">
+                                    <i class="icon icon-check"></i>
+                                    <span class="text"><mvc:message code="button.Delete"/></span>
+                                </button>
+                            </c:when>
+                            <c:otherwise>
+                                <button type="button" class="btn btn-primary btn-large js-confirm-negative"
+                                                 data-dismiss="modal">
+                                    <i class="icon icon-check"></i>
+                                    <span class="text"><mvc:message code="button.OK"/></span>
+                                </button>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </div>
-            </html:form>
+            </mvc:form>
         </div>
     </div>
 </div>

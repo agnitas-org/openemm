@@ -38,6 +38,7 @@ import com.agnitas.emm.core.JavaMailService;
  * Implementation of {@link AgnVelocityUberspector} checking OpenEMM and EMM
  * classes.
  */
+@Deprecated // After completion of EMM-8360, this class can be removed without replacement
 public class AgnVelocityUberspector extends SecureUberspector {
 	/** List of restricted packages. */
 	private static final String[] RESTRICTED_PACKAGES = { "java.lang.reflect" };
@@ -99,7 +100,7 @@ public class AgnVelocityUberspector extends SecureUberspector {
 	}
 
 	@Override
-	public VelMethod getMethod(Object obj, String methodName, Object[] args, Info info) throws Exception {
+	public VelMethod getMethod(Object obj, String methodName, Object[] args, Info info) {
 		if (isRuntimeCheckEnabled()) {
 			checkRestrictedPackage(obj);
 
@@ -112,12 +113,19 @@ public class AgnVelocityUberspector extends SecureUberspector {
 	}
 
 	@Override
-	public VelPropertySet getPropertySet(Object obj, String identifier, Object arg, Info info) throws Exception {
+	public VelPropertySet getPropertySet(Object obj, String identifier, Object arg, Info info) {
 		if (isRuntimeCheckEnabled()) {
 			checkRestrictedPackage(obj);
 
 			if (this.packageChecker.includePackage(obj.getClass().getPackage())) {
-				checkPropertyWriteAccess(obj, identifier, arg, info);
+				try {
+					checkPropertyReadAccess(obj, identifier, arg, info);
+				} catch (final IntrospectionException e) {
+					final String msg = String.format("Property '%s' of '%s' is not readable" , obj.getClass().getCanonicalName(), identifier);
+					logger.warn(msg);
+
+					throw new RuntimeException(msg, e);
+				}
 			}
 		}
 
@@ -159,7 +167,7 @@ public class AgnVelocityUberspector extends SecureUberspector {
 	}
 
 	/**
-	 * Checks the write access to a property from Velocity script.
+	 * Checks the read access to a property from Velocity script.
 	 * 
 	 * @param callee
 	 *            objects thats property is set
@@ -174,11 +182,11 @@ public class AgnVelocityUberspector extends SecureUberspector {
 	 *             on error introspecting the callee
 	 * @throws VelocityCheckerException
 	 */
-	private void checkPropertyWriteAccess(Object callee, String propertyName, Object arg, Info info) throws IntrospectionException {
+	private void checkPropertyReadAccess(Object callee, String propertyName, Object arg, Info info) throws IntrospectionException {
 		PropertyDescriptor descriptor = new PropertyDescriptor(propertyName, callee.getClass());
-		Method setterMethod = descriptor.getWriteMethod();
+		Method getterMethod = descriptor.getReadMethod();
 
-		checkMethodAccess(setterMethod, new Object[] { arg }, info);
+		checkMethodAccess(getterMethod, new Object[] { arg }, info);
 	}
 
 	/**
@@ -262,7 +270,7 @@ public class AgnVelocityUberspector extends SecureUberspector {
 				performCheckOnParameter(method, arg, checkType);
 			}
 		} catch (VelocityCheckerException e) {
-			javaMailService.sendEmail(configService.getValue(ConfigValue.Mailaddress_Frontend), "Error in Velocity Script", "Error in Velocity Script: " + e.getMessage(), "Error in Velocity Script: " + e.getMessage());
+			javaMailService.sendEmail(0, configService.getValue(ConfigValue.Mailaddress_Frontend), "Error in Velocity Script", "Error in Velocity Script: " + e.getMessage(), "Error in Velocity Script: " + e.getMessage());
 			throw e;
 		}
 	}
@@ -309,7 +317,9 @@ public class AgnVelocityUberspector extends SecureUberspector {
 	 *            class to check
 	 */
 	protected void checkRestrictedPackage(Class<?> clazz) {
-		checkRestrictedPackage(clazz.getPackage());
+		if(clazz != null) {
+			checkRestrictedPackage(clazz.getPackage());
+		}
 	}
 
 	/**
@@ -319,6 +329,10 @@ public class AgnVelocityUberspector extends SecureUberspector {
 	 *            package to check
 	 */
 	protected void checkRestrictedPackage(Package pack) {
+		if(pack == null) {
+			return;
+		}
+		
 		String name = pack.getName();
 
 		for (String packageName : RESTRICTED_PACKAGES) {

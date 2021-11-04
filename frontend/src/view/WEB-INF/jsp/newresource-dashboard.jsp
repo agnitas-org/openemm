@@ -85,7 +85,7 @@
         </emm:ShowByPermission>
         <emm:ShowByPermission token="targets.show">
             <li>
-                <a tabindex="-1" href="<html:rewrite page='/target.do?action=2&targetID=0'/>">
+                <a tabindex="-1" href="<c:url value='/target/create.action'/>">
                     <bean:message key="target.create"/>
                 </a>
             </li>

@@ -10,11 +10,9 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Objects;
+import java.util.Optional;
 
-import com.agnitas.emm.core.userform.util.WebFormUtils;
 import org.agnitas.beans.Recipient;
 import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
@@ -33,11 +31,13 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.ComCompany;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.mailing.service.FullviewException;
 import com.agnitas.emm.core.mailing.service.FullviewService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.recipient.UnknownRecipientIdException;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
+import com.agnitas.emm.core.userform.web.WebFormUrlBuilder;
 import com.agnitas.userform.bean.UserForm;
 
 public final class FullviewServiceImpl implements FullviewService {
@@ -52,6 +52,7 @@ public final class FullviewServiceImpl implements FullviewService {
 	private RecipientService recipientService;
 	
 	private ExtensibleUIDService uidService;
+	private CompanyTokenService companyTokenService;
 	
 	@Override
 	public final String getFullviewUrl(final int companyID, final int mailingID, final int customerID, final String formNameOrNull) throws UnknownCompanyIdException, UnknownMailingIdException, UnknownRecipientIdException, FormNotFoundException, FullviewException {
@@ -60,6 +61,7 @@ public final class FullviewServiceImpl implements FullviewService {
 		}
 		
 		final ComCompany company = this.companyService.getCompany(companyID);
+		final Optional<String> companyToken = this.companyTokenService.getCompanyToken(companyID);
 		final MailingModel mailingModel = new MailingModel();
 		mailingModel.setCompanyId(companyID);
 		mailingModel.setMailingId(mailingID);
@@ -80,15 +82,14 @@ public final class FullviewServiceImpl implements FullviewService {
 		
 		try {
 			final String uidString = uidService.buildUIDString(uid);
-
-			final String urlEncodedFormName = URLEncoder.encode(form.getFormName(), "UTF-8");
-			final String urlEncodedUID = URLEncoder.encode(uidString, "UTF-8");
-
-			return WebFormUtils.getFormFullViewLink(company.getRdirDomain(), companyID, urlEncodedFormName, urlEncodedUID);
+			
+			return WebFormUrlBuilder.from(company, form.getFormName())
+					.withCompanyToken(companyToken)
+					.withResolvedUID(true)
+					.withUID(uidString)
+					.build();
 		} catch(final RequiredInformationMissingException | UIDStringBuilderException e) {
 			throw new FullviewException("Cannot build UID", e);
-		} catch(final UnsupportedEncodingException e) {
-			throw new FullviewException("Cannot url-encode data", e);
 		}
 	}
 	
@@ -120,5 +121,10 @@ public final class FullviewServiceImpl implements FullviewService {
 	@Required
 	public final void setExtensibleUidService(final ExtensibleUIDService service) {
 		this.uidService = Objects.requireNonNull(service, "Extensible UID service cannot be null");
+	}
+	
+	@Required
+	public final void setCompanyTokenService(final CompanyTokenService service) {
+		this.companyTokenService = Objects.requireNonNull(service, "CompanyTokenService is null");
 	}
 }

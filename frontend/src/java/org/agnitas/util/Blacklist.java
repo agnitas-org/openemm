@@ -74,13 +74,12 @@ public class Blacklist {
 	/** add a email or pattern to the blacklist
 	 * @param email the email or pattern
 	 * @param global true, if this entry is on the global blacklist
-	 * @param simplified true, if simplified version should be used
 	 */
-	public void add (String email, boolean global, boolean simplified) {
+	public void add (String email, boolean global) {
 		if (! seen.contains (email)) {
 			seen.add (email);
 
-			Blackdata	bd = new Blackdata (email, global, simplified);
+			Blackdata	bd = new Blackdata (email, global);
 
 			if (bd.isWildcard ()) {
 				wildcards.add (bd);
@@ -94,9 +93,6 @@ public class Blacklist {
 				++localCount;
 			}
 		}
-	}
-	public void add (String email, boolean global) {
-		add (email, global, false);
 	}
 
 	/** Returns wether an email is on the blacklist or not

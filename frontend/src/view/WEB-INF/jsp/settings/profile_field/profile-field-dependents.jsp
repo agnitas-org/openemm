@@ -65,10 +65,7 @@
                             <mvc:message code="Target"/>
                         </c:set>
 
-                        <c:url var="viewLink" value="/targetQB.do">
-                            <c:param name="method" value="show"/>
-                            <c:param name="targetID" value="${dependent.id}"/>
-                        </c:url>
+                        <c:url var="viewLink" value="/target/${dependent.id}/view.action"/>
                     </c:when>
                 </c:choose>
 
@@ -84,13 +81,13 @@
                 {
                     "headerName": "<mvc:message code='default.Type'/>",
                     "editable": false,
-                    "cellAction": "goTo",
+                    "cellRenderer": "StringCellRenderer",
                     "field": "entityType"
                 },
                 {
                     "headerName": "<mvc:message code='Name'/>",
                     "editable": false,
-                    "cellAction": "goTo",
+                    "cellRenderer": "StringCellRenderer",
                     "field": "entityName"
                 }
             ],

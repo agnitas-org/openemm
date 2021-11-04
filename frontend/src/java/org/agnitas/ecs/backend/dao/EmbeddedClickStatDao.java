@@ -39,7 +39,5 @@ public interface EmbeddedClickStatDao {
 	 * @return click statistics for links of the mailing
 	 * @throws Exception 
 	 */
-	ClickStatInfo getClickStatInfo(@VelocityCheck int companyId, int mailingId, int mode) throws Exception;
-
 	ClickStatInfo getClickStatInfo(@VelocityCheck int companyId, int mailingId, int mode, int deviceClass) throws Exception;
 }

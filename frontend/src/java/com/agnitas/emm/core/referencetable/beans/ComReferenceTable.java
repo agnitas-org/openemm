@@ -25,6 +25,10 @@ public interface ComReferenceTable {
 
 	void setName(String name);
 
+	String getTableName();
+
+	void setTableName(String tableName);
+
 	String getDbTableName();
 
 	void setDbTableName(String dbTableName);

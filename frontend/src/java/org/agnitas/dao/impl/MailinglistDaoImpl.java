@@ -24,8 +24,10 @@ import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.UserStatus;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -70,6 +72,16 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 			return false;
 		}
 	}
+
+    @Override
+    public boolean canBeMarkedAsDeleted(int mailinglistId, int companyId) {
+        if (mailinglistId <= 0 || companyId <= 0) {
+            return false;
+        }
+        return selectInt(logger, "SELECT COUNT(*) FROM mailing_tbl WHERE mailinglist_id = ? " +
+                        "AND company_id = ? AND is_template = 0 AND deleted = 0 AND work_status NOT IN (?)", 
+                mailinglistId, companyId, MailingStatus.SENT.getDbKey()) <= 0;
+    }
 
 	@Override
 	public Mailinglist getMailinglist(int listID, @VelocityCheck int companyId) {
@@ -193,6 +205,13 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
+	public List<Integer> getMailinglistIds(@VelocityCheck int companyId) {
+		return select(logger,
+				"SELECT mailinglist_id FROM mailinglist_tbl " +
+						"WHERE deleted = 0 AND company_id = ?", new IntegerRowMapper(), companyId);
+	}
+
+	@Override
 	public PaginatedListImpl<MailinglistEntry> getMailinglists(@VelocityCheck int companyId, int adminId, String sort, String direction, int page, int rownums) {
 		if(!SORTABLE_FIELDS.contains(sort)) {
 			sort = "shortname";
@@ -217,22 +236,6 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 			return "to_char(" + sortField + ", 'YYYYMMDD')";
 		} else {
 			return "DATE_FORMAT(" + sortField + ", '%Y%m%d')";
-		}
-	}
-
-	/**
-	 * deletes the bindings for this mailinglist (invocated before the mailinglist is deleted to avoid orphaned mailinglist bindings)
-	 * 
-	 * @return return code
-	 */
-	@Override
-	@DaoUpdateReturnValueCheck
-	public boolean deleteBindings(int id, @VelocityCheck int companyId) {
-		try {
-			return update(logger, "DELETE FROM customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ?", id) > 0;
-		} catch (Exception e) {
-			// logging was already done
-			return false;
 		}
 	}
 
@@ -293,6 +296,30 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 		}
 		return returnMap;
 	}
+
+    @Override
+    public boolean mailinglistDeleted(int mailinglistId, int companyId) {
+        if (mailinglistId <= 0) {
+            return false;
+        }
+        return selectInt(logger, "SELECT deleted FROM mailinglist_tbl WHERE company_id = ? AND mailinglist_id = ?",
+                companyId, mailinglistId) == 1;
+    }
+
+    @Override
+    public Mailinglist getDeletedMailinglist(int mailinglistId, int companyId) {
+        if (mailinglistId == 0 || companyId == 0) {
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Unable to load deleted mailinglist (mailinglist ID %d, company ID %d)", mailinglistId, companyId));
+            }
+            return null;
+        } else {
+            return selectObjectDefaultNull(logger,
+                    "SELECT " + getMailinglistSqlFieldsForSelect() + ", deleted FROM mailinglist_tbl " +
+                            "WHERE mailinglist_id = ? AND deleted = 1 AND company_id = ?",
+                    MAILINGLIST_ROW_MAPPER, mailinglistId, companyId);
+        }
+    }
 
 	@Override
 	public boolean mailinglistExists(String mailinglistName, @VelocityCheck int companyId) {

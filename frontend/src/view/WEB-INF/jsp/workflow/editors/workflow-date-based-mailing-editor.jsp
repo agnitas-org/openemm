@@ -46,11 +46,6 @@
         </div>
     </div>
 
-    <jsp:include page="transfer-dialog.jsp">
-        <jsp:param name="containerId" value="datebased_mailing-editor"/>
-        <jsp:param name="baseMailingEditor" value="date-mailing-editor-base"/>
-    </jsp:include>
-
     <script id="config:date-mailing-initializer" type="application/json">
         {
             "form":"datebasedMailingForm",

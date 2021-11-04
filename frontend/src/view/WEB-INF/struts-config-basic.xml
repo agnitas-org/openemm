@@ -4,7 +4,7 @@
 	<!-- ========== Form Bean Definitions =================================== -->
 	<form-beans type="org.apache.struts.action.ActionFormBean">
 
-		<form-bean name="campaignForm" type="com.agnitas.web.ComCampaignForm" />
+		<form-bean name="campaignForm" type="com.agnitas.web.CampaignForm" />
 
 		<form-bean name="optimizationForm" type="com.agnitas.mailing.autooptimization.web.forms.ComOptimizationForm" />
 
@@ -18,11 +18,7 @@
 
 		<form-bean name="adminForm" type="com.agnitas.web.ComAdminForm" />
 
-		<form-bean name="targetForm" type="com.agnitas.web.forms.ComTargetForm" />
-
 		<form-bean name="mailingContentForm" type="com.agnitas.web.ComMailingContentForm" />
-
-		<form-bean name="ecsForm" type="com.agnitas.ecs.web.forms.EcsForm" />
 
 		<form-bean name="mailingComponentsForm" type="com.agnitas.web.forms.ComMailingComponentsForm" />
 
@@ -169,10 +165,6 @@
 		<action path="/mailingsend_ajax" type="org.springframework.web.struts.DelegatingActionProxy" parameter="method">
 		</action>
 
-		<action path="/ecs_stat" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="ecsForm" scope="session" parameter="method">
-			<forward name="view" path="ecs_ecs"/>
-		</action>
-
 		<!-- Mailing-Wizard mappings -->
 		<action path="/mwStart" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_start">
 			<forward name="next" path="mailing_wizard_name" />
@@ -286,16 +278,12 @@
 		<action path="/recipient" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="recipientForm" scope="session" input="/recipient.do?init=1">
 			<forward name="list" path="recipient_list" />
 			<forward name="view" path="recipient_view" />
-			<forward name="mailings" path="recipient_mailings" />
 			<forward name="history" path="recipient_history" />
 			<forward name="search" path="recipient_list" />
 			<forward name="delete" path="recipient_delete_ajax" />
 			<forward name="loading" path="recipient_loading" />
 			<forward name="social_updating" path="recipient_social_updating" />
 			<forward name="bulk_delete_confirm" path="recipient_bulk_delete_ajax" />
-			<forward name="recipient_webtracking_history" path="recipient_webtracking_history" />
-			<forward name="reactions_history" path="recipient_reactions_history" />
-			<forward name="mailing_delivery_info" path="mailing_delivery_info"/>
 			<forward name="confirm_save" path="recipient_confirm_save_modal" />
 			<forward name="messages" path="messages" />
 		</action>
@@ -360,31 +348,10 @@
 			<forward name="loading" path="settings_salutation_loading" />
 		</action>
 
-		<action path="/followupstats" parameter="method" type="org.springframework.web.struts.DelegatingActionProxy" scope="request">
-			<forward name="resultsAjax" path="mailing_predelivery_list" />
-		</action>
-
-		<!-- Process target groups -->
-		<action path="/target" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="targetForm" scope="session" input="targets_querybuilder_view">
-			<forward name="failure" path="targets_querybuilder_view" />
-			<forward name="success" path="targets_querybuilder_view" />
-			<forward name="list" path="targets_list" />
-			<forward name="after_delete" path="targets_list" />
-			<forward name="view" path="targets_querybuilder_view" />
-			<forward name="delete" path="targets_delete_ajax" />
-			<forward name="create_ml" path="targets_new_ml_ajax" />
-			<forward name="delete_recipients" path="targets_delete_recipients_ajax" />
-			<forward name="mailing_wizard_new_target" path="/mwTarget.do?action=newTarget" />
-			<forward name="back_mailingwizard" path="/mwSubject.do?action=subject" />
-			<forward name="bulk_delete_confirm" path="targets_bulk_delete_ajax" />
-			<forward name="workflow_view" path="/workflow/{WORKFLOW_ID}/view.action" />
-			<forward name="messages" path="messages" />
-		</action>
-		
 		<action path="/targetQB" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="editTargetForm" parameter="method" scope="request">
 			<forward name="view" path="targets_querybuilder_view" />
 			<forward name="dependents_list" path="targets_querybuilder_dependents_list" />
-			<forward name="list" path="/target.do?action=1" />
+			<forward name="list" path="/target/list.action" />
 			<forward name="messages" path="messages" />
 		</action>
 		

@@ -81,16 +81,6 @@ public interface MailinglistDao {
 	int saveMailinglist(Mailinglist list);
 
 	/**
-	 * Deletes all bindings for mailing list.
-	 * 
-	 * @param id The id of mailing list.
-	 * @param companyId The company id for bindings.
-	 * @return {@code true} if all the binding were deleted, and {@code false} if there were no bindings
-	 * or something went wrong.
-	 */
-	boolean deleteBindings(int id, @VelocityCheck int companyId);
-
-	/**
 	 * Get numbers of recipients related to given mailing list.
 	 * 
 	 * @param admin Include admin recipients.
@@ -122,7 +112,9 @@ public interface MailinglistDao {
 	 */
 	boolean exist(int mailinglistId, @VelocityCheck int companyId);
 
-	PaginatedListImpl<MailinglistEntry> getMailinglists(@VelocityCheck int companyId, int adminId, String sort, String direction, int page, int rownums);
+    List<Integer> getMailinglistIds(@VelocityCheck int companyId);
+
+    PaginatedListImpl<MailinglistEntry> getMailinglists(@VelocityCheck int companyId, int adminId, String sort, String direction, int page, int rownums);
 
 	boolean deleteAllMailinglist(@VelocityCheck int companyId);
 
@@ -130,4 +122,9 @@ public interface MailinglistDao {
 
 	Map<Integer, Integer> getMailinglistWorldSubscribersStatistics(int companyId, int mailinglistID);
 
+    boolean canBeMarkedAsDeleted(int mailinglistId, @VelocityCheck int companyId);
+	
+    boolean mailinglistDeleted(int mailinglistId, int companyId);
+
+    Mailinglist getDeletedMailinglist(int mailinglistId, int companyId);
 }

@@ -3,14 +3,11 @@ AGN.Lib.Controller.new('manage-tables-viewfield', function() {
 
   this.addAction({change: 'typeFieldChangeAction'}, function() {
     var $nullableEl = $('#nullable');
-    var $fieldNullableDivEl = $('#fieldNullableDiv');
-    if(this.el.val() === 'DATE'){
+    if (this.el.val() === 'DATE' || this.el.val() === 'DATETIME') {
       previousValueNullableField = $nullableEl.val();
       $nullableEl.val('true');
-      $fieldNullableDivEl.hide();
     } else {
       $nullableEl.val(previousValueNullableField);
-      $fieldNullableDivEl.show();
     }
   });
 });

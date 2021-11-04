@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
@@ -206,6 +207,14 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
         }
     }
 
+    @Override
+    public void updateReportMailinglists(int reportId, int reportType, List<Integer> mailinglistIds) {
+        String mailinglistIdsString = mailinglistIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+        update(logger, "UPDATE birtreport_parameter_tbl SET parameter_value = ? " +
+                        "WHERE report_id = ? AND report_type = ? AND parameter_name = ?",
+                mailinglistIdsString, reportId, reportType, ComBirtReportSettings.MAILINGLISTS_KEY);
+    }
+
 	@DaoUpdateReturnValueCheck
 	public void deleteReportParameters(ComBirtReport report) {
 		deleteReportParameters(report, Collections.emptyList());
@@ -242,7 +251,8 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 
     @Override
     public List<Map<String, Object>> getReportParamValues(@VelocityCheck int companyID, String paramName) {
-        String query = "SELECT DISTINCT param.report_id, param.parameter_value FROM birtreport_parameter_tbl param " +
+        String query = "SELECT DISTINCT param.report_id, param.parameter_value, param.report_type " +
+                "FROM birtreport_parameter_tbl param " +
                 "INNER JOIN birtreport_tbl rep " +
                 "ON rep.report_id = param.report_id " +
                 "WHERE rep.company_id = ? " +

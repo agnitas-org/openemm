@@ -30,7 +30,7 @@
 
     <mvc:form servletRelativeAction="/action/save.action" data-form="resource"
               data-controller="action-view" data-initializer="action-view" data-action="save-action-data"
-              modelAttribute="form" id="emmActionForm" cssClass="hidden">
+              modelAttribute="form" id="emmActionForm" cssClass="hidden" data-validator="action">
         <mvc:hidden path="id"/>
         <script type="application/json" id="config:action-view">
             {
@@ -70,10 +70,13 @@
             <div class="tile-content tile-content-forms">
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label" for="shortname"><mvc:message code="Name"/></label>
+                        <label class="control-label" for="shortname">
+                            <mvc:message var="nameMsg" code="default.Name"/>
+                            ${nameMsg}
+                        </label>
                     </div>
                     <div class="col-sm-8">
-                        <mvc:text path="shortname" id="shortname" maxlength="50" size="42" cssClass="form-control" />
+                        <mvc:text path="shortname" id="shortname" maxlength="50" size="42" cssClass="form-control" placeholder="${nameMsg}" />
                     </div>
                 </div>
 
@@ -92,10 +95,13 @@
 
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label" for="description"><mvc:message code="default.description"/></label>
+                        <label class="control-label" for="description">
+                            <mvc:message var="descriptionMsg" code="default.description"/>
+                            ${descriptionMsg}
+                        </label>
                     </div>
                     <div class="col-sm-8">
-                        <mvc:textarea path="description" id="description" cssClass="form-control" rows="5" cols="12"/>
+                        <mvc:textarea path="description" id="description" cssClass="form-control" rows="5" cols="12" placeholder="${descriptionMsg}"/>
                     </div>
                 </div>
             </div>
@@ -212,4 +218,3 @@
         </div>
     </script>
 </c:if>
-

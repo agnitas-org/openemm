@@ -12,7 +12,7 @@ package com.agnitas.emm.core.bounce.util;
 
 public class BounceUtils {
 
-    public static final String EMAIL_PREFIX = "aml";
+    public static final String EMAIL_PREFIX = "reply";
 
     public static String getFilterEmailDefault(final String companyDomain, final int id) {
         return EMAIL_PREFIX + "_" + id + "@" + companyDomain;

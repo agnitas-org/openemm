@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Affecter des valeurs]]></title>
+	<content><![CDATA[L'option "Affecter des valeurs" vous permet de d&#xE9;finir les valeurs que ce champ peut prendre. Les valeurs sont propos&#xE9;es &#xE0; la s&#xE9;lection dans une liste d&#xE9;roulante dans le profil du destinataire, afin que les utilisateurs puissent les s&#xE9;lectionner rapidement et facilement. Les valeurs par d&#xE9;faut doivent bien s&#xFB;r correspondre au type de donn&#xE9;es du champ. Veuillez noter que seules les valeurs pr&#xE9;d&#xE9;finies sont transf&#xE9;r&#xE9;es pour les importations, car sinon des valeurs divergentes sont cr&#xE9;&#xE9;es dans le profil du destinataire et les logiques/groupes cibles bas&#xE9;s sur ces valeurs ne fonctionnent pas.]]></content>
+</HelpBalloon>

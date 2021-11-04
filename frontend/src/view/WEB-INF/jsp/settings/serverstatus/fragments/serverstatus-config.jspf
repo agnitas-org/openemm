@@ -1,0 +1,39 @@
+<div class="tile-header">
+	<div class="headline">
+		<mvc:message code="settings.Config" />
+	</div>
+</div>
+<div class="tile-content tile-content-forms">
+	<div class="form-group no_margin">
+		<div class="row">
+			<div class="col-sm-4 col-xs-12 vspace-top-10">
+				<mvc:text path="configForm.companyIdString" cssClass="form-control" placeholder="CompanyID"/>
+			</div>
+			<div class="col-sm-4 col-xs-12 vspace-top-10">
+				<mvc:text path="configForm.name" cssClass="form-control" placeholder="ConfigName"/>
+			</div>
+			<div class="col-sm-4 col-xs-12 vspace-top-10">
+				<mvc:text path="configForm.value" cssClass="form-control" placeholder="Value"/>
+			</div>
+		</div>
+		<div class="row vspace-top-10">
+			<div class="col-sm-12 col-xs-12">
+				<mvc:text path="configForm.description" cssClass="form-control" placeholder="Description"/>
+			</div>
+		</div>
+		<div class="row vspace-top-20">
+			<div class="col-sm-6 col-xs-12 vspace-bottom-10">
+				<c:url var="configSaveAction" value="/serverstatus/config/view.action"/>
+				<button type="button" class="btn btn-primary btn-regular full-width whitespace_normal" data-form-url="${configSaveAction}" data-form-submit="">
+					<mvc:message code="button.Show" />
+				</button>
+			</div>
+			<div class="col-sm-6 col-xs-12 vspace-bottom-10">
+				<c:url var="configViewAction" value="/serverstatus/config/save.action"/>
+				<button type="button" class="btn btn-primary btn-regular full-width whitespace_normal" data-form-url="${configViewAction}" data-form-submit="">
+					<mvc:message code="button.Save" />
+				</button>
+			</div>
+		</div>
+	</div>
+</div>

@@ -13,9 +13,6 @@ package com.agnitas.beans.impl;
 import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComTarget;
-import com.agnitas.emm.core.target.eql.EqlFacade;
-
-import bsh.Interpreter;
 
 /**
  * Implementation of {@link ComTarget} interface.
@@ -89,18 +86,6 @@ public class ComTargetImpl extends TargetLightImpl implements ComTarget {
     	 * See JIRA-787 for more informations.
     	 */
         return targetSQL; 
-    }
-
-    @Override
-	public boolean isCustomerInGroup(Interpreter interpreter, final EqlFacade eqlFacade) {
-        try {
-        	final String bshCode = eqlFacade.convertEqlToBeanShellExpression(this);
-        	
-            return (Boolean) interpreter.eval(String.format("return (%s)", bshCode));
-        } catch (Exception e) {
-            logger.error("isCustomerInGroup: " + e.getMessage(), e);
-            return false;
-        }
     }
 
 	@Override

@@ -12,11 +12,11 @@ package com.agnitas.web;
 
 import java.io.IOException;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -36,7 +36,7 @@ import com.agnitas.beans.FormComponent.FormComponentType;
  * This servlet loads and shows a image from the form_component_tbl.
  * The images are cached.
  * If the image cannot be found, a text is shown, which is also cached.
- * The caching is done for performance reasons and the caching timeout is set in emm.properties.
+ * The caching is done for performance reasons and the caching timeout is set in emm configuration.
  * The caching can be disabled by the optional item "/nc" for preview-reasons etc.
  * 
  * The parameter <licenseID> is also optional.
@@ -119,7 +119,7 @@ public class ShowFormImageServlet extends HttpServlet {
 	}
 
 	/* (non-Javadoc)
-	 * @see javax.servlet.http.HttpServlet#service(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 * @see jakarta.servlet.http.HttpServlet#service(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse)
 	 */
 	@Override
 	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {

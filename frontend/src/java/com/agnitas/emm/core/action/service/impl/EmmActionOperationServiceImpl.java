@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
@@ -24,6 +25,9 @@ import com.agnitas.emm.core.action.service.EmmActionOperationService;
 import com.agnitas.emm.core.action.service.UnknownEmmActionExecutor;
 
 public class EmmActionOperationServiceImpl implements EmmActionOperationService, InitializingBean {
+	
+	/** The logger. */
+	private static final transient Logger LOGGER = Logger.getLogger(EmmActionOperationServiceImpl.class);
 
 	private List<EmmActionOperation> executors = new ArrayList<>();
 
@@ -41,6 +45,17 @@ public class EmmActionOperationServiceImpl implements EmmActionOperationService,
 		EmmActionOperation executor = getExecutor(operation.getOperationType());
 		final boolean result = executor.execute(operation, params, errors);
 
+		if(!result || !errors.isEmpty()) {
+			LOGGER.error(String.format(
+					"Action operation %d (type %s, company %d, action %d) returned result %b and action errors %s",
+					operation.getId(),
+					operation.getOperationType(),
+					operation.getCompanyId(),
+					operation.getActionId(),
+					result,
+					errors));
+		}
+		
 		return result && errors.isEmpty();
 	}
 

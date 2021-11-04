@@ -197,13 +197,23 @@ AGN.Lib.Controller.new('auto-import-export', function() {
     this.addAction({change : 'change-mailing-type'}, function() {
         var $el = $(this.el);
         var mailingType = AGN.Lib.Select.get($el).getSelectedValue();
-        var exportType = $('#exportType [type=radio]:checked').val();
+        var exportType;
+        if ($('#exportType').is("select")) { 
+            exportType = AGN.Lib.Select.get($('#exportType select')).getSelectedValue();
+        } else {
+            exportType = $('#exportType [type=radio]:checked').val();
+        }
         getExportTypeHandler($el).resolve(exportType, mailingType);
     });
 
     this.addAction({change : 'export-type-resolver'}, function() {
         var $el = $(this.el);
-        var exportType = $el.find("[type=radio]:checked").val();
+        var exportType;
+        if ($('#exportType').is("select")) { 
+            exportType = AGN.Lib.Select.get($('#exportType select')).getSelectedValue();
+        } else {
+            exportType = $el.find("[type=radio]:checked").val();
+        }
         var mailingType = AGN.Lib.Select.get($('#exportMailing select')).getSelectedValue();
         getExportTypeHandler($el).resolve(exportType, mailingType);
 

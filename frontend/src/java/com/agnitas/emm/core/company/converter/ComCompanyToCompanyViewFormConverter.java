@@ -78,15 +78,18 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompan
         settingsDto.setHasForceSending(configService.getBooleanValue(ConfigValue.ForceSending, comCompany.getId()));
 
         settingsDto.setHasRecipientsCleanup(configService.getBooleanValue(ConfigValue.CleanRecipientsWithoutBinding, comCompany.getId()));
-        settingsDto.setHasRecipientsAnonymisation(configService.getBooleanValue(ConfigValue.CleanRecipientsData, comCompany.getId()));
+        settingsDto.setRecipientAnonymization(configService.getBooleanAsInteger(ConfigValue.CleanRecipientsData, comCompany.getId(), 30, -1));
+        settingsDto.setRecipientCleanupTracking(configService.getIntegerValue(ConfigValue.CleanTrackingData, comCompany.getId()));
+        settingsDto.setRecipientDeletion(configService.getIntegerValue(ConfigValue.DeleteRecipients, comCompany.getId()));
         settingsDto.setHasTrackingVeto(configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, comCompany.getId()));
         settingsDto.setSector(comCompany.getSector());
         settingsDto.setBusiness(comCompany.getBusiness());
         settingsDto.setHasTwoFactorAuthentication(configService.getBooleanValue(ConfigValue.HostAuthentication, comCompany.getId()));
+        settingsDto.setMaxAdminMails(configService.getIntegerValue(ConfigValue.MaxAdminMails, comCompany.getId()));
         
         // Settings for login tracking
         final Optional<LoginlockSettings> settingsOptional = LoginlockSettings.fromSettings(
-        		configService.getIntegerValue(ConfigValue.LoginTracking.WebuiMaxFailedAttempts, comCompany.getId()), 
+        		configService.getIntegerValue(ConfigValue.LoginTracking.WebuiMaxFailedAttempts, comCompany.getId()),
         		configService.getIntegerValue(ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, comCompany.getId()) / 60);
         settingsDto.setLoginlockSettingsName(settingsOptional.isPresent() ? settingsOptional.get().getName() : "UNDEFINED");
         

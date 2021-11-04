@@ -241,4 +241,10 @@ public interface ComTargetDao {
 	List<Pair<Integer, String>> getTargetsToInitializeComplexityIndices(@VelocityCheck int companyId);
 
 	void saveComplexityIndices(@VelocityCheck int companyId, Map<Integer, Integer> complexities);
+
+    boolean isValid(int companyId, int targetId);
+
+    void addToFavorites(int targetId, int companyId);
+    
+    void removeFromFavorites(int targetId, int companyId);
 }

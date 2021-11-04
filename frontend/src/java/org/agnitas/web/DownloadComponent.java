@@ -13,12 +13,6 @@ package org.agnitas.web;
 import java.io.IOException;
 import java.util.Map;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.dao.MailingComponentDao;
@@ -28,29 +22,44 @@ import org.agnitas.preview.PreviewFactory;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.dao.ComRecipientDao;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 
 public class DownloadComponent extends HttpServlet {
 
-    /** Logger. */
-    private static final transient Logger logger = Logger.getLogger( ShowComponent.class);
+    /**
+     * Logger.
+     */
+    private static final transient Logger logger = Logger.getLogger(ShowComponent.class);
 
     private static final long serialVersionUID = 663420929616439014L;
 
     private UserActivityLogService userActivityLogService;
+    private MailingComponentDao mailingComponentDao;
+    private PreviewFactory previewFactory;
+    private ComRecipientDao recipientDao;
 
     @Override
     public void init() throws ServletException {
         super.init();
 
         ApplicationContext ctx = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
-        this.userActivityLogService = ctx.getBean(UserActivityLogService.class);
+        userActivityLogService = ctx.getBean("UserActivityLogService", UserActivityLogService.class);
+        mailingComponentDao = ctx.getBean("MailingComponentDao", MailingComponentDao.class);
+        previewFactory = ctx.getBean("PreviewFactory", PreviewFactory.class);
+        recipientDao = ctx.getBean("RecipientDao", ComRecipientDao.class);
     }
 
     /**
@@ -59,64 +68,61 @@ public class DownloadComponent extends HttpServlet {
      */
     @Override
     public void service(HttpServletRequest req, HttpServletResponse response) throws IOException, ServletException {
-        long len=0;
-        int compId=0;
+        long len = 0;
+        int compId = 0;
 
         if (!AgnUtils.isUserLoggedIn(req)) {
             return;
         }
 
         try {
-            compId=Integer.parseInt(req.getParameter("compID"));
+            compId = Integer.parseInt(req.getParameter("compID"));
         } catch (Exception e) {
-            logger.warn( "Error converting " + (req.getParameter("compID") != null ? "'" + req.getParameter("compID") + "'" : req.getParameter("compID")) + " to integer", e);
+            logger.warn("Error converting " + (req.getParameter("compID") != null ? "'" + req.getParameter("compID") + "'" : req.getParameter("compID")) + " to integer", e);
             return;
         }
 
-        if(compId==0) {
+        if (compId == 0) {
             return;
         }
 
-        int customerID = 0;
+        int customerID = NumberUtils.toInt(req.getParameter("customerID"), 0);
 
-        String customerIDStr = req.getParameter("customerID");
-        if( StringUtils.isNumeric(customerIDStr)) {
-            customerID = Integer.parseInt(customerIDStr);
-        }
+        MailingComponent comp = mailingComponentDao.getMailingComponent(compId, AgnUtils.getCompanyID(req));
 
-        MailingComponentDao mDao=(MailingComponentDao) WebApplicationContextUtils.getWebApplicationContext(this.getServletContext()).getBean("MailingComponentDao");
-        MailingComponent comp=mDao.getMailingComponent(compId, AgnUtils.getCompanyID(req));
-
-        if (comp!=null) {
+        if (comp != null) {
             HttpUtils.setDownloadFilenameHeader(response, comp.getComponentName());
             response.setContentType(comp.getMimeType());
             try (ServletOutputStream out = response.getOutputStream()) {
-	            ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
-	            Preview preview = ((PreviewFactory)applicationContext.getBean("PreviewFactory")).createPreview();
-	
-	            byte[] attachment = null;
-	            int mailingID = comp.getMailingID();
-	
-	            if( comp.getType() == MailingComponentType.PersonalizedAttachment) {
-	                Page page = null;
-	                if( customerID == 0 ){ // no customerID is available, take the 1st available test recipient
-	                	ComRecipientDao recipientDao = (ComRecipientDao) applicationContext.getBean("RecipientDao");
-	                    Map<Integer,String> recipientList = recipientDao.getAdminAndTestRecipientsDescription(comp.getCompanyID(), mailingID);
-	                    customerID = recipientList.keySet().iterator().next();
-	                }
-	                page = preview.makePreview(mailingID, customerID, false);
-	                attachment = page.getAttachment(comp.getComponentName());
-	
-	                } else {
-	                    attachment = comp.getBinaryBlock();
-	                }
-	
-	            len= attachment.length;
-	            response.setContentLength((int)len);
-	            out.write(attachment);
-	            out.flush();
-            userActivityLogService.writeUserActivityLog(AgnUtils.getAdmin(req), "component download",
-                    String.format("downloaded component (%d) for mailing (%d)", compId, mailingID));
+                Preview preview = previewFactory.createPreview();
+
+                byte[] attachment = null;
+                int mailingID = comp.getMailingID();
+
+                if (comp.getType() == MailingComponentType.PersonalizedAttachment) {
+                    int targetID = 0;
+                    if (customerID == 0) {
+                        targetID = comp.getTargetID();
+                    }
+
+                    if (customerID == 0 && targetID == 0) { // no customerID and targetID are available, take the 1st available test recipient
+                        Map<Integer, String> recipientList = recipientDao.getAdminAndTestRecipientsDescription(comp.getCompanyID(), mailingID);
+                        customerID = recipientList.keySet().iterator().next();
+                    }
+
+                    Page page = preview.makePreview(mailingID, customerID, targetID);
+                    attachment = page.getAttachment(comp.getComponentName());
+
+                } else {
+                    attachment = comp.getBinaryBlock();
+                }
+
+                len = ArrayUtils.getLength(attachment);
+                response.setContentLength((int) len);
+                out.write(attachment);
+                out.flush();
+                userActivityLogService.writeUserActivityLog(AgnUtils.getAdmin(req), "component download",
+                        String.format("downloaded component (%d) for mailing (%d)", compId, mailingID));
             }
         }
     }

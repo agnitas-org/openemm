@@ -28,7 +28,8 @@ Fields are small extensions of functionality for a form. They can be added via t
       FilterField,
       DateFilterField,
       DateSplitField,
-      RequiredField;
+      RequiredField,
+      DateTimeField;
 
   Field = function($field) {
     this.el = $field;
@@ -406,7 +407,7 @@ Only targets inside the container designated by the `toggle-vis` directive will 
     var fieldsToHide,
         fieldsToShow;
 
-    if ($el.is(':disabled')) {
+    if ($el.is(':disabled') && !$el.is('[data-field-vis-nondisabled]')) {
       return;
     }
 
@@ -915,4 +916,84 @@ The required field helps with preventing a form from submit, when its field valu
   AGN.Lib.DateSplitField       = DateSplitField;
   AGN.Opt.Fields['date-split'] = DateSplitField;
 
+  
+  /* Usage:
+  <div class="js-datetime-field" data-field="datetime"
+    data-property="propertyName"
+    data-field-options="format: '${fn:toLowerCase(adminDateFormat)}',
+                        defaultValue: '1/1/2021 10:00'">
+  </div>
+  */
+  DateTimeField = function($field) {
+    Field.apply(this, [$field]); // inherit from Field
+
+    var $el = $(this.el);
+    var propertyName = $el.data('property');
+    var options = _.extend({}, AGN.Lib.Helpers.objFromString($el.data('field-options')));
+    var value = options.value || options.defaultValue;
+
+    prepareDatetimeInput($el, propertyName, value, options.format);
+    $el.on('change', function() {
+      setDateTimeFieldValue(propertyName, options.format);
+    });
+  }
+  // inherit from Field
+  DateTimeField.prototype = Object.create(Field.prototype);
+  DateTimeField.prototype.constructor = DateTimeField;
+  AGN.Lib.DateTimeField = DateTimeField;
+  AGN.Opt.Fields['datetime'] = DateTimeField;
+  
+  function setDateTimeFieldValue(property, format) {
+    var escapedProperty = property.replace(/([:.\[\],=@])/g, "\\$1");
+    var $date = $('#' + escapedProperty + '_date');
+    var $time = $('#' + escapedProperty + '_time');
+    $('[name="' + property + '"]').val(prepareDateTimeValue($date, $time, format));
+  }
+
+  function prepareDateTimeValue($date, $time, format) {
+    var time = $time ? $time.val() : '';
+    time = time ? time.replaceAll('_', '0') : "00:00";
+    return $date.val() ? formatDateTime($date.pickadate("picker"), time, format) : '';
+  }
+
+  function formatDateTime(date, time, format) {
+    return date.get("select", format) + (isValidTimeField(time) ? (' ' + time) : '');
+  }
+
+  function isValidTimeField(time) {
+    return /^(\d{2}):(\d{2})$/.test(time);
+  }
+
+  function getDateFromFieldValue(value) {
+    if (value) {
+      return value.split(' ')[0];
+    }
+    return '';
+  }
+
+  function getTimeFromFieldValue(value) {
+    if (value) {
+      var datetime = value.split(' ');
+      if (datetime.length == 2) {
+        return datetime[1];
+      }
+    }
+    return '';
+  }
+  
+  function prepareDatetimeInput($el, propertyName, value, format) {
+    var input = document.createElement("input");
+    input.type = "hidden";
+    input.name = propertyName;
+    input.value = value;
+    $el.append(input);
+    $el.append(_.template(AGN.Opt.Templates['datetime-picker'])({
+      date: getDateFromFieldValue(value),
+      time: getTimeFromFieldValue(value),
+      property: propertyName,
+      format: format
+    }));
+    
+    AGN.runAll($el);
+  }
 })();

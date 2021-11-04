@@ -12,10 +12,10 @@ package com.agnitas.emm.core.workflow.service;
 
 import static com.agnitas.emm.core.workflow.beans.WorkflowRecipient.WorkflowTargetOption.ALL_TARGETS_REQUIRED;
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.WORKFLOW_TARGET_NAME_PATTERN;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.resolveDeadline;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -30,9 +30,9 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
 import org.agnitas.emm.core.autoimport.service.AutoImportService;
@@ -40,7 +40,6 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -101,15 +100,14 @@ public class ComWorkflowActivationService {
 	private static final transient Logger logger = Logger.getLogger(ComWorkflowActivationService.class);
     public static final int DEFAULT_STEPPING = 60;
 
-	public static final int TESTING_MODE_DEADLINE_DURATION = 15;  // minutes
-	private static final Deadline TESTING_MODE_DEADLINE = new Deadline(TimeUnit.MINUTES.toMillis(TESTING_MODE_DEADLINE_DURATION));
-
 	public static final List<Integer> ALL_MAILING_TYPES = Arrays.asList(
 			WorkflowIconType.MAILING.getId(),
 			WorkflowIconType.ACTION_BASED_MAILING.getId(),
 			WorkflowIconType.DATE_BASED_MAILING.getId(),
 			WorkflowIconType.FOLLOWUP_MAILING.getId()
 	);
+	private static final String MONTH_EXPRESSION = "30 * ";
+	private static final String WEEK_EXPRESSION = "7 * ";
 	private static final String HOUR_EXPRESSION = "1/24 * ";
 	private static final String MINUTE_EXPRESSION = "1/(24 * 60) * ";
 
@@ -191,7 +189,7 @@ public class ComWorkflowActivationService {
 					case EVENT_DATE:
 						processRuleBasedStart(companyId, workflowId, workflowGraph, startIcon, ruleStartMailingTargets, testing);
 						break;
-						
+
 					default:
 						break;
 				}
@@ -376,6 +374,12 @@ public class ComWorkflowActivationService {
 				expressions.add(HOUR_EXPRESSION + delayValue);
 			} else if (deadline.getTimeUnit() == WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_MINUTE) {
 				expressions.add(MINUTE_EXPRESSION + delayValue);
+			} else if(deadline.getTimeUnit() == WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_WEEK) {
+				expressions.add(WEEK_EXPRESSION + delayValue);
+			} else if(deadline.getTimeUnit() == WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_MONTH) {
+				expressions.add(MONTH_EXPRESSION + delayValue);
+			} else {
+				logger.error("Unknown type of deadline for date expression");
 			}
 		}
 
@@ -476,7 +480,7 @@ public class ComWorkflowActivationService {
 
 				mailingSendService.sendMailing(mailingId, companyId, options, warnings, errors, userActions);
 				// Use "test" mailing status on workflow test run.
-				mailingDao.updateStatus(mailingId, testing ? "test" : "active");
+				mailingDao.updateStatus(mailingId, testing ? MailingStatus.TEST : MailingStatus.ACTIVE);
 			}
 		}
 	}
@@ -1160,21 +1164,21 @@ public class ComWorkflowActivationService {
 			}
 		}
 	}
-	
+
 	private ComTarget createTarget(int companyId, int workflowId, String eql, String targetName) {
     	return createTarget(companyId, workflowId, eql, targetName, true);
     }
 
 	private ComTarget createTarget(int companyId, int workflowId, String eql, String targetName, boolean isTrackable) {
         ComTarget target = targetFactory.newTarget();
-		
+
 		target.setTargetName(targetName);
 		target.setTargetDescription("");
 		target.setCompanyID(companyId);
 		target.setComponentHide(true);
-		
+
 		target.setEQL(eql);
-		
+
         try {
             int targetId = targetDao.saveHiddenTarget(target);
             target.setId(targetId);
@@ -1185,21 +1189,21 @@ public class ComWorkflowActivationService {
             logger.error("Error creating target group during campaign activation: " + e.getMessage(), e);
 			// @todo: inform the user (#monitor?)
         }
-		
+
 		return target;
     }
-	
+
 	private int createMailingSentTarget(int companyId, int workflowId, WorkflowMailingAware mailing) {
 		int mailingId = mailing.getMailingId();
-		
+
 		if (mailingId > 0) {
 			String eql = String.format("RECEIVED MAILING %d", mailingId);
 			return createTarget(companyId, workflowId, eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "previous mailing has to be sent")).getId();
 		}
-		
+
 		return 0;
 	}
-	
+
 	private int createDecisionTarget(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowDecision decision, boolean isPositiveDecisionCase) {
 		try {
 			if(WorkflowUtils.isBranchingDecisionIcon(decision)) {
@@ -1211,24 +1215,24 @@ public class ComWorkflowActivationService {
 		} catch (Exception e) {
 			logger.error("Error while creating target group during campaign activation: " + e.getMessage(), e);
 		}
-		
+
 		return 0;
 	}
-	
+
 	private int createAutoOptimizationTarget(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowDecision decision) {
 		try {
 			String eql = workflowGraph.getAllNextParallelIconsByType(decision, ALL_MAILING_TYPES, Collections.emptySet(), true).stream()
 					.map(WorkflowUtils::getMailingId)
 					.map(mailingId -> String.format("RECEIVED MAILING %d", mailingId))
 					.collect(Collectors.joining(" AND "));
-			
+
 			return createTarget(companyId, workflowId, eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "decision")).getId();
 		} catch (Exception e) {
 			logger.error("Error while creating target group during campaign activation: " + e.getMessage(), e);
 		}
 		return 0;
 	}
-	
+
 	private int createImportTarget(int companyId, int workflowId, WorkflowImport importIcon) {
 		int autoImportId = importIcon.getImportexportId();
 
@@ -1300,29 +1304,9 @@ public class ComWorkflowActivationService {
 		return null;
 	}
 
-	private Date applyDeadline(Date triggerDate, WorkflowDeadline deadline, boolean testing, TimeZone adminTimeZone) {
-        Calendar calendar = DateUtilities.calendar(triggerDate, adminTimeZone);
-
-		if (testing) {
-			calendar.add(Calendar.MINUTE, TESTING_MODE_DEADLINE_DURATION);
-		} else {
-			if (deadline.getDeadlineType() == WorkflowDeadline.WorkflowDeadlineType.TYPE_FIXED_DEADLINE) {
-				calendar.setTime(WorkflowUtils.mergeIconDateAndTime(deadline.getDate(), deadline.getHour(), deadline.getHour()));
-			} else {
-				if (deadline.getTimeUnit() == WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_DAY) {
-					calendar.add(Calendar.DAY_OF_MONTH, deadline.getDelayValue());
-					if (deadline.isUseTime()) {
-						calendar.set(Calendar.HOUR_OF_DAY, deadline.getHour());
-						calendar.set(Calendar.MINUTE, deadline.getMinute());
-					}
-				} else if (deadline.getTimeUnit() == WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_HOUR) {
-					calendar.add(Calendar.HOUR_OF_DAY, deadline.getDelayValue());
-				} else if (deadline.getTimeUnit() == WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_MINUTE) {
-					calendar.add(Calendar.MINUTE, deadline.getDelayValue());
-				}
-			}
-		}
-		return calendar.getTime();
+	private Date applyDeadline(Date triggerDate, WorkflowDeadline icon, boolean testing, TimeZone adminTimeZone) {
+		Deadline deadline = resolveDeadline(icon, adminTimeZone, testing);
+		return Deadline.toDate(triggerDate, deadline, adminTimeZone);
 	}
 
     private void updateAutoImportActivationDate(@VelocityCheck int companyId, WorkflowGraph workflowGraph, Map<Integer, Date> importsActivationDates) throws Exception {
@@ -1393,7 +1377,7 @@ public class ComWorkflowActivationService {
 	public void setRecipientDao(ComRecipientDao recipientDao) {
 		this.recipientDao = recipientDao;
 	}
-	
+
 	@Required
 	public void setEqlHelper(ComWorkflowEQLHelper eqlHelper) {
 		this.eqlHelper = eqlHelper;
@@ -1501,11 +1485,7 @@ public class ComWorkflowActivationService {
 		}
 
 		private Deadline deadline(WorkflowIcon deadline) {
-			if (testing) {
-				return TESTING_MODE_DEADLINE;
-			} else {
-				return WorkflowUtils.asDeadline((WorkflowDeadline) deadline, timezone);
-			}
+			return resolveDeadline((WorkflowDeadline) deadline, timezone, testing);
 		}
 
 		private WorkflowReactionStepDeclaration next(WorkflowReactionStepDeclaration step, WorkflowIcon icon) {

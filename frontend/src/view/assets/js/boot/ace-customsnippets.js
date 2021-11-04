@@ -66,10 +66,6 @@
           name: "agn:DB",
           tabTrigger: "db"
       }, {
-          content: "[agnDBV]",
-          name: "agn:DBV",
-          tabTrigger: "dbv"
-      }, {
           content: "[agnEMAIL]",
           name: "agn:EMAIL",
           tabTrigger: "ema"
@@ -85,10 +81,6 @@
           content: "[agnIMGLINK name=\"${1}\"]",
           name: "agn:IMGLINK",
           tabTrigger: "imgli"
-      }, {
-          content: "[agnNULL]",
-          name: "agn:NULL",
-          tabTrigger: "nul"
       }, {
           content: "[agnPROFILE]",
           name: "agn:PROFILE",
@@ -113,10 +105,6 @@
           content: "[agnTITLEFULL type=\"${1:2}\"]",
           name: "agn:TITLEFULL",
           tabTrigger: "tifu"
-      }, {
-          content: "[agnTITLE_SHORT type=\"${1:2}\"]",
-          name: "agn:TITLE_SHORT",
-          tabTrigger: "tish"
       }, {
           content: "[agnUNSUBSCRIBE]",
           name: "agn:UNSUBSCRIBE",

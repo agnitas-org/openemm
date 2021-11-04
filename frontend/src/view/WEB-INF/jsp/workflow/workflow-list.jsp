@@ -125,44 +125,39 @@
                 {
                     "headerName": "<mvc:message code='Status'/>",
                     "editable": false,
-                    "cellAction": "goTo",
                     "field": "status",
                     "cellRenderer": "WorkflowStatusCellRenderer"
                 },
                 {
                     "headerName": "<mvc:message code='default.Name'/>",
                     "editable": false,
-                    "cellAction": "goTo",
+                    "cellRenderer": "StringCellRenderer",
                     "field": "shortname"
                 },
                 {
                     "headerName": "<mvc:message code='Description'/>",
                     "editable": false,
-                    "cellAction": "goTo",
+                    "cellRenderer": "StringCellRenderer",
                     "field": "description"
                 },
                 {
                     "headerName": "<mvc:message code='Start'/>",
                     "editable": false,
-                    "cellAction": "goTo",
                     "field": "startDate",
-                    "cellRenderer": "WorkflowStartCellRenderer",
-                    "cellRendererParams": { "adminDateTimeFormat": "${fn:toUpperCase(adminDateTimeFormat)}" }
+                    "cellRenderer": "WorkflowStartCellRenderer"
                 },
                 {
                     "headerName": "<mvc:message code='report.stopDate'/>",
                     "editable": false,
-                    "cellAction": "goTo",
                     "field": "stopDate",
-                    "cellRenderer": "WorkflowEndCellRenderer",
-                    "cellRendererParams": { "adminDateTimeFormat": "${fn:toUpperCase(adminDateTimeFormat)}" }
+                    "cellRenderer": "WorkflowEndCellRenderer"
                 },
                 {
                     "headerName": "<mvc:message code='workflow.Reaction'/>",
                     "editable": false,
-                    "cellAction": "goTo",
                     "field": "reaction",
-                    "cellRenderer": "WorkflowReactionCellRenderer"
+                    "cellRenderer": "MustacheTemplateCellRender",
+                    "cellRendererParams": {"templateName": "workflow-reaction"}
                 },
                 {
                     "field": "delete",
@@ -182,3 +177,14 @@
         background-color: #33b0b8;
     }
 </style>
+
+<script id="workflow-reaction" type="text/x-mustache-template">
+    {{ if (value) { }}
+        {{ if (value.iconClass) { }}
+            <i class="icon {{- value.iconClass}}"></i>
+        {{ } }}
+        {{ if (value.name) { }}
+            <strong> {{- t('workflow.reaction.' + value.name)}}</strong>
+        {{ } }}
+    {{ } }}
+</script>

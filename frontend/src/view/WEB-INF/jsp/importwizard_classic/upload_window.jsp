@@ -270,9 +270,19 @@
             
 		<c:if test="${importIsDone}">
 			<div class="tile-footer">
-				<html:link page='<%= "/recipient.do?action=" + RecipientAction.ACTION_LIST + "&latestDataSourceId=" + aForm.getDatasourceID() %>' styleClass="btn btn-large btn-primary pull-right">
-					<span><bean:message key="button.Finish"/></span>
-				</html:link>
+                <emm:HideByPermission token="recipient.rollback">
+                    <c:url var="recipientUrl" value="/recipient/list.action">
+                        <c:param name="latestDataSourceId" value="${aForm.datasourceID}"/>
+                    </c:url>
+                    <a href="${recipientUrl}" class="btn btn-large btn-primary pull-right">
+                        <span><bean:message key="button.Finish"/></span>
+                    </a>
+                </emm:HideByPermission>
+                <emm:ShowByPermission token="recipient.rollback">
+                    <html:link page='<%= "/recipient.do?action=" + RecipientAction.ACTION_LIST + "&latestDataSourceId=" + aForm.getDatasourceID() %>' styleClass="btn btn-large btn-primary pull-right">
+                        <span><bean:message key="button.Finish"/></span>
+                    </html:link>
+                </emm:ShowByPermission>
 				<span class="clearfix"></span>
 			</div>
 		</c:if>

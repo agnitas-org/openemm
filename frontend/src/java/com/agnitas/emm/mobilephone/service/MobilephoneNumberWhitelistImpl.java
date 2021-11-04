@@ -22,7 +22,7 @@ import com.agnitas.emm.mobilephone.MobilephoneNumber;
 import com.agnitas.emm.mobilephone.dao.MobilephoneNumberWhitelistDao;
 
 /**
- * Implementation of {@link MobilephoneNumberWhitelist} interface. 
+ * Implementation of {@link MobilephoneNumberWhitelist} interface.
  */
 public final class MobilephoneNumberWhitelistImpl implements MobilephoneNumberWhitelist {
 	
@@ -41,8 +41,9 @@ public final class MobilephoneNumberWhitelistImpl implements MobilephoneNumberWh
 				final Pattern pattern = Pattern.compile(patternString);
 				
 				// If phone number matches patten, we can stop here
-				if(pattern.matcher(number.toString()).matches())
+				if(pattern.matcher(number.toString()).matches()) {
 					return true;
+				}
 			} catch(final PatternSyntaxException e) {
 				// Log invalid pattern and proceed
 				LOGGER.warn(String.format("Found invalid mobilephone whitelist pattern for company ID %d: %s", companyID, patternString));

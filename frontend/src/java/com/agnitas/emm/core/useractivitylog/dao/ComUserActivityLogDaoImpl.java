@@ -125,11 +125,16 @@ public class ComUserActivityLogDaoImpl extends PaginatedBaseDaoImpl implements U
 	public void addAdminUseOfFeature(ComAdmin admin, String feature, Date date) {
 		if (admin != null && admin.getAdminID() != 0) {
 			if (isOracleDB()) {
-				String sql = "UPDATE admin_use_tbl SET use_count = use_count + 1, last_use = ? WHERE admin_id = ? AND feature = ?";
-				int updated = update(logger, sql, date, admin.getAdminID(), feature);
-				if (updated == 0) {
-					sql = "INSERT INTO admin_use_tbl (admin_id, feature, use_count, last_use) VALUES (?, ?, 1, ?)";
-					update(logger, sql, admin.getAdminID(), feature, date);
+				String updateSql = "UPDATE admin_use_tbl SET use_count = use_count + 1, last_use = ? WHERE admin_id = ? AND feature = ?";
+				int updatedLines = update(logger, updateSql, date, admin.getAdminID(), feature);
+				if (updatedLines == 0) {
+					String insertSql = "INSERT INTO admin_use_tbl (admin_id, feature, use_count, last_use) VALUES (?, ?, 1, ?)";
+					try {
+						update(logger, insertSql, admin.getAdminID(), feature, date);
+					} catch (Exception e) {
+						// if another request already created the entry meanwhile
+						updatedLines = update(logger, updateSql, date, admin.getAdminID(), feature);
+					}
 				}
 			} else {
 				String sql = "INSERT INTO admin_use_tbl " +

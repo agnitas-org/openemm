@@ -78,8 +78,6 @@ public interface ComRecipientDao {
 
     List<ComRecipientMailing> getMailingsSentToRecipient(int recipientID, int companyID);
 
-    PaginatedListImpl<ComRecipientMailing> getMailingsSentToRecipient(int customerID, int companyID, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending);
-
     List<ComRecipientHistory> getRecipientBindingHistory(int recipientID, int companyID);
 
     List<ComRecipientHistory> getRecipientProfileHistory(int recipientID, int companyID);
@@ -107,6 +105,8 @@ public interface ComRecipientDao {
      * @throws InstantiationException
      */
     PaginatedListImpl<Recipient> getRecipients(int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums) throws Exception;
+
+    PaginatedListImpl<Map<String, Object>> getPaginatedRecipientsData(int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums) throws Exception;
 
     PaginatedListImpl<Recipient> getDuplicatePaginatedRecipientList(int companyID, Set<String> columns, String statement, Object[] parameters, String sortCriterion, boolean sortedAscending, int pageNumber, int pageSize) throws Exception;
     
@@ -144,7 +144,7 @@ public interface ComRecipientDao {
     /**
      * Check whether it is allowed to add the given number of recipients.
      * The maximum number of recipients/company is defined in
-     * emm.properties with recipient.maxRows.
+     * emm configuration with recipient.maxRows.
      *
      * @param companyID The id of the company to check.
      * @param count the number of recipients that should be added.
@@ -155,9 +155,13 @@ public interface ComRecipientDao {
     /**
      * Inserts new customer record in Database with a fresh customer-id
      *
+     * @param cust recipient to insert
+     *
      * @return true on success
+     * 
+     * @throws Exception on errors writing data
      */
-	int insertNewCust(Recipient cust);
+    int insertNewCustWithException(Recipient cust) throws Exception;
 	
 	/**
      * Updates Customer in DB. customerID must be set to a valid id, customer-data is taken from this.customerData
@@ -166,8 +170,10 @@ public interface ComRecipientDao {
      * @param cust customer data to be saved to database
      * 
      * @return true on success
+     * 
+     * @throws Exception on errors writing data
      */
-	boolean updateInDB(Recipient cust);
+	boolean updateInDbWithException(final Recipient cust) throws Exception;
 
 	/**
      * Updates Customer in DB. customerID must be set to a valid id, customer-data is taken from this.customerData
@@ -179,8 +185,12 @@ public interface ComRecipientDao {
      * @param missingFieldsToNull control flag for handling profile fields that are not listed in given customer
 
      * @return true on success
+     * 
+     * @throws Exception on errors writing data
      */
-	boolean updateInDB(final Recipient cust, final boolean missingFieldsToNull);
+	boolean updateInDbWithException(final Recipient cust, final boolean missingFieldsToNull) throws Exception;
+
+    Map<String, Object> getRecipientData(@VelocityCheck int companyId, int recipientId, boolean respectHideSignIfSet);
 
     /**
      * Find Subscriber by providing a column-name and a value. Only exact matches possible.
@@ -357,8 +367,8 @@ public interface ComRecipientDao {
     void deleteRecipientsBindings(int mailinglistID, @VelocityCheck int companyID, boolean activeOnly, boolean noAdminsAndTests);
 
     int getCustomerIdWithEmailInMailingList(@VelocityCheck int companyId, int mailingId, String email);
-    
-	int getDefaultDatasourceID(String username, int companyID);
+
+    int getDefaultDatasourceID(String username, int companyID);
 	
 	void lockCustomers(int companyId, List<Integer> ids);
 	
@@ -388,7 +398,7 @@ public interface ComRecipientDao {
 	
 	boolean isOracleDB();
 
-    List<Integer> insertTestRecipients(@VelocityCheck int companyId, int mailingListId, int userStatus, String remark, List<String> addresses);
+    List<Integer> insertTestRecipients(@VelocityCheck int companyId, int mailingListId, int userStatus, String remark, List<String> addresses) throws Exception;
 
     String getEmail(@VelocityCheck int companyId, int customerId);
 
@@ -431,11 +441,25 @@ public interface ComRecipientDao {
     boolean isRecipientMatchTarget(int companyId, String targetExpression, int customerId);
 
     boolean isNotSavedRecipientDataMatchTarget(int companyId, String targetExpression, Recipient recipient) throws Exception;
-    
-    public List<Integer> listRecipientIdsByTargetGroup(final int companyId, final ComTarget target);
 
-	boolean updateInDB(Recipient customer, boolean missingFieldsToNull, boolean throwExceptionOnError) throws Exception;
+    boolean isNotSavedRecipientDataMatchTarget(int companyId, int recipientId, String targetExpression, Map<String, Object> entry) throws Exception;
 
-	List<CaseInsensitiveMap<String, Object>> getMailinglistRecipients(int companyID, int mailinglistID, MediaTypes mediaTypes, String targetSql, List<UserStatus> userstatusList,
-			TimeZone timeZone) throws Exception;
+    List<Integer> listRecipientIdsByTargetGroup(final int companyId, final ComTarget target);
+
+    int saveRecipient(@VelocityCheck int companyId, int recipientId, Map<String, Object> recipientValues);
+
+	List<Recipient> findByData(int companyID, Map<String, Object> searchDataMap) throws Exception;
+
+	BindingEntry getMailinglistBinding(int companyID, int customerID, int mailinglistId, int mediaType) throws Exception;
+
+	List<CaseInsensitiveMap<String, Object>> getMailinglistRecipients(int companyID, int mailinglistID, MediaTypes mediaTypes, String targetSql, List<UserStatus> userstatusList, TimeZone timeZone) throws Exception;
+
+	List<ComRecipientLiteImpl> listAdminAndTestRecipientsByAdmin(int companyID, int adminID);
+	
+	/**
+	 * Get data of several recipients<br />
+	 * Keeps datatypes in Object class (differs from method "getCustomers")<br />
+	 * Dates are returned as items of class Date
+	 */
+	List<CaseInsensitiveMap<String, Object>> getCustomersData(List<Integer> customerIDs, int companyID, TimeZone timeZone);
 }

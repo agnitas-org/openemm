@@ -65,13 +65,14 @@
                             </c:choose>
 
                             <%-- Show the size value at least in KB since the byte number is inaccurate anyway --%>
-                            <agn:agnMessage key="mailing.send.confirm" escapeMode="none"
+                            <agn:agnMessage key="mailing.send.confirm.ml" escapeMode="none"
                                             arg0="${mailingSendForm.shortname}"
                                             arg1="${mailingSendForm.mailingSubject}"
                                             arg2="${num_recipients}"
                                             arg3="${potentialSendDate}"
                                             arg4="${potentialSendTime}"
-                                            arg5="${sizeMessage}"/>
+                                            arg5="${sizeMessage}"
+                                            arg6="${mailinglistShortname}"/>
                         </div>
                         <div class="modal-footer">
                             <div class="btn-group">

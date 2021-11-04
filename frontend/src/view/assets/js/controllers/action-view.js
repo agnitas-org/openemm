@@ -128,7 +128,9 @@ AGN.Lib.Controller.new('action-view', function() {
         data.doubleOptIn = false;
         break;
       case 'UnsubscribeCustomer':
-        //no data
+        data.mailinglistIds = [];
+        data.allMailinglistsSelected = false;
+        data.additionalMailinglists = false;
         break;
       case 'UpdateCustomer':
         data.useTrack = false;

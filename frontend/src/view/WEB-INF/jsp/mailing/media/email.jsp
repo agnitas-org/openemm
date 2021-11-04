@@ -13,14 +13,9 @@
 <c:set var="TEXTAREA_WIDTH" value="<%= ComMailingBaseForm.TEXTAREA_WIDTH%>" scope="page" />
 <c:set var="TYPE_DATEBASED" value="<%= MailingTypes.DATE_BASED.getCode() %>"/>
 
-<c:set var="isMailingEditable" value="${not mailingBaseForm.worldMailingSend}"/>
-<emm:ShowByPermission token="mailing.content.change.always">
-    <c:set var="isMailingEditable" value="${true}"/>
-</emm:ShowByPermission>
-
 <c:set var="isEmailSettingsEditable" value="${mailingBaseForm.canChangeEmailSettings}"/>
 
-<c:set var="isEmailSettingsDisabled" value="${not isMailingEditable or not isEmailSettingsEditable}"/>
+<c:set var="isEmailSettingsDisabled" value="${not IS_MAILING_EDITABLE or not isEmailSettingsEditable}"/>
 
 <emm:ShowByPermission token="template.show">
 
@@ -156,7 +151,7 @@
                             <div class="col-sm-12">
                                 <agn:agnTextarea styleId="textTemplate" property="textTemplate" rows="14" cols="${TEXTAREA_WIDTH}"
                                                data-field-validator="reject-script-element"
-                                               styleClass="form-control js-editor-text" readonly="${not isMailingEditable}"/>
+                                               styleClass="form-control js-editor-text" readonly="${not IS_MAILING_EDITABLE}"/>
                             </div>
                         </div>
                     </div>
@@ -179,7 +174,7 @@
                                 <div class="col-sm-12">
                                     <agn:agnTextarea styleId="htmlTemplate" property="htmlTemplate" rows="14" cols="${TEXTAREA_WIDTH}"
                                                    data-field-validator="reject-script-element"
-                                                   styleClass="form-control js-editor" readonly="${not isMailingEditable}" />
+                                                   styleClass="form-control js-editor" readonly="${not IS_MAILING_EDITABLE}" />
                                 </div>
                             </div>
                         </div>

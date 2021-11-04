@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.commons.database.fulltext.impl;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.collections4.ListUtils;
@@ -19,22 +21,47 @@ import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchReservedLite
 
 public class OracleFulltextSearchReservedLiteralsConfig implements FulltextSearchReservedLiteralsConfig {
 
-    private List<Character> specialChars;
-    private List<String> specialWords;
+    private static final List<Character> SPECIAL_CHARS = new ArrayList<>(Arrays.asList(';', ',', '&', '=', '{', '}', '[', ']', '-', '~', '|', '$', '!', '>', '_'));
 
-    public OracleFulltextSearchReservedLiteralsConfig(List<Character> specialCharacters, List<String> specialWords) {
-        this.specialChars = specialCharacters;
-        this.specialWords = specialWords;
-    }
+    private static final List<String> SPECIAL_WORDS = new ArrayList<>(Arrays.asList(
+            "ABOUT",
+            "ACCUM",
+            "AND",
+            "BT",
+            "BTG",
+            "BTI",
+            "BTP",
+            "EQUIV",
+            "FUZZY",
+            "HASPATH",
+            "INPATH",
+            "MDATA",
+            "MINUS",
+            "NEAR",
+            "NOT",
+            "NT",
+            "NTG",
+            "NTI",
+            "NTP",
+            "OR",
+            "PT",
+            "RT",
+            "SQE",
+            "SYN",
+            "TR",
+            "TRSYN",
+            "TT",
+            "WITHIN"
+    ));
 
     @Override
     public List<Character> getSpecialCharacters() {
-        return ListUtils.emptyIfNull(specialChars);
+        return ListUtils.emptyIfNull(SPECIAL_CHARS);
     }
 
     @Override
     public List<String> getSpecialWords() {
-        return ListUtils.emptyIfNull(specialWords);
+        return ListUtils.emptyIfNull(SPECIAL_WORDS);
     }
 
     @Override

@@ -31,14 +31,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.ImportProfile;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.impl.ColumnMappingImpl;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
@@ -47,19 +46,9 @@ import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.ProfileImportCsvException.ReasonCode;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.CsvDataException;
-import org.agnitas.util.CsvDataInvalidItemCountException;
-import org.agnitas.util.CsvDataInvalidTextAfterQuoteException;
-import org.agnitas.util.CsvReader;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType;
+import org.agnitas.util.*;
 import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.FileUtils;
-import org.agnitas.util.ImportUtils;
 import org.agnitas.util.ImportUtils.ImportErrorType;
-import org.agnitas.util.ZipUtilities;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.CheckForDuplicates;
 import org.agnitas.util.importvalues.DateFormat;
@@ -83,6 +72,7 @@ import com.agnitas.emm.core.commons.encrypt.ProfileFieldEncryptor;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidatorWithWhitespace;
 import com.agnitas.emm.core.commons.validation.EmailValidator;
+import com.agnitas.emm.core.imports.beans.ImportItemizedProgress;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader;
@@ -123,7 +113,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	private TimeZone importTimeZone = TimeZone.getDefault();
 	private ComAdmin admin;
 	private int datasourceId;
-	private CustomerImportStatus status;
+	private ImportStatus status;
 	private List<Integer> mailingListIdsToAssign;
 	private String sessionId;
 	private int maxGenderValue;
@@ -163,6 +153,8 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	private List<String> transferDbColumns;
 	
 	private int reportID = 0;
+
+	private ImportItemizedProgress currentProgressStatus;
 
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
@@ -247,7 +239,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		return datasourceId;
 	}
 
-	public void setCustomerImportStatus(CustomerImportStatus status) {
+	public void setCustomerImportStatus(ImportStatus status) {
 		this.status = status;
 	}
 
@@ -283,7 +275,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		return importProfile.getId();
 	}
 
-	public CustomerImportStatus getStatus() {
+	public ImportStatus getStatus() {
 		return status;
 	}
 
@@ -329,6 +321,10 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		}
 	}
 
+	public ImportItemizedProgress getCurrentProgressStatus() {
+		return currentProgressStatus;
+	}
+
 	@Override
 	public ProfileImportWorker call() throws Exception {
 		try {
@@ -338,101 +334,93 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			waitingForInteraction = false;
 			
 			if (!ImportUtils.checkIfImportFileHasData(importFile.getLocalFile(), importProfile.isZipped(), importProfile.getZipPassword())) {
-				if (autoImport != null && autoImport.isEmptyFileAllowed()) {
-					endTime = new Date();
-			    	
-			    	// Write logs and reports
-					resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
-					
-					// Create downloadable report files
-					status.setImportedRecipientsCsv(null);
-					status.setInvalidRecipientsCsv(null);
-					status.setFixedByUserRecipientsCsv(null);
-					status.setDuplicateInCsvOrDbRecipientsCsv(null);
+				handleFileIsEmpty();
+				return this;
+			}
 
+			if (importProfile.isAutoMapping()) {
+				prepareAutoMapping();
+			}
+
+			if (configService.getBooleanValue(ConfigValue.AllowEmailWithWhitespace, importProfile.getCompanyId())) {
+				emailValidator = AgnitasEmailValidatorWithWhitespace.getInstance();
+			} else {
+				emailValidator = AgnitasEmailValidator.getInstance();
+			}
+
+			importValidationCheck();
+
+			if (temporaryImportTableName == null) {
+				try {
+					// Loading and parsing import data
+					prepareImportData();
+				} catch (Exception e) {
+					setStatusValues();
+					endTime = new Date();
+					logger.error("Error during profile prepareImportData: " + e.getMessage(), e);
+					cleanUp();
+					throw e;
+				}
+			}
+
+			if (error != null) {
+				// Some error occurred
+				importFile.setStatus(ImportFileStatus.FAILED);
+				waitingForInteraction = false;
+				endTime = new Date();
+				try {
+					// Write logs and reports
+					resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
+					profileImportReporter.sendProfileImportErrorMail(this, admin);
+					reportID = profileImportReporter.writeProfileImportReport(this, admin, true);
+				} catch (Exception e) {
+					logger.error("Error during profile importData: " + e.getMessage(), e);
+					throw e;
+				} finally {
+					cleanUp();
+				}
+			} else if (!interactiveMode || temporaryErrorTableName == null || ignoreErrors || !importRecipientsDao.hasRepairableErrors(temporaryErrorTableName)) {
+				waitingForInteraction = false;
+				try {
+					// Transferring the loaded and maybe corrected data into the live tables
+					importData();
+
+					endTime = new Date();
+
+					// Check if any valid data was imported
+					if ((ImportMode.getFromInt(importProfile.getImportMode()) == ImportMode.ADD || ImportMode.getFromInt(importProfile.getImportMode()) == ImportMode.ADD_AND_UPDATE || ImportMode.getFromInt(importProfile.getImportMode()) == ImportMode.UPDATE)
+							&& ((importProfile.isNoHeaders() && linesInFile > 0) || (!importProfile.isNoHeaders() && linesInFile > 1))
+							&& status.getInserted() == 0
+							&& status.getUpdated() == 0
+							&& status.getErrors().size() > 0) {
+						error = new ImportException(false, "error.import.data.invalid");
+						status.setFatalError("All import data was invalid");
+					}
+
+
+					// Write logs and reports
+					currentProgressStatus = ImportItemizedProgress.REPORTING_TO_RESULT_FILE;
+					resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
+
+
+					// Create downloadable report files
+					currentProgressStatus = ImportItemizedProgress.REPORTING_SUCCESS_RECIPIENTS;
+					status.setImportedRecipientsCsv(createImportedRecipients(getImportFile().getLocalFile().getName() + "_valid_recipients", "CSV".equalsIgnoreCase(importProfile.getDatatype())));
+					currentProgressStatus = ImportItemizedProgress.REPORTING_INVALID_RECIPIENTS;
+					status.setInvalidRecipientsCsv(createInvalidRecipients(getImportFile().getLocalFile().getName() + "_invalid_recipients", importedDataFileColumns, "CSV".equalsIgnoreCase(importProfile.getDatatype())));
+					currentProgressStatus = ImportItemizedProgress.REPORTING_FIXED_RECIPIENTS;
+					status.setFixedByUserRecipientsCsv(createFixedByUserRecipients(getImportFile().getLocalFile().getName() + "_fixed_recipients", importedDataFileColumns, "CSV".equalsIgnoreCase(importProfile.getDatatype())));
+					currentProgressStatus = ImportItemizedProgress.REPORTING_DUPLICATED_RECIPIENTS;
+					status.setDuplicateInCsvOrDbRecipientsCsv(createDuplicateInCsvOrDbRecipients(getImportFile().getLocalFile().getName() + "_duplicate_recipients", "CSV".equalsIgnoreCase(importProfile.getDatatype())));
+
+					currentProgressStatus = ImportItemizedProgress.SENDING_REPORT_MAIL;
 					profileImportReporter.sendProfileImportReportMail(this, admin);
 					reportID = profileImportReporter.writeProfileImportReport(this, admin, false);
-					return this;
-				} else {
-					throw new ImportException(false, "autoimport.error.emptyFile", importFile.getRemoteFilePath());
+				} finally {
+					cleanUp();
 				}
 			} else {
-				if (importProfile.isAutoMapping()) {
-					prepareAutoMapping();
-				}
-				
-				if (configService.getBooleanValue(ConfigValue.AllowEmailWithWhitespace, importProfile.getCompanyId())) {
-					emailValidator = AgnitasEmailValidatorWithWhitespace.getInstance();
-				} else {
-					emailValidator = AgnitasEmailValidator.getInstance();
-				}
-				
-				importValidationCheck();
-				
-				if (temporaryImportTableName == null) {
-				    try {
-				    	// Loading and parsing import data
-				    	prepareImportData();
-				    } catch (Exception e) {
-				    	setStatusValues();
-				    	endTime = new Date();
-				        logger.error("Error during profile prepareImportData: " + e.getMessage(), e);
-				    	cleanUp();
-				        throw e;
-				    }
-				}
-				
-				if (error != null) {
-					// Some error occurred
-					importFile.setStatus(ImportFileStatus.FAILED);
-					waitingForInteraction = false;
-					endTime = new Date();
-					try {
-						// Write logs and reports
-						resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
-						profileImportReporter.sendProfileImportErrorMail(this, admin);
-						reportID = profileImportReporter.writeProfileImportReport(this, admin, true);
-					} catch (Exception e) {
-						logger.error("Error during profile importData: " + e.getMessage(), e);
-				        throw e;
-				    } finally {
-				    	cleanUp();
-				    }
-				} else if (!interactiveMode || temporaryErrorTableName == null || ignoreErrors || !importRecipientsDao.hasRepairableErrors(temporaryErrorTableName)) {
-					waitingForInteraction = false;
-				    try {
-				    	// Transferring the loaded and maybe corrected data into the live tables
-				    	importData();
-						
-						endTime = new Date();
-						
-				    	// Check if any valid data was imported
-				    	if ((ImportMode.getFromInt(importProfile.getImportMode()) == ImportMode.ADD || ImportMode.getFromInt(importProfile.getImportMode()) == ImportMode.ADD_AND_UPDATE || ImportMode.getFromInt(importProfile.getImportMode()) == ImportMode.UPDATE)
-					    		&& ((importProfile.isNoHeaders() && linesInFile > 0) || (!importProfile.isNoHeaders() && linesInFile > 1))
-					    		&& status.getInserted() == 0
-					    		&& status.getUpdated() == 0
-					    		&& status.getErrors().size() > 0) {
-				    		error = new ImportException(false, "error.import.data.invalid");
-				    		status.setFatalError("All import data was invalid");
-				    	}
-				    	
-				    	// Write logs and reports
-						resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
-						
-						// Create downloadable report files
-						status.setImportedRecipientsCsv(createImportedRecipients(getImportFile().getLocalFile().getName() + "_valid_recipients", "CSV".equalsIgnoreCase(importProfile.getDatatype())));
-						status.setInvalidRecipientsCsv(createInvalidRecipients(getImportFile().getLocalFile().getName() + "_invalid_recipients", importedDataFileColumns, "CSV".equalsIgnoreCase(importProfile.getDatatype())));
-						status.setFixedByUserRecipientsCsv(createFixedByUserRecipients(getImportFile().getLocalFile().getName() + "_fixed_recipients", importedDataFileColumns, "CSV".equalsIgnoreCase(importProfile.getDatatype())));
-						status.setDuplicateInCsvOrDbRecipientsCsv(createDuplicateInCsvOrDbRecipients(getImportFile().getLocalFile().getName() + "_duplicate_recipients", "CSV".equalsIgnoreCase(importProfile.getDatatype())));
-	
-						profileImportReporter.sendProfileImportReportMail(this, admin);
-						reportID = profileImportReporter.writeProfileImportReport(this, admin, false);
-				    } finally {
-				    	cleanUp();
-				    }
-				} else {
-					waitingForInteraction = true;
-				}
+				waitingForInteraction = true;
 			}
 		} catch (DataAccessException | SQLException e) {
 			logger.error("Error during profile importData: " + e.getMessage(), e);
@@ -534,6 +522,11 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		} else {
 			try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
 				jsonReader.readNextToken();
+				
+				while (jsonReader.getCurrentToken() != null && jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+					jsonReader.readNextToken();
+				}
+				
 				if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
 					throw new Exception("Json data does not contain expected JsonArray");
 				}
@@ -567,11 +560,16 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			try {
 				if (importProfile.getZipPassword() == null) {
 					InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile.getLocalFile()));
-					ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-					if (zipEntry == null) {
-						throw new ImportException(false, "error.unzip.noEntry");
-					} else {
-						return dataInputStream;
+					try {
+						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
+						if (zipEntry == null) {
+							throw new ImportException(false, "error.unzip.noEntry");
+						} else {
+							return dataInputStream;
+						}
+					} catch (Exception e) {
+						dataInputStream.close();
+						throw e;
 					}
 				} else {
 					ZipFile zipFile = new ZipFile(importFile.getLocalFile());
@@ -624,19 +622,22 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 
 	private void importData() throws Exception {
 		ImportModeHandler importModeHandler = importModeHandlerFactory.getImportModeHandler(ImportMode.getFromInt(importProfile.getImportMode()).getImportModeHandlerName());
-		
+
+		currentProgressStatus = ImportItemizedProgress.HANDLING_BLACKLIST;
 		// Remove blacklisted entries (global blacklist is ignored to allow import of global blacklisted entries to companies blacklist)
 		blacklistedEmails = importModeHandler.handleBlacklist(importProfile, temporaryImportTableName);
 		
 		// Create synchronization infos
 		if (importProfile.getKeyColumns() != null && !importProfile.getKeyColumns().isEmpty() && importProfile.getCheckForDuplicates() == CheckForDuplicates.COMPLETE.getIntValue()) {
-			duplicatesInCsvData = importRecipientsDao.markDuplicatesEntriesSingleTable(temporaryImportTableName, importProfile.getKeyColumns(), importIndexColumn, duplicateIndexColumn);
-			duplicatesInDatabase = importRecipientsDao.markDuplicatesEntriesCrossTable(temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), "customer_id");
+			currentProgressStatus = ImportItemizedProgress.HANDLING_BLACKLIST;
+			duplicatesInCsvData = importRecipientsDao.markDuplicatesEntriesSingleTable(importProfile.getCompanyId(), temporaryImportTableName, importProfile.getKeyColumns(), importIndexColumn, duplicateIndexColumn);
+			duplicatesInDatabase = importRecipientsDao.markDuplicatesEntriesCrossTable(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), "customer_id");
 		}
 		
 		// Execute ImportProcessAction
 		if (importProcessActionDao != null && importProfile.getImportProcessActionID() > 0) {
 			try {
+				currentProgressStatus = ImportItemizedProgress.EXECUTING_IMPORT_ACTION;
 				importProcessActionDao.executeImportProcessAction(admin.getCompanyID(), importProfile.getImportProcessActionID(), temporaryImportTableName, mailingListIdsToAssign);
 			} catch (Exception e) {
 				logger.error("Error in ImportProcessAction: " + e.getMessage());
@@ -645,24 +646,28 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			}
 		}
 
-		
+		currentProgressStatus = ImportItemizedProgress.HANDLING_PREPROCESSING;
 		importModeHandler.handlePreProcessing(emmActionService, status, importProfile, temporaryImportTableName, datasourceId, mailingListIdsToAssign);
-		
+
+		currentProgressStatus = ImportItemizedProgress.HANDLING_NEW_RECIPIENTS;
 		importModeHandler.handleNewCustomers(status, importProfile, temporaryImportTableName, duplicateIndexColumn, transferDbColumns, datasourceId);
-		
+
+		currentProgressStatus = ImportItemizedProgress.HANDLING_EXISTING_RECIPIENTS;
 		importModeHandler.handleExistingCustomers(status, importProfile, temporaryImportTableName, importIndexColumn, transferDbColumns, datasourceId);
 
+		currentProgressStatus = ImportItemizedProgress.HANDLING_POSTPROCESSING;
 		mailinglistAssignStatistics = importModeHandler.handlePostProcessing(emmActionService, status, importProfile, temporaryImportTableName, datasourceId, mailingListIdsToAssign, importProfile.getMediatypes());
 
 		setStatusValues();
 	}
 
 	private void prepareImportData() throws Exception {
+		currentProgressStatus = ImportItemizedProgress.PREPARATIONS;
 		// Create temporary import table
 		String description = "Import by " + getUsername();
 		temporaryImportTableName = importRecipientsDao.createTemporaryCustomerImportTable(admin.getCompanyID(), "customer_" + importProfile.getCompanyId() + "_tbl", admin.getAdminID(), datasourceId, importProfile.getKeyColumns(), sessionId, description);
-		importIndexColumn = importRecipientsDao.addIndexedIntegerColumn(temporaryImportTableName, "csvindex", temporaryImportTableName + "csvix");
-		duplicateIndexColumn = importRecipientsDao.addIndexedIntegerColumn(temporaryImportTableName, "dbl", temporaryImportTableName + "dblix");
+		importIndexColumn = importRecipientsDao.addIndexedIntegerColumn(importProfile.getCompanyId(), temporaryImportTableName, "csvindex", temporaryImportTableName + "csvix");
+		duplicateIndexColumn = importRecipientsDao.addIndexedIntegerColumn(importProfile.getCompanyId(), temporaryImportTableName, "dbl", temporaryImportTableName + "dblix");
 		
 		if (!isOracleDB() && (ImportMode.getFromInt(importProfile.getImportMode()) == ImportMode.BLACKLIST_EXCLUSIVE || ImportMode.getFromInt(importProfile.getImportMode()) == ImportMode.TO_BLACKLIST)) {
 			// Change collation of email column for blacklist import on mysql and mariadb
@@ -686,6 +691,11 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		} else if ("JSON".equalsIgnoreCase(importProfile.getDatatype())) {
 			try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
 				jsonReader.readNextToken();
+				
+				while (jsonReader.getCurrentToken() != null && jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+					jsonReader.readNextToken();
+				}
+				
 				if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
 					throw new Exception("Json data does not contain expected JsonArray");
 				}
@@ -816,6 +826,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 
 	private final int importCsvDataInTemporaryTable() throws Exception {
 		setCompletedPercent(0);
+		currentProgressStatus = ImportItemizedProgress.IMPORTING_DATA_TO_TMP_TABLE;
 		
 		try (final Connection connection = importRecipientsDao.getDataSource().getConnection()) {
 			final boolean previousAutoCommit = connection.getAutoCommit();
@@ -1001,7 +1012,38 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	}
 	
 	private final int importCsvDataInTemporaryTable(final CsvReader csvReader, final Connection connection, final List<String> additionalDbColumns, List<String> additionalDbValues) throws Exception {
-		additionalDbValues = additionalDbValues.stream().map(value -> DbUtilities.isNowKeyword(value) ? "CURRENT_TIMESTAMP" : value).collect(Collectors.toList());
+		final CaseInsensitiveMap<String, DbColumnType> columnDataTypes = DbUtilities.getColumnDataTypes(importRecipientsDao.getDataSource(), "customer_" + importProfile.getCompanyId() + "_tbl");
+		
+		for (int i = 0; i < additionalDbValues.size(); i++) {
+			// Pure db function values, indicated by no quotes, cannot be checked by now
+			String additionalValue = additionalDbValues.get(i).trim();
+			if (StringUtils.isBlank(additionalValue)) {
+				additionalDbValues.set(i, "NULL");
+			} else if (DbUtilities.isNowKeyword(additionalValue)) {
+				additionalDbValues.set(i, "CURRENT_TIMESTAMP");
+			} else if (additionalValue.startsWith("'") && additionalValue.endsWith("'")) {
+				String textValue = additionalValue.substring(1, additionalValue.length() - 1);
+				if (DbUtilities.isNowKeyword(textValue)) {
+					additionalDbValues.set(i, "CURRENT_TIMESTAMP");
+				} else {
+					if (!DbUtilities.isAllowedValueForDataType(isOracleDB(), columnDataTypes.get(additionalDbColumns.get(i)), textValue)) {
+						throw new Exception("Additional value '" + textValue + "' is not allowed for column '" + additionalDbColumns.get(i) + "'");
+					}
+				}
+			} else if (additionalValue.startsWith("\"") && additionalValue.endsWith("\"")) {
+				// Allow and fix invalid textvalue quotes
+				String textValue = additionalValue.substring(1, additionalValue.length() - 1);
+				if (DbUtilities.isNowKeyword(textValue)) {
+					additionalDbValues.set(i, "CURRENT_TIMESTAMP");
+				} else {
+					if (!DbUtilities.isAllowedValueForDataType(isOracleDB(), columnDataTypes.get(additionalDbColumns.get(i)), textValue)) {
+						throw new Exception("Additional value '" + textValue + "' is not allowed for column '" + additionalDbColumns.get(i) + "'");
+					} else {
+						additionalDbValues.set(i, "'" + textValue + "'");
+					}
+				}
+			}
+		}
 		
 		insertIntoTemporaryImportTableSqlString = "INSERT INTO " + temporaryImportTableName + " ("
 				+ StringUtils.join(importedDBColumns, ", ")
@@ -1021,7 +1063,6 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			final int batchBlockSize = 1000;
 			boolean hasUnexecutedData = false;
 
-			final CaseInsensitiveMap<String, DbColumnType> columnDataTypes = DbUtilities.getColumnDataTypes(importRecipientsDao.getDataSource(), "customer_" + importProfile.getCompanyId() + "_tbl");
 			ImportModeHandler importModeHandler = importModeHandlerFactory.getImportModeHandler(ImportMode.getFromInt(importProfile.getImportMode()).getImportModeHandlerName());
 			columnMappingsByCsvIndex = new ArrayList<>();
 			for (int i = 0; i < importedCsvFileColumnIndexes.size(); i++) {
@@ -1063,7 +1104,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 						createTemporaryErrorTable(importedDataFileColumns.size());
 					}
 		        	
-					importRecipientsDao.addErrorneousCsvEntry(temporaryErrorTableName, importedCsvFileColumnIndexes, csvDataLine, csvReader.getReadCsvLines(), e.getReasonCode(), e.getCsvFieldName());
+					importRecipientsDao.addErrorneousCsvEntry(importProfile.getCompanyId(), temporaryErrorTableName, importedCsvFileColumnIndexes, csvDataLine, csvReader.getReadCsvLines(), e.getReasonCode(), e.getCsvFieldName());
 				} catch (Exception e) {
 					preparedStatement.clearParameters();
 
@@ -1071,7 +1112,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 						createTemporaryErrorTable(importedDataFileColumns.size());
 					}
 		        	
-					importRecipientsDao.addErrorneousCsvEntry(temporaryErrorTableName, importedCsvFileColumnIndexes, csvDataLine, csvReader.getReadCsvLines(), null, null);
+					importRecipientsDao.addErrorneousCsvEntry(importProfile.getCompanyId(), temporaryErrorTableName, importedCsvFileColumnIndexes, csvDataLine, csvReader.getReadCsvLines(), null, null);
 				}
 				
 				if (csvReader.getReadCsvLines() % batchBlockSize == 0) {
@@ -1108,6 +1149,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	
 	private final int importJsonDataInTemporaryTable() throws Exception {
 		setCompletedPercent(0);
+		currentProgressStatus = ImportItemizedProgress.IMPORTING_DATA_TO_TMP_TABLE;
 
 		try(final Connection connection = importRecipientsDao.getDataSource().getConnection()) {
 			final boolean previousAutoCommit = connection.getAutoCommit();
@@ -1131,6 +1173,11 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	private final int importJsonDataInTemporaryTable(final InputStream stream, final Connection connection) throws Exception {
 		try(final JsonReader jsonReader = new Json5Reader(stream, Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
 			jsonReader.readNextToken();
+			
+			while (jsonReader.getCurrentToken() != null && jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+				jsonReader.readNextToken();
+			}
+			
 			if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
 				throw new Exception("Json data does not contain expected JsonArray");
 			}
@@ -1263,7 +1310,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 						createTemporaryErrorTable(importedDBColumns.size());
 					}
 		        	
-					importRecipientsDao.addErrorneousJsonObject(temporaryErrorTableName, columnMappingByDbColumn, importedDBColumns, jsonDataObject, jsonObjectCount, e.getReasonCode(), e.getCsvFieldName());
+					importRecipientsDao.addErrorneousJsonObject(importProfile.getCompanyId(), temporaryErrorTableName, columnMappingByDbColumn, importedDBColumns, jsonDataObject, jsonObjectCount, e.getReasonCode(), e.getCsvFieldName());
 				} catch (Exception e) {
 					preparedStatement.clearParameters();
 
@@ -1271,7 +1318,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 						createTemporaryErrorTable(importedDBColumns.size());
 					}
 		        	
-					importRecipientsDao.addErrorneousJsonObject(temporaryErrorTableName, columnMappingByDbColumn, importedDBColumns, jsonDataObject, jsonObjectCount, null, null);
+					importRecipientsDao.addErrorneousJsonObject(importProfile.getCompanyId(), temporaryErrorTableName, columnMappingByDbColumn, importedDBColumns, jsonDataObject, jsonObjectCount, null, null);
 				}
 				
 				if (jsonObjectCount % batchBlockSize == 0) {
@@ -1319,7 +1366,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	 * @throws Exception
 	 */
 	public void setBeansAfterEditOnErrorEditPage(Map<String, String> changedValues) throws Exception {
-		List<Integer> updatedCsvIndexes = importRecipientsDao.updateTemporaryErrors(temporaryErrorTableName, importedDataFileColumns, changedValues);
+		List<Integer> updatedCsvIndexes = importRecipientsDao.updateTemporaryErrors(importProfile.getCompanyId(), temporaryErrorTableName, importedDataFileColumns, changedValues);
 		revalidateTemporaryErrorTable(updatedCsvIndexes);
 	}
 
@@ -1357,7 +1404,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 					preparedStatement.setInt(importedCsvFileColumnIndexes.size() + 1, revalidateCsvIndex);
 					
 					preparedStatement.executeUpdate();
-					importRecipientsDao.markErrorLineAsRepaired(temporaryErrorTableName, revalidateCsvIndex);
+					importRecipientsDao.markErrorLineAsRepaired(importProfile.getCompanyId(), temporaryErrorTableName, revalidateCsvIndex);
 				} catch (ProfileImportCsvException e) {
 					preparedStatement.clearParameters();
 
@@ -1365,7 +1412,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 						createTemporaryErrorTable(importedDataFileColumns.size());
 					}
 		        	
-					importRecipientsDao.addErrorneousCsvEntry(temporaryErrorTableName, csvValues, revalidateCsvIndex, e.getReasonCode(), e.getCsvFieldName());
+					importRecipientsDao.addErrorneousCsvEntry(importProfile.getCompanyId(), temporaryErrorTableName, csvValues, revalidateCsvIndex, e.getReasonCode(), e.getCsvFieldName());
 				} catch (Exception e) {
 					preparedStatement.clearParameters();
 
@@ -1373,7 +1420,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 						createTemporaryErrorTable(importedDataFileColumns.size());
 					}
 		        	
-					importRecipientsDao.addErrorneousCsvEntry(temporaryErrorTableName, importedCsvFileColumnIndexes, csvValues, revalidateCsvIndex, null, null);
+					importRecipientsDao.addErrorneousCsvEntry(importProfile.getCompanyId(), temporaryErrorTableName, importedCsvFileColumnIndexes, csvValues, revalidateCsvIndex, null, null);
 				}
 				
 				doneLines++;
@@ -1500,9 +1547,39 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 						throw new ProfileImportCsvException(ReasonCode.InvalidNumber, columnMapping.getFileColumn(), "Invalid number: " + dataValue);
 					}
 					
-					if (isOracleDB() && columnType.getNumericPrecision() < Double.toString(value).length()) {
-						status.addErrorColumn(columnMapping.getFileColumn());
-						throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValue);
+					if (isOracleDB()) {
+						if ("integer".equalsIgnoreCase(columnType.getTypeName())) {
+							if (value > 2147483647) {
+								status.addErrorColumn(columnMapping.getFileColumn());
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValue);
+							} else if (value < -2147483648) {
+								status.addErrorColumn(columnMapping.getFileColumn());
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValue);
+							}
+						} else if (columnType.getNumericPrecision() < Double.toString(value).length()) {
+							status.addErrorColumn(columnMapping.getFileColumn());
+							throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValue);
+						}
+					} else {
+						if ("smallint".equalsIgnoreCase(columnType.getTypeName())) {
+							if (value > 32767) {
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + value);
+							} else if (value < -32768) {
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too small: " + value);
+							}
+						} else if ("int".equalsIgnoreCase(columnType.getTypeName())) {
+							if (value > 2147483647) {
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + value);
+							} else if (value < -2147483648) {
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too small: " + value);
+							}
+						} else if ("bigint".equalsIgnoreCase(columnType.getTypeName())) {
+							if (value > 9223372036854775807l) {
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + value);
+							} else if (value < -9223372036854775808l) {
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too small: " + value);
+							}
+						}
 					}
 					
 					preparedStatement.setDouble(columnIndex + 1, value);
@@ -1515,9 +1592,31 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 						throw new ProfileImportCsvException(ReasonCode.InvalidNumber, columnMapping.getFileColumn(), "Invalid number: " + dataValue);
 					}
 					
-					if (isOracleDB() && columnType.getNumericPrecision() < Long.toString(value).length()) {
-						status.addErrorColumn(columnMapping.getFileColumn());
-						throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValue);
+					if (isOracleDB()) {
+						if (columnType.getNumericPrecision() < Long.toString(value).length()) {
+							status.addErrorColumn(columnMapping.getFileColumn());
+							throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + dataValue);
+						}
+					} else {
+						if ("smallint".equalsIgnoreCase(columnType.getTypeName())) {
+							if (value > 32767) {
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + value);
+							} else if (value < -32768) {
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too small: " + value);
+							}
+						} else if ("int".equalsIgnoreCase(columnType.getTypeName())) {
+							if (value > 2147483647) {
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + value);
+							} else if (value < -2147483648) {
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too small: " + value);
+							}
+						} else if ("bigint".equalsIgnoreCase(columnType.getTypeName())) {
+							if (value > 9223372036854775807l) {
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too large: " + value);
+							} else if (value < -9223372036854775808l) {
+								throw new ProfileImportCsvException(ReasonCode.NumberTooLarge, columnMapping.getFileColumn(), "Number too small: " + value);
+							}
+						}
 					}
 					
 					preparedStatement.setLong(columnIndex + 1, value);
@@ -1653,12 +1752,36 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			return null;
 		}
 	}
+
+	private void handleFileIsEmpty() throws Exception {
+		assertEmptyFileIsAllowed();
+
+		endTime = new Date();
+
+		// Write logs and reports
+		resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
+
+		// Create downloadable report files
+		status.setImportedRecipientsCsv(null);
+		status.setInvalidRecipientsCsv(null);
+		status.setFixedByUserRecipientsCsv(null);
+		status.setDuplicateInCsvOrDbRecipientsCsv(null);
+
+		profileImportReporter.sendProfileImportReportMail(this, admin);
+		reportID = profileImportReporter.writeProfileImportReport(this, admin, false);
+	}
+
+	private void assertEmptyFileIsAllowed() {
+		if(autoImport == null || !autoImport.isEmptyFileAllowed()) {
+			throw new ImportException(false, "autoimport.error.emptyFile", importFile.getRemoteFilePath());
+		}
+	}
 	
 	public void cleanUp() {
-		importRecipientsDao.dropTemporaryCustomerImportTable(temporaryImportTableName);
+		importRecipientsDao.dropTemporaryCustomerImportTable(importProfile.getCompanyId(), temporaryImportTableName);
 		temporaryImportTableName = null;
 		
-		importRecipientsDao.dropTemporaryCustomerImportTable(temporaryErrorTableName);
+		importRecipientsDao.dropTemporaryCustomerImportTable(importProfile.getCompanyId(), temporaryErrorTableName);
 		temporaryErrorTableName = null;
 	}
 

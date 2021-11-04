@@ -51,23 +51,23 @@ public interface ImportRecipientsDao {
 		
 	String createTemporaryCustomerImportTable(int companyID, String destinationTableName, int adminID, int datasourceID, List<String> keyColumns, String sessionId, String description) throws Exception;
 
-	String addIndexedIntegerColumn(String tableName, String baseColumnName, String indexName) throws Exception;
+	String addIndexedIntegerColumn(int companyID, String tableName, String baseColumnName, String indexName) throws Exception;
 	
-	String addIndexedStringColumn(String tableName, String baseColumnName, String indexName) throws Exception;
+	String addIndexedStringColumn(int companyID, String tableName, String baseColumnName, String indexName) throws Exception;
 
-	void dropTemporaryCustomerImportTable(String tempTableName);
+	void dropTemporaryCustomerImportTable(int companyID, String tempTableName);
 
 	DataSource getDataSource();
 
-	int markDuplicatesEntriesCrossTable(String destinationTableName, String sourceTableName, List<String> keyColumns, String duplicateSignColumn);
+	int markDuplicatesEntriesCrossTable(int companyID, String destinationTableName, String sourceTableName, List<String> keyColumns, String duplicateSignColumn);
 
-	int markDuplicatesEntriesSingleTable(String temporaryImportTableName, List<String> keyColumns, String importIndexColumn, String duplicateIndexColumn);
+	int markDuplicatesEntriesSingleTable(int companyID, String temporaryImportTableName, List<String> keyColumns, String importIndexColumn, String duplicateIndexColumn);
 	
 	int removeNewCustomersWithInvalidNullValues(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, List<ColumnMapping> columnMapping) throws Exception;
 
-	int insertNewCustomers(String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, int datasourceId, int defaultMailType, List<ColumnMapping> columnMappingForDefaultValues, int companyId);
+	int insertNewCustomers(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, int datasourceId, int defaultMailType, List<ColumnMapping> columnMappingForDefaultValues, int companyId);
 
-	int updateFirstExistingCustomers(String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception;
+	int updateFirstExistingCustomers(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception;
 
 	int getNumberOfEntriesForInsert(String temporaryImportTableName, String duplicateIndexColumn);
 
@@ -79,29 +79,31 @@ public interface ImportRecipientsDao {
 	
 	int importInBlackList(String temporaryImportTableName, int companyId);
 
-	int updateAllExistingCustomersByKeyColumn(String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception;
+	int updateAllExistingCustomersByKeyColumn(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception;
 
 	String createTemporaryCustomerErrorTable(int companyId, int adminId, int datasourceId, List<String> columns, String sessionId) throws Exception;
 
-	void addErrorneousCsvEntry(String temporaryErrorTableName, List<Integer> importedCsvFileColumnIndexes, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String errorneousFieldName);
+	void addErrorneousCsvEntry(int companyID, String temporaryErrorTableName, List<Integer> importedCsvFileColumnIndexes, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String errorneousFieldName);
 
 	Map<ImportErrorType, Integer> getReasonStatistics(String temporaryErrorTableName);
 
 	boolean hasRepairableErrors(String temporaryErrorTableName);
 
+	int dropLeftoverTables(int companyID, String hostName);
+	
 	int dropLeftoverTables(String hostName);
 
 	PaginatedListImpl<Map<String, Object>> getInvalidRecipientList(String temporaryErrorTableName, List<String> columns, String sort, String direction, int page, int rownums, int previousFullListSize) throws Exception;
 
-	List<Integer> updateTemporaryErrors(String temporaryErrorTableName, List<String> importedCsvFileColumns, Map<String, String> changedValues);
+	List<Integer> updateTemporaryErrors(int companyID, String temporaryErrorTableName, List<String> importedCsvFileColumns, Map<String, String> changedValues);
 
 	Map<String, Object> getErrorLine(String temporaryErrorTableName, int csvIndex);
 
-	void addErrorneousCsvEntry(String temporaryErrorTableName, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String errorneousFieldName);
+	void addErrorneousCsvEntry(int companyID, String temporaryErrorTableName, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String errorneousFieldName);
 
 	int getResultEntriesCount(String selectIntStatement);
 
-	void markErrorLineAsRepaired(String temporaryErrorTableName, int csvIndex);
+	void markErrorLineAsRepaired(int companyID, String temporaryErrorTableName, int csvIndex);
 
 	List<Integer> getImportedCustomerIdsWithoutBindingToMailinglist(String temporaryImportTableName, int companyId, int datasourceId, int mailinglistId);
 
@@ -109,7 +111,7 @@ public interface ImportRecipientsDao {
 
 	CaseInsensitiveMap<String, DbColumnType> getCustomerDbFields(int companyId) throws Exception;
 
-	void addErrorneousJsonObject(String temporaryErrorTableName, Map<String, ColumnMapping> columnMappingByDbColumn, List<String> importedDBColumns, JsonObject jsonDataObject, int jsonObjectCount, ReasonCode reasonCode, String jsonAttributeName);
+	void addErrorneousJsonObject(int companyID, String temporaryErrorTableName, Map<String, ColumnMapping> columnMappingByDbColumn, List<String> importedDBColumns, JsonObject jsonDataObject, int jsonObjectCount, ReasonCode reasonCode, String jsonAttributeName);
 
 	boolean checkUnboundCustomersExist(int companyID);
 

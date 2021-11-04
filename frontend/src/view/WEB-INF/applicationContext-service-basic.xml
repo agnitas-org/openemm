@@ -165,6 +165,19 @@
 	<bean id="CompanyService" class="org.agnitas.emm.company.service.impl.CompanyServiceImpl">
 		<property name="companyDao" ref="CompanyDao" />
     </bean>
+    
+    <bean id="CompanyTokenService" class="com.agnitas.emm.core.company.service.impl.CompanyTokenServiceImpl">
+    	<property name="companyTokenDao" ref="CompanyTokenDao" />
+    	<property name="companyService" ref="CompanyService" />
+    	<property name="configService" ref="ConfigService" />
+    	<property name="tokenGenerator" ref="DefaultTokenGenerator" />
+    </bean>
+    
+    <bean id="CompanyAccessCheck" class="org.agnitas.emm.core.velocity.emmapi.CompanyAccessCheckImpl" >
+    	<property name="configService" ref="ConfigService" />
+    	<property name="javaMailService" ref="JavaMailService" />
+    	<property name="companyHierarchyCache" ref="CompanyHierarchyCache" />
+    </bean>
 
 <!-- ============================================================================================================================== Component -->
 	<bean id="componentService" class="com.agnitas.emm.core.components.service.impl.ComComponentServiceImpl" > <!-- Maybe this can be merged with "mailingComponentService"? -->
@@ -225,11 +238,11 @@
 		<property name="recipientFactory" ref="RecipientFactory" />
 		<property name="extensibleUidService" ref="ExtensibleUIDService" />
 		<property name="companyDao" ref="CompanyDao" />
-		<property name="recipientDao" ref="RecipientDao" />
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="titleDao" ref="TitleDao" />
 		<property name="tagDao" ref="TagDao" />
 		<property name="configService" ref="ConfigService" />
+		<property name="recipientService" ref="recipientService"/>
 	</bean>
 
 	<bean id="AgnDynTagGroupResolverFactory" class="com.agnitas.service.impl.AgnDynTagGroupResolverFactoryImpl">
@@ -283,6 +296,10 @@
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="beanLookupFactory" ref="beanLookupFactory" />
 		<property name="javaMailService" ref="JavaMailService" />
+		<property name="configService" ref="ConfigService" />
+		<property name="companyAccessCheck" ref="CompanyAccessCheck" />
+		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
+		<property name="sendActionbasedMailingService" ref="SendActionbasedMailingService" />
 	</bean>
 
 	<bean id="actionOperationUpdateCustomer" class="com.agnitas.emm.core.action.service.impl.ActionOperationUpdateCustomerImpl">
@@ -291,6 +308,7 @@
 
 	<bean id="actionOperationGetCustomer" class="com.agnitas.emm.core.action.service.impl.ActionOperationGetCustomerImpl" >
 		<property name="beanLookupFactory" ref="beanLookupFactory" />
+		<property name="recipientService" ref="recipientService"/>
 	</bean>
 
 	<bean id="actionOperationActivateDoubleOptIn" class="com.agnitas.emm.core.action.service.impl.ActionOperationActivateDoubleOptInImpl">
@@ -301,6 +319,8 @@
 	<bean id="actionOperationUnsubscribeCustomer" class="com.agnitas.emm.core.action.service.impl.ActionOperationUnsubscribeCustomerImpl">
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="beanLookupFactory" ref="beanLookupFactory" />
+		<property name="recipientService" ref="recipientService"/>
+        <property name="configService" ref="ConfigService"/>
 	</bean>
 
 	<bean id="actionOperationSendMailing" class="com.agnitas.emm.core.action.service.impl.ActionOperationSendMailingImpl">
@@ -312,6 +332,7 @@
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="beanLookupFactory" ref="beanLookupFactory" />
 		<property name="blacklistService" ref="BlacklistService" />
+		<property name="recipientService" ref="recipientService"/>
 	</bean>
 
 	<bean id="actionOperationGetArchiveList" class="com.agnitas.emm.core.action.service.impl.ActionOperationGetArchiveListImpl">
@@ -337,6 +358,7 @@
 		<property name="companyDao" ref="CompanyDao" />
 		<property name="beanLookupFactory" ref="beanLookupFactory" />
 		<property name="configService" ref="ConfigService" />
+		<property name="recipientService" ref="recipientService"/>
 	</bean>
 
 <!-- ============================================================================================================================== Host authentication -->
@@ -483,6 +505,8 @@
         <property name="mailingComponentDao" ref="MailingComponentDao" />
 		<property name="mailingComponentFactory" ref="MailingComponentFactory" />
 		<property name="configService" ref="ConfigService" />
+		<property name="uploadDao" ref="UploadDao" />
+		<property name="componentValidationService" ref="ComponentValidationService" />
 	</bean>
 
 <!-- ============================================================================================================================== Mailing Stop -->
@@ -570,7 +594,11 @@
 		<property name="recipientWorkerFactory" ref="RecipientWorkerFactory"/>
 		<property name="adminService" ref="AdminService"/>
         <property name="queryBuilderToEqlConverter" ref="QueryBuilderToEqlConverter"/>
-    </bean>
+		<property name="bindingEntryDao" ref="BindingEntryDao"/>
+		<property name="bindingEntryFactory" ref="BindingEntryFactory"/>
+		<property name="conversionService" ref="conversionService"/>
+		<property name="mailinglistDao" ref="MailinglistDao"/>
+	</bean>
 
 	<bean id="recipientBulkService" class="org.agnitas.emm.core.recipient.service.impl.RecipientBulkServiceImpl">
 		<property name="recipientDao" ref="RecipientDao" />
@@ -661,7 +689,10 @@
 		<property name="beanShellInterpreterFactory" ref="BeanShellInterpreterFactory" />
 		<property name="targetComplexityEvaluator" ref="TargetComplexityEvaluator"/>
 		<property name="columnInfoService" ref="ColumnInfoService" />
-		<property name="referencedItemsService" ref="TargetGroupsReferencedItemsService" />  
+		<property name="referencedItemsService" ref="TargetGroupsReferencedItemsService" />
+		<property name="adminService" ref="AdminService"/>
+		<property name="targetFactory" ref="TargetFactory"/>
+		<property name="queryBuilderToEqlConverter" ref="QueryBuilderToEqlConverter"/>
 	</bean>
 	
 	<bean id="TargetGroupsReferencedItemsService" class="com.agnitas.emm.core.target.service.impl.ReferencedItemsServiceImpl">
@@ -674,6 +705,12 @@
 	</bean>
 
 	<bean id="TargetCopyService" class="com.agnitas.emm.core.target.service.impl.ComTargetCopyServiceImpl" />
+<!-- ============================================================================================================================== Token generators -->
+	<bean id="DefaultTokenGenerator" class="com.agnitas.emm.core.commons.tokengen.RandomTokenGenerator">
+		<constructor-arg>
+			<bean class="java.security.SecureRandom" />
+		</constructor-arg>
+	</bean>
 
 <!-- ============================================================================================================================== Trackable links -->
 	<bean id="TrackeableLinkService" class="com.agnitas.emm.core.trackablelinks.service.impl.ComTrackableLinkServiceImpl">
@@ -709,6 +746,8 @@
 		<property name="uidService" ref="ExtensibleUIDService"/>
 		<property name="comRecipientDao" ref="RecipientDao"/>
 		<property name="profileFieldService" ref="ProfileFieldService"/>
+		<property name="companyTokenService" ref="CompanyTokenService" />
+		<property name="recipientService" ref="recipientService" />
 	</bean>
 
 <!-- ============================================================================================================================== Velocity -->
@@ -845,6 +884,7 @@
 
 	<bean id="JavaMailService" class="com.agnitas.emm.core.JavaMailServiceImpl">
 		<property name="configService" ref="ConfigService" />
+		<property name="dkimDao" ref="DkimDao" />
 	</bean>
 
 	<bean id="LinkService" class="com.agnitas.emm.core.linkcheck.service.LinkServiceImpl">
@@ -929,6 +969,7 @@
 		<property name="recipientFactory" ref="RecipientFactory" />
 		<property name="configService" ref="ConfigService" />
 		<property name="mailingContentTypeCache" ref="MailingContentTypeCache" />
+		<property name="recipientService" ref="recipientService"/>
 	</bean>
 
 	<bean id="FullviewService" class="com.agnitas.emm.core.mailing.service.impl.FullviewServiceImpl">
@@ -938,14 +979,17 @@
 		<property name="configService" ref="ConfigService" />
 		<property name="recipientService" ref="recipientService" />
 		<property name="extensibleUidService" ref="ExtensibleUIDService" />
+		<property name="companyTokenService" ref="CompanyTokenService" />
 	</bean>
 
 	<bean id="ImportModeAddHandler" class="org.agnitas.util.importvalues.ImportModeAddHandler">
 		<property name="importRecipientsDao" ref="ImportRecipientsDao" />
+		<property name="configService" ref="ConfigService" />
 	</bean>
 	
 	<bean id="ImportModeAddAndUpdateHandler" class="org.agnitas.util.importvalues.ImportModeAddAndUpdateHandler">
 		<property name="importRecipientsDao" ref="ImportRecipientsDao" />
+		<property name="configService" ref="ConfigService" />
 	</bean>
 	
 	<bean id="ImportModeUpdateHandler" class="org.agnitas.util.importvalues.ImportModeUpdateHandler">
@@ -954,6 +998,7 @@
 	
 	<bean id="ImportModeAddAndUpdateForcedHandler" class="org.agnitas.util.importvalues.ImportModeAddAndUpdateForcedHandler">
 		<property name="importRecipientsDao" ref="ImportRecipientsDao" />
+		<property name="configService" ref="ConfigService" />
 	</bean>
 	
 	<bean id="ImportModeUnsubscribeHandler" class="org.agnitas.util.importvalues.ImportModeUnsubscribeHandler">
@@ -1117,8 +1162,38 @@
 		<property name="targetDao" ref="TargetDao" />
 	</bean>
 	
+	<bean id="RestfulQuotaService" class="com.agnitas.emm.util.quota.tokenbucket.Bucket4jQuotaService">
+		<property name="bucketManager">
+			<bean class="com.agnitas.emm.restful.util.quota.LocalBucketManager">
+				<property name="configService" ref="ConfigService" />
+				
+				<property name="restfulQuotaDao">
+					<bean class="com.agnitas.emm.restful.util.quota.dao.RestfulQuotaDaoImpl" parent="_BaseDao" />
+				</property>
+			</bean>
+		</property>
+		
+		<property name="apiInvocationCosts">
+			<bean class="com.agnitas.emm.restful.util.quota.RestfulApiInvocationCostsCache">
+				<constructor-arg>
+					<bean class="com.agnitas.emm.restful.util.quota.dao.RestfulApiInvocationCostsDaoImpl" parent="_BaseDao" />
+				</constructor-arg>
+				<constructor-arg ref="ConfigService" />
+			</bean>
+		</property>
+	</bean>
+	
 	<bean id="ObjectUsageService" class="com.agnitas.emm.core.objectusage.service.impl.ObjectUsageServiceImpl">
 		<property name="targetGroupReferencedItemsService" ref="TargetGroupsReferencedItemsService" />
 		<property name="profileFieldService" ref="ProfileFieldService" />
+	</bean>
+	
+	<bean id="MailingPropertiesRules" class="com.agnitas.emm.core.mailing.service.impl.MailingPropertiesRulesImpl">
+		<property name="maildropService" ref="MaildropService" />
+		<property name="mailingDao" ref="MailingDao" />
+	</bean>
+
+	<bean id="WysiwygService" class="com.agnitas.emm.core.wysiwyg.service.impl.WysiwygServiceImpl">
+		<property name="mailingComponentsService" ref="mailingComponentService" />
 	</bean>
 </beans>

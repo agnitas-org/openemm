@@ -46,44 +46,40 @@
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
-        <c:set target="${agnBreadcrumb}" property="textKey" value="import.Wizard"/>
-        <c:set target="${agnBreadcrumb}" property="url" value="${importWizardLink}"/>
-    </emm:instantiate>
-
-    <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
-        <c:set target="${agnBreadcrumbs}" property="1" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}" property="textKey" value="import.ProfileAdministration"/>
         <c:set target="${agnBreadcrumb}" property="url" value="${profilesOverviewLink}"/>
     </emm:instantiate>
 
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
-        <c:set target="${agnBreadcrumbs}" property="2" value="${agnBreadcrumb}"/>
+        <c:set target="${agnBreadcrumbs}" property="1" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}" property="text" value="${shortname}"/>
         <c:set target="${agnBreadcrumb}" property="url" value="${profileViewLink}"/>
     </emm:instantiate>
 
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
-        <c:set target="${agnBreadcrumbs}" property="3" value="${agnBreadcrumb}"/>
+        <c:set target="${agnBreadcrumbs}" property="2" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}" property="textKey" value="import.ManageColumns"/>
     </emm:instantiate>
 </emm:instantiate>
 
 <c:if test="${not isReadonly}">
-    <emm:instantiate var="itemActionsSettings" type="java.util.LinkedHashMap" scope="request">
-        <emm:instantiate var="element" type="java.util.LinkedHashMap">
-            <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
-            <c:set target="${element}" property="btnCls" value="btn btn-inverse btn-regular"/>
-            <c:set target="${element}" property="iconBefore" value="icon icon-save"/>
-            <c:set target="${element}" property="extraAttributes" value="data-form-target='#importProfileColumnsForm' data-form-persist='action:${ACTION_SAVE}'  data-form-submit"/>
-            <c:set target="${element}" property="name"><bean:message key="button.Save"/></c:set>
-        </emm:instantiate>
-        
-        <emm:instantiate var="element" type="java.util.LinkedHashMap">
-            <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
-            <c:set target="${element}" property="btnCls" value="btn btn-inverse btn-regular"/>
-            <c:set target="${element}" property="iconBefore" value="icon icon-save"/>
-            <c:set target="${element}" property="extraAttributes" value="data-form-target='#importProfileColumnsForm' data-form-persist='action:${ACTION_SAVE_AND_START}' data-form-submit" />
-            <c:set target="${element}" property="name"><bean:message key="button.SaveAndStartImport"/></c:set>
-        </emm:instantiate>
-    </emm:instantiate>
+	<emm:ShowByPermission token="import.change">
+	    <emm:instantiate var="itemActionsSettings" type="java.util.LinkedHashMap" scope="request">
+	        <emm:instantiate var="element" type="java.util.LinkedHashMap">
+	            <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
+	            <c:set target="${element}" property="btnCls" value="btn btn-inverse btn-regular"/>
+	            <c:set target="${element}" property="iconBefore" value="icon icon-save"/>
+	            <c:set target="${element}" property="extraAttributes" value="data-form-target='#importProfileColumnsForm' data-form-persist='action:${ACTION_SAVE}'  data-form-submit"/>
+	            <c:set target="${element}" property="name"><bean:message key="button.Save"/></c:set>
+	        </emm:instantiate>
+	        
+	        <emm:instantiate var="element" type="java.util.LinkedHashMap">
+	            <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
+	            <c:set target="${element}" property="btnCls" value="btn btn-inverse btn-regular"/>
+	            <c:set target="${element}" property="iconBefore" value="icon icon-save"/>
+	            <c:set target="${element}" property="extraAttributes" value="data-form-target='#importProfileColumnsForm' data-form-persist='action:${ACTION_SAVE_AND_START}' data-form-submit" />
+	            <c:set target="${element}" property="name"><bean:message key="button.SaveAndStartImport"/></c:set>
+	        </emm:instantiate>
+	    </emm:instantiate>
+    </emm:ShowByPermission>
 </c:if>

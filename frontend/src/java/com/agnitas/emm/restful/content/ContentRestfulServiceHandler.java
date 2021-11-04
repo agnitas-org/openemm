@@ -11,15 +11,10 @@
 package com.agnitas.emm.restful.content;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map.Entry;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.impl.DynamicTagContentImpl;
@@ -49,6 +44,10 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
+
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * This restful service is available at:
@@ -94,17 +93,17 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, String requestDataFilePath, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getContent(request, response, admin)));
 		} else if (requestMethod == RequestMethod.DELETE) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(deleteContent(request, admin)));
-		} else if (requestDataFilePath == null || new File(requestDataFilePath).length() <= 0) {
+		} else if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
 			restfulResponse.setError(new RestfulClientException("Missing request data"), ErrorCode.REQUEST_DATA_ERROR);
 		} else if (requestMethod == RequestMethod.POST) {
-			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createNewContent(request, new File(requestDataFilePath), admin)));
+			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createNewContent(request, requestData, requestDataFile, admin)));
 		} else if (requestMethod == RequestMethod.PUT) {
-			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createOrUpdateContent(request, new File(requestDataFilePath), admin)));
+			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createOrUpdateContent(request, requestData, requestDataFile, admin)));
 		} else {
 			throw new RestfulClientException("Invalid http request method");
 		}
@@ -140,7 +139,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			
 			JsonArray contentsJsonArray = new JsonArray();
 			
-			for (DynamicTag dynamicTag : mailingDao.getDynamicTags(mailingID, admin.getCompanyID())) {
+			for (DynamicTag dynamicTag : dynamicTagDao.getDynamicTags(mailingID, admin.getCompanyID(), false)) {
 				contentsJsonArray.add(createContentJsonObject(dynamicTag));
 			}
 			
@@ -163,7 +162,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 				throw new RestfulNoDataFoundException("No data found");
 			}
 			
-			DynamicTag dynamicTag = mailingDao.getDynamicTag(dynTagNameID, admin.getCompanyID());
+			DynamicTag dynamicTag = dynamicTagDao.getDynamicTag(dynTagNameID, admin.getCompanyID());
 			
 			if (dynamicTag == null) {
 				throw new RestfulNoDataFoundException("No data found");
@@ -229,7 +228,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createNewContent(HttpServletRequest request, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createNewContent(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_CHANGE.toString() + "'");
 		}
@@ -247,14 +246,14 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/content", new Date());
 		userActivityLogDao.writeUserActivityLog(admin, "restful/content POST", "MID: " + mailingID);
 		
-		DynamicTag dynamicTag = parseContentJsonObject(requestDataFile, admin);
+		DynamicTag dynamicTag = parseContentJsonObject(requestData, requestDataFile, admin);
 		dynamicTag.setMailingID(mailingID);
 		
 		if (dynamicTagDao.getId(admin.getCompanyID(), mailingID, dynamicTag.getDynName()) > 0) {
 			throw new RestfulClientException("Content already exists: " + dynamicTag.getDynName());
 		} else {
-			mailingDao.createDynamicTags(admin.getCompanyID(), mailingID, "UTF-8", Collections.singletonList(dynamicTag));
-			return createContentJsonObject(mailingDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID()));
+			dynamicTagDao.createDynamicTags(admin.getCompanyID(), mailingID, "UTF-8", Collections.singletonList(dynamicTag));
+			return createContentJsonObject(dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID()));
 		}
 	}
 
@@ -267,7 +266,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createOrUpdateContent(HttpServletRequest request, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createOrUpdateContent(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_CHANGE.toString() + "'");
 		}
@@ -287,14 +286,14 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/content", new Date());
 			userActivityLogDao.writeUserActivityLog(admin, "restful/content PUT", "MID: " + mailingID);
 			
-			DynamicTag dynamicTag = parseContentJsonObject(requestDataFile, admin);
+			DynamicTag dynamicTag = parseContentJsonObject(requestData, requestDataFile, admin);
 			dynamicTag.setMailingID(mailingID);
 			
 			if (dynamicTagDao.getId(admin.getCompanyID(), mailingID, dynamicTag.getDynName()) > 0) {
 				throw new RestfulClientException("Content already exists: " + dynamicTag.getDynName());
 			} else {
-				mailingDao.createDynamicTags(admin.getCompanyID(), mailingID, "UTF-8", Collections.singletonList(dynamicTag));
-				return createContentJsonObject(mailingDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID()));
+				dynamicTagDao.createDynamicTags(admin.getCompanyID(), mailingID, "UTF-8", Collections.singletonList(dynamicTag));
+				return createContentJsonObject(dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID()));
 			}
 		} else {
 			// Update content of a mailing by name or content_id
@@ -303,14 +302,14 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/content", new Date());
 			userActivityLogDao.writeUserActivityLog(admin, "restful/content PUT", "MID: " + mailingID + " " + requestedContentKeyValue);
 			
-			DynamicTag dynamicTag = parseContentJsonObject(requestDataFile, admin);
+			DynamicTag dynamicTag = parseContentJsonObject(requestData, requestDataFile, admin);
 			dynamicTag.setMailingID(mailingID);
 			
 			DynamicTag existingDynamicTag;
 			if (AgnUtils.isNumber(requestedContentKeyValue)) {
 				int contentID = Integer.parseInt(requestedContentKeyValue);
 				if (contentID > 0) {
-					existingDynamicTag = mailingDao.getDynamicTag(contentID, admin.getCompanyID());
+					existingDynamicTag = dynamicTagDao.getDynamicTag(contentID, admin.getCompanyID());
 				} else {
 					existingDynamicTag = null;
 				}
@@ -321,7 +320,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			} else {
 				int dynTagId = dynamicTagDao.getId(admin.getCompanyID(), mailingID, dynamicTag.getDynName());
 				if (dynTagId > 0) {
-					existingDynamicTag = mailingDao.getDynamicTag(dynTagId, admin.getCompanyID());
+					existingDynamicTag = dynamicTagDao.getDynamicTag(dynTagId, admin.getCompanyID());
 				} else {
 					existingDynamicTag = null;
 				}
@@ -333,9 +332,9 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			
 			dynamicTag.setId(existingDynamicTag.getId());
 			
-			mailingDao.updateDynamicTags(admin.getCompanyID(), mailingID, "UTF-8", Collections.singletonList(dynamicTag));
+			dynamicTagDao.updateDynamicTags(admin.getCompanyID(), mailingID, "UTF-8", Collections.singletonList(dynamicTag));
 			
-			DynamicTag storedDynamicTag = mailingDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID());
+			DynamicTag storedDynamicTag = dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID());
 			
 			if (storedDynamicTag != null) {
 				return createContentJsonObject(storedDynamicTag);
@@ -376,11 +375,11 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 		return dynamicTagJsonObject;
 	}
 
-	private DynamicTag parseContentJsonObject(File requestDataFile, ComAdmin admin) throws Exception {
+	private DynamicTag parseContentJsonObject(byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
 		DynamicTag dynamicTag = new DynamicTagImpl();
 		dynamicTag.setCompanyID(admin.getCompanyID());
 		
-		try (InputStream inputStream = new FileInputStream(requestDataFile)) {
+		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 				JsonNode jsonNode = jsonReader.read();
 				if (JsonDataType.OBJECT == jsonNode.getJsonDataType()) {

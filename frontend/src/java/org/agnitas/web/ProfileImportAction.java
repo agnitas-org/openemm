@@ -29,20 +29,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.ImportProfile;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.ProfileRecipientFields;
-import org.agnitas.beans.impl.CustomerImportStatusImpl;
 import org.agnitas.beans.impl.DatasourceDescriptionImpl;
+import org.agnitas.beans.impl.ImportStatusImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
@@ -88,6 +82,12 @@ import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import com.agnitas.messages.I18nString;
 import com.agnitas.util.FutureHolderMap;
 import com.agnitas.web.forms.ComNewImportWizardForm;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Profileimport Action
@@ -299,6 +299,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 					aForm.setAction(ProfileImportAction.ACTION_PROCEED);
 					destination = mapping.findForward(FORWARDKEY_PROGRESS);
 					aForm.setCompletedPercent(profileImportWorker.getCompletedPercent());
+					aForm.setCurrentProgressStatus(profileImportWorker.getCurrentProgressStatus());
 				} else {
 					// Prepare view for new Import process
 					if (aForm.getListsToAssign() != null) {
@@ -313,7 +314,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 						}
 					}
 					aForm.setImportProfiles(getProfileList(admin));
-					aForm.setStatus(new CustomerImportStatusImpl());
+					aForm.setStatus(new ImportStatusImpl());
 					aForm.setResultPagePrepared(false);
 					destination = mapping.findForward("start");
 				}
@@ -532,6 +533,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 							aForm.setAction(ProfileImportAction.ACTION_PROCEED);
 							destination = mapping.findForward(FORWARDKEY_PROGRESS);
 							aForm.setCompletedPercent(profileImportWorker.getCompletedPercent());
+							aForm.setCurrentProgressStatus(profileImportWorker.getCurrentProgressStatus());
 						} else {
 							// Show the remaining erroneous data
 							destination = mapping.findForward(FORWARDKEY_ERROREDIT);
@@ -556,6 +558,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 					aForm.setAction(ProfileImportAction.ACTION_PROCEED);
 					destination = mapping.findForward(FORWARDKEY_PROGRESS);
 					aForm.setCompletedPercent(profileImportWorker.getCompletedPercent());
+					aForm.setCurrentProgressStatus(profileImportWorker.getCurrentProgressStatus());
 				}
 				
 				if(destination != null && "preview".equals(destination.getName())) {
@@ -609,6 +612,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 					aForm.setAction(ProfileImportAction.ACTION_PROCEED);
 					destination = mapping.findForward(FORWARDKEY_PROGRESS);
 					aForm.setCompletedPercent(profileImportWorker.getCompletedPercent());
+					aForm.setCurrentProgressStatus(profileImportWorker.getCurrentProgressStatus());
 				}
 				break;
 
@@ -651,7 +655,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 
 				aForm.setDefaultProfileId(admin.getDefaultImportProfileID());
 				aForm.setImportProfiles(getProfileList(admin));
-				aForm.setStatus(new CustomerImportStatusImpl());
+				aForm.setStatus(new ImportStatusImpl());
 				destination = mapping.findForward("start");
 				aForm.setResultPagePrepared(false);
 				break;
@@ -705,7 +709,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 					aForm.setError(true);
 					destination = mapping.findForward(FORWARDKEY_PROGRESS);
 	
-					CustomerImportStatus status = aForm.getStatus();
+					ImportStatus status = aForm.getStatus();
 					status.setFields(0);
 					status.setUpdated(0);
 					status.setInserted(0);
@@ -742,21 +746,25 @@ public class ProfileImportAction extends ImportBaseFileAction {
 	 * @return true if key column is contained in one of column mappings
 	 */
 	private boolean isProfileKeyColumnValid(ImportProfile importProfile, ActionMessages errors) {
-		List<ColumnMapping> mapping = importProfile.getColumnMapping();
-		List<String> mappedDbColumns = mapping.stream()
-				.map(ColumnMapping::getDatabaseColumn)
-				.filter(Objects::nonNull)
-				.map(String::toLowerCase)
-				.collect(Collectors.toList());
-		
-		for (String keyColumn : importProfile.getKeyColumns()) {
-			if (!mappedDbColumns.contains(keyColumn.toLowerCase())) {
-				errors.add("profile", new ActionMessage("error.import.keycolumn_not_imported"));
-				return false;
+		if (importProfile.isAutoMapping())  {
+			return true;
+		} else {
+			List<ColumnMapping> mapping = importProfile.getColumnMapping();
+			List<String> mappedDbColumns = mapping.stream()
+					.map(ColumnMapping::getDatabaseColumn)
+					.filter(Objects::nonNull)
+					.map(String::toLowerCase)
+					.collect(Collectors.toList());
+			
+			for (String keyColumn : importProfile.getKeyColumns()) {
+				if (!mappedDbColumns.contains(keyColumn.toLowerCase())) {
+					errors.add("profile", new ActionMessage("error.import.keycolumn_not_imported"));
+					return false;
+				}
 			}
-		}
 		
-		return true;
+			return true;
+		}
 	}
 
 	/**

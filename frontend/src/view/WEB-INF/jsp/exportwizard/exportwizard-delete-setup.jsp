@@ -3,7 +3,7 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <emm:CheckLogon/>
-<emm:Permission token="wizard.export"/>
+<emm:Permission token="export.delete"/>
 <c:set var="agnNavigationKey" 		value="subscriber_export" 				scope="request" />
 <c:set var="agnTitleKey" 			value="export" 							scope="request" />
 <c:set var="agnSubtitleKey" 		value="export" 							scope="request" />

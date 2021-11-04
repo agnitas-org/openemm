@@ -33,4 +33,12 @@ public interface FulltextSearchReservedLiteralsConfig {
     default String escapeWord(String word) {
         return word;
     }
+
+    default String sanitize(String token) {
+        return token;
+    }
+
+    default boolean isContainsDateBaseDependentControlCharacters(String searchQuery) {
+        return false;
+    }
 }

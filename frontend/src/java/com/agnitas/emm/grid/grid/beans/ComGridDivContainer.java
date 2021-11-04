@@ -14,27 +14,35 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComGridDivContainer {
     int getCompanyId();
+
     void setCompanyId(@VelocityCheck int companyId);
 
     int getId();
+
     void setId(int id);
 
     String getName();
+
     void setName(String name);
 
     String getBody();
+
     void setBody(String body);
 
     boolean getIsToc();
+
     void setIsToc(boolean isToc);
 
     boolean getIsSortable();
+
     void setIsSortable(boolean isSortable);
 
     boolean isIsHidden();
+
     void setIsHidden(boolean hidden);
 
     byte[] getThumbnail();
+
     void setThumbnail(byte[] thumbnail);
 
     /**
@@ -42,13 +50,24 @@ public interface ComGridDivContainer {
      * It will not be updated after changes made to div container's content.
      */
     boolean getIsThumbnailCustom();
+
     void setIsThumbnailCustom(boolean isThumbnailCustom);
 
     ComGridDivContainerUsages getUsageData();
+
     void setUsageData(ComGridDivContainerUsages usageData);
-    
+
     boolean equalsWithoutID(ComGridDivContainer otherGridDivContainer);
 
     boolean isDeleted();
+
     void setDeleted(boolean deleted);
+
+    String getType();
+
+    void setType(String type);
+
+    String getFilter();
+
+    void setFilter(String filter);
 }

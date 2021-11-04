@@ -66,12 +66,12 @@
                 </div>
                 <div class="form-group">
                     <div class="col-sm-offset-4 col-sm-8">
-                        <html:select styleClass="form-control js-select" property="attachmentCsvFileID" size="1" styleId="attachment_csv_file_id" disabled="true">
+                        <agn:agnSelect property="attachmentCsvFileID" styleClass="form-control js-select" size="1" styleId="attachment_csv_file_id" disabled="true" data-show-by-checkbox="#useCsvUpload">
                             <c:forEach var="csvFile" items="${csvFiles}">
                                 ${csvFile.uploadID}
                                 <html:option value="${csvFile.uploadID}">${csvFile.filename}</html:option>
                             </c:forEach>
-                        </html:select>
+                        </agn:agnSelect>
                     </div>
                 </div>
                 <div class="form-group">

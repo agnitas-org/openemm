@@ -61,7 +61,6 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="recipientDao" ref="RecipientDao" />
-		<property name="configService" ref="ConfigService" />
 	</bean>
 
 <!-- ============================================================================================================================== Blacklist -->
@@ -78,7 +77,7 @@
 	</bean>
 
 <!-- ============================================================================================================================== Campaign -->
-	<bean id="CampaignDao" class="com.agnitas.dao.impl.ComCampaignDaoImpl">
+	<bean id="CampaignDao" class="com.agnitas.dao.impl.CampaignDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="campaignStatEntryFactory" ref="CampaignStatEntryFactory" />
@@ -95,6 +94,8 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
+	
+	<bean id="CompanyTokenDao" class="com.agnitas.emm.core.company.dao.impl.CompanyTokenDaoImpl" parent="_BaseDao" />
 	
 <!-- ============================================================================================================================== Configuration -->
 	<bean id="LicenseDao" class="com.agnitas.dao.impl.LicenseDaoImpl">
@@ -130,12 +131,14 @@
 	<bean id="DkimDao" class="com.agnitas.dao.impl.ComDkimDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
+		<property name="configService" ref="ConfigService" />
 	</bean>
 	
 <!-- ============================================================================================================================== Dynamic tag -->
 	<bean id="DynamicTagDao" class="com.agnitas.dao.impl.DynamicTagDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
+		<property name="dynamicTagContentDao" ref="DynamicTagContentDao" />
 	</bean>
 	
 <!-- ============================================================================================================================== Dynamic tag content -->
@@ -168,6 +171,7 @@
 				<entry key="UpdateCustomer" value-ref="actionOperationUpdateCustomerDao"/>
 				<entry key="GetCustomer" value-ref="actionOperationGetCustomerDao"/>
 				<entry key="SubscribeCustomer" value-ref="actionOperationSubscribeCustomerDao"/>
+				<entry key="UnsubscribeCustomer" value-ref="actionOperationUnsubscribeCustomerDao"/>
 				<entry key="SendMailing" value-ref="actionOperationSendMailingDao"/>
 				<entry key="ServiceMail" value-ref="actionOperationServiceMailDao"/>
 				<entry key="GetArchiveList" value-ref="actionOperationGetArchiveListDao"/>
@@ -198,6 +202,11 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
+
+    <bean id="actionOperationUnsubscribeCustomerDao" class="com.agnitas.emm.core.action.dao.impl.ActionOperationUnsubscribeCustomerDaoImpl">
+        <property name="dataSource" ref="dataSource" />
+        <property name="javaMailService" ref="JavaMailService" />
+    </bean>
 
 	<bean id="actionOperationSendMailingDao" class="com.agnitas.emm.core.action.dao.impl.ActionOperationSendMailingDaoImpl">
 		<property name="dataSource" ref="dataSource" />
@@ -647,4 +656,11 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
+
+    <bean id="MailingStatisticsDao" class="com.agnitas.dao.impl.MailingStatisticsDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+		<property name="configService" ref="ConfigService" />
+		<property name="targetDao" ref="TargetDao" />
+    </bean>
 </beans>

@@ -25,6 +25,14 @@ public class StringRowMapper implements RowMapper<String> {
 	/** Singleton of this {@link RowMapper}. */
 	public static final StringRowMapper INSTANCE = new StringRowMapper();
 
+	/**
+	 * Use {@link #INSTANCE} instead.
+	 */
+	@Deprecated
+	public StringRowMapper() {	// TODO Make private if all references have been replaced
+		super();
+	}
+	
 	@Override
 	public String mapRow(ResultSet resultSet, int row) throws SQLException {
 		final String str = resultSet.getString(1);

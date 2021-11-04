@@ -10,8 +10,6 @@
 
 package org.agnitas.backend.dao;
 
-import	java.sql.Connection;
-import	java.sql.PreparedStatement;
 import	java.sql.SQLException;
 import	java.sql.Timestamp;
 import	java.util.Date;
@@ -20,6 +18,7 @@ import	java.util.Map;
 
 import	org.agnitas.backend.DBase;
 import	org.agnitas.util.Log;
+import org.apache.log4j.Logger;
 
 /**
  * Accesses all maildrop status relevant information from the database
@@ -28,6 +27,9 @@ import	org.agnitas.util.Log;
  * No caching here as we have to ensure to always access the real data
  */
 public class MaildropStatusDAO {
+
+    private static final Logger logger = Logger.getLogger(MaildropStatusDAO.class);
+
 	private long		statusID;
 	private long		companyID;
 	private long		mailingID;
@@ -263,23 +265,24 @@ public class MaildropStatusDAO {
 		try (DBase.With with = dbase.with ()) {
 			int	count;
 		
-			DBase.Retry <Integer>	r = dbase.new Retry <Integer> ("genstatus", dbase, with.jdbc ()) {
+			DBase.Retry <Integer>	r = dbase.new Retry <> ("genstatus", dbase, with.jdbc ()) {
 				@Override
 				public void execute () throws SQLException {
-					String	query =
-						"UPDATE maildrop_status_tbl " +
-						"SET genchange = CURRENT_TIMESTAMP, genstatus = ? " +
-						"WHERE status_id = ?" + (fromStatus > 0 ? " AND genstatus = ?" : "");
-					try (Connection conn = dbase.getConnection (query, toStatus, statusID, fromStatus)) {
-						try (PreparedStatement prep = conn.prepareStatement (query)) {
-							prep.setLong (1, toStatus);
-							prep.setLong (2, statusID);
-							if (fromStatus > 0) {
-								prep.setLong (3, fromStatus);
-							}
-							priv = prep.executeUpdate ();
-						}
-						conn.commit ();
+					if (fromStatus > 0) {
+						priv = dbase.update (jdbc,
+								     "UPDATE maildrop_status_tbl " +
+								     "SET genchange = CURRENT_TIMESTAMP, genstatus = :toStatus " +
+								     "WHERE status_id = :statusID AND genstatus = :fromStatus",
+								     "toStatus", toStatus,
+								     "statusID", statusID,
+								     "fromStatus", fromStatus);
+					} else {
+						priv = dbase.update (jdbc,
+								     "UPDATE maildrop_status_tbl " +
+								     "SET genchange = CURRENT_TIMESTAMP, genstatus = :toStatus " +
+								     "WHERE status_id = :statusID ",
+								     "toStatus", toStatus,
+								     "statusID", statusID);
 					}
 					if (priv == 1) {
 						Map <String, Object>	rq;
@@ -316,7 +319,7 @@ public class MaildropStatusDAO {
 									dbase.logging (Log.ERROR, "genstatus", "Failed to retry update genstatus to " + toStatus + " for status_id " + statusID);
 								} else {
 									genstatus = dbase.queryInt (jdbc,
-												    "SELECT genstatus " + 
+												    "SELECT genstatus " +
 												    "FROM maildrop_status_tbl " +
 												    "WHERE status_id = :statusID",
 												    "statusID", statusID);
@@ -351,7 +354,10 @@ public class MaildropStatusDAO {
 	 */
 	public boolean remove (DBase dbase) throws SQLException {
 		try (DBase.With with = dbase.with ()) {
-			return dbase.update (with.jdbc (),
+            logger.error(String.format(
+                    "Removing maildrop status id = %d; companyId = %d; mailingId = %d; statusField = %s; getStatus = %d", 
+                    statusID, companyID, mailingID, statusField, genStatus), new Exception());
+            return dbase.update (with.jdbc (),
 					     "DELETE FROM maildrop_status_tbl " +
 					     "WHERE status_id = :statusID",
 					     "statusID", statusID) == 1;

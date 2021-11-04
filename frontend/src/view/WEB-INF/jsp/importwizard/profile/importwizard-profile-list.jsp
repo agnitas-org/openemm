@@ -4,6 +4,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="importProfileForm" type="org.agnitas.web.forms.ImportProfileForm"--%>
 
@@ -89,16 +90,16 @@
 
                     </display:column>
                     <display:column class="table-actions">
-
-                        <c:set var="importProfileDeleteMessage" scope="page">
-                            <bean:message key="recipient.importprofile.delete"/>
-                        </c:set>
-                        <agn:agnLink class="btn btn-regular btn-alert js-row-delete"
-                            data-tooltip="${importProfileDeleteMessage}"
-                            page="/importprofile.do?action=${ACTION_CONFIRM_DELETE}&profileId=${profile.id}&fromListPage=true">
-                            <i class="icon icon-trash-o"></i>
-                        </agn:agnLink>
-
+                    	<emm:ShowByPermission token="import.delete">	
+	                        <c:set var="importProfileDeleteMessage" scope="page">
+	                            <bean:message key="recipient.importprofile.delete"/>
+	                        </c:set>
+	                        <agn:agnLink class="btn btn-regular btn-alert js-row-delete"
+	                            data-tooltip="${importProfileDeleteMessage}"
+	                            page="/importprofile.do?action=${ACTION_CONFIRM_DELETE}&profileId=${profile.id}&fromListPage=true">
+	                            <i class="icon icon-trash-o"></i>
+	                        </agn:agnLink>
+						</emm:ShowByPermission>
                         <html:link styleClass="hidden js-row-show" page="/importprofile.do?action=${ACTION_VIEW}&profileId=${profile.id}">
                         </html:link>
                     </display:column>

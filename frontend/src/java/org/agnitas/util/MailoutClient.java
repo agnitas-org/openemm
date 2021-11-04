@@ -26,7 +26,7 @@ public class MailoutClient {
 	private Systemconfig	syscfg = null;
 	
 	private void setupLogger (int loglevel) {
-		log = new Log ("mailoutclient", loglevel);
+		log = new Log ("mailoutclient", loglevel, 0);
 		syscfg = new Systemconfig ();
 	}
 

@@ -12,7 +12,7 @@ package com.agnitas.emm.core.mailingcontent.web;
 
 import java.util.List;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.beans.Mailing;

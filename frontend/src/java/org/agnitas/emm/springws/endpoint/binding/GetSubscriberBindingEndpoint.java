@@ -10,7 +10,7 @@
 
 package org.agnitas.emm.springws.endpoint.binding;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 
 import org.agnitas.emm.core.binding.service.BindingModel;
 import org.agnitas.emm.core.binding.service.BindingService;

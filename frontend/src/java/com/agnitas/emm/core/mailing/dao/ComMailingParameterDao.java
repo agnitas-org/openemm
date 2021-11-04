@@ -29,7 +29,8 @@ public interface ComMailingParameterDao {
         Weekly(1),
         TwoWeekly(2),
         Monthly(3),
-    	Weekdaily(4);
+    	Weekdaily(4),
+    	Short(5);
 
         private int id;
 

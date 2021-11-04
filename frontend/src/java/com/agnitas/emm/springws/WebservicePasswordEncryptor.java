@@ -73,7 +73,6 @@ public final class WebservicePasswordEncryptor {
 			} else {
 				saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
 			}
-			@SuppressWarnings("unchecked")
 			final List<String> lines = FileUtils.readLines(new File(saltFilePath), "UTF-8");
 			final String encryptorPasswordString = lines.get(0).replace("“", "\""); // Replace some not allowed non-ascii password chars
 			encryptorPasswordChars = encryptorPasswordString.toCharArray();

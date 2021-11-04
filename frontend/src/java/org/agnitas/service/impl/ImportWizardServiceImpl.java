@@ -19,7 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import org.agnitas.beans.impl.CustomerImportStatusImpl;
+import org.agnitas.beans.impl.ImportStatusImpl;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.service.ImportWizardHelper;
 import org.agnitas.service.ImportWizardService;
@@ -50,7 +50,7 @@ public class ImportWizardServiceImpl implements ImportWizardService {
     public ImportWizardHelper createHelper() {
         ImportWizardHelperImpl helper = new ImportWizardHelperImpl();
 
-        helper.setStatus(new CustomerImportStatusImpl());
+        helper.setStatus(new ImportStatusImpl());
 
         return helper;
     }

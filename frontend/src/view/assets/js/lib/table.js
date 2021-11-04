@@ -51,8 +51,13 @@
             break;
 
           case 'goTo':
-            if (cell.data.show) {
-              window.location.href = cell.data.show;
+            var url = cell.data.show;
+            if (url) {
+                if (cell.event.ctrlKey) {
+                    window.open(url, "_blank");
+                } else {
+                    window.location.href = url;
+                }
             }
             break;
         }
@@ -139,10 +144,6 @@
           'button-tooltip': t('defaults.delete')
         },
         textCaseInsensitiveColumn: {
-          filter: {
-            clearButton: true,
-            caseSensitive: false
-          },
           comparator: AGN.Lib.TableCaseInsensitiveComparator
         }
       },

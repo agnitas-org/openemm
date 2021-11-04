@@ -5,11 +5,6 @@
 	<taskdef name="xmltask" classname="com.oopsconsultancy.xmltask.ant.XmlTask" classpath="lib_ant/xmltask.jar" />
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties" classpath="lib_ant/ant-contrib-1.0b3.jar" />
 	<taskdef name="mergexml" classname="com.agnitas.ant.MergeXml" classpath="lib_ant/mergexml.jar" />
-	<taskdef name="signfile" classname="com.agnitas.ant.SignFile" classpath="lib_ant/signfile.jar">
-		<classpath>
-			<pathelement location="lib_ant/bcprov-ext-jdk15on-166.jar" />
-		</classpath>
-	</taskdef>
 
 	<target name="all" depends="parseApplicationVersion, createPropertiesFiles, copyEhcacheConfig, replaceEmmPropertiesPlaceholders, copyDbChanges_Oracle, createMandatoryDbChanges_Oracle, copyDbChanges_MySQL, createMandatoryDbChanges_MySQL, deploy, copyAdditionalPiwikFile, compile, create_web.xml, applicationContext" description="Build everything.">
 		<echo message="Application built." />
@@ -37,7 +32,7 @@
 				<isset property="javaVersion" />
 			</not>
 			<then>
-				<property name="javaVersion" value="1.8" />
+				<property name="javaVersion" value="11" />
 			</then>
 		</if>
 		<echo message="Using Java version ${javaVersion}" />
@@ -398,21 +393,16 @@
 		<if>
 			<istrue value="${extendSessionTimeout}" />
 			<then>
-				<xmltask source="${deploydir}${appname}/WEB-INF/web.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" preserveType="true">
-					<insert path="/:web-app/:display-name" position="after">
-						<![CDATA[&#09;
-	<!-- Extended session timeout -->
-	<session-config>
-		<session-timeout>60</session-timeout>
-	</session-config>]]>
-					</insert>
-				</xmltask>
-
-				<!-- Remove unwanted namespace attributes -->
-				<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="">
-					<replacetoken> xmlns=""</replacetoken>
-				</replace>
+				<replace file="${deploydir}${appname}/WEB-INF/web.xml" token="&lt;session-timeout>30&lt;/session-timeout>" value="&lt;session-timeout>60&lt;/session-timeout>"/>
 			</then>
+			<else>
+				<if>
+					<isset property="extendSessionTimeout" />
+					<then>
+						<replace file="${deploydir}${appname}/WEB-INF/web.xml" token="&lt;session-timeout>30&lt;/session-timeout>" value="&lt;session-timeout>${extendSessionTimeout}&lt;/session-timeout>"/>
+					</then>
+				</if>
+			</else>
 		</if>
 		
 		<!-- RESTful services mappings in web.xml -->

@@ -13,8 +13,6 @@ package com.agnitas.emm.core.binding.service.impl;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.Resource;
-
 import org.agnitas.emm.core.binding.service.BindingModel;
 import org.agnitas.emm.core.binding.service.impl.BindingServiceImpl;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
@@ -24,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.agnitas.emm.core.action.service.ComEmmActionService;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.binding.service.ComBindingService;
+
+import jakarta.annotation.Resource;
 
 public abstract class ComBindingServiceImpl extends BindingServiceImpl implements ComBindingService {
 

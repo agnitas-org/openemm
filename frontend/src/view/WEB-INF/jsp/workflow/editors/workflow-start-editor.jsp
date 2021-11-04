@@ -121,8 +121,7 @@
                             <option value="${REACTION_OPENED}"><bean:message key="statistic.opened"/></option>
                             <%--<option value="${REACTION_NOT_OPENED}"><bean:message key="workflow.reaction.NotOpened"/></option>--%>
                             <option value="${REACTION_CLICKED}"><bean:message key="default.clicked"/></option>
-                            <option value="${REACTION_CLICKED_LINK}"><bean:message
-                                    key="workflow.reaction.ClickedOnLink"/></option>
+                            <option value="${REACTION_CLICKED_LINK}"><bean:message key="workflow.reaction.ClickedOnLink"/></option>
                             <%--<option value="${REACTION_NOT_CLICKED}"><bean:message key="workflow.reaction.NotClicked"/></option>--%>
                             <%--<c:if test="${hasDeepTrackingTables}">--%>
                             <%--<option value="${REACTION_BOUGHT}"><bean:message key="workflow.reaction.Bought"/></option>--%>

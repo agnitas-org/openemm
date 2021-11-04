@@ -52,7 +52,7 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 						}
 					}
 				} catch (Exception e) {
-					e.printStackTrace();
+					logger.error("Error storing license data", e);
 					throw e;
 				}
 			} else {
@@ -65,7 +65,7 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 						updateBlob(logger, "UPDATE license_tbl SET data = ? WHERE name = ?", licenseData, "LicenseData");
 					}
 				} catch (Exception e) {
-					e.printStackTrace();
+					logger.error("Error storing license data", e);
 					throw e;
 				}
 	
@@ -80,7 +80,7 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 							updateBlob(logger, "UPDATE license_tbl SET data = ? WHERE name = ?", licenseSignatureData, "LicenseSignature");
 						}
 					} catch (Exception e) {
-						e.printStackTrace();
+						logger.error("Error storing license signature data", e);
 						throw e;
 					}
 				}
@@ -95,6 +95,8 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 			writeBlobInStream(logger, "SELECT data FROM license_tbl WHERE name = ?", interimStream, "LicenseSignature");
 			return interimStream.toByteArray();
 		} catch (Exception e) {
+			logger.error("Error reading license data", e);
+			
 			return null;
 		}
 	}

@@ -22,8 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import gnu.trove.list.TLongList;
-import gnu.trove.list.array.TLongArrayList;
+
 import org.agnitas.dao.UserStatus;
 import org.agnitas.util.Log;
 import org.springframework.dao.DataAccessException;
@@ -31,6 +30,9 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+
+import gnu.trove.list.TLongList;
+import gnu.trove.list.array.TLongArrayList;
 
 /**
  * BC, the Big Clause, creates the main queries to prepare and retrieve
@@ -751,7 +753,7 @@ public class BC {
 						String query = "SELECT customer_id, email FROM " + table + " WHERE user_type IN ('A', 'T', 'W') ORDER BY customer_id";
 						long cnt;
 
-						DBase.Retry<Long> r = data.dbase.new Retry<Long>("filler", data.dbase, data.dbase.jdbc(query)) {
+						DBase.Retry<Long> r = data.dbase.new Retry<>("filler", data.dbase, data.dbase.jdbc(query)) {
 							@Override
 							public void execute() throws SQLException {
 								jdbc.query(query, filler);
@@ -981,7 +983,7 @@ public class BC {
 			try {
 				cnt = data.dbase.update(stmt, "mailingID", data.mailing.id(), "statusID", data.maildropStatus.id(), "timeID", data.priorityTimeID);
 				remain = countTable(table, "distinct customer_id", "user_type = 'W'");
-				data.logging(Log.INFO, "bc", "Removed " + cnt + " recpients due to priority, remaining " + remain + " world recipients");
+				data.logging(Log.INFO, "bc", "Removed " + cnt + " recipients due to priority, remaining " + remain + " world recipients");
 			} catch (Exception e) {
 				data.logging(Log.ERROR, "bc", "Failed to remove recipients for priority mailings: " + e.toString(), e);
 				ok = false;
@@ -1232,7 +1234,7 @@ public class BC {
 										       null);
 							}
 
-							DBase.Retry<Long> rt = data.dbase.new Retry<Long>("voucher", data.dbase, data.dbase.jdbc(voucher.query())) {
+							DBase.Retry<Long> rt = data.dbase.new Retry<>("voucher", data.dbase, data.dbase.jdbc(voucher.query())) {
 								@Override
 								public void execute() throws SQLException {
 									jdbc.query(voucher.query(), voucher);

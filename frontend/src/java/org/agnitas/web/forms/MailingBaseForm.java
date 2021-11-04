@@ -17,11 +17,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.mail.internet.InternetAddress;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.servlet.http.HttpServletRequest;
 
-import org.agnitas.beans.Campaign;
-import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.MediaTypeStatus;
@@ -38,6 +36,8 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 
+import com.agnitas.beans.Campaign;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -116,6 +116,7 @@ public class MailingBaseForm extends StrutsFormBase {
     /**
      * Holds value of property worldMailingSend.
      */
+    @Deprecated // No replacement. Deprecated, because this is nothing the user can enter by form.
     protected boolean worldMailingSend;
      
     /**
@@ -193,30 +194,40 @@ public class MailingBaseForm extends StrutsFormBase {
     /**
      * If this is new mailing or a template or user has no mailing.settings.hide permission
      */
+    @Deprecated // Replace by request attribute
     private boolean canChangeEmailSettings;
     
     
+    @Deprecated // Replace by request attribute
     protected boolean templateContainerVisible;
+    @Deprecated // Replace by request attribute
     protected boolean otherMediaContainerVisible;
+    @Deprecated // Replace by request attribute
     protected boolean generalContainerVisible;
+    @Deprecated // Replace by request attribute
     protected boolean targetgroupsContainerVisible;
+    @Deprecated // Replace by request attribute
     protected boolean mailingIntervalContainerVisible;
+    @Deprecated // Replace by request attribute
 	protected boolean parameterContainerVisible;
 
     /**
      * Does user have permission to see/edit mailinglist of current mailing
      */
+    @Deprecated // Replace by request attribute
     private boolean canChangeMailinglist = false;
 
     /**
      * Is mailing not active {@link com.agnitas.emm.core.maildrop.service.MaildropService#isActiveMailing(int, int)}
      * or user has permission {@link com.agnitas.emm.core.Permission#MAILING_CONTENT_CHANGE_ALWAYS}
      */
+    @Deprecated // Replaced by request attribute
     private boolean mailingEditable = false;
 
     /**
 	 * @return the templateContainerVisible
 	 */
+    @Deprecated // Replace by request attribute
 	public boolean isTemplateContainerVisible() {
 		return templateContainerVisible;
 	}
@@ -224,6 +235,7 @@ public class MailingBaseForm extends StrutsFormBase {
 	/**
 	 * @param templateContainerVisible the templateContainerVisible to set
 	 */
+    @Deprecated // Replace by request attribute
 	public void setTemplateContainerVisible(boolean templateContainerVisible) {
 		this.templateContainerVisible = templateContainerVisible;
 	}
@@ -231,6 +243,7 @@ public class MailingBaseForm extends StrutsFormBase {
 	/**
 	 * @return the otherMediaContainerVisible
 	 */
+    @Deprecated // Replace by request attribute
 	public boolean isOtherMediaContainerVisible() {
 		return otherMediaContainerVisible;
 	}
@@ -238,6 +251,7 @@ public class MailingBaseForm extends StrutsFormBase {
 	/**
 	 * @param otherMediaContainerVisible the otherMediaContainerVisible to set
 	 */
+    @Deprecated // Replace by request attribute
 	public void setOtherMediaContainerVisible(boolean otherMediaContainerVisible) {
 		this.otherMediaContainerVisible = otherMediaContainerVisible;
 	}
@@ -245,6 +259,7 @@ public class MailingBaseForm extends StrutsFormBase {
 	/**
 	 * @return the generalContainerVisible
 	 */
+    @Deprecated // Replace by request attribute
 	public boolean isGeneralContainerVisible() {
 		return generalContainerVisible;
 	}
@@ -252,14 +267,17 @@ public class MailingBaseForm extends StrutsFormBase {
 	/**
 	 * @param generalContainerVisible the generalContainerVisible to set
 	 */
+    @Deprecated // Replace by request attribute
 	public void setGeneralContainerVisible(boolean generalContainerVisible) {
 		this.generalContainerVisible = generalContainerVisible;
 	}
 
+    @Deprecated // Replace by request attribute
 	public boolean isParameterContainerVisible() {
 		return parameterContainerVisible;
 	}
 
+    @Deprecated // Replace by request attribute
 	public void setParameterContainerVisible(boolean parameterContainerVisible) {
 		this.parameterContainerVisible = parameterContainerVisible;
 	}
@@ -267,6 +285,7 @@ public class MailingBaseForm extends StrutsFormBase {
 	/**
 	 * @return the targetgroupsContainerVisible
 	 */
+    @Deprecated // Replace by request attribute
 	public boolean isTargetgroupsContainerVisible() {
 		return targetgroupsContainerVisible;
 	}
@@ -274,6 +293,7 @@ public class MailingBaseForm extends StrutsFormBase {
 	/**
 	 * @param targetgroupsContainerVisible the targetgroupsContainerVisible to set
 	 */
+    @Deprecated // Replace by request attribute
 	public void setTargetgroupsContainerVisible(boolean targetgroupsContainerVisible) {
 		this.targetgroupsContainerVisible = targetgroupsContainerVisible;
 	}
@@ -281,6 +301,7 @@ public class MailingBaseForm extends StrutsFormBase {
     /**
      * @return the mailingIntervalContainerVisible
      */
+    @Deprecated // Replace by request attribute
     public boolean isMailingIntervalContainerVisible() {
         return mailingIntervalContainerVisible;
     }
@@ -288,6 +309,7 @@ public class MailingBaseForm extends StrutsFormBase {
     /**
      * @param mailingIntervalContainerVisible the mailingIntervalContainerVisible to set
      */
+    @Deprecated // Replace by request attribute
     public void setMailingIntervalContainerVisible(boolean mailingIntervalContainerVisible) {
         this.mailingIntervalContainerVisible = mailingIntervalContainerVisible;
     }
@@ -323,6 +345,8 @@ public class MailingBaseForm extends StrutsFormBase {
     protected List<TargetLight> targetGroupsList;
 
     protected Map<Integer, TargetComplexityGrade> targetComplexities;
+    
+    private Mailinglist selectedRemovedMailinglist;
     
 	/**
      * Creates a new instance of TemplateForm
@@ -754,6 +778,7 @@ public class MailingBaseForm extends StrutsFormBase {
      *
      * @return Value of property worldMailingSend.
      */
+    @Deprecated // No replacement. Deprecated, because this is nothing the user can enter by form.
     public boolean isWorldMailingSend() {
         return this.worldMailingSend;
     }
@@ -763,6 +788,7 @@ public class MailingBaseForm extends StrutsFormBase {
      *
      * @param worldMailingSend New value of property worldMailingSend.
      */
+    @Deprecated // No replacement. Deprecated, because this is nothing the user can enter by form.
     public void setWorldMailingSend(boolean worldMailingSend) {
         this.worldMailingSend = worldMailingSend;
     }
@@ -1317,7 +1343,7 @@ public class MailingBaseForm extends StrutsFormBase {
 		if( dynamicTemplateString == null) {
 			this.dynamicTemplate = false;
 		} else {
-			this.dynamicTemplate = dynamicTemplateString.equals( "on") || dynamicTemplateString.equals( "on") || dynamicTemplateString.equals( "true");
+			this.dynamicTemplate = dynamicTemplateString.equals( "on") || dynamicTemplateString.equals( "true");
 		}
 	}
 
@@ -1334,26 +1360,32 @@ public class MailingBaseForm extends StrutsFormBase {
 		return parameterName.equals( "textTemplate") || parameterName.equals( "htmlTemplate");
 	}
 
+    @Deprecated // Replace by request attribute
     public boolean isCanChangeEmailSettings() {
         return canChangeEmailSettings;
     }
 
+    @Deprecated // Replace by request attribute
     public void setCanChangeEmailSettings(boolean canChangeEmailSettings) {
         this.canChangeEmailSettings = canChangeEmailSettings;
     }
 
+    @Deprecated // Replace by request attribute
     public boolean isCanChangeMailinglist() {
         return canChangeMailinglist;
     }
 
+    @Deprecated // Replace by request attribute
     public void setCanChangeMailinglist(boolean canChangeMailinglist) {
         this.canChangeMailinglist = canChangeMailinglist;
     }
 
+    @Deprecated // Replaced by request attribute
     public boolean isMailingEditable() {
         return mailingEditable;
     }
 
+    @Deprecated // Replaced by request attribute
     public void setMailingEditable(boolean mailingEditable) {
         this.mailingEditable = mailingEditable;
     }
@@ -1372,5 +1404,13 @@ public class MailingBaseForm extends StrutsFormBase {
 
     public void setTargetComplexities(Map<Integer, TargetComplexityGrade> targetComplexities) {
         this.targetComplexities = targetComplexities;
+    }
+
+    public Mailinglist getSelectedRemovedMailinglist() {
+        return selectedRemovedMailinglist;
+    }
+
+    public void setSelectedRemovedMailinglist(Mailinglist selectedRemovedMailinglist) {
+        this.selectedRemovedMailinglist = selectedRemovedMailinglist;
     }
 }

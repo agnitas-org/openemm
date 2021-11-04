@@ -10,8 +10,6 @@
 
 package org.agnitas.beans.factory.impl;
 
-import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComRecipientDao;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.factory.BindingEntryFactory;
 import org.agnitas.beans.factory.RecipientFactory;
@@ -20,6 +18,9 @@ import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.service.ColumnInfoService;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.dao.ComBindingEntryDao;
+import com.agnitas.dao.ComRecipientDao;
+
 
 public class RecipientFactoryImpl implements RecipientFactory {
 
@@ -27,7 +28,6 @@ public class RecipientFactoryImpl implements RecipientFactory {
     protected BlacklistService blacklistService;
     protected ColumnInfoService columnInfoService;
     protected BindingEntryFactory bindingEntryFactory;
-    protected RecipientFactory recipientFactory;
     protected ComBindingEntryDao bindingEntryDao;
 
 	@Required
@@ -39,7 +39,7 @@ public class RecipientFactoryImpl implements RecipientFactory {
     public void setColumnInfoService(ColumnInfoService columnInfoService) {
         this.columnInfoService = columnInfoService;
     }
-    
+
     @Required
     public void setBindingEntryFactory(final BindingEntryFactory factory) {
     	this.bindingEntryFactory = factory;
@@ -49,21 +49,21 @@ public class RecipientFactoryImpl implements RecipientFactory {
     public void setBindingEntryDao(ComBindingEntryDao bindingEntryDao) {
 		this.bindingEntryDao = bindingEntryDao;
 	}
- 
+
 	@Required
     public void setBlacklistService(BlacklistService blacklistService) {
         this.blacklistService = blacklistService;
     }
-    
+
     @Override
     public Recipient newRecipient() {
     	return newRecipient(0);
     }
-    
+
     @Override
     public Recipient newRecipient(final int companyID) {
         RecipientImpl recipient = new RecipientImpl();
-        
+
         recipient.setRecipientDao(recipientDao);
         recipient.setColumnInfoService(columnInfoService);
         recipient.setBindingEntryFactory(bindingEntryFactory);
@@ -75,7 +75,7 @@ public class RecipientFactoryImpl implements RecipientFactory {
         	recipient.setCompanyID(companyID);
         	recipient.loadCustDBStructure();
         }
-        
+
         return recipient;
     }
 }

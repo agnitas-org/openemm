@@ -1,0 +1,20 @@
+<div class="tile-header">
+	<div class="headline">
+	<mvc:message code="settings.DB" />
+	</div>
+</div>
+<div class="tile-content table-responsive">
+	<table id="serverStatus_dbColumn" class="table js-table">
+		<tbody style="line-height:8px">
+			<c:forEach var="dbVersion" items="${serverStatus.dbVersionStatuses}">
+				<tr>
+					<td>${dbVersion.version}</td>
+					<c:set var="isOkVersionStatus" value="${dbVersion.status}"/>
+					<td class="serverstatus_status ${isOkVersionStatus ? 'serverstatus_status-success' : 'serverstatus_status-error'}">
+						${isOkVersionStatus ? 'OK' : 'is Missing'}
+					</td>
+				</tr>
+			</c:forEach>
+		</tbody>
+	</table>
+</div>

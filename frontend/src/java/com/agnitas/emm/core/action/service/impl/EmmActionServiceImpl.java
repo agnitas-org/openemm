@@ -129,6 +129,7 @@ public class EmmActionServiceImpl implements EmmActionService {
 		return saveEmmAction(destinationActionCompanyId, subscribeAction);
 	}
 
+	@Transactional
 	@Override
 	public int saveEmmAction(int companyId, EmmAction action) {
     	return saveEmmAction(companyId, action, null);

@@ -322,4 +322,12 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	public void acknowledgeErrorneousJob(int idToAcknowledge) {
 		update(logger, "UPDATE job_queue_tbl SET acknowledged = 1 WHERE id = ?", idToAcknowledge);
 	}
+	
+	@Override
+	public void storeDynamicJobParameter(int jobID, String parameterName, String parameterValue) {
+		update(logger, "DELETE FROM job_queue_parameter_tbl WHERE job_id = ? AND parameter_name = ?", jobID, parameterName);
+		if (StringUtils.isNotBlank(parameterValue)) {
+			update(logger, "INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES (?, ?, ?)", jobID, parameterName, parameterValue);
+		}
+	}
 }

@@ -10,7 +10,6 @@
 
 package org.agnitas.emm.core.velocity;
 
-import java.io.IOException;
 import java.io.Writer;
 import java.util.Map;
 
@@ -29,10 +28,8 @@ public interface VelocityWrapper {
 	 * @param actionId action ID that contains the script
 	 * 
 	 * @return {@link VelocityResult} containing status of the executing
-	 * 
-	 * @throws IOException on errors writing to {@code writer}
 	 */
-	VelocityResult evaluate(Map<?, ?> params, String template, Writer writer, int formId, int actionId) throws IOException;
+	VelocityResult evaluate(Map<String, Object> params, String template, Writer writer, int formId, int actionId);
 	
 	/**
 	 * Evaluates a script with logging.
@@ -43,10 +40,8 @@ public interface VelocityWrapper {
 	 * @param logTag log tag
 	 * 
 	 * @return {@link VelocityResult} containing status of the executing
-	 * 
-	 * @throws IOException on errors writing to {@code writer}
 	 */
-	VelocityResult evaluate(Map<?, ?> params, String template, Writer writer, String logTag) throws IOException;
+	VelocityResult evaluate(Map<String, Object> params, String template, Writer writer, String logTag);
 
 	/**
 	 * Returns the company ID in which the Velocity engine is running.

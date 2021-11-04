@@ -104,9 +104,9 @@ public class TAGCheckImpl implements TAGCheck {
 			} catch (EMMTagException e) {
 				data.logging(Log.ERROR, "tc", "Failed to check \"" + tag + "\": " + e.toString(), e);
 				if(StringUtils.isBlank(e.getMessageKey())) {
-					s.report = tag + ": " + e.getMessage();
+					s.report = e.getMessage();
 				} else {
-					s.report = I18nString.getLocaleString(e.getMessageKey(), locale, (Object[]) e.getMessageArgs());
+					s.report = tag + ": " + I18nString.getLocaleString(e.getMessageKey(), locale, (Object[]) e.getMessageArgs());
 				}
 			} catch (Exception e) {
 				data.logging(Log.ERROR, "tc", "Failed to check \"" + tag + "\": " + e.toString(), e);

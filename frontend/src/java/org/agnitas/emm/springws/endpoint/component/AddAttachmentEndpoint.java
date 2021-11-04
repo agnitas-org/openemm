@@ -10,10 +10,13 @@
 
 package org.agnitas.emm.springws.endpoint.component;
 
+import java.util.Objects;
+
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddAttachmentRequest;
 import org.agnitas.emm.springws.jaxb.AddAttachmentResponse;
@@ -27,13 +30,20 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 public class AddAttachmentEndpoint extends BaseEndpoint {
 
 	private ComponentService componentService;
+	private final MailingEditableCheck mailingEditableCheck;
 
-	public AddAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService) {
+
+	public AddAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService, @Qualifier("MailingEditableCheck") final MailingEditableCheck mailingEditableCheck) {
 		this.componentService = componentService;
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
 	}
 
 	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddAttachmentRequest")
 	public @ResponsePayload AddAttachmentResponse addAttachment(@RequestPayload AddAttachmentRequest request) throws Exception {
+		final int companyID = Utils.getUserCompany();
+		
+		this.mailingEditableCheck.requireMailingEditable(request.getMailingID(), companyID);
+
 		AddAttachmentResponse response = new AddAttachmentResponse();
 		ComponentModel model = new ComponentModel();
 		model.setCompanyId(Utils.getUserCompany());

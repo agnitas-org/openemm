@@ -158,7 +158,7 @@
 	
 	.version--wrapper {
 		background-image: url("/assets/core/images/logonPageOffline/Version.jpg");
-		background-position: 100% 55%;
+		background-position: 100% 100%;
 		background-repeat: no-repeat;
 		background-size: cover;
 		align-items: center;
@@ -167,7 +167,7 @@
 	
 	.version__text {
 		color: #FFFFFF;
-		padding: 4em 25% 2em 25%;
+		padding: 2em 50% 2em 0;
 	}
 	
 	.version__text--headline {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">MailingSummaryDataCube.MailingSummaryDataSet.x</property>
@@ -5814,6 +5814,8 @@ function beforeDrawDataPointLabel( dph, label, icsc )
 	labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot; &quot; + message;
 	//labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot;\n&quot; + message;
 	label.getCaption().setValue(labelText);
+	
+	preparePointLabelColor(label, icsc);
 }
 
 function beforeDrawMarkerLine(axis, line, icsc) {
@@ -5823,7 +5825,7 @@ function beforeDrawMarkerLine(axis, line, icsc) {
 	}
 };
 
-function beforeDrawDataPointLabel(dph, label, icsc) {
+function preparePointLabelColor(label, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
 	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
 		label.getCaption().getColor().set(255, 255, 255);
@@ -6610,6 +6612,8 @@ function beforeDrawDataPointLabel( dph, label, icsc )
 	//labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot;\n&quot; + message;
 	//labelText = labelText.subSequence(0, labelText.lastIndexOf(&quot;%&quot;) + 1) + &quot;\n&quot; + labelText.substring(labelText.lastIndexOf(&quot;(&quot;));
 	label.getCaption().setValue(labelText);
+	
+	preparePointLabelColor(label, icsc);
 }
 
 function beforeDrawMarkerLine(axis, line, icsc) {
@@ -6619,7 +6623,7 @@ function beforeDrawMarkerLine(axis, line, icsc) {
 	}
 };
 
-function beforeDrawDataPointLabel(dph, label, icsc) {
+function preparePointLabelColor(label, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
 	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
 		label.getCaption().getColor().set(255, 255, 255);

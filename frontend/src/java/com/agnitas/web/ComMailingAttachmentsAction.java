@@ -17,11 +17,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.factory.MailingComponentFactory;
@@ -30,6 +29,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.web.StrutsActionBase;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
@@ -43,6 +43,7 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.dao.ComMailingDao;
@@ -50,6 +51,7 @@ import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 import com.agnitas.emm.core.mimetypes.service.MimeTypeWhitelistService;
 import com.agnitas.emm.core.upload.bean.UploadData;
 import com.agnitas.emm.core.upload.dao.ComUploadDao;
@@ -88,6 +90,8 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
  	private MaildropService maildropService;
  	
  	private MimeTypeWhitelistService mimetypeWhitelistService;
+ 	
+ 	private MailingPropertiesRules mailingPropertiesRules;
 
     /**
      * Process the specified HTTP request, and create the corresponding HTTP
@@ -146,13 +150,7 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
                 		 */
                 		final boolean isPersonalizedPdf = aForm.getNewAttachmentType() == 1;
                 		
-                		// TODO "isPersonalizedPdf ||" disables the check of the Mimetype of the uploaded file for personalized PDFs!!!
-                		final boolean mimetypeAllowed = isPersonalizedPdf || (aForm.getNewAttachment() != null && mimetypeWhitelistService.isMimeTypeWhitelisted(aForm.getNewAttachment().getContentType()));
-                		
-                		if(aForm.getNewAttachment() != null && !mimetypeAllowed) {
-                			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.errors.attachment.invalidMimeType", aForm.getNewAttachment().getContentType()));
-     	                    destination = mapping.findForward("list");
-                		} else {
+                		if (checkMimeTypeOfAttachments(isPersonalizedPdf, aForm, errors)) {
 		                    if (!statusChanged(aForm,req)) {
 		                        saveAttachment(aForm, req, errors);
 		                    }
@@ -196,8 +194,12 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
 			                        errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("status_changed"));
 			                    }
 		                    }
-                		}
-                	}
+                		} else {
+                            destination = mapping.findForward("list");
+                        }
+                	} else {
+                        destination = mapping.findForward("list");
+                    }
                     break;
 
                 case ComMailingComponentsAction.ACTION_CONFIRM_DELETE:
@@ -251,7 +253,33 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
 
     }
 
-	private boolean newAttachmentAllowed(ComMailingAttachmentsForm aForm, List<MailingComponent> attachments) {
+    private boolean checkMimeTypeOfAttachments(boolean isPersonalizedPdf, ComMailingAttachmentsForm aForm, ActionMessages errors) {
+        FormFile attachment = aForm.getNewAttachment();
+        if (attachment == null) {
+            return true;
+        }
+
+        FormFile background = aForm.getNewAttachmentBackground();
+        if (isPersonalizedPdf) {
+            if (!StringUtils.equals("text/xml", attachment.getContentType()) &&
+                    !StringUtils.equals("text/x-xslfo", attachment.getContentType())) {
+                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("GWUA.mailing.errors.personalized.attachment.invalidMimeType"));
+                return false;
+            }
+
+            if (background == null || !StringUtils.equals("application/pdf", background.getContentType())) {
+                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("GWUA.mailing.errors.personalized.bg.attachment.invalidMimeType"));
+                return false;
+            }
+        } else if (!mimetypeWhitelistService.isMimeTypeWhitelisted(attachment.getContentType())) {
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.errors.attachment.invalidMimeType", attachment.getContentType()));
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean newAttachmentAllowed(ComMailingAttachmentsForm aForm, List<MailingComponent> attachments) {
 		// Same attachment name for other target group is not allowed by now
 		for (MailingComponent attachment : attachments) {
 			if (attachment.getComponentName().equals(aForm.getNewAttachmentName()) && attachment.getTargetID() != aForm.getAttachmentTargetID()) {
@@ -275,9 +303,9 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
         if (AgnUtils.allowed(req, Permission.MAILING_CONTENT_CHANGE_ALWAYS)) {
             return false;
         } else {
-            Mailing mailing = mailingDao.getMailing(aForm.getMailingID(), AgnUtils.getCompanyID(req));
+            final Mailing mailing = mailingDao.getMailing(aForm.getMailingID(), AgnUtils.getCompanyID(req));
             
-            return this.maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID());
+            return this.mailingPropertiesRules.mailingIsWorldSentOrActive(mailing);
         }
     }
 
@@ -419,11 +447,13 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
     }
 
 	private boolean checkNewAttachmentSize(ComMailingAttachmentsForm form, ActionMessages errors, ActionMessages messages) {
-		if (form.getNewAttachment().getFileSize() > configService.getIntegerValue(ConfigValue.MaximumUploadAttachmentSize)) {
-			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("component.size.error", configService.getIntegerValue(ConfigValue.MaximumUploadAttachmentSize) / 1024f / 1024));
+        int maxErrorSize = configService.getIntegerValue(ConfigValue.MaximumUploadAttachmentSize);
+        int maxWarningSize = configService.getIntegerValue(ConfigValue.MaximumWarningAttachmentSize);
+		if (form.getNewAttachment().getFileSize() > maxErrorSize) {
+			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.component.size", FileUtils.byteCountToDisplaySize(maxErrorSize)));
 			return false;
-		} else if (form.getNewAttachment().getFileSize() > configService.getIntegerValue(ConfigValue.MaximumWarningAttachmentSize)) {
-			messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.component.size", configService.getIntegerValue(ConfigValue.MaximumWarningAttachmentSize) / 1024f / 1024));
+		} else if (form.getNewAttachment().getFileSize() > maxWarningSize) {
+			messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.component.size", FileUtils.byteCountToDisplaySize(maxWarningSize)));
 		}
 		return true;
 	}
@@ -496,5 +526,10 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
     @Required
     public final void setMimeTypeWhitelistService(final MimeTypeWhitelistService service) {
     	this.mimetypeWhitelistService = Objects.requireNonNull(service, "Mimetype whitelist service is null");
+    }
+    
+    @Required
+    public final void setMailingPropertiesRules(final MailingPropertiesRules rules) {
+    	this.mailingPropertiesRules = Objects.requireNonNull(rules, "MailingPropertiesRules is null");
     }
 }

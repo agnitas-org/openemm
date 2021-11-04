@@ -21,7 +21,7 @@
     }
 
     function createEditorExt(textAreaId, editorWidth, editorHeight, mailingId, fullPage, isResizeNotEnabled, allowExternalScript) {
-      var imageBrowserUrl = !!mailingId ? '<html:rewrite page="/${CKEDITOR_PATH}/emm-image-browser.jsp?mailingID="/>' + mailingId : '';
+      var imageBrowserUrl = !!mailingId ? '<html:rewrite page="/wysiwyg/image-browser.action?mailingID="/>' + mailingId : '';
       if (!isEditorVisible(textAreaId)) {
 
         var config = {
@@ -37,6 +37,7 @@
           filebrowserImageWindowWidth: '700',
           filebrowserImageWindowHeight: '600',
           resize_enabled: !isResizeNotEnabled,
+          mailingId: mailingId,
           on: {
             instanceReady: function(event) {
               if (fullPage) {

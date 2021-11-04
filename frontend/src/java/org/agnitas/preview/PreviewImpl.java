@@ -251,7 +251,6 @@ public class PreviewImpl implements Preview {
 	/**
 	 * PreviewImpl
 	 * the constructor reading the configuration
-	 * from emm.properties
 	 */
 	public PreviewImpl(String mailoutCacheAge, String mailoutCacheSize, String pageCacheAge, String pageCacheSize, String logName, String logLevel) {
 		String age = mailoutCacheAge;
@@ -299,7 +298,7 @@ public class PreviewImpl implements Preview {
 			}
 		}
 		lastrep = 0;
-		log = new Log(logname, level);
+		log = new Log(logname, level, 0);
 		if (rscerror != null) {
 			log.out(Log.ERROR, "rsc", "Failed accessing resource bundle: " + rscerror);
 		}

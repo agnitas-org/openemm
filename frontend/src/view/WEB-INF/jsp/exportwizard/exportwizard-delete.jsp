@@ -7,7 +7,7 @@
 
 <emm:CheckLogon/>
 
-<emm:Permission token="wizard.export"/>
+<emm:Permission token="export.delete"/>
 
 <div class="modal">
     <div class="modal-dialog">

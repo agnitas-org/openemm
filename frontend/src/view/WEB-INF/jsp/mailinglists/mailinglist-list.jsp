@@ -89,28 +89,27 @@
                 {
                     "headerName": "<mvc:message code='MailinglistID'/>",
                     "editable": false,
-                    "cellAction": "goTo",
+                    "cellRenderer": "StringCellRenderer",
                     "field": "id",
                     "type": "numberColumn"
                 },
                 {
                     "headerName": "<mvc:message code='Mailinglist'/>",
                     "editable": false,
-                    "cellAction": "goTo",
+                    "cellRenderer": "StringCellRenderer",
                     "field": "shortname",
                     "type": "textCaseInsensitiveColumn"
                 },
                 {
                     "headerName": "<mvc:message code='default.description'/>",
                     "editable": false,
-                    "cellAction": "goTo",
+                    "cellRenderer": "StringCellRenderer",
                     "field": "description",
                     "type": "textCaseInsensitiveColumn"
                 },
                 {
                     "headerName": "<mvc:message code='CreationDate'/>",
                     "editable": false,
-                    "cellAction": "goTo",
                     "field": "creationDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",
@@ -119,7 +118,6 @@
                 {
                     "headerName": "<mvc:message code='default.changeDate'/>",
                     "editable": false,
-                    "cellAction": "goTo",
                     "field": "changeDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",
@@ -129,7 +127,6 @@
                     "headerName": "<mvc:message code='mailinglist.frequency.counter'/>",
                     "editable": false,
                     "suppressMenu": true,
-                    "cellAction": "goTo",
                     "field": "isFrequencyCounterEnabled",
                     "hide": ${hideFrequencyCounterInfo},
                     "cellStyle": {"textAlign": "center"},

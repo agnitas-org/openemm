@@ -101,6 +101,10 @@ public class Data {
 	 */
 	static long incarnation = 0;
 	/**
+	 * incarnation of invocation to get unique log entries
+	 */
+	static long logIncarnation = 0;
+	/**
 	 * all informations about the company of this mailing
 	 */
 	public Company company;
@@ -461,6 +465,10 @@ public class Data {
 	 */
 	protected boolean removeDuplicateEMails = false;
 	/**
+	 * optional force using encrypted transport
+	 */
+	protected boolean sendEncrypted = false;
+	/**
 	 * optional external tracker information
 	 */
 	public List<Tracker> tracker = null;
@@ -553,7 +561,7 @@ public class Data {
 						// do nothing
 					}
 					if ("unknown".equals(version)) {
-						Log log = new Log("version", Log.INFO);
+						Log log = new Log("version", Log.INFO, 0);
 
 						log.out(Log.ERROR, "retrieve", "Failed to retrieve version in:");
 						for (String v : seen) {
@@ -563,7 +571,7 @@ public class Data {
 				}
 			}
 		} catch (Exception e) {
-			Log log = new Log("version", Log.INFO);
+			Log log = new Log("version", Log.INFO, 0);
 			log.out(Log.ERROR, "retrieve", "Failed to retrieve version: " + e.toString(), e);
 		}
 	}
@@ -701,7 +709,7 @@ public class Data {
 	 * @param setprinter if we should also log to stdout
 	 */
 	protected void setupLogging(String program, boolean setprinter) {
-		log = new Log(program, logLevel);
+		log = new Log(program, logLevel, logIncarnation ());
 		if (setprinter) {
 			log.setPrinter(System.out);
 		}
@@ -752,6 +760,7 @@ public class Data {
 		logging(Log.DEBUG, "init", "\tfollowupReference = " + followupReference);
 		logging(Log.DEBUG, "init", "\tfollowupMethod = " + (followupMethod == null ? "*non-opener*" : followupMethod));
 		logging(Log.DEBUG, "init", "\tremoveDuplicateEMails = " + removeDuplicateEMails);
+		logging(Log.DEBUG, "init", "\tsendEncrypted = " + sendEncrypted);
 		company.logSettings();
 		mailinglist.logSettings();
 		maildropStatus.logSettings();
@@ -944,6 +953,7 @@ public class Data {
 				retrieveMailingInformation();
 				retrieveMediaInformation();
 				targetExpression.retrieveInformation();
+				mailing.checkMailerset();
 			}
 			targetExpression.handleMissingTargetExpression();
 			retrieveURLsForMeasurement();
@@ -1149,67 +1159,71 @@ public class Data {
 		availableMedias = 0;
 		usedMedia = 0;
 		for (Media tmp : media()) {
+			String	config = cfg.cget ("media-" + Media.typeName (tmp.type) + "-config");
+			
+			if ((config != null) && (config.length () > 0)) {
+				tmp.setParameter ("config", config);
+			}
 			switch (tmp.type) {
-				case Media.TYPE_EMAIL:
-					mediaEMail = tmp;
-					mailing.fromEmail(new EMail(findMediadata(tmp, "from")));
-					mailing.replyTo(new EMail(findMediadata(tmp, "reply")));
+			case Media.TYPE_EMAIL:
+				mediaEMail = tmp;
+				mailing.fromEmail(new EMail(findMediadata(tmp, "from")));
+				mailing.replyTo(new EMail(findMediadata(tmp, "reply")));
+				String env = findMediadata(tmp, "envelope");
+				if (env != null) {
+					mailing.envelopeFrom(new EMail(env));
+				}
+				mailing.subject(findMediadata(tmp, "subject"));
+				masterMailtype = ifindMediadata(tmp, "mailformat", masterMailtype);
+				if (masterMailtype > MailType.HTML_OFFLINE.getIntValue()) {
+					masterMailtype = MailType.HTML_OFFLINE.getIntValue();
+				}
+				mailing.encoding(findMediadata(tmp, "encoding", mailing.defaultEncoding()));
+				mailing.charset(findMediadata(tmp, "charset", mailing.defaultCharset()));
+				lineLength = ifindMediadata(tmp, "linefeed", lineLength);
 
-					String env = findMediadata(tmp, "envelope");
+				String opl = findMediadata(tmp, "onepixlog", "none");
 
-					if (env != null) {
-						mailing.envelopeFrom(new EMail(env));
-					}
-					mailing.subject(findMediadata(tmp, "subject"));
-					masterMailtype = ifindMediadata(tmp, "mailformat", masterMailtype);
-					if (masterMailtype > MailType.HTML_OFFLINE.getIntValue()) {
-						masterMailtype = MailType.HTML_OFFLINE.getIntValue();
-					}
-					mailing.encoding(findMediadata(tmp, "encoding", mailing.defaultEncoding()));
-					mailing.charset(findMediadata(tmp, "charset", mailing.defaultCharset()));
-					lineLength = ifindMediadata(tmp, "linefeed", lineLength);
+				if (opl.equals("top")) {
+					onepixlog = OPL_TOP;
+				} else if (opl.equals("bottom")) {
+					onepixlog = OPL_BOTTOM;
+				} else {
+					onepixlog = OPL_NONE;
+				}
 
-					String opl = findMediadata(tmp, "onepixlog", "none");
+				followupReference = ifindMediadata(tmp, "followup_for", 0L);
+				if (!maildropStatus.isWorldMailing()) {
+					followupReference = 0L;
+				}
+				if (followupReference > 0) {
+					followupMethod = findMediadata(tmp, "followup_method", null);
+				}
+				removeDuplicateEMails = bfindMediadata(tmp, "remove_dups", false);
+				sendEncrypted = bfindMediadata (tmp, "send_encrypted", false);
+				if (bfindMediadata(tmp, "intelliad_enabled", false)) {
+					String id = findMediadata(tmp, "intelliad_string", null);
 
-					if (opl.equals("top")) {
-						onepixlog = OPL_TOP;
-					} else if (opl.equals("bottom")) {
-						onepixlog = OPL_BOTTOM;
+					if (id != null) {
+						addTracker("intelliAd", id);
 					} else {
-						onepixlog = OPL_NONE;
+						logging(Log.WARNING, "init", "Missing intelliAd ID string even if tracking for intelliAd is enabled");
 					}
+				}
 
-					followupReference = ifindMediadata(tmp, "followup_for", 0L);
-					if (!maildropStatus.isWorldMailing()) {
-						followupReference = 0L;
-					}
-					if (followupReference > 0) {
-						followupMethod = findMediadata(tmp, "followup_method", null);
-					}
-					removeDuplicateEMails = bfindMediadata(tmp, "remove_dups", false);
-					if (bfindMediadata(tmp, "intelliad_enabled", false)) {
-						String id = findMediadata(tmp, "intelliad_string", null);
+				String bcc_recv = findMediadata(tmp, "bcc");
 
-						if (id != null) {
-							addTracker("intelliAd", id);
-						} else {
-							logging(Log.WARNING, "init", "Missing intelliAd ID string even if tracking for intelliAd is enabled");
-						}
+				if (bcc_recv != null) {
+					for (String recv : bcc_recv.split(", *")) {
+						addBcc(recv);
 					}
-
-					String bcc_recv = findMediadata(tmp, "bcc");
-
-					if (bcc_recv != null) {
-						for (String recv : bcc_recv.split(", *")) {
-							addBcc(recv);
-						}
-						if (bcc != null) {
-							bccBaseIndex = bcc.size();
-						}
+					if (bcc != null) {
+						bccBaseIndex = bcc.size();
 					}
-					break;
-				default:
-					break;
+				}
+				break;
+			default:
+				break;
 			}
 			if (tmp.stat == Media.STAT_ACTIVE) {
 				if (!Bit.isset(availableMedias, tmp.type)) {
@@ -1244,6 +1258,7 @@ public class Data {
 		}
 		mailing.setEnvelopeFrom();
 		company.infoAdd("_envelope_from", mailing.getEnvelopeFrom());
+		company.infoAdd("_envelope_forced", StringOps.btoa (mailing.envelopeForced ()));
 		mailing.setEncoding();
 		mailing.setCharset();
 	}
@@ -1594,6 +1609,13 @@ public class Data {
 		return incarnation;
 	}
 
+	private synchronized long logIncarnation() {
+		if (++logIncarnation < 0) {
+			logIncarnation = 1;
+		}
+		return logIncarnation;
+	}
+
 	/**
 	 * find an entry from the media record for this mailing
 	 *
@@ -1925,7 +1947,7 @@ public class Data {
 	}
 
 	protected void getTableLayout(String table, String ref) throws Exception {
-		DBase.Retry<List<Column>> r = dbase.new Retry<List<Column>>("layout", dbase, dbase.jdbc()) {
+		DBase.Retry<List<Column>> r = dbase.new Retry<>("layout", dbase, dbase.jdbc()) {
 			@Override
 			public void execute() throws SQLException {
 				String query = "SELECT * FROM " + table + " WHERE 1 = 0";
@@ -2149,6 +2171,7 @@ public class Data {
 	/**
 	 * Executed at start of mail generation
 	 */
+	static private final SimpleDateFormat	dateFormater = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss");
 	public void startExecution() throws Exception {
 		bigClause = new BC(this);
 		if (!bigClause.prepareQueryParts()) {
@@ -2164,7 +2187,7 @@ public class Data {
 		logging(Log.DEBUG, "start", "\ttotalReceivers = " + totalReceivers);
 		if (maildropStatus.isWorldMailing() || maildropStatus.isRuleMailing() || maildropStatus.isOnDemandMailing()) {
 			logging("generate", "company=" + company.id() + "\tmailinglist=" + mailinglist.id() + "\tmailing=" + mailing.id() +
-			"\tcount=" + totalReceivers + "\tstatus_field=" + maildropStatus.statusField());
+			"\tcount=" + totalReceivers + "\tstatus_field=" + maildropStatus.statusField() + "\ttimestamp=" + dateFormater.format (new Date ()));
 		}
 	}
 
@@ -2503,6 +2526,7 @@ public class Data {
 			} else {
 				sendSeconds = now;
 			}
+			currentSendDate = new Date(sendSeconds * 1000);
 
 			if ((tmp = opts.get("step")) != null) {
 				mailing.stepping(obj2int(tmp, "step"));
@@ -3243,11 +3267,9 @@ public class Data {
 	 */
 	public String RFCDate(Date ts) {
 		SimpleDateFormat fmt = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z", new Locale("en"));
+		
 		fmt.setTimeZone(TimeZone.getTimeZone("GMT"));
-		if (ts == null) {
-			ts = new Date();
-		}
-		return fmt.format(ts);
+		return fmt.format(ts != null ? ts : new Date ());
 	}
 
 	/**
@@ -3269,6 +3291,8 @@ public class Data {
 				inc = getIncarnation();
 			}
 			return inc + "D" + mailing.id();
+		} else if (maildropStatus.isRuleMailing ()) {
+			return "R" + mailing.id ();
 		}
 		return Long.toString(mailing.id());
 	}
@@ -3373,10 +3397,43 @@ public class Data {
 			}
 		}
 		if (maildropStatus.isWorldMailing() || maildropStatus.isRuleMailing() || maildropStatus.isOnDemandMailing()) {
-			String expr = company.infoSubstituted("fixed-target-clause", mailing.id());
+			String	mailingTypeName;
+			
+			if (mailingType == MailingType.NORMAL.getCode ()) {
+				mailingTypeName = "world";
+			} else if (mailingType == MailingType.ACTION_BASED.getCode ()) {
+				mailingTypeName = "action";
+			} else if (mailingType == MailingType.DATE_BASED.getCode ()) {
+				mailingTypeName = "date";
+			} else if (mailingType == MailingType.FOLLOW_UP.getCode ()) {
+				mailingTypeName = "followup";
+			} else if (mailingType == MailingType.INTERVAL.getCode ()) {
+				mailingTypeName = "interval";
+			} else {
+				mailingTypeName = null;
+			}
+			Set <String> seen = new HashSet <> ();
 
-			if ((expr != null) && (!expr.equals("-"))) {
-				rc.add(expr);
+			for (String extra : new String[]{"exact", mailingTypeName, maildropStatus.statusField (), ""}) {
+				if (extra != null) {
+					String	key = "fixed-target-clause";
+					String	expr;
+					
+					if (extra.equals ("exact")) {
+						expr = company.infoSubstituted (key + "[" + mailing.id () + "]");
+					} else if (extra.length () > 0) {
+						expr = company.infoSubstituted (key + "-" + extra.toLowerCase ());
+					} else {
+						expr = company.infoSubstituted (key);
+					}
+					if ((expr != null) && (! seen.contains (expr))) {
+						seen.add (expr);
+						logging (Log.INFO, "target", "Using fixed target clause " + (extra.length () > 0 ? "(using " + extra + ")" : "") + ": \"" + expr + "\"");
+						if (! expr.equals ("-")) {
+							rc.add (expr);
+						}
+					}
+				}
 			}
 		}
 		if (maildropStatus.isWorldMailing()) {
@@ -3425,6 +3482,11 @@ public class Data {
 				buf.append("'");
 				rc.add(buf.toString());
 			}
+		}
+		if (sendEncrypted && (maildropStatus.isWorldMailing() || maildropStatus.isRuleMailing() || maildropStatus.isOnDemandMailing() || maildropStatus.isCampaignMailing ())) {
+			String	expr = company.infoSubstituted ("encrypted-sending-clause", mailing.id ());
+			
+			rc.add (expr != null ? expr : "cust.sys_encrypted_sending = 1");
 		}
 		return rc;
 	}

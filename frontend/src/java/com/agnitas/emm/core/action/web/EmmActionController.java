@@ -52,9 +52,9 @@ import com.agnitas.emm.core.action.operations.ActionOperationParametersParser;
 import com.agnitas.emm.core.action.service.ComEmmActionService;
 import com.agnitas.emm.core.action.service.impl.EmmActionValidationServiceImpl;
 import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.userform.service.ComUserformService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.messages.I18nString;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.Popups;
@@ -78,8 +78,9 @@ public class EmmActionController {
 	private EmmActionValidationServiceImpl validationService;
 	private ActionOperationFactory actionOperationFactory;
 	private ComUserformService userFormService;
+	private MailinglistApprovalService mailinglistApprovalService;
 
-	public EmmActionController(WebStorage webStorage, ComEmmActionService emmActionService, MailingService mailingService, ConfigService configService, ComWorkflowService workflowService, UserActivityLogService userActivityLogService, ConversionService conversionService, ActionOperationParametersParser actionOperationParametersParser, EmmActionValidationServiceImpl validationService, ActionOperationFactory actionOperationFactory, ComUserformService userFormService) {
+	public EmmActionController(WebStorage webStorage, ComEmmActionService emmActionService, MailingService mailingService, ConfigService configService, ComWorkflowService workflowService, UserActivityLogService userActivityLogService, ConversionService conversionService, ActionOperationParametersParser actionOperationParametersParser, EmmActionValidationServiceImpl validationService, ActionOperationFactory actionOperationFactory, ComUserformService userFormService, MailinglistApprovalService mailinglistApprovalService) {
 		this.webStorage = webStorage;
 		this.emmActionService = emmActionService;
 		this.mailingService = mailingService;
@@ -91,7 +92,8 @@ public class EmmActionController {
 		this.validationService = validationService;
 		this.actionOperationFactory = actionOperationFactory;
 		this.userFormService = userFormService;
-	}
+        this.mailinglistApprovalService = mailinglistApprovalService;
+    }
 
 	@RequestMapping("/list.action")
 	public String list(ComAdmin admin, EmmActionsForm form, Model model, Popups popups) {
@@ -190,9 +192,6 @@ public class EmmActionController {
 
 	@GetMapping(value = {"/new.action", "/0/view.action"})
 	public String create(ComAdmin admin, @ModelAttribute("form") EmmActionForm form, Model model) {
-		form.setShortname(I18nString.getLocaleString("default.Name", admin.getLocale()));
-		form.setDescription(I18nString.getLocaleString("default.description", admin.getLocale()));
-
 		loadViewData(admin, model);
 
 		return "actions_view";
@@ -299,6 +298,10 @@ public class EmmActionController {
 
 	private void loadViewData(ComAdmin admin, Model model) {
 		model.addAttribute("operationList", actionOperationFactory.getTypesList());
+		if (configService.getBooleanValue(ConfigValue.ActopUnsubscribeExtended, admin.getCompanyID())) {
+		    model.addAttribute("isUnsubscribeExtended", true);
+            model.addAttribute("allowedMailinglists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
+        }
 
 		// Some deserialized Actions need the mailings to show their configuration data
 		model.addAttribute("eventBasedMailings", mailingService.getMailingsByStatusE(admin.getCompanyID()));

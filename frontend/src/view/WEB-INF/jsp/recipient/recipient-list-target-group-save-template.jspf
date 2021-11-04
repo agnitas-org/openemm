@@ -11,19 +11,25 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <div class="col-sm-4">
-                            <label for="targetShortnameOverlay" class="control-label"><bean:message key="Name"/></label>
+                            <label for="targetShortnameOverlay" class="control-label">
+                                <c:set var="nameMsg"><bean:message key="default.Name"/></c:set>
+                                ${nameMsg}
+                            </label>
                         </div>
                         <div class="col-sm-8">
-                            <input type="text" id="targetShortnameOverlay" class="form-control" maxlength="99"/>
+                            <input type="text" id="targetShortnameOverlay" class="form-control" maxlength="99" placeholder="${nameMsg}"/>
                         </div>
                     </div>
                     <div class="form-group">
                         <div class="col-sm-4">
-                            <label for="targetDescriptionOverlay" class="control-label"><bean:message key="Description"/></label>
+                            <label for="targetDescriptionOverlay" class="control-label">
+                                <c:set var="descriptionMsg"><bean:message key="default.description"/></c:set>
+                                ${descriptionMsg}
+                            </label>
                         </div>
                         <div class="col-sm-8">
                             <textarea id="targetDescriptionOverlay" class="form-control" rows="5"
-                                      cols="32"></textarea>
+                                      cols="32" placeholder="${descriptionMsg}"></textarea>
                         </div>
                     </div>
                 </div>

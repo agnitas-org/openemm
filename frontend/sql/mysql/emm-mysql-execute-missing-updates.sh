@@ -104,9 +104,13 @@ for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mysql-update-*.sql"
 	versionAlreadyInDb=`echo "SELECT version_number FROM agn_dbversioninfo_tbl WHERE version_number = '${updatefileVersion}';" | MYSQL_PWD=${password} mysql -h ${hostname} -P ${port} --protocol=TCP -u ${username} --database=${dbname} --default-character-set=utf8`
 
 	if [[ ${versionAlreadyInDb} == *${updatefileVersion}* ]]; then {
+		if [ "${updatefileVersion}" == "" ]; then {
+			echo "Skipping file ${sqlfilename}"
+		} else {
 			echo "DB already contains version ${updatefileVersion}"
+		} fi
 	} else {
-			updatefiles="${updatefiles} ${sqlfilename}"
+		updatefiles="${updatefiles} ${sqlfilename}"
 	} fi
 done
 

@@ -22,6 +22,7 @@ import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.target.exception.TargetGroupException;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.emm.core.target.service.UserActivityLog;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.struts.action.ActionMessages;
 
@@ -31,9 +32,12 @@ import com.agnitas.beans.ListSplit;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.recipient.dto.RecipientSaveTargetDto;
+import com.agnitas.emm.core.recipient.web.RejectAccessByTargetGroupLimit;
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
+import com.agnitas.messages.Message;
 import com.agnitas.service.SimpleServiceResult;
 
 /**
@@ -53,9 +57,14 @@ public interface ComTargetService {
 	void deleteTargetGroup(int targetGroupID, @VelocityCheck int companyID) throws TargetGroupException, TargetGroupPersistenceException;
 
     int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
-    TargetSavingAndAnalysisResult saveTargetWithAnalysis(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
 
-    int saveTarget(ComTarget target) throws TargetGroupPersistenceException;
+	int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, List<Message> errors, List<UserAction> userActions) throws Exception;
+
+	TargetSavingAndAnalysisResult saveTargetWithAnalysis(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
+
+	int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, List<Message> errors, UserActivityLog userActivityLog) throws Exception;
+
+	int saveTarget(ComTarget target) throws TargetGroupPersistenceException;
 
     SimpleServiceResult canBeDeleted(int targetId, @VelocityCheck int companyId);
 
@@ -103,10 +112,8 @@ public interface ComTargetService {
 	 * @param companyId company ID
 	 * 
 	 * @return target group or <code>null</code>
-	 * 
 	 * @see #getTargetGroup(int, int)
 	 */
-	@Deprecated
     ComTarget getTargetGroupOrNull(int targetId, int companyId);
 	
 	/**
@@ -154,12 +161,12 @@ public interface ComTargetService {
 	 * @see #getTargetLights(com.agnitas.beans.ComAdmin, boolean, boolean, boolean)
 	 */
 	List<TargetLight> getTargetLights(ComAdmin admin);
+	List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
 
 	List<TargetLight> getTargetLights(ComAdmin admin, boolean worldDelivery, boolean adminTestDelivery,
 			boolean content);
 
-	List<TargetLight> getTargetLights(ComAdmin admin, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery,
-			boolean content);
+	List<TargetLight> getTargetLights(ComAdmin admin, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
 
 	List<TargetLight> getTargetLights(TargetLightsOptions options);
 
@@ -224,4 +231,15 @@ public interface ComTargetService {
 
 	boolean isRecipientMatchTarget(ComAdmin admin, int targetGroupId, int customerId);
 
+	void checkRecipientTargetGroupAccess(ComAdmin admin, int customerId) throws RejectAccessByTargetGroupLimit;
+	
+	boolean isValid(int companyId, int targetId);
+
+	boolean isLocked(int companyId, int targetId);
+
+	int saveTargetFromRecipientSearch(ComAdmin admin, RecipientSaveTargetDto targetDto, List<Message> errors, List<UserAction> userActions);
+
+    void addToFavorites(int targetId, int companyId);
+
+    void removeFromFavorites(int targetId, int companyId);
 }

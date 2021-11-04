@@ -14,6 +14,7 @@ import java.util.List;
 
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
@@ -29,6 +30,7 @@ import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 
 public interface MailingService {
+	
 	int addMailing(MailingModel model) throws MailinglistNotExistException;
 	
 	int addMailingFromTemplate(MailingModel model);
@@ -44,7 +46,8 @@ public interface MailingService {
     void deleteMailing(MailingModel model);
 	
 	List<Mailing> getMailings(MailingModel model);
-	
+	List<Mailing> listMailings(final int companyId, final ListMailingFilter filter);
+
 	List<Mailing> getMailingsForMLID(MailingModel model) throws MailinglistException;
 
 	void sendMailing(MailingModel model, List<UserAction> userActions) throws Exception;
@@ -98,11 +101,13 @@ public interface MailingService {
 	String getTargetExpression(@VelocityCheck final int companyId, final int mailingId);
 
 	boolean tryToLock(ComAdmin admin, int mailingId);
-	
+
+	ComAdmin getMailingLockingAdmin(int mailingId, int companyId);
+
 	boolean isDeliveryComplete(final int companyID, final int mailingID);
 	boolean isDeliveryComplete(final LightweightMailing mailing);
 
-	void updateStatus(int companyID, int mailingID, String string);
+	void updateStatus(int companyID, int mailingID, MailingStatus status);
 
 	List<Integer> listFollowupMailingIds(int companyID, int mailingID, boolean includeUnscheduled);
     
@@ -119,4 +124,6 @@ public interface MailingService {
 	List<MailingBase> getTemplatesWithPreview(ComAdmin admin, String sort, String direction);
 
     List<MailingBase> getMailingsByStatusE(@VelocityCheck int companyId);
+
+    List<LightweightMailing> getUnsetMailingsForRootTemplate(@VelocityCheck int companyId, int templateId);
 }

@@ -170,11 +170,11 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
     }
 	
 	private List<OptimizationMailingData> getOptimizationMailingsData(int optimizationId, int companyId) {
-		String query = "SELECT res.mid, res.name, res.subject, " +
+		String query = "SELECT res.mid, res.name, res.mt_param, " +
 				"  COALESCE(res.target_id, 0) AS target_id, res.target_name, " +
 				"  res.group_id, res.result_mailing, COALESCE(mac.mintime, mds.senddate) AS last_send_date" +
 				" FROM (" +
-				"  SELECT m.mailing_id AS mid, MAX(m.shortname) AS name, MAX(m.subject) AS subject, " +
+				"  SELECT m.mailing_id AS mid, MAX(m.shortname) AS name, mt.param AS mt_param, " +
 				"  MAX(tg.target_id) AS target_id, " +
 				"  MAX(tg.target_shortname) AS target_name, " +
 				"  MAX(ao.result_mailing_id) AS result_mailing_id, " +
@@ -187,20 +187,20 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 				"        ELSE 0" +
 				"   END) AS group_id, " +
 				"  (CASE WHEN ao.final_mailing_id =  m.mailing_id THEN MAX(ao.result_mailing_id) ELSE 0 END) AS result_mailing" +
-				"  FROM mailing_tbl m, auto_optimization_tbl ao " +
-				"  LEFT JOIN dyn_target_tbl tg ON ao.target_id = tg.target_id" +
+				"  FROM mailing_tbl m LEFT JOIN mailing_mt_tbl mt ON m.mailing_id = mt.mailing_id, " +
+                "  auto_optimization_tbl ao LEFT JOIN dyn_target_tbl tg ON ao.target_id = tg.target_id" +
 				"  WHERE m.mailing_id IN (ao.group1_id, ao.group2_id, ao.group3_id, ao.group4_id, ao.group5_id, ao.final_mailing_id)" +
 				"  AND optimization_id = ? AND m.company_id = ?" +
-				"  GROUP BY m.mailing_id, ao.group1_id, ao.group2_id, ao.group3_id, ao.group4_id, ao.group5_id, ao.final_mailing_id" +
+				"  GROUP BY m.mailing_id, mt.param, ao.group1_id, ao.group2_id, ao.group3_id, ao.group4_id, ao.group5_id, ao.final_mailing_id" +
 				") res " +
 				" LEFT JOIN (SELECT mailing_id AS mid, MIN(mintime) AS mintime FROM mailing_account_sum_tbl WHERE status_field = 'W' GROUP BY mailing_id) mac ON res.mid = mac.mid" +
 				" LEFT JOIN (SELECT mailing_id AS mid, MAX(senddate) AS senddate FROM maildrop_status_tbl WHERE status_field = 'W' GROUP BY mailing_id) mds ON res.mid = mds.mid";
 
-		List<OptimizationMailingData> mailingData = select(logger, query, (resultSet, i) -> {
+		return select(logger, query, (resultSet, i) -> {
 			OptimizationMailingData mdata = new OptimizationMailingData();
 			mdata.setMailingId(resultSet.getInt("mid"));
 			mdata.setMailingName(resultSet.getString("name"));
-			mdata.setMailingSubject(StringUtils.trimToEmpty(resultSet.getString("subject")));
+			mdata.setMailingSubject(getSubjectFromMTParam(resultSet.getString("mt_param")));
 			int targetId = resultSet.getInt("target_id");
 			mdata.setTargetGroupId(targetId == 0 ? ALL_SUBSCRIBERS_TARGETGROUPID : targetId);
 			mdata.setTargetGroupName(resultSet.getString("target_name"));
@@ -210,8 +210,16 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 			mdata.setSendDate(resultSet.getTimestamp("last_send_date"));
 			return mdata;
 		}, optimizationId, companyId);
-		return mailingData;
 	}
+
+    private String getSubjectFromMTParam(String mtParam) {
+        if (mtParam == null) {
+            return "";
+        } else {
+            return StringUtils.defaultString(
+                    com.agnitas.reporting.birt.external.utils.StringUtils.findParam("subject", mtParam), "");   
+        }
+    }
 
 	public long getAvgMailingSize(Integer mailingId, int companyId) {
 		String query = "SELECT" +

@@ -18,6 +18,8 @@ import org.springframework.jdbc.core.RowMapper;
 import com.agnitas.beans.TrackableLinkListItem;
 
 public class TrackableLinkListItemRowMapper implements RowMapper<TrackableLinkListItem> {
+	
+	// TODO Performance improvement: Introduce static constant INSTANCE and reduce visibility of constructor to private.
 
 	@Override
 	public TrackableLinkListItem mapRow(ResultSet rs, int row) throws SQLException {

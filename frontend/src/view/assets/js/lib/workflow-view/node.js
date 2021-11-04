@@ -757,6 +757,10 @@
         this.$connectionButton.toggle(!!isEnabled);
     };
 
+    Node.prototype.removePopover = function() {
+        this.nodePopover.remove();
+    };
+
     Node.prototype.setPopoverEnabled = function(isEnabled) {
         if (!isEnabled) {
             this.nodePopover._hidePopover(true);
@@ -778,6 +782,7 @@
     };
 
     Node.prototype.remove = function() {
+        this.nodePopover.remove();
         this.$element.remove();
         this.$titleDiv.remove();
         this.$container = null;
@@ -816,39 +821,55 @@
         } else {
           this.node = Node.get(node);
         }
+        this.popover = undefined;
+        this.timeoutId = undefined;
+        this.isEnabled = true;
+    }
+
+    NodePopover.prototype.remove = function() {
+        if (this.popover) {
+            this.popover.hide();
+        }
+        Popover.remove(this.node.get$());
+        this.popover = null;
+    }
+
+    NodePopover.destroyAll = function() {
+        $("[rel=popover]").each(function(i, node) {
+            Node.get($(node)).removePopover();
+        });
+
+        $('.popover').remove();
+    };
+
+    NodePopover.prototype.initPopover = function() {
         var self = this;
-        this.popover = Popover.new(node.get$(), {
+        var popover = Popover.new(self.node.get$(), {
             trigger: 'manual',
             html: true,
             template: Def.NODE_POPOVER_TEMPLATE,
             content: function () {return self.getPopoverContent()}
         });
 
-        this.timeoutId = undefined;
-    }
+        if (self.isEnabled) {
+            popover.enable();
+        } else {
+            popover.disable();
+        }
 
-    NodePopover.destroyAll = function() {
-        $("[rel=popover]").each(function(i, node) {
-            Popover.remove($(node));
-        });
-
-        $('.popover').remove();
-    };
-
-    NodePopover.prototype.initTipEvents = function() {
-        var self = this;
-        var $tip = this.popover.tip();
+        var $tip = popover.tip();
         $tip.on({
             mouseenter: function() {self._showPopover();},
             mouseleave: function() {self._hidePopover(true);}
         });
-    };
+
+        return popover;
+    }
 
     NodePopover.prototype.show = function() {
         NodePopover.destroyAll();
-
+        this.popover = this.initPopover();
         if (this.popover.hasContent() && this.popover.enabled) {
-            this.initTipEvents();
             this._showPopover();
         }
     };
@@ -917,6 +938,10 @@
     NodePopover.prototype._hidePopover = function(immediate) {
         this._stopHiding();
 
+        if (!this.popover) {
+            return;
+        }
+
         if (immediate === true) {
             if (this.popover) {
                 this.popover.hide();
@@ -930,6 +955,11 @@
     };
 
     NodePopover.prototype.setEnabled = function(isEnabled) {
+        this.isEnabled = isEnabled;
+
+        if (!this.popover) {
+            return;
+        }
         if (isEnabled) {
             this.popover.enable();
         } else {

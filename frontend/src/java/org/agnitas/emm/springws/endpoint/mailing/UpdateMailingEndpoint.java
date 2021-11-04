@@ -12,10 +12,12 @@ package org.agnitas.emm.springws.endpoint.mailing;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.UpdateMailingRequest;
 import org.agnitas.emm.springws.jaxb.UpdateMailingRequest.TargetIDList;
@@ -31,21 +33,27 @@ import com.agnitas.emm.core.mailing.service.MailingService;
 @Endpoint
 public class UpdateMailingEndpoint extends BaseEndpoint {
 
-	private MailingService mailingService;
+	private final MailingService mailingService;
+	private final MailingEditableCheck mailingEditableCheck;
 
-	public UpdateMailingEndpoint(@Qualifier("MailingService") MailingService mailingService) {
-		this.mailingService = mailingService;
+	public UpdateMailingEndpoint(@Qualifier("MailingService") MailingService mailingService, final MailingEditableCheck mailingEditableCheck) {
+		this.mailingService = Objects.requireNonNull(mailingService);
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
 	}
 
 	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateMailingRequest")
 	public @ResponsePayload UpdateMailingResponse updateMailing(@RequestPayload UpdateMailingRequest request) throws Exception {
-		MailingModel model = new MailingModel();
+		final int companyId = Utils.getUserCompany();
+		
+		this.mailingEditableCheck.requireMailingEditable(request.getMailingID(), companyId);
+		
+		final MailingModel model = new MailingModel();
 		model.setMailingId(request.getMailingID());
-		model.setCompanyId(Utils.getUserCompany());
+		model.setCompanyId(companyId);
 		model.setShortname(request.getShortname());
 		model.setDescription(request.getDescription());
 		model.setMailinglistId(request.getMailinglistID());
-		TargetIDList targetIDList = request.getTargetIDList();
+		final TargetIDList targetIDList = request.getTargetIDList();
 		if (targetIDList != null) {
 			model.setTargetIDList(targetIDList.getTargetID());
 		}
@@ -62,7 +70,7 @@ public class UpdateMailingEndpoint extends BaseEndpoint {
 		model.setOnePixelString(request.getOnePixel());
 //		model.setAutoUpdate(request.isAutoUpdate());
 
-		List<UserAction> userActions = new ArrayList<>();
+		final List<UserAction> userActions = new ArrayList<>();
 		mailingService.updateMailing(model, userActions);
 		Utils.writeLog(userActivityLogService, userActions);
 

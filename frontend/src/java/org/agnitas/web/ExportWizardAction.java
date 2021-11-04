@@ -10,6 +10,7 @@
 
 package org.agnitas.web;
 
+import static com.agnitas.emm.core.Permission.EXPORT_OWN_COLUMNS;
 import static org.agnitas.util.UserActivityUtil.addChangedFieldLog;
 
 import java.io.File;
@@ -18,22 +19,21 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
 import org.agnitas.beans.ExportPredef;
-import org.agnitas.beans.impl.ExportPredefImpl;
+import org.agnitas.beans.ExportColumnMapping;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.dao.AutoExportDao;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
@@ -58,11 +58,18 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.export.util.ExportWizardUtils;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.service.ComColumnInfoService;
 import com.agnitas.service.ExportPredefService;
 import com.agnitas.util.FutureHolderMap;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Implementation of <strong>Action</strong> that handles customer exports
@@ -93,7 +100,8 @@ public class ExportWizardAction extends StrutsActionBase {
 	protected AutoExportDao autoExportDao;
     private MailinglistApprovalService mailinglistApprovalService;
     private RecipientExportWorkerFactory recipientExportWorkerFactory;
-    
+    private ComColumnInfoService columnInfoService;
+
     @Required
     public final void setRecipientExportWorkerFactory(final RecipientExportWorkerFactory factory) {
     	this.recipientExportWorkerFactory = Objects.requireNonNull(factory, "RecipientExportWorkerFactory is null");
@@ -128,6 +136,11 @@ public class ExportWizardAction extends StrutsActionBase {
 	public void setRecipientExportReporter(RecipientExportReporter recipientExportReporter) {
 		this.recipientExportReporter = recipientExportReporter;
 	}
+	
+    @Required
+    public void setColumnInfoService(ComColumnInfoService columnInfoService) {
+        this.columnInfoService = columnInfoService;
+    }
 	
 	public void setAutoExportDao(AutoExportDao autoExportDao) {
 		this.autoExportDao = autoExportDao;
@@ -245,6 +258,9 @@ public class ExportWizardAction extends StrutsActionBase {
                     req.setAttribute("availableDateFormats", org.agnitas.util.importvalues.DateFormat.values());
                     req.setAttribute("availableDateTimeFormats", org.agnitas.util.importvalues.DateFormat.values());
                     req.setAttribute("availableTimeZones", TimeZone.getAvailableIDs());
+                    if (admin.permissionAllowed(EXPORT_OWN_COLUMNS)) {
+                        req.setAttribute("availableColumns", columnInfoService.getComColumnInfos(companyID, admin.getAdminID()));
+                    }
 
                     aForm.setTargetGroups(targetService.getTargetLights(admin));
                     aForm.setMailinglistObjects(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
@@ -300,6 +316,9 @@ public class ExportWizardAction extends StrutsActionBase {
                     req.setAttribute("availableDateFormats", org.agnitas.util.importvalues.DateFormat.values());
                     req.setAttribute("availableDateTimeFormats", org.agnitas.util.importvalues.DateFormat.values());
                     req.setAttribute("availableTimeZones", TimeZone.getAvailableIDs());
+                    if (admin.permissionAllowed(EXPORT_OWN_COLUMNS)) {
+                        req.setAttribute("availableColumns", columnInfoService.getComColumnInfos(companyID, admin.getAdminID()));
+                    }
                     
                     aForm.setTargetGroups(targetService.getTargetLights(admin));
                     aForm.setMailinglistObjects(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
@@ -490,7 +509,8 @@ public class ExportWizardAction extends StrutsActionBase {
      *         false==error
      */
 	protected boolean loadPredefExportFromDB(ExportWizardForm aForm, HttpServletRequest request) {
-		ExportPredef exportPredef = exportPredefService.get(aForm.getExportPredefID(), AgnUtils.getCompanyID(request));
+        int companyId = AgnUtils.getCompanyID(request);
+        ExportPredef exportPredef = exportPredefService.get(aForm.getExportPredefID(), companyId);
 
 		if (exportPredef != null) {
 			aForm.setShortname(exportPredef.getShortname());
@@ -563,8 +583,11 @@ public class ExportWizardAction extends StrutsActionBase {
 
 			// process columns:
 			try {
-				aForm.setColumns(exportPredef.getColumns().split(";"));
-
+				String exportedColumns = StringUtils.join(exportPredef.getExportColumnMappings().stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toList()), ";");
+				aForm.setColumns(exportedColumns.split(";"));
+                if (AgnUtils.getAdmin(request).permissionAllowed(EXPORT_OWN_COLUMNS)) {
+                    aForm.setCustomColumnMappings(getCustomColumnMappingsFromExport(exportPredef, companyId, AgnUtils.getAdminId(request)));
+                }
 				if (StringUtils.isNotBlank(exportPredef.getMailinglists())) {
 					aForm.setMailinglists(exportPredef.getMailinglists().split(";"));
 				}
@@ -581,6 +604,13 @@ public class ExportWizardAction extends StrutsActionBase {
 
 		return true;
 	}
+
+    private Map<String, String> getCustomColumnMappingsFromExport(ExportPredef exportPredef, int companyId, int adminId) 
+            throws Exception {
+        return ExportWizardUtils
+                .getCustomColumnMappingsFromExport(exportPredef, companyId, adminId, columnInfoService).stream()
+                .collect(Collectors.toMap(ExportColumnMapping::getDbColumn, ExportColumnMapping::getDefaultValue));
+    }
 
     /**
      * Updates predefined export definition database entry
@@ -609,7 +639,7 @@ public class ExportWizardAction extends StrutsActionBase {
         exportPredef.setShortname(aForm.getShortname());
         exportPredef.setDescription(aForm.getDescription());
         exportPredef.setCharset(aForm.getCharset());
-        exportPredef.setColumns(StringUtils.join(aForm.getColumns(), ";"));
+        exportPredef.setExportColumnMappings(getExportColumnMappingsFromForm(aForm, admin));
         exportPredef.setMailinglists(StringUtils.join(aForm.getMailinglists(), ";"));
         exportPredef.setMailinglistID(aForm.getMailinglistID());
         exportPredef.setDelimiter(aForm.getDelimiter());
@@ -643,8 +673,33 @@ public class ExportWizardAction extends StrutsActionBase {
         return true;
     }
 
-	private void writeExportChangeLog(ExportPredef oldExport, ExportPredef newExport, ComAdmin admin) {
+    private List<ExportColumnMapping> getExportColumnMappingsFromForm(ExportWizardForm form, ComAdmin admin) {
+        List<ExportColumnMapping> exportColumnMappings = new ArrayList<>();
+        for (String dbColumn : form.getColumns()) {
+        	var exportColumnMapping = new ExportColumnMapping();
+        	exportColumnMapping.setDbColumn(dbColumn);
+        	exportColumnMappings.add(exportColumnMapping);
+        }
+        if (admin.permissionAllowed(EXPORT_OWN_COLUMNS)) {
+            exportColumnMappings.addAll(getCustomColumnMappingsFromForm(form));
+        }
+        return exportColumnMappings;
+    }
+
+    private List<ExportColumnMapping> getCustomColumnMappingsFromForm(ExportWizardForm form) {
+        return form.getCustomColumnMappings().entrySet().stream().map(mapping -> {
+            var columnMapping = new ExportColumnMapping();
+            columnMapping.setDbColumn(mapping.getKey());
+            columnMapping.setDefaultValue(mapping.getValue());
+            return columnMapping;
+        }).collect(Collectors.toList());
+    }
+
+    private void writeExportChangeLog(ExportPredef oldExport, ExportPredef newExport, ComAdmin admin) {
 		DateFormat dateFormat = admin.getDateTimeFormatWithSeconds();
+		
+		String newColumns = StringUtils.join(newExport.getExportColumnMappings().stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toList()), ";");
+		String oldColumns = StringUtils.join(oldExport.getExportColumnMappings().stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toList()), ";");
 
 		StringBuilder descriptionSb = new StringBuilder();
 		descriptionSb.append(addChangedFieldLog("shortname", newExport.getShortname(), oldExport.getShortname()))
@@ -653,7 +708,7 @@ public class ExportWizardAction extends StrutsActionBase {
 			.append(addChangedFieldLog("target group", newExport.getTargetID(), oldExport.getTargetID()))
 			.append(addChangedFieldLog("recipient type", newExport.getUserType(), oldExport.getUserType()))
 			.append(addChangedFieldLog("recipient status", newExport.getUserStatus(),oldExport.getUserStatus()))
-			.append(addChangedFieldLog("columns", newExport.getColumns(), oldExport.getColumns()))
+			.append(addChangedFieldLog("columns", newColumns, oldColumns))
 			.append(addChangedFieldLog("mailing lists", newExport.getMailinglists(), oldExport.getMailinglists()))
 			.append(addChangedFieldLog("separator", newExport.getSeparator(), oldExport.getSeparator()))
 			.append(addChangedFieldLog("delimiter", newExport.getDelimiter(), oldExport.getDelimiter()))
@@ -750,12 +805,13 @@ public class ExportWizardAction extends StrutsActionBase {
 	}
 
     protected ExportPredef getExportProfileFromForm(ExportWizardForm form, HttpServletRequest request, int companyID) {
-		SimpleDateFormat format = AgnUtils.getAdmin(request).getDateFormat();
+        ComAdmin admin = AgnUtils.getAdmin(request);
+        SimpleDateFormat format = admin.getDateFormat();
 		
-		ExportPredef exportProfile = new ExportPredefImpl();
+		ExportPredef exportProfile = new ExportPredef();
 		
 		exportProfile.setCharset(form.getCharset());
-		exportProfile.setColumns(StringUtils.join(form.getColumns(), ";"));
+        exportProfile.setExportColumnMappings(getExportColumnMappingsFromForm(form, admin));
 		exportProfile.setCompanyID(companyID);
 		exportProfile.setCreationDateLastDays(AgnUtils.isNumber(form.getCreationDateLastDays()) ? Integer.parseInt(form.getCreationDateLastDays()) : 0);
 		exportProfile.setCreationDateEnd(parseDate(form.getCreationDateEnd(), format));

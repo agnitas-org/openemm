@@ -10,8 +10,8 @@
 
 package org.agnitas.emm.core.download.service;
 
-import javax.activation.MimeType;
-import javax.servlet.http.HttpSession;
+import jakarta.activation.MimeType;
+import jakarta.servlet.http.HttpSession;
 
 import org.agnitas.emm.core.download.model.FileData;
 

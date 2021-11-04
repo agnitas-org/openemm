@@ -10,13 +10,14 @@
 
 package com.agnitas.emm.restful;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
@@ -31,6 +32,12 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.emm.core.logon.web.LogonFailedException;
+import com.agnitas.emm.util.quota.api.QuotaLimitExceededException;
+import com.agnitas.emm.util.quota.api.QuotaService;
+import com.agnitas.emm.util.quota.api.QuotaServiceException;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Restful services are available at:
@@ -42,8 +49,11 @@ import com.agnitas.emm.core.logon.web.LogonFailedException;
  * > rm test.txt; wget -S -O - --content-on-error --auth-no-challenge --http-user="<UrlencodedUserName>" --http-password="<UrlencodedPassword>" "http://localhost:8080/restful/reference/TestTbl" > test.txt; cat test.txt; echo
  */
 public class RestfulServiceServlet extends BaseRequestServlet {
+	
+	/** Serial version UID. */
 	private static final long serialVersionUID = -126080706211654654L;
 
+	/** The logge.r */
 	private static final transient Logger logger = Logger.getLogger(RestfulServiceServlet.class);
 
 	/**
@@ -51,6 +61,13 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 	 */
 	private ComLogonService logonService;
 	
+	private QuotaService quotaService;
+	
+	/**
+	 * Sets logon service.
+	 * 
+	 * @param logonService logon service
+	 */
 	@Required
 	public void setLogonService(ComLogonService logonService) {
 		this.logonService = logonService;
@@ -169,8 +186,21 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 					writeResponse(response, restfulResponse);
 					return;
 				}
+
+				// Check quotas
+				checkQuotas(admin, serviceHandler.getClass());
 				
-				serviceHandler.doService(request, response, admin, getRequestDataTempFile(request), restfulResponse, getServletContext(), requestMethod);
+				boolean extendedLogging = configService.getBooleanValue(ConfigValue.ExtendedRestfulLogging, admin.getCompanyID());
+				if (extendedLogging && getRequestData(request) != null) {
+					// Store requestData in a temp file for logging purpose, even if it was small enough to be kept it in memory only
+					File tempFile = File.createTempFile("Request_", ".requestData", AgnUtils.createDirectory(TEMP_FILE_DIRECTORY));
+					try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+						try (ByteArrayInputStream inputStream = new ByteArrayInputStream(getRequestData(request))) {
+							IOUtils.copy(inputStream, outputStream);
+						}
+					}
+				}
+				serviceHandler.doService(request, response, admin, getRequestData(request), getRequestDataTempFile(request) == null ? null : new File(getRequestDataTempFile(request)), restfulResponse, getServletContext(), requestMethod, extendedLogging);
 				writeResponse(response, restfulResponse);
 			}
 		} catch (RestfulNoDataFoundException e) {
@@ -179,10 +209,30 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 		} catch (RestfulClientException e) {
 			restfulResponse.setClientError(e);
 			writeResponse(response, restfulResponse);
+		} catch (QuotaLimitExceededException e) {
+			restfulResponse.setClientError(e, ErrorCode.MAX_LOAD_EXCEED_ERROR);
+			writeResponse(response, restfulResponse);
 		} catch (Exception e) {
 			restfulResponse.setError(e);
 			writeResponse(response, restfulResponse);
 		}
+	}
+	
+	private final void checkQuotas(final ComAdmin admin, final Class<? extends RestfulServiceHandler> serviceHandlerClass) throws QuotaLimitExceededException, QuotaServiceException {
+		if(getConfigService().getBooleanValue(ConfigValue.EnableRestfulQuotas, admin.getCompanyID())) {
+			final String serviceHandlerName = classToServiceName(serviceHandlerClass);
+			
+			getQuotaService().checkAndTrack(admin.getUsername(), admin.getCompanyID(), serviceHandlerName);
+		}
+	}
+	
+	private static final String classToServiceName(final Class<? extends RestfulServiceHandler> clazz) {
+		final String suffix = "RestfulServiceHandler";
+		final String name = clazz.getSimpleName();
+		
+		return name.endsWith(suffix)
+				? name.substring(0, name.length() - suffix.length())
+				: name;
 	}
 
 	private void writeResponse(HttpServletResponse response, BaseRequestResponse restfulResponse) throws Exception {
@@ -192,7 +242,11 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 		} else if (restfulResponse.responseState == State.NO_DATA_FOUND_ERROR) {
 			super.writeResponse(response, HttpServletResponse.SC_NOT_FOUND, restfulResponse.getMimeType(), restfulResponse.getString());
 		} else if (restfulResponse.responseState == State.CLIENT_ERROR) {
-			super.writeResponse(response, HttpServletResponse.SC_BAD_REQUEST, restfulResponse.getMimeType(), restfulResponse.getString());
+			if (restfulResponse.errorCode == ErrorCode.MAX_LOAD_EXCEED_ERROR) {
+				super.writeResponse(response, 429, restfulResponse.getMimeType(), restfulResponse.getString());
+			} else {
+				super.writeResponse(response, HttpServletResponse.SC_BAD_REQUEST, restfulResponse.getMimeType(), restfulResponse.getString());
+			}
 		} else if (restfulResponse.responseState == State.ERROR) {
 			super.writeResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, restfulResponse.getMimeType(), restfulResponse.getString());
 		} else {
@@ -200,11 +254,28 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 		}
 	}
 
+	protected ConfigService getConfigService() {
+		if(this.configService == null) {
+			this.configService = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("ConfigService", ConfigService.class);
+		}
+		
+		return this.configService;
+		
+	}
+	
 	protected ComLogonService getComLogonService() {
 		if (logonService == null) {
 			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
-			logonService = (ComLogonService) applicationContext.getBean("LogonService");
+			logonService = applicationContext.getBean("LogonService", ComLogonService.class);
 		}
 		return logonService;
+	}
+	
+	protected QuotaService getQuotaService() {
+		if(this.quotaService == null) {
+			this.quotaService = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("RestfulQuotaService", QuotaService.class);
+		}
+		
+		return this.quotaService;
 	}
 }

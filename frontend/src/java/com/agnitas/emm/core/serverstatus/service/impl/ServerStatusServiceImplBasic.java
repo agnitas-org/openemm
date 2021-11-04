@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
-import javax.servlet.ServletContext;
-
 import org.agnitas.emm.core.autoimport.dao.AutoImportDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -40,7 +38,6 @@ import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComServerStatusDao;
-import com.agnitas.emm.core.JavaMailAttachment;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.serverstatus.bean.ServerStatus;
 import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
@@ -50,6 +47,7 @@ import com.agnitas.messages.Message;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.Version;
 
+import jakarta.servlet.ServletContext;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -238,7 +236,7 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 		String version = configService.getValue(ConfigValue.ApplicationVersion);
 		String installPath = servletContext.getRealPath("/");
 		SimpleDateFormat dateTimeFormat = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS);
-		return ServerStatus.builder(version, installPath, admin.getLocale())
+		return ServerStatus.builder(version, installPath, admin.getLocale(), configService)
 				.database(serverStatusDao.getDbVendor(), getDbUrl(), checkDatabaseConnection())
 				.dateTimeSettings(dateTimeFormat, configService.getStartupTime(), configService.getConfigurationExpirationTime())
 				.statuses(isOverallStatusOK(), isJobQueueStatusOK(), !isImportStalling(), isDBStatusOK(), isReportStatusOK())
@@ -263,8 +261,7 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 				fromAddress = System.getProperty("user.name") + "@" + AgnUtils.getHostName();
 			}
 
-			success = javaMailService.sendEmail(testMailAddress, subject, textMessage, htmlMessage,
-					new JavaMailAttachment("Tästfile.txt", "Täxt".getBytes("UTF-8"), "text/plain"));
+			success = javaMailService.sendEmail(admin.getCompanyID(), testMailAddress, subject, textMessage, htmlMessage);
 			
 			message = Message.exact(String.format("Email to %s %s sent with \"from\"-address: %s", testMailAddress,
 					success ? "was successfully" : "wasn't successfully", fromAddress));
@@ -294,7 +291,7 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 				fromAddress = System.getProperty("user.name") + "@" + AgnUtils.getHostName();
 			}
 
-			success = javaMailService.sendEmail(sendDiagnosisEmail, subject, textMessage, null);
+			success = javaMailService.sendEmail(admin.getCompanyID(), sendDiagnosisEmail, subject, textMessage, null);
 			
 			message = Message.exact(String.format("Email to %s %s sent with \"from\"-address: %s", sendDiagnosisEmail,
 					success ? "was successfully" : "wasn't successfully", fromAddress));
@@ -371,7 +368,6 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 		List<Version> list = new ArrayList<>();
 		String dbVendor = ConfigService.isOracleDB() ? ORACLE : MYSQL;
 		try {
-			@SuppressWarnings("unchecked")
 			List<String> versionStringList = IOUtils.readLines(getClass().getClassLoader()
 							.getResourceAsStream("mandatoryDbChanges_"+ dbVendor + ".csv"),
 							"UTF-8");
@@ -440,6 +436,7 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 				}
 			
 			} catch (IOException ex) {
+				ZipUtilities.closeZipOutputStream(zipOutput);
 				logger.error("Error writing file." + ex);
 				throw ex;
 			}

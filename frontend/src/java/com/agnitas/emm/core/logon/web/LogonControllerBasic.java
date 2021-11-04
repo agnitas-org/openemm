@@ -18,9 +18,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.SessionTrackingMode;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -61,6 +62,7 @@ import com.agnitas.emm.core.logon.service.ComHostAuthenticationService;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.emm.core.logon.service.HostAuthenticationServiceException;
 import com.agnitas.emm.core.logon.service.UnexpectedLogonStateException;
+import com.agnitas.emm.core.sessionhijacking.web.SessionHijackingPreventionConstants;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
@@ -69,6 +71,7 @@ import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.Anonymous;
 
 public class LogonControllerBasic {
+	/** The logger. */
     private static final Logger logger = Logger.getLogger(LogonControllerBasic.class);
 
     protected static final String PASSWORD_CHANGED_KEY = "com.agnitas.emm.core.logon.web.PASSWORD_CHANGED";
@@ -114,13 +117,18 @@ public class LogonControllerBasic {
 
     @Anonymous
     @GetMapping("/logon.action")
-    public String logonView(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
-        SimpleServiceResult result = logonService.checkDatabase();
+    public String logonView(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups, final HttpSession session) {
+        if(session.getAttribute(SessionHijackingPreventionConstants.FORCED_LOGOUT_MARKER_ATTRIBUTE_NAME) != null) {
+        	popups.alert(new Message("logon.security.sessionCheck"));
+        	session.removeAttribute(SessionHijackingPreventionConstants.FORCED_LOGOUT_MARKER_ATTRIBUTE_NAME);
+        }
+        
+        final SimpleServiceResult result = logonService.checkDatabase();
 
         if (result.isSuccess()) {
         	logonStateBundle.toPendingState();
 
-        	return getLogonPage(model, request.getServerName());
+        	return getLogonPage(model, request.getServerName(), request);
         } else {
             popups.addPopups(result);
             model.addAttribute("supportEmergencyUrl", configService.getValue(ConfigValue.SupportEmergencyUrl));
@@ -132,7 +140,7 @@ public class LogonControllerBasic {
     @PostMapping("/logon.action")
     public String logon(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
         if(!logonFormValidator.validate(form, popups)) {
-            return getLogonPage(model, request.getServerName());
+            return getLogonPage(model, request.getServerName(), request);
         }
 
         String clientIp = request.getRemoteAddr();
@@ -153,7 +161,7 @@ public class LogonControllerBasic {
             form.setPassword(null);
 
             popups.addPopups(result);
-            return getLogonPage(model, request.getServerName());
+            return getLogonPage(model, request.getServerName(), request);
         }
     }
     
@@ -570,11 +578,18 @@ public class LogonControllerBasic {
         return "redirect:/dashboard.action";
     }
 
-    private String getLogonPage(Model model, String serverName) {
+    private String getLogonPage(Model model, String serverName, final HttpServletRequest request) {
         model.addAttribute("supportMailAddress", configService.getValue(ConfigValue.Mailaddress_Support));
         model.addAttribute("iframeUrl", getLogonIframeUrl());
         model.addAttribute("layoutdir", logonService.getLayoutDirectory(serverName));
+        
+        model.addAttribute("SHOW_TAB_HINT", showTabHint(request));
+        
         return "logon";
+    }
+    
+    protected boolean showTabHint(final HttpServletRequest request) {
+    	return !request.getServletContext().getEffectiveSessionTrackingModes().contains(SessionTrackingMode.COOKIE);
     }
     
     protected String getLogonIframeUrl() {

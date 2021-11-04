@@ -1,4 +1,3 @@
-// -*- scope: openemm -*-
 package com.agnitas.emm.core.serverstatus.web;
 
 import org.agnitas.emm.core.commons.util.ConfigService;

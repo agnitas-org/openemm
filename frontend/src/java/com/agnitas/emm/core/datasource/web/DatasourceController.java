@@ -20,6 +20,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.datasource.bean.DataSource;
 import com.agnitas.emm.core.datasource.form.DatasourceForm;
 import com.agnitas.service.ComWebStorage;
@@ -49,13 +50,17 @@ public class DatasourceController {
     public String list(ComAdmin admin, DatasourceForm form, Model model, Popups popups) {
         try {
             FormUtils.syncNumberOfRows(webStorage, ComWebStorage.DATASOURCE_OVERVIEW, form);
-            PaginatedListImpl<DataSource> dataSources = dataSourceService.getPaginatedDataSources(
-                    admin.getCompanyID(),
-                    form.getSort(),
-                    form.getPage(),
-                    form.getNumberOfRows(),
-                    form.getDir());
-            model.addAttribute("datasources", dataSources);
+            if (!admin.permissionAllowed(Permission.DATASOURCE_ID_OVERVIEW_JS_TABLE_ROLLBACK)) {
+                model.addAttribute("datasources", dataSourceService.getDataSourcesJson(admin.getCompanyID()));
+            } else {
+                PaginatedListImpl<DataSource> dataSources = dataSourceService.getPaginatedDataSources(
+                        admin.getCompanyID(),
+                        form.getSort(),
+                        form.getPage(),
+                        form.getNumberOfRows(),
+                        form.getDir());
+                model.addAttribute("datasources", dataSources);
+            }
             userActivityLogService.writeUserActivityLog(admin, "datasource list", "show datasource IDs");
         } catch (Exception e) {
             logger.error("Error occurred: " + e.getMessage(), e);

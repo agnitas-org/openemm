@@ -15,11 +15,11 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.EmmLayoutBase;
 import org.agnitas.beans.MailingComponent;
@@ -47,7 +47,7 @@ import com.agnitas.util.ImageUtils;
  * This servlet loads and shows a image from the mailing_component_tbl.
  * The images are cached. When an image cannot be found a default image is shown which is also cached.
  * If even the default image cannot be found, a text is shown, which is also cached.
- * The caching is done for performance reasons and the caching timeout is set in emm.properties
+ * The caching is done for performance reasons and the caching timeout is set in emm configuration
  */
 public class ShowImageServlet extends HttpServlet {
 	/** The logger. */

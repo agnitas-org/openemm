@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
@@ -30,6 +30,8 @@ import org.agnitas.web.forms.BulkActionForm;
 import org.agnitas.web.forms.SimpleActionForm;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Logger;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -56,7 +58,7 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping("/target")
-@PermissionMapping("targetNew")
+@PermissionMapping("target")
 public class TargetController {
 
     private static final Logger logger = Logger.getLogger(TargetController.class);
@@ -87,7 +89,7 @@ public class TargetController {
         model.addAttribute("targetComplexities", targetService.getTargetComplexities(admin.getCompanyID()));
         model.addAttribute("targets", getTargetGroupsOverview(targetForm, admin));
 
-        return "targets_list_new";
+        return "targets_list";
     }
 
     @RequestMapping("/confirm/bulk/delete.action")
@@ -204,6 +206,28 @@ public class TargetController {
     public String createMailingList(final Model model, @PathVariable final int id) {
         model.addAttribute("targetIdToCreateMailingList", id);
         return "targets_create_mailinglist_confirm";
+    }
+
+    @RequestMapping("/{id:\\d+}/addToFavorites.action")
+    public ResponseEntity<Object> addToFavorites(@PathVariable final int id, ComAdmin admin) {
+        try {
+            targetService.addToFavorites(id, admin.getCompanyID());
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            logger.error(String.format("Can't add target group [id = %d] to favorites. %s", id, e.getMessage()), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @RequestMapping("/{id:\\d+}/removeFromFavorites.action")
+    public ResponseEntity<Object> removeFromFavorites(@PathVariable final int id, ComAdmin admin) {
+        try {
+            targetService.removeFromFavorites(id, admin.getCompanyID());
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            logger.error(String.format("Can't remove target group [id = %d] from favorites. %s.", id, e.getMessage()), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     private List<TargetLight> getTargetGroupsOverview(final TargetForm form, final ComAdmin admin) {

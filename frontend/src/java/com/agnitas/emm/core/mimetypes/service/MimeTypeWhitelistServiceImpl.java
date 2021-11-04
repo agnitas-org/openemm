@@ -13,8 +13,8 @@ package com.agnitas.emm.core.mimetypes.service;
 import java.util.List;
 import java.util.Objects;
 
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
+import jakarta.activation.MimeType;
+import jakarta.activation.MimeTypeParseException;
 
 import org.springframework.beans.factory.annotation.Required;
 

@@ -4,7 +4,7 @@
 
     // gets called once before the renderer is used
     WorkflowStartCellRenderer.prototype.init = function(params) {
-        this.eGui = document.createElement('div');
+        this.eGui = AGN.Lib.TableCellWrapper(params.data.show);
         var innerHtml = "";
 
         if (params.value.startTypeId === 1) {
@@ -18,7 +18,7 @@
                 "              <strong>" + t('workflow.start.date_based') + "</strong>\n" +
                 "        </span>";
         } else {
-            innerHtml = moment(params.value.dateLong).format(params.adminDateTimeFormat);
+            innerHtml = params.value.date;
         }
 
         this.eGui.innerHTML = innerHtml;

@@ -66,10 +66,13 @@
                         </div>
                         <div class="form-group">
                             <div class="col-sm-4">
-                                <label class="control-label" for="linkName"><bean:message key="default.description"/></label>
+                                <label class="control-label" for="linkName">
+                                    <c:set var="descriptionMsg"><bean:message key="default.description"/></c:set>
+                                    ${descriptionMsg}
+                                </label>
                             </div>
                             <div class="col-sm-8">
-                                <html:text property="linkName" size="52" maxlength="99" styleId="linkName" styleClass="form-control"/>
+                                <agn:agnTextarea property="linkName" size="52" maxlength="99" styleId="linkName" styleClass="form-control" placeholder="${descriptionMsg}"/>
                             </div>
                         </div>
                         <div class="form-group">

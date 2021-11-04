@@ -12,10 +12,12 @@ package org.agnitas.web.forms;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.beans.Mailinglist;
@@ -162,6 +164,8 @@ public class ExportWizardForm extends StrutsFormBase {
 	private String decimalSeparator = ",";
 	
 	private boolean timeLimitsLinkedByAnd = false;
+	
+	private Map<String, String> customColumnMappings = new HashMap<>();
 
 	/**
      * Reset all properties to their default values.
@@ -873,4 +877,12 @@ public class ExportWizardForm extends StrutsFormBase {
 	public void setTimeLimitsLinkedByAnd(boolean timeLimitsLinkedByAnd) {
 		this.timeLimitsLinkedByAnd = timeLimitsLinkedByAnd;
 	}
+
+    public Map<String, String> getCustomColumnMappings() {
+        return customColumnMappings;
+    }
+
+    public void setCustomColumnMappings(Map<String, String> customColumnMappings) {
+        this.customColumnMappings = customColumnMappings;
+    }
 }

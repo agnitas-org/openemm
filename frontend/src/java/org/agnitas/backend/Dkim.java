@@ -46,7 +46,7 @@ public class Dkim {
 				salt = (new String(rc)).trim();
 			} catch (IOException e) {
 				try {
-					(new Log("dkim-key", Log.ERROR)).out(Log.ERROR, "read", "Failed to read key from existing file " + path + ": " + e.toString(), e);
+					(new Log("dkim-key", Log.ERROR, 0)).out(Log.ERROR, "read", "Failed to read key from existing file " + path + ": " + e.toString(), e);
 				} catch (Exception e2) {
 					// do nothing
 				}

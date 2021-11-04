@@ -14,7 +14,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -52,12 +51,10 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.preview.AgnTagError;
-import org.agnitas.preview.AgnTagException;
 import org.agnitas.preview.TagSyntaxChecker;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.util.MailoutClient;
 import org.agnitas.util.SafeString;
-import org.agnitas.util.beanshell.BeanShellInterpreterFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -82,10 +79,8 @@ import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.linkcheck.service.LinkService.ErrorneousLink;
 import com.agnitas.emm.core.linkcheck.service.LinkService.LinkScanResult;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
-import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToActionMessages;
 import com.agnitas.messages.I18nString;
@@ -93,8 +88,6 @@ import com.agnitas.service.AgnDynTagGroupResolverFactory;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.util.ImageUtils;
 import com.agnitas.util.LinkUtils;
-
-import bsh.Interpreter;
 
 public class MailingImpl extends MailingBaseImpl implements Mailing {
 	public static final String LINK_SWYN_PREFIX = "SWYN: ";
@@ -822,11 +815,14 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	private Vector<String> scanForComponents(String text, ApplicationContext applicationContext, Set<MailingComponent> componentsToAdd, int companyIDToCheckFor, ActionMessages errors) throws Exception {
-		Vector<String> foundComponentUrls = new Vector<>();
-		LinkScanResult linkScanResult = getLinkService(applicationContext).scanForLinks(text, companyIDToCheckFor);
+		final Vector<String> foundComponentUrls = new Vector<>();
+		final LinkScanResult linkScanResult = getLinkService(applicationContext).scanForLinks(text, companyIDToCheckFor);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
-        for (String componentLinkString : linkScanResult.getImageLinks()) {
+		// Create set to get unique links.
+		final Set<String> uniqueImageLinks = new HashSet<>(linkScanResult.getImageLinks());
+		
+        final ExecutorService executorService = Executors.newFixedThreadPool(10);
+        for (final String componentLinkString : uniqueImageLinks) {
             executorService.execute(() -> {
                 MailingComponent foundComponent = applicationContext.getBean("MailingComponent", MailingComponent.class);
                 foundComponent.setCompanyID(companyIDToCheckFor);
@@ -933,106 +929,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		this.mailingType = mailingType.getCode();
 	}
 
-	@Override
-	public String getPreview(String input, int inputType, int customerID, ApplicationContext con) throws Exception {
-		return getPreview(input, inputType, customerID, false, con);
-	}
-	
-	@Override
-	public String getPreview(String input, int inputType, int customerID, boolean overwriteMailtype, ApplicationContext con) throws Exception {
-		AgnTagService agnTagService = con.getBean("AgnTagService", AgnTagService.class);
-
-		// Resolve non-dynamic agn-tags at first.
-		StringBuilder output = new StringBuilder(agnTagService.resolveTags(input, companyID, id, mailinglistID, customerID));
-		TargetGroupMatcher targetGroupMatcher = new TargetGroupMatcher(con, companyID, customerID, overwriteMailtype, inputType);
-
-		Map<String, String> contentMap = new HashMap<>();
-		for (DynamicTag tag : dynTags.values()) {
-			String content = null;
-
-			Map<Integer, DynamicTagContent> dynamicTagContentMap = tag.getDynContent();
-			if (dynamicTagContentMap != null) {
-				content = dynamicTagContentMap.values()
-					.stream()
-					.sorted(Comparator.comparingInt(DynamicTagContent::getDynOrder))
-					.filter(e -> targetGroupMatcher.matches(e.getTargetID()))
-					.map(DynamicTagContent::getDynContent)
-					.findFirst()
-					.orElse(null);
-				content = agnTagService.resolveTags(content, companyID, id, mailinglistID, customerID);
-			}
-
-			contentMap.put(tag.getDynName(), content);
-		}
-
-		List<DynamicTag> tags = agnTagService.getDynTags(output.toString());
-		while (tags.size() > 0) {
-			for (DynamicTag tag : tags) {
-				tag.setMailingID(id);
-				tag.setCompanyID(companyID);
-
-				DynamicTag existingTag = dynTags.get(tag.getDynName());
-				if (existingTag != null) {
-					tag.setDynInterestGroup(existingTag.getDynInterestGroup());
-				}
-				addDynamicTag(tag);
-			}
-
-			Map<DynamicTag, DynamicTag> reorderMap = getTagsReorderMap(tags, customerID, con);
-
-			// Replace tags from right to left in order to prevent positions invalidation.
-			Collections.reverse(tags);
-
-			for (DynamicTag tag : tags) {
-				String name = reorderMap.getOrDefault(tag, tag).getDynName();
-
-				if (contentMap.containsKey(name)) {
-					replaceTag(output, tag, contentMap.get(name));
-				} else {
-					// Cannot resolve dynamic tag.
-					List<String[]> errorReports = Collections.singletonList(new String[] {"", name, ""});
-					throw new AgnTagException("error.template.dyntags.unknown", errorReports);
-				}
-			}
-
-			tags = agnTagService.getDynTags(output.toString());
-		}
-
-		String preview = output.toString();
-
-		if (inputType == MailingPreviewHelper.INPUT_TYPE_HTML) {
-			preview = SafeString.removeHTMLTags(preview);
-			if (getEmailParam().getLinefeed() > 0) {
-				preview = SafeString.cutLineLength(preview, getEmailParam().getLinefeed());
-			}
-		}
-
-		return insertTrackableLinks(preview, customerID, con);
-	}
-
-	private void replaceTag(StringBuilder content, DynamicTag tag, String value) {
-		// Replace or erase tag.
-		if (StringUtils.isEmpty(value)) {
-			// Erase tag (no suitable content available).
-			if (tag.isStandaloneTag()) {
-				content.delete(tag.getStartTagStart(), tag.getStartTagEnd());
-			} else {
-				content.delete(tag.getStartTagStart(), tag.getEndTagEnd());
-			}
-		} else {
-			// Replace tag with resolved content.
-			if (tag.isStandaloneTag()) {
-				content.replace(tag.getStartTagStart(), tag.getStartTagEnd(), value);
-			} else {
-				content.delete(tag.getEndTagStart(), tag.getEndTagEnd());
-				if (tag.getValueTagStart() != tag.getValueTagEnd()) {
-					content.replace(tag.getValueTagStart(), tag.getValueTagEnd(), value);
-				}
-				content.delete(tag.getStartTagStart(), tag.getStartTagEnd());
-			}
-		}
-	}
-
 	/**
 	 * Scans a textblock for trackable links and replaces them with encoded
 	 * rdir-links.
@@ -1111,10 +1007,11 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 	@Override
 	public boolean hasComplexTargetExpression() {
-		if (targetExpression != null) {
+		if (StringUtils.isBlank(targetExpression)) {
+			return false;
+		} else {
 			return (targetExpression.contains("&") && targetExpression.contains("|")) || StringUtils.containsAny(targetExpression, "()!");
 		}
-		return false;
 	}
 
 	/**
@@ -1669,104 +1566,4 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
     	}
     	return linkService;
     }
-
-    @Deprecated
-	private static class TargetGroupMatcher {
-    	private ApplicationContext context;
-    	private final EqlFacade eqlFacade;
-		private int companyId;
-
-		private ComTargetDao targetDao;
-		private Interpreter interpreter;
-
-		private Map<Integer, ComTarget> targetsCache = new HashMap<>();
-
-		public TargetGroupMatcher(ApplicationContext context, int companyId, int customerId, boolean overwriteMailtype, int inputType) throws Exception {
-			this.context = context;
-			this.companyId = companyId;
-
-			targetDao = context.getBean("TargetDao", ComTargetDao.class);
-			this.eqlFacade = context.getBean("EqlFacade", EqlFacade.class);
-
-			BeanShellInterpreterFactory beanShellInterpreterFactory = context.getBean("BeanShellInterpreterFactory", BeanShellInterpreterFactory.class);
-			interpreter = beanShellInterpreterFactory.createBeanShellInterpreter(companyId, customerId);
-			if (interpreter == null) {
-				throw new Exception("error.template.dyntags.bshInterpreter");
-			}
-			if (overwriteMailtype) {
-				interpreter.set("mailtype", new Integer(inputType));
-			}
-		}
-
-    	public boolean matches(int targetId) {
-			if (targetId == 0) {
-				return true;
-			} else {
-				ComTarget target = targetsCache.computeIfAbsent(targetId, this::getTarget);
-
-				if (target.isCustomerInGroup(interpreter, this.eqlFacade)) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		private ComTarget getTarget(int targetId) {
-			ComTarget value = targetDao.getTarget(targetId, companyId);
-			if (value == null) {
-				value = (ComTarget) context.getBean("Target");
-				value.setCompanyID(companyId);
-				value.setId(targetId);
-			}
-			return value;
-		}
-
-
-	/* EMM-6543: New Code for new BeanShell implementation
-    	private final ApplicationContext context;
-		private final int companyId;
-
-		private final ComTargetDao targetDao;
-
-		private final Map<Integer, ComTarget> targetsCache = new HashMap<>();
-		private final RecipientTargetGroupMatcher matcher;
-
-		public TargetGroupMatcher(ApplicationContext context, int companyId, int customerId, boolean overwriteMailtype, int inputType) throws Exception {
-			this.context = context;
-			this.companyId = companyId;
-			this.matcher = createMatcher(context, customerId, companyId);
-
-			targetDao = context.getBean("TargetDao", ComTargetDao.class);
-
-			if (overwriteMailtype) {
-				matcher.setRecipientProperty("mailtype", new Integer(inputType));
-			}
-		}
-		
-		private static final RecipientTargetGroupMatcher createMatcher(final ApplicationContext context, final int customerID, final int companyID) throws Exception {
-			final ComTargetService targetService = context.getBean("TargetService", ComTargetService.class);
-			return targetService.createRecipientTargetGroupMatcher(customerID, companyID);
-		}
-
-    	public boolean matches(int targetId) {
-			if (targetId == 0) {
-				return true;
-			} else {
-				ComTarget target = targetsCache.computeIfAbsent(targetId, this::getTarget);
-
-				return this.matcher.isInTargetGroup(target);
-			}
-		}
-
-		private ComTarget getTarget(int targetId) {
-			ComTarget value = targetDao.getTarget(targetId, companyId);
-			if (value == null) {
-				value = (ComTarget) context.getBean("Target");
-				value.setCompanyID(companyId);
-				value.setId(targetId);
-			}
-			return value;
-		}
-	*/
-	}
 }

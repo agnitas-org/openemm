@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.agnitas.beans.Campaign;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.factory.impl.MailingComponentFactoryImpl;
@@ -34,9 +33,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 
-import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.beans.Campaign;
+import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComMailingComponentDao;
-import com.agnitas.dao.impl.ComCampaignDaoImpl;
+import com.agnitas.dao.impl.CampaignDaoImpl;
 import com.agnitas.dao.impl.ComMailingComponentDaoImpl;
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.LightMailing;
@@ -394,8 +394,8 @@ public class MailingDataSet extends BIRTDataSet {
 	}
 
 	public Campaign getCampaign(Integer campaignId, @VelocityCheck Integer companyId) {
-		ComCampaignDao campaignDaoImpl = new ComCampaignDaoImpl();
-		((ComCampaignDaoImpl) campaignDaoImpl).setDataSource(getDataSource());
+		CampaignDao campaignDaoImpl = new CampaignDaoImpl();
+		((CampaignDaoImpl) campaignDaoImpl).setDataSource(getDataSource());
 		return campaignDaoImpl.getCampaign(campaignId, companyId);
 	}
 
@@ -429,7 +429,7 @@ public class MailingDataSet extends BIRTDataSet {
 		return (null != mailformat) ? mailformat : "";
 	}
 	
-	public List<String> getTargets( int mailingID, @VelocityCheck int companyID ) {
+	public List<String> getTargets(int mailingID, @VelocityCheck int companyID ) {
 		List<String> targets = new ArrayList<>();
 		LightMailing mailing = getMailing(mailingID, companyID);
 		String targExp = mailing.getTargetExpression();

@@ -17,13 +17,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.ImportUtils;
-import org.agnitas.web.ImportProfileAction;
+import org.agnitas.web.StrutsActionBase;
 import org.agnitas.web.forms.ImportBaseFileForm;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.struts.action.ActionErrors;
@@ -31,6 +31,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 
 import com.agnitas.emm.core.upload.bean.UploadData;
+import com.agnitas.web.ImportProfileColumnsAction;
 
 public class ImportProfileColumnsForm extends ImportBaseFileForm {
 
@@ -39,7 +40,8 @@ public class ImportProfileColumnsForm extends ImportBaseFileForm {
     protected int profileId;
     protected ImportProfile profile;
     protected String[] dbColumns;
-    protected String newColumn;
+    private String newColumnMappingName;
+    private String newColumnMappingValue;
     protected String valueType;
     protected Map<String, String> dbColumnsDefaults;
     private List<UploadData> csvFiles;
@@ -85,12 +87,12 @@ public class ImportProfileColumnsForm extends ImportBaseFileForm {
         this.dbColumns = dbColumns;
     }
 
-    public String getNewColumn() {
-        return newColumn;
+    public String getNewColumnMappingValue() {
+        return newColumnMappingValue;
     }
 
-    public void setNewColumn(String newColumn) {
-        this.newColumn = ImportUtils.fixEncoding(newColumn);
+    public void setNewColumnMappingValue(String newColumnMappingValue) {
+        this.newColumnMappingValue = ImportUtils.fixEncoding(newColumnMappingValue);
     }
 
     public String getValueType() {
@@ -103,7 +105,7 @@ public class ImportProfileColumnsForm extends ImportBaseFileForm {
 
     public void resetFormData() {
         profile = null;
-        newColumn = "";
+        newColumnMappingValue = "";
         dbColumns = new String[0];
         dbColumnsDefaults = new HashMap<>();
         columnIndexes.clear();
@@ -116,10 +118,10 @@ public class ImportProfileColumnsForm extends ImportBaseFileForm {
             errors = new ActionErrors();
         }
         storeMappings(request);
-        if (action == ImportProfileAction.ACTION_SAVE &&
+        if ((action == StrutsActionBase.ACTION_SAVE || action == ImportProfileColumnsAction.ACTION_SAVE_AND_START) &&
                 !ImportUtils.hasNoEmptyParameterStartsWith(request, "removeMapping")) {
             if (AgnUtils.parameterNotEmpty(request, "add")) {
-                if (!StringUtils.isEmpty(newColumn) && columnExists(newColumn, profile.getColumnMapping())) {
+                if (!StringUtils.isEmpty(newColumnMappingName) && columnExists(newColumnMappingName, profile.getColumnMapping())) {
                     errors.add("newColumn", new ActionMessage("error.import.column.duplicate"));
                 }
             } else {
@@ -178,7 +180,8 @@ public class ImportProfileColumnsForm extends ImportBaseFileForm {
 
     public boolean columnExists(String csvColumn, List<ColumnMapping> columnMappings) {
         for (ColumnMapping columnMapping : columnMappings) {
-            if (csvColumn.equals(columnMapping.getFileColumn())) {
+            if (csvColumn.equals(columnMapping.getFileColumn()) || (csvColumn.equals(columnMapping.getDatabaseColumn())
+                    && !ColumnMapping.DO_NOT_IMPORT.equals(columnMapping.getDatabaseColumn()))) {
                 return true;
             }
         }
@@ -213,5 +216,13 @@ public class ImportProfileColumnsForm extends ImportBaseFileForm {
         if (AgnUtils.interpretAsBoolean(value)) {
             columnIndexes.add(elementId);
         }
+    }
+
+    public String getNewColumnMappingName() {
+        return newColumnMappingName;
+    }
+
+    public void setNewColumnMappingName(String newColumnMappingName) {
+        this.newColumnMappingName = newColumnMappingName;
     }
 }

@@ -10,39 +10,20 @@
 
 package org.agnitas.emm.core.velocity;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.TimeoutLRUMap;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Implementation of {@link VelocityWrapperFactory} that caches existing {@link VelocityWrapper}
  * for companies.
  */
 public class VelocityWrapperFactoryImpl implements VelocityWrapperFactory {
-	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(VelocityWrapperFactoryImpl.class);
-	
-	private ConfigService configService;
-	
-	@Required
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
-	}
 
 	@Override
 	public VelocityWrapper getWrapper(int companyId) throws Exception {
 		VelocityWrapper wrapper = cache.get(companyId);
 
 		if (wrapper == null) {
-			String velocityLogDir = configService.getValue(ConfigValue.VelocityLogDir);
-			if (StringUtils.isBlank(velocityLogDir)) {
-				logger.error("VelocityLogDir configuration value is empty");
-			}
-			wrapper = createVelocityWrapper(companyId, velocityLogDir);
-
+			wrapper = createVelocityWrapper(companyId);
 			cache.put(companyId, wrapper);
 		}
 
@@ -59,8 +40,8 @@ public class VelocityWrapperFactoryImpl implements VelocityWrapperFactory {
 	 * 
 	 * @throws Exception on errors creating new instance
 	 */
-	protected VelocityWrapper createVelocityWrapper( int companyId, String velocityLogDir) throws Exception {
-		return new VelocityWrapperImpl( companyId, factory, velocityLogDir);
+	protected VelocityWrapper createVelocityWrapper( int companyId) throws Exception {
+		return new VelocityWrapperImpl(companyId, factory);
 	}
 	
 	/**
@@ -70,7 +51,7 @@ public class VelocityWrapperFactoryImpl implements VelocityWrapperFactory {
 	 * @return factory for Uberspect delegate targets
 	 */
 	public UberspectDelegateTargetFactory getUberspectDelegateTargetFactory() {
-		return this.factory;
+		return factory;
 	}
 
 	// --------------------------------------------------------------------------- Dependency Injection

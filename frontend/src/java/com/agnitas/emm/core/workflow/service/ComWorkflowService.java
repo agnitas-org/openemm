@@ -15,10 +15,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+
+import com.agnitas.beans.Campaign;
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ProfileField;
-import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
 import com.agnitas.emm.core.workflow.beans.Workflow;
@@ -30,12 +36,8 @@ import com.agnitas.emm.core.workflow.beans.WorkflowRule;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowReactionDao;
 import com.agnitas.emm.core.workflow.graph.WorkflowNode;
 import com.agnitas.userform.bean.UserForm;
+
 import net.sf.json.JSONArray;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.Campaign;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComWorkflowService {
 
@@ -111,8 +113,6 @@ public interface ComWorkflowService {
     Map<String, Object> getMailingWithWorkStatus(int mailingId, int companyId);
 
     String getTargetSplitName(int splitId);
-
-    void updateMailings(Workflow workflow, ComAdmin admin) throws Exception;
 
     Workflow copyWorkflow(ComAdmin admin, int workflowId, boolean isWithContent);
 

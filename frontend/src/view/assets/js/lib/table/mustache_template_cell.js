@@ -5,7 +5,7 @@ var cachedTemplates = [];
   var MustacheTemplateCellRender = function () {};
   // gets called once before the renderer is used
   MustacheTemplateCellRender.prototype.init = function(params) {
-    this.eGui = document.createElement('div');
+    this.eGui = AGN.Lib.TableCellWrapper(params.data.show); 
     var preparedTemplate;
     var templateName = params.templateName;
     if(cachedTemplates[templateName]) {

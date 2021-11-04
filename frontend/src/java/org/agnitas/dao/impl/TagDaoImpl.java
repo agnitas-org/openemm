@@ -88,7 +88,7 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
 
 	@Override
 	public Map<String, String> getSelectValues(@VelocityCheck int companyID) {
-		String sql = "SELECT tagname, selectvalue FROM tag_tbl WHERE company_id IN (0, ?) AND deprecated = 0 AND tagname NOT IN ('agnITAS', 'agnAUTOURL', 'agnLASTNAME', 'agnFIRSTNAME', 'agnMAILTYPE') ORDER BY tagname";
+		String sql = "SELECT tagname, selectvalue FROM tag_tbl WHERE company_id IN (0, ?) AND deprecated = 0 AND tagname NOT IN ('agnLASTNAME', 'agnFIRSTNAME', 'agnMAILTYPE') ORDER BY tagname";
 
 		// Preserve sorting order.
 		Map<String, String> result = new LinkedHashMap<>();

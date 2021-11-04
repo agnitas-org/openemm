@@ -286,14 +286,16 @@
             <c:if test="${isMailingGrid}">
                 </div>
             </c:if>
-
-            <c:import url="/mailingsend.do">
-                <c:param name="action" value="${ACTION_PREVIEW_HEADER}"/>
-                <c:param name="mailingID" value="${mailingSendForm.mailingID}"/>
-                <c:param name="previewForm.modeTypeId" value="${mailingSendForm.previewForm.modeTypeId}"/>
-                <c:param name="previewForm.customerID" value="${mailingSendForm.previewForm.customerID}"/>
-                <c:param name="previewForm.targetGroupId" value="${mailingSendForm.previewForm.targetGroupId}"/>
-            </c:import>
+            
+            <c:if test="${empty mailingListExist or mailingListExist}">
+                <c:import url="/mailingsend.do">
+                    <c:param name="action" value="${ACTION_PREVIEW_HEADER}"/>
+                    <c:param name="mailingID" value="${mailingSendForm.mailingID}"/>
+                    <c:param name="previewForm.modeTypeId" value="${mailingSendForm.previewForm.modeTypeId}"/>
+                    <c:param name="previewForm.customerID" value="${mailingSendForm.previewForm.customerID}"/>
+                    <c:param name="previewForm.targetGroupId" value="${mailingSendForm.previewForm.targetGroupId}"/>
+                </c:import>
+            </c:if>
         </c:if>
     </c:set>
 
@@ -312,7 +314,9 @@
                     <!-- Tabs END -->
                 </ul>
 
-                <ul class="tile-header-actions">${tileHeaderActions}</ul>
+                    <c:if test="${empty mailingListExist or mailingListExist}">
+                        <ul class="tile-header-actions">${tileHeaderActions}</ul>
+                    </c:if>
             </tiles:put>
         </c:if>
 
@@ -331,15 +335,17 @@
                         </c:choose>
                     </h2>
 
-
-                    <ul class="tile-header-nav">${tileHeaderNav}</ul>
-                    <ul class="tile-header-actions">${tileHeaderActions}</ul>
+                    <c:if test="${empty mailingListExist or mailingListExist}">
+                        <ul class="tile-header-nav">${tileHeaderNav}</ul>
+                        <ul class="tile-header-actions">${tileHeaderActions}</ul>
+                    </c:if>
 
                 </div>
                 <div class="tile-content">
             </c:if>
                     <div id="preview-contents">
-
+                    <c:choose>
+                        <c:when test="${empty mailingListExist or mailingListExist}">
                         ${previewHeader}
 
                         <div class="${isMailingGrid ? 'tile-content-padded' : 'mailing-preview-wrapper'}">
@@ -370,6 +376,13 @@
                                 </div>
                             </c:if>
                         </div>
+                        </c:when>
+                        <c:otherwise>
+                            <div class="tile-content-padded">
+                                <h3><bean:message key="error.mailing.mailinglist.deleted"/></h3>
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
                     </div>
             <c:if test="${not isMailingGrid}">
                 </div>

@@ -17,8 +17,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.agnitas.beans.ExportColumnMapping;
 import org.agnitas.beans.ExportPredef;
-import org.agnitas.beans.impl.ExportPredefImpl;
 import org.agnitas.dao.ExportPredefDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
@@ -48,7 +48,7 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 		if (companyID == 0) {
 			return null;
 		} else {
-			ExportPredef exportPredef = new ExportPredefImpl();
+			ExportPredef exportPredef = new ExportPredef();
 			exportPredef.setId(0);
 			exportPredef.setCompanyID(companyID);
 			
@@ -69,11 +69,21 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 			if (exportPredef.getId() != 0) {
 				exists = selectInt(logger, "SELECT COUNT(*) FROM export_predef_tbl WHERE export_predef_id = ? AND company_id = ?", exportPredef.getId(), exportPredef.getCompanyID()) > 0;
 			}
+			
+			String columnsListString = "";
+			if (exportPredef.getExportColumnMappings() != null) {
+				for (ExportColumnMapping exportPredefMapping : exportPredef.getExportColumnMappings()) {
+					if (columnsListString.length() > 0) {
+						columnsListString += ";";
+					}
+					columnsListString += exportPredefMapping.getDbColumn();
+				}
+			}
 
 			if (exists) {
 				update(logger, "UPDATE export_predef_tbl SET charset = ?, columns = ?, shortname = ?, description = ?, mailinglists = ?, mailinglist_id = ?, delimiter_char = ?, always_quote = ?, separator_char = ?, target_id = ?, user_type = ?, user_status = ?, deleted = ?, timestamp_start = ?, timestamp_end = ?, timestamp_lastdays = ?, timestamp_includecurrent = ?, creation_date_start = ?, creation_date_end = ?, creation_date_lastdays = ?, creation_date_includecurrent = ?, mailinglist_bind_start = ?, mailinglist_bind_end = ?, mailinglist_bind_lastdays = ?, ml_bind_includecurrent = ?, dateformat = ?, datetimeformat = ?, timezone = ?, decimalseparator = ?, limits_linked_by_and = ? WHERE export_predef_id = ? AND company_id = ?",
 					exportPredef.getCharset(),
-					exportPredef.getColumns(),
+					columnsListString,
 					exportPredef.getShortname(),
 					exportPredef.getDescription(),
 					exportPredef.getMailinglists(),
@@ -111,7 +121,7 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 						newExportPredefID,
 						exportPredef.getCompanyID(),
 						exportPredef.getCharset(),
-						exportPredef.getColumns(),
+						columnsListString,
 						exportPredef.getShortname(),
 						exportPredef.getDescription(),
 						exportPredef.getMailinglists(),
@@ -145,7 +155,7 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 					int newExportPredefID = insertIntoAutoincrementMysqlTable(logger, "export_predef_id", "INSERT INTO export_predef_tbl (company_id, charset, columns, shortname, description, mailinglists, mailinglist_id, delimiter_char, always_quote, separator_char, target_id, user_type, user_status, deleted, timestamp_start, timestamp_end, timestamp_lastdays, timestamp_includecurrent, creation_date_start, creation_date_end, creation_date_lastdays, creation_date_includecurrent, mailinglist_bind_start, mailinglist_bind_end, mailinglist_bind_lastdays, ml_bind_includecurrent, dateformat, datetimeformat, timezone, decimalseparator, limits_linked_by_and) VALUES (" + AgnUtils.repeatString("?", 31, ", ") + ")",
 						exportPredef.getCompanyID(),
 						exportPredef.getCharset(),
-						exportPredef.getColumns(),
+						columnsListString,
 						exportPredef.getShortname(),
 						exportPredef.getDescription(),
 						exportPredef.getMailinglists(),
@@ -177,6 +187,35 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 					exportPredef.setId(newExportPredefID);
 				}
 			}
+			
+			update(logger, "DELETE FROM export_column_mapping_tbl WHERE export_predef_id = ?", exportPredef.getId());
+			if (CollectionUtils.isNotEmpty(exportPredef.getExportColumnMappings())){
+				if (isOracleDB()) {
+					List<Object[]> parameterList = new ArrayList<>();
+		            for (ExportColumnMapping exportColumnMapping : exportPredef.getExportColumnMappings()) {
+						parameterList.add(new Object[] {
+								exportPredef.getId(),
+								exportColumnMapping.getDbColumn(),
+								exportColumnMapping.getFileColumn(),
+								exportColumnMapping.getDefaultValue(),
+								exportColumnMapping.isEncrypted() ? 1 : 0
+						});
+		            }
+		            batchupdate(logger, "INSERT INTO export_column_mapping_tbl (id, export_predef_id, db_column, file_column, default_value, encrypted) VALUES (export_column_mapping_tbl_seq.NEXTVAL, ?, ?, ?, ?, ?)", parameterList);
+				} else {
+					List<Object[]> parameterList = new ArrayList<>();
+		            for (ExportColumnMapping exportColumnMapping : exportPredef.getExportColumnMappings()) {
+						parameterList.add(new Object[] {
+								exportPredef.getId(),
+								exportColumnMapping.getDbColumn(),
+								exportColumnMapping.getFileColumn(),
+								exportColumnMapping.getDefaultValue(),
+								exportColumnMapping.isEncrypted() ? 1 : 0
+						});
+		            }
+		            batchupdate(logger, "INSERT INTO export_column_mapping_tbl (export_predef_id, db_column, file_column, default_value, encrypted) VALUES (?, ?, ?, ?, ?)", parameterList);
+				}
+	        }
 		}
 		
 		return exportPredef.getId();
@@ -185,12 +224,14 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean delete(ExportPredef exportPredef) {
+		update(logger, "DELETE FROM export_column_mapping_tbl WHERE export_predef_id = ? AND export_predef_id IN (SELECT export_predef_id FROM export_predef_tbl WHERE company_id = ?)", exportPredef.getId(), exportPredef.getCompanyID());
 		int touchedLines = update(logger, "DELETE FROM export_predef_tbl WHERE export_predef_id = ? AND company_id = ?", exportPredef.getId(), exportPredef.getCompanyID());
 		return touchedLines > 0;
 	}
 	
 	@Override
 	public boolean deleteAllByCompanyID(@VelocityCheck int companyID) {
+		update(logger, "DELETE FROM export_column_mapping_tbl WHERE export_predef_id IN (SELECT export_predef_id FROM export_predef_tbl WHERE company_id = ?)", companyID);
 		int touchedLines = update(logger, "DELETE FROM export_predef_tbl WHERE company_id = ?", companyID);
 		return touchedLines > 0;
 	}
@@ -295,7 +336,7 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 		return mailingListIds.isEmpty() || !disabledMailingListIds.containsAll(mailingListIds);
 	}
 
-    private static class ExportPredefRowMapper implements RowMapper<ExportPredef> {
+    private class ExportPredefRowMapper implements RowMapper<ExportPredef> {
 		private boolean isOracle;
 
 		public ExportPredefRowMapper(boolean isOracle) {
@@ -304,12 +345,25 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 
 		@Override
 		public ExportPredef mapRow(ResultSet resultSet, int row) throws SQLException {
-			ExportPredef readItem = new ExportPredefImpl();
+			ExportPredef readItem = new ExportPredef();
 			
 			readItem.setId(resultSet.getBigDecimal("export_predef_id").intValue());
 			readItem.setCompanyID(resultSet.getBigDecimal("company_id").intValue());
 			readItem.setCharset(resultSet.getString("charset"));
-			readItem.setColumns(resultSet.getString("columns"));
+			
+			List<ExportColumnMapping> exportColumnMappings = select(logger, "SELECT id, db_column, file_column, default_value, encrypted FROM export_column_mapping_tbl WHERE export_predef_id = ? ORDER BY id", new ExportColumnMappingRowMapper(), readItem.getId());
+			if (exportColumnMappings != null && exportColumnMappings.size() > 0) {
+				readItem.setExportColumnMappings(exportColumnMappings);
+			} else if (resultSet.getString("columns") != null) {
+				exportColumnMappings = new ArrayList<>();
+				for (String dbColumnName : AgnUtils.splitAndTrimList(resultSet.getString("columns"))) {
+					ExportColumnMapping exportColumnMapping = new ExportColumnMapping();
+					exportColumnMapping.setDbColumn(dbColumnName);
+					exportColumnMappings.add(exportColumnMapping);
+				}
+				readItem.setExportColumnMappings(exportColumnMappings);
+			}
+			
 			readItem.setShortname(resultSet.getString("shortname"));
 			readItem.setDescription(resultSet.getString("description"));
 			readItem.setMailinglists(resultSet.getString("mailinglists"));
@@ -375,6 +429,21 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 			return readItem;
 		}
 	}
+    
+    private class ExportColumnMappingRowMapper implements RowMapper<ExportColumnMapping> {
+		@Override
+		public ExportColumnMapping mapRow(ResultSet resultSet, int row) throws SQLException {
+			ExportColumnMapping readItem = new ExportColumnMapping();
+			
+			readItem.setId(resultSet.getBigDecimal("id").intValue());
+			readItem.setDbColumn(resultSet.getString("db_column"));
+			readItem.setFileColumn(resultSet.getString("file_column"));
+			readItem.setDefaultValue(resultSet.getString("default_value"));
+			readItem.setEncrypted(resultSet.getBigDecimal("encrypted").intValue() > 0);
+			
+			return readItem;
+		}
+    }
     
     public int getDelimiterValueForOracle(ExportPredef item) {
 		if ("'".equals(item.getDelimiter())) {

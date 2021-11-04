@@ -12,12 +12,12 @@
 package org.agnitas.emm.springws.jaxb;
 
 import java.util.Date;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlSchemaType;
-import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlSchemaType;
+import jakarta.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 
 /**
@@ -26,15 +26,15 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="AttachmentDateTimeISO">
- *   &lt;complexContent>
- *     &lt;extension base="{http://agnitas.org/ws/schemas}Attachment">
- *       &lt;sequence>
- *         &lt;element name="timestamp" type="{http://agnitas.org/ws/schemas}dateTimeISO"/>
- *       &lt;/sequence>
- *     &lt;/extension>
- *   &lt;/complexContent>
- * &lt;/complexType>
+ * &lt;complexType name="AttachmentDateTimeISO"&gt;
+ *   &lt;complexContent&gt;
+ *     &lt;extension base="{http://agnitas.org/ws/schemas}Attachment"&gt;
+ *       &lt;sequence&gt;
+ *         &lt;element name="timestamp" type="{http://agnitas.org/ws/schemas}dateTimeISO"/&gt;
+ *       &lt;/sequence&gt;
+ *     &lt;/extension&gt;
+ *   &lt;/complexContent&gt;
+ * &lt;/complexType&gt;
  * </pre>
  * 
  * 

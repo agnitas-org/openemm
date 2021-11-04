@@ -1,0 +1,60 @@
+<?xml version="1.0" standalone="yes"?>
+<!--
+
+    Copyright (c) 2004, 2020 Oracle and/or its affiliates. All rights reserved.
+
+    This program and the accompanying materials are made available under the
+    terms of the Eclipse Distribution License v. 1.0, which is available at
+    http://www.eclipse.org/org/documents/edl-v10.php.
+
+    SPDX-License-Identifier: BSD-3-Clause
+
+-->
+
+<project basedir="." default="run">
+  <description>
+    This example shows how the use of the jxb:implClass customization and
+    substitution groups can be used to inject virtual functions into the
+    derived Java hierarchy. It compares two equivalent ways of achieving
+    the same processing, but one is much simpler than the other (search for
+    the "enlightened" boolean flag in the code).
+    </description>
+  <property name="jaxb.home" value="../.." />
+  <path id="classpath">
+    <pathelement path="src" />
+    <pathelement path="gen-src" />
+    <pathelement path="classes" />
+    <!--additional jar files for this sample-->
+    <fileset dir="${jaxb.home}" includes="mod/*.jar" />
+  </path>
+  <taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+    <classpath refid="classpath" />
+  </taskdef>
+  <!--compile Java source files-->
+  <target name="compile" description="Compile all Java source files">
+    <echo message="Compiling the schema..." />
+    <mkdir dir="gen-src" />
+    <xjc extension="true" schema="itinerary.xsd" package="extend" destdir="gen-src">
+      <produces dir="gen-src/extend" includes="**/*.java" />
+    </xjc>
+    <echo message="Compiling the java source files..." />
+    <mkdir dir="classes" />
+    <javac destdir="classes" debug="on">
+      <src path="src" />
+      <src path="gen-src" />
+      <classpath refid="classpath" />
+    </javac>
+  </target>
+
+  <target name="run" depends="compile" description="Run the sample app">
+    <echo message="Running the sample application..." />
+    <java classname="Main" fork="true">
+      <classpath refid="classpath" />
+    </java>
+  </target>
+
+  <target name="clean" description="Deletes all the generated artifacts.">
+    <delete dir="classes" />
+  </target>
+</project>
+

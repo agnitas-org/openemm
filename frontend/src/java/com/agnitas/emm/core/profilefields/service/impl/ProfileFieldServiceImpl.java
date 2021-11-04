@@ -373,4 +373,14 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
         }
         return field1.isHiddenField() ? -1 : 1;
     }
+
+	@Override
+	public List<ProfileField> listVisibleProfileFields(final int companyID) throws Exception {
+		return this.profileFieldDao.getComProfileFields(companyID);
+	}
+
+	@Override
+	public boolean isReservedKeyWord(String fieldname) {
+		return profileFieldDao.isReservedKeyWord(fieldname);
+	}
 }

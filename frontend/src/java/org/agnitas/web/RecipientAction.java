@@ -45,10 +45,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.Recipient;
@@ -68,6 +68,7 @@ import org.agnitas.service.ColumnInfoService;
 import org.agnitas.service.TargetEqlQueryBuilder;
 import org.agnitas.service.WebStorage;
 import org.agnitas.target.ChainOperator;
+import org.agnitas.target.ColumnType;
 import org.agnitas.target.ConditionalOperator;
 import org.agnitas.target.PseudoColumn;
 import org.agnitas.target.TargetFactory;
@@ -368,7 +369,6 @@ public class RecipientAction extends StrutsActionBase {
 					isTheLastElementInFilter &= StringUtils.isBlank(eql);
 				}
 
-
 				if (isTheLastElementInFilter) {
 					aForm.setAction(7);
                 	
@@ -411,7 +411,7 @@ public class RecipientAction extends StrutsActionBase {
 	protected void setPseudoRuleAttributes(final HttpServletRequest request) {
 		request.setAttribute("COLUMN_INTERVAL_MAILING", PseudoColumn.INTERVAL_MAILING);
 	}
-	
+
 	private boolean validateForm(ComAdmin admin, RecipientForm form, ActionMessages errors) throws Exception {
 		if (!configService.getBooleanValue(ConfigValue.AllowEmptyEmail, admin.getCompanyID()) && StringUtils.isBlank(form.getEmail())) {
 			errors.add("email", new ActionMessage("error.invalid.email"));
@@ -781,10 +781,10 @@ public class RecipientAction extends StrutsActionBase {
 	}
 
 	private int getNewUserStatus(final int setUserStatus, final boolean newEmailBlacklisted, final boolean oldEmailBlacklisted) {
-		if(newEmailBlacklisted) {
+		if (newEmailBlacklisted) {
 			return UserStatus.Blacklisted.getStatusCode();
 		}
-		if(oldEmailBlacklisted && setUserStatus == UserStatus.Blacklisted.getStatusCode()) {
+		if (oldEmailBlacklisted && setUserStatus == UserStatus.Blacklisted.getStatusCode()) {
 			return UserStatus.AdminOut.getStatusCode();
 		}
 		return setUserStatus;
@@ -1075,21 +1075,21 @@ public class RecipientAction extends StrutsActionBase {
 				switch (type) {
 					case GENERIC_TYPE_VARCHAR:
 						form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForString());
-						form.setColumnType(index, TargetForm.COLUMN_TYPE_STRING);
+						form.setColumnType(index, ColumnType.COLUMN_TYPE_STRING);
 						break;
 					case GENERIC_TYPE_INTEGER:
 					case GENERIC_TYPE_FLOAT:
 						form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForNumber());
-						form.setColumnType(index, TargetForm.COLUMN_TYPE_NUMERIC);
+						form.setColumnType(index, ColumnType.COLUMN_TYPE_NUMERIC);
 						break;
 					case GENERIC_TYPE_DATE:
 					case GENERIC_TYPE_DATETIME:
 						form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForDate());
-						form.setColumnType(index, TargetForm.COLUMN_TYPE_DATE);
+						form.setColumnType(index, ColumnType.COLUMN_TYPE_DATE);
 						break;
 					case "INTERVAL_MAILING":
 						form.setValidTargetOperators(index, ConditionalOperator.getValidOperatorsForMailingOperators());
-						form.setColumnType(index, TargetForm.COLUMN_TYPE_INTERVAL_MAILING);
+						form.setColumnType(index, ColumnType.COLUMN_TYPE_INTERVAL_MAILING);
 						break;
 					default:
 						form.setValidTargetOperators(index, new ConditionalOperator[0]);
@@ -1113,31 +1113,27 @@ public class RecipientAction extends StrutsActionBase {
 
 	private void updateDataSourceParamsOld(final RecipientForm form, final HttpServletRequest request) {
 		if (form.getLatestDataSourceId() > 0) {
-			if (!configService.getBooleanValue(ConfigValue.DontWriteLatestDatasourceId, AgnUtils.getCompanyID(request))) {
-				form.resetSearch();
-				request.setAttribute("forceShowAdvancedSearchTab", true);
-				form.setColumnAndType(0, COLUMN_LATEST_DATASOURCE_ID);
-				form.setChainOperator(0, ChainOperator.AND.getOperatorCode());
-				form.setPrimaryOperator(0, ConditionalOperator.EQ.getOperatorCode());
-				form.setPrimaryValue(0, Integer.toString(form.getLatestDataSourceId()));
-			}
+			form.resetSearch();
+			request.setAttribute("forceShowAdvancedSearchTab", true);
+			form.setColumnAndType(0, COLUMN_LATEST_DATASOURCE_ID);
+			form.setChainOperator(0, ChainOperator.AND.getOperatorCode());
+			form.setPrimaryOperator(0, ConditionalOperator.EQ.getOperatorCode());
+			form.setPrimaryValue(0, Integer.toString(form.getLatestDataSourceId()));
 		}
 	}
 
 	private void updateDataSourceParams(final RecipientForm form, final HttpServletRequest request) {
 		int latestDataSourceId = form.getLatestDataSourceId();
 		if (latestDataSourceId > 0) {
-			if (!configService.getBooleanValue(ConfigValue.DontWriteLatestDatasourceId, AgnUtils.getCompanyID(request))) {
-				String lastImportRuleEql =
-						COLUMN_LATEST_DATASOURCE_ID + ConditionalOperator.EQ.getEqlSymbol() + latestDataSourceId;
-				try {
-					String lastImportRuleJson = eqlToQueryBuilderConverter
-							.convertEqlToQueryBuilderJson(lastImportRuleEql, AgnUtils.getCompanyID(request));
-					form.setQueryBuilderRules(lastImportRuleJson);
-					request.setAttribute("forceShowAdvancedSearchTab", true);
-				} catch (EqlParserException | EqlToQueryBuilderConversionException e) {
-					logger.error("Could not convert query builder rule.", e);
-				}
+			String lastImportRuleEql =
+					COLUMN_LATEST_DATASOURCE_ID + ConditionalOperator.EQ.getEqlSymbol() + latestDataSourceId;
+			try {
+				String lastImportRuleJson = eqlToQueryBuilderConverter
+						.convertEqlToQueryBuilderJson(lastImportRuleEql, AgnUtils.getCompanyID(request));
+				form.setQueryBuilderRules(lastImportRuleJson);
+				request.setAttribute("forceShowAdvancedSearchTab", true);
+			} catch (EqlParserException | EqlToQueryBuilderConversionException e) {
+				logger.error("Could not convert query builder rule.", e);
 			}
 		}
 	}

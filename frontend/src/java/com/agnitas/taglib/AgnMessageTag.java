@@ -12,7 +12,7 @@ package com.agnitas.taglib;
 
 import java.util.Locale;
 
-import javax.servlet.jsp.JspException;
+import jakarta.servlet.jsp.JspException;
 
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.text.StringEscapeUtils;

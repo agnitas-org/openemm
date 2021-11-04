@@ -1,6 +1,6 @@
 
 <script id="module-ServiceMail" type="text/x-mustache-template">
-    <div class="inline-tile-content" data-module-content="{{- index}}">
+    <div id="serviceMailOperation" class="inline-tile-content" data-module-content="{{- index}}">
         <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="ServiceMail"/>
         <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
 
@@ -55,7 +55,7 @@
                         <li>
                             <a href="#" data-modal="action-modal-editor"
                                data-modal-set="title: <mvc:message code="Text_Version"/>,
-                                                target: module_{{- index}}.textMail, id: textTemplateLarge, type: text"
+                                                target: module_{{- index}}_textMail, id: textTemplateLarge, type: text"
                                data-tooltip="<mvc:message code='editor.enlargeEditor'/>">
                                <i class="icon icon-arrows-alt"></i>
                             </a>
@@ -65,7 +65,7 @@
                 <div class="inline-tile-content">
                     <div class="row">
                         <div class="col-sm-12">
-                            <textarea name="modules[].textMail" id="module_{{- index}}.textMail" rows="14" cols="70"
+                            <textarea name="modules[].textMail" id="module_{{- index}}_textMail" rows="14" cols="70"
                                       data-field-validator="reject-script-element" class="form-control js-editor-text">{{- textMail}}</textarea>
                         </div>
                     </div>
@@ -78,7 +78,7 @@
                         <li>
                             <a href="#" data-modal="action-modal-editor"
                                data-modal-set="title: <mvc:message code="mailing.HTML_Version"/>,
-                                                target: module_{{- index}}.htmlMail, id: htmlTemplateLarge"
+                                                target: module_{{- index}}_htmlMail, id: htmlTemplateLarge"
                                data-tooltip="<mvc:message code='editor.enlargeEditor'/>">
                                <i class="icon icon-arrows-alt"></i>
                             </a>
@@ -88,7 +88,7 @@
                 <div class="inline-tile-content">
                     <div class="row">
                         <div class="col-sm-12">
-                            <textarea name="modules[].htmlMail" id="module_{{- index}}.htmlMail" rows="14" cols="70"
+                            <textarea name="modules[].htmlMail" id="module_{{- index}}_htmlMail" rows="14" cols="70"
                                       data-field-validator="reject-script-element" class="form-control js-editor">{{- htmlMail}}</textarea>
                         </div>
                     </div>

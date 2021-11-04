@@ -20,6 +20,9 @@ public class MysqlWildcardWordProcessor implements WordProcessor {
 
     @Override
     public String process(String word) {
+        if (WordProcessUtils.isDoubleQuotesEnclosed(word)) {
+            return word;
+        }
         return word.replace(PERCENT, ASTERISK);
     }
 }

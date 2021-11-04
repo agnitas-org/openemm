@@ -11,7 +11,6 @@
 package com.agnitas.emm.core.delivery.dao.impl;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -95,12 +94,7 @@ public class DeliveryDaoImpl extends BaseDaoImpl implements DeliveryDao {
             }
     	}
     	List<DeliveryInfo> deliveryInfos = new ArrayList<>(deliveryInfoByMessageID.values());
-		Collections.sort(deliveryInfos, new Comparator<DeliveryInfo>() {
-			@Override
-			public int compare(DeliveryInfo o1, DeliveryInfo o2) {
-				return o1.getTimestamp().compareTo(o2.getTimestamp());
-			}
-		});
+		deliveryInfos.sort(Comparator.comparing(DeliveryInfo::getTimestamp));
 		return deliveryInfos;
     }
 

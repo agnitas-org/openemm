@@ -10,276 +10,318 @@
 
 package org.agnitas.beans;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.importvalues.DateFormat;
 
-public interface ExportPredef {
-    /**
-     * Setter for property id.
-     * 
-     * @param id New value of property id.
-     */
-    void setId(int id);
+public class ExportPredef {
+	protected int id;
 
-    /**
-     * Setter for property companyID.
-     * 
-     * @param company New value of property companyID.
-     */
-    void setCompanyID(@VelocityCheck int company);
+	protected int company;
 
-    /**
-     * Setter for property charset.
-     * 
-     * @param charset New value of property charset.
-     */
-    void setCharset(String charset);
+	protected String charset = "ISO-8859-1";
 
-    /**
-     * Setter for property columns.
-     * 
-     * @param columns New value of property columns.
-     */
-    void setColumns(String columns);
+	protected List<ExportColumnMapping> exportColumnMappings = new ArrayList<>();
 
-    /**
-     * Setter for property shortname.
-     * 
-     * @param shortname New value of property shortname.
-     */
-    void setShortname(String shortname);
+	protected String shortname = "";
 
-    /**
-     * Setter for property description.
-     * 
-     * @param description New value of property description.
-     */
-    void setDescription(String description);
+	protected String description = "";
 
-    /**
-     * Setter for property mailinglists.
-     * 
-     * @param mailinglists New value of property mailinglists.
-     */
-    void setMailinglists(String mailinglists);
+	protected String mailinglists = "";
 
-    /**
-     * Setter for property mailinglistID.
-     * 
-     * @param mailinglistID New value of property mailinglistID.
-     */
-    void setMailinglistID(int mailinglistID);
+	protected int mailinglistID;
 
-    /**
-     * Setter for property delimiter.
-     * 
-     * @param delimiter New value of property delimiter.
-     */
-    void setDelimiter(String delimiter);
+	protected String delimiter = "";
+	
+	protected boolean alwaysQuote = false;
 
-    /**
-     * Setter for property separator.
-     * 
-     * @param separator New value of property separator.
-     */
-    void setSeparator(String separator);
+	protected String separator = ";";
 
-    /**
-     * Setter for property targetID.
-     * 
-     * @param targetID New value of property targetID.
-     */
-    void setTargetID(int targetID);
+	protected int targetID;
 
-    /**
-     * Setter for property userType.
-     * 
-     * @param userType New value of property userType.
-     */
-    void setUserType(String userType);
+	protected String userType = "E";
 
-    /**
-     * Setter for property userStatus.
-     * 
-     * @param userStatus New value of property userStatus.
-     */
-    void setUserStatus(int userStatus);
+	protected int userStatus;
 
-    /**
-     * Setter for property deleted.
-     * 
-     * @param deleted New value of property deleted.
-     */
-    void setDeleted(int deleted);
+	protected int deleted;
 
-    /**
-     * Getter for property id.
-     *
-     * @return Value of property id.
-     */
-    int getId();
+	protected boolean timeLimitsLinkedByAnd = true;
 
-    /**
-     * Getter for property companyID.
-     *
-     * @return Value of property companyID.
-     */
-    int getCompanyID();
-    
-    /**
-     * Getter for property charset.
-     *
-     * @return Value of property charset.
-     */
-    String getCharset();
-    
-    /**
-     * Getter for property columns.
-     *
-     * @return Value of property columns.
-     */
-    String getColumns();
-    
-    /**
-     * Getter for property shortname.
-     *
-     * @return Value of property shortname.
-     */
-    String getShortname();
-    
-    /**
-     * Getter for property description.
-     *
-     * @return Value of property description.
-     */
-    String getDescription();
-    
-    /**
-     * Getter for property mailinglists.
-     *
-     * @return Value of property mailinglists.
-     */
-    String getMailinglists();
-    
-    /**
-     * Getter for property mailinglistID.
-     *
-     * @return Value of property mailinglistID.
-     */
-    int getMailinglistID();
+	private Date timestampStart;
+	private Date timestampEnd;
+	private int timestampLastDays;
+	private boolean timestampIncludeCurrentDay;
 
-    /**
-     * Getter for property delimiter.
-     *
-     * @return Value of property delimiter.
-     */
-    String getDelimiter();
+	private Date creationDateStart;
+	private Date creationDateEnd;
+	private int creationDateLastDays;
+	private boolean creationDateIncludeCurrentDay;
 
-    /**
-     * Getter for property separator.
-     *
-     * @return Value of property separator.
-     */
-    String getSeparator();
+	private Date mailinglistBindStart;
+	private Date mailinglistBindEnd;
+	private int mailinglistBindLastDays;
+	private boolean mailinglistBindIncludeCurrentDay;
+	
+	private int dateFormat = DateFormat.ddMMyyyy.getIntValue();
+	private int dateTimeFormat = DateFormat.ddMMyyyyHHmmss.getIntValue();
+	private String timezone = "Europe/Berlin";
+	private String decimalSeparator = ",";
 
-    /**
-     * Getter for property targetID.
-     *
-     * @return Value of property targetID.
-     */
-    int getTargetID();
+	public void setId(int id) {
+		this.id = id;
+	}
 
-    /**
-     * Getter for property userType.
-     *
-     * @return Value of property userType.
-     */
-    String getUserType();
+	public void setCompanyID(int company) {
+		this.company = company;
+	}
 
-    /**
-     * Getter for property userStatus.
-     *
-     * @return Value of property userStatus.
-     */
-    int getUserStatus();
+	public void setCharset(String charset) {
+		this.charset = charset;
+	}
 
-    /**
-     * Getter for property deleted.
-     *
-     * @return Value of property deleted.
-     */
-    int getDeleted();
+	public void setExportColumnMappings(List<ExportColumnMapping> exportColumnMappings) {
+		this.exportColumnMappings = exportColumnMappings;
+	}
 
-    Date getTimestampStart();
+	public void setShortname(String shortname) {
+		this.shortname = shortname;
+	}
 
-    void setTimestampStart(Date timestampStart);
+	public void setDescription(String description) {
+		this.description = description;
+	}
 
-    Date getTimestampEnd();
+	public void setMailinglists(String mailinglists) {
+		this.mailinglists = mailinglists;
+	}
 
-    void setTimestampEnd(Date timestampEnd);
+	public void setMailinglistID(int mailinglistID) {
+		this.mailinglistID = mailinglistID;
+	}
 
-    int getTimestampLastDays();
+	public void setDelimiter(String delimiter) {
+		this.delimiter = delimiter;
+	}
 
-    void setTimestampLastDays(int timestampLastDays);
+	public void setSeparator(String separator) {
+		this.separator = separator;
+	}
 
-    Date getCreationDateStart();
+	public void setTargetID(int targetID) {
+		this.targetID = targetID;
+	}
 
-    void setCreationDateStart(Date creationDateStart);
+	public void setUserType(String userType) {
+		this.userType = userType;
+	}
+	
+	public void setUserStatus(int userStatus) {
+		this.userStatus = userStatus;
+	}
 
-    Date getCreationDateEnd();
+	public void setDeleted(int deleted) {
+		this.deleted = deleted;
+	}
 
-    void setCreationDateEnd(Date creationDateEnd);
+	public int getId() {
+		return id;
+	}
 
-    int getCreationDateLastDays();
+	public int getCompanyID() {
+		return company;
+	}
 
-    void setCreationDateLastDays(int creationDateLastDays);
+	public String getCharset() {
+		return charset;
+	}
 
-    Date getMailinglistBindStart();
+	public List<ExportColumnMapping> getExportColumnMappings() {
+		return exportColumnMappings;
+	}
 
-    void setMailinglistBindStart(Date mailinglistBindStart);
+	public String getShortname() {
+		return shortname;
+	}
 
-    Date getMailinglistBindEnd();
+	public String getDescription() {
+		return description;
+	}
 
-    void setMailinglistBindEnd(Date mailinglistBindEnd);
+	public String getMailinglists() {
+		return mailinglists;
+	}
 
-    int getMailinglistBindLastDays();
-    
-    void setMailinglistBindLastDays(int mailinglistBindLastDays);
+	public int getMailinglistID() {
+		return mailinglistID;
+	}
 
-	boolean isAlwaysQuote();
+	public String getDelimiter() {
+		return delimiter;
+	}
 
-	void setAlwaysQuote(boolean alwaysQuote);
+	public String getSeparator() {
+		return separator;
+	}
 
-	int getDateFormat();
+	public int getTargetID() {
+		return targetID;
+	}
 
-	void setDateFormat(int dateFormat);
+	public String getUserType() {
+		return userType;
+	}
 
-	int getDateTimeFormat();
+	public int getUserStatus() {
+		return userStatus;
+	}
 
-	void setDateTimeFormat(int dateTimeFormat);
+	public int getDeleted() {
+		return deleted;
+	}
 
-	String getTimezone();
+	public Date getTimestampStart() {
+		return timestampStart;
+	}
 
-	void setTimezone(String timezone);
+	public void setTimestampStart(Date timestampStart) {
+		this.timestampStart = timestampStart;
+	}
 
-	String getDecimalSeparator();
+	public Date getTimestampEnd() {
+		return timestampEnd;
+	}
 
-	void setDecimalSeparator(String decimalSeparator);
+	public void setTimestampEnd(Date timestampEnd) {
+		this.timestampEnd = timestampEnd;
+	}
 
-	boolean isTimestampIncludeCurrentDay();
+	public Date getCreationDateStart() {
+		return creationDateStart;
+	}
 
-	void setTimestampIncludeCurrentDay(boolean timestampIncludeCurrentDay);
+	public void setCreationDateStart(Date creationDateStart) {
+		this.creationDateStart = creationDateStart;
+	}
 
-	boolean isCreationDateIncludeCurrentDay();
+	public Date getCreationDateEnd() {
+		return creationDateEnd;
+	}
 
-	void setCreationDateIncludeCurrentDay(boolean creationDateIncludeCurrentDay);
+	public void setCreationDateEnd(Date creationDateEnd) {
+		this.creationDateEnd = creationDateEnd;
+	}
 
-	boolean isMailinglistBindIncludeCurrentDay();
+	public Date getMailinglistBindStart() {
+		return mailinglistBindStart;
+	}
 
-	void setMailinglistBindIncludeCurrentDay(boolean mailinglistBindIncludeCurrentDay);
+	public void setMailinglistBindStart(Date mailinglistBindStart) {
+		this.mailinglistBindStart = mailinglistBindStart;
+	}
 
-	boolean isTimeLimitsLinkedByAnd();
+	public Date getMailinglistBindEnd() {
+		return mailinglistBindEnd;
+	}
 
-	void setTimeLimitsLinkedByAnd(boolean timeLimitsLinkedByAnd);
+	public void setMailinglistBindEnd(Date mailinglistBindEnd) {
+		this.mailinglistBindEnd = mailinglistBindEnd;
+	}
+
+	public int getTimestampLastDays() {
+		return timestampLastDays;
+	}
+
+	public void setTimestampLastDays(int timestampLastDays) {
+		this.timestampLastDays = timestampLastDays;
+	}
+
+	public int getCreationDateLastDays() {
+		return creationDateLastDays;
+	}
+
+	public void setCreationDateLastDays(int creationDateLastDays) {
+		this.creationDateLastDays = creationDateLastDays;
+	}
+
+	public int getMailinglistBindLastDays() {
+		return mailinglistBindLastDays;
+	}
+
+	public void setMailinglistBindLastDays(int mailinglistBindLastDays) {
+		this.mailinglistBindLastDays = mailinglistBindLastDays;
+	}
+
+	public boolean isTimestampIncludeCurrentDay() {
+		return timestampIncludeCurrentDay;
+	}
+
+	public void setTimestampIncludeCurrentDay(boolean timestampIncludeCurrentDay) {
+		this.timestampIncludeCurrentDay = timestampIncludeCurrentDay;
+	}
+
+	public boolean isCreationDateIncludeCurrentDay() {
+		return creationDateIncludeCurrentDay;
+	}
+
+	public void setCreationDateIncludeCurrentDay(boolean creationDateIncludeCurrentDay) {
+		this.creationDateIncludeCurrentDay = creationDateIncludeCurrentDay;
+	}
+
+	public boolean isMailinglistBindIncludeCurrentDay() {
+		return mailinglistBindIncludeCurrentDay;
+	}
+
+	public void setMailinglistBindIncludeCurrentDay(boolean mailinglistBindIncludeCurrentDay) {
+		this.mailinglistBindIncludeCurrentDay = mailinglistBindIncludeCurrentDay;
+	}
+
+	public boolean isAlwaysQuote() {
+		return alwaysQuote;
+	}
+
+	public void setAlwaysQuote(boolean alwaysQuote) {
+		this.alwaysQuote = alwaysQuote;
+	}
+
+	public int getDateFormat() {
+		return dateFormat;
+	}
+
+	public void setDateFormat(int dateFormat) {
+		this.dateFormat = dateFormat;
+	}
+
+	public int getDateTimeFormat() {
+		return dateTimeFormat;
+	}
+
+	public void setDateTimeFormat(int dateTimeFormat) {
+		this.dateTimeFormat = dateTimeFormat;
+	}
+
+	public String getTimezone() {
+		return timezone;
+	}
+
+	public void setTimezone(String timezone) {
+		this.timezone = timezone;
+	}
+
+	public String getDecimalSeparator() {
+		return decimalSeparator;
+	}
+
+	public void setDecimalSeparator(String decimalSeparator) {
+		this.decimalSeparator = decimalSeparator;
+	}
+
+	public boolean isTimeLimitsLinkedByAnd() {
+		return timeLimitsLinkedByAnd;
+	}
+
+	public void setTimeLimitsLinkedByAnd(boolean timeLimitsLinkedByAnd) {
+		this.timeLimitsLinkedByAnd = timeLimitsLinkedByAnd;
+	}
 }

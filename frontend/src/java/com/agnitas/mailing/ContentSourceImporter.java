@@ -99,7 +99,7 @@ public class ContentSourceImporter implements ApplicationContextAware {
 			aTarget.setCompanyID(aMailing.getCompanyID());
 			aTarget.setId(0);
 			aTarget.setTargetName("All Subscribers");
-			allTargets.put(new Integer(0), aTarget);
+			allTargets.put(0, aTarget);
 		}
 
 		// Read all dyntags from mailing

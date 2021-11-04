@@ -156,6 +156,11 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 			return 0;
 		}
 		
+		if (comLink.getFullUrl() != null && comLink.getFullUrl().contains("##")) {
+			// Links with Hash tags must be measurable
+			comLink.setUsage(TrackableLink.TRACKABLE_TEXT_HTML);
+		}
+		
 		if (comLink.getId() != 0) {
 			int existingLinkCount = selectInt(logger, "SELECT COUNT(url_id) FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ? AND url_id = ?", comLink.getCompanyID(), comLink.getMailingID(), comLink.getId());
 			// if link exist in db - update it, else we set it's id=0 that means link not saved
@@ -572,7 +577,7 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 		}
 
 		List<Integer> existingLinkIds = select(logger,
-				"SELECT DISTINCT url_id FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ?", new IntegerRowMapper(), companyId, mailingId);
+				"SELECT DISTINCT url_id FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ?", IntegerRowMapper.INSTANCE, companyId, mailingId);
 		
 		List<ComTrackableLink> update = new ArrayList<>();
 		List<ComTrackableLink> create = new ArrayList<>();
@@ -647,8 +652,12 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 			} else {
 				comLink.setId(reactivatedId);
 			}
+			
+			if (comLink.getFullUrl() != null && comLink.getFullUrl().contains("##")) {
+				// Links with Hash tags must be measurable
+				comLink.setUsage(TrackableLink.TRACKABLE_TEXT_HTML);
+			}
 		}
-		
 		
 		if (isOracleDB()) {
 			String sql = "INSERT INTO rdir_url_tbl (url_id, company_id, mailing_id, action_id, usage, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value, measured_separately) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)";

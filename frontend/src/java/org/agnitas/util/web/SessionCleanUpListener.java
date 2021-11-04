@@ -13,8 +13,8 @@ package org.agnitas.util.web;
 import java.io.File;
 import java.io.IOException;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;

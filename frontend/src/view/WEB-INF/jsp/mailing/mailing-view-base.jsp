@@ -81,7 +81,7 @@
 
         <emm:ShowByPermission token="mailing.change">
             <tiles:add>
-                <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#mailingBaseForm' data-form-set='save:save' data-form-submit="" data-controls-group="save">
+                <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#mailingBaseForm' data-form-set='save:save' data-action="save" data-controls-group="save">
                     <span class="text">
                         <bean:message key="button.Save"/>
                     </span>
@@ -133,6 +133,7 @@
                         "followUpAllowed": ${mailingFollowUpAllowed},
                         "isWorkflowDriven": ${isWorkflowDriven},
                         "mailingType": ${mailingBaseForm.mailingType},
+                        "selectedRemovedMailinglistId": ${emm:toJson(mailingBaseForm.selectedRemovedMailinglist.id)},
                         "campaignEnableTargetGroups": ${isCampaignEnableTargetGroups},
                         "mainBoxClass": "${mainBoxClass}"
                     }
@@ -161,23 +162,25 @@
                             <div class="form-group" data-field="validator">
                                 <div class="col-sm-4">
                                     <label class="control-label" for="mailingShortname">
-                                        <bean:message key="default.Name"/>
+                                        <c:set var="nameMsg"><bean:message key="default.Name"/></c:set>
+                                        ${nameMsg}
                                     </label>
                                 </div>
                                 <div class="col-sm-8">
                                     <agn:agnText styleId="mailingShortname" styleClass="form-control" property="shortname" maxlength="99"  data-field-validator="length"
-                                               data-validator-options="required: true, min: 3, max: 99"/>
+                                               data-validator-options="required: true, min: 3, max: 99" placeholder="${nameMsg}"/>
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <div class="col-sm-4">
                                     <label class="control-label" for="mailingDescription">
-                                        <bean:message key="default.description"/>
+                                        <c:set var="descriptionMsg"><bean:message key="default.description"/></c:set>
+                                        ${descriptionMsg}
                                     </label>
                                 </div>
                                 <div class="col-sm-8">
-                                    <html:textarea styleId="mailingDescription" styleClass="form-control v-resizable" property="description" rows="5" cols="32"/>
+                                    <agn:agnTextarea styleId="mailingDescription" styleClass="form-control v-resizable" property="description" rows="5" cols="32" placeholder="${descriptionMsg}"/>
                                 </div>
                             </div>
 

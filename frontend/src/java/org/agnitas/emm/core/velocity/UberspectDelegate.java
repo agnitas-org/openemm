@@ -44,27 +44,27 @@ public class UberspectDelegate implements Uberspect, RuntimeServicesAware, Conte
 	private Context context;
 	
 	@Override
-	public Iterator<?> getIterator(Object obj, Info info) throws Exception {
+	public Iterator<?> getIterator(Object obj, Info info) {
 		return uberspector.getIterator(obj, info);
 	}
 
 	@Override
-	public VelMethod getMethod(Object obj, String method, Object[] args, Info info) throws Exception {
+	public VelMethod getMethod(Object obj, String method, Object[] args, Info info) {
 		return uberspector.getMethod( obj, method, args, info);
 	}
 
 	@Override
-	public VelPropertyGet getPropertyGet(Object obj, String identifier, Info info) throws Exception {
+	public VelPropertyGet getPropertyGet(Object obj, String identifier, Info info) {
 		return uberspector.getPropertyGet( obj, identifier, info);
 	}
 
 	@Override
-	public VelPropertySet getPropertySet(Object obj, String identifier, Object arg, Info info) throws Exception {
+	public VelPropertySet getPropertySet(Object obj, String identifier, Object arg, Info info) {
 		return uberspector.getPropertySet( obj, identifier, arg, info);
 	}
 
 	@Override
-	public void init() throws Exception {
+	public void init() {
 		try {
 			this.uberspector = (Uberspect) runtimeServices.getProperty( DELEGATE_TARGET_PROPERTY_NAME);
 		} catch( ClassCastException e) {
@@ -93,7 +93,7 @@ public class UberspectDelegate implements Uberspect, RuntimeServicesAware, Conte
 	 * 
 	 * @throws Exception on error initializing the target
 	 */
-	private void initUberspectTarget( Uberspect uberspectorTarget) throws Exception {
+	private void initUberspectTarget( Uberspect uberspectorTarget) {
 		// Call methods of Aware-interfaces
 		if( uberspectorTarget instanceof RuntimeServicesAware) {
 			((RuntimeServicesAware) uberspectorTarget).setRuntimeServices( runtimeServices);

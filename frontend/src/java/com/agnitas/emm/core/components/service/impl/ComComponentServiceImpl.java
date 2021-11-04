@@ -32,6 +32,7 @@ import java.util.zip.ZipOutputStream;
 import javax.imageio.ImageIO;
 
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentNotExistException;
 import org.agnitas.emm.core.component.service.impl.ComponentServiceImpl;
@@ -75,7 +76,7 @@ public abstract class ComComponentServiceImpl extends ComponentServiceImpl imple
 	public int addComponent(ComponentModel model) throws Exception {
 		modelValidator.assertIsValidToAdd(model);
 		int res = addComponentImpl(model);
-        ((ComMailingDao)mailingDao).updateStatus(model.getMailingId(), "edit");
+        ((ComMailingDao)mailingDao).updateStatus(model.getMailingId(), MailingStatus.EDIT);
         return res;
 	}
 
@@ -84,7 +85,7 @@ public abstract class ComComponentServiceImpl extends ComponentServiceImpl imple
 	public void deleteComponent(ComponentModel model) {
 		modelValidator.assertIsValidToGetOrDelete(model);
 		deleteComponentImpl(model);
-	    ((ComMailingDao)mailingDao).updateStatus(model.getMailingId(), "edit");
+	    ((ComMailingDao)mailingDao).updateStatus(model.getMailingId(), MailingStatus.EDIT);
 	}
 
 	@Override
@@ -92,7 +93,7 @@ public abstract class ComComponentServiceImpl extends ComponentServiceImpl imple
 	public void updateMailingContent(ComponentModel model) throws Exception {
 		modelValidator.assertIsValidToUpdateMailingContentGroup(model);
 		if (!mailingDao.exist(model.getMailingId(), model.getCompanyId())) {
-			throw new MailingNotExistException();
+			throw new MailingNotExistException(model.getCompanyId(), model.getMailingId());
 		}
 
 		MailingComponent component = mailingComponentDao.getMailingComponentByName(model.getMailingId(), model.getCompanyId(), model.getComponentName());

@@ -32,18 +32,20 @@
 </emm:instantiate>
 
 <emm:instantiate var="itemActionsSettings" type="java.util.LinkedHashMap" scope="request">
-    <emm:instantiate var="element" type="java.util.LinkedHashMap">
-        <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
-        <c:set target="${element}" property="btnCls" value="btn btn-inverse btn-regular"/>
-        <c:set target="${element}" property="iconBefore" value="icon-plus"/>
-        <c:set target="${element}" property="type" value="href"/>
-        <c:set target="${element}" property="name">
-            <bean:message key="import.NewImportProfile"/>
-        </c:set>
-        <c:set target="${element}" property="url">
-            <c:url value="/importprofile.do">
-                <c:param name="action" value="${ACTION_NEW}"/>
-            </c:url>
-        </c:set>
-    </emm:instantiate>
+	<emm:ShowByPermission token="import.change">
+    	<emm:instantiate var="element" type="java.util.LinkedHashMap">
+	        <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
+	        <c:set target="${element}" property="btnCls" value="btn btn-inverse btn-regular"/>
+	        <c:set target="${element}" property="iconBefore" value="icon-plus"/>
+	        <c:set target="${element}" property="type" value="href"/>
+	        <c:set target="${element}" property="name">
+	            <bean:message key="import.NewImportProfile"/>
+	        </c:set>
+	        <c:set target="${element}" property="url">
+	            <c:url value="/importprofile.do">
+	                <c:param name="action" value="${ACTION_NEW}"/>
+	            </c:url>
+	        </c:set>
+	    </emm:instantiate>
+	</emm:ShowByPermission>
 </emm:instantiate>

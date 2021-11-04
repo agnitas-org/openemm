@@ -66,13 +66,11 @@ public class MailingStatisticDataSet extends BIRTDataSet {
 			    || figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE)) {
 			    mailingSummaryDataSet.insertOpenersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, true, false, dateFormats);
 			}
-			if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE)) {
+			if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE)
+                    || figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_TOTAL)) {
 			    mailingSummaryDataSet.insertOpenedInvisibleIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, dateFormats);
 			}
 
-			if (!figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_TOTAL)) {
-			    mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.OPENERS_TOTAL_INDEX);
-			}
 			if (figures.contains(BirtReporUtils.BirtReportFigure.OPENINGS_ANONYMOUS)) {
 			    mailingSummaryDataSet.insertOpenedAnonymousIntoTempTable(mailingId, tempTableId, companyId, dateFormats);
 			}
@@ -116,6 +114,12 @@ public class MailingStatisticDataSet extends BIRTDataSet {
 
 			if (!figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)) {
 			    mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.OPENERS_MEASURED_INDEX);
+			}
+			if (!figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE)) {
+			    mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.OPENERS_INVISIBLE_INDEX);
+			}
+			if (!figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_TOTAL)) {
+			    mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.OPENERS_TOTAL_INDEX);
 			}
 			if (!figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)) {
 			    mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.CLICKER_INDEX);
@@ -187,17 +191,19 @@ public class MailingStatisticDataSet extends BIRTDataSet {
             List<MailingClickStatsPerTargetRow> urlClicksData = mailingURLClicksDataSet.getUrlClicksData(tempTableID);
             for (MailingClickStatsPerTargetRow row : urlClicksData) {
                 if (!links.containsKey(row.getUrl_id())) {
-                    links.put(row.getUrl_id(), new LinkGeneralInfo());
-                    links.get(row.getUrl_id()).setMailingId(mailingId);
-                    links.get(row.getUrl_id()).setUrl(row.getUrl());
-                    links.get(row.getUrl_id()).setUrlId(row.getUrl_id());
-                    links.get(row.getUrl_id()).setAdminLink(row.isAdmin_link());
+                    LinkGeneralInfo linkGeneralInfo = new LinkGeneralInfo();
+                    links.put(row.getUrl_id(), linkGeneralInfo);
+
+                    linkGeneralInfo.setMailingId(mailingId);
+                    linkGeneralInfo.setUrl(row.getUrl());
+                    linkGeneralInfo.setUrlId(row.getUrl_id());
+                    linkGeneralInfo.setAdminLink(row.isAdmin_link());
                     if (row.isAdmin_link()) {
-                        links.get(row.getUrl_id()).setLinkItemNumber(0);
+                        linkGeneralInfo.setLinkItemNumber(0);
                         urlIdToItemLinkNumber.put(row.getUrl_id(), 0);
                     } else {
                         itemLinkNumber++;
-                        links.get(row.getUrl_id()).setLinkItemNumber(itemLinkNumber);
+                        linkGeneralInfo.setLinkItemNumber(itemLinkNumber);
                         urlIdToItemLinkNumber.put(row.getUrl_id(), itemLinkNumber);
                     }
                 }

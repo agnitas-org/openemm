@@ -19,7 +19,13 @@
 		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
 		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
 	</context:component-scan>
-
+	
+	<!-- Begin: Non-action classes used in presentation layer only -->
+	<bean name="MailingBaseRequestAttributesHelper" class="com.agnitas.emm.core.mailing.web.RequestAttributesHelper">
+		<property name="mailingPropertiesRules" ref="MailingPropertiesRules" />
+	</bean>
+	<!-- End: Non-action classes used in presentation layer only -->
+	
 	<bean name="TargetGroupEditorContentSynchronizer" class="com.agnitas.emm.core.target.web.util.EditorContentSynchronizer">
 		<property name="eqlToQueryBuilderConverter" ref="EqlToQueryBuilderConverter" />
 		<property name="queryBuilderToEqlConverter" ref="QueryBuilderToEqlConverter" />
@@ -60,7 +66,7 @@
 		<property name="linkService" ref="TrackeableLinkService"/>
 	</bean>
 
-	<bean name="/campaign" class="com.agnitas.web.ComCampaignAction">
+	<bean name="/campaign" class="com.agnitas.web.CampaignAction">
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="configService" ref="ConfigService" />
 		<property name="workerExecutorService" ref="WorkerExecutorService" />
@@ -92,6 +98,7 @@
         <property name="copyMailingService" ref="CopyMailingService"/>
 		<property name="filterListBuilder" ref="TargetGroupQueryBuilderFilterListBuilder"/>
 		<property name="adminService" ref="AdminService"/>
+		<property name="editorContentSynchronizer" ref="TargetGroupEditorContentSynchronizer" />
 	</bean>
 
 	<!-- Same type, same setup as "/target"-->
@@ -122,6 +129,7 @@
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="passwordCheck" ref="PasswordCheck" />
 		<property name="webStorage" ref="WebStorage" />
+		<property name="logonService" ref="LogonService" />
 	</bean>
 	
 	<bean name="/showSupervisorLoginPermission" class="com.agnitas.web.ComUserSelfServiceShowSupervisorLoginPermissionAction">
@@ -169,6 +177,7 @@
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="maildropService" ref="MaildropService" />
 		<property name="mimeTypeWhitelistService" ref="MimeTypeWhitelistService" />
+		<property name="mailingPropertiesRules" ref="MailingPropertiesRules" />
     </bean>
 
 	<bean name="/mailingsend_ajax" class="org.agnitas.mailing.web.MailingSendAjaxAction">
@@ -196,14 +205,6 @@
 	<bean name="/permissionDenied" class="com.agnitas.web.PermissionDeniedAction" />
 
 	<bean name="/error" class="com.agnitas.web.ErrorAction" />
-
-	<bean name="/ecs_stat" class="com.agnitas.ecs.web.EcsAction">
-		<property name="ecsService" ref="EcsService"/>
-		<property name="mailingBaseService" ref="MailingBaseService"/>
-		<property name="userActivityLogService" ref="UserActivityLogService"/>
-		<property name="configService" ref="ConfigService" />
-		<property name="gridService" ref="GridServiceWrapper"/>
-	</bean>
 
 	<bean name="/tracklink" class="com.agnitas.web.ComTrackableLinkAction">
 		<property name="mailingDao" ref="MailingDao" />
@@ -251,6 +252,9 @@
         <property name="agnDynTagGroupResolverFactory" ref="AgnDynTagGroupResolverFactory"/>
 		<property name="mailingService" ref="MailingService"/>
 		<property name="objectUsageService" ref="ObjectUsageService" />
+		<property name="mailingPropertiesRules" ref="MailingPropertiesRules" />
+		<property name="requestAttributesHelper" ref="MailingBaseRequestAttributesHelper" />
+		<property name="adminService" ref="AdminService" />
     </bean>
 
 	<bean name="/mailingcontent" class="com.agnitas.web.ComMailingContentAction">
@@ -274,6 +278,7 @@
 		<property name="maildropService" ref="MaildropService" />
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
         <property name="gridServiceWrapper" ref="GridServiceWrapper"/>
+        <property name="mailingPropertiesRules" ref="MailingPropertiesRules" />
     </bean>
 
     <bean name="/optimize" class="com.agnitas.mailing.autooptimization.web.ComOptimizationAction">

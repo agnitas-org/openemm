@@ -1,4 +1,4 @@
-<%@ page import="com.agnitas.web.ComCampaignAction"  errorPage="/error.do" %>
+<%@ page import="com.agnitas.web.CampaignAction"  errorPage="/error.do" %>
 <%@ page language="java" contentType="text/html; charset=utf-8"%>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
@@ -8,11 +8,11 @@
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<%--@elvariable id="campaignForm" type="com.agnitas.web.ComCampaignForm"--%>
+<%--@elvariable id="campaignForm" type="com.agnitas.web.CampaignForm"--%>
 
-<c:set var="ACTION_LIST" value="<%=ComCampaignAction.ACTION_LIST%>" scope="page" />
-<c:set var="ACTION_VIEW" value="<%=ComCampaignAction.ACTION_VIEW%>" scope="page" />
-<c:set var="ACTION_CONFIRM_DELETE" value="<%=ComCampaignAction.ACTION_CONFIRM_DELETE%>" scope="page" />
+<c:set var="ACTION_LIST" value="<%=CampaignAction.ACTION_LIST%>" scope="page" />
+<c:set var="ACTION_VIEW" value="<%=CampaignAction.ACTION_VIEW%>" scope="page" />
+<c:set var="ACTION_CONFIRM_DELETE" value="<%=CampaignAction.ACTION_CONFIRM_DELETE%>" scope="page" />
 
 <agn:agnForm action="/campaign" data-form="resource">
     <!-- Tile BEGIN -->

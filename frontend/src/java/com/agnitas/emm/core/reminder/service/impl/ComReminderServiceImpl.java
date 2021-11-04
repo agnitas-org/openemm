@@ -50,7 +50,7 @@ public class ComReminderServiceImpl implements ComReminderService {
 
     private boolean send(ComReminder reminder) {
         String message = getMessage(reminder);
-        return javaMailService.sendEmail(reminder.getRecipientEmail(), reminder.getTitle(), message, message);
+        return javaMailService.sendEmail(reminder.getCompanyId(), reminder.getRecipientEmail(), reminder.getTitle(), message, message);
     }
 
     private String getMessage(ComReminder reminder) {

@@ -31,6 +31,7 @@
                 <entry key="admin.sendWelcome" value="admin.sendWelcome" />
 
                 <entry key="user.group.list" value="role.show" />
+                <entry key="user.group.copy" value="role.change"/>
                 <entry key="user.group.save" value="role.change" />
                 <entry key="user.group.create" value="role.change" />
                 <entry key="user.group.delete" value="role.delete" />
@@ -118,32 +119,22 @@
                 <entry key="mailinglist.recipientsDelete" value="mailinglist.recipients.delete" />
 
                 <entry key="target.view" value="targets.show" />
-                <entry key="target.save" value="targets.change" />
-                <entry key="target.back_to_mailingwizard" value="mailing.show" />
-                <entry key="target.bulk_confirm_delete" value="targets.delete" />
-                <entry key="target.bulk_delete" value="targets.delete" />
-                <entry key="target.lock_target_group" value="targets.lock" />
-                <entry key="target.unlock_target_group" value="targets.lock" />
-                <entry key="target.rebuild_structure_data" value="targets.show" />
-                <entry key="target.new" value="targets.change" />
-                <entry key="target.list" value="targets.show" />
-                <entry key="target.confirm_delete" value="targets.delete" />
+                <entry key="target.confirmBulkDelete" value="targets.delete" />
+                <entry key="target.bulkDelete" value="targets.delete" />
+                <entry key="target.confirmDelete" value="targets.delete" />
                 <entry key="target.delete" value="targets.delete" />
-                <entry key="target.create_ml" value="targets.createml" />
-                <entry key="target.clone" value="targets.change" />
-                <entry key="target.delete_recipients_confirm" value="recipient.delete" />
-                <entry key="target.delete_recipients" value="recipient.delete" />
-                <entry key="target.view_mailings" value="targets.show" />
-                <entry key="target.unspecified" value="targets.show" />
-
-                <entry key="targetNew.list" value="targets.migration" />
-                <entry key="targetNew.confirmDelete" value="targets.migration" />
-                <entry key="targetNew.confirmBulkDelete" value="targets.migration" />
-                <entry key="targetNew.confirmDeleteRecipients" value="targets.migration" />
-                <entry key="targetNew.bulkDelete" value="targets.migration" />
-                <entry key="targetNew.delete" value="targets.migration" />
-                <entry key="targetNew.deleteRecipients" value="targets.migration" />
-                <entry key="targetNew.createMailingList" value="targets.migration" />
+                <entry key="target.confirmDeleteRecipients" value="recipient.delete" />
+                <entry key="target.deleteRecipients" value="recipient.delete" />
+                <entry key="target.createMailingList" value="targets.createml" />
+                <entry key="target.addToFavorites" value="targets.show" />
+                <entry key="target.removeFromFavorites" value="targets.show" />
+                <entry key="target.list" value="targets.show" />
+                <entry key="target.save" value="targets.change" />
+                <entry key="target.create" value="targets.change" />
+                <entry key="target.lock" value="targets.change" />
+                <entry key="target.unlock" value="targets.change" />
+                <entry key="target.copy" value="targets.change" />
+                <entry key="target.dependents" value="targets.show" />
 
                 <entry key="targetQB.show" value="targets.show" />
                 <entry key="targetQB.viewQB" value="targets.show" />
@@ -159,8 +150,6 @@
                 <entry key="recipient.check_limit_access" value="recipient.show" />
                 <entry key="recipient.search" value="recipient.show" />
                 <entry key="recipient.view" value="recipient.show" />
-                <entry key="recipient.mailings_view" value="recipient.history.mailing" />
-                <entry key="recipient.mailing_delivery_history" value="recipient.history.mailing.delivery" />
                 <entry key="recipient.save_back_to_list" value="recipient.change" />
                 <entry key="recipient.history_view" value="recipient.history" />
                 <!--Spring MVC import/export edit field content -->
@@ -177,7 +166,24 @@
                 <entry key="recipient.view_without_load" value="recipient.show" />
                 <entry key="recipient.unspecified" value="recipient.show" />
                 <entry key="recipient.check_address" value="recipient.show" />
-               
+
+                <entry key="recipient.contactHistory" value="recipient.history.mailing" />
+                <entry key="recipient.deliveryHistory" value="recipient.history.mailing.delivery" />
+
+<!--                GWUA-4769: migration permissions-->
+                <entry key="recipient.listNew" value="recipient.show" />
+                <entry key="recipient.searchNew" value="recipient.show" />
+                <entry key="recipient.createTargetGroup" value="recipient.show" />
+                <entry key="recipient.viewNew" value="recipient.show" />
+                <entry key="recipient.create" value="recipient.create" />
+                <entry key="recipient.saveNew" value="recipient.change" />
+                <entry key="recipient.saveAndBackToList" value="recipient.change" />
+                <entry key="recipient.checkAddress" value="recipient.show" />
+                <entry key="recipient.confirmDelete" value="recipient.delete" />
+                <entry key="recipient.deleteNew" value="recipient.delete" />
+                <entry key="recipient.statusChangesHistory" value="recipient.history" />
+				<entry key="recipient.isRecipientDataMatchAltgTarget" value="recipient.show"/>
+
                 <!-- GWUA-3764 test feature -->
                 <entry key="report.recipients" value="always.allowed"/>
 
@@ -197,41 +203,42 @@
                 
                 <entry key="importprofile.list" value="wizard.import" />
                 <entry key="importprofile.view" value="wizard.import" />
-                <entry key="importprofile.new_gender" value="wizard.import" />
-                <entry key="importprofile.remove_gender" value="wizard.import" />
-                <entry key="importprofile.save" value="wizard.import" />
-                <entry key="importprofile.new" value="wizard.import" />
-                <entry key="importprofile.set_default" value="wizard.import" />
-                <entry key="importprofile.confirm_delete" value="wizard.import" />
-                <entry key="importprofile.delete" value="wizard.import" />
+                <entry key="importprofile.new_gender" value="import.change" />
+                <entry key="importprofile.remove_gender" value="import.change" />
+                <entry key="importprofile.save" value="import.change" />
+                <entry key="importprofile.new" value="import.change" />
+                <entry key="importprofile.set_default" value="import.change" />
+                <entry key="importprofile.confirm_delete" value="import.delete" />
+                <entry key="importprofile.delete" value="import.delete" />
                 <entry key="importprofile.unspecified" value="wizard.import" />
                 
                 <entry key="importprofile_columns.list" value="wizard.import" />
                 <entry key="importprofile_columns.view" value="wizard.import" />
                 <entry key="importprofile_columns.upload" value="wizard.import" />
-                <entry key="importprofile_columns.add_column" value="wizard.import" />
-                <entry key="importprofile_columns.save" value="wizard.import" />
-                <entry key="importprofile_columns.new" value="wizard.import" />
+                <entry key="importprofile_columns.add_column" value="import.change" />
+                <entry key="importprofile_columns.save" value="import.change" />
+                <entry key="importprofile_columns.new" value="import.change" />
                 <entry key="importprofile_columns.skip" value="wizard.import" />
-                <entry key="importprofile_columns.confirm_delete" value="wizard.import" />
-                <entry key="importprofile_columns.delete" value="wizard.import" />
+                <entry key="importprofile_columns.confirm_delete" value="import.delete" />
+                <entry key="importprofile_columns.delete" value="import.delete" />
                 <entry key="importprofile_columns.unspecified" value="wizard.import" />
-                <entry key="importprofile_columns.remove_mapping" value="wizard.import" />
-                <entry key="importprofile_columns.bulk_remove" value="wizard.import" />
-                <entry key="importprofile_columns.save_and_start" value="wizard.import" />
+                <entry key="importprofile_columns.remove_mapping" value="import.change" />
+                <entry key="importprofile_columns.bulk_remove" value="import.delete" />
+                <entry key="importprofile_columns.save_and_start" value="import.change" />
 
-                <entry key="ecs_stat.view" value="stats.ecs" />
-                <entry key="ecs_stat.export" value="stats.ecs" />
+                <entry key="heatmap.view" value="stats.ecs" />
+                <entry key="heatmap.preview" value="stats.ecs" />
+                <entry key="heatmap.export" value="stats.ecs" />
 
                 <entry key="exportwizard.list" value="wizard.export" />
                 <entry key="exportwizard.view" value="wizard.export" />
                 <entry key="exportwizard.collect_data" value="wizard.export" />
                 <entry key="exportwizard.view_status_window" value="wizard.export" />
                 <entry key="exportwizard.download" value="wizard.export" />
-                <entry key="exportwizard.save_question" value="wizard.export" />
-                <entry key="exportwizard.save" value="wizard.export" />
-                <entry key="exportwizard.confirm_delete" value="wizard.export" />
-                <entry key="exportwizard.delete" value="wizard.export" />
+                <entry key="exportwizard.save_question" value="export.change" />
+                <entry key="exportwizard.save" value="export.change" />
+                <entry key="exportwizard.confirm_delete" value="export.delete" />
+                <entry key="exportwizard.delete" value="export.delete" />
                 <entry key="exportwizard.unspecified" value="wizard.export" />
 
                 <!-- recipient blacklist -->
@@ -423,6 +430,12 @@
                 <entry key="mailingattachments.save" value="mailing.attachments.show" />
                 <entry key="mailingattachments.confirm_delete" value="mailing.attachments.show" />
                 <entry key="mailingattachments.delete" value="mailing.attachments.show" />
+
+                <entry key="mailing.attachment.list" value="mailing.attachments.show" />
+                <entry key="mailing.attachment.save" value="mailing.attachments.show" />
+                <entry key="mailing.attachment.upload" value="mailing.attachments.show" />
+                <entry key="mailing.attachment.confirmDelete" value="mailing.attachments.show" />
+                <entry key="mailing.attachment.delete" value="mailing.attachments.show" />
                 
                 <entry key="mailingsend.view_send" value="mailing.send.show" />
                 <entry key="mailingsend.unlock_send" value="mailing.can_allow" />
@@ -477,6 +490,8 @@
                 <entry key="webservice.manager.user.view" value="webservice.user.change"/>
 
                 <entry key="wysiwyg.showAgnTags" value="always.allowed"/>
+                <entry key="wysiwyg.getNamesUrlsJsonMap" value="always.allowed"/>
+                <entry key="wysiwyg.imageBrowser" value="always.allowed"/>
 
                 <entry key="session.info" value="always.allowed"/>
 

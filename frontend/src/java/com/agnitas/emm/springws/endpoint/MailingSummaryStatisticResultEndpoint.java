@@ -122,7 +122,7 @@ public class MailingSummaryStatisticResultEndpoint extends BaseEndpoint {
 		
 		com.agnitas.emm.springws.jaxb.StatisticValue jaxStat = new com.agnitas.emm.springws.jaxb.StatisticValue();
 		jaxStat.setValue(stat.getValue());
-		jaxStat.setQuotient(new BigDecimal(stat.getQuotient()));
+		jaxStat.setQuotient(BigDecimal.valueOf(stat.getQuotient()));
 		return jaxStat;
 	}
 }

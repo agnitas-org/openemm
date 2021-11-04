@@ -13,8 +13,12 @@ package com.agnitas.emm.core.workflow.service.impl;
 import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_DELIVERY;
 import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_LINK;
 import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_REFERENCE;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.TESTING_MODE_DEADLINE;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.TESTING_MODE_DEADLINE_DURATION;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.asDeadline;
 import static java.util.stream.Collectors.toList;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -32,16 +36,14 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import javax.mail.internet.InternetAddress;
-
 import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.Campaign;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.MaildropDeleteException;
@@ -64,15 +66,16 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.agnitas.beans.Campaign;
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.IntEnum;
 import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.ComTargetDao;
@@ -140,7 +143,6 @@ import com.agnitas.emm.core.workflow.dao.ComWorkflowStartStopReminderDao.Reminde
 import com.agnitas.emm.core.workflow.graph.WorkflowGraph;
 import com.agnitas.emm.core.workflow.graph.WorkflowNode;
 import com.agnitas.emm.core.workflow.service.ChangingWorkflowStatusResult;
-import com.agnitas.emm.core.workflow.service.ComWorkflowActivationService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowDataParser;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowValidationService;
@@ -156,6 +158,7 @@ import com.agnitas.service.ComColumnInfoService;
 import com.agnitas.service.ComMailingSendService;
 import com.agnitas.userform.bean.UserForm;
 
+import jakarta.mail.internet.InternetAddress;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -188,9 +191,9 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     private SendActionbasedMailingService sendActionbasedMailingService;
     private ComReminderService reminderService;
     private ComWorkflowDataParser workflowDataParser;
-    private ComCampaignDao campaignDao;
+    private CampaignDao campaignDao;
     protected AdminService adminService;
-    
+
     private ComWorkflowService selfReference;
 
     @Override
@@ -489,7 +492,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                         }
                     }
                     break;
-                    
+
 				default:
 					break;
             }
@@ -563,12 +566,12 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         removeMailingsTargetExpressions(workflowId, companyId);
         workflowDao.deleteWorkflow(workflowId, companyId);
     }
-    
+
     private void removeMailingsTargetExpressions(int workflowId, int companyId) {
         Set<Integer> mailingIds = collectMailingIds(getWorkflow(workflowId, companyId).getWorkflowIcons());
         workflowDao.removeMailingsTargetExpressions(companyId, mailingIds);
     }
-    
+
     @Override
     public List<Workflow> getWorkflowsOverview(ComAdmin admin) {
         return workflowDao.getWorkflowsOverview(admin.getCompanyID(), admin.getAdminID(), adminService.getAccessLimitTargetId(admin));
@@ -591,7 +594,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         if(StringUtils.equals(status, "all")){
             status = null;
         }
-        
+
         return mailingDao.getMailingsNamesByStatus(admin.getCompanyID(), admin.getAdminID(), mailingTypes, status, mailingStatus, takeMailsForPeriod, sort, order, 0);
 	}
 
@@ -722,7 +725,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                         }
                     }
                     break;
-                    
+
 				default:
 					break;
             }
@@ -807,7 +810,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
             case WorkflowIconType.Constants.ACTION_BASED_MAILING_ID:
                 return MailingTypes.ACTION_BASED.getCode();
-                
+
 			default:
 		        return defaultType;
         }
@@ -857,7 +860,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 case WorkflowIconType.Constants.STOP_ID:
                     // It's the end.
                     return;
-                    
+
 				default:
 					break;
             }
@@ -873,66 +876,6 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         for (WorkflowNode next : nextNodes) {
             collectChains(chainMap, new Chain(chain), next);
         }
-    }
-
-	@Override
-    public void updateMailings(Workflow workflow, ComAdmin admin) {
-        Map<Integer, Mailing> mailingCacheMap = new HashMap<>();
-
-        for (WorkflowIcon icon : workflow.getWorkflowIcons()) {
-            if (WorkflowUtils.isMailingIcon(icon) && icon.isFilled()) {
-                WorkflowMailingAware mailingIcon = (WorkflowMailingAware) icon;
-                Mailing mailing = mailingCacheMap.computeIfAbsent(mailingIcon.getMailingId(), id -> getMailingForUpdate(id, admin));
-
-                if (mailing != null) {
-                    updateMailing(admin, mailing, workflow.getWorkflowIcons(), mailingIcon);
-                }
-            }
-        }
-
-        // Store all the changes.
-        for (Mailing mailing : mailingCacheMap.values()) {
-            if (mailing != null) {
-                mailingDao.saveMailing(mailing, false);
-            }
-        }
-    }
-
-    /**
-     * Assign some mailing's properties using data taken from corresponding workflow icon.
-     *
-     * @param admin an admin who makes the changes (or the one who created a workflow).
-     * @param mailing a mailing entity to make changes to.
-     * @param icons a list of icons of a workflow that is being saved.
-     * @param icon a workflow mailing icon that the data should be taken from.
-     */
-    private void updateMailing(ComAdmin admin, Mailing mailing, List<WorkflowIcon> icons, WorkflowMailingAware icon) {
-        assignWorkflowDrivenSettings(admin, mailing, icons, icon);
-
-        mailing.setMailingType(getMailingType(icon, mailing.getMailingType()));
-
-        if (mailing.getSplitID() < 0) {
-            mailing.setSplitID(0);
-        }
-
-        if (icon.getType() == WorkflowIconType.FOLLOWUP_MAILING.getId()) {
-            WorkflowFollowupMailing followUpMailing = (WorkflowFollowupMailing) icon;
-            String followUpMethod = WorkflowUtils.getFollowUpMethod(followUpMailing.getDecisionCriterion());
-
-            if (followUpMethod != null) {
-                MediatypeEmail paramEmail = mailing.getEmailParam();
-                int followupBaseMailingId = followUpMailing.getBaseMailingId();
-                if (mailing.getId() == followupBaseMailingId) {
-                    throw new RuntimeException("Cannot create cyclic followup mailing structure");
-                }
-                paramEmail.setFollowupFor(Integer.toString(followupBaseMailingId));
-                paramEmail.setFollowUpMethod(followUpMethod);
-            }
-        }
-    }
-
-    private Mailing getMailingForUpdate(int mailingId, ComAdmin admin) {
-        return getMailingForUpdate(mailingId, admin.getCompanyID());
     }
 
     private Mailing getMailingForUpdate(int mailingId, @VelocityCheck int companyId) {
@@ -1003,12 +946,12 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 									default:
 										break;
                                 }
-                                
+
                                 aCalendar.setTimeZone(aZone);
                                 mailing.setPlanDate(aCalendar.getTime());
                             }
                             break;
-                            
+
 						default:
 							break;
                     }
@@ -1129,7 +1072,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 decision.setIconTitle("");
                 break;
             }
-            
+
 			default:
 				break;
         }
@@ -1525,7 +1468,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                     case WorkflowIconType.Constants.EXPORT_ID:
                         deactivateAutoExport((WorkflowExport) icon, companyId);
                         break;
-                        
+
 					default:
 						break;
                 }
@@ -1542,14 +1485,14 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 // Send scheduled reminders (if any) before actual status change.
                 reminderService.send();
             }
-    
+
             if (newStatus == WorkflowStatus.STATUS_FAILED) {
                 newStatus = WorkflowStatus.STATUS_INACTIVE;
             }
-    
+
             if (newStatus == WorkflowStatus.STATUS_TESTING_FAILED) {
                 newStatus = WorkflowStatus.STATUS_OPEN ;
-                
+
             }
 
         }
@@ -1567,7 +1510,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         if(WorkflowStatus.STATUS_FAILED == newStatus) {
             return true;
         }
-        
+
         switch (oldStatus) {
             case STATUS_ACTIVE:
             case STATUS_TESTING:
@@ -1718,7 +1661,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
             if (!sentMailings.getOrDefault(mailing.getId(), false)) {
                 String targetSQL = targetService.getSQLFromTargetExpression(mailing, false);
                 int customersForMailing = workflowDao.countCustomers(companyId, mailing.getMailinglistID(), targetSQL);
-                Date maxWaitForSendDate = DateUtils.addMinutes(maxPossibleDateOfMailing, ComWorkflowActivationService.TESTING_MODE_DEADLINE_DURATION);
+                Date maxWaitForSendDate = DateUtils.addMinutes(maxPossibleDateOfMailing, TESTING_MODE_DEADLINE_DURATION);
 
                 if (customersForMailing > 0 && now.before(maxWaitForSendDate)) {
                     return false;
@@ -1753,8 +1696,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     private Date getChainDateForTestRun(List<WorkflowNode> chain, Date testStartDate) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(testStartDate);
+        Deadline deadline = new Deadline(testStartDate);
         if (CollectionUtils.isNotEmpty(chain)) {
             chain = new ArrayList<>(chain);
             Collections.reverse(chain);
@@ -1762,12 +1704,12 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
             if (icon.getType() == WorkflowIconType.START.getId()) {
                 for (WorkflowNode node: chain) {
                     if (node.getNodeIcon().getType() == WorkflowIconType.DEADLINE.getId()) {
-                        calendar.add(Calendar.MINUTE, ComWorkflowActivationService.TESTING_MODE_DEADLINE_DURATION);
+                        deadline = deadline.add(TESTING_MODE_DEADLINE);
                     }
                 }
             }
         }
-        return calendar.getTime();
+        return new Date(deadline.getValue());
     }
 
     private WorkflowMailing getPreviousOptimizationTestMailing(WorkflowGraph graph, WorkflowIcon currentIcon) {
@@ -1831,7 +1773,8 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
     @Override
     public Date getChainDate(List<WorkflowNode> chain, WorkflowIcon terminatingIcon) {
-        Calendar calendar = null;
+        TimeZone timezone = TimeZone.getDefault();
+        Deadline deadline = null;
         if (CollectionUtils.isNotEmpty(chain)) {
             chain = new ArrayList<>(chain);
             Collections.reverse(chain);
@@ -1844,8 +1787,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
             WorkflowStart startIcon = (WorkflowStart) firstIcon;
 
-            calendar = Calendar.getInstance();
-            calendar.setTime(WorkflowUtils.mergeIconDateAndTime(startIcon.getDate(), startIcon.getHour(), startIcon.getMinute()));
+            deadline = asDeadline(startIcon, timezone);
 
             for (WorkflowNode node : chain) {
                 WorkflowIcon icon = node.getNodeIcon();
@@ -1855,69 +1797,31 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 }
 
                 if (icon.getType() == WorkflowIconType.DEADLINE.getId()) {
-                    WorkflowDeadline deadline = (WorkflowDeadline) icon;
+                    WorkflowDeadline deadlineIcon = (WorkflowDeadline) icon;
 
                     // Every deadline icon have to be filled
                     if (!icon.isFilled()) {
                         return null;
                     }
 
-                    switch (deadline.getDeadlineType()) {
-                        case TYPE_FIXED_DEADLINE:
-                            Calendar deadlineCalendar = Calendar.getInstance();
-                            deadlineCalendar.setTime(WorkflowUtils.mergeIconDateAndTime(deadline.getDate(), deadline.getHour(), deadline.getMinute()));
-
-                            // Ignore a deadline if it's earlier than we already are
-                            if (deadlineCalendar.after(calendar)) {
-                                calendar = deadlineCalendar;
-                            }
-                            break;
-
-                        case TYPE_DELAY:
-                            switch (deadline.getTimeUnit()) {
-                                case TIME_UNIT_MINUTE:
-                                    calendar.add(Calendar.MINUTE, deadline.getDelayValue());
-                                    break;
-                                case TIME_UNIT_HOUR:
-                                    calendar.add(Calendar.HOUR_OF_DAY, deadline.getDelayValue());
-                                    break;
-                                case TIME_UNIT_DAY:
-                                    calendar.add(Calendar.DATE, deadline.getDelayValue());
-                                    if (deadline.isUseTime()) {
-                                        calendar.add(Calendar.HOUR_OF_DAY, deadline.getHour());
-                                        calendar.add(Calendar.MINUTE, deadline.getMinute());
-                                    }
-                                    break;
-								case TIME_UNIT_MONTH:
-									break;
-								case TIME_UNIT_WEEK:
-									break;
-								default:
-									break;
-                            }
-                            
-                            
-                            break;
-                            
-						default:
-							break;
-                    }
+                    deadline = deadline.add(asDeadline(deadlineIcon, timezone));
                 } else if (icon.getType() == WorkflowIconType.DECISION.getId()) {
                     WorkflowDecision decision = (WorkflowDecision) icon;
 
-                    if (icon.isFilled() && decision.getDecisionType() == WorkflowDecision.WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION && decision.getDecisionDate() != null) {
-                        Calendar decisionCalendar = Calendar.getInstance();
-                        decisionCalendar.setTime(decision.getDecisionDate());
+                    if (icon.isFilled() &&
+                            decision.getDecisionType() == WorkflowDecision.WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION &&
+                            decision.getDecisionDate() != null) {
+                        Deadline decisionDeadline = new Deadline(decision.getDecisionDate());
 
                         // Ignore a decision if it's earlier than we already are
-                        if (decisionCalendar.after(calendar)) {
-                            calendar = decisionCalendar;
+                        if (decisionDeadline.getValue() > deadline.getValue()) {
+                            deadline = decisionDeadline;
                         }
                     }
                 }
             }
         }
-        return calendar == null ? null : calendar.getTime();
+        return deadline == null ? null : new Date(deadline.getValue());
     }
 
 	@Override
@@ -2152,7 +2056,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     public List<Campaign> getCampaignList(int companyId, String sort, int order) {
         return campaignDao.getCampaignList(companyId, sort, order);
     }
-    
+
     @Override
     public void setTargetConditionDependency(ComTarget target, @VelocityCheck int companyId, int workflowId) {
         int targetId = target.getId();
@@ -2161,13 +2065,13 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                     WorkflowDependency.from(WorkflowDependencyType.TARGET_GROUP_CONDITION, targetId));
         }
     }
-    
+
     @Override
     public void deleteWorkflowTargetConditions(@VelocityCheck int companyId, int workflowId) {
 		targetDao.deleteWorkflowTargetConditions(companyId, workflowId);
 		workflowDao.deleteTargetConditionDependencies(companyId, workflowId);
 	}
-    
+
     @Override
     public List<Workflow> getDependentWorkflowOnMailing(@VelocityCheck int companyId, int mailingId) {
         final Collection<WorkflowDependency> dependencies =
@@ -2178,57 +2082,67 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     @Override
     public JSONArray getWorkflowListJson(ComAdmin admin) {
         JSONArray mailingListsJson = new JSONArray();
+        String dateTimePattern = admin.getDateTimeFormat().toPattern();
 
-        for (Workflow workflow: getWorkflowsOverview(admin)) {
-            JSONObject entry = new JSONObject();
-            JSONObject statusJson = new JSONObject();
-            JSONObject startDateJson = new JSONObject();
-            JSONObject endDateJson = new JSONObject();
-            JSONObject reactionJson = new JSONObject();
-
-            WorkflowForm.WorkflowStatus status = WorkflowForm.WorkflowStatus.valueOf(workflow.getStatusString());
-            statusJson.element("name", status.getName());
-            statusJson.element("messageKey", status.getMessageKey());
-
-            Long startDateLong = DateUtilities.toLong(workflow.getGeneralStartDate());
-            startDateJson.element("dateLong", startDateLong);
-            int startEventTypeId = -1;
-            if(workflow.getGeneralStartEvent() != null) {
-                startEventTypeId = workflow.getGeneralStartEvent().getId();
-            }
-            startDateJson.element("startTypeId", startEventTypeId);
-
-            Long endDateLong = DateUtilities.toLong(workflow.getGeneralEndDate());
-            endDateJson.element("dateLong", endDateLong);
-            int endEventTypeId = -1;
-            if(workflow.getEndType() != null) {
-                endEventTypeId = workflow.getEndType().getId();
-            }
-            endDateJson.element("endTypeId", endEventTypeId);
-
-            String iconClass = "";
-            String name = "";
-            if(workflow.getGeneralStartReaction() != null) {
-                iconClass = workflow.getGeneralStartReaction().getIconClass();
-                name = workflow.getGeneralStartReaction().getName();
-            }
-            reactionJson.element("iconClass", iconClass);
-            reactionJson.element("name", name);
-
-            entry.element("id", workflow.getWorkflowId());
-            entry.element("status", statusJson);
-            entry.element("shortname", workflow.getShortname());
-            entry.element("description", workflow.getDescription());
-            entry.element("startDate", startDateJson);
-            entry.element("stopDate", endDateJson);
-            entry.element("reaction", reactionJson);
-
-            mailingListsJson.element(entry);
+        for (Workflow workflow : getWorkflowsOverview(admin)) {
+            mailingListsJson.element(getWorkflowListJsonEntry(dateTimePattern, workflow));
         }
-
         return mailingListsJson;
     }
-    
+
+    private JSONObject getWorkflowListJsonEntry(String dateTimePattern, Workflow workflow) {
+        JSONObject entry = new JSONObject();
+        List<WorkflowIcon> icons = workflowDataParser.deSerializeWorkflowIconsList(workflow.getWorkflowSchema());
+
+        entry.element("id", workflow.getWorkflowId());
+        entry.element("status", getWorkflowStatusJson(workflow));
+        entry.element("shortname", workflow.getShortname());
+        entry.element("description", workflow.getDescription());
+        entry.element("startDate", getWorkflowDateJson(workflow.getGeneralStartEvent(), icons, dateTimePattern, true));
+        entry.element("stopDate", getWorkflowDateJson(workflow.getEndType(), icons, dateTimePattern, false));
+        entry.element("reaction", getWorkflowReactionJson(workflow));
+        return entry;
+    }
+
+    private JSONObject getWorkflowReactionJson(Workflow workflow) {
+        JSONObject reactionJson = new JSONObject();
+        String iconClass = "";
+        String name = "";
+        if (workflow.getGeneralStartReaction() != null) {
+            iconClass = workflow.getGeneralStartReaction().getIconClass();
+            name = workflow.getGeneralStartReaction().getName();
+        }
+        reactionJson.element("iconClass", iconClass);
+        reactionJson.element("name", name);
+        return reactionJson;
+    }
+
+    private JSONObject getWorkflowStatusJson(Workflow workflow) {
+        JSONObject statusJson = new JSONObject();
+        WorkflowForm.WorkflowStatus status = WorkflowForm.WorkflowStatus.valueOf(workflow.getStatusString());
+        statusJson.element("name", status.getName());
+        statusJson.element("messageKey", status.getMessageKey());
+        return statusJson;
+    }
+
+    private JSONObject getWorkflowDateJson(IntEnum type, List<WorkflowIcon> icons, String dateTimePattern, boolean start) {
+        JSONObject dateJson = new JSONObject();
+        dateJson.element("date", getDateStrFromIcons(icons, dateTimePattern, start));
+        dateJson.element((start ? "start" : "end") + "TypeId", type != null ? type.getId() : -1);
+        return dateJson;
+    }
+
+    private String getDateStrFromIcons(List<WorkflowIcon> icons, String pattern, boolean start) {
+        Optional<WorkflowIcon> iconOptional = icons.stream()
+                .filter(i -> i.getType() == (start ? WorkflowIconType.START.getId() : WorkflowIconType.STOP.getId()))
+                .findFirst();
+        if (iconOptional.isPresent()) {
+            Date date = ((WorkflowStartStop) iconOptional.get()).getDate();
+            return date != null ? new SimpleDateFormat(pattern).format(date.getTime()) : "";
+        }
+        return "";
+    }
+
     private WorkflowReport getReportIcon(List<WorkflowIcon> icons, int iconId) {
         // Search for referenced icon, make sure it has proper type.
         for (WorkflowIcon icon : icons) {
@@ -2371,7 +2285,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
                     // Leave status "test" for mailing if that was the test run.
                     if (!testing) {
-                        deactivated = mailingDao.updateStatus(mailingId, "canceled");
+                        deactivated = mailingDao.updateStatus(mailingId, MailingStatus.CANCELED);
                     }
                     break;
 
@@ -2381,7 +2295,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
                     // Leave status "test" for mailing if that was the test run.
                     if (!testing) {
-                        deactivated = mailingDao.updateStatus(mailingId, "disable");
+                        deactivated = mailingDao.updateStatus(mailingId, MailingStatus.DISABLE);
                     }
                     break;
 				case ARCHIVE:
@@ -2542,26 +2456,26 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     public void setReminderService(ComReminderService reminderService) {
         this.reminderService = reminderService;
     }
-    
+
     @Required
     public void setReminderDao(ComWorkflowStartStopReminderDao reminderDao) {
         this.reminderDao = reminderDao;
     }
-    
+
     @Required
-    public void setCampaignDao(ComCampaignDao campaignDao) {
+    public void setCampaignDao(CampaignDao campaignDao) {
         this.campaignDao = campaignDao;
     }
-    
+
     @Required
     public final void setSelfReference(final ComWorkflowService service) {
     	this.selfReference = Objects.requireNonNull(service, "Self reference is null");
     }
-    
+
     public final ComWorkflowService getSelfReference() {
     	return this.selfReference;
     }
-    
+
     private static class ReactionId {
         private int companyId;
         private int reactionId;
@@ -2810,7 +2724,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
             for (AutoImport autoImport : autoImportMap.values()) {
                 if (autoImport != null) {
-                    autoImportService.saveAutoImport(autoImport, autoImport.getCompanyId());
+                    autoImportService.saveAutoImport(autoImport);
                 }
             }
 

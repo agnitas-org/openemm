@@ -13,6 +13,8 @@ package com.agnitas.emm.core.action.service.impl;
 import java.util.Map;
 
 import org.agnitas.beans.Recipient;
+import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
@@ -20,23 +22,26 @@ import com.agnitas.emm.core.action.operations.ActionOperationGetCustomerParamete
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 
 public class ActionOperationGetCustomerImpl implements EmmActionOperation {
 
 //	private static final Logger logger = Logger.getLogger(ActionOperationGetCustomerImpl.class);
 
 	private BeanLookupFactory beanLookupFactory;
+	private RecipientService recipientService;
 
 	@Override
 	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors errors) {
 		
 		ActionOperationGetCustomerParameters op =(ActionOperationGetCustomerParameters) operation;
         int customerID=0;
+        int companyID = op.getCompanyId();
         Integer tmpNum=null;
         Recipient aCust = beanLookupFactory.getBeanRecipient();
         boolean returnValue=false;
         
-        aCust.setCompanyID(op.getCompanyId());
+        aCust.setCompanyID(companyID);
         if(params.get("customerID")!=null) {
             tmpNum=(Integer)params.get("customerID");
             customerID=tmpNum.intValue();
@@ -44,16 +49,22 @@ public class ActionOperationGetCustomerImpl implements EmmActionOperation {
         
         if(customerID!=0) {
             aCust.setCustomerID(customerID);
-            aCust.loadCustDBStructure();
-            aCust.getCustomerDataFromDb();
-            aCust.loadAllListBindings();
+            aCust.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
+            aCust.setCustParameters(recipientService.getCustomerDataFromDb(companyID, customerID, aCust.getDateFormat()));
+            aCust.setListBindings(recipientService.getMailinglistBindings(companyID, customerID));
             if(op.isLoadAlways() || aCust.isActiveSubscriber()) {
                 if(!aCust.getCustParameters().isEmpty()) {
                     params.put("customerData", aCust.getCustParameters());
                     params.put("customerBindings", aCust.getListBindings());
                     returnValue=true;
+                } else {
+                	errors.addErrorCode(ErrorCode.NO_RECIPIENT_PROFILE_FIELDS_READ);
                 }
+            } else {
+            	errors.addErrorCode(ErrorCode.RECIPIENT_NOT_ACTIVE);
             }
+        } else {
+        	errors.addErrorCode(ErrorCode.MISSING_CUSTOMER_ID);
         }
         
         return returnValue;
@@ -68,4 +79,8 @@ public class ActionOperationGetCustomerImpl implements EmmActionOperation {
 		this.beanLookupFactory = beanLookupFactory;
 	}
 
+	@Required
+    public void setRecipientService(RecipientService recipientService) {
+        this.recipientService = recipientService;
+    }
 }

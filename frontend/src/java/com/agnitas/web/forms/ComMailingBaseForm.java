@@ -10,8 +10,10 @@
 
 package com.agnitas.web.forms;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,14 +26,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import javax.mail.internet.InternetAddress;
-import javax.servlet.http.HttpServletRequest;
-
 import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.beans.Mediatype;
 import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.web.MailingBaseAction;
 import org.agnitas.web.forms.MailingBaseForm;
@@ -47,6 +47,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.upload.FormFile;
 
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
@@ -57,6 +58,9 @@ import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.service.ComMailingLightService;
 import com.agnitas.web.ComMailingBaseAction;
+
+import jakarta.mail.internet.InternetAddress;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Implementation of <strong>Form</strong> that handles Mailings
@@ -202,10 +206,14 @@ public class ComMailingBaseForm extends MailingBaseForm {
 	 */
 	protected boolean mailingTypeFollowup;
 
-	// Mailing's target expression won't be overwritten unless this flag is set to true.
+	/**
+	 * Mailing's target expression won't be overwritten unless this flag is set to true.
+	 */
 	private boolean assignTargetGroups;
 	
 	private MailingContentType mailingContentType;
+	
+	private boolean mailingChanged;
 
 	@Override
 	public void reset(ActionMapping map, HttpServletRequest request) {
@@ -466,6 +474,15 @@ public class ComMailingBaseForm extends MailingBaseForm {
 					actionErrors.add(ActionMessages.GLOBAL_MESSAGE,  new ActionMessage("error.mailing.parameter.emptyName"));
 				}
 			}
+			
+			String intervalValue = getIntervalParameterValue();
+	    	if (StringUtils.isNotBlank(intervalValue)) {
+		    	try {
+					DateUtilities.calculateNextJobStart(getIntervalParameterValue());
+				} catch (Exception e) {
+					actionErrors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.interval.invalid"));
+				}
+	    	}
 		}
 
         if (action == MailingBaseAction.ACTION_LIST) {
@@ -770,9 +787,10 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		planDate = "";
         workflowId = 0;
         workflowForwardParams = "";
-		setSplitBase("none");
+		setSplitBase(Mailing.NONE_SPLIT);
 		setSplitPart("1");
         setMailingGrid(false);
+        setMailingChanged(false);
         parameterMap.clear();
         mailingContentType = null;
 	}
@@ -1161,4 +1179,91 @@ public class ComMailingBaseForm extends MailingBaseForm {
 	public void setMailingListFrequencyCountEnabled(boolean mailingListFrequencyCountEnabled) {
 		this.mailingListFrequencyCountEnabled = mailingListFrequencyCountEnabled;
 	}
+
+    public boolean isMailingChanged() {
+        return mailingChanged;
+    }
+
+    public void setMailingChanged(boolean mailingChanged) {
+        this.mailingChanged = mailingChanged;
+    }
+    
+    public String getIntervalParameterValue() {
+        switch (getIntervalType()) {
+            case Weekly:
+                return getIntervalWeekdaysPattern(getIntervalDays()) + ":" + getIntervalTimePattern(getIntervalTime());
+
+            case TwoWeekly:
+                return getIntervalWeekdaysPattern(getIntervalDays()) + (isWeekEven() ? "Ev" : "Od") + ":" + getIntervalTimePattern(getIntervalTime());
+
+            case Monthly:
+                return getIntervalMonthPattern(getNumberOfMonth(), getIntervalDayOfMonth()) + ":" + getIntervalTimePattern(getIntervalTime());
+                
+            case Weekdaily:
+                return getIntervalWeekdailyPattern(getWeekdayOrdinal(), getIntervalDays(), getIntervalTimePattern(getIntervalTime()));
+                
+            case Short:
+                return "***0";
+
+            default:
+                return null;
+        }
+    }
+
+    private String getIntervalWeekdailyPattern(int weekdayOrdinal, boolean[] days, String timePattern) {
+        StringBuilder intervalPatternString = new StringBuilder();
+        if (days != null) {
+            int count = Math.min(days.length, 7);
+
+            for (int i = 0; i < count; i++) {
+                if (days[i]) {
+                	if (intervalPatternString.length() > 0) {
+                		intervalPatternString.append(";");
+                	}
+                	intervalPatternString.append(weekdayOrdinal);
+                	intervalPatternString.append(DateUtilities.getWeekdayShortnameIgnoreOtherLocale(i + 1));
+                	intervalPatternString.append(":" + timePattern);
+                }
+            }
+        }
+        return intervalPatternString.toString();
+	}
+
+	private String getIntervalMonthPattern(int month, int date) {
+        DecimalFormat format = new DecimalFormat("00");
+        return (month > 1 ? month : "") + "M" + format.format(date == -1 ? 99 : date);
+    }
+
+    private String getIntervalWeekdaysPattern(boolean[] days) {
+        StringBuilder weekdays = new StringBuilder();
+
+        if (days != null) {
+            int count = Math.min(days.length, 7);
+
+            for (int i = 0; i < count; i++) {
+                if (days[i]) {
+                    weekdays.append(DateUtilities.getWeekdayShortnameIgnoreOtherLocale(i + 1));
+                }
+            }
+        }
+
+        return weekdays.toString();
+    }
+
+    private String getIntervalTimePattern(String time) {
+        if (time == null) {
+            return "";
+        } else {
+            return time.replace(":", "");
+        }
+    }
+
+    /**
+     * Check whether a current week of year is even or odd.
+     * @return {@code true} if even, {@code false} if odd.
+     */
+    private boolean isWeekEven() {
+        Calendar calendar = Calendar.getInstance();
+        return DateUtilities.makeWeekOfYearISO8601Compliant(calendar).get(Calendar.WEEK_OF_YEAR) % 2 == 0;
+    }
 }

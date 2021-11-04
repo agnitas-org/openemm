@@ -12,6 +12,8 @@
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
 <script id="content-editor-template" type="text/x-mustache-template">
+    {{var readonly = isEditableMailing ? '' : 'readonly="readonly"';}}
+
     <div id="content_modal"
          class="modal modal-extra-wide"
          data-backdrop="static"
@@ -67,16 +69,16 @@
                                         <bean:message key="default.NoEntries"/>
                                     </div>
 
-                                    <c:if test="${disableContentEditing ne true}">
+                                    {{ if (isEditableMailing) { }}
                                         <div class="plus-button-holder">
                                             <i class="icon icon-plus-circle icon-2x plus-button"
                                                data-action="addDynContent"></i>
                                         </div>
-                                    </c:if>
+                                    {{ } }}
                                 </div>
                             </div>
 
-                            <c:if test="${disableContentEditing ne true}">
+                            {{ if (isEditableMailing) { }}
                                 <div class="fixed-footer mailing-content-footer">
                                     <div class="col-sm-4">
                                         <label class="control-label" for="target_groups">
@@ -91,7 +93,7 @@
                                         </select>
                                     </div>
                                 </div>
-                            </c:if>
+                            {{ } }}
                         </div>
                         <div class="col-sm-8 full-height no-padding" id="editable_area">
                             <div class="fixed-content-40-0 full-height">
@@ -117,14 +119,14 @@
                                 </div>
                                 <div class="fixed-body">
                                     <div id="tab-content-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height">
-                                        <div id="contentEditor" class="form-control" ${disableContentEditing eq true ? 'readonly' : ''}></div>
+                                        <div id="contentEditor" class="form-control" {{- readonly }}></div>
                                     </div>
                                     <div id="tab-content-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height" >
                                             <textarea id="content"
                                                       name="content"
                                                       class="form-control js-editor js-wysiwyg full-height"
                                                       data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
-                                                      ${disableContentEditing eq true ? 'readonly' : ''}></textarea>
+                                                      {{- readonly }}></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -139,14 +141,14 @@
                             <i class="icon icon-times"></i>
                             <span class="text"><bean:message key="button.Cancel"/></span>
                         </button>
-                        <c:if test="${disableContentEditing ne true}">
+                        {{ if (isEditableMailing) { }}
                             <button type="button"
                                     class="btn btn-primary btn-large"
                                     data-action="saveDynTag">
                                 <i class="icon icon-save"></i>
                                 <span class="text"><bean:message key="button.Save"/></span>
                             </button>
-                        </c:if>
+                        {{ } }}
                     </div>
                 </div>
             </form>

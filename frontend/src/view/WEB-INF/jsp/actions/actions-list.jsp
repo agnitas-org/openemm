@@ -103,20 +103,19 @@
                 {
                     "headerName": "<mvc:message code='action.Action'/>",
                     "editable": false,
-                    "cellAction": "goTo",
+                    "cellRenderer": "StringCellRenderer",
                     "field": "shortname"
                 },
                 {
                     "headerName": "<mvc:message code='Description'/>",
                     "editable": false,
-                    "cellAction": "goTo",
+                    "cellRenderer": "StringCellRenderer",
                     "field": "description"
                 },
                 {
                     "headerName": "<mvc:message code='used'/>",
                     "editable": false,
                     "suppressMenu": true,
-                    "cellAction": "goTo",
                     "field": "formNames",
                     "cellStyle": {"textAlign": "center"},
                     "cellRenderer": "MustacheTemplateCellRender",
@@ -126,7 +125,6 @@
                 {
                     "headerName": "<mvc:message code='default.creationDate'/>",
                     "editable": false,
-                    "cellAction": "goTo",
                     "field": "creationDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",
@@ -135,7 +133,6 @@
                 {
                     "headerName": "<mvc:message code='default.changeDate'/>",
                     "editable": false,
-                    "cellAction": "goTo",
                     "field": "changeDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",

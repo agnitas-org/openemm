@@ -14,8 +14,7 @@
         </div>
     </div>
 
-    <div id='settingsExtensions' data-show-by-checkbox="#settings_modifyLinkExtensions">
-        <c:set var="extensionTableTitle"><bean:message key="GWUA.mailing.trackablelinks.extensionsForAllLinks" /></c:set>
+    <div id="settingsExtensions" data-show-by-checkbox="#settings_modifyLinkExtensions">
         <c:set var="enterdownAction" value="settingsExtensionsEnterdown"/>
         <%@ include file="../extensions-table.jspf" %>
     </div>

@@ -14,10 +14,6 @@
 <%--@elvariable id="affectedReportsMessageType" type="java.lang.String"--%>
 <%--@elvariable id="affectedReports" type="java.util.List"--%>
 
-<%--@elvariable id="affectedTargetGroupsMessageKey" type="java.lang.String"--%>
-<%--@elvariable id="affectedTargetGroupsMessageType" type="java.lang.String"--%>
-<%--@elvariable id="affectedTargetGroups" type="java.util.List"--%>
-
 <%--@elvariable id="affectedDependentWorkflowsMessageKey" type="java.lang.String"--%>
 <%--@elvariable id="affectedDependentWorkflowsMessageType" type="java.lang.String"--%>
 <%--@elvariable id="affectedDependentWorkflows" type="java.util.List"--%>
@@ -44,12 +40,6 @@
 <c:set var="affectedReportsCount" value="${fn:length(affectedReports)}"/>
 <c:if test="${affectedReportsCount > AFFECTED_ENTITIES_LIMIT}">
     <c:set var="affectedReportsCount" value="${AFFECTED_ENTITIES_LIMIT}"/>
-</c:if>
-
-<%-- Min(list.length, AFFECTED_ENTITIES_LIMIT) --%>
-<c:set var="affectedTargetGroupsCount" value="${fn:length(affectedTargetGroups)}"/>
-<c:if test="${affectedTargetGroupsCount > AFFECTED_ENTITIES_LIMIT}">
-    <c:set var="affectedTargetGroupsCount" value="${AFFECTED_ENTITIES_LIMIT}"/>
 </c:if>
 
 <%-- Min(list.length, AFFECTED_ENTITIES_LIMIT) --%>
@@ -189,34 +179,6 @@
     </c:set>
 </c:if>
 
-<c:if test="${affectedTargetGroupsCount > 0}">
-    <c:set var="affectedTargetGroupsTable">
-        <c:if test="${not empty affectedTargetGroupsMessageKey}">
-            <bean:message key="${affectedTargetGroupsMessageKey}" arg0=""/> <%--hardcode. Will change it, when change 'settings.ProfileFieldErrorMsg'--%>
-        </c:if>
-
-        <display:table name="affectedTargetGroups" id="affectedTargetGroup" class="errorTable" length="${affectedTargetGroupsCount}">
-            <display:column>
-                <c:set var="targetId" value="${affectedTargetGroup.id}"/>
-                <c:set var="targetName" value="${affectedTargetGroup.targetName}"/>
-
-                <c:url var="targetLink" value="/targetQB.do">
-                    <c:param name="method" value="show"/>
-                    <c:param name="targetID" value="${targetId}"/>
-                </c:url>
-
-                <a href="${targetLink}" title="<c:out value="${targetName}" escapeXml="true"/>" style="color: orange;">
-                    <c:out value="${fn:trim(fn:substring(targetName, 0, AFFECTED_ENTITY_NAME_MAX_LENGTH-2))}" escapeXml="true"/>&#x2026;
-                </a>
-            </display:column>
-        </display:table>
-
-        <c:if test="${affectedTargetGroupsCount < fn:length(affectedTargetGroups)}">
-            <bean:message key="error.showNumberOfLeft" arg0="${fn:length(affectedTargetGroups) - affectedTargetGroupsCount}"/>
-        </c:if>
-    </c:set>
-</c:if>
-
 <c:if test="${affectedDependentWorkflowsCount > 0}">
     <c:set var="affectedDependentWorkflowsTable">
         <c:if test="${not empty affectedDependentWorkflowsMessageKey}">
@@ -263,11 +225,6 @@
         ${affectedReportsTable}
     </c:if>
 
-    <c:if test="${not empty affectedTargetGroupsTable and fn:toLowerCase(affectedTargetGroupsMessageType) eq 'warning'}">
-        <c:set var="showWarningMessages" value="true"/>
-        ${affectedTargetGroupsTable}
-    </c:if>
-
     <c:if test="${not empty affectedDependentWorkflowsTable and fn:toLowerCase(affectedDependentWorkflowsMessageType) eq 'warning'}">
         <c:set var="showWarningMessages" value="true"/>
         ${affectedDependentWorkflowsTable}
@@ -285,11 +242,6 @@
     <c:if test="${not empty affectedReportsTable and fn:toLowerCase(affectedReportsMessageType) eq 'warning_permanent'}">
         <c:set var="showPermanentWarningMessages" value="true"/>
         ${affectedReportsTable}
-    </c:if>
-
-    <c:if test="${not empty affectedTargetGroupsTable and fn:toLowerCase(affectedTargetGroupsMessageType) eq 'warning_permanent'}">
-        <c:set var="showPermanentWarningMessages" value="true"/>
-        ${affectedTargetGroupsTable}
     </c:if>
 
     <c:if test="${not empty affectedDependentWorkflowsTable and fn:toLowerCase(affectedDependentWorkflowsMessageType) eq 'warning_permanent'}">
@@ -345,11 +297,6 @@
     <c:if test="${not empty affectedReportsTable and fn:toLowerCase(affectedReportsMessageType) eq 'alert'}">
         <c:set var="showErrorMessages" value="true"/>
         ${affectedReportsTable}
-    </c:if>
-
-    <c:if test="${not empty affectedTargetGroupsTable and fn:toLowerCase(affectedTargetGroupsMessageType) eq 'alert'}">
-        <c:set var="showErrorMessages" value="true"/>
-        ${affectedTargetGroupsTable}
     </c:if>
 
     <c:if test="${not empty affectedDependentWorkflowsTable and fn:toLowerCase(affectedDependentWorkflowsMessageType) eq 'alert'}">

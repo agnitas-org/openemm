@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.mimetypes.service;
 
-import javax.activation.MimeType;
+import jakarta.activation.MimeType;
 
 public interface MimeTypeWhitelistService {
 

@@ -14,8 +14,8 @@ import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Vector;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 
 /**
  * HttpServletRequestWrapper which rewrites the clients language settings

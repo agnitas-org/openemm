@@ -10,9 +10,10 @@
 
 package com.agnitas.emm.core.serverstatus.forms.validation;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.agnitas.emm.core.serverstatus.forms.ServerConfigForm;
 import com.agnitas.web.mvc.Popups;
-import org.apache.commons.lang3.StringUtils;
 
 public class ServerConfigFormValidator {
 

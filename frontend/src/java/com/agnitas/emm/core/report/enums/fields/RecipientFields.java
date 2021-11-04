@@ -10,11 +10,12 @@
 
 package com.agnitas.emm.core.report.enums.fields;
 
+import org.agnitas.emm.core.recipient.RecipientUtils;
+import org.antlr.v4.runtime.misc.Nullable;
+
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.report.enums.DatabaseField;
 import com.agnitas.emm.core.report.enums.DatabaseFieldUtils;
-import org.agnitas.emm.core.recipient.RecipientUtils;
-import org.antlr.v4.runtime.misc.Nullable;
 
 public enum RecipientFields implements DatabaseField<String, RecipientFields> {
 
@@ -28,7 +29,8 @@ public enum RecipientFields implements DatabaseField<String, RecipientFields> {
     COLUMN_LAST_NAME(RecipientUtils.COLUMN_LASTNAME, "lastname", "Lastname"),
     COLUMN_EMAIL(RecipientUtils.COLUMN_EMAIL, "email", "mailing.MediaType.0"),
     COLUMN_TRACKING_VETO(ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK, "sys_tracking_veto", "recipient.trackingVeto"),
-    COLUMN_MAIL_TYPE(RecipientUtils.COLUMN_MAILTYPE, "mailtype", "Mailtype");
+    COLUMN_MAIL_TYPE(RecipientUtils.COLUMN_MAILTYPE, "mailtype", "Mailtype"),
+    COLUMN_ENCRYPTED_SENDING(ComCompanyDaoImpl.STANDARD_FIELD_ENCRYPTED_SENDING, "sys_encrypted_sending", "recipient.encryptedSending");
 
     private String code;
     private String readableName;

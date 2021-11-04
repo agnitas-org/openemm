@@ -23,5 +23,5 @@ public interface InboxTestDeletionService {
 	 * 
 	 * @return <code>true</code> if test has been deleted
 	 */
-	public boolean deletePredeliveryTest(final int mailingID, final int companyID);
+	boolean deletePredeliveryTest(final int mailingID, final int companyID);
 }

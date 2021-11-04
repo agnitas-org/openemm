@@ -39,7 +39,7 @@ window.I18n = {
         },
         mailing: {
             invalidPriorityCount: '<agn:agnMessage key="mailing.priority.maxMails"/>',
-            exclusiveLockingFailed: '<agn:agnMessage key="error.mailing.locked"/>'
+            exclusiveLockingFailed: '<agn:agnMessage key="error.mailing.locked.advanced" arg0="%s"/>'
         },
         enterEmailAddresses: '<agn:agnMessage key="enterEmailAddresses"/>',
         inUse: '<agn:agnMessage key="error.email.duplicated"/>',
@@ -160,6 +160,11 @@ window.I18n = {
             description: '<agn:agnMessage key="Description"/>',
             for_mailing: '<agn:agnMessage key="mailing.MailingParameter.forMailing"/>',
             change_date: '<agn:agnMessage key="default.changeDate"/>'
+        },
+        mailinglist: {
+            errors:{
+                removed: '<agn:agnMessage key="default.selection.deleted"/>'   
+            }
         },
         mediapool: {
             errors: {
@@ -466,7 +471,14 @@ window.I18n = {
             imageAlt: '<agn:agnMessage key="default.text.alt" />',
             nextForm: '<agn:agnMessage key="userform.builder.next" />',
             formName: '<agn:agnMessage key="userform.name" />',
-            emmField: '<agn:agnMessage key="workflow.start.ProfileField" />'
+            emmField: '<agn:agnMessage key="workflow.start.ProfileField" />',
+            template: {
+                template: '<agn:agnMessage key="Template" />',
+                subscribe: '<agn:agnMessage key="action.op.SubscribeCustomer" />',
+                unsubscribe: '<agn:agnMessage key="action.op.UnsubscribeCustomer" />',
+                profile_change: '<agn:agnMessage key="action.op.UpdateCustomer" />',
+                other: '<agn:agnMessage key="others" />'
+            }
         }
     },
 
@@ -483,8 +495,51 @@ window.I18n = {
             ServiceMail: '<agn:agnMessage key="action.op.ServiceMail" />',
             SubscribeCustomer: '<agn:agnMessage key="action.op.SubscribeCustomer" />',
             UnsubscribeCustomer: '<agn:agnMessage key="action.op.UnsubscribeCustomer" />',
-            UpdateCustomer: '<agn:agnMessage key="action.op.UpdateCustomer" />'
+            UpdateCustomer: '<agn:agnMessage key="action.op.UpdateCustomer" />',
+          serviceMail: {
+            error: {
+              senderAddress: '<agn:agnMessage key="error.mailing.sender_adress" />',
+              recipientAddress: '<agn:agnMessage key="error.mailing.recipient_adress" />',
+              replyAddress: '<agn:agnMessage key="error.mailing.reply_adress" />',
+              subjectToShort: '<agn:agnMessage key="error.subjectToShort" />',
+              subjectToLong: '<agn:agnMessage key="error.subjectToLong" />'
+            }
+          }
         }
+    },
+    referenceTables: {
+      table: {
+        error: {
+          name: '<agn:agnMessage key="error.referenceTable.name.invalid"/>',
+          keyColumn: '<agn:agnMessage key="error.referenceTable.keyColumn.invalid"/>'
+        }
+      }
+    },
+    import: {
+      gender: {
+        short: {
+          0: '<agn:agnMessage key="recipient.gender.0.short"/>',
+          1: '<agn:agnMessage key="recipient.gender.1.short"/>',
+          2: '<agn:agnMessage key="recipient.gender.2.short"/>',
+          3: '<agn:agnMessage key="recipient.gender.3.short"/>',
+          4: '<agn:agnMessage key="recipient.gender.4.short"/>',
+          5: '<agn:agnMessage key="recipient.gender.5.short"/>'
+        },
+        error: {
+          duplicate: '<agn:agnMessage key="error.import.gender.number.duplicate"/>',
+          empty: '<agn:agnMessage key="error.import.gender.empty"/>'
+        }
+      }
+    },
+    export: {
+      columnMapping: {
+        error: {
+          invalidColName: '<agn:agnMessage key="error.invalidSimpleName"/>',
+          nameToShort: '<agn:agnMessage key="error.name.too.short"/>',
+          duplicate: '<agn:agnMessage key="error.export.column.duplicate"/>',
+          exist: '<agn:agnMessage key="error.export.column.exist"/>'
+        }
+      }
     },
     forms: '<agn:agnMessage key="workflow.panel.forms"/>',
     report: '<agn:agnMessage key="Report"/>',

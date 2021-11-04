@@ -10,7 +10,7 @@
 
 package com.agnitas.web.mvc;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import com.agnitas.web.mvc.impl.StrutsPopups;
 import org.springframework.core.MethodParameter;

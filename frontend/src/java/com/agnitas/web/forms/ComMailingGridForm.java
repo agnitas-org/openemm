@@ -12,7 +12,8 @@ package com.agnitas.web.forms;
 
 import java.util.HashMap;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.web.forms.MailingBaseForm;
 import org.apache.struts.action.ActionMapping;
@@ -26,12 +27,14 @@ public class ComMailingGridForm extends MailingBaseForm {
 
     private int gridTemplateId;
 
+    @Deprecated // Replace by request attribute
     private boolean isMailingUndoAvailable;
 
     /**
      * Is mailing not active {@link com.agnitas.emm.core.maildrop.service.MaildropService#isActiveMailing(int, int)}
      * or user has permission {@link com.agnitas.emm.core.Permission#MAILING_CONTENT_CHANGE_ALWAYS}
      */
+    @Deprecated // Replace by request attribute
     private boolean mailingEditable = false;
 
     @Override
@@ -67,20 +70,24 @@ public class ComMailingGridForm extends MailingBaseForm {
         this.gridTemplateId = gridTemplateId;
     }
 
+    @Deprecated // Replace by request attribute
     public boolean getIsMailingUndoAvailable() {
         return isMailingUndoAvailable;
     }
 
+    @Deprecated // Replace by request attribute
     public void setIsMailingUndoAvailable(boolean isMailingUndoAvailable) {
         this.isMailingUndoAvailable = isMailingUndoAvailable;
     }
 
     @Override
+    @Deprecated // Replace by request attribute
     public boolean isMailingEditable() {
         return mailingEditable;
     }
 
     @Override
+    @Deprecated // Replace by request attribute
     public void setMailingEditable(boolean mailingEditable) {
         this.mailingEditable = mailingEditable;
     }

@@ -10,7 +10,7 @@
 
 package com.agnitas.web.perm;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.util.AgnUtils;
 import org.springframework.core.MethodParameter;

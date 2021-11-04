@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.restful;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,11 +26,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
@@ -43,11 +39,17 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 public abstract class BaseRequestServlet extends HttpServlet {
 	private static final long serialVersionUID = 6817178588854693746L;
 
 	private static final transient Logger logger = Logger.getLogger(BaseRequestServlet.class);
-	
+
+	private static final String REQUEST_ATTRIBUTE_REQUEST_DATA_IN_MEMORY = "requestData";
 	private static final String REQUEST_ATTRIBUTE_REQUEST_DATA_TEMP_FILE = "requestDataTempFile";
 	private static final String REQUEST_ATTRIBUTE_PARAMETER_MAP = "parameterMap";
 	
@@ -189,21 +191,37 @@ public abstract class BaseRequestServlet extends HttpServlet {
 
 	private void parseSimpleRequest(HttpServletRequest request) throws Exception {
 		try {
-			File tempFile = null;
+			// Do not trust in request header "Content-Length", because it might be invalid or even missing
 			try (InputStream inputStream = request.getInputStream()) {
-				if (inputStream != null) {
-					tempFile = File.createTempFile("Request_", ".requestData", AgnUtils.createDirectory(TEMP_FILE_DIRECTORY));
+				boolean createRequestDataTempFile = false;
+				
+				byte[] data = null;
+				try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+					long count = 0;
+					int bytesRead;
+					byte[] buffer = new byte[1024];
+					while ((bytesRead = inputStream.read(buffer)) != -1) {
+						outputStream.write(buffer, 0, bytesRead);
+						count += bytesRead;
+						if (count > 4096) {
+							createRequestDataTempFile = true;
+							break;
+						}
+					}
+					data = outputStream.toByteArray();
+				}
+				
+				if (createRequestDataTempFile) {
+					// requestData is too big to be kept in memory, so write already read data in temp file and upcoming data too
+					File tempFile = File.createTempFile("Request_", ".requestData", AgnUtils.createDirectory(TEMP_FILE_DIRECTORY));
 					try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+						outputStream.write(data);
 						IOUtils.copy(inputStream, outputStream);
 					}
-					if (tempFile.length() == 0) {
-						tempFile.delete();
-						tempFile = null;
-					}
+					request.setAttribute(REQUEST_ATTRIBUTE_REQUEST_DATA_TEMP_FILE, tempFile.getAbsolutePath());
+				} else {
+					request.setAttribute(REQUEST_ATTRIBUTE_REQUEST_DATA_IN_MEMORY, data);
 				}
-			}
-			if (tempFile != null) {
-				request.setAttribute(REQUEST_ATTRIBUTE_REQUEST_DATA_TEMP_FILE, tempFile.getAbsolutePath());
 			}
 		} catch (IOException e) {
 			throw new Exception("Error while reading request data", e);
@@ -257,6 +275,10 @@ public abstract class BaseRequestServlet extends HttpServlet {
 				throw new Exception("Error while reading request data: " + e.getMessage(), e);
 			}
 		}
+	}
+
+	protected byte[] getRequestData(HttpServletRequest request) {
+		return (byte[]) request.getAttribute(REQUEST_ATTRIBUTE_REQUEST_DATA_IN_MEMORY);
 	}
 
 	protected String getRequestDataTempFile(HttpServletRequest request) {

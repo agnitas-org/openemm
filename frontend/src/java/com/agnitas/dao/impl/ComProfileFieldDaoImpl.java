@@ -247,6 +247,12 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	}
 	
 	@Override
+    public boolean existWithExactShortname(final int companyID, final String shortName) {
+        return selectInt(logger, "SELECT count(*) FROM customer_field_tbl WHERE company_id = ? AND shortname = ?", 
+                companyID, shortName) > 0;
+    }
+
+	@Override
 	public ProfileField getProfileFieldByShortname(@VelocityCheck int companyID, String shortName, int adminID) throws Exception {
 		if (companyID <= 0) {
 			return null;
@@ -697,7 +703,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 		} else {
 			// Check if new shortname already exists before a new column is added to dbtable
 			if (!previousProfileField.getShortname().equals(comProfileField.getShortname())
-					&& getProfileFieldByShortname(comProfileField.getCompanyID(), comProfileField.getShortname()) != null) {
+					&& existWithExactShortname(comProfileField.getCompanyID(), comProfileField.getShortname())) {
 				throw new Exception("New shortname for customerprofilefield already exists");
 			}
 
@@ -1165,6 +1171,15 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 			return DbUtilities.checkForIndex(getDataSource(), recipientTable, Collections.singletonList(column));
 		} catch (Exception e) {
 			return false;
+		}
+	}
+
+	@Override
+	public boolean isReservedKeyWord(String fieldname) {
+		if (isOracleDB()) {
+			return DbUtilities.RESERVED_WORDS_ORACLE.contains(fieldname);
+		} else {
+			return DbUtilities.RESERVED_WORDS_MYSQL_MARIADB.contains(fieldname);
 		}
 	}
 }

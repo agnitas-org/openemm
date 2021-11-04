@@ -86,6 +86,7 @@ public class DBJobWorker extends JobWorker {
 		}
 		
 		String infoMailSubject = job.getParameters().get("infoMailSubject");
+		infoMailSubject = DateUtilities.replaceDatePatternsInFileName(infoMailSubject, 0, null); // May contain Java date pattern parts ("[YYYY]", "[MM]", "[DD]", "[HH]", "[MI]", "[SS]")
 		String sftpServerCredentials = job.getParameters().get("sftpServerCredentials");
 		
 		StringBuilder infoMailContent = new StringBuilder();
@@ -96,6 +97,7 @@ public class DBJobWorker extends JobWorker {
 		while (!haltExecution && job.getParameters().containsKey(statementIndex + "_statement")) {
 			String sqlStatement = job.getParameters().get(statementIndex + "_statement");
 			String statementLabel = job.getParameters().get(statementIndex + "_label");
+			statementLabel = DateUtilities.replaceDatePatternsInFileName(statementLabel, 0, null); // May contain Java date pattern parts ("[YYYY]", "[MM]", "[DD]", "[HH]", "[MI]", "[SS]")
 			String format = job.getParameters().get(statementIndex + "_format");
 			String filename = job.getParameters().get(statementIndex + "_filename"); // May contain Java date pattern parts ("[YYYY]", "[MM]", "[DD]", "[HH]", "[MI]", "[SS]")
 			String zipFilePassword = job.getParameters().get(statementIndex + "_zipFilePassword");
@@ -204,7 +206,7 @@ public class DBJobWorker extends JobWorker {
 		}
 		
 		if (StringUtils.isNotBlank(infoMailAddress)) {
-			serviceLookupFactory.getBeanJavaMailService().sendEmail(infoMailAddress, infoMailSubject, infoMailContent.toString(), infoMailContent.toString(), mailAttachments.toArray(new JavaMailAttachment[0]));
+			serviceLookupFactory.getBeanJavaMailService().sendEmail(companyID, infoMailAddress, infoMailSubject, infoMailContent.toString(), infoMailContent.toString(), mailAttachments.toArray(new JavaMailAttachment[0]));
 		}
 		
 		if (errorOccurred) {

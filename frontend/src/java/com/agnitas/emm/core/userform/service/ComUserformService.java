@@ -14,6 +14,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.userforms.UserformService;
@@ -50,8 +51,10 @@ public interface ComUserformService extends UserformService {
 	ServiceResult<Integer> cloneUserForm(ComAdmin admin, int userFormId);
 
 	File exportUserForm(ComAdmin admin, int userFormId, String userFormName);
-
-	String getUserFormUrlPattern(ComAdmin admin, boolean resolveUID);
+	
+	String getUserFormUrlPattern(final ComAdmin admin, final String formName, final boolean resolveUID, final Optional<String> companyToken);
+	List<UserFormTestUrl> getUserFormUrlForAllAdminAndTestRecipients(final ComAdmin admin, final String formName, final Optional<String> companyToken);
+	String getUserFormUrlWithoutUID(ComAdmin admin, String formName, Optional<String> companyToken);
 
     JSONArray getUserFormsJson(ComAdmin admin);
 
@@ -60,4 +63,5 @@ public interface ComUserformService extends UserformService {
 	Map<String, String> getMediapoolImages(ComAdmin admin);
 
 	Map<String, String> getProfileFields(ComAdmin admin, DbColumnType.SimpleDataType... allowedTypes);
+
 }

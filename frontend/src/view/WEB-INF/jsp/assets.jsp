@@ -21,5 +21,3 @@
     <c:param name="ts" value="<%= AgnUtils.getBrowserCacheMarker() %>"/>
 </c:url>
 <script src="${applicationJsLink}"></script>
-
-<%@ include file="additional_assets.jspf" %>

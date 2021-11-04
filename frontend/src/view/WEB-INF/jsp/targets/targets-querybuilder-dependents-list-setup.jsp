@@ -1,12 +1,10 @@
-<%@ page language="java" import="com.agnitas.web.ComTargetAction" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="editTargetForm" type="com.agnitas.emm.core.target.web.QueryBuilderTargetGroupForm"--%>
-
-<c:set var="ACTION_LIST" value="<%= ComTargetAction.ACTION_LIST%>"/>
 
 <c:set var="isTabsMenuShown" 		value="true" 									scope="request" />
 
@@ -29,9 +27,7 @@
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}" property="textKey" value="default.Overview"/>
         <c:set target="${agnBreadcrumb}" property="url">
-            <c:url value="/target.do">
-                <c:param name="action" value="${ACTION_LIST}"/>
-            </c:url>
+            <c:url value="/target/list.action" />
         </c:set>
     </emm:instantiate>
 

@@ -14,11 +14,11 @@ import java.util.Date;
 import java.util.Map;
 
 import org.agnitas.beans.BindingEntry;
-import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComBindingEntryDao;
+import com.agnitas.emm.core.binding.service.BindingUtils;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 /**
@@ -213,25 +213,8 @@ public class BindingEntryImpl implements BindingEntry {
 		}
 	}
 
-	private String getUserRemarkForStatusByAdmin(int newUserStatus, ComAdmin admin) throws Exception {
-		switch (UserStatus.getUserStatusByID(newUserStatus)) {
-			case Active:
-				return "Opt-In by ADMIN (" + admin.getUsername() + ")";
-			case Bounce:
-				return "Bounced by ADMIN (" + admin.getUsername() + ")";
-			case AdminOut:
-				return "Opt-Out by ADMIN (" + admin.getUsername() + ")";
-			case UserOut:
-				return "User-Opt-Out by ADMIN (" + admin.getUsername() + ")";
-			case WaitForConfirm:
-				return "Wait-For-Confirm by ADMIN (" + admin.getUsername() + ")";
-			case Blacklisted:
-				return "Blacklist by ADMIN (" + admin.getUsername() + ")";
-			case Suspend:
-				return "Suspend by ADMIN (" + admin.getUsername() + ")";
-			default:
-				return "Unknown status " + newUserStatus + " by ADMIN (" + admin.getUsername() + ")";
-		}
+	private String getUserRemarkForStatusByAdmin(int newUserStatus, ComAdmin admin) {
+		return BindingUtils.getUserRemarkForStatusByAdmin(admin, newUserStatus);
 	}
 
 	/**

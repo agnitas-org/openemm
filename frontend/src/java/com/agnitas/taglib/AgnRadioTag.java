@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.servlet.jsp.tagext.DynamicAttributes;
+import jakarta.servlet.jsp.tagext.DynamicAttributes;
 
 import org.apache.struts.taglib.html.RadioTag;
 

@@ -23,9 +23,12 @@ import org.apache.commons.lang3.StringUtils;
 import com.agnitas.emm.core.workflow.beans.WorkflowRecipient.WorkflowTargetOption;
 
 public class TargetExpressionUtils {
+
+    public static final String SIMPLE_TARGET_EXPRESSION = "1=1";
+
     private static final Pattern TARGET_IDS_FROM_EXPRESSION_PATTERN = Pattern.compile( "^.*?(\\d+)(.*)$");
-    private static final String OPERATOR_AND = "&";
-    private static final String OPERATOR_OR = "|";
+    public static final String OPERATOR_AND = "&";
+    public static final String OPERATOR_OR = "|";
 
     public static Set<Integer> getTargetIds(String targetExpression) {
         Set<Integer> targetIds = new HashSet<>();

@@ -1,12 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.ComTargetAction" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="mailingWizardForm" type="org.agnitas.web.MailingWizardForm"--%>
-
-<c:set var="ACTION_BACK_TO_MAILINGWIZARD" value="<%= ComTargetAction.ACTION_BACK_TO_MAILINGWIZARD %>"/>
 
 <c:choose>
     <c:when test="${not empty mailingWizardForm.mailing}">
@@ -40,10 +37,7 @@
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="1" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}" property="text" value="${shortname}"/>
-        <c:url var="backToWizardLink" value="/target.do">
-            <c:param name="action" value="${ACTION_BACK_TO_MAILINGWIZARD}"/>
-        </c:url>
-        <c:set target="${agnBreadcrumb}" property="url" value="${backToWizardLink}"/>
+        <c:set target="${agnBreadcrumb}" property="url" value="/mwSubject.do?action=subject"/>
     </emm:instantiate>
 
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

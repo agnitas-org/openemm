@@ -12,7 +12,7 @@ package com.agnitas.util.web;
 
 import java.io.File;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 /**
  * Utility class to retrieve paths and filenames relative to web application.

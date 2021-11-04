@@ -10,7 +10,7 @@
 
 package com.agnitas.taglib;
 
-import javax.servlet.jsp.JspException;
+import jakarta.servlet.jsp.JspException;
 
 import org.apache.taglibs.standard.tag.common.core.SetSupport;
 import org.apache.velocity.util.ClassUtils;

@@ -25,7 +25,16 @@
                     <a href="${item['url']}" class="${item['btnCls']}" ${item['extraAttributes']}>${content}</a>
                 </c:when>
                 <c:otherwise>
-                    <button class="${item['btnCls']}" type="button" ${item['extraAttributes']}>${content}</button>
+                    <c:choose>
+                        <c:when test="${not empty item['tooltip']}">
+                            <div data-tooltip="${item['tooltip']}" data-tooltip-options="placement: 'bottom'" >
+                                <button class="${item['btnCls']}" type="button" ${item['extraAttributes']}>${content}</button>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <button class="${item['btnCls']}" type="button" ${item['extraAttributes']}>${content}</button>
+                        </c:otherwise>
+                    </c:choose>
                 </c:otherwise>
             </c:choose>
             <!-- element might be button or link END -->

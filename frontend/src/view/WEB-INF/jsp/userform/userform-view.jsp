@@ -12,6 +12,7 @@
 <%--@elvariable id="userFormFullURLPattern" type="java.lang.String"--%>
 <%--@elvariable id="emmActions" type="java.util.List<org.agnitas.actions.EmmAction>"--%>
 <%--@elvariable id="workflowParameters" type="org.agnitas.web.forms.WorkflowParameters"--%>
+<%--@elvariable id="companyId" type="java.lang.Integer"--%>
 
 <c:url var="actionEditUrlPattern" value="/action/{action-ID}/view.action"/>
 
@@ -24,6 +25,21 @@
             "actionURLPattern": "${actionEditUrlPattern}"
         }
     </script>
+
+    <emm:ShowByPermission token="forms.creator">
+        <script id="config:formbuilderCommon" type="application/json">
+            {
+                "companyId": ${companyId},
+                "confirmationModal": "warning-html-generation-modal",
+                "namesJson": ${emm:toJson(names)},
+                "mediapoolImages": ${emm:toJson(mediapoolImages)},
+                "textProfileFields": ${emm:toJson(textProfileFields)},
+                "dateProfileFields": ${emm:toJson(dateProfileFields)},
+                "numberProfileFields": ${emm:toJson(numberProfileFields)},
+                "cssUrl": "${formCssLocation}/css/bootstrap.min.css"
+            }
+        </script>
+    </emm:ShowByPermission>
 
     <mvc:hidden path="formId"/>
     <emm:workflowParameters />
@@ -50,11 +66,12 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label for="formName" class="control-label">
-                            <mvc:message code="Name"/>
+                            <mvc:message var="nameMsg" code="default.Name"/>
+                            ${nameMsg}
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <mvc:text path="formName" maxlength="50" size="42" cssClass="form-control" id="formName"/>
+                        <mvc:text path="formName" maxlength="50" size="42" cssClass="form-control" id="formName" placeholder="${nameMsg}"/>
                     </div>
                 </div>
 
@@ -66,22 +83,41 @@
                             </label>
                         </div>
                         <div class="col-sm-8">
-
                             <div class="input-group">
                                 <div class="input-group-controls">
                                     <input type="text" id="formURL"
                                            class="form-control" maxlength="99" size="42" readonly="readonly"
-                                           value="${fn:replace(userFormURLPattern, "{user-form-name}", form.formName)}">
+                                           value="${userFormURLPattern}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="col-sm-4">
+                            <label for="formURL" class="control-label">
+                                <mvc:message code="userform.test"/>
+                            </label>
+                        </div>
+                        <div class="col-sm-8">
+                            <div class="input-group">
+                                <div class="input-group-controls">
+                                	<select id="formTestRecipient" class="form-control js-select" data-action="formTestRecipient">
+                                		<option value="${userFormFullURLPatternNoUid}"><mvc:message code="userform.test.withoutRecipient"/></option>
+                                		<c:forEach items="${userFormFullURLPatterns}" var="testURL">
+                                			<option value="${testURL.userFormUrl}">${testURL.firstname} ${testURL.lastname} (${testURL.email})</option>
+                                		</c:forEach>
+                                	</select>
                                 </div>
                                 <div class="input-group-btn">
-                                  <a href="${fn:replace(userFormFullURLPattern, "{user-form-name}", form.formName)}"
+                                  <a href="${userFormFullURLPatternNoUid}"
+                                  	 id="formTestLink"
                                      data-tooltip="<mvc:message code='userform.test'/>"
                                      class="btn btn-regular btn-primary" target="_blank">
                                       <i class="icon icon-arrow-right"></i>
                                   </a>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </c:if>
@@ -89,11 +125,12 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label for="description" class="control-label">
-                            <mvc:message code="default.description"/>
+                            <mvc:message var="descriptionMsg" code="default.description"/>
+                            ${descriptionMsg}
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <mvc:text path="description" rows="5" cols="32" cssClass="form-control" id="description"/>
+                        <mvc:text path="description" rows="5" cols="32" cssClass="form-control" id="description" placeholder="${descriptionMsg}"/>
                     </div>
                 </div>
             </div>
@@ -176,11 +213,11 @@
                                 </ul>
                                 <ul class="inline-tile-header-actions">
                                     <li>
-                                        <a href="#" id="successFormUndoButton" style="display: none"><mvc:message code="button.Undo" /></a>
-                                    </li>
-                                    <li>
                                         <a href="#" data-modal="modal-editor"
-                                           data-modal-set="title: <mvc:message code="settings.form.success"/>, target: '#successTemplate', type: success, useVelocity: '${form.successSettings.useVelocity}'"
+                                           data-modal-set="title: <mvc:message code="settings.form.success"/>,
+                                                target: '#successTemplate', type: success,
+                                                useVelocity: '${form.successSettings.useVelocity}',
+                                                targetFormBuilder: '#successFormBuilder'"
                                            data-tooltip="<mvc:message code='editor.enlargeEditor'/>">
                                            <i class="icon icon-arrows-alt"></i>
                                         </a>
@@ -210,17 +247,8 @@
                                     <div id="tab-success-template-form-builder" class="hidden" data-initializer="formbuilder">
                                         <script id="config:formbuilder" type="application/json">
                                             {
-                                                "cssUrl": "${formCssLocation}/css/bootstrap.min.css",
-                                                "template": "formbuilder-template",
-                                                "confirmationModal": "warning-html-generation-modal",
                                                 "formName": "${empty form.formName ? "new form" : form.formName}${'(success)'}",
-                                                "undoButton": "#successFormUndoButton",
-                                                "data": ${empty form.successSettings.formBuilderJson ? "\"\"" : form.successSettings.formBuilderJson},
-                                                "namesJson": ${emm:toJson(names)},
-                                                "mediapoolImages": ${emm:toJson(mediapoolImages)},
-                                                "textProfileFields": ${emm:toJson(textProfileFields)},
-                                                "dateProfileFields": ${emm:toJson(dateProfileFields)},
-                                                "numberProfileFields": ${emm:toJson(numberProfileFields)}
+                                                "data": ${empty form.successSettings.formBuilderJson ? "\"\"" : form.successSettings.formBuilderJson}
                                             }
                                         </script>
                                         <div class="row">
@@ -325,12 +353,11 @@
                                 </ul>
                                 <ul class="inline-tile-header-actions">
                                     <li>
-                                        <a href="#" id="errorFormUndoButton" style="display: none"><mvc:message code="button.Undo" /></a>
-                                    </li>
-                                    <li>
                                         <a href="#" data-modal="modal-editor"
-                                           data-modal-set="title: <mvc:message code="settings.form.error"/>, target: '#errorTemplate', type: error,
-                                           useVelocity: '${form.errorSettings.useVelocity}'"
+                                           data-modal-set="title: <mvc:message code="settings.form.error"/>,
+                                           target: '#errorTemplate', type: error,
+                                           useVelocity: '${form.errorSettings.useVelocity}',
+                                           targetFormBuilder: '#errorFormBuilder'"
                                            data-tooltip="<mvc:message code='editor.enlargeEditor'/>">
                                            <i class="icon icon-arrows-alt"></i>
                                         </a>
@@ -357,20 +384,11 @@
 
                                 <emm:ShowByPermission token="forms.creator">
                                     <!-- FORM BUILDER -->
-                                    <div id="tab-error-template-form-builder" class="hidden"  data-initializer="formbuilder">
+                                    <div id="tab-error-template-form-builder" class="hidden" data-initializer="formbuilder">
                                         <script id="config:formbuilder" type="application/json">
                                             {
-                                                "cssUrl": "${formCssLocation}/css/bootstrap.min.css",
-                                                "template": "formbuilder-template",
-                                                "confirmationModal": "warning-html-generation-modal",
                                                 "formName": "${empty form.formName ? "new form" : form.formName}${'(error)'}",
-                                                "undoButton": "#errorFormUndoButton",
-                                                "dlinksata": ${empty form.errorSettings.formBuilderJson ? "\"\"" : form.errorSettings.formBuilderJson},
-                                                "namesJson": ${emm:toJson(names)},
-                                                "mediapoolImages": ${emm:toJson(mediapoolImages)},
-                                                "textProfileFields": ${emm:toJson(textProfileFields)},
-                                                "dateProfileFields": ${emm:toJson(dateProfileFields)},
-                                                "numberProfileFields": ${emm:toJson(numberProfileFields)}
+                                                "data": ${empty form.errorSettings.formBuilderJson ? "\"\"" : form.errorSettings.formBuilderJson}
                                             }
                                         </script>
                                         <div class="row">
@@ -401,7 +419,9 @@
 </mvc:form>
 
 <script id="modal-editor" type="text/x-mustache-template">
-    {{ showHtmlEditor = $('#tab-' + type + '-template-html').is(':visible')}}
+    {{ showHtmlEditor = $('#tab-' + type + '-template-html').is(':visible') }}
+    {{ showWysisygEditor = $('#tab-' + type + '-template-wysiwyg').is(':visible') }}
+    {{ showFormBuilder = $('#tab-' + type + '-template-form-builder').is(':visible') }}
     <div class="modal modal-editor">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -422,18 +442,32 @@
                                 <mvc:message code="mailingContentHTMLEditor"/>
                             </a>
                         </li>
+                        <emm:ShowByPermission token="forms.creator">
+                            <li>
+                                <a href="#" data-toggle-tab="#tab-modal-template-formbuilder">
+                                    <mvc:message code="userform.builder"/>
+                                </a>
+                            </li>
+                        </emm:ShowByPermission>
                     </ul>
                 </div>
                 <div class="modal-body">
                     <div id="tab-modal-template-html" {{ (showHtmlEditor) ? print('data-tab-show') : print('data-tab-hide') }}>
                         <div id="modalTextAreaEditor" class="form-control"></div>
                     </div>
-                    <div id="tab-modal-template-wysiwyg" {{ (showHtmlEditor) ? print('data-tab-hide') : print('data-tab-show') }}>
+                    <div id="tab-modal-template-wysiwyg" {{ (showWysisygEditor) ? print('data-tab-show') : print('data-tab-hide') }}>
                         <textarea id="modalTextArea" name="modalTextArea"
                                   data-editor-options="allowExternalScript: true, isFullHtml: true"
-                                  data-sync="{{= target }}" class="form-control js-editor js-wysiwyg hidden"
-                                  data-form-target="#userFormForm"></textarea>
+                                  data-sync="{{= target }}" class="form-control js-editor js-wysiwyg hidden"></textarea>
                     </div>
+                    <emm:ShowByPermission token="forms.creator">
+                        <div id="tab-modal-template-formbuilder" {{ (showFormBuilder) ? print('data-tab-show') : print('data-tab-hide') }}>
+                            <!-- FORM BUILDER -->
+                            <div class="row" data-initializer="formbuilder">
+                                <div id="modalFormBuilder" class="modal-js-form-builder" data-target-formbuilder="{{= targetFormBuilder }}"></div>
+                            </div>
+                        </div>
+                    </emm:ShowByPermission>
 
                 </div>
                 <div class="modal-footer">
@@ -443,8 +477,9 @@
                             <span class="text"><mvc:message code="button.Cancel"/></span>
                         </button>
                         <emm:ShowByPermission token="forms.change">
-                            <button type="button" class="btn btn-primary btn-large" data-sync-from="#modalTextArea"
-                                    data-sync-to="{{= target }}" data-dismiss="modal" data-form-target="#userFormForm" data-form-submit="">
+                            <button type="button" class="btn btn-primary btn-large"
+                                    data-sync-from="#modalTextArea, #modalFormBuilder" data-sync-to="{{= target }}, {{= targetFormBuilder }}"
+                                    data-dismiss="modal" data-action="saveUserForm">
                                 <i class="icon icon-save"></i>
                                 <span class="text"><mvc:message code="button.Save"/></span>
                             </button>
@@ -494,19 +529,103 @@
     </div>
 </script>
 
-<script id="formbuilder-template" type="text/x-mustache-template">
-<html>
-    <head>
-        {{ if (cssUrl) { }}
-        <link rel="stylesheet" href="{{- cssUrl }}">
-        {{ } }}
-    </head>
-    <body>
-        <div class="container" style="margin-top: 50px;">
-            <form action="form.action">
-                {{= generatedHTML}}
-            </form>
+<script id="warning-save-different-tabs" type="text/x-mustache-template">
+    <div class="modal modal-wide" data-controller="userform-view">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close-icon close" data-dismiss="modal"><i aria-hidden="true" class="icon icon-times-circle"></i></button>
+                    <h4 class="modal-title text-state-warning">
+                        <i class="icon icon-state-warning"></i>
+                        <mvc:message code="warning" />
+                    </h4>
+                </div>
+
+                <div class="modal-body">
+                    <form id="choose-code-format-modal-form">
+
+                        <div class="form-group">
+                            <div class="row">
+                                <div class="col-sm-8 col-sm-offset-2">
+                                    <mvc:message code="GWUA.warning.userform.severalContentTabsChanged"/>
+                                </div>
+                            </div>
+                            <div class="row"></div>
+                        </div>
+
+                        {{ if(needSuccessCodeChoose) { }}
+                        <div class="form-group" data-field="toggle-vis">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label class="control-label">
+                                        <mvc:message code="settings.form.success"/>:
+                                    </label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="radio-inline">
+                                        <input type="radio" value="HTML" checked="checked" name="success_template_mode" data-field-vis="" data-field-vis-hide="#success-code-replacement-warning"/>
+                                        <mvc:message code="HTML"/>
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" value="FORM_BUILDER" name="success_template_mode" data-field-vis="" data-field-vis-show="#success-code-replacement-warning"/>
+                                        <mvc:message code="userform.builder"/>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="row col-sm-offset-4 col-sm-8 text-state-warning" id="success-code-replacement-warning">
+                                <i class="icon icon-state-warning"></i>
+                                <mvc:message code="userform.builder.generateHtml.question" />
+                            </div>
+                        </div>
+                        {{ } }}
+
+                        {{ if(needErrorCodeChoose) { }}
+                        <div class="form-group" data-field="toggle-vis">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label class="control-label">
+                                        <mvc:message code="settings.form.error"/>:
+                                    </label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="radio-inline">
+                                        <input type="radio" value="HTML" checked="checked" name="error_template_mode" data-field-vis="" data-field-vis-hide="#error-code-replacement-warning"/>
+                                        <mvc:message code="HTML"/>
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" value="FORM_BUILDER" name="error_template_mode" data-field-vis="" data-field-vis-show="#error-code-replacement-warning"/>
+                                        <mvc:message code="userform.builder"/>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="row col-sm-offset-4 col-sm-8 text-state-warning" id="error-code-replacement-warning">
+                                <i class="icon icon-state-warning"></i>
+                                <mvc:message code="userform.builder.generateHtml.question" />
+                            </div>
+                        </div>
+
+                        {{ } }}
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default btn-large" data-dismiss="modal">
+                            <i class="icon icon-times"></i>
+                            <span class="text">
+                                <mvc:message code="button.Cancel" />
+                            </span>
+                        </button>
+
+                        <button type="button" class="btn btn-primary btn-large" data-dismiss="modal" data-action="save-specific-code-mode">
+                            <i class="icon icon-check"></i>
+                            <span class="text">
+                                <mvc:message code="button.Proceed" />
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-    </body>
-</html>
+    </div>
 </script>

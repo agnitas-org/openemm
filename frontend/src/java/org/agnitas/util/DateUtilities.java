@@ -47,10 +47,14 @@ public class DateUtilities {
 	public static final String DD_MM_YYYY_HH_MM = "dd.MM.yyyy HH:mm";
 	public static final String DD_MM_YYYY_HH = "dd.MM.yyyy HH";
 	public static final String DD_MM_YYYY = "dd.MM.yyyy";
+	public static final String MM_DD_YYYY = "MM/dd/yyyy";
+	public static final String MM_DD_YYYY_HH_MM = "MM/dd/yyyy HH:mm";
+	public static final String MM_DD_YYYY_HH_MM_SS = "MM/dd/yyyy HH:mm:ss";
 	public static final String DDMMYYYY = "ddMMyyyy";
 	public static final String YYYY_MM_DD_HH_MM_SS_MS = "yyyy-MM-dd_HH:mm:ss,SSS";
 	public static final String YYYY_MM_DD_HH_MM_SS = "yyyy-MM-dd HH:mm:ss";
 	public static final String YYYY_MM_DD_HH_MM = "yyyy-MM-dd HH:mm";
+    public static final String DD_MM_YYYY_HH_MM_HYPHEN = "dd-MM-yyyy HH:mm";
 	public static final String YYYY_MM_DD_HH_MM_SS_FORFILENAMES = "yyyy-MM-dd_HH-mm-ss";
 	public static final String YYYY_MM_DD = "yyyy-MM-dd";
 	public static final String YYYYMMDD = "yyyyMMdd";
@@ -203,10 +207,6 @@ public class DateUtilities {
 		returnCalendar.set(Calendar.SECOND, 0);
 		returnCalendar.set(Calendar.MILLISECOND, 0);
 		return returnCalendar;
-	}
-
-	public static Date removeTime(Date date) {
-		return removeTime(date, UTC);
 	}
 
 	public static Date removeTime(Date date, TimeZone zone) {
@@ -797,7 +797,7 @@ public class DateUtilities {
     }
     
     public static Date parseUnknownDateFormat(String value) throws Exception {
-		String[] patterns = new String[]{DD_MM_YYYY_HH_MM_SS, DD_MM_YYYY_HH_MM, DD_MM_YYYY, YYYY_MM_DD_HH_MM_SS, YYYY_MM_DD_HH_MM, YYYY_MM_DD, YYYYMMDDHHMMSS, DDMMYYYY};
+		String[] patterns = new String[]{DD_MM_YYYY_HH_MM_SS, DD_MM_YYYY_HH_MM, DD_MM_YYYY, DD_MM_YYYY_HH_MM_HYPHEN, YYYY_MM_DD_HH_MM_SS, YYYY_MM_DD_HH_MM, YYYY_MM_DD, YYYYMMDDHHMMSS, DDMMYYYY, MM_DD_YYYY_HH_MM_SS, MM_DD_YYYY_HH_MM, MM_DD_YYYY};
 
 		for (String pattern : patterns) {
 			try {
@@ -811,7 +811,7 @@ public class DateUtilities {
     }
 
     public static String detectSimpleFormat(String value) throws Exception {
-		String[] patterns = new String[]{DD_MM_YYYY_HH_MM_SS, DD_MM_YYYY_HH_MM, DD_MM_YYYY, YYYY_MM_DD_HH_MM_SS, YYYY_MM_DD_HH_MM, YYYY_MM_DD, YYYYMMDDHHMMSS, DDMMYYYY};
+		String[] patterns = new String[]{DD_MM_YYYY_HH_MM_SS, DD_MM_YYYY_HH_MM, DD_MM_YYYY, YYYY_MM_DD_HH_MM_SS, YYYY_MM_DD_HH_MM, YYYY_MM_DD, YYYYMMDDHHMMSS, DDMMYYYY, MM_DD_YYYY_HH_MM_SS, MM_DD_YYYY_HH_MM, MM_DD_YYYY};
 
 		for (String pattern : patterns) {
 			try {

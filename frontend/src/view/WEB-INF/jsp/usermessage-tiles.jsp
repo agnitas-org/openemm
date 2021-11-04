@@ -1,5 +1,9 @@
+
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+
 <%@page import="com.agnitas.motd.web.MOTDAction"%>
 <%@ page language="java" import="org.agnitas.util.*" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+
 <div id="header_usermessage" align="left">
 </div>
 <script type="text/javascript">
@@ -14,9 +18,19 @@
 	}
 	
 	function loadAndShowReminderMessages() {
+		
+		<c:url value="motd.do" var="_url">
+			<c:param name="method" value="showUserReminderMessage" />
+			<c:param name="company_id" value="<%= Integer.toString(AgnUtils.getCompanyID(request)) %>" />
+			<c:param name="admin_id" value="<%= Integer.toString(AgnUtils.getAdmin(request).getAdminID()) %>" />
+			<c:param name="host" value="<%= AgnUtils.getHostName() %>" />
+			<c:param name="token" value="<%= MOTDAction.calculateSignatureToken(AgnUtils.getCompanyID(request), AgnUtils.getAdmin(request).getAdminID()) %>" />
+		</c:url>
+
 		var userMessageContainer = document.getElementById("header_usermessage");
 		var reminderRequest = new XMLHttpRequest();
-		var requestUrl = "motd.do;jsessionid=0?method=showUserReminderMessage&company_id=<%= Integer.toString(AgnUtils.getCompanyID(request)) %>&admin_id=<%= Integer.toString(AgnUtils.getAdmin(request).getAdminID()) %>&host=<%= AgnUtils.getHostName() %>&token=<%= MOTDAction.calculateSignatureToken(AgnUtils.getCompanyID(request), AgnUtils.getAdmin(request).getAdminID()) %>";
+		
+		var requestUrl = "${_url}";
 		reminderRequest.open("POST", requestUrl, false);
 		reminderRequest.send();
 		while (userMessageContainer.hasChildNodes()) {
@@ -28,6 +42,15 @@
 	}
 	
 	function scheduleNextRequestUserMessages() {
+		
+		<c:url value="motd.do" var="_url">
+			<c:param name="method" value="showUserPopupMessage" />
+			<c:param name="company_id" value="<%= Integer.toString(AgnUtils.getCompanyID(request)) %>" />
+			<c:param name="admin_id" value="<%= Integer.toString(AgnUtils.getAdmin(request).getAdminID()) %>" />
+			<c:param name="host" value="<%= AgnUtils.getHostName() %>" />
+			<c:param name="token" value="<%= MOTDAction.calculateSignatureToken(AgnUtils.getCompanyID(request), AgnUtils.getAdmin(request).getAdminID()) %>" />
+		</c:url>
+		
 		setTimeout(function() {
 			reloadTime = 60000; // following calls: 1 minute delay
 			self.scheduleNextRequestUserMessages();
@@ -35,7 +58,7 @@
 			loadAndShowReminderMessages();
 			
 			var popupRequest = new XMLHttpRequest();
-			var requestUrl = "motd.do;jsessionid=0?method=showUserPopupMessage&company_id=<%= Integer.toString(AgnUtils.getCompanyID(request)) %>&admin_id=<%= Integer.toString(AgnUtils.getAdmin(request).getAdminID()) %>&host=<%= AgnUtils.getHostName() %>&token=<%= MOTDAction.calculateSignatureToken(AgnUtils.getCompanyID(request), AgnUtils.getAdmin(request).getAdminID()) %>";
+			var requestUrl = "${_url}";
 			popupRequest.open("POST", requestUrl, false);
 			popupRequest.send();
 			if (popupRequest.status == 200 && !isBlank(popupRequest.responseText)) {

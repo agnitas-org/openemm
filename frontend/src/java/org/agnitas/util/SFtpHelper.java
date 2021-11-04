@@ -311,8 +311,8 @@ public class SFtpHelper implements RemoteFileHelper {
 				try {
 					channel.disconnect();
 				} catch (Exception e) {
-					// do nothing
-					e.printStackTrace();
+					logger.error("Error diconnecting from SFTP channel", e);
+					// do nothing else
 				}
 				channel = null;
 			}
@@ -321,8 +321,8 @@ public class SFtpHelper implements RemoteFileHelper {
 				try {
 					session.disconnect();
 				} catch (Exception e) {
-					// do nothing
-					e.printStackTrace();
+					logger.error("Error diconnecting from SFTP session", e);
+					// do nothing else
 				}
 				session = null;
 			}

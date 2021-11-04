@@ -17,9 +17,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.AdminPreferences;
 import org.agnitas.beans.DynamicTagContent;
@@ -59,7 +59,9 @@ import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailing.web.RequestAttributesHelper;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.service.ComMailingContentService;
@@ -105,6 +107,8 @@ public class ComMailingContentAction extends StrutsActionBase {
 	protected AdminPreferencesDao adminPreferencesDao;
     
     private GridServiceWrapper gridServiceWrapper;
+    
+    private MailingPropertiesRules mailingPropertiesRules;
 
 	@Override
     public String subActionMethodName(int subAction) {
@@ -243,11 +247,11 @@ public class ComMailingContentAction extends StrutsActionBase {
 			mailing.init(AgnUtils.getCompanyID(req), getApplicationContext(req));
 			mailing.setId(0);
 			form.setMailingID(0);
-			form.setMailingEditable(true);
-			form.setMailingExclusiveLockingAcquired(true);
+			req.setAttribute(RequestAttributesHelper.MAILNG_EDITABLE_REQUEST_ATTRIBUTE_NAME, true);
+			req.setAttribute("isMailingExclusiveLockingAcquired", true);
 		} else {
-			form.setMailingEditable(isMailingEditable(admin, form));
-			form.setMailingExclusiveLockingAcquired(tryToLock(admin, form));
+			req.setAttribute(RequestAttributesHelper.MAILNG_EDITABLE_REQUEST_ATTRIBUTE_NAME, isMailingEditable(admin, mailing.getId()));
+			req.setAttribute("isMailingExclusiveLockingAcquired", tryToLock(mailing.getId(), admin, form));
 		}
 
 		form.setShortname(mailing.getShortname());
@@ -306,7 +310,7 @@ public class ComMailingContentAction extends StrutsActionBase {
 		final boolean showContentBlockTargetGroupsOnly = !AgnUtils.allowed(req, Permission.MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS);
 		
 		final List<TargetLight> list = targetService
-				.getTargetLights(AgnUtils.getAdmin(req), true, true, false, showContentBlockTargetGroupsOnly);
+				.getTargetLights(AgnUtils.getAdmin(req), false, true, false, showContentBlockTargetGroupsOnly);
 		
 		form.setAvailableTargetGroups(list);
 	}
@@ -332,15 +336,23 @@ public class ComMailingContentAction extends StrutsActionBase {
 	 * that unlocks sent mailing so it could be edited anyway.
 	 */
 	protected boolean isMailingEditable(ComAdmin admin, ComMailingContentForm form) {
-		if (maildropService.isActiveMailing(form.getMailingID(), admin.getCompanyID())) {
-			return admin.permissionAllowed(Permission.MAILING_CONTENT_CHANGE_ALWAYS);
-		}
-		return true;
+		return isMailingEditable(admin, form.getMailingID());
 	}
 
-	private boolean tryToLock(ComAdmin admin, ComMailingContentForm form) {
+	protected boolean isMailingEditable(ComAdmin admin, int mailingId) {
+		return this.mailingPropertiesRules.isMailingContentEditable(mailingId, admin);
+	}
+
+	private boolean tryToLock(int mailingId, ComAdmin admin, ComMailingContentForm form) {
 		try {
-			return mailingService.tryToLock(admin, form.getMailingID());
+            boolean lockedByCurrentUser = mailingService.tryToLock(admin, form.getMailingID());
+            if (!lockedByCurrentUser) {
+                ComAdmin lockingUser = mailingService.getMailingLockingAdmin(mailingId, admin.getCompanyID());
+                if (lockingUser != null) {
+                    form.setAnotherLockingUserName(String.join(" ", lockingUser.getFirstName(), lockingUser.getFullname()));
+                }
+            }
+            return lockedByCurrentUser;
 		} catch (MailingNotExistException e) {
 			// New mailing is always edited exclusively.
 			return true;
@@ -448,4 +460,9 @@ public class ComMailingContentAction extends StrutsActionBase {
 	public void setGridServiceWrapper(GridServiceWrapper gridServiceWrapper) {
 		this.gridServiceWrapper = gridServiceWrapper;
 	}
+    
+    @Required
+    public final void setMailingPropertiesRules(final MailingPropertiesRules rules) {
+    	this.mailingPropertiesRules = Objects.requireNonNull(rules, "MailingPropertiesRules is null");
+    }
 }

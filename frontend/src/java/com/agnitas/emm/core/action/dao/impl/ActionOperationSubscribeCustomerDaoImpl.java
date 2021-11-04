@@ -45,8 +45,8 @@ public class ActionOperationSubscribeCustomerDaoImpl extends AbstractActionOpera
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationSubscribeCustomerParameters operation) {
-		update(logger, "insert into actop_subscribe_customer_tbl (action_operation_id, double_check, key_column, double_opt_in) values (?,?,?,?)", 
-				operation.getId(), 
+		update(logger, "insert into actop_subscribe_customer_tbl (action_operation_id, double_check, key_column, double_opt_in) values (?,?,?,?)",
+				operation.getId(),
 				operation.isDoubleCheck(),
 				operation.getKeyColumn(),
 				operation.isDoubleOptIn());
@@ -55,7 +55,7 @@ public class ActionOperationSubscribeCustomerDaoImpl extends AbstractActionOpera
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processUpdateOperation(ActionOperationSubscribeCustomerParameters operation) {
-		update(logger, "update actop_subscribe_customer_tbl set double_check=?, key_column=?, double_opt_in=? where action_operation_id=?", 
+		update(logger, "update actop_subscribe_customer_tbl set double_check=?, key_column=?, double_opt_in=? where action_operation_id=?",
 				operation.isDoubleCheck(),
 				operation.getKeyColumn(),
 				operation.isDoubleOptIn(),

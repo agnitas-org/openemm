@@ -9,5 +9,15 @@ module.exports = {
       style: 'nested',
       sourceMap: true
     }
+  },
+  build_formcss: {
+    files: {
+      '<%= config.assets %>/form.css': '<%= config.assets %>/sass/form.scss',
+    },
+    options: {
+      implementation: require('node-sass'),
+      style: 'nested',
+      sourceMap: true
+    }
   }
 };

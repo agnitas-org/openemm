@@ -15,41 +15,31 @@ import java.util.Date;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface MailingBase {
-
+	void setCompanyID( @VelocityCheck int id);
 	int getCompanyID();
 
+	void setCampaignID(int id);
 	int getCampaignID();
 
+	void setDescription(String description);
 	String getDescription();
 
+	void setId(int id);
 	int getId();
 
-	int getMailinglistID();
-	
-	Mailinglist getMailinglist();
-	
-	Date getSenddate();
-
-	String getShortname();
-
-	void setCompanyID( @VelocityCheck int id);
-
-	void setCampaignID(int id);
-
-	void setDescription(String description);
-
-	void setId(int id);
-
 	void setMailinglistID(int id);
-	
+	int getMailinglistID();
+
 	void setMailinglist(Mailinglist mailinglist);
+	Mailinglist getMailinglist();
 
 	void setSenddate(Date sendDate);
-	
+	Date getSenddate();
+
 	void setShortname(String shortname);
+	String getShortname();
 
 	void setHasActions(boolean hasActions);
-
     boolean isHasActions();
 
 	boolean getUseDynamicTemplate();
@@ -57,4 +47,7 @@ public interface MailingBase {
 
 	void setOnlyPostType(boolean isOnlyPostType);
 	boolean isOnlyPostType();
+
+	void setGridMailing(boolean isGridMailing);
+	boolean isGridMailing();
 }

@@ -25,6 +25,14 @@ public class IntegerRowMapper implements RowMapper<Integer> {
 	/** Singleton of this {@link RowMapper}. */
 	public static final IntegerRowMapper INSTANCE = new IntegerRowMapper();
 	
+	/**
+	 * Use {@link #INSTANCE} instead.
+	 */
+	@Deprecated
+	public IntegerRowMapper() {	// TODO Make private if all references have been replaced
+		// Empty
+	}
+	
 	@Override
 	public Integer mapRow(ResultSet resultSet, int row) throws SQLException {
 		return resultSet.getInt(1);

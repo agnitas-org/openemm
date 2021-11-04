@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Format des champs de date]]></title>
+	<content><![CDATA[Si vous souhaitez utiliser un champ de profil de date, le format suivant doit &#xEA;tre utilis&#xE9; : yyyyMMdd.<br/><br/>Exemple : 20210531 pour le 31 mai 2021.<br/><br/>Vous pouvez &#xE9;galement utiliser l'expression "current_timestamp" si vous souhaitez d&#xE9;finir la date du jour.]]></content>
+</HelpBalloon>

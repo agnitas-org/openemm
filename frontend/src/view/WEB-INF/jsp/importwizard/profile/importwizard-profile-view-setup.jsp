@@ -7,6 +7,9 @@
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
+<%--@elvariable id="importProfileForm" type="org.agnitas.web.forms.ImportProfileForm"--%>
+<%--@elvariable id="isUserHasPermissionForSelectedMode" type="java.lang.Boolean"--%>
+
 <emm:CheckLogon/>
 <emm:Permission token="mailinglist.show"/>
 
@@ -17,6 +20,12 @@
 <c:set var="profileId" value="${importProfileForm.profileId}"/>
 <c:set var="profileExists" value="${profileId != 0}"/>
 <c:set var="shortname" value="${importProfileForm.profile.name}"/>
+<c:set var="isJsonImportAllowed" value="false"/>
+<%@include file="json-import-allowed-property.jspf" %>
+<c:set var="isPreprocessingAllowed" value="false"/>
+<emm:ShowByPermission token="import.preprocessing">
+    <c:set var="isPreprocessingAllowed" value="true"/>
+</emm:ShowByPermission>
 
 <c:url var="importWizardLink" value="/newimportwizard.do">
     <c:param name="action" value="${ACTION_START}"/>
@@ -70,7 +79,7 @@
 </emm:instantiate>
 
 <jsp:useBean id="itemActionsSettings" class="java.util.LinkedHashMap" scope="request">
-    <emm:ShowByPermission token="wizard.import">
+    <emm:ShowByPermission token="import.delete">
     	<c:if test="${profileExists}">	
         	<jsp:useBean id="element0" class="java.util.LinkedHashMap" scope="request">
             	<c:set target="${itemActionsSettings}" property="1" value="${element0}"/>
@@ -84,15 +93,20 @@
     	</c:if>
     </emm:ShowByPermission>
 
-    <emm:ShowByPermission token="wizard.import">
+    <c:if test="${(isUserHasPermissionForSelectedMode 
+        && (importProfileForm.profile.importProcessActionID == 0 || isPreprocessingAllowed) 
+        && (importProfileForm.profile.datatype ne 'JSON' || isJsonImportAllowed)) 
+        || importProfileForm.profileId eq 0}">
+    <emm:ShowByPermission token="import.change">
         <jsp:useBean id="element1" class="java.util.LinkedHashMap" scope="request">
             <c:set target="${itemActionsSettings}" property="2" value="${element1}"/>
             <c:set target="${element1}" property="btnCls" value="btn btn-regular btn-inverse"/>
-            <c:set target="${element1}" property="extraAttributes" value="data-form-set='save: save' data-form-target='#importProfileForm' data-form-submit"/>
+            <c:set target="${element1}" property="extraAttributes" value="data-form-set='save: save' data-form-target='#importProfileForm' data-action='save'"/>
             <c:set target="${element1}" property="iconBefore" value="icon-save"/>
             <c:set target="${element1}" property="name">
                 <bean:message key="button.Save"/>
             </c:set>
         </jsp:useBean>
     </emm:ShowByPermission>
+    </c:if>
 </jsp:useBean>

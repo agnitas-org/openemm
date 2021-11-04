@@ -59,6 +59,7 @@ import com.agnitas.emm.core.report.services.RecipientReportService;
  *    (SELECT MAX(id) + 1, 'InformationReport', CURRENT_TIMESTAMP, null, 0, 'OK', 0, 0, '***0;***5', CURRENT_TIMESTAMP, null, 'com.agnitas.service.job.InformationReportJobWorker', 0 FROM job_queue_tbl);
  */
 public class InformationReportJobWorker extends JobWorker {
+	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(InformationReportJobWorker.class);
 	
 	private RecipientReportService recipientReportService;
@@ -147,7 +148,8 @@ public class InformationReportJobWorker extends JobWorker {
 							FileUtils.writeStringToFile(informationReportFile, informationReportText, "UTF-8");
 						}
 					} catch (Exception e) {
-						e.printStackTrace();
+						logger.error("Error while running job worker", e);
+
 						errorCounter++;
 					}
 					

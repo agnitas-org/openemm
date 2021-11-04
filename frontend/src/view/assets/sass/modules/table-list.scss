@@ -67,21 +67,41 @@ body.dark-theme .table-list {
   }
 }
 
+//TODO: GWUA-4769 delete after recipient migration tested successfully
 .recipientsTable-odd {
   td {
     background-color: #fff;
   }
 }
+//TODO: GWUA-4769 delete after recipient migration tested successfully
 .recipientsTable-even {
   td {
     background-color: #e4e3e3;
   }
 }
-
+//TODO: GWUA-4769 delete after recipient migration tested successfully
 body.dark-theme .recipientsTable-odd td {
   background-color: lighten($c-dt-table-background, 5%);
 }
-
+//TODO: GWUA-4769 delete after recipient migration tested successfully
 body.dark-theme .recipientsTable-even  td {
   background-color: $c-dt-table-background;
+}
+
+.recipient-history-row {
+  &-odd {
+    background-color: #fff !important;
+
+    body.dark-theme & {
+      background-color: lighten($c-dt-table-background, 5%) !important;
+    }
+  }
+
+  &-even {
+    background-color: #e4e3e3 !important;
+
+    body.dark-theme & {
+      background-color: $c-dt-table-background !important;
+    }
+  }
 }

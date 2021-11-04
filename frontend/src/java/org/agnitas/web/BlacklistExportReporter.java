@@ -122,7 +122,7 @@ public class BlacklistExportReporter {
 			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
 			String bodyText = generateLocalizedExportTextReport(exportWorker, admin) + "\n" + additionalContent;
 			
-			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+			javaMailService.sendEmail(admin.getCompanyID(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 
@@ -334,7 +334,7 @@ public class BlacklistExportReporter {
 			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
 			String bodyText = "Export-ERROR:\n" + generateLocalizedExportTextReport(exportWorker, admin) + "\n" + additionalContent;
 						
-			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+			javaMailService.sendEmail(admin.getCompanyID(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 

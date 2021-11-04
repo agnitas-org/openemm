@@ -3,7 +3,7 @@
   var LOCKING_MAX_DURATION_MILLISECONDS = 3 * 60 * 60000;  // 3 hours
 
   AGN.Opt.Components.MailingContentLock = {
-    manageLock: function (mailingId, isMailingExclusiveLockingAcquired) {
+    manageLock: function (mailingId, isMailingExclusiveLockingAcquired, anotherLockingUserName) {
       if (mailingId > 0 && isMailingExclusiveLockingAcquired) {
         var ajaxLockingBeginTimestamp = Date.now();
         var ajaxLockingUpdateIntervalId;
@@ -47,7 +47,7 @@
         AGN.Lib.Modal.createFromTemplate({
           modalClass: '',
           title: t('defaults.warning'),
-          content: t('error.mailing.exclusiveLockingFailed')
+          content: t('error.mailing.exclusiveLockingFailed', anotherLockingUserName)
         }, 'modal');
 
         return false;

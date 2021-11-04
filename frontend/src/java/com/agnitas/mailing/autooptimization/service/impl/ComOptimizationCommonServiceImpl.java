@@ -10,14 +10,16 @@
 
 package com.agnitas.mailing.autooptimization.service.impl;
 
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
+
+import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.dao.MaildropStatusDao;
+import org.agnitas.dao.MailingStatus;
+
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationCommonService;
-import org.agnitas.beans.impl.MaildropDeleteException;
-import org.agnitas.dao.MaildropStatusDao;
-
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
 
 public class ComOptimizationCommonServiceImpl implements ComOptimizationCommonService {
 	
@@ -55,7 +57,7 @@ public class ComOptimizationCommonServiceImpl implements ComOptimizationCommonSe
         for (Integer mailingID : optimization.getTestmailingIDs()) {
             droppedEntriesCount += maildropStatusDao.deleteUnsentEntries(mailingID);
             if (!(optimization.isTestRun() && testComplete)) {
-                mailingDao.updateStatus(mailingID, "canceled");
+                mailingDao.updateStatus(mailingID, MailingStatus.CANCELED);
             }
         }
 
@@ -63,7 +65,7 @@ public class ComOptimizationCommonServiceImpl implements ComOptimizationCommonSe
         if (finalMailingId > 0) {
             droppedEntriesCount += maildropStatusDao.deleteUnsentEntries(finalMailingId);
             if (!(optimization.isTestRun() && testComplete)) {
-                mailingDao.updateStatus(finalMailingId, "canceled");
+                mailingDao.updateStatus(finalMailingId, MailingStatus.CANCELED);
             }
         }
 

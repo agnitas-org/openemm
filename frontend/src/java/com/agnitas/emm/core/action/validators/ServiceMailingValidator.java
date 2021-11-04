@@ -10,7 +10,11 @@
 
 package com.agnitas.emm.core.action.validators;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.agnitas.util.AgnUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -38,39 +42,64 @@ public class ServiceMailingValidator implements ActionOperationValidator {
     @Override
     public SimpleServiceResult validate(ComAdmin admin, ActionOperationParameters target) {
         ActionOperationServiceMailParameters operation = (ActionOperationServiceMailParameters) target;
+        List<Message> errors = new ArrayList<>();
+        int companyId = admin.getCompanyID();
 
-        String toAddress = operation.getToAddress();
-        if (StringUtils.isNotBlank(toAddress)) {
-            for (String exactAddress : toAddress.split(";|,| ")) {
-                exactAddress = AgnUtils.normalizeEmail(exactAddress);
-                if (StringUtils.isNotBlank(exactAddress) && blacklistService.blacklistCheckCompanyOnly(exactAddress, admin.getCompanyID())) {
-                    return new SimpleServiceResult(false, Message.of("error.action.blacklistedTo", exactAddress));
-                }
+        validateToAddress(operation.getToAddress(), errors, companyId);
+        validateFromAddress(operation.getFromAddress(), errors, companyId);
+        validateReplyAddress(operation.getReplyAddress(), errors, companyId);
+        validateSubject(operation.getSubjectLine(), errors);
+
+        return errors.isEmpty() ? new SimpleServiceResult(true) : new SimpleServiceResult(false, errors);
+    }
+
+    private void validateFromAddress(String fromAddress, List<Message> errors, int companyId) {
+        if (StringUtils.isBlank(fromAddress)) {
+            errors.add(Message.of("error.mailing.sender_adress"));
+        } else if (!isRequestParamOrCustomerData(fromAddress)) {
+            checkEmailValid(fromAddress, errors, "error.action.blacklistedFrom", companyId);
+        }
+    }
+
+    private void validateToAddress(String toAddress, List<Message> errors, int companyId) {
+        List<String> emails = AgnUtils.splitAndTrimList(toAddress);
+        emails.removeIf(StringUtils::isBlank);
+        if (StringUtils.isBlank(toAddress) || CollectionUtils.isEmpty(emails)) {
+            errors.add(Message.of("error.mailing.recipient_adress"));
+        } else if (!isRequestParamOrCustomerData(toAddress)) {
+            for (String email : emails) {
+                checkEmailValid(email, errors, "error.action.blacklistedTo", companyId);
             }
         }
+    }
 
-        String fromAddress = operation.getFromAddress();
-        if (StringUtils.isNotBlank(fromAddress)) {
-            if (!fromAddress.toLowerCase().startsWith("$requestparameters.")
-                    && !fromAddress.toLowerCase().startsWith("$customerdata.")) {
-                fromAddress = AgnUtils.normalizeEmail(fromAddress);
-                if (StringUtils.isNotBlank(fromAddress) && blacklistService.blacklistCheckCompanyOnly(fromAddress, admin.getCompanyID())) {
-                    return new SimpleServiceResult(false, Message.of("error.action.blacklistedFrom", fromAddress));
-                }
-            }
+    private void validateReplyAddress(String replyAddress, List<Message> errors, int companyId) {
+        if (StringUtils.isBlank(replyAddress)) {
+            errors.add(Message.of("error.mailing.reply_adress"));
+        } else if (!isRequestParamOrCustomerData(replyAddress)) {
+            checkEmailValid(replyAddress, errors, "error.action.blacklistedReply", companyId);
         }
+    }
 
-        String replyAddress = operation.getReplyAddress();
-        if (StringUtils.isNotBlank(replyAddress)) {
-            if (!replyAddress.toLowerCase().startsWith("$requestparameters.")
-                    && !replyAddress.toLowerCase().startsWith("$customerdata.")) {
-                replyAddress = AgnUtils.normalizeEmail(replyAddress);
-                if (StringUtils.isNotBlank(replyAddress) && blacklistService.blacklistCheckCompanyOnly(replyAddress, admin.getCompanyID())) {
-                    return new SimpleServiceResult(false, Message.of("error.action.blacklistedReply", replyAddress));
-                }
-            }
+    private void validateSubject(String subject, List<Message> errors) {
+        if (StringUtils.isBlank(subject) || StringUtils.length(subject) < 3) {
+            errors.add(Message.of("error.subjectToShort"));
+        } else if (StringUtils.length(subject) > 200) {
+            errors.add(Message.of("error.subjectToLong"));
         }
+    }
 
-        return new SimpleServiceResult(true);
+    private void checkEmailValid(String email, List<Message> errors, String blacklistedErrorMsg, int companyId) {
+        email = AgnUtils.normalizeEmail(email);
+        if (!AgnUtils.isEmailValid(email)) {
+            errors.add(Message.of("GWUA.error.invalidEmail", email));
+        } else if (blacklistService.blacklistCheckCompanyOnly(email, companyId)) {
+            errors.add(Message.of(blacklistedErrorMsg, email));
+        }
+    }
+
+    private boolean isRequestParamOrCustomerData(String fromAddress) {
+        return fromAddress.toLowerCase().startsWith("$requestparameters.")
+                || fromAddress.toLowerCase().startsWith("$customerdata.");
     }
 }

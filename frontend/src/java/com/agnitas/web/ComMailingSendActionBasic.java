@@ -33,15 +33,13 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
@@ -69,6 +67,7 @@ import org.agnitas.util.MailoutClient;
 import org.agnitas.util.Tuple;
 import org.agnitas.web.MailingSendAction;
 import org.agnitas.web.MailingSendForm;
+import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -93,6 +92,7 @@ import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.ComDkimDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.dao.MailingStatisticsDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.EmmActionService;
@@ -113,6 +113,7 @@ import com.agnitas.emm.core.commons.TranslatableMessageException;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.bean.MailingDependentType;
+import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
 import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
@@ -130,6 +131,10 @@ import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.ClassicTemplateGenerator;
 import com.agnitas.util.NumericUtil;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import net.sf.json.JSONObject;
 
 public class ComMailingSendActionBasic extends MailingSendAction {
@@ -194,11 +199,11 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 
     public static final int ADMIN_TARGET_SINGLE_RECIPIENT = -1;
 
-    private static final String FUTURE_TASK = "GET_MAILING_STAS";
+    public static final String FUTURE_TASK = "GET_MAILING_STAS";
 
     protected ComTrackableLinkDao trackableLinkDao;
     protected OnepixelDao onepixelDao;
-    protected Map<String, Future<?>> futureHolder;
+    protected Map<String, Future<Map<Integer, Integer>>> futureHolder;
     protected ExecutorService workerExecutorService;
     protected ComWorkflowService workflowService;
     protected ComDkimDao dkimDao;
@@ -211,6 +216,8 @@ public class ComMailingSendActionBasic extends MailingSendAction {
     private GridServiceWrapper gridService;
     private WebStorage webStorage;
     private BirtReportFactory birtReportFactory;
+    private MailingStatisticsDao mailingStatisticsDao;
+    private ComMailingParameterDao mailingParameterDao;
 
     @Override
     public String subActionMethodName(int subAction) {
@@ -368,7 +375,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 					break;
 				
 				case ACTION_DEACTIVATE_INTERVALMAILING:
-					updateStatus(aForm, request, "disable");
+					updateStatus(aForm, request, MailingStatus.DISABLE);
 					loadMailing(aForm, request);
 					aForm.setAction(MailingSendAction.ACTION_VIEW_SEND);
 					destination = mapping.findForward("send");
@@ -380,6 +387,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 					
 					if (validateActivation(request, aForm, errors, messages)) {
 						if(!containsInvalidTargetGroups(companyId, aForm)) {
+                    		warnIfTargetsHaveDisjunction(AgnUtils.getAdmin(request), mailingToSend, messages);
 							try {
 								if (isPostMailing(mailingToSend)) {
 									TimeZone aZone = AgnUtils.getTimeZone(request);
@@ -392,12 +400,12 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 							} finally {
 								loadMailing(aForm, request);
 							}
-							updateStatus(aForm, request, "active");
+							updateStatus(aForm, request, MailingStatus.ACTIVE);
 						} else {
 							errors.add("global", new ActionMessage("error.mailing.containsInvaidTargetGroups"));
 						}
 					} else {
-						updateStatus(aForm, request, "disable");
+						updateStatus(aForm, request, MailingStatus.DISABLE);
 					}
 					loadDeliveryStats(aForm, request);
 					aForm.setAction(MailingSendAction.ACTION_VIEW_SEND);
@@ -405,7 +413,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 					break;
 				
 				case ACTION_ACTIVATE_INTERVALMAILING:
-					loadMailing(aForm, request);
+					final Mailing intervalMailingToActivate = loadMailing(aForm, request);
 					if (aForm.getTargetGroups() == null) {
 						errors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
 					} else if (companyId == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
@@ -413,7 +421,9 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 					} else if (containsInvalidTargetGroups(companyId, aForm)) {
 						errors.add("global", new ActionMessage("error.mailing.containsInvaidTargetGroups"));
 					} else {
-						updateStatus(aForm, request, "active");
+						updateNextIntervalMailingSendDate(intervalMailingToActivate);
+						updateStatus(aForm, request, MailingStatus.ACTIVE);
+						loadMailing(aForm, request);
 						aForm.setAction(MailingSendAction.ACTION_VIEW_SEND);
 					}
 					destination = mapping.findForward("send");
@@ -516,6 +526,13 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 						}
 						final NumberFormat formatter = NumberFormat.getNumberInstance(admin.getLocale());
 						request.setAttribute("num_recipients", formatter.format(num_recipients));
+						
+						Mailinglist aList = mailinglistDao.getMailinglist(aForm.getMailinglistID(), companyId);
+						if (aList == null) {
+							throw new TranslatableMessageException("noMailinglistAssigned");
+						}
+						String mailingList = aList.getShortname();
+						request.setAttribute("mailinglistShortname", mailingList);
 					}
 					
 					break;
@@ -524,6 +541,17 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 					int mailingId = aForm.getMailingID();
 					aForm.setFollowUpType(getFollowUpType(mailingId));
 					loadMailing(aForm, request);
+					
+                    if (admin.permissionAllowed(Permission.UPDATE_MAILINGLIST_ALLOW_DELETION)) {
+                        boolean mailingListExist = mailinglistDao.exist(aForm.getMailinglistID(), companyId);
+                        if (!mailingListExist) {
+                            request.setAttribute("mailingListExist", false);
+                            destination = previewForm.isPure() ?
+                                    mapping.findForward("preview_select_pure") :
+                                    mapping.findForward("preview_select");
+                            break;
+                        }
+                    }
 					
 					MailingPreviewHelper.updateActiveMailingPreviewFormat(previewForm, request, mailingId, companyId, mailingDao);
 					
@@ -613,7 +641,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 					if (request.getParameter("kill") != null) {
 						if (cancelMailingDelivery(aForm, request)) {
 							loadDeliveryStats(aForm, request);
-							mailingDao.updateStatus(aForm.getMailingID(), "canceled");
+							mailingDao.updateStatus(aForm.getMailingID(), MailingStatus.CANCELED);
 						}
 						destination = mapping.findForward("send");
 					} else {
@@ -717,7 +745,18 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 
 		return destination;
 	}
-	
+
+	private void warnIfTargetsHaveDisjunction(ComAdmin admin, Mailing mailing, ActionMessages messages) {
+        if (mailing.getMailingType() == MailingTypes.DATE_BASED.getCode()) {
+            if (CollectionUtils.size(mailing.getTargetGroups()) > 1) {
+                boolean conjunction = admin.isAccessLimitedByTargetGroup() || mailing.getTargetMode() == Mailing.TARGET_MODE_AND;
+                if (!conjunction) {
+                    messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.target.disjunction"));
+                }
+            }
+        }
+    }
+
 	private void loadTargetGroupsPreviewParams(HttpServletRequest request, int mailingId) {
 		List<TargetLight> targets = mailingService.listTargetGroupsOfMailing(AgnUtils.getCompanyID(request), mailingId);
 		request.setAttribute("availableTargetGroups", targets);
@@ -795,7 +834,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
         		if (StringUtils.isNotBlank(companyAdminMail)) {
         			toAddressList += ", " + companyAdminMail;
         		}
-        		javaMailService.sendEmail(null, null, null, null, null, toAddressList, null,
+        		javaMailService.sendEmail(0, null, null, null, null, null, toAddressList, null,
         			I18nString.getLocaleString("mandatoryDkimKeyMissing.subject", admin.getLocale()),
         			I18nString.getLocaleString("mandatoryDkimKeyMissing.text", admin.getLocale(), company.getShortname() + " (CID: " + companyID + ")", senderDomain),
         			I18nString.getLocaleString("mandatoryDkimKeyMissing.text", admin.getLocale(), company.getShortname() + " (CID: " + companyID + ")", senderDomain), "UTF-8");
@@ -808,7 +847,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
         		if (StringUtils.isNotBlank(companyAdminMail)) {
         			toAddressList += ", " + companyAdminMail;
         		}
-        		javaMailService.sendEmail(null, null, null, null, null, toAddressList, null,
+        		javaMailService.sendEmail(0, null, null, null, null, null, toAddressList, null,
         			I18nString.getLocaleString("mandatoryDkimKeyMissing.subject", admin.getLocale()),
         			I18nString.getLocaleString("mandatoryDkimKeyMissing.text", admin.getLocale(), company.getShortname() + " (CID: " + companyID + ")", senderDomain),
         			I18nString.getLocaleString("mandatoryDkimKeyMissing.text", admin.getLocale(), company.getShortname() + " (CID: " + companyID + ")", senderDomain), "UTF-8");
@@ -1397,7 +1436,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 		new MailoutClient().invoke("fire", Integer.toString(maildropStatusId));
 	}
 
-	private void selectTestRecipients(@VelocityCheck int companyId, int mailingListId, int maildropStatusId, List<String> addresses) {
+	private void selectTestRecipients(int companyId, int mailingListId, int maildropStatusId, List<String> addresses) throws Exception {
 		if (CollectionUtils.isNotEmpty(addresses)) {
 			List<Integer> customerIds = recipientDao.insertTestRecipients(companyId, mailingListId, UserStatus.Suspend.getStatusCode(), "Test recipient for delivery test", addresses);
 			maildropService.selectTestRecipients(companyId, maildropStatusId, customerIds);
@@ -1436,11 +1475,11 @@ public class ComMailingSendActionBasic extends MailingSendAction {
     }
 
     private void updateStatusByMaildrop(ComMailingSendForm aForm, HttpServletRequest req, MaildropEntry drop) throws Exception {
-        String status = "scheduled";
+    	MailingStatus status = MailingStatus.SCHEDULED;
         if (drop.getStatus() == MaildropStatus.TEST.getCode()) {
-            status = "test";
+            status = MailingStatus.TEST;
         } else if (drop.getStatus() == MaildropStatus.ADMIN.getCode()) {
-            status = "admin";
+            status = MailingStatus.ADMIN;
         }
         updateStatus(aForm, req, status);
     }
@@ -1618,7 +1657,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 		aMailing.setLocked(0);
 
 		mailingDao.saveMailing(aMailing, false);
-		updateStatus(aForm, req, "ready");
+		updateStatus(aForm, req, MailingStatus.READY);
 	}
 	
 	@Override
@@ -1631,54 +1670,85 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 		return -1;
 	}
 
+	private void waitForFuture(Future<?> future, ComMailingSendForm form) throws InterruptedException, ExecutionException {
+		while (!future.isDone()) {
+			// Raise the refresh time up to 1 second
+			if (form.getRefreshMillis() < 1000) {
+				form.setRefreshMillis(form.getRefreshMillis() + 50);
+			}
+
+			try {
+				future.get(form.getRefreshMillis(), TimeUnit.MILLISECONDS);
+			} catch (TimeoutException e) {
+				// Do nothing, keep waiting
+			}
+		}
+	}
+
     /**
      * Loads sending statistics.
      */
     protected boolean loadSendStats(ComMailingSendForm comForm, HttpServletRequest req) throws Exception {
         final int companyId = AgnUtils.getCompanyID(req);
 
-        Boolean recipientStatIsDone = false;
+        boolean recipientStatIsDone = false;
         String key = FUTURE_TASK + "@" + req.getSession(false).getId();
-        if (!futureHolder.containsKey(key)) {
-            futureHolder.put(key, getMailingStatFuture(mailingDao, comForm.getMailingID(), companyId));
-        }
+
+        Future<Map<Integer, Integer>> future = futureHolder.get(key);
+		if (future == null){
+			try {
+				future = getMailingStatFuture(mailingDao, mailingStatisticsDao, comForm.getMailingID(), companyId);
+				futureHolder.put(key, future);
+			} catch (Exception e) {
+				throw new RuntimeException("Failure of getting RecipientListFuture", e);
+			}
+		}
 
         //if we perform AJAX request (load next/previous page) we have to wait for preparing data
-        if (HttpUtils.isAjax(req)) {
-            while (!futureHolder.containsKey(key) || !futureHolder.get(key).isDone()) {
-                if (comForm.getRefreshMillis() < 1000) { // raise the refresh time
-                    comForm.setRefreshMillis(comForm.getRefreshMillis() + 50);
-                }
-                Thread.sleep(comForm.getRefreshMillis());
-            }
-        }
+		if (HttpUtils.isAjax(req)) {
+			try {
+				waitForFuture(future, comForm);
+			} finally {
+				comForm.setRefreshMillis(StrutsFormBase.DEFAULT_REFRESH_MILLIS);
+				futureHolder.remove(key);
+			}
+		}
 
-        if (futureHolder.containsKey(key) && futureHolder.get(key) != null && futureHolder.get(key).isDone()) {
-            recipientStatIsDone = true;
-            @SuppressWarnings("unchecked")
-			Map<Integer, Integer> map = (Map<Integer, Integer>) futureHolder.get(key).get();
-            futureHolder.remove(key);
+		if (future != null && future.isDone()) {
+			try {
+				recipientStatIsDone = true;
+				Map<Integer, Integer> map = future.get();
+				futureHolder.remove(key);
 
-            int numText = map.get(ComMailingDao.SEND_STATS_TEXT);
-            int numHtml = map.get(ComMailingDao.SEND_STATS_HTML);
-            int numOffline = map.get(ComMailingDao.SEND_STATS_OFFLINE);
-            int numTotal = numText + numHtml + numOffline;
+				int numText = map.get(MailingStatisticsDao.SEND_STATS_TEXT);
+				int numHtml = map.get(MailingStatisticsDao.SEND_STATS_HTML);
+				int numOffline = map.get(MailingStatisticsDao.SEND_STATS_OFFLINE);
+				int numTotal = numText + numHtml + numOffline;
 
-            map.remove(ComMailingDao.SEND_STATS_TEXT);
-            map.remove(ComMailingDao.SEND_STATS_HTML);
-            map.remove(ComMailingDao.SEND_STATS_OFFLINE);
-            for (Entry<Integer, Integer> entry : map.entrySet()) {
-                comForm.setSendStat(entry.getKey(), entry.getValue());
-            }
-            comForm.setSendStatText(numText);
-            comForm.setSendStatHtml(numHtml);
-            comForm.setSendStatOffline(numOffline);
-            comForm.setSendStat(0, numTotal);
-        }
+				map.remove(MailingStatisticsDao.SEND_STATS_TEXT);
+				map.remove(MailingStatisticsDao.SEND_STATS_HTML);
+				map.remove(MailingStatisticsDao.SEND_STATS_OFFLINE);
+				for (Entry<Integer, Integer> entry : map.entrySet()) {
+					comForm.setSendStat(entry.getKey(), entry.getValue());
+				}
+				comForm.setSendStatText(numText);
+				comForm.setSendStatHtml(numHtml);
+				comForm.setSendStatOffline(numOffline);
+				comForm.setSendStat(0, numTotal);
+			} finally {
+				comForm.setRefreshMillis(StrutsFormBase.DEFAULT_REFRESH_MILLIS);
+				futureHolder.remove(key);
+			}
+		} else {
+			if (comForm.getRefreshMillis() < 1000) { // raise the refresh time
+				comForm.setRefreshMillis(comForm.getRefreshMillis() + 50);
+			}
+			comForm.setError(false);
+		}
         return recipientStatIsDone;
     }
     
-	protected void updateStatus(ComMailingSendForm aForm, HttpServletRequest req, String status) throws Exception {
+	protected void updateStatus(ComMailingSendForm aForm, HttpServletRequest req, MailingStatus status) throws Exception {
         updateStatus(aForm.getMailingID(), AgnUtils.getCompanyID(req), status);
 	}
 
@@ -1772,8 +1842,8 @@ public class ComMailingSendActionBasic extends MailingSendAction {
         req.setAttribute("adminDateFormat", AgnUtils.getAdmin(req).getDateFormat().toPattern());
 	}
 
-    private Future<Map<Integer, Integer>> getMailingStatFuture(ComMailingDao mailingDaoAsParam, int mailingId, @VelocityCheck int companyId) {
-        return workerExecutorService.submit(new MailingSendRecipientStatWorker(mailingDaoAsParam, mailingId, companyId));
+    private Future<Map<Integer, Integer>> getMailingStatFuture(ComMailingDao mailingDaoAsParam, MailingStatisticsDao mailingStatisticsDaoAsParam, int mailingId, @VelocityCheck int companyId) {
+        return workerExecutorService.submit(new MailingSendRecipientStatWorker(mailingDaoAsParam, mailingStatisticsDaoAsParam, mailingId, companyId));
     }
 	
 	protected void checkActivateDeeptracking(int mailingID, int companyID) {
@@ -1886,8 +1956,25 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 	}
 
 	private void setInputControlAttributes(final HttpServletRequest request, final int companyId) {
-        request.setAttribute("isMailtrackExtended", 
+        request.setAttribute("isMailtrackExtended",
                 configService.getBooleanValue(ConfigValue.MailtrackExtended, companyId));
+	}
+	
+	private final void updateNextIntervalMailingSendDate(final Mailing mailing) {
+		if(mailing.getMailingType() == MailingType.INTERVAL.getCode()) {
+			final int mailingID = mailing.getId();
+			
+			final String intervalString = mailingParameterDao.getIntervalParameter(mailingID);
+			
+			if (intervalString != null) {
+				Date nextStart = DateUtilities.calculateNextJobStart(intervalString);
+				mailingParameterDao.updateNextStartParameter(mailingID, nextStart);
+			}
+		} else {
+			if(logger.isInfoEnabled()) {
+				logger.info(String.format("Cannot update next send date. Mailing %d is not an interval mailing", mailing.getId()));
+			}
+		}
 	}
 
     public void setAutoExportService(AutoExportService autoExportService) {
@@ -1925,7 +2012,7 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 	}
 
 	@Required
-    public void setFutureHolder(Map<String, Future<?>> futureHolder) {
+    public void setFutureHolder(Map<String, Future<Map<Integer, Integer>>> futureHolder) {
         this.futureHolder = futureHolder;
     }
 
@@ -1962,5 +2049,15 @@ public class ComMailingSendActionBasic extends MailingSendAction {
 	@Required
 	public void setBirtReportFactory(BirtReportFactory birtReportFactory) {
 		this.birtReportFactory = birtReportFactory;
+	}
+	
+	@Required
+	public void setMailingStatisticsDao(MailingStatisticsDao mailingStatisticsDao) {
+		this.mailingStatisticsDao = mailingStatisticsDao;
+	}
+	
+	@Required
+	public final void setMailingParameterDao(final ComMailingParameterDao dao) {
+		this.mailingParameterDao = Objects.requireNonNull(dao, "MailingParameterDao is null");
 	}
 }

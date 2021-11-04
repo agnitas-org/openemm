@@ -22,26 +22,29 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.components.dto.NewFileDto;
+import com.agnitas.emm.core.components.dto.UpdateMailingAttachmentDto;
+import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
 import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.ImageUtils;
 
 public interface ComMailingComponentsService {
 	interface ImportStatistics {
+
 		/**
 		 * Get an overall count of found (see {@link ImageUtils#isValidImageFileExtension(String)}) image files
 		 *
 		 * @return files count
 		 */
 		int getFound();
-
 		/**
 		 * Get a count of valid (see {@link ImageUtils#isValidImage(byte[])}) image files
 		 *
 		 * @return files count
 		 */
 		int getStored();
-	}
 
+	}
 	MailingComponent getMailingTextTemplate(int mailingId, int companyID);
 
 	Map<Integer, String> getImageSizes(@VelocityCheck int companyId, int mailingId);
@@ -49,9 +52,15 @@ public interface ComMailingComponentsService {
 	Map<String, Integer> getImageSizeMap(int companyId, int mailingId, boolean includeExternalImages);
 
 	Map<Integer, String> getImageTimestamps(@VelocityCheck int companyId, int mailingId, DateFormat format);
-	
+
 	MailingComponent getComponent(int componentId, @VelocityCheck int companyID);
-	
+
+	MailingComponent getComponent(@VelocityCheck int companyId, int mailingId, int componentId);
+
+	SimpleServiceResult uploadMailingAttachment(ComAdmin admin, int mailingId, UploadMailingAttachmentDto attachment);
+
+	SimpleServiceResult updateMailingAttachments(ComAdmin admin, int mailingId, Map<Integer, UpdateMailingAttachmentDto> attachments);
+
 	/**
 	 * Gets the mailing components by ids
 	 *
@@ -64,7 +73,13 @@ public interface ComMailingComponentsService {
 	List<MailingComponent> getComponents(@VelocityCheck int companyId, int mailingId, boolean includeContent);
 
 	List<MailingComponent> getComponentsByType(@VelocityCheck int companyID, int mailingId, List<MailingComponentType> types);
-	
+
+	List<MailingComponent> getPreviewHeaderComponents(@VelocityCheck int companyId, int mailingId);
+
+	Map<String, String> getUrlsByNamesForEmmImages(ComAdmin admin, int mailingId);
+
+	void deleteComponent(int companyId, int mailingId, int componentId);
+
 	void deleteComponent(MailingComponent component);
 
 	boolean deleteImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds);

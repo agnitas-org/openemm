@@ -10,23 +10,9 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
-import java.sql.Timestamp;
 import java.text.DateFormat;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -295,12 +281,12 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 
     @Override
     public List<DynamicTag> getDynamicTags(int mailingId, @VelocityCheck int companyId) {
-        return mailingDao.getDynamicTags(mailingId, companyId);
+        return dynamicTagDao.getDynamicTags(mailingId, companyId, false);
     }
 
     @Override
     public List<DynamicTag> getDynamicTags(int mailingId, @VelocityCheck int companyId, boolean resetIds) {
-        List<DynamicTag> tags = mailingDao.getDynamicTags(mailingId, companyId);
+        List<DynamicTag> tags = dynamicTagDao.getDynamicTags(mailingId, companyId, false);
         if (resetIds) {
             for (DynamicTag tag : tags) {
                 resetIds(tag, companyId);
@@ -328,7 +314,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 
     @Override
     public DynamicTag getDynamicTag(@VelocityCheck int companyId, int dynNameId) {
-        return mailingDao.getDynamicTag(dynNameId, companyId);
+        return dynamicTagDao.getDynamicTag(dynNameId, companyId);
     }
 
     private void resetIds(DynamicTag tag, int companyId) {
@@ -526,7 +512,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         
         return mailingDao.getMailingNames(mailingIds, companyId);
     }
-    
+
     private boolean isContentBlank(String content, Map<String, DynamicTag> contentMap, Deque<String> visitedDynBlocks) {
         if (StringUtils.isBlank(content)) {
             return true;
@@ -745,7 +731,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     public void setGridServiceWrapper(GridServiceWrapper gridServiceWrapper) {
         this.gridServiceWrapper = gridServiceWrapper;
     }
-    
+
     public static class Block {
         private String name;
         private String content;
@@ -1194,7 +1180,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
     
     @Override
-    public Timestamp getMailingLastSendDate(int mailingId) {
+    public Date getMailingLastSendDate(int mailingId) {
         return mailingDao.getLastSendDate(mailingId);
     }
 

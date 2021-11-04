@@ -11,15 +11,10 @@
 package com.agnitas.emm.restful.component;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.Map.Entry;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
@@ -49,6 +44,10 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
+
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * This restful service is available at:
@@ -100,17 +99,17 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, String requestDataFilePath, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getComponent(request, response, admin)));
 		} else if (requestMethod == RequestMethod.DELETE) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(deleteComponent(request, admin)));
-		} else if (requestDataFilePath == null || new File(requestDataFilePath).length() <= 0) {
+		} else if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
 			restfulResponse.setError(new RestfulClientException("Missing request data"), ErrorCode.REQUEST_DATA_ERROR);
 		} else if (requestMethod == RequestMethod.POST) {
-			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createNewComponent(request, new File(requestDataFilePath), admin)));
+			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createNewComponent(request, requestData, requestDataFile, admin)));
 		} else if (requestMethod == RequestMethod.PUT) {
-			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createOrUpdateComponent(request, new File(requestDataFilePath), admin)));
+			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createOrUpdateComponent(request, requestData, requestDataFile, admin)));
 		} else {
 			throw new RestfulClientException("Invalid http request method");
 		}
@@ -228,7 +227,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createNewComponent(HttpServletRequest request, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createNewComponent(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_COMPONENTS_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_COMPONENTS_CHANGE.toString() + "'");
 		}
@@ -246,7 +245,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/component", new Date());
 		userActivityLogDao.writeUserActivityLog(admin, "restful/component POST", "MID: " + mailingID);
 		
-		MailingComponent newMailingComponent = parseComponentJsonObject(requestDataFile, admin);
+		MailingComponent newMailingComponent = parseComponentJsonObject(requestData, requestDataFile, admin);
 		newMailingComponent.setMailingID(mailingID);
 		
 		MailingComponent existingMailingComponent = mailingComponentDao.getMailingComponentByName(mailingID, admin.getCompanyID(), newMailingComponent.getComponentName());
@@ -268,7 +267,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createOrUpdateComponent(HttpServletRequest request, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createOrUpdateComponent(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_COMPONENTS_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_COMPONENTS_CHANGE.toString() + "'");
 		}
@@ -288,7 +287,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/component", new Date());
 			userActivityLogDao.writeUserActivityLog(admin, "restful/component PUT", "MID: " + mailingID);
 			
-			MailingComponent newMailingComponent = parseComponentJsonObject(requestDataFile, admin);
+			MailingComponent newMailingComponent = parseComponentJsonObject(requestData,  requestDataFile, admin);
 			newMailingComponent.setMailingID(mailingID);
 			
 			MailingComponent existingMailingComponent = mailingComponentDao.getMailingComponentByName(mailingID, admin.getCompanyID(), newMailingComponent.getComponentName());
@@ -305,7 +304,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/component", new Date());
 			userActivityLogDao.writeUserActivityLog(admin, "restful/component PUT", "MID: " + mailingID + " " + requestedComponentKeyValue);
 			
-			MailingComponent newMailingComponent = parseComponentJsonObject(requestDataFile, admin);
+			MailingComponent newMailingComponent = parseComponentJsonObject(requestData, requestDataFile, admin);
 			newMailingComponent.setMailingID(mailingID);
 			
 			MailingComponent existingMailingComponent;
@@ -343,7 +342,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 		componentJsonObject.add("component_id", component.getId());
 		componentJsonObject.add("name", component.getComponentName());
 		componentJsonObject.add("description", component.getDescription());
-		componentJsonObject.add("type", component.getType().name());
+		componentJsonObject.add("type", component.getType().getCode());
 		if (component.getTargetID() > 0) {
 			componentJsonObject.add("target_id", component.getTargetID());
 		}
@@ -365,11 +364,11 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 		return componentJsonObject;
 	}
 
-	private MailingComponent parseComponentJsonObject(File requestDataFile, ComAdmin admin) throws Exception {
+	private MailingComponent parseComponentJsonObject(byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
 		MailingComponent mailingComponent = new MailingComponentImpl();
 		mailingComponent.setCompanyID(admin.getCompanyID());
 		
-		try (InputStream inputStream = new FileInputStream(requestDataFile)) {
+		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 				JsonNode jsonNode = jsonReader.read();
 				if (JsonDataType.OBJECT == jsonNode.getJsonDataType()) {
@@ -393,6 +392,12 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 							if (entry.getValue() != null && entry.getValue() instanceof String) {
 								try {
 									mailingComponent.setType(MailingComponentType.getMailingComponentTypeByName((String) entry.getValue()));
+								} catch (Exception e) {
+									throw new RestfulClientException("Invalid value for 'type'");
+								}
+							} else if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+								try {
+									mailingComponent.setType(MailingComponentType.getMailingComponentTypeByCode((Integer) entry.getValue()));
 								} catch (Exception e) {
 									throw new RestfulClientException("Invalid value for 'type'");
 								}

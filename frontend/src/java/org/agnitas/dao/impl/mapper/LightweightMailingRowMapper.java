@@ -22,6 +22,8 @@ import com.agnitas.beans.MailingContentType;
  * {@link RowMapper} for {@link LightweightMailing}.
  */
 public class LightweightMailingRowMapper implements RowMapper<LightweightMailing> {
+	
+	// TODO Performance improvement: Introduce static constant INSTANCE and reduce visibility of constructor to private.
 
 	@Override
 	public LightweightMailing mapRow(ResultSet resultSet, int index) throws SQLException {

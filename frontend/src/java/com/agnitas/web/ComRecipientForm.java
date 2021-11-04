@@ -18,10 +18,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.RecipientForm;
 import org.apache.struts.action.ActionMapping;
@@ -29,17 +28,14 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComRecipientReaction;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 
 public class ComRecipientForm extends RecipientForm {
     private static final long serialVersionUID = -175166723099243720L;
 
     private Set<Integer> bulkIDs = new HashSet<>();
 
-    private PaginatedListImpl<ComRecipientReaction> recipientReactions;
     private Map<String, String> bulkChange = new HashMap<>();
     private boolean trackingVeto;
 
@@ -49,14 +45,6 @@ public class ComRecipientForm extends RecipientForm {
 
 	public final void setTrackingVeto(final boolean trackingVeto) {
 		this.trackingVeto = trackingVeto;
-	}
-
-	public static final Map<Integer, String> MAILING_TYPE_NAMES;
-	static {
-	    MAILING_TYPE_NAMES = new HashMap<>();
-        for (MailingTypes mt : MailingTypes.values()) {
-            MAILING_TYPE_NAMES.put(mt.getCode(), mt.getTranslationKey());
-        }
 	}
 
 	/**
@@ -140,14 +128,6 @@ public class ComRecipientForm extends RecipientForm {
 
     public void clearBulkIds() {
         this.bulkIDs.clear();
-    }
-
-    public PaginatedListImpl<ComRecipientReaction> getRecipientReactions() {
-        return recipientReactions;
-    }
-
-    public void setRecipientReactions(PaginatedListImpl<ComRecipientReaction> recipientReactions) {
-        this.recipientReactions = recipientReactions;
     }
 
 	/**

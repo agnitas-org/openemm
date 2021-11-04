@@ -22,7 +22,8 @@ public interface FeatureCleanupDao {
 		WebPush,
 		Sms,
 		AHV,
-		OMG;
+		OMG,
+		DeliveryInformation;
 		
 		public static CleanupFeature getFeatureByName(String featureName) throws Exception {
 			for (CleanupFeature item : CleanupFeature.values()) {
@@ -30,7 +31,7 @@ public interface FeatureCleanupDao {
 					return item;
 				}
 			}
-			throw new Exception("Invalid feature name: " + featureName); 
+			throw new Exception("Invalid feature name: " + featureName);
 		}
 	}
 	

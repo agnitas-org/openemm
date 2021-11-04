@@ -43,11 +43,6 @@
             </div>
         </div>
 
-    <jsp:include page="transfer-dialog.jsp">
-        <jsp:param name="containerId" value="actionbased_mailing-editor"/>
-        <jsp:param name="baseMailingEditor" value="action-mailing-editor-base"/>
-    </jsp:include>
-
 <script id="config:action-mailing-editor-initializer" type="application/json">
     {
         "form":"actionbasedMailingForm",

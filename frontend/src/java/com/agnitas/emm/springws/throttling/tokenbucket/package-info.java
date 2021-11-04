@@ -10,7 +10,7 @@
 
 /**
  * <p>
- * Implementation of {@link ThrottlingService} using <a href="https://github.com/vladimir-bukhtoyarov/bucket4j">Bucket4j</a>.
+ * Implementation of {@link QuotaService} using <a href="https://github.com/vladimir-bukhtoyarov/bucket4j">Bucket4j</a>.
  * </p>
  * 
  * <p>

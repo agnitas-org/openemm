@@ -36,13 +36,13 @@ public class MailNotificationService {
 		this.javaMailService = javaMailService;
 	}
 	
-	public boolean sendNotificationMailWithDuplicateRetention(String toAddresses, String mailSubject, String htmlMailBody) throws Exception {
-		return sendNotificationMailWithDuplicateRetention(toAddresses, mailSubject, null, htmlMailBody);
+	public boolean sendNotificationMailWithDuplicateRetention(int companyID, String toAddresses, String mailSubject, String htmlMailBody) throws Exception {
+		return sendNotificationMailWithDuplicateRetention(companyID, toAddresses, mailSubject, null, htmlMailBody);
 	}
 
-	public boolean sendNotificationMailWithDuplicateRetention(String toAddresses, String mailSubject, String textMailBody, String htmlMailBody) throws Exception {
+	public boolean sendNotificationMailWithDuplicateRetention(int companyID, String toAddresses, String mailSubject, String textMailBody, String htmlMailBody) throws Exception {
 		if (mailNotificationBufferDao.registerForSending(RETENTION_TIME_MINUTES, toAddresses, mailSubject, textMailBody, htmlMailBody)) {
-			if (javaMailService.sendEmail(toAddresses, mailSubject, textMailBody, htmlMailBody)) {
+			if (javaMailService.sendEmail(companyID, toAddresses, mailSubject, textMailBody, htmlMailBody)) {
 				return true;
 			} else {
 				logger.error("Cannot send notification mail: " + mailSubject);

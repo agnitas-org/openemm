@@ -501,13 +501,15 @@ public class StringOps {
 			    s.equalsIgnoreCase("yes") ||
 			    s.equalsIgnoreCase("on") ||
 			    s.equalsIgnoreCase("enabled") ||
-			    s.equals("+")) {
+			    s.equals("+") ||
+			    s.equals("1")) {
 				return true;
 			} else if (s.equalsIgnoreCase("false") ||
 				   s.equalsIgnoreCase("no") ||
 				   s.equalsIgnoreCase("off") ||
 				   s.equalsIgnoreCase("disabled") ||
-				   s.equals("-")) {
+				   s.equals("-") ||
+				   s.equals("0")) {
 				return false;
 			}
 		}
@@ -515,6 +517,9 @@ public class StringOps {
 	}
 	public static boolean atob (String s) {
 		return atob (s, false);
+	}
+	public static String btoa (boolean b) {
+		return b ? "true" : "false";
 	}
 
 	/**

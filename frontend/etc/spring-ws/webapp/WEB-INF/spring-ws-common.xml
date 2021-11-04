@@ -15,19 +15,11 @@
 
 	<context:annotation-config/>
 
-    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-        <property name="locations">
-            <list>
-                <value>classpath:emm.properties</value>
-            </list>
-        </property>
-    </bean>
-
 	<bean id="LegacyThrottlingService" class="com.agnitas.emm.springws.throttling.impl.SimpleSlidingAverageThrottlingServiceImpl" >
         <property name="webserviceUserService" ref="WebserviceUserService"/>
     </bean>
  
- 	<bean id="Bucket4jThrottlingService" class="com.agnitas.emm.springws.throttling.tokenbucket.service.Bucket4jThrottlingService">
+ 	<bean id="SoapQuotaService" class="com.agnitas.emm.util.quota.tokenbucket.Bucket4jQuotaService">
  		<property name="bucketManager">
  			<bean class="com.agnitas.emm.springws.throttling.tokenbucket.service.LocalBucketManager">
  				<property name="configService" ref="ConfigService" />
@@ -35,7 +27,7 @@
  			</bean>
  		</property>
  		
- 		<property name="webserviceInvocationCosts">
+ 		<property name="apiInvocationCosts">
  		    <bean class="com.agnitas.emm.springws.throttling.tokenbucket.service.WebserviceInvocationCostsCache">
  		    	<constructor-arg><bean class="com.agnitas.emm.springws.throttling.tokenbucket.dao.DatabaseBasedWebserviceInvocationCosts" parent="_BaseDao" /></constructor-arg>
  		    	<constructor-arg ref="ConfigService" />
@@ -45,7 +37,7 @@
  	
     <bean id="throttlingService" class="com.agnitas.emm.springws.throttling.migration.ThrottlingServiceImplementationSwitch">
     	<property name="legacyThrottlingService" ref="LegacyThrottlingService" />
-    	<property name="newThrottlingService" ref="Bucket4jThrottlingService" />
+    	<property name="newThrottlingService" ref="SoapQuotaService" />
     	<property name="configService" ref="ConfigService" />
     </bean>
 
@@ -53,7 +45,9 @@
         <property name="throttlingService" ref="throttlingService"/>
     </bean>
 
-	<!-- EMM-4686: When enabled IP lock, remove this interceptor and enable new LoginTrackingXwsSecurityInterceptor.
+
+	<!--  Security interceptor without login tracking. -->
+	<!-- 
 	<bean id="wsSecurityInterceptor"
         class="org.springframework.ws.soap.security.xwss.XwsSecurityInterceptor">
         <property name="policyConfiguration" value="classpath:server-securityPolicy.xml"/>
@@ -63,11 +57,17 @@
     </bean>
     -->
 
-    <!-- EMM-4686: Replacement for old XwsSecurityInterceptor from above. Remove old interceptor and enable this one here. -->
+    <!-- 
+    	Security interceptor with login tracking. 
+    	
+    	If server load is too high and no login tracking is required, one can use 
+    	the security interceptor above.
+    -->
 	<bean id="wsSecurityInterceptor" class="org.agnitas.emm.springws.security.LoginTrackingXwsSecurityInterceptor">
         <property name="policyConfiguration" value="classpath:server-securityPolicy.xml"/>
         <property name="callbackHandlers" ref="springSecurityHandler"/>
         <property name="loginTrackService" ref="WsLoginTrackService" />
+        <property name="configService" ref="ConfigService" />
     </bean>
 
 

@@ -21,40 +21,47 @@ import java.util.concurrent.TimeUnit;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingDao;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComRdirMailingData;
-import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
 import com.agnitas.emm.core.mailing.bean.ComFollowUpStats;
+import com.agnitas.emm.core.mailing.service.ListMailingFilter;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface ComMailingDao extends MailingDao {
-	int SEND_STATS_TEXT = 100;
-	int SEND_STATS_HTML = 101;
-	int SEND_STATS_OFFLINE = 102;
-
     List<Map<String, Object>> getMailingsForMLIDs(Set<Integer> mailinglistIds, @VelocityCheck int companyId);
 
 	Mailing getMailingWithDeletedDynTags(int mailingID, @VelocityCheck int companyID);
 	
-	boolean updateStatus(int mailingID, String status);
+	boolean updateStatus(int mailingID, MailingStatus mailingStatus);
 	
 	// returns all Mailings in a linked List.
 	List<Integer> getAllMailings(@VelocityCheck int companyID);
 	// returns the given amount of mailings
 	List<Mailing> getMailings(@VelocityCheck int companyID, int adminId, int count, String mailingStatus, boolean takeMailsForPeriod);
 
+	/**
+	 * Loads list of non-deleted mailings/templates of certain company.
+	 * Depending on the conditions in the given filter, other tables can be taken into account.
+	 * 
+	 * @param companyId	            Id of the company
+	 * @param template	        true - load templates, false - load mailings
+	 * @param filter			filter for mailings
+	 * 
+	 * @return List of Mailing objects
+	 */
+	List<Mailing> listMailings(final int companyId, final boolean template, final ListMailingFilter filter);
+
 	List<Map<String, Object>> getMailings(@VelocityCheck int companyId, String commaSeparatedMailingIds);
 	
 	boolean hasEmail(@VelocityCheck int companyId, int mailingId);
 
 	boolean hasMediaType(@VelocityCheck int companyId, int mailingId, MediaTypes type);
-
-    Map<Integer, Integer> getSendStats(Mailing mailing, @VelocityCheck int companyId) throws Exception;
 
 	boolean saveStatusmailRecipients(int mailingID, String statusmailRecipients);
 
@@ -65,7 +72,8 @@ public interface ComMailingDao extends MailingDao {
      *
      * @param mailingID - target mailing id
      * @param companyID
-     * @param includeUnscheduled - whether the unscheduled followup mailings will be included.
+     * @param includeUnscheduled - w@Override
+	hether the unscheduled followup mailings will be included.
      * @return - list of followup mailings id. Is not recursive.
      */
     List<Integer> getFollowupMailings(int mailingID, @VelocityCheck int companyID, boolean includeUnscheduled);
@@ -77,7 +85,9 @@ public interface ComMailingDao extends MailingDao {
 	 */
 	Timestamp getLastSendDate(int mailingID) ;
 
-	/**
+    Date getStartDate(int companyId, int mailingId);
+
+    /**
 	 * Get a list of mailing data (mailing_id, shortname, description and mailinglist's shortname).
 	 *
 	 * Use {@code searchName} and {@code searchDescription} to apply filter (fulltext search) to column(s) shortname and/or description. To enable the fulltext search engine
@@ -107,10 +117,6 @@ public interface ComMailingDao extends MailingDao {
 	int getFollowUpStat(ComFollowUpStats comFollowUpStats, boolean useTargetGroups) throws Exception;
 
     boolean isMailingMarkedDeleted(int mailingID, @VelocityCheck int companyID);
-	
-	int getFollowUpStat(int mailingID, int followUpFor, String followUpType, @VelocityCheck int companyID, boolean useTargetGroups) throws Exception;
-
-	int getFollowUpStat(int followUpFor, String followUpType, @VelocityCheck int companyID, String sqlTargetExpression) throws Exception;
 
 	/**
 	 * returns the type of a Followup Mailing as String.
@@ -185,14 +191,6 @@ public interface ComMailingDao extends MailingDao {
 	List<MailingBase> getSentWorldMailingsForReports(@VelocityCheck int companyID, int number, int targetId);
 
 	List<MailingBase> getPredefinedNormalMailingsForReports(@VelocityCheck int companyId, Date from, Date to, int filterType, int filterValue, String orderKey, int targetId);
-
-	//List<LightweightMailing> getTemplateOverview(@VelocityCheck int companyID);
-	
-	boolean deleteContentFromMailing(Mailing mailing, int contentID);
-
-	boolean deleteContentFromMailing(@VelocityCheck int companyId, int mailingId, int contentId);
-
-    void deleteAllDynTags(int mailingId);
 
 	List<Map<String, Object>> getSentAndScheduled(@VelocityCheck int companyId, int adminId, Date startDate, Date endDate);
 
@@ -377,17 +375,6 @@ public interface ComMailingDao extends MailingDao {
 
 	boolean isActiveIntervalMailing(final int mailingID);
 
-	/**
-	 * Retrieve a dynamic contents of a mailing referenced by {@code mailingId}.
-	 *
-	 * @param mailingId an identifier of a mailing whose dynamic content is to be retrieved.
-	 * @param companyId an identifier of a company of the current user.
-	 * @return a list of an entities representing dynamic contents.
-	 */
-	List<DynamicTag> getDynamicTags(int mailingId, @VelocityCheck int companyId);
-
-	DynamicTag getDynamicTag(int dynNameId, @VelocityCheck int companyId);
-
 	boolean deleteAccountSumEntriesByCompany(@VelocityCheck int companyID);
 	
 	boolean isAdvertisingContentType(@VelocityCheck int companyId, int mailingId);
@@ -408,10 +395,13 @@ public interface ComMailingDao extends MailingDao {
 	String getEmailSubject(int companyID, int mailingID) throws Exception;
 
 	MailingContentType getMailingContentType(int companyId, int mailingId);
-
-	void createDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception;
-
-	void updateDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception;
 	
 	boolean deleteRdirUrls(final int companyID);
+
+    int getMailingLockingAdminId(int mailingId, int companyId);
+
+	List<LightweightMailing> getUnsetMailingsForRootTemplate(@VelocityCheck int companyId, int templateId);
+
+	boolean isActiveIntervalMailing(int companyID, int mailingID);
+
 }

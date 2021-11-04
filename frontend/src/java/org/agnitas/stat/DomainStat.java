@@ -13,7 +13,7 @@ package org.agnitas.stat;
 import java.io.Serializable;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;

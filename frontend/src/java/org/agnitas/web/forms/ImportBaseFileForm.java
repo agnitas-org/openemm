@@ -12,7 +12,7 @@ package org.agnitas.web.forms;
 
 import java.io.File;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.ImportBaseFileAction;

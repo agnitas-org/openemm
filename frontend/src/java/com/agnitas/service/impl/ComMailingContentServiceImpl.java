@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.DynamicTagContent;
-import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.factory.DynamicTagContentFactory;
 import org.agnitas.beans.factory.DynamicTagFactory;
@@ -42,7 +41,9 @@ import org.jsoup.nodes.TextNode;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.service.ComMailingContentService;
@@ -59,6 +60,7 @@ public class ComMailingContentServiceImpl implements ComMailingContentService {
     private ComMailingBaseService mailingBaseService;
     private AgnTagService agnTagService;
     private ComMailingDao mailingDao;
+    private DynamicTagDao dynamicTagDao;
 
     @Override
     public void generateTextContent(Mailing mailing) {
@@ -260,7 +262,7 @@ public class ComMailingContentServiceImpl implements ComMailingContentService {
     }
 
     private void clearDynTag(Mailing mailing, DynamicTag tag) {
-        mailingDao.cleanupContentForDynName(mailing.getId(), mailing.getCompanyID(), tag.getDynName());
+    	dynamicTagDao.cleanupContentForDynName(mailing.getId(), mailing.getCompanyID(), tag.getDynName());
         tag.getDynContent().clear();
     }
 
@@ -393,5 +395,10 @@ public class ComMailingContentServiceImpl implements ComMailingContentService {
     @Required
     public void setMailingDao(ComMailingDao mailingDao) {
         this.mailingDao = mailingDao;
+    }
+
+    @Required
+    public void setDynamicTagDao(DynamicTagDao dynamicTagDao) {
+        this.dynamicTagDao = dynamicTagDao;
     }
  }

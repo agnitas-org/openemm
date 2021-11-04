@@ -141,6 +141,7 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 		}
 	}
 
+	@Transactional
 	@Override
 	public void updateWebserviceUser(WebserviceUserDto user) throws WebserviceUserException, WebserviceUserServiceException {
 		String userName = user.getUserName();
@@ -167,6 +168,7 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 		}
 	}
 
+	@Transactional
 	@Override
 	public void saveWebServiceUser(ComAdmin admin, WebserviceUserDto user, boolean isNew) throws WebserviceUserException, WebserviceUserServiceException {
 		

@@ -13,8 +13,8 @@ package com.agnitas.taglib;
 import static com.agnitas.util.JspUtilities.absUrlPrefix;
 import static java.util.regex.Pattern.compile;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.JspException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.jsp.JspException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.taglibs.standard.tag.common.core.SetSupport;

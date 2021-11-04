@@ -12,8 +12,8 @@ package com.agnitas.reporting.birt.external.beans;
 
 public class ClickingRecipientsRow {
 	private String category ;
-	private int clicking_recpients;
-	private float clicking_recipients_percent; 
+	private int clicking_recipients;
+	private float clicking_recipients_percent;
 	
 	public String getCategory() {
 		return category;
@@ -21,11 +21,11 @@ public class ClickingRecipientsRow {
 	public void setCategory(String category) {
 		this.category = category;
 	}
-	public int getClicking_recpients() {
-		return clicking_recpients;
+	public int getClicking_recipients() {
+		return clicking_recipients;
 	}
-	public void setClicking_recpients(int clicking_recpients) {
-		this.clicking_recpients = clicking_recpients;
+	public void setClicking_recipients(int clicking_recipients) {
+		this.clicking_recipients = clicking_recipients;
 	}
 	public float getClicking_recipients_percent() {
 		return clicking_recipients_percent;

@@ -1,7 +1,6 @@
 AGN.Lib.Controller.new('recipient-list', function () {
-  var self = this;
 
-  function checkAndRedirect(link, recipientId, checkLimitAccessUrl, viewUrl) {
+  function checkAndRedirect(link, recipientId, checkLimitAccessUrl, viewUrl, ctrlPressed) {
     checkLimitAccessUrl = checkLimitAccessUrl.replace("{RECIPIENT_ID}", recipientId);
     $.ajax({
         url: checkLimitAccessUrl,
@@ -12,7 +11,12 @@ AGN.Lib.Controller.new('recipient-list', function () {
 
         if (accessible) {
           AGN.Lib.JsonMessages({}, true);
-          window.location.href = viewUrl.replace("{RECIPIENT_ID}", recipientId);
+          var url = viewUrl.replace("{RECIPIENT_ID}", recipientId);
+          if (ctrlPressed) {
+            window.open(url, "_blank");
+          } else {
+            window.location.href = url;
+          }
         } else {
           AGN.Lib.Messages(t("Error"), t("error.recipient.restricted"), "alert");
         }
@@ -23,6 +27,12 @@ AGN.Lib.Controller.new('recipient-list', function () {
         console.error("Could not check access for recipient with id: " + recipientId);
     });
   }
+
+  //necessary to support keydown event submit
+  this.addAction({submission: 'search-recipient'}, function() {
+    var $form = $(this.el);
+    $form.submit();
+  });
 
   this.addDomInitializer('recipient-list', function ($scope) {
     var config = this.config;
@@ -40,9 +50,10 @@ AGN.Lib.Controller.new('recipient-list', function () {
     $scope.on("click", '.js-table .table-link a', function(e) {
       e.preventDefault();
       e.preventViewLoad = true;
+      var ctrlPressed = e.ctrlKey;
       var link = $(this);
       var recipientId = link.closest('tr').find('[data-recipient-id]').data('recipient-id');
-      checkAndRedirect(link, recipientId, config.CHECK_LIMITACCESS_URL, config.VIEW_URL);
+      checkAndRedirect(link, recipientId, config.CHECK_LIMITACCESS_URL, config.VIEW_URL, ctrlPressed);
     });
 
 

@@ -6,6 +6,10 @@
 	version="3.0">
 
 	<display-name>OpenEMM</display-name>
+	
+	<session-config>
+		<session-timeout>30</session-timeout>
+	</session-config>
 
 	<!-- Spring context -->
 	<context-param>
@@ -239,13 +243,6 @@
 		<url-pattern>*.action</url-pattern>
 	</servlet-mapping>
 
-	<!-- Quartz job init servlet -->
-	<servlet>
-		<servlet-name>QuartzInitializer</servlet-name>
-		<servlet-class>org.quartz.ee.servlet.QuartzInitializerServlet</servlet-class>
-		<load-on-startup>1</load-on-startup>
-	</servlet>
-
 	<!-- servlets to show components and images -->
 	<servlet>
 		<servlet-name>ShowComponent</servlet-name>
@@ -392,16 +389,6 @@
 		<url-pattern>/uq/*</url-pattern>
 	</servlet-mapping>
 	
-	<!-- heatmap statistic servlet -->
-	<servlet>
-		<servlet-name>EmbeddedClickStatView</servlet-name>
-		<servlet-class>org.agnitas.ecs.backend.web.EmbeddedClickStatView</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>EmbeddedClickStatView</servlet-name>
-		<url-pattern>/ecs_view</url-pattern>
-	</servlet-mapping>
-
 	<!-- text download servlet -->
 	<servlet>
 		<servlet-name>TextFileDownload</servlet-name>
@@ -482,7 +469,7 @@
 
 	<!-- Error Pages -->
 	<error-page>
-		<exception-type>javax.servlet.ServletException</exception-type>
+		<exception-type>jakarta.servlet.ServletException</exception-type>
 		<location>/error.do</location>
 	</error-page>
 	<error-page>

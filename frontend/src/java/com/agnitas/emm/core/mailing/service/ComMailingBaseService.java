@@ -10,9 +10,9 @@
 
 package com.agnitas.emm.core.mailing.service;
 
-import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -245,7 +245,7 @@ public interface ComMailingBaseService {
     
     int getMailingType(int mailingId);
 
-    Timestamp getMailingLastSendDate(int mailingId);
+    Date getMailingLastSendDate(int mailingId);
 
     /**
      * Check if required content (depends on selected media types) is not blank.

@@ -15,11 +15,11 @@ import java.sql.SQLException;
 
 import org.springframework.jdbc.core.RowMapper;
 
-public class RecipientsStatisticRowMapper implements RowMapper<RecipientsStatisticRow> {
+public class RecipientsStatisticRowMapper implements RowMapper<RecipientsStatisticCommonRow> {
 
 	@Override
-	public RecipientsStatisticRow mapRow(ResultSet resultSet, int rowNum) throws SQLException {
-		RecipientsStatisticRow row = new RecipientsStatisticRow();
+	public RecipientsStatisticCommonRow mapRow(ResultSet resultSet, int rowNum) throws SQLException {
+		RecipientsStatisticCommonRow row = new RecipientsStatisticCommonRow();
 		row.setMailingListId(resultSet.getInt("mailinglist_id"));
 		row.setMailingListName(resultSet.getString("mailinglist_name"));
 		row.setMailingListGroupId(resultSet.getInt("mailinglist_group_id"));

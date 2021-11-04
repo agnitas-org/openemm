@@ -29,6 +29,7 @@ import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -37,7 +38,6 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTitleDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
@@ -53,7 +53,7 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
     private ExtensibleUIDService extensibleUidService;
 
     private ComCompanyDao companyDao;
-    private ComRecipientDao recipientDao;
+    private RecipientService recipientService;
     private ComMailingDao mailingDao;
     private ComTitleDao titleDao;
     private TagDao tagDao;
@@ -85,8 +85,8 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
     }
 
     @Required
-    public final void setRecipientDao(final ComRecipientDao dao) {
-        this.recipientDao = Objects.requireNonNull(dao, "Recipient DAO cannot be null");
+    public final void setRecipientService(final RecipientService service) {
+        this.recipientService = Objects.requireNonNull(service, "Recipient DAO cannot be null");
     }
 
     @Required
@@ -275,7 +275,7 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
                 value = value.replace("[agnUID]", getUid());
             }
 
-            value = recipientDao.getField(value, customerId, companyId);
+            value = recipientService.getRecipientField(value, customerId, companyId);
             if (value == null) {
                 logger.error("Error processing tag " + name + " (" + tag.getFullText() + "). (mailing #" + mailingId + ", customer #" + customerId + ")");
             }
@@ -330,6 +330,8 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
             if (customerData == null) {
                 Recipient recipient = recipientFactory.newRecipient(companyId);
                 recipient.setCustomerID(customerId);
+                recipient.setCustParameters(recipientService.getCustomerDataFromDb(companyId, customerId, recipient.getDateFormat()));
+
                 customerData = recipient.getCustomerDataFromDb();
             }
             return customerData.get(key);

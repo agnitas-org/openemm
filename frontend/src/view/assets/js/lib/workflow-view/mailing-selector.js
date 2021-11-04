@@ -1,5 +1,5 @@
 (function() {
-    var EditorsHelper = AGN.Lib.WM.EditorsHelperNew;
+    var EditorsHelper = AGN.Lib.WM.EditorsHelper;
 
     AGN.Lib.WM.MailingSelector = function(form, container, selectName, noMailingOption) {
         this.formNameJId = 'form[name="' + form + '"]';

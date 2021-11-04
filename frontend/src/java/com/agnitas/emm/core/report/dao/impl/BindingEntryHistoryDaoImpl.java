@@ -26,7 +26,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.dao.impl.ComBindingEntryDaoImpl;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntryHistory;
 import com.agnitas.emm.core.report.bean.PlainBindingEntryHistory;
 import com.agnitas.emm.core.report.bean.impl.CompositeBindingEntryHistoryImpl;
@@ -35,7 +34,7 @@ import com.agnitas.emm.core.report.dao.BindingEntryHistoryDao;
 
 public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements BindingEntryHistoryDao {
 
-    private static final Logger logger = Logger.getLogger(ComBindingEntryDaoImpl.class);
+    private static final Logger logger = Logger.getLogger(BindingEntryHistoryDaoImpl.class);
 
     private String getRecipientBindingHistoryTableName(int companyId) {
         return String.format("hst_customer_%d_binding_tbl", companyId);

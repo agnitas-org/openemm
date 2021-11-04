@@ -88,11 +88,15 @@ for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mysql-update-*.sql"
 	
 	versionAlreadyInDb=`echo "SELECT version_number FROM agn_dbversioninfo_tbl WHERE version_number = '${updatefileVersion}';" | MYSQL_PWD=${password} mysql -h ${hostname} -P ${port} --protocol=TCP -u ${username} --database=${dbname} --default-character-set=utf8`
 
-    if [[ ${versionAlreadyInDb} == *${updatefileVersion}* ]]; then {
-            echo "DB already contains version ${updatefileVersion}"
-    } else {
-           sqlScriptsToDo+=" ${sqlfilename}"
-    } fi
+	if [[ ${versionAlreadyInDb} == *${updatefileVersion}* ]]; then {
+		if [ "${updatefileVersion}" == "" ]; then {
+			echo "Skipping file ${sqlfilename}"
+		} else {
+			echo "DB already contains version ${updatefileVersion}"
+		} fi
+	} else {
+		sqlScriptsToDo+=" ${sqlfilename}"
+	} fi
 done
 
 sqlScriptsToDo+=" ${scriptDir}/../userrights.sql ${scriptDir}/emm-mysql-messages.sql"
@@ -104,8 +108,8 @@ if [ -e "${scriptDir}/emm-mysql-test-post-update.sql" ]; then {
 	sqlScriptsToDo+=" ${scriptDir}/emm-mysql-test-post-update.sql"
 } fi
 
-if [ -e "${scriptDir}/emm-mysql-update-test-aso.sql" ]; then {
-	sqlScriptsToDo+=" ${scriptDir}/emm-mysql-update-test-aso.sql"
+if [ -e "${scriptDir}/emm-mysql-test-aso.sql" ]; then {
+	sqlScriptsToDo+=" ${scriptDir}/emm-mysql-test-aso.sql"
 } fi
 
 for sqlfilename in ${sqlScriptsToDo}; do

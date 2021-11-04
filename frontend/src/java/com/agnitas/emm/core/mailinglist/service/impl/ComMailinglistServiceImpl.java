@@ -10,7 +10,10 @@
 
 package com.agnitas.emm.core.mailinglist.service.impl;
 
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGLISTS_KEY;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +23,7 @@ import java.util.stream.Collectors;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.MailinglistApprovalDao;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -27,6 +31,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComTarget;
@@ -37,6 +42,7 @@ import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
+import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
@@ -203,6 +209,20 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
         return connectedReports;
     }
 
+    private void deleteMailinglistFromReports(int mailinglistIdToDelete, @VelocityCheck int companyId) {
+        List<Map<String, Object>> reportParams = birtReportDao.getReportParamValues(companyId, MAILINGLISTS_KEY);
+        for (Map<String, Object> paramRow : reportParams) {
+            List<Integer> mailinglistIds = BirtReportSettingsUtils.convertStringToIntList((String) paramRow.get("parameter_value"));
+
+            if (mailinglistIds.contains(mailinglistIdToDelete)) {
+                mailinglistIds.removeIf(m -> m == mailinglistIdToDelete);
+                int reportId = ((Number) paramRow.get("report_id")).intValue();
+                int reportType = ((Number) paramRow.get("report_type")).intValue();
+                birtReportDao.updateReportMailinglists(reportId, reportType, mailinglistIds);
+            }
+        }
+    }
+
     @Override
 	public PaginatedListImpl<MailinglistDto> getMailinglistPaginatedList(ComAdmin admin, String sort, String sortDirection, int page, int rownumber) {
 		PaginatedListImpl<MailinglistEntry> mailinglists = mailinglistDao.getMailinglists(admin.getCompanyID(), admin.getAdminID(), sort, sortDirection, page, rownumber);
@@ -243,6 +263,10 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
                 || !mailinglistDao.mailinglistExists(newShortname, companyId);
     }
     
+    /**
+     * after GWUA-4783 has been successfully tested
+     * replace method code with code from {@link #deleteMailinglistWithReportsCleaning(int, int)}
+     */
     @Override
     public boolean deleteMailinglist(int mailinglistId, @VelocityCheck int companyId) {
         if(mailinglistId == 0 || mailinglistDao.checkMailinglistInUse(mailinglistId, companyId)) {
@@ -250,6 +274,20 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
         }
         
         return mailinglistDao.deleteMailinglist(mailinglistId, companyId);
+    }
+
+    /**
+     * after GWUA-4783 has been successfully tested
+     * place method code to {@link #deleteMailinglist(int, int)}
+     */
+    @Override
+    @Transactional
+    public boolean deleteMailinglistWithReportsCleaning(int mailinglistId, int companyId) {
+        if (mailinglistDao.canBeMarkedAsDeleted(mailinglistId, companyId)) {
+            deleteMailinglistFromReports(mailinglistId, companyId);
+            return mailinglistDao.deleteMailinglist(mailinglistId, companyId);
+        }
+        return false;
     }
     
     @Override
@@ -277,5 +315,39 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
         }
 
         return mailingListsJson;
+    }
+
+    @Override
+    public boolean mailinglistDeleted(int mailinglistId, int companyId) {
+        return mailinglistDao.mailinglistDeleted(mailinglistId, companyId);
+    }
+
+    @Override
+    public Mailinglist getDeletedMailinglist(int mailinglistId, int companyId) {
+        return mailinglistDao.getDeletedMailinglist(mailinglistId, companyId);
+    }
+
+    @Override
+    public List<Mailing> getUsedMailings(Set<Integer> mailinglistIds, int companyId) {
+        return getAllDependedMailing(mailinglistIds, companyId).stream()
+                .filter(mail -> !mail.isIsTemplate())
+                .filter(mail -> !MailingStatus.SENT.getDbKey().equals(mailingDao.getWorkStatus(companyId, mail.getId())))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public int getSentMailingsCount(int mailinglistId, int companyId) {
+        return getAllDependedMailing(Collections.singleton(mailinglistId), companyId).stream()
+                .filter(m -> MailingStatus.SENT.getDbKey().equals(mailingDao.getWorkStatus(companyId, m.getId())))
+                .mapToInt(i -> 1).sum();
+    }
+
+    @Override
+    public int getAffectedReportsCount(int mailinglistId, int companyId) {
+        return birtReportDao.getReportParamValues(companyId, MAILINGLISTS_KEY)
+                .stream().filter(param ->
+                        BirtReportSettingsUtils.convertStringToIntList((String) param.get("parameter_value"))
+                                .contains(mailinglistId))
+                .map(param -> param.get("report_id")).distinct().mapToInt(i -> 1).sum();
     }
 }

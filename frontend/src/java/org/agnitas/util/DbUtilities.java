@@ -74,6 +74,89 @@ public class DbUtilities {
 
 	// All characters (except digits) allowed in a target expression
 	public static final String TARGET_EXPRESSION_NON_NUMERIC_CHARACTERS = "!( )&|";
+	
+	public static final CaseInsensitiveSet RESERVED_WORDS_ORACLE = new CaseInsensitiveSet(new String[] { "access", "account", "activate", "add", "admin", "advise", "after", "all",
+			"all_rows", "allocate", "alter", "analyze", "and", "any", "archive", "archivelog", "array", "as", "asc", "at", "audit", "authenticated", "authorization", "autoextend",
+			"automatic", "backup", "become", "before", "begin", "between", "bfile", "bitmap", "blob", "block", "body", "by", "cache", "cache_instances", "cancel", "cascade",
+			"cast", "cfile", "chained", "change", "char", "char_cs", "character", "check", "checkpoint", "choose", "chunk", "clear", "clob", "clone", "close",
+			"close_cached_open_cursors", "cluster", "coalesce", "column", "columns", "comment", "commit", "committed", "compatibility", "compile", "complete", "composite_limit",
+			"compress", "compute", "connect", "connect_time", "constraint", "constraints", "contents", "continue", "controlfile", "convert", "cost", "cpu_per_call",
+			"cpu_per_session", "create", "current", "current_schema", "curren_user", "cursor", "cycle", "dangling", "database", "datafile", "datafiles", "dataobjno", "date", "dba",
+			"dbhigh", "dblow", "dbmac", "deallocate", "debug", "dec", "decimal", "declare", "default", "deferrable", "deferred", "degree", "delete", "deref", "desc", "directory",
+			"disable", "disconnect", "dismount", "distinct", "distributed", "dml", "double", "drop", "dump", "each", "else", "enable", "end", "enforce", "entry", "escape",
+			"except", "exceptions", "exchange", "excluding", "exclusive", "execute", "exists", "expire", "explain", "extent", "extents", "externally", "failed_login_attempts",
+			"false", "fast", "file", "first_rows", "flagger", "float", "flob", "flush", "for", "force", "foreign", "freelist", "freelists", "from", "full", "function", "global",
+			"globally", "global_name", "grant", "group", "groups", "hash", "hashkeys", "having", "header", "heap", "identified", "idgenerators", "idle_time", "if", "immediate",
+			"in", "including", "increment", "index", "indexed", "indexes", "indicator", "ind_partition", "initial", "initially", "initrans", "insert", "instance", "instances",
+			"instead", "int", "integer", "intermediate", "intersect", "into", "is", "isolation", "isolation_level", "keep", "key", "kill", "label", "layer", "less", "level",
+			"library", "like", "limit", "link", "list", "lob", "local", "lock", "locked", "log", "logfile", "logging", "logical_reads_per_call", "logical_reads_per_session",
+			"long", "manage", "master", "max", "maxarchlogs", "maxdatafiles", "maxextents", "maxinstances", "maxlogfiles", "maxloghistory", "maxlogmembers", "maxsize", "maxtrans",
+			"maxvalue", "min", "member", "minimum", "minextents", "minus", "minvalue", "mlslabel", "mls_label_format", "mode", "modify", "mount", "move", "mts_dispatchers",
+			"multiset", "national", "nchar", "nchar_cs", "nclob", "needed", "nested", "network", "new", "next", "noarchivelog", "noaudit", "nocache", "nocompress", "nocycle",
+			"noforce", "nologging", "nomaxvalue", "nominvalue", "none", "noorder", "nooverride", "noparallel", "noreverse", "normal", "nosort", "not", "nothing", "nowait", "null",
+			"number", "numeric", "nvarchar2", "object", "objno", "objno_reuse", "of", "off", "offline", "oid", "oidindex", "old", "on", "online", "only", "opcode", "open",
+			"optimal", "optimizer_goal", "option", "or", "order", "organization", "oslabel", "overflow", "own", "package", "parallel", "partition", "password",
+			"password_grace_time", "password_life_time", "password_lock_time", "password_reuse_max", "password_reuse_time", "password_verify_function", "pctfree", "pctincrease",
+			"pctthreshold", "pctused", "pctversion", "percent", "permanent", "plan", "plsql_debug", "post_transaction", "precision", "preserve", "primary", "prior", "private",
+			"private_sga", "privilege", "privileges", "procedure", "profile", "public", "purge", "queue", "quota", "range", "raw", "rba", "read", "readup", "real", "rebuild",
+			"recover", "recoverable", "recovery", "ref", "references", "referencing", "refresh", "rename", "replace", "reset", "resetlogs", "resize", "resource", "restricted",
+			"return", "returning", "reuse", "reverse", "revoke", "role", "roles", "rollback", "row", "rowid", "rownum", "rows", "rule", "sample", "savepoint", "sb4",
+			"scan_instances", "schema", "scn", "scope", "sd_all", "sd_inhibit", "sd_show", "segment", "seg_block", "seg_file", "select", "sequence", "serializable", "session",
+			"session_cached_cursors", "sessions_per_user", "set", "share", "shared", "shared_pool", "shrink", "size", "skip", "skip_unusable_indexes", "smallint", "snapshot",
+			"some", "sort", "specification", "split", "sql_trace", "standby", "start", "statement_id", "statistics", "stop", "storage", "store", "structure", "successful",
+			"switch", "sys_op_enforce_not_null$", "sys_op_ntcimg$", "synonym", "sysdate", "sysdba", "sysoper", "system", "table", "tables", "tablespace", "tablespace_no", "tabno",
+			"temporary", "than", "the", "then", "thread", "timestamp", "time", "to", "toplevel", "trace", "tracing", "transaction", "transitional", "trigger", "triggers", "true",
+			"truncate", "tx", "type", "ub2", "uba", "uid", "unarchived", "undo", "union", "unique", "unlimited", "unlock", "unrecoverable", "until", "unusable", "unused",
+			"updatable", "update", "usage", "use", "user", "using", "validate", "validation", "value", "values", "varchar", "varchar2", "varying", "view", "when", "whenever",
+			"where", "with", "without", "work", "write", "writedown", "writeup", "xid", "year", "zone" });
+
+	public static final CaseInsensitiveSet RESERVED_WORDS_MYSQL_MARIADB = new CaseInsensitiveSet(new String[] { "accessible", "account", "action", "add", "after", "against",
+			"aggregate", "algorithm", "all", "alter", "always", "analyse", "analyze", "and", "any", "as", "asc", "ascii", "asensitive", "at", "autoextend_size", "auto_increment",
+			"avg", "avg_row_length", "backup", "before", "begin", "between", "bigint", "binary", "binlog", "bit", "blob", "block", "bool", "boolean", "both", "btree", "by", "byte",
+			"cache", "call", "cascade", "cascaded", "case", "catalog_name", "chain", "change", "changed", "channel", "char", "character", "charset", "check", "checksum", "cipher",
+			"class_origin", "client", "close", "coalesce", "code", "collate", "collation", "column", "columns", "column_format", "column_name", "comment", "commit", "committed",
+			"compact", "completion", "compressed", "compression", "concurrent", "condition", "connection", "consistent", "constraint", "constraint_catalog", "constraint_name",
+			"constraint_schema", "contains", "context", "continue", "convert", "cpu", "create", "cross", "cube", "current", "current_date", "current_time", "current_timestamp",
+			"current_user", "cursor", "cursor_name", "data", "database", "databases", "datafile", "date", "datetime", "day", "day_hour", "day_microsecond", "day_minute",
+			"day_second", "deallocate", "dec", "decimal", "declare", "default", "default_auth", "definer", "delayed", "delay_key_write", "delete", "desc", "describe",
+			"des_key_file", "deterministic", "diagnostics", "directory", "disable", "discard", "disk", "distinct", "distinctrow", "div", "do", "double", "drop", "dual", "dumpfile",
+			"duplicate", "dynamic", "each", "else", "elseif", "enable", "enclosed", "encryption", "end", "ends", "engine", "engines", "enum", "error", "errors", "escape",
+			"escaped", "event", "events", "every", "exchange", "execute", "exists", "exit", "expansion", "expire", "explain", "export", "extended", "extent_size", "false", "fast",
+			"faults", "fetch", "fields", "file", "file_block_size", "filter", "first", "fixed", "float", "float4", "float8", "flush", "follows", "for", "force", "foreign",
+			"format", "found", "from", "full", "fulltext", "function", "general", "generated", "geometry", "geometrycollection", "get", "get_format", "global", "grant", "grants",
+			"group", "group_replication", "handler", "hash", "having", "help", "high_priority", "host", "hosts", "hour", "hour_microsecond", "hour_minute", "hour_second",
+			"identified", "if", "ignore", "ignore_server_ids", "import", "in", "index", "indexes", "infile", "initial_size", "inner", "inout", "insensitive", "insert",
+			"insert_method", "install", "instance", "int", "int1", "int2", "int3", "int4", "int8", "integer", "interval", "into", "invoker", "io", "io_after_gtids",
+			"io_before_gtids", "io_thread", "ipc", "is", "isolation", "issuer", "iterate", "join", "json", "key", "keys", "key_block_size", "kill", "language", "last", "leading",
+			"leave", "leaves", "left", "less", "level", "like", "limit", "linear", "lines", "linestring", "list", "load", "local", "localtime", "localtimestamp", "lock", "locks",
+			"logfile", "logs", "long", "longblob", "longtext", "loop", "low_priority", "master", "master_auto_position", "master_bind", "master_connect_retry", "master_delay",
+			"master_heartbeat_period", "master_host", "master_log_file", "master_log_pos", "master_password", "master_port", "master_retry_count", "master_server_id", "master_ssl",
+			"master_ssl_ca", "master_ssl_capath", "master_ssl_cert", "master_ssl_cipher", "master_ssl_crl", "master_ssl_crlpath", "master_ssl_key", "master_ssl_verify_server_cert",
+			"master_tls_version", "master_user", "match", "maxvalue", "max_connections_per_hour", "max_queries_per_hour", "max_rows", "max_size", "max_statement_time",
+			"max_updates_per_hour", "max_user_connections", "medium", "mediumblob", "mediumint", "mediumtext", "memory", "merge", "message_text", "microsecond", "middleint",
+			"migrate", "minute", "minute_microsecond", "minute_second", "min_rows", "mod", "mode", "modifies", "modify", "month", "multilinestring", "multipoint", "multipolygon",
+			"mutex", "mysql_errno", "name", "names", "national", "natural", "nchar", "ndb", "ndbcluster", "never", "new", "next", "no", "nodegroup", "nonblocking", "none", "not",
+			"no_wait", "no_write_to_binlog", "null", "number", "numeric", "nvarchar", "offset", "old_password", "on", "one", "only", "open", "optimize", "optimizer_costs",
+			"option", "optionally", "options", "or", "order", "out", "outer", "outfile", "owner", "pack_keys", "page", "parser", "parse_gcol_expr", "partial", "partition",
+			"partitioning", "partitions", "password", "phase", "plugin", "plugins", "plugin_dir", "point", "polygon", "port", "precedes", "precision", "prepare", "preserve",
+			"prev", "primary", "privileges", "procedure", "processlist", "profile", "profiles", "proxy", "purge", "quarter", "query", "quick", "range", "read", "reads",
+			"read_only", "read_write", "real", "rebuild", "recover", "redofile", "redo_buffer_size", "redundant", "references", "regexp", "relay", "relaylog", "relay_log_file",
+			"relay_log_pos", "relay_thread", "release", "reload", "remove", "rename", "reorganize", "repair", "repeat", "repeatable", "replace", "replicate_do_db",
+			"replicate_do_table", "replicate_ignore_db", "replicate_ignore_table", "replicate_rewrite_db", "replicate_wild_do_table", "replicate_wild_ignore_table", "replication",
+			"require", "reset", "resignal", "restore", "restrict", "resume", "return", "returned_sqlstate", "returns", "reverse", "revoke", "right", "rlike", "rollback", "rollup",
+			"rotate", "routine", "row", "rows", "row_count", "row_format", "rtree", "savepoint", "schedule", "schema", "schemas", "schema_name", "second", "second_microsecond",
+			"security", "select", "sensitive", "separator", "serial", "serializable", "server", "session", "set", "share", "show", "shutdown", "signal", "signed", "simple",
+			"slave", "slow", "smallint", "snapshot", "socket", "some", "soname", "sounds", "source", "spatial", "specific", "sql", "sqlexception", "sqlstate", "sqlwarning",
+			"sql_after_gtids", "sql_after_mts_gaps", "sql_before_gtids", "sql_big_result", "sql_buffer_result", "sql_cache", "sql_calc_found_rows", "sql_no_cache",
+			"sql_small_result", "sql_thread", "sql_tsi_day", "sql_tsi_hour", "sql_tsi_minute", "sql_tsi_month", "sql_tsi_quarter", "sql_tsi_second", "sql_tsi_week", "sql_tsi_year",
+			"ssl", "stacked", "start", "starting", "starts", "stats_auto_recalc", "stats_persistent", "stats_sample_pages", "status", "stop", "storage", "stored", "straight_join",
+			"string", "subclass_origin", "subject", "subpartition", "subpartitions", "super", "suspend", "swaps", "switches", "table", "tables", "tablespace", "table_checksum",
+			"table_name", "temporary", "temptable", "terminated", "text", "than", "then", "time", "timestamp", "timestampadd", "timestampdiff", "tinyblob", "tinyint", "tinytext",
+			"to", "trailing", "transaction", "trigger", "triggers", "true", "truncate", "type", "types", "uncommitted", "undefined", "undo", "undofile", "undo_buffer_size",
+			"unicode", "uninstall", "union", "unique", "unknown", "unlock", "unsigned", "until", "update", "upgrade", "usage", "use", "user", "user_resources", "use_frm", "using",
+			"utc_date", "utc_time", "utc_timestamp", "validation", "value", "values", "varbinary", "varchar", "varcharacter", "variables", "varying", "view", "virtual", "wait",
+			"warnings", "week", "weight_string", "when", "where", "while", "with", "without", "work", "wrapper", "write", "x509", "xa", "xid", "xml", "xor", "year", "year_month",
+			"zerofill" });
 
 	public static int readoutInOutputStream(JdbcTemplate jdbcTemplate, String statementString, OutputStream outputStream, String encoding, char separator, Character stringQuote) throws Exception {
 		return readoutInOutputStream(jdbcTemplate.getDataSource(), statementString, outputStream, encoding, separator, stringQuote);
@@ -770,109 +853,120 @@ public class DbUtilities {
 			}
 		}
 	}
-
+	
 	public static CaseInsensitiveMap<String, DbColumnType> getColumnDataTypes(DataSource dataSource, String tableName) throws Exception {
 		if (dataSource == null) {
-			throw new Exception("Invalid empty dataSource for getColumnDataTypes");
+			throw new RuntimeException("Cannot getColumnDataTypes: dataSource is null");
+		}
+
+		try (final Connection connection = dataSource.getConnection()) {
+			return getColumnDataTypes(connection, tableName);
+		} catch (Exception e) {
+			logger.error("Cannot getColumnDataTypes: " + e.getMessage(), e);
+			throw new RuntimeException("Cannot getColumnDataTypes: " + e.getMessage(), e);
+		}
+	}
+
+	public static CaseInsensitiveMap<String, DbColumnType> getColumnDataTypes(Connection connection, String tableName) throws Exception {
+		if (connection == null) {
+			throw new Exception("Invalid empty connection for getColumnDataTypes");
 		} else if (StringUtils.isBlank(tableName)) {
 			throw new Exception("Invalid empty tableName for getColumnDataTypes");
 		} else {
 			try {
 				CaseInsensitiveMap<String, DbColumnType> returnMap = new CaseInsensitiveMap<>();
-				try (final Connection connection = dataSource.getConnection()) {
-					if (checkDbVendorIsOracle(connection)) {
-						// Read special constraints for not-nullable fields by user_tab_columns
-						String nullableSql = "SELECT search_condition FROM all_constraints WHERE table_name = UPPER(?)";
-						Set<String> notNullByConstraintFields = new HashSet<>();
-						try (final PreparedStatement preparedStatementNullable = connection.prepareStatement(nullableSql)) {
-							preparedStatementNullable.setString(1, tableName);
-							try (final ResultSet resultSetNullable = preparedStatementNullable.executeQuery()) {
-								while (resultSetNullable.next()) {
-									String searchCondition = resultSetNullable.getString("search_condition");
-									searchCondition = searchCondition != null ? searchCondition.toLowerCase().replace("'", "").replace("\"", "") : "";
-									if (searchCondition.endsWith(" is not null")) {
-										notNullByConstraintFields.add(searchCondition.substring(0, searchCondition.indexOf(" is not null")).trim());
-									}
+				if (checkDbVendorIsOracle(connection)) {
+					// Read special constraints for not-nullable fields by user_tab_columns
+					String nullableSql = "SELECT search_condition FROM all_constraints WHERE table_name = UPPER(?)";
+					Set<String> notNullByConstraintFields = new HashSet<>();
+					try (final PreparedStatement preparedStatementNullable = connection.prepareStatement(nullableSql)) {
+						preparedStatementNullable.setString(1, tableName);
+						try (final ResultSet resultSetNullable = preparedStatementNullable.executeQuery()) {
+							while (resultSetNullable.next()) {
+								String searchCondition = resultSetNullable.getString("search_condition");
+								searchCondition = searchCondition != null ? searchCondition.toLowerCase().replace("'", "").replace("\"", "") : "";
+								if (searchCondition.endsWith(" is not null")) {
+									notNullByConstraintFields.add(searchCondition.substring(0, searchCondition.indexOf(" is not null")).trim());
 								}
 							}
 						}
+					}
 
-						// Watchout: Oracle's timestamp datatype is "TIMESTAMP(6)", so remove the bracket value
-						String sql = "SELECT column_name, COALESCE(SUBSTR(data_type, 1, INSTR(data_type, '(') - 1), data_type) AS data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ? ORDER BY column_name";
-						try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-							preparedStatement.setString(1, tableName.toUpperCase());
+					// Watchout: Oracle's timestamp datatype is "TIMESTAMP(6)", so remove the bracket value
+					String sql = "SELECT column_name, COALESCE(SUBSTR(data_type, 1, INSTR(data_type, '(') - 1), data_type) AS data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ? ORDER BY column_name";
+					try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+						preparedStatement.setString(1, tableName.toUpperCase());
 
-							try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-								while (resultSet.next()) {
-									String columnName = resultSet.getString("column_name");
+						try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+							while (resultSet.next()) {
+								String columnName = resultSet.getString("column_name");
 
-									String dataType = resultSet.getString("data_type");
+								String dataType = resultSet.getString("data_type");
 
-									int characterLength;
-									if (resultSet.wasNull() || dataType.toUpperCase().contains("DATE") || dataType.toUpperCase().contains("TIMESTAMP") || dataType.toUpperCase().contains("CLOB") || dataType.toUpperCase().contains("BLOB")) {
-										characterLength = -1;
-									} else {
-										characterLength = resultSet.getInt("data_length");
-									}
-
-									int numericPrecision = resultSet.getInt("data_precision");
-									if (resultSet.wasNull()) {
-										if ("number".equalsIgnoreCase(dataType)) {
-											// maximum precision of oracle number is 38 which is represented by null
-											numericPrecision = 38;
-										} else {
-											numericPrecision = -1;
-										}
-									}
-									int numericScale = resultSet.getInt("data_scale");
-									if (resultSet.wasNull()) {
-										numericScale = -1;
-									}
-
-									boolean isNullable = resultSet.getString("nullable").equalsIgnoreCase("y");
-									// Check for special constraints if nullable by user_tab_columns
-									if (isNullable && notNullByConstraintFields.contains(columnName.toLowerCase())) {
-										isNullable = false;
-									}
-
-									returnMap.put(columnName, new DbColumnType(dataType, characterLength, numericPrecision, numericScale, isNullable));
+								int characterLength;
+								if (resultSet.wasNull() || dataType.toUpperCase().contains("DATE") || dataType.toUpperCase().contains("TIMESTAMP") || dataType.toUpperCase().contains("CLOB") || dataType.toUpperCase().contains("BLOB")) {
+									characterLength = -1;
+								} else {
+									characterLength = resultSet.getInt("data_length");
 								}
-							}
-						}
-		        	} else {
-		        		String sql = "SELECT column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND LOWER(table_name) = LOWER(?) ORDER BY column_name";
 
-		        		try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-							preparedStatement.setString(1, tableName);
-
-							try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-								while (resultSet.next()) {
-									String dataType = resultSet.getString("data_type");
-
-									int characterLength;
-									if (resultSet.wasNull() || dataType.toUpperCase().contains("DATE") || dataType.toUpperCase().contains("TIMESTAMP") || dataType.toUpperCase().contains("LONGTEXT") || dataType.toUpperCase().contains("BLOB")) {
-										characterLength = -1;
+								int numericPrecision = resultSet.getInt("data_precision");
+								if (resultSet.wasNull()) {
+									if ("number".equalsIgnoreCase(dataType)) {
+										// maximum precision of oracle number is 38 which is represented by null
+										numericPrecision = 38;
 									} else {
-										characterLength = resultSet.getInt("character_maximum_length");
-									}
-
-									int numericPrecision = resultSet.getInt("numeric_precision");
-									if (resultSet.wasNull()) {
 										numericPrecision = -1;
 									}
-									int numericScale = resultSet.getInt("numeric_scale");
-									if (resultSet.wasNull()) {
-										numericScale = -1;
-									}
-									boolean isNullable = resultSet.getString("is_nullable").equalsIgnoreCase("yes");
-
-									returnMap.put(resultSet.getString("column_name"), new DbColumnType(dataType, characterLength, numericPrecision, numericScale, isNullable));
 								}
+								int numericScale = resultSet.getInt("data_scale");
+								if (resultSet.wasNull()) {
+									numericScale = -1;
+								}
+
+								boolean isNullable = resultSet.getString("nullable").equalsIgnoreCase("y");
+								// Check for special constraints if nullable by user_tab_columns
+								if (isNullable && notNullByConstraintFields.contains(columnName.toLowerCase())) {
+									isNullable = false;
+								}
+
+								returnMap.put(columnName, new DbColumnType(dataType, characterLength, numericPrecision, numericScale, isNullable));
 							}
-		        		}
-		        	}
-			        return returnMap;
-				}
+						}
+					}
+	        	} else {
+	        		String sql = "SELECT column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND LOWER(table_name) = LOWER(?) ORDER BY column_name";
+
+	        		try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+						preparedStatement.setString(1, tableName);
+
+						try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+							while (resultSet.next()) {
+								String dataType = resultSet.getString("data_type");
+
+								int characterLength;
+								if (resultSet.wasNull() || dataType.toUpperCase().contains("DATE") || dataType.toUpperCase().contains("TIMESTAMP") || dataType.toUpperCase().contains("LONGTEXT") || dataType.toUpperCase().contains("BLOB")) {
+									characterLength = -1;
+								} else {
+									characterLength = resultSet.getInt("character_maximum_length");
+								}
+
+								int numericPrecision = resultSet.getInt("numeric_precision");
+								if (resultSet.wasNull()) {
+									numericPrecision = -1;
+								}
+								int numericScale = resultSet.getInt("numeric_scale");
+								if (resultSet.wasNull()) {
+									numericScale = -1;
+								}
+								boolean isNullable = resultSet.getString("is_nullable").equalsIgnoreCase("yes");
+
+								returnMap.put(resultSet.getString("column_name"), new DbColumnType(dataType, characterLength, numericPrecision, numericScale, isNullable));
+							}
+						}
+	        		}
+	        	}
+		        return returnMap;
 			} catch (Exception e) {
 				throw e;
 			}
@@ -1939,6 +2033,38 @@ public class DbUtilities {
 		return clauseBuilder.toString();
 	}
 
+	public static String makeSelectRangeOfDates(String fieldName, Date fromDate, Date toDate, boolean isOracle) {
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		if (fromDate == null || toDate == null) {
+			throw new IllegalArgumentException("Could not create SQL without date limits");
+		}
+
+		Date dateBegin = fromDate;
+		Date dateEnd = toDate;
+
+		// check dateBegin is before dateEnd
+		if (dateBegin.after(dateEnd)) {
+			dateBegin = toDate;
+			dateEnd = fromDate;
+		}
+
+		if (isOracle) {
+			return String.format("SELECT TRUNC(TO_DATE('%2$s', 'yyyy-mm-dd') + 1 - ROWNUM) " + fieldName +
+					" FROM DUAL " +
+					" CONNECT BY ROWNUM <= (TO_DATE('%2$s', 'yyyy-mm-dd') + 1 - TO_DATE('%1$s', 'yyyy-mm-dd'))",
+					dateFormat.format(dateBegin), dateFormat.format(dateEnd));
+		} else {
+			return "SELECT * FROM" +
+					"(SELECT ADDDATE('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) " + fieldName + " FROM " +
+					" (SELECT 0 t0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t0, " +
+					" (SELECT 0 t1 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t1, " +
+					" (SELECT 0 t2 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t2, " +
+					" (SELECT 0 t3 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t3, " +
+					" (SELECT 0 t4 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t4) v " +
+					" WHERE v." + fieldName + " BETWEEN STR_TO_DATE('" + dateFormat.format(dateBegin) + "', '%Y-%m-%d') AND STR_TO_DATE('" + dateFormat.format(dateEnd) + "', '%Y-%m-%d')";
+		}
+	}
+
 	/**
 	 * Checks, if given table name references a view.
 	 *
@@ -1962,7 +2088,7 @@ public class DbUtilities {
 	}
 
 	public static final boolean dropSequenceIfExists(String sequenceName, final DataSource dataSource) {
-		if(checkDbVendorIsOracle(dataSource)) {
+		if (checkDbVendorIsOracle(dataSource)) {
 			final JdbcTemplate template = new JdbcTemplate(dataSource);
 			try {
 		    	int foundSequences = template.queryForObject("SELECT COUNT(*) FROM all_sequences WHERE sequence_name = ?", Integer.class, sequenceName.toUpperCase());
@@ -1970,13 +2096,13 @@ public class DbUtilities {
 		    		template.execute("DROP SEQUENCE " + sequenceName);
 		    		return true;
 		    	} else {
-		    		return false;
+		    		return true;
 		    	}
 			} catch (Exception e) {
 				return false;
 			}
 		} else {
-			return false;
+			return true;
 		}
 	}
 
@@ -1996,7 +2122,7 @@ public class DbUtilities {
 		ResultSetMetaData metaData = resultSet.getMetaData();
 		int numberOfColumns = metaData.getColumnCount();
 		for (int i = 1; i < numberOfColumns + 1; i++) {
-		    String columnName = metaData.getColumnName(i);
+		    String columnName = metaData.getColumnLabel(i);
 		    if (StringUtils.equalsIgnoreCase(columnNameToSearch, columnName)) {
 		        return true;
 		    }
@@ -2348,11 +2474,12 @@ public class DbUtilities {
 				try (final Connection connection = dataSource.getConnection()) {
 					if (checkDbVendorIsOracle(connection)) {
 						List<String> indexNames = getTableIndexNames(dataSource, tableName);
-						String sql = "SELECT SUM(bytes) FROM user_segments WHERE segment_name IN (UPPER(?)" + AgnUtils.repeatString(", UPPER(?)", indexNames.size()) + ")";
+						String sql = "SELECT SUM(bytes) FROM user_segments WHERE segment_name in (SELECT segment_name FROM user_lobs WHERE table_name = UPPER(?)) OR segment_name IN (UPPER(?)" + AgnUtils.repeatString(", UPPER(?)", indexNames.size()) + ")";
 						try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 							preparedStatement.setString(1, tableName);
+							preparedStatement.setString(2, tableName);
 							for (int i = 0; i < indexNames.size(); i++) {
-								preparedStatement.setString(2 + i, indexNames.get(i));
+								preparedStatement.setString(3 + i, indexNames.get(i));
 							}
 							try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 								if (resultSet.next()) {
@@ -2422,5 +2549,96 @@ public class DbUtilities {
 			targetExpressionRestriction.append(", ':'), CONCAT(':', ?, ':')) <> 0");
 		}
 		return targetExpressionRestriction.toString();
+	}
+
+	public static boolean isAllowedValueForDataType(boolean isOracle, DbColumnType dbColumnType, Object value) {
+		switch (dbColumnType.getSimpleDataType()) {
+			case Characters:
+				if (!(value instanceof String)) {
+					return false;
+				} else {
+					return true;
+				}
+	
+			case Numeric:
+			case Float:
+				double numericValue;
+				if (value instanceof String) {
+					try {
+						numericValue = Double.parseDouble((String) value);
+					} catch (NumberFormatException e) {
+						return false;
+					}
+				} else {
+					numericValue = ((Number) value).doubleValue();
+				}
+					
+				if (isOracle) {
+					if ("integer".equalsIgnoreCase(dbColumnType.getTypeName())) {
+						if (numericValue > 2147483647) {
+							return false;
+						} else if (numericValue < -2147483648) {
+							return false;
+						} else {
+							return true;
+						}
+					} else {
+						String stringRepresentation = Double.toString(numericValue);
+						if (stringRepresentation.endsWith(".0")) {
+							stringRepresentation = stringRepresentation.substring(0, stringRepresentation.length() - 2);
+						}
+						if (dbColumnType.getNumericPrecision() < stringRepresentation.length()) {
+							return false;
+						} else {
+							return true;
+						}
+					}
+				} else {
+					if ("smallint".equalsIgnoreCase(dbColumnType.getTypeName())) {
+						if (numericValue > 32767) {
+							return false;
+						} else if (numericValue < -32768) {
+							return false;
+						} else {
+							return true;
+						}
+					} else if ("int".equalsIgnoreCase(dbColumnType.getTypeName()) || "integer".equalsIgnoreCase(dbColumnType.getTypeName())) {
+						if (numericValue > 2147483647) {
+							return false;
+						} else if (numericValue < -2147483648) {
+							return false;
+						} else {
+							return true;
+						}
+					} else if ("bigint".equalsIgnoreCase(dbColumnType.getTypeName())) {
+						if (numericValue > 9223372036854775807l) {
+							return false;
+						} else if (numericValue < -9223372036854775808l) {
+							return false;
+						} else {
+							return true;
+						}
+					} else {
+						return true;
+					}
+				}
+	
+			case Date:
+			case DateTime:
+				if (value instanceof String) {
+					try {
+						DateUtilities.detectSimpleFormat((String) value);
+						return true;
+					} catch (Exception e) {
+						return false;
+					}
+				} else {
+					return true;
+				}
+	
+			case Blob:
+			default:
+				return false;
+		}
 	}
 }

@@ -20,8 +20,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.Resource;
-
 import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.dao.MailingDao;
@@ -51,6 +49,8 @@ import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkUnknownLinkId
 import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 import com.agnitas.web.exception.ClearLinkExtensionsException;
 
+import jakarta.annotation.Resource;
+
 /**
  * Service class dealing with trackable links.
  */
@@ -71,7 +71,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     @Override
     public void addExtensions(Mailing aMailing, Set<Integer> bulkIds, List<LinkProperty> extensions, List<UserAction> userActions) {
 		Collection<ComTrackableLink> bulkLinks = aMailing.getTrackableLinks().values()
-                .stream().filter(l -> bulkIds.contains(l.getId()) && (l.getShortname() == null 
+                .stream().filter(l -> bulkIds.contains(l.getId()) && (l.getShortname() == null
                                 || !l.getShortname().startsWith(MailingImpl.LINK_SWYN_PREFIX)))
                 .collect(Collectors.toList());
         List<LinkProperty> commonExtensions = getCommonExtensions(aMailing.getId(), aMailing.getCompanyID(), bulkIds);
@@ -195,7 +195,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
         Mailing mailing = mailingDao.getMailing(mailingID, companyID);
 
         if (mailing == null || mailing.getId() == 0) {
-            throw new MailingNotExistException();
+            throw new MailingNotExistException(companyID, mailingID);
         }
     }
 
@@ -290,7 +290,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     @Override
-    public void bulkClearExtensions(final int mailingId, final int companyId, final Set<Integer> bulkIds) 
+    public void bulkClearExtensions(final int mailingId, final int companyId, final Set<Integer> bulkIds)
             throws ClearLinkExtensionsException {
         trackableLinkDao.bulkClearExtensions(mailingId, companyId, bulkIds);
     }

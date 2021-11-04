@@ -17,7 +17,7 @@ import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.apache.log4j.Logger;
 
 /**
- * Implementation of {@link MobilephoneNumberWhitelistDao} interface. 
+ * Implementation of {@link MobilephoneNumberWhitelistDao} interface.
  */
 public final class MobilephoneNumberWhitelistDaoImpl extends BaseDaoImpl implements MobilephoneNumberWhitelistDao {
 

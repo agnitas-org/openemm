@@ -116,11 +116,11 @@ public class NumberUtilities {
 			} else {
 				final BigDecimal value = new BigDecimal(numberString);
 				final int numberOfDecimalPoints = numberString.substring(numberString.indexOf(".") + 1).replace(",", "").length();
-				final boolean isFloat = numberOfDecimalPoints <= 7 && new BigDecimal(Float.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Float.MAX_VALUE)) == -1;
+				final boolean isFloat = numberOfDecimalPoints <= 7 && BigDecimal.valueOf(Float.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigDecimal.valueOf(Float.MAX_VALUE)) < 0;
 				if (isFloat) {
 					return Float.valueOf(numberString);
 				} else {
-					final boolean isDouble = new BigDecimal(Double.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Double.MAX_VALUE)) == -1;
+					final boolean isDouble = BigDecimal.valueOf(Double.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) < 0;
 					if (isDouble) {
 						return Double.valueOf(numberString);
 					} else {
@@ -133,11 +133,11 @@ public class NumberUtilities {
 				return Integer.valueOf(numberString);
 			} else {
 				final BigDecimal value = new BigDecimal(numberString);
-				final boolean isInteger = new BigDecimal(Integer.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Integer.MAX_VALUE)) == -1;
+				final boolean isInteger = BigDecimal.valueOf(Integer.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) < 0;
 				if (isInteger) {
 					return Integer.valueOf(numberString);
 				} else {
-					final boolean isLong = new BigDecimal(Long.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Long.MAX_VALUE)) == -1;
+					final boolean isLong = BigDecimal.valueOf(Long.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigDecimal.valueOf(Long.MAX_VALUE)) < 0;
 					if (isLong) {
 						return Long.valueOf(numberString);
 					} else {
@@ -160,11 +160,11 @@ public class NumberUtilities {
 				return Integer.parseInt(hexNumberString.substring(2), 16);
 			} else {
 				final BigInteger value = new BigInteger(hexNumberString.substring(2), 16);
-				final boolean isInteger = new BigInteger(Integer.toString(Integer.MIN_VALUE)).compareTo(value) == -1 && value.compareTo(new BigInteger(Integer.toString(Integer.MAX_VALUE))) == -1;
+				final boolean isInteger = BigInteger.valueOf(Integer.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) < 0;
 				if (isInteger) {
 					return Integer.parseInt(hexNumberString.substring(2), 16);
 				} else {
-					final boolean isLong = new BigInteger(Long.toString(Long.MIN_VALUE)).compareTo(value) == -1 && value.compareTo(new BigInteger(Long.toString(Long.MAX_VALUE))) == -1;
+					final boolean isLong = BigInteger.valueOf(Long.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) < 0;
 					if (isLong) {
 						return Long.parseLong(hexNumberString.substring(2), 16);
 					} else {

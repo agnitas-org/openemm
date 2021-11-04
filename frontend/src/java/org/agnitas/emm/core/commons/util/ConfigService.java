@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -78,6 +79,8 @@ import com.agnitas.service.LicenseError;
 import com.agnitas.util.CryptographicUtilities;
 import com.agnitas.util.Version;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 /**
  * ConfigurationService for EMM
  * This class uses buffering of the values of the config_tbl for better performance.
@@ -102,7 +105,9 @@ public class ConfigService {
     /** Application startup timestamp **/
     private static final Date STARTUP_TIME = new Date();
     private static Version applicationVersion = null;
-    private static Server applicationType = null;
+    private static Date applicationVersionInstallationTime = null;
+
+	private static Server applicationType = null;
     
     private static ConfigService instance;
     
@@ -148,6 +153,7 @@ public class ConfigService {
 	 * 
 	 * see also: singleton pattern
 	 */
+	@Deprecated // TODO Instantiate ConfigService by Spring application context
 	public static synchronized ConfigService getInstance() {
 		if (instance == null) {
 			instance = new ConfigService();
@@ -338,7 +344,9 @@ public class ConfigService {
 				} catch (Exception e) {
 					// The version sign is not valid. Maybe it is text like 'Unknown'.
 				}
-				applicationType = Server.getServerByName(EMM_PROPERTIES_VALUES.get(ConfigValue.ApplicationType.toString()).get(0));
+				if (EMM_PROPERTIES_VALUES.get(ConfigValue.ApplicationType.toString()) != null) {
+					applicationType = Server.getServerByName(EMM_PROPERTIES_VALUES.get(ConfigValue.ApplicationType.toString()).get(0));
+				}
 				
 	    		configTableDao.checkAndSetReleaseVersion();
 			}
@@ -421,10 +429,10 @@ public class ConfigService {
 	}
 
 	private Map<String, Map<Integer, String>> readEmmPropertiesFile() throws Exception {
-		try {
+		try (InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("emm.properties")) {
 			Map<String, Map<Integer, String>> emmPropertiesMap = new HashMap<>();
 			Properties properties = new Properties();
-			properties.load(getClass().getClassLoader().getResourceAsStream("emm.properties"));
+			properties.load(resourceAsStream);
 			for (String key : properties.stringPropertyNames()) {
 				Map<Integer, String> configValueMap = emmPropertiesMap.get(key);
 				if (configValueMap == null) {
@@ -435,7 +443,8 @@ public class ConfigService {
 			}
 			return emmPropertiesMap;
 		} catch (Exception e) {
-			throw new Exception("Cannot read emm.properties: " + e.getMessage(), e);
+			logger.error("Cannot read emm.properties: " + e.getMessage(), e);
+			return new HashMap<>();
 		}
 	}
 	
@@ -839,6 +848,56 @@ public class ConfigService {
 		return AgnUtils.interpretAsBoolean(value);
 	}
 	
+	public int getBooleanAsInteger(ConfigValue configurationValueID, @VelocityCheck int companyID, int valueForTrue, int valueForFalse) {
+		try {
+			return getIntegerValue(configurationValueID, companyID);
+		} catch (Exception e) {
+			boolean value = getBooleanValue(configurationValueID, companyID);
+			if (value) {
+				return valueForTrue;
+			} else {
+				return valueForFalse;
+			}
+		}
+	}
+	
+	public <E extends Enum<E>> Optional<E> getEnum(final ConfigValue configValue, final int companyID, final Class<E> enumClass) {
+		return getEnum(configValue, companyID, enumClass, configValue.getDefaultValue());
+	}
+	
+	public <E extends Enum<E>> Optional<E> getEnum(final ConfigValue configValue, final int companyID, final Class<E> enumClass, final String defaultValue) {
+		final String value = getValue(configValue, companyID, defaultValue);
+		
+		if(value == null) {
+			return Optional.empty(); // If value read is null, then return the empty optional.
+		}
+
+		for(final E constant : enumClass.getEnumConstants()) {
+			if(constant.name().equals(value)) {
+				return Optional.of(constant);
+			}
+		}
+		
+		// We encountered an invalid value for the enum type.
+		
+		// List allowed values, ...
+		final String allowed = Arrays.asList(enumClass.getEnumConstants())
+				.stream()
+				.map(e -> e.name())
+				.collect(Collectors.joining());
+		
+		// ... log error message, ...
+		logger.error(String.format(
+				"Config key '%s' contains invalid value '%s'. Allowed values are: %s",
+				configValue.getName(),
+				value,
+				allowed
+				));
+		
+		// ... and return empty optional.
+		return Optional.empty();
+	}
+	
 	/**
 	 * Returns an integer value using logic with fallback and default value.
 	 * See {@link #getValue(ConfigValue, int, String)} for details on fallback.
@@ -1137,10 +1196,6 @@ public class ConfigService {
 		return getIntegerValue(ConfigValue.PendingHostAuthenticationMaxAgeMinutes);
 	}
 
-	public final String getLitmusStatusURL(final int companyID) {
-		return getValue(ConfigValue.Predelivery_LitmusStatusUrl);
-	}
-
 	public final String getFullviewFormName(final int companyID) {
 		return getValue(ConfigValue.FullviewFormName, companyID);
 	}
@@ -1194,5 +1249,17 @@ public class ConfigService {
 
 	public Date getCurrentDbTime() {
 		return configTableDao.getCurrentDbTime();
+	}
+	
+    public static Date getApplicationVersionInstallationTime() {
+		return applicationVersionInstallationTime;
+	}
+
+	public static String getApplicationVersionInstallationTimeString(HttpServletRequest request) {
+		return AgnUtils.getAdmin(request).getDateTimeFormat().format(applicationVersionInstallationTime);
+	}
+
+	public static void setApplicationVersionInstallationTime(Date applicationVersionInstallationTime) {
+		ConfigService.applicationVersionInstallationTime = applicationVersionInstallationTime;
 	}
 }

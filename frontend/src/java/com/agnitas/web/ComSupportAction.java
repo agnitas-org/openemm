@@ -10,8 +10,8 @@
 
 package com.agnitas.web;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -70,7 +70,7 @@ public class ComSupportAction extends DispatchAction {
 			String messageBody = buildMessageBody(supportForm);
 			request.setAttribute("MESSAGE_BODY", messageBody);
 			
-			if (javaMailService.sendEmail(supportAddress, I18nString.getLocaleString("FormNotFoundTitle", "de"), messageBody, messageBody)) {
+			if (javaMailService.sendEmail(0, supportAddress, I18nString.getLocaleString("FormNotFoundTitle", "de"), messageBody, messageBody)) {
 				actionMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("FormNotFoundSent"));
 				saveMessages(request, actionMessages);
 			} else {

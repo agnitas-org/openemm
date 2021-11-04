@@ -44,7 +44,7 @@ public class FormUtils {
     }
 
     public static <E> void syncSearchParams(FormSearchParams<E> searchParams, E form, boolean restore) {
-        if(restore) {
+        if (restore) {
             searchParams.restoreParams(form);
         } else {
             searchParams.storeParams(form);

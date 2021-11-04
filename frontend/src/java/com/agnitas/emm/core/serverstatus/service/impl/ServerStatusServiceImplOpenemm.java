@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.StringReader;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.JobQueueService;
 import org.agnitas.util.HttpUtils;
 import org.apache.log4j.Logger;
@@ -28,7 +29,7 @@ public class ServerStatusServiceImplOpenemm extends ServerStatusServiceImplBasic
 
 	@Override
 	public Version getAvailableUpdateVersion() throws Exception {
-		String versionData = HttpUtils.executeHttpRequest("https://www.agnitas.de/download/openemm-version/", null, null);
+		String versionData = HttpUtils.executeHttpRequest("https://www.agnitas.de/download/openemm-version/", null, null, configuredSecureTransportLayerProtocol());
 		try (BufferedReader reader = new BufferedReader(new StringReader(versionData))) {
 			String nextLine;
 			while ((nextLine = reader.readLine()) != null) {
@@ -39,5 +40,9 @@ public class ServerStatusServiceImplOpenemm extends ServerStatusServiceImplBasic
 			}
 			return null;
 		}
+	}
+	
+	private final String configuredSecureTransportLayerProtocol() {
+		return this.configService.getValue(ConfigValue.SecureTransportLayerProtocol);
 	}
 }

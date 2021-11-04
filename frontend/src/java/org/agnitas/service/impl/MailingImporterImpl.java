@@ -19,8 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Resource;
-
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
@@ -38,7 +36,7 @@ import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.agnitas.beans.ComCampaign;
+import com.agnitas.beans.Campaign;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.DynamicTag;
@@ -49,7 +47,7 @@ import com.agnitas.beans.MailingContentType;
 import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.beans.impl.DynamicTagImpl;
 import com.agnitas.beans.impl.MailingImpl;
-import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
@@ -59,7 +57,8 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader;
-import com.agnitas.util.TimingLogger;
+
+import jakarta.annotation.Resource;
 
 public class MailingImporterImpl extends ActionImporter implements MailingImporter {
 	/** The logger. */
@@ -81,7 +80,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 	protected MediatypesDao mediatypesDao;
 
 	@Resource(name="CampaignDao")
-	protected ComCampaignDao campaignDao;
+	protected CampaignDao campaignDao;
 	
 	@Resource(name="MailingImporterMediatypeFactory")
 	protected MailingImporterMediatypeFactory mediatypeFactory;
@@ -91,12 +90,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
      */
 	@Override
 	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, boolean overwriteTemplate, boolean isGrid) throws Exception {
-		return importMailingFromJson(null, companyID, input, importAsTemplate, overwriteTemplate, isGrid);
-	}
-	
-	@Override
-	public ImportResult importMailingFromJson(final TimingLogger timingLogger, int companyID, InputStream input, boolean importAsTemplate, boolean overwriteTemplate, boolean isGrid) throws Exception {
-		return importMailingFromJson(timingLogger, companyID, input, importAsTemplate, null, null, overwriteTemplate, isGrid);
+		return importMailingFromJson(companyID, input, importAsTemplate, null, null, overwriteTemplate, isGrid);
 	}
 
     /**
@@ -104,25 +98,11 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
      */
 	@Override
 	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean isGrid) throws Exception {
-		return importMailingFromJson(null, companyID, input, importAsTemplate, shortName, description, overwriteTemplate, isGrid);
-	}
-	
-	@Override
-	public ImportResult importMailingFromJson(final TimingLogger timingLogger, int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean isGrid) throws Exception {
-		return importMailingFromJson(timingLogger, companyID, input, importAsTemplate, shortName, description, true, overwriteTemplate, isGrid);
+		return importMailingFromJson( companyID, input, importAsTemplate, shortName, description, true, overwriteTemplate, isGrid);
 	}
 	
 	@Override
 	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean checkIsTemplate, boolean isGrid) throws Exception {
-		return importMailingFromJson(null, companyID, input, importAsTemplate, shortName, description, overwriteTemplate, checkIsTemplate, isGrid);
-	}
-	
-	@Override
-	public ImportResult importMailingFromJson(final TimingLogger timingLogger, int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean checkIsTemplate, boolean isGrid) throws Exception {
-		if(timingLogger != null) {
-			timingLogger.log("Entered MailingImporterImpl.importMailingFromJson()");
-		}
-		
 		Map<String, Object[]> warnings = new HashMap<>();
 		try (JsonReader reader = new JsonReader(input, "UTF-8")) {
 			JsonNode jsonNode = reader.read();
@@ -151,8 +131,10 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				isTemplate = jsonObject.get("is_template") != null && (Boolean) jsonObject.get("is_template");
 			}
 			
-			Map<Integer, Integer> targetIdMappings = importTargets(timingLogger, companyID, jsonObject, warnings);
-			int importedMailingID = importMailingData(timingLogger, companyID, isTemplate, shortName, description, warnings, jsonObject, actionIdMappings, targetIdMappings);
+			Map<Integer, Integer> targetIdMappings = importTargets(companyID, jsonObject, warnings);
+
+			Mailing mailing = new MailingImpl();
+			int importedMailingID = importMailingData(mailing, companyID, isTemplate, shortName, description, warnings, jsonObject, actionIdMappings, targetIdMappings);
 			if (importedMailingID <= 0) {
 				logger.error("Cannot save mailing");
 				return ImportResult.builder().addError("error.mailing.import").build();
@@ -165,21 +147,12 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		} catch (Exception e) {
 			logger.error("Error in mailing import: " + e.getMessage(), e);
 			throw e;
-		} finally {
-			if(timingLogger != null) {
-				timingLogger.log("Leaving MailingImporterImpl.importMailingFromJson()");
-			}
 		}
 	}
 
-	protected int importMailingData(final TimingLogger timingLogger, int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings) throws Exception, IOException {
-		if(timingLogger != null) {
-			timingLogger.log("Entered MailingImporterImpl.importMailingFromJson()");
-		}
-		
+	protected int importMailingData(Mailing mailing, int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings) throws Exception, IOException {
 		String rdirDomain = companyDao.getRedirectDomain(companyID);
 		
-		Mailing mailing = new MailingImpl();
 		mailing.setCompanyID(companyID);
 		
 		mailing.setShortname(StringUtils.defaultString(shortName, (String) jsonObject.get("shortname")));
@@ -192,9 +165,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		}
 
 		// Use the existing mailinglist with same shortname or the mailinglist with the lowest id (= default mailinglist)
-		if(timingLogger != null) {
-			timingLogger.log("Handling mailing lists");
-		}
 		if (jsonObject.containsPropertyKey("mailinglist_shortname")) {
 			String mailinglistShortname = (String) jsonObject.get("mailinglist_shortname");
 			int mailinglistID = Integer.MAX_VALUE;
@@ -240,7 +210,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		if (jsonObject.containsPropertyKey("campaign_id")) {
 			int campaignID = (Integer) jsonObject.get("campaign_id");
 			String campaignName = (String) jsonObject.get("campaign_name");
-			ComCampaign campaign = campaignDao.getCampaign(campaignID, companyID);
+			Campaign campaign = campaignDao.getCampaign(campaignID, companyID);
 			if (campaign != null && StringUtils.equals(campaignName, campaign.getShortname())) {
 				mailing.setCampaignID(campaignID);
 			} else {
@@ -250,9 +220,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 
 		readMediatypes(mailing, jsonObject);
 
-		if(timingLogger != null) {
-			timingLogger.log("Handling mailing parameters");
-		}
 		if (jsonObject.containsPropertyKey("parameters")) {
 			List<ComMailingParameter> parameters = new ArrayList<>();
 			for (Object parameterObject : (JsonArray) jsonObject.get("parameters")) {
@@ -266,9 +233,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			mailing.setParameters(parameters);
 		}
 
-		if(timingLogger != null) {
-			timingLogger.log("Handling mailing components");
-		}
 		if (jsonObject.containsPropertyKey("components")) {
 			Map<String, MailingComponent> components = new HashMap<>();
 			for (Object componentObject : (JsonArray) jsonObject.get("components")) {
@@ -276,7 +240,11 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				MailingComponent mailingComponent = new MailingComponentImpl();
 				mailingComponent.setComponentName((String) componentJsonObject.get("name"));
 				mailingComponent.setDescription((String) componentJsonObject.get("description"));
-				mailingComponent.setType(MailingComponentType.getMailingComponentTypeByName((String) componentJsonObject.get("type")));
+				if (componentJsonObject.get("type") instanceof String) {
+					mailingComponent.setType(MailingComponentType.getMailingComponentTypeByName((String) componentJsonObject.get("type")));
+				} else {
+					mailingComponent.setType(MailingComponentType.getMailingComponentTypeByCode((Integer) componentJsonObject.get("type")));
+				}
 				if (componentJsonObject.containsPropertyKey("emm_block")) {
 					String emmBlock = (String) componentJsonObject.get("emm_block");
 					emmBlock = emmBlock.replace("[COMPANY_ID]", Integer.toString(companyID)).replace("[RDIR_DOMAIN]", rdirDomain);
@@ -302,9 +270,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			mailing.setComponents(components);
 		}
 
-		if(timingLogger != null) {
-			timingLogger.log("Handling mailing content");
-		}
 		if (jsonObject.containsPropertyKey("contents")) {
 			Map<String, DynamicTag> dynTags = new HashMap<>();
 			for (Object contentObject : (JsonArray) jsonObject.get("contents")) {
@@ -333,9 +298,6 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			mailing.setDynTags(dynTags);
 		}
 
-		if(timingLogger != null) {
-			timingLogger.log("Handling mailing trackable links");
-		}
 		if (jsonObject.containsPropertyKey("links")) {
 			Map<String, ComTrackableLink> trackableLinks = new HashMap<>();
 			for (Object linkObject : (JsonArray) jsonObject.get("links")) {
@@ -377,26 +339,17 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			mailing.setTrackableLinks(trackableLinks);
 		}
 
-		// Mark mailing as newly imported
-		mailing.setDescription("Imported at " + new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM).format(new Date()) + (StringUtils.isEmpty(mailing.getDescription()) ? "" : "\n" + mailing.getDescription()));
+		if (StringUtils.isEmpty(mailing.getDescription())) {
+			// Mark mailing as newly imported
+			mailing.setDescription("Imported at " + new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM).format(new Date()));
+		}
 
-		if(timingLogger != null) {
-			timingLogger.log("Saving mailing");
-		}
 		final int id = mailingDao.saveMailing(mailing, false);
-		
-		if(timingLogger != null) {
-			timingLogger.log("Leaving MailingImporterImpl.importMailingFromJson()");
-		}
 		
 		return id;
 	}
 
-	protected Map<Integer, Integer> importTargets(final TimingLogger timingLogger, int companyID, JsonObject jsonObject, Map<String, Object[]> warnings) {
-		if(timingLogger != null) {
-			timingLogger.log("Entered importTargets()");
-		}
-			
+	protected Map<Integer, Integer> importTargets(int companyID, JsonObject jsonObject, Map<String, Object[]> warnings) {
 		Map<Integer, Integer> targetIdMappings = new HashMap<>();
 
 		targetIdMappings.put(0, 0);
@@ -419,14 +372,11 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				}
 
 				if (targetID == 0) {
+					// Do not create new target groups, because in most cases they need special profile fields, which may no exist.
 					warnings.put("warning.mailing.import.targetgroup", null);
 				}
 				targetIdMappings.put((Integer) targetJsonObject.get("id"), targetID);
 			}
-		}
-
-		if(timingLogger != null) {
-			timingLogger.log("Leaving importTargets()");
 		}
 
 		return targetIdMappings;

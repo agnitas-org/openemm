@@ -10,7 +10,7 @@
 
 package com.agnitas.web.forms;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.struts.action.ActionErrors;
@@ -69,6 +69,7 @@ public class ComMailingAttachmentsForm extends StrutsFormBase {
      /**
      * Holds value of property worldMailingSend.
      */
+    @Deprecated // Replace by request attribute
     private boolean worldMailingSend;
 
     /**
@@ -345,10 +346,12 @@ public class ComMailingAttachmentsForm extends StrutsFormBase {
         this.usePdfUpload = usePdfUpload;
     }
 
+    @Deprecated // Replace by request attribute
     public boolean isWorldMailingSend() {
         return worldMailingSend;
     }
 
+    @Deprecated // Replace by request attribute
     public void setWorldMailingSend(boolean worldMailingSend) {
         this.worldMailingSend = worldMailingSend;
     }

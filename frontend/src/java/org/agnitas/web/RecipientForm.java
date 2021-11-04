@@ -16,13 +16,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.emm.core.recipient.dto.RecipientFrequencyCounterDto;
 import org.agnitas.target.ConditionalOperator;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.SafeString;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.agnitas.web.forms.TargetEqlBuilder;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -35,6 +31,8 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
 
 import com.agnitas.emm.core.recipient.service.RecipientType;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 public class RecipientForm extends StrutsFormBase  {
 	private static final long serialVersionUID = -1626162472029428066L;
@@ -142,12 +140,8 @@ public class RecipientForm extends StrutsFormBase  {
 
         targetEqlBuilder.reset();
         needSaveTargetGroup = false;
-        // We need just to check if user is logged in - in other case we'll get NPE here.
-        // The actual redirect to login page will be made by Action class.
-        if (AgnUtils.isUserLoggedIn(request)) {
-            targetEqlBuilder.setShortname(SafeString.getLocaleString("default.Name", AgnUtils.getLocale(request)));
-            targetEqlBuilder.setDescription(SafeString.getLocaleString("default.description", AgnUtils.getLocale(request)));
-        }
+        targetEqlBuilder.setShortname("");
+        targetEqlBuilder.setDescription("");
 
         setNumberOfRows(-1);
         selectedFields = ArrayUtils.EMPTY_STRING_ARRAY;

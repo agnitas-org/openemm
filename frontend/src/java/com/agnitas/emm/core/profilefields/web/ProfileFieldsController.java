@@ -13,6 +13,7 @@ package com.agnitas.emm.core.profilefields.web;
 import java.text.SimpleDateFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -161,6 +162,8 @@ public class ProfileFieldsController {
     public String save(ComAdmin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Popups popups) {
         if (StringUtils.isBlank(profileForm.getFieldname())) {
             popups.alert("error.profiledb.invalid_fieldname", "''");
+        } else if (profileFieldService.isReservedKeyWord(profileForm.getFieldname())) {
+            popups.alert("error.name.reserved", profileForm.getFieldname());
         } else {
             ProfileField field = profileFieldService.getProfileField(admin.getCompanyID(), profileForm.getFieldname());
 
@@ -206,10 +209,10 @@ public class ProfileFieldsController {
         if(!usages.isEmpty()) {
         	ObjectUsagesToPopups.objectUsagesToPopups("error.profilefield.used", "error.profilefield.used.withMore", usages, popups, admin.getLocale());
         	
-        	return fromListPage 
+        	return fromListPage
         			? "redirect:/profiledb.action"
         			: String.format("redirect:/profiledb/%s/view.action", fieldName);
-        } else {        
+        } else {
         	String result = "settings_profile_field_delete_ajax";
 	        List<String> dependentWorkflows = profileFieldService.getDependentWorkflows(companyId, fieldName);
 	
@@ -372,7 +375,7 @@ public class ProfileFieldsController {
         if (profileField == null) {
             validateForCreating(companyId, form, popups, admin.getDateFormat());
         } else {
-            validationForUpdating(companyId, profileField, form, popups, admin.getDateFormat());
+            validationForUpdating(companyId, profileField, form, popups, admin.getDateFormat(), admin.getLocale());
         }
     }
 
@@ -396,7 +399,8 @@ public class ProfileFieldsController {
         }
     }
 
-    private void validationForUpdating(int companyId, ProfileField field, ProfileFieldForm form, Popups popups, SimpleDateFormat dateFormat) {
+    private void validationForUpdating(int companyId, ProfileField field, ProfileFieldForm form, Popups popups, 
+                                       SimpleDateFormat dateFormat, Locale locale) {
         if (!field.getNullable() && StringUtils.isEmpty(form.getFieldDefault())) {
             popups.alert("error.profiledb.empty");
         }
@@ -416,6 +420,17 @@ public class ProfileFieldsController {
 
             if (columnSet.size() > maximumHistoryFields) {
                 popups.alert("error.profileHistory.tooManyFields");
+            }
+        }
+        alertIfUsedProfileFieldRenamed(popups, companyId, field, form.getShortname(), locale);
+    }
+
+    private void alertIfUsedProfileFieldRenamed(Popups popups, int companyId, ProfileField field, String newName, Locale locale) {
+        if (!StringUtils.equals(field.getShortname(), newName)) {
+            ObjectUsages usages = objectUsageService.listUsageOfProfileFieldByDatabaseName(companyId, field.getColumn());
+            if (!usages.isEmpty()) {
+                ObjectUsagesToPopups.objectUsagesToPopups("GWUA.error.profileField.rename",
+                        "GWUA.error.profileField.rename.withMore", usages, popups, locale);
             }
         }
     }

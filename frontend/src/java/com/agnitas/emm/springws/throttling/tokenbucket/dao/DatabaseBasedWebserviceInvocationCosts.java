@@ -13,9 +13,9 @@ package com.agnitas.emm.springws.throttling.tokenbucket.dao;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.apache.log4j.Logger;
 
-import com.agnitas.emm.springws.throttling.tokenbucket.common.WebserviceInvocationCosts;
+import com.agnitas.emm.util.quota.tokenbucket.ApiInvocationCosts;
 
-public final class DatabaseBasedWebserviceInvocationCosts extends BaseDaoImpl implements WebserviceInvocationCosts {
+public final class DatabaseBasedWebserviceInvocationCosts extends BaseDaoImpl implements ApiInvocationCosts {
 
 	/** The logger. */
 	private static final transient Logger LOGGER = Logger.getLogger(DatabaseBasedWebserviceInvocationCosts.class);
@@ -23,7 +23,7 @@ public final class DatabaseBasedWebserviceInvocationCosts extends BaseDaoImpl im
 	public static final int DEFAULT_INVOCATION_COSTS = 1;
 	
 	@Override
-	public final int executionCostsForEndpoint(final int companyID, final String endpointName) {
+	public final int invocationCostsForApi(final int companyID, final String endpointName) {
 		int costs = queryCosts(companyID, endpointName);
 		
 		if(costs == 0) {

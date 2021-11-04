@@ -1,0 +1,52 @@
+{
+	"$schema": "http:\/\/json-schema.org\/draft-04\/schema#",
+	"type": "object",
+	"properties":
+		{
+			"mailing_id":
+				{
+					"type": "integer"
+				},
+			"special_id_name":
+				{
+					"type": "string"
+				},
+			"recipient":
+				{
+					"type": "object",
+					"properties":
+						{
+							"title":
+								{
+									"type": "string"
+								},
+							"firstname":
+								{
+									"type": "string"
+								},
+							"lastname":
+								{
+									"type": "string"
+								},
+							"email":
+								{
+									"type": "string"
+								}
+						},
+					"required":
+						[
+							"title",
+							"firstname",
+							"lastname",
+							"email"
+						],
+    				"additionalProperties": true
+				}
+		},
+	"required":
+		[
+			"mailing_id",
+			"recipient"
+		],
+	"additionalProperties": false
+}

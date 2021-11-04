@@ -19,8 +19,6 @@ public class Blackdata {
 	private String	  email;
 	/** true, if the entry is part on the global blacklist */
 	private boolean	  global;
-	/** true, if we use simplified version of blacklist matching */
-	private boolean	  simplified;
 	/** true, if email contains any wildcard characters */
 	private boolean	  iswildcard;
 
@@ -35,17 +33,11 @@ public class Blackdata {
 	 *
 	 * @param nEmail the email or the pattern
 	 * @param nGlobal sets the source for this entry, true it comes from a global blacklist, otherwise from a local one
-	 * @param nSimplified if true, simplified version of code is used
 	 */
-	public Blackdata (String nEmail, boolean nGlobal, boolean nSimplified) {
+	public Blackdata (String nEmail, boolean nGlobal) {
 		email = nEmail != null ? nEmail.toLowerCase ().trim () : null;
 		global = nGlobal;
-		simplified = nSimplified;
-		if (simplified) {
-			iswildcard = (email != null) && ((email.indexOf ('*') != -1) || (email.indexOf ('%') != -1));
-		} else {
-			iswildcard = (email != null) && ((email.indexOf ('_') != -1) || (email.indexOf ('?') != -1) || (email.indexOf ('%') != -1) || (email.indexOf ('*') != -1));
-		}
+		iswildcard = (email != null) && ((email.indexOf ('*') != -1) || (email.indexOf ('%') != -1));
 	}
 
 	/**
@@ -58,11 +50,7 @@ public class Blackdata {
 		if (! iswildcard) {
 			return email.equals (check);
 		}
-		if (simplified) {		
-			return compare (email, 0, email.length (), check, 0, check.length ());
-		} else {
-			return sqllike (email, 0, email.length (), check, 0, check.length ());
-		}
+		return compare (email, 0, email.length (), check, 0, check.length ());
 	}
 
 	/** returns a static string where this email comes from.
@@ -101,46 +89,6 @@ public class Blackdata {
 	 */
 	protected boolean isWildcard () {
 		return iswildcard;
-	}
-	
-	/* compares a string against a SQL wildcard pattern (recrusive) */
-	private boolean sqllike (String mask, int mpos, int mlen, String str, int spos, int slen) {
-		char	cur;
-
-		while ((mpos < mlen) && (spos < slen)) {
-			cur = mask.charAt (mpos++);
-			if ((cur == '_') || (cur == '?')) {
-				spos++;
-			} else if ((cur == '%') || (cur == '*')) {
-				while ((mpos < mlen) && ((mask.charAt (mpos) == '%') || (mask.charAt (mpos) == '*'))) {
-					mpos++;
-				}
-				if (mpos == mlen) {
-					return true;
-				}
-				while (spos < slen) {
-					if (sqllike (mask, mpos, mlen, str, spos, slen)) {
-						return true;
-					} else {
-						++spos;
-					}
-				}
-			} else {
-				if ((cur == '\\') && (mpos < mlen)) {
-					cur = mask.charAt (mpos++);
-				}
-				if (cur != str.charAt (spos)) {
-					return false;
-				}
-				spos++;
-			}
-		}
-		if ((spos == slen) && (mpos < mlen)) {
-			while ((mpos < mlen) && ((mask.charAt (mpos) == '%') || (mask.charAt (mpos) == '*'))) {
-				++mpos;
-			}
-		}
-		return (mpos == mlen) && (spos == slen);
 	}
 	
 	/* compares a string against a SQL wildcard pattern (recrusive) */

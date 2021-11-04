@@ -125,6 +125,9 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 
 	private static final String DARKMODE = "darkmode";
 
+	private static final String SUCCESS_EXPIRE_PERIOD = "successExpirePeriod";
+	private static final String ONEPIXEL_EXPIRE_PERIOD = "onepixelExpirePeriod";
+
 	protected static final String BIRT_REPORT_TEMP_DIR = AgnUtils.getTempDir() + File.separator + "BirtReport";
 	protected static final String BIRT_REPORT_TEMP_FILE_PATTERN = "birt-report-%d-body";
 	
@@ -352,6 +355,8 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 			params.put(RECIPIENT_START_DATE, startDateStr);
 			params.put(RECIPIENT_STOP_DATE, endDateStr);
 			params.put(HOUR_SCALE, mailingStatistic.isHourScale());
+			params.put(SUCCESS_EXPIRE_PERIOD, configService.getIntegerValue(ConfigValue.ExpireSuccess));
+			params.put(ONEPIXEL_EXPIRE_PERIOD, configService.getIntegerValue(ConfigValue.ExpireOnePixel));
 		}
 
 		collectParametersAccordingToType(mailingStatistic.getType(), admin, mailingStatistic, params);

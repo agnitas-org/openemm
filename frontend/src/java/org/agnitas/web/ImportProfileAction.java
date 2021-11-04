@@ -13,16 +13,16 @@ package org.agnitas.web;
 import static org.agnitas.util.UserActivityUtil.addChangedFieldLog;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.StringTokenizer;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.ColumnMapping;
@@ -51,6 +51,7 @@ import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.ImportProfileForm;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -71,6 +72,9 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ComColumnInfoService;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 /**
  * Action that handles import profile actions: view, edit, remove, list,
  * manage gender mappings.
@@ -79,8 +83,6 @@ public class ImportProfileAction extends StrutsActionBase {
 	/** The logger. */
     private static final transient Logger logger = Logger.getLogger(ImportProfileAction.class);
 
-    public static final int ACTION_NEW_GENDER = ACTION_LAST + 1;
-    public static final int ACTION_REMOVE_GENDER = ACTION_LAST + 2;
     public static final int ACTION_SET_DEFAULT = ACTION_LAST + 3;
 
     public static final String IMPORT_PROFILE_ERRORS_KEY = "import-profile-errors";
@@ -153,16 +155,10 @@ public class ImportProfileAction extends StrutsActionBase {
 
 	@Override
     public String subActionMethodName(int subAction) {
-        switch (subAction) {
-        case ACTION_NEW_GENDER:
-            return "new_gender";
-        case ACTION_REMOVE_GENDER:
-            return "remove_gender";
-        case ACTION_SET_DEFAULT:
+        if (subAction == ACTION_SET_DEFAULT) {
             return "set_default";
-        default:
-            return super.subActionMethodName(subAction);
         }
+        return super.subActionMethodName(subAction);
     }
 
     /**
@@ -174,11 +170,6 @@ public class ImportProfileAction extends StrutsActionBase {
      * <br>
 	 * ACTION_LIST: loads list of profile fields and default profile field into request and forwards to profile
      *     field list page.
-	 * <br><br>
-     * ACTION_NEW_GENDER: saves gender mappings converting that from sequence if new gender is not empty and
-     *     forwards to profile field view page.
-	 * <br><br>
-     * ACTION_REMOVE_GENDER: removes gender mapping from profile field and forwards to profile field view page.
 	 * <br><br>
      * ACTION_VIEW: loads data of chosen profile field into form and forwards to profile field view page.
 	 * <br><br>
@@ -210,12 +201,10 @@ public class ImportProfileAction extends StrutsActionBase {
      * @param mapping The ActionMapping used to select this instance
      * @param form    The optional ActionForm bean for this request (if any)
      * @param request The HTTP request we are processing<br>
-     *     If the request parameter "addGender" is set - changes action to ACTION_REMOVE_GENDER.<br>
-     *     If the request parameter "removeGender" is set - changes action to ACTION_REMOVE_GENDER.<br>
      *     If the request parameter "setDefault" is set - changes action to ACTION_SET_DEFAULT.<br>
      * @param response     The HTTP response we are creating
      * @throws java.io.IOException            if an input/output error occurs
-     * @throws javax.servlet.ServletException if a servlet exception occurs
+     * @throws jakarta.servlet.ServletException if a servlet exception occurs
      * @return destination specified in struts-config.xml to forward to next jsp
      */
 	@Override
@@ -255,14 +244,6 @@ public class ImportProfileAction extends StrutsActionBase {
             request.getSession().removeAttribute(IMPORT_PROFILE_ID_KEY);
         }
 
-        if (AgnUtils.parameterNotEmpty(request, "addGender")) {
-            aForm.setAction(ACTION_NEW_GENDER);
-        }
-
-        if (ImportUtils.hasNoEmptyParameterStartsWith(request, "removeGender")) {
-            aForm.setAction(ACTION_REMOVE_GENDER);
-        }
-
         if (AgnUtils.parameterNotEmpty(request, "setDefault")) {
             aForm.setAction(ACTION_SET_DEFAULT);
         }
@@ -282,7 +263,6 @@ public class ImportProfileAction extends StrutsActionBase {
                     }
 
                     loadImportProfile(aForm);
-                    setAvailableImportModes(aForm, request);
                     if (emmActionDao != null) {
                     	aForm.setActionsForNewRecipients(emmActionDao.getEmmActionsByOperationType(companyId, false, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING));
                     }
@@ -292,45 +272,8 @@ public class ImportProfileAction extends StrutsActionBase {
                     writeUserActivityLog(AgnUtils.getAdmin(request), "view import profile", getImportProfileDescription(aForm.getProfile()));
                     break;
 
-                case ImportProfileAction.ACTION_NEW_GENDER:
-                	if (StringUtils.isEmpty(aForm.getAddedGender())) {
-                		errors.add("newGender", new ActionMessage("error.import.gender.empty"));
-                	} else {
-                		if (!StringUtils.isEmpty(aForm.getAddedGender())) {
-                			if (!importProfileService.addImportProfileGenderMapping(aForm.getProfileId(), aForm.getAddedGender(), aForm.getAddedGenderInt())) {
-                				errors.add("newGender", new ActionMessage("error.import.gender.number.duplicate"));
-                			}
-                		} else {
-            				errors.add("newGender", new ActionMessage("error.import.gender.number.duplicate"));
-            			}
-                	}
-                	
-                    aForm.getProfile().setGenderMapping(importProfileService.getImportProfileGenderMapping(aForm.getProfileId()));
-                	aForm.setAddedGender("");
-                	aForm.setAddedGenderInt(0);
-                    
-                    aForm.setAction(ImportProfileAction.ACTION_SAVE);
-                    destination = mapping.findForward("view");
-                    request.setAttribute("isGenderSectionFocused", true);
-                    break;
-
-                case ImportProfileAction.ACTION_REMOVE_GENDER:
-                    String gender = ImportUtils.getNotEmptyValueFromParameter(request, "removeGender_");
-                    StringTokenizer stringTokenizerNewGender = new StringTokenizer(gender, ",");
-                    Map<String, Integer> genderMapping = importProfileService.getImportProfileGenderMapping(aForm.getProfileId());
-                    while (stringTokenizerNewGender.hasMoreTokens()) {
-                    	String genderToken = stringTokenizerNewGender.nextToken().trim();
-                    	genderMapping.remove(genderToken);
-                    }
-                    importProfileService.saveImportProfileGenderMapping(aForm.getProfileId(), genderMapping);
-                    aForm.getProfile().setGenderMapping(genderMapping);
-                    aForm.setAction(ImportProfileAction.ACTION_SAVE);
-                    destination = mapping.findForward("view");
-                    request.setAttribute("isGenderSectionFocused", true);
-                    break;
-
                 case ImportProfileAction.ACTION_SAVE:
-                	if (AgnUtils.parameterNotEmpty(request, "save")) {
+                	if (AgnUtils.parameterNotEmpty(request, "save") && (isValidImportToSave(admin, aForm))) {
                 		if (aForm.getProfile().getImportProcessActionID() > 0 && !admin.permissionAllowed(Permission.IMPORT_PREPROCESSING)) {
                 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.notAllowed"));
                 		} else if (aForm.getProfile().isAutoMapping() && aForm.getProfile().isNoHeaders()) {
@@ -342,7 +285,6 @@ public class ImportProfileAction extends StrutsActionBase {
 		                    if (!checkErrorsOnSave(aForm, request, errors)) {
 		                        saveImportProfile(aForm, request);
 		                        loadImportProfile(aForm);
-		                        setAvailableImportModes(aForm, request);
 		                        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
 		                        if (aForm.getProfile().getImportMode() == ImportMode.REACTIVATE_BOUNCED.getIntValue()) {
 		                        	messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage(I18nString.getLocaleString("warning.import.mode.bounceractivation", AgnUtils.getLocale(request)), false));
@@ -351,11 +293,17 @@ public class ImportProfileAction extends StrutsActionBase {
 		                        checkProfileKeyColumnIndexed(messages, errors, aForm.getProfile());
 		                    }
                 		}
-                	}
+                	} else {
+                        loadImportProfile(aForm);
+                    }
                 	if (emmActionDao != null) {
                 		aForm.setActionsForNewRecipients(emmActionDao.getEmmActionsByOperationType(companyId, false, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING));
                 	}
+                    if (importProcessActionDao != null) {
+                    	aForm.setImportProcessActions(importProcessActionDao.getAvailableImportProcessActions(companyId));
+                    }
                     aForm.setAction(ImportProfileAction.ACTION_SAVE);
+                    request.setAttribute("isGenderSectionFocused", Boolean.valueOf(request.getParameter("isGenderSectionFocused")));
                     destination = mapping.findForward("view");
                     break;
 
@@ -363,7 +311,6 @@ public class ImportProfileAction extends StrutsActionBase {
                     aForm.reset(mapping, request);
                     aForm.setAction(ImportProfileAction.ACTION_SAVE);
                     createEmptyProfile(aForm, request);
-                    setAvailableImportModes(aForm, request);
                     if (importProcessActionDao != null) {
                     	aForm.setImportProcessActions(importProcessActionDao.getAvailableImportProcessActions(companyId));
                     }
@@ -440,6 +387,17 @@ public class ImportProfileAction extends StrutsActionBase {
         return destination;
     }
 
+    protected boolean isValidImportToSave(ComAdmin admin, ImportProfileForm form) throws Exception {
+        return isUserHasPermissionForSelectedMode(admin, form)
+                && (form.getProfile().getImportProcessActionID() == 0 || admin.permissionAllowed(Permission.IMPORT_PREPROCESSING))
+                && (!"json".equalsIgnoreCase(form.getProfile().getDatatype()));
+    }
+
+    protected boolean isUserHasPermissionForSelectedMode(ComAdmin admin, ImportProfileForm aForm) throws Exception {
+        return admin.permissionAllowed(Permission
+                .getPermissionByToken(ImportMode.getFromInt(aForm.getProfile().getImportMode()).getMessageKey()));
+	}
+
     private List<Integer> getAllowedModesForAllMailinglists() {
         return Stream.of(
                     ImportMode.ADD,
@@ -473,10 +431,13 @@ public class ImportProfileAction extends StrutsActionBase {
         for (int i = 0; i <= maxGenderValue; i++) {
             genders.add(i);
         }
+
+        setImportModes(form, request);
         
         request.setAttribute("availableGenderIntValues", genders);
         request.setAttribute("allowedModesForAllMailinglists", getAllowedModesForAllMailinglists());
         request.setAttribute("mediatypes", MediaTypes.valuesSortedByCode());
+        request.setAttribute("isUserHasPermissionForSelectedMode", isUserHasPermissionForSelectedMode(admin, form));
     }
 
 	protected boolean checkErrorsOnSave(ImportProfileForm aForm, HttpServletRequest request, ActionMessages errors) throws InstantiationException, IllegalAccessException {
@@ -503,18 +464,26 @@ public class ImportProfileAction extends StrutsActionBase {
     /**
      * Loads the list of allowed import modes for current user.
      *
-     * @param aForm   form
      * @param request request
      * @throws Exception
      */
-    private void setAvailableImportModes(ImportProfileForm aForm, HttpServletRequest request) throws Exception {
+    private List<ImportMode> getAvailableImportModes(HttpServletRequest request) throws Exception {
         List<ImportMode> allowedModes = new ArrayList<>();
         for (ImportMode mode : ImportMode.values()) {
             if (AgnUtils.allowed(request, Permission.getPermissionsByToken(mode.getMessageKey()))) {
                 allowedModes.add(mode);
             }
         }
-        aForm.setImportModes(allowedModes.toArray(new ImportMode[0]));
+        return allowedModes;
+    }
+    
+    private void setImportModes(ImportProfileForm aForm, HttpServletRequest request) throws Exception {
+        Set<ImportMode> modes = new TreeSet<>(Comparator.comparingInt(ImportMode::getIntValue));
+        modes.addAll(getAvailableImportModes(request));
+        if (aForm.getProfileId() != 0) {
+            modes.add(ImportMode.getFromInt(aForm.getProfile().getImportMode()));
+        }
+        aForm.setImportModes(modes.toArray(new ImportMode[0]));
     }
 
     /**
@@ -611,9 +580,8 @@ public class ImportProfileAction extends StrutsActionBase {
      * Saves import profile (or creats new if its' "New import profile" page)
      *
      * @param aForm a form
-     * @throws Exception
      */
-    private void saveImportProfile(ImportProfileForm aForm, HttpServletRequest request) throws Exception {
+    private void saveImportProfile(ImportProfileForm aForm, HttpServletRequest request) {
     	ComAdmin admin = AgnUtils.getAdmin(request);
     	
         ImportProfile importProfile = aForm.getProfile();
@@ -621,13 +589,12 @@ public class ImportProfileAction extends StrutsActionBase {
         importProfile.setCompanyId(AgnUtils.getCompanyID(request));
         importProfile.setAdminId(AgnUtils.getAdminId(request));
         importProfile.setMailinglists(new ArrayList<>(aForm.getMailinglists()));
-        
         importProfile.setMediatypes(aForm.getMediatypes());
         
+        setupGenderMappings(importProfile);
+
         if (aForm.getProfileId() != 0) {
             ImportProfile oldImportProfile = importProfileService.getImportProfileById(aForm.getProfileId());
-            // Gendermapping is handled separately
-            importProfile.setGenderMapping(oldImportProfile.getGenderMapping());
             importProfileService.saveImportProfileWithoutColumnMappings(importProfile);
 
             writeImportChangeLog(oldImportProfile, importProfile, aForm, admin);
@@ -637,6 +604,17 @@ public class ImportProfileAction extends StrutsActionBase {
 
             writeUserActivityLog(admin, "create import profile", getImportProfileDescription(importProfile));
         }
+    }
+
+    private void setupGenderMappings(ImportProfile importProfile) {
+        importProfile.getGenderMappingsToSave().entrySet().stream()
+                .filter(entry -> NumberUtils.isDigits(String.valueOf(entry.getKey())))
+                .forEach(mapping -> {
+                    int intValue = NumberUtils.toInt(String.valueOf(mapping.getKey()));
+                    String textValuesStr = mapping.getValue();
+                    Arrays.stream(textValuesStr.split(",")).map(String::trim).filter(v -> !v.isEmpty()).distinct()
+                            .forEach(textVal -> importProfile.getGenderMapping().put(textVal, intValue));
+                });
     }
 
     private void writeImportChangeLog(ImportProfile oldImport, ImportProfile newImport, ImportProfileForm form, ComAdmin admin) {
@@ -705,9 +683,7 @@ public class ImportProfileAction extends StrutsActionBase {
         } catch (Exception e) {
             //Should never happen
         }
-        logDescription.append(addChangedFieldLog("Pre import action",
-                getImportProcessActionName(newImport.getImportProcessActionID(), form),
-                getImportProcessActionName(oldImport.getImportProcessActionID(), form)));
+        logDescription.append(getPreImportActionLog(oldImport.getImportProcessActionID(), newImport.getImportProcessActionID(), admin.getCompanyID()));
         logDescription.append(addChangedFieldLog("Action for new recipients",
                 getActionForNewRecipientsName(newImport.getActionForNewRecipients(), form),
                 getActionForNewRecipientsName(oldImport.getActionForNewRecipients(),form)));
@@ -760,9 +736,16 @@ public class ImportProfileAction extends StrutsActionBase {
         return value ? "update all recipients" : "update only one recipient";
     }
 
-    private String getImportProcessActionName(int actionId, ImportProfileForm form) {
+    private String getPreImportActionLog(int oldId, int newId, int companyId) {
+        List<ImportProcessAction> allActions = importProcessActionDao.getAvailableImportProcessActions(companyId);
+        return addChangedFieldLog("Pre import action",
+                getImportProcessActionName(newId, allActions),
+                getImportProcessActionName(oldId, allActions));
+    }
+    
+    private String getImportProcessActionName(int actionId, List<ImportProcessAction> allActions) {
         if (actionId != 0) {
-            ImportProcessAction importAction = form.getImportProcessActions().stream()
+            ImportProcessAction importAction = allActions.stream()
                     .filter(action -> action.getImportactionID() == actionId)
                     .findFirst().orElse(null);
             return importAction != null ? importAction.getName() : UNKNOWN_ACTION;

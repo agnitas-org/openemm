@@ -16,7 +16,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
@@ -29,7 +29,6 @@ import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.springframework.beans.BeansException;
@@ -91,7 +90,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		final int clientID = clientService.getClientId(request.getHeader("User-Agent"));
 		final UserForm userForm = loadUserForm(formName, companyID);
 
-		final ComExtensibleUID uid = processUID(request, params, useSession);
+		final ComExtensibleUID uid = processUID(companyID, request, params, useSession);
 		
 		logFormAccess(userForm, uid, request.getRemoteAddr(), deviceID, deviceClass, clientID);
 		
@@ -120,8 +119,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	 * @param useSession also store the result in the session if this is not 0.
 	 */
 	@SuppressWarnings("unchecked")
-	public ComExtensibleUID processUID(HttpServletRequest req, Map<String, Object> params, boolean useSession) {
-		int	companyIdRequestParam = NumberUtils.toInt(req.getParameter("agnCI"));
+	private final ComExtensibleUID processUID(final int companyIdRequestParam, HttpServletRequest req, Map<String, Object> params, boolean useSession) {
 		String uidString = getUidStringFromRequest(req);
 		ComExtensibleUID uidObject = decodeUidString(uidString);
 

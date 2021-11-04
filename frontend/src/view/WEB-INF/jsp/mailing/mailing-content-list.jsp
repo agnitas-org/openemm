@@ -16,7 +16,8 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="mailingContentForm" type="com.agnitas.web.ComMailingContentForm"--%>
-<%--@elvariable id="disableContentEditing" type="java.lang.Boolean"--%>
+<%--@elvariable id="IS_MAILING_EDITABLE" type="java.lang.Boolean"--%>
+<%--@elvariable id="isMailingExclusiveLockingAcquired" type="java.lang.Boolean"--%>
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 
 <c:set var="ACTION_VIEW" value="<%=ComMailingContentAction.ACTION_VIEW%>"/>
@@ -35,9 +36,6 @@
 <c:set var="PREVIEW_FORMAT_TEXT" value="<%= MailingPreviewHelper.INPUT_TYPE_HTML %>"/>
 
 <c:set var="isMailingGrid" value="${mailingContentForm.gridTemplateId > 0}" scope="request"/>
-<c:set var="isMailingExclusiveLockingAcquired" value="${true}"/>
-
-<c:set var="isMailingExclusiveLockingAcquired" value="${mailingContentForm.mailingExclusiveLockingAcquired}"/>
 
 <jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp"/>
 
@@ -113,14 +111,17 @@
 											"interestGroupList": ${emm:toJson(mailingContentForm.availableInterestGroups)},
 											"dynTagNames": ${emm:toJson(mailingContentForm.dynTagNames)},
 											"dynTagsMap": ${emm:toJson(mailingContentForm.tags)},
-											"isMailingExclusiveLockingAcquired": ${isMailingExclusiveLockingAcquired}
+											"isMailingExclusiveLockingAcquired": ${isMailingExclusiveLockingAcquired},
+											"isEditableMailing": ${IS_MAILING_EDITABLE}
 										}
 									</script>
 
 									<script id="config:mailing-content-overview" type="application/json">
 										{
 											"mailingId": ${mailingContentForm.mailingID},
-											"isMailingExclusiveLockingAcquired": ${isMailingExclusiveLockingAcquired}
+											"isMailingExclusiveLockingAcquired": ${isMailingExclusiveLockingAcquired},
+											"anotherLockingUserName": "${mailingContentForm.anotherLockingUserName}",
+											"isEditableMailing": ${IS_MAILING_EDITABLE}
 										}
 									</script>
 								</div>

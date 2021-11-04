@@ -10,7 +10,7 @@
 
 package com.agnitas.web.mvc;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.util.AgnUtils;
 import org.springframework.core.MethodParameter;

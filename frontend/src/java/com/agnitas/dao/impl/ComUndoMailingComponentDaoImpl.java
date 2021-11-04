@@ -64,7 +64,7 @@ public class ComUndoMailingComponentDaoImpl extends BaseDaoImpl implements ComUn
 	
 	// --------------------------------------------------------------------------------------------------------------------------------------- JDBC helper
 
-	private final RowMapper<ComUndoMailingComponent> undoMailingComponentRowMapper = new RowMapper<ComUndoMailingComponent>() {
+	private final RowMapper<ComUndoMailingComponent> undoMailingComponentRowMapper = new RowMapper<>() {
 		@Override
 		public ComUndoMailingComponent mapRow(ResultSet resultSet, int rowNum) throws SQLException {
 			ComUndoMailingComponentImpl undo = new ComUndoMailingComponentImpl();

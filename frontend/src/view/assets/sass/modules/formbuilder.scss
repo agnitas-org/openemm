@@ -41,6 +41,10 @@
       }
     }
   }
+
+  .input-control + .input-set-control {
+    margin-top: 5px;
+  }
 }
 
 body.dark-theme .form-wrap.form-builder {

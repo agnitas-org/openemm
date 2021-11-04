@@ -59,23 +59,23 @@ public abstract class GenericEqlNodeParser<T> implements EqlNodeParser<T> {
 
     private QueryBuilderBaseNode refactorIfContainsIncludingEmptyRule(final QueryBuilderGroupNode node) {
         final List<QueryBuilderBaseNode> rules = node.getRules();
-        if(rules.size() != 2) {
+        if (rules.size() != 2) {
             return node;
         }
         final QueryBuilderBaseNode leftNode = rules.get(0),
                 rightNode = rules.get(1);
-        if(!(leftNode instanceof QueryBuilderRuleNode && rightNode instanceof QueryBuilderRuleNode)) {
+        if (!(leftNode instanceof QueryBuilderRuleNode && rightNode instanceof QueryBuilderRuleNode)) {
             return node;
         }
 
         final QueryBuilderRuleNode leftRule = (QueryBuilderRuleNode) leftNode,
                 rightRule = (QueryBuilderRuleNode) rightNode;
 
-        if(!leftRule.getId().equals(rightRule.getId())) {
+        if (!leftRule.getId().equals(rightRule.getId())) {
             return node;
         }
 
-        if(!("not_equal".equals(leftRule.getOperator()) && "is_empty".equals(rightRule.getOperator()) && "OR".equals(node.getCondition()))) {
+        if (!("not_equal".equals(leftRule.getOperator()) && "is_empty".equals(rightRule.getOperator()) && "OR".equals(node.getCondition()))) {
             return node;
         }
 

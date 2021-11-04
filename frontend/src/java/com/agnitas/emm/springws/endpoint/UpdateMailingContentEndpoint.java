@@ -11,9 +11,11 @@
 package com.agnitas.emm.springws.endpoint;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.util.StringUtils;
@@ -30,10 +32,12 @@ import com.agnitas.emm.springws.jaxb.UpdateMailingContentResponse;
 @Endpoint
 public class UpdateMailingContentEndpoint extends BaseEndpoint {
 
-    private ComComponentService componentService;
+    private final ComComponentService componentService;
+	private final MailingEditableCheck mailingEditableCheck;
 
-    public UpdateMailingContentEndpoint(@Qualifier("componentService") ComComponentService componentService) {
-        this.componentService = componentService;
+    public UpdateMailingContentEndpoint(@Qualifier("componentService") ComComponentService componentService, final MailingEditableCheck mailingEditableCheck) {
+        this.componentService = Objects.requireNonNull(componentService);
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
     }
 
     @PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "UpdateMailingContentRequest")
@@ -45,6 +49,8 @@ public class UpdateMailingContentEndpoint extends BaseEndpoint {
         if (!MediaTypes.EMAIL.isComponentNameForMediaType(request.getComponentName())) {
             throw new IllegalArgumentException("Invalid component name");
         }
+        
+        this.mailingEditableCheck.requireMailingEditable(request.getMailingID(), Utils.getUserCompany());
 
         componentService.updateMailingContent(parseModel(request));
         return new UpdateMailingContentResponse();

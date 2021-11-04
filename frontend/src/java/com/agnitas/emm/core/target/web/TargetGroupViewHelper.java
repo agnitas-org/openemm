@@ -24,10 +24,11 @@ public final class TargetGroupViewHelper {
 	 * 
 	 * @return view URL
 	 */
-	public static final String targetGroupViewUrl(int targetId) {
-		return UriComponentsBuilder.fromPath("/targetQB.do")
-				.queryParam("method", "show")
-				.queryParam("targetID", targetId)
+	public static String targetGroupViewUrl(int targetId) {
+		return UriComponentsBuilder.newInstance()
+				.path("/target/")
+				.path(Integer.toString(targetId))
+				.path("/view.action")
 				.toUriString();
 	}
 

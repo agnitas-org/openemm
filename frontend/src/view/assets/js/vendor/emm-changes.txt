@@ -8,9 +8,8 @@
 2) ace/worker-html.js
 - removed error emit for 'almost-standards-doctype'.
 
-3) bootstrap-tooltip-3.2.0.js
+3) bootstrap-tooltip-3.4.1.js
 - changed an order of statements to make sure that placement function is able to get an actual balloon's dimensions
-- changed tooltip validation function to indicate that triggering element is detached (former implementation was suitable for a special case only - when there's no immediate parent node)
 
 4) query-builder.js
 - added localization for builder.
@@ -23,7 +22,7 @@
 - deeply customized before initial commit
 - replaced 'notification-top-right' with 'notification-below-header' container style in order to provide custom positioning
 
-7) bootstrap-modal-3.2.0.js
+7) bootstrap-modal-3.4.1.js
 - added a click event handler to a backdrop so a click outside a <div class="modal"></div> also hides a dialog.
 
 8) ace.js
@@ -48,3 +47,9 @@
 - added statuses property to Dirty.prototype
 - added support of adding custom methods
 - added support of extending dirty lib
+
+14) bootstrap-dropdown-3.4.1.js
+- e.preventDropdownClose check in clearMenus to be able to keep the dropdown open
+
+15) bootstrap-popover-3.4.1.js
+- changed jQuery fn tooltip namespace to bsTooltip

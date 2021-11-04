@@ -27,6 +27,8 @@ public interface ComBirtReportDao {
 
     List<ComLightweightBirtReport> getLightweightBirtReportList(@VelocityCheck int companyID);
 
+    void updateReportMailinglists(int reportId, int reportType, List<Integer> mailinglistIds);
+
     void insertSentMailings(Integer reportId, Integer companyID, List<Integer> sentMailings);
 
     List<Map<String, Object>> getReportParamValues(@VelocityCheck int companyID, String paramName);

@@ -30,8 +30,6 @@ import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
@@ -56,16 +54,10 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	private static final transient Logger logger = Logger.getLogger(ComBindingEntryDaoImpl.class);
 	
 	private ComRecipientDao recipientDao;
-	private ConfigService configService;
 	
 	@Required
 	public final void setRecipientDao(final ComRecipientDao dao) {
 		this.recipientDao = Objects.requireNonNull(dao, "Recipient DAO is null");
-	}
-	
-	@Required
-	public final void setConfigService(final ConfigService service) {
-		this.configService = Objects.requireNonNull(service, "ConfigService is null");
 	}
 
 	@Override
@@ -185,6 +177,98 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			return false;
 		}
 	}
+
+	@Override
+	@DaoUpdateReturnValueCheck
+    public void updateBindings(@VelocityCheck int companyId, List<BindingEntry> bindings) throws Exception {
+		List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyId + "_binding_tbl");
+
+		boolean containsReferrerColumn = bindingColumns.contains("referrer");
+		boolean containsEntryMailingIdColumn = bindingColumns.contains("entry_mailing_id");
+
+        String query = "UPDATE customer_" + companyId + "_binding_tbl" +
+                " SET user_status = ?, user_remark = ?, exit_mailing_id = ?, user_type = ?, timestamp = CURRENT_TIMESTAMP" +
+				(containsReferrerColumn ? ", referrer = ?" : "") +
+				(containsEntryMailingIdColumn ? ", entry_mailing_id = ?" : "") +
+                " WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
+
+		List<Object[]> params = new ArrayList<>();
+		for (BindingEntry binding : bindings) {
+			List<Object> objects = new ArrayList<>();
+			objects.add(binding.getUserStatus());
+			objects.add(binding.getUserRemark());
+			objects.add(binding.getExitMailingID());
+			objects.add(binding.getUserType());
+
+			if (containsReferrerColumn) {
+				objects.add(binding.getReferrer());
+			}
+			if (containsEntryMailingIdColumn) {
+				objects.add(binding.getEntryMailingID());
+			}
+
+			objects.add(binding.getCustomerID());
+			objects.add(binding.getMailinglistID());
+			objects.add(binding.getMediaType());
+			params.add(objects.toArray());
+		}
+
+		batchupdate(logger, query, params);
+    }
+
+    @Override
+	@DaoUpdateReturnValueCheck
+    public void insertBindings(@VelocityCheck int companyId, List<BindingEntry> bindings) throws Exception {
+		if (companyId > 0) {
+			List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyId + "_binding_tbl");
+
+			boolean containsReferrerColumn = bindingColumns.contains("referrer");
+			boolean containsEntryMailingIdColumn = bindingColumns.contains("entry_mailing_id");
+
+			List<String> columns = new ArrayList<>(Arrays.asList(
+					"mailinglist_id",
+					"customer_id",
+					"user_type",
+					"user_status",
+					"user_remark",
+					"exit_mailing_id",
+					"mediatype"));
+			if (containsReferrerColumn) {
+				columns.add("referrer");
+			}
+			if (containsEntryMailingIdColumn) {
+				columns.add("entry_mailing_id");
+			}
+			String query = "INSERT INTO customer_" + companyId + "_binding_tbl(" + StringUtils.join(columns, ", ") + ", creation_date, timestamp) " +
+					"VALUES (" + StringUtils.repeat("?, ", columns.size()) + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+
+			List<Object[]> params = new ArrayList<>();
+			for (BindingEntry binding : bindings) {
+				if (checkAssignedProfileFieldIsSet(binding, companyId)) {
+
+					List<Object> objects = new ArrayList<>();
+					objects.add(binding.getMailinglistID());
+					objects.add(binding.getCustomerID());
+					objects.add(binding.getUserType());
+					objects.add(binding.getUserStatus());
+					objects.add(binding.getUserRemark());
+					objects.add(binding.getExitMailingID());
+					objects.add(binding.getMediaType());
+
+					if (containsReferrerColumn) {
+						objects.add(binding.getReferrer());
+					}
+					if (containsEntryMailingIdColumn) {
+						objects.add(binding.getEntryMailingID());
+					}
+
+					params.add(objects.toArray());
+				}
+			}
+
+			batchupdate(logger, query, params);
+		}
+    }
 
 	@Override
 	@DaoUpdateReturnValueCheck
@@ -424,25 +508,18 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 		// Check for valid UserStatus code
 		UserStatus.getUserStatusByID(userStatus);
 		
-		final boolean useNewWildcards = this.configService.getBooleanValue(ConfigValue.Development.UseNewBlacklistWildcards, companyId);
+		final String escapeClause = isOracleDB() ? " ESCAPE '\\'" : "";
 		
-		if(useNewWildcards) {
-			final String escapeClause = isOracleDB() ? " ESCAPE '\\'" : "";
-			
-			final String customerIdByPatternSubselect = String.format(
-					"SELECT customer_id FROM customer_%d_tbl WHERE email LIKE REPLACE(REPLACE(?, '_', '\\_'), '*', '%%') %s",
-					companyId,
-					escapeClause);
-			
-			final String sql = String.format("UPDATE customer_%d_binding_tbl SET user_status=?, user_remark=?, timestamp=CURRENT_TIMESTAMP WHERE customer_id IN (%s)",
-					companyId,
-					customerIdByPatternSubselect);
-			
-			update(logger, sql, userStatus, remark, emailPattern);
-		} else {
-			String sql = "UPDATE customer_" + companyId + "_binding_tbl " + "SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP WHERE customer_id IN (SELECT customer_id FROM customer_" + companyId + "_tbl WHERE email LIKE ?)";
-			update(logger, sql, userStatus, remark, emailPattern);
-		}
+		final String customerIdByPatternSubselect = String.format(
+				"SELECT customer_id FROM customer_%d_tbl WHERE email LIKE REPLACE(REPLACE(?, '_', '\\_'), '*', '%%') %s",
+				companyId,
+				escapeClause);
+		
+		final String sql = String.format("UPDATE customer_%d_binding_tbl SET user_status=?, user_remark=?, timestamp=CURRENT_TIMESTAMP WHERE customer_id IN (%s)",
+				companyId,
+				customerIdByPatternSubselect);
+		
+		update(logger, sql, userStatus, remark, emailPattern);
 	}
 	
 	@Override

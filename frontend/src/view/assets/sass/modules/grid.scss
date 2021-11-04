@@ -1052,3 +1052,11 @@ $row-group-indent-size: 10px !default;
 .ag-row-inline-editing {
     z-index: 1;
 }
+
+body.dark-theme .ag-cell a {
+  color: #cccdcd;
+}
+
+.ag-cell a {
+  color: #707173;
+}

@@ -34,6 +34,12 @@ public abstract class BaseValidator {
         }
     }
 
+    protected void assertIsPositiveOrZero(final Number propertyValue, final String propertyNameCode) {
+        if (propertyValue == null || propertyValue.doubleValue() < 0.0) {
+            throwException("err.isPositiveOrZero", propertyNameCode);
+        }
+    }
+    
     protected void assertIsNotBlank(final String propertyValue, final String propertyNameCode) {
         if (StringUtils.isBlank(propertyValue)) {
             throwException("err.required", propertyNameCode);

@@ -10,7 +10,11 @@
 
 package com.agnitas.emm.core.target.eql;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+
+import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComTarget;
 import com.agnitas.emm.core.target.eql.ast.BooleanExpressionTargetRuleEqlNode;
@@ -27,6 +31,8 @@ import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeGeneratorCallback;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeGeneratorCallbackFactory;
 import com.agnitas.emm.core.target.eql.parser.EqlParser;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
+import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
+import com.agnitas.emm.core.target.eql.parser.EqlSyntaxErrorException;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 import com.agnitas.emm.core.target.eql.referencecollector.SimpleReferenceCollector;
 
@@ -35,6 +41,8 @@ import com.agnitas.emm.core.target.eql.referencecollector.SimpleReferenceCollect
  */
 public class EqlFacade {
 
+	private static final transient Logger LOGGER = Logger.getLogger(EqlFacade.class);
+
 	/** Parser for EQL code. */
 	private final EqlParser eqlParser;
 	
@@ -42,6 +50,8 @@ public class EqlFacade {
 	private final CodeGenerator codeGenerator;
 
 	private final SqlCodeGeneratorCallbackFactory sqlCodeGeneratorCallbackFactory;
+	
+	@Deprecated
 	private final BeanShellCodeGeneratorCallbackFactory beanShellCodeGeneratorCallbackFactory;
 		
 	/**
@@ -148,6 +158,7 @@ public class EqlFacade {
 	 * @throws CodeGeneratorException on errors generating BeanShell code
 	 * @throws ProfileFieldResolveException on errors resolving profile fields
 	 */
+	@Deprecated // No replacement
 	public final String convertEqlToBeanShellExpression(final String eql, final int companyId) throws EqlParserException, CodeGeneratorException, ProfileFieldResolveException {
 		final BooleanExpressionTargetRuleEqlNode node = this.eqlParser.parseEql(eql);
 		
@@ -169,6 +180,7 @@ public class EqlFacade {
 	 * @throws CodeGeneratorException on errors generating BeanShell code
 	 * @throws ProfileFieldResolveException on errors resolving profile fields
 	 */
+	@Deprecated // No replacement
 	public final String convertEqlToBeanShellExpression(final ComTarget target) throws EqlParserException, CodeGeneratorException, ProfileFieldResolveException {
 		return convertEqlToBeanShellExpression(target.getEQL(), target.getCompanyID());
 	}
@@ -181,6 +193,24 @@ public class EqlFacade {
 		node.traverse(mailtrackingAnalyzer);
 		
 		return new EqlAnalysisResult(mailtrackingAnalyzer.isMailtrackingRequired());
+	}
+
+	public EqlDetailedAnalysisResult analyseEqlSafely(final String eql) {
+		try {
+			final BooleanExpressionTargetRuleEqlNode node = this.eqlParser.parseEql(eql);
+
+			final RequireMailtrackingSyntaxTreeAnalyzer mailtrackingAnalyzer = new RequireMailtrackingSyntaxTreeAnalyzer();
+			node.traverse(mailtrackingAnalyzer);
+
+			return new EqlDetailedAnalysisResult(new EqlAnalysisResult(mailtrackingAnalyzer.isMailtrackingRequired()), Collections.emptyList());
+		} catch (final EqlSyntaxErrorException e) {
+			List<EqlSyntaxError> syntaxErrors = e.getErrors();
+
+			return new EqlDetailedAnalysisResult(null, syntaxErrors);
+		} catch (EqlParserException e) {
+			LOGGER.error("Error in EQL analysis.", e);
+			return new EqlDetailedAnalysisResult(null, Collections.emptyList());
+		}
 	}
 
 }

@@ -8,5 +8,5 @@
 
 */
 
-@javax.xml.bind.annotation.XmlSchema(namespace = "http://agnitas.com/ws/schemas", elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED)
+@jakarta.xml.bind.annotation.XmlSchema(namespace = "http://agnitas.com/ws/schemas", elementFormDefault = jakarta.xml.bind.annotation.XmlNsForm.QUALIFIED)
 package com.agnitas.emm.springws.jaxb;

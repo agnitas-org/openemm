@@ -523,10 +523,10 @@ public class Column {
 			String tempvalue = valueParameter.trim();
 
 			try {
-				valueParameter = (new Long(calc(expression, Long.parseLong(tempvalue)))).toString();
+				valueParameter = Long.valueOf(calc(expression, Long.parseLong(tempvalue))).toString();
 			} catch (NumberFormatException e1) {
 				try {
-					valueParameter = (new Double(calc(expression, Double.parseDouble(tempvalue)))).toString();
+					valueParameter = Double.valueOf(calc(expression, Double.parseDouble(tempvalue))).toString();
 				} catch (NumberFormatException e2) {
 					// do nothing
 				}

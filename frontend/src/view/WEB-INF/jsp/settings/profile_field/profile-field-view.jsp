@@ -13,6 +13,8 @@
 <c:set var="GENERIC_TYPE_INTEGER" value="<%= DbColumnType.GENERIC_TYPE_INTEGER %>"/>
 <c:set var="GENERIC_TYPE_FLOAT" value="<%= DbColumnType.GENERIC_TYPE_FLOAT %>"/>
 <c:set var="GENERIC_TYPE_VARCHAR" value="<%= DbColumnType.GENERIC_TYPE_VARCHAR %>"/>
+<c:set var="GENERIC_TYPE_DATE" value="<%= DbColumnType.GENERIC_TYPE_DATE %>"/>
+<c:set var="GENERIC_TYPE_DATETIME" value="<%= DbColumnType.GENERIC_TYPE_DATETIME %>"/>
 
 <mvc:form servletRelativeAction="/profiledb/save.action" data-form="resource" id="profileFieldForm" method="POST"
 		  data-controller="profile-field-view" modelAttribute="profileForm">
@@ -85,19 +87,19 @@
 					<div class="col-sm-8">
 						<c:if test="${isNewField}">
 							<mvc:select path="fieldType" size="1" id="fieldType" cssClass="form-control js-select" data-field-vis="">
-								<mvc:option value="INTEGER" data-field-vis-hide="#fieldLengthDiv" data-field-vis-show="#interestDiv">
+								<mvc:option value="INTEGER" data-field-vis-hide="#fieldLengthDiv" data-field-vis-show="#interestDiv, #defaultFieldDiv, #nullAllowedDiv">
 									<bean:message key="settings.fieldType.INTEGER"/>
 								</mvc:option>
-								<mvc:option value="FLOAT" data-field-vis-hide="#fieldLengthDiv" data-field-vis-show="#interestDiv">
+								<mvc:option value="FLOAT" data-field-vis-hide="#fieldLengthDiv" data-field-vis-show="#interestDiv, #defaultFieldDiv, #nullAllowedDiv">
 									<bean:message key="settings.fieldType.Float"/>
 								</mvc:option>
-								<mvc:option value="VARCHAR" data-field-vis-show="#fieldLengthDiv" data-field-vis-hide="#interestDiv">
+								<mvc:option value="VARCHAR" data-field-vis-hide="#interestDiv" data-field-vis-show="#fieldLengthDiv, #defaultFieldDiv, #nullAllowedDiv">
 									<bean:message key="settings.fieldType.VARCHAR"/>
 								</mvc:option>
-								<mvc:option value="DATE" data-field-vis-hide="#fieldLengthDiv, #interestDiv">
+								<mvc:option value="DATE" data-field-vis-hide="#fieldLengthDiv, #interestDiv, #defaultFieldDiv, #nullAllowedDiv">
 									<bean:message key="settings.fieldType.DATE"/>
 								</mvc:option>
-								<mvc:option value="DATETIME" data-field-vis-hide="#fieldLengthDiv, #interestDiv">
+								<mvc:option value="DATETIME" data-field-vis-hide="#fieldLengthDiv, #interestDiv, #defaultFieldDiv, #nullAllowedDiv">
 									<bean:message key="settings.fieldType.DATETIME"/>
 								</mvc:option>
 							</mvc:select>
@@ -140,16 +142,18 @@
 					</c:if>
 				</c:if>
 
-				<div class="form-group">
-					<div class="col-sm-4">
-						<label class="control-label" for="fieldDefault"><bean:message key="settings.Default_Value"/></label>
-					</div>
-					<div class="col-sm-8">
-						<mvc:text path="fieldDefault" id="fieldDefault" cssClass="form-control" size="32"  maxlength="199"/>
-					</div>
-				</div>
+                <c:if test="${profileForm.fieldType != GENERIC_TYPE_DATE && profileForm.fieldType != GENERIC_TYPE_DATETIME}">
+                    <div id="defaultFieldDiv" class="form-group">
+                        <div class="col-sm-4">
+                            <label class="control-label" for="fieldDefault"><bean:message key="settings.Default_Value"/></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <mvc:text path="fieldDefault" id="fieldDefault" cssClass="form-control" size="32"  maxlength="199"/>
+                        </div>
+                    </div>
+                </c:if>
 
-				<div class="form-group">
+				<div id="nullAllowedDiv" class="form-group">
 					<div class="col-sm-4">
 						<label class="control-label" for="fieldNull"><bean:message key="settings.NullAllowed"/></label>
 					</div>
@@ -283,8 +287,13 @@
 
 				<div class="form-group">
 					<div class="col-sm-4">
-						<label class="control-label" for="useAllowedValues"><bean:message
-								key="settings.FieldFixedValue"/></label>
+						<label class="control-label" for="useAllowedValues">
+							<bean:message key="settings.FieldFixedValue"/>
+							<button class="icon icon-help"
+									data-help="help_${helplanguage}/recipient/profileField/FixedValue.xml"
+									tabindex="-1"
+									type="button"></button>
+						</label>
 					</div>
 					<div class="col-sm-8">
 						<label class="toggle">

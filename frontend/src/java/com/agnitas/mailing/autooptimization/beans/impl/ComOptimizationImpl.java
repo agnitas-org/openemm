@@ -373,6 +373,21 @@ public class ComOptimizationImpl implements ComOptimization {
 
     @Override
     public void setTargetExpression(String targetExpression) {
+		/*
+		 * EMM-8756
+		 * This pre-processing is needed, because we receive a list of target group ids
+		 * here from UI that starts with a ",".
+		 * This is sent in that form by the browser, so there must be some issue with the JSP.
+		 * 
+		 * This faulty list is stored in DB unchecked (!!!), so the leading comma can be found there, too.
+		 */
+
+		if(targetExpression != null) {
+			while(targetExpression.startsWith(",")) {
+				targetExpression = targetExpression.substring(1).trim();
+			}
+		}
+
         this.targetExpression = targetExpression;
     }
 

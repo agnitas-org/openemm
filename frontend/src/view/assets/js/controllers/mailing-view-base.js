@@ -10,6 +10,7 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
   var lastMailingListId = 0;
 
   var saveDirtyState = false;
+  var mediaTypePriorityChanged = false;
   var backupFieldsDirtyData = {};
 
   this.addDomInitializer('mailing-view-base', function() {
@@ -41,7 +42,9 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
     if (lastMailingListId  > 0) {
       lastMailingListId = mailingListSelect.select2("val", lastMailingListId);
     }
-
+    if (config.selectedRemovedMailinglistId) {
+        showRemovedFieldError();
+    }
     updateGeneralMailingTypeView(config.mailingType);
   });
 
@@ -67,7 +70,7 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
         preventLeaving: true,
         leavingMessage: t('grid.layout.leaveQuestion'),
         onDirty: function() {
-          if (isDirtyOnlyNonEditableFields($form)) {
+          if (isDirtyOnlyNonEditableFields($form) && !mediaTypePriorityChanged) {
             $form.dirty('setAsClean');
           }
         }
@@ -78,11 +81,12 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
       $form.dirty('restoreData', backupFieldsDirtyData);
     }
 
-    if (!saveDirtyState || isDirtyOnlyNonEditableFields($form)) {
+    if (!saveDirtyState || isDirtyOnlyNonEditableFields($form) && !mediaTypePriorityChanged) {
       $form.dirty('setAsClean');
       backupFieldsDirtyData = $form.dirty('backupData');
     }
 
+    mediaTypePriorityChanged = false;
     saveDirtyState = false;
   }
 
@@ -198,6 +202,12 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
     if (!isFollowUpMailing(mailingType)) {
       lastMailingListId = this.el.select2("val");
     }
+    
+    if (config.selectedRemovedMailinglistId) {
+        mailingListSelect.find('option[value="' + config.selectedRemovedMailinglistId + '"]').remove();
+        var form = AGN.Lib.Form.get($(this.el));
+        form.cleanFieldError('mailinglistID');
+    }
   });
 
   function setMailingListSelectByFollowUpMailing() {
@@ -268,16 +278,12 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
     var $form = AGN.Lib.Form.getWrapper($el);
     backupFieldsDirtyData = $form.dirty('backupData');
 
-    form.setValueOnce('action', config.actions.ACTION_VIEW_WITHOUT_LOAD);
     form.setValueOnce($el.prop('name'), $el.is(':checked'));
-
     form.setResourceSelectorOnce('#mailingBaseForm');
-
-    $.post(form.getAction(), form.params())
-      .done(function (resp) {
-        saveDirtyState = true;
-        form.updateHtml(resp);
-      });
+    saveDirtyState = true;
+    form.submit('action', config.actions.ACTION_VIEW_WITHOUT_LOAD).fail(function() {
+      saveDirtyState = false;
+    });
   });
 
   this.addAction({click: 'prioritise-media'}, function() {
@@ -288,15 +294,14 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
     backupFieldsDirtyData = $form.dirty('backupData');
 
     var data = _.extend({}, AGN.Lib.Helpers.objFromString($el.data('config')));
-    form.setValueOnce('action', data.action);
     form.setValueOnce('activeMedia', data.activeMedia);
 
     form.setResourceSelectorOnce('#mailingBaseForm');
-    $.post(form.getAction(), form.params())
-      .done(function(resp) {
-        saveDirtyState = true;
-        form.updateHtml(resp);
-      });
+    mediaTypePriorityChanged = true;
+    saveDirtyState = true;
+    form.submit('action', data.action).fail(function() {
+      saveDirtyState = false;
+    });
   });
 
   window.onbeforeunload = function() {
@@ -305,4 +310,16 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
         AGN.Lib.Loader.show();
     }
   };
+
+  this.addAction({click: 'save'}, function() {
+    var $form = $('#mailingBaseForm');
+    var form = AGN.Lib.Form.get($form);
+    form.setValueOnce('mailingChanged', $form.dirty('isDirty') === true);
+    form.submit();
+  });
+  
+  function showRemovedFieldError() {
+    var form = AGN.Lib.Form.get($('#mailingBaseForm'));
+    form.showFieldError('mailinglistID', 'Mailing list removed', true);
+  }
 });

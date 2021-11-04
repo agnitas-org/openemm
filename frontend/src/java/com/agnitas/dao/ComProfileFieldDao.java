@@ -54,6 +54,8 @@ public interface ComProfileFieldDao extends ProfileFieldDao {
     @Override
 	ProfileField getProfileFieldByShortname(@VelocityCheck int companyID, String shortName) throws Exception;
 
+    boolean existWithExactShortname(int companyID, String shortName);
+
     ProfileField getProfileFieldByShortname(@VelocityCheck int companyID, String shortName, int adminID) throws Exception;
 
 	List<ProfileField> getProfileFieldsWithIndividualSortOrder(@VelocityCheck int companyID, int adminID) throws Exception;
@@ -105,4 +107,6 @@ public interface ComProfileFieldDao extends ProfileFieldDao {
 	DbColumnType getColumnType(@VelocityCheck int companyId, String columnName);
 
 	boolean isColumnIndexed(@VelocityCheck int companyId, String column);
+
+	boolean isReservedKeyWord(String fieldname);
 }

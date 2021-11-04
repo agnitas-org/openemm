@@ -28,9 +28,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.Vector;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
-import org.agnitas.beans.CustomerImportStatus;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.ImportWizardHelper;
 import org.agnitas.util.AgnUtils;
@@ -214,7 +214,7 @@ public class ComImportWizardForm extends StrutsFormBase {
 	 * 
 	 * @return Value of property status.
 	 */
-	public CustomerImportStatus getStatus() {
+	public ImportStatus getStatus() {
 		return importWizardHelper.getStatus();
 	}
 
@@ -224,7 +224,7 @@ public class ComImportWizardForm extends StrutsFormBase {
 	 * @param status
 	 *            New value of property status.
 	 */
-	public void setStatus(CustomerImportStatus status) {
+	public void setStatus(ImportStatus status) {
 		importWizardHelper.setStatus(status);
 	}
 

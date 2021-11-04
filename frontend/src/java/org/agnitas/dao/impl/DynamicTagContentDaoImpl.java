@@ -13,13 +13,13 @@ package org.agnitas.dao.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.util.SpecialCharactersWorker;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.impl.DynamicTagContentImpl;
 import org.agnitas.dao.DynamicTagContentDao;
@@ -28,6 +28,10 @@ import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.util.SpecialCharactersWorker;
 
 public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagContentDao {
 	private static final transient Logger logger = Logger.getLogger(DynamicTagContentDaoImpl.class);
@@ -73,7 +77,7 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteContent( @VelocityCheck int companyID, int contentID) {
+	public boolean deleteContent(@VelocityCheck int companyID, int contentID) {
     	String deleteContentSQL = "DELETE from dyn_content_tbl WHERE dyn_content_id = ? AND company_id = ?";
     	return update(logger, deleteContentSQL, contentID, companyID) > 0;
 	}
@@ -140,4 +144,103 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 			dynContentMap.put(dynNameId, contentIds);
 		}
 	}
+
+	@Override
+    @DaoUpdateReturnValueCheck
+    public void saveDynamicTagContent(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception {
+        Map<Integer, List<Integer>> existingDynContentForDynName = getExistingDynContentForDynName(companyID, mailingID, dynamicTags.stream().map(DynamicTag::getId).collect(Collectors.toList()));
+
+        for (DynamicTag dynamicTag : dynamicTags) {
+            String dynamicName = dynamicTag.getDynName();
+            if (AgnUtils.DEFAULT_MAILING_TEXT_DYNNAME.equals(dynamicName)) {
+                dynamicTag.getDynContent().values().forEach(content -> {
+                    //update dyn content according to mailing charset
+                    content.setDynContent(SpecialCharactersWorker.processString(content.getDynContent(), encodingCharset));
+                });
+            }
+
+            saveDynContent(dynamicTag, dynamicTag.getDynContent(), existingDynContentForDynName.getOrDefault(dynamicTag.getId(), Collections.emptyList()));
+        }
+    }
+
+    private void saveDynContent(DynamicTag dynTag, Map<Integer, DynamicTagContent> contents, final List<Integer> existingContentIds) throws Exception {
+        List<DynamicTagContent> tagContentForUpdate = new ArrayList<>();
+        List<DynamicTagContent> tagContentForCreation = new ArrayList<>();
+
+        contents.values().forEach(entry -> {
+            entry.setCompanyID(dynTag.getCompanyID());
+            entry.setMailingID(dynTag.getMailingID());
+            entry.setDynNameID(dynTag.getId());
+            if (existingContentIds.contains(entry.getId())) {
+                tagContentForUpdate.add(entry);
+            } else {
+                tagContentForCreation.add(entry);
+            }
+        });
+
+        batchUpdateDynContent(tagContentForUpdate);
+        batchInsertDynContent(tagContentForCreation);
+    }
+
+    private void batchInsertDynContent(List<DynamicTagContent> dynamicTagContents) throws Exception {
+        if (isOracleDB()) {
+            dynamicTagContents.forEach(entry -> {
+                entry.setId(selectInt(logger, "SELECT dyn_content_tbl_seq.NEXTVAL FROM DUAL"));
+            });
+
+            List<Object[]> paramList = dynamicTagContents.stream().map(entry -> new Object[]{
+                    entry.getMailingID(),
+                    entry.getCompanyID(),
+                    entry.getDynNameID(),
+                    entry.getId(),
+                    entry.getDynContent(),
+                    entry.getDynOrder(),
+                    entry.getTargetID()
+            }).collect(Collectors.toList());
+
+
+            final String insertSql = "INSERT INTO dyn_content_tbl (mailing_id, company_id, dyn_name_id, dyn_content_id, dyn_content, dyn_order, target_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            batchupdate(logger, insertSql, paramList);
+        } else {
+            List<Object[]> paramList = dynamicTagContents.stream().map(entry -> new Object[]{
+                    entry.getMailingID(),
+                    entry.getCompanyID(),
+                    entry.getDynNameID(),
+                    entry.getDynContent(),
+                    entry.getDynOrder(),
+                    entry.getTargetID()
+            }).collect(Collectors.toList());
+
+
+            final String insertSql = "INSERT INTO dyn_content_tbl (mailing_id, company_id, dyn_name_id, dyn_content, dyn_order, target_id) VALUES (?, ?, ?, ?, ?, ?)";
+            int[] generatedKeys = batchInsertIntoAutoincrementMysqlTable(logger, "dyn_content_id", insertSql, paramList);
+
+            for (int i = 0; i < generatedKeys.length && i < dynamicTagContents.size(); i++) {
+                dynamicTagContents.get(i).setId(generatedKeys[i]);
+            }
+        }
+    }
+
+    private void batchUpdateDynContent(List<DynamicTagContent> dynamicTagContents) {
+        List<Object[]> paramList = dynamicTagContents.stream().map(entry -> new Object[]{
+                entry.getDynContent(),
+                entry.getDynOrder(),
+                entry.getTargetID(),
+                entry.getMailingID(),
+                entry.getCompanyID(),
+                entry.getDynNameID(),
+                entry.getId()
+        }).collect(Collectors.toList());
+
+
+        final String updateSql = "UPDATE dyn_content_tbl SET dyn_content = ?, dyn_order = ?, target_id = ? WHERE mailing_id = ? AND company_id = ? AND dyn_name_id = ? AND dyn_content_id = ?";
+        batchupdate(logger, updateSql, paramList);
+    }
+
+	@Override
+    @DaoUpdateReturnValueCheck
+    public boolean deleteContentFromMailing(@VelocityCheck final int companyId, final int mailingId, final int contentId) {
+        final int affectedRows = update(logger, "DELETE FROM dyn_content_tbl WHERE dyn_content_id = ? AND mailing_id = ? AND company_id = ?", contentId, mailingId, companyId);
+        return affectedRows > 0;
+    }
 }

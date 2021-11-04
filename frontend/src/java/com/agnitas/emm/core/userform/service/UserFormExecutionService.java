@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.userform.service;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 

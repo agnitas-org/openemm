@@ -10,7 +10,7 @@
 
 package org.agnitas.backend;
 
-import javax.mail.internet.MimeUtility;
+import jakarta.mail.internet.MimeUtility;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
@@ -31,7 +31,6 @@ import java.util.zip.GZIPOutputStream;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Log;
 import org.agnitas.util.XMLRPCClient;
-import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -552,9 +551,9 @@ public class MailWriterMeta extends MailWriter {
 	}
 
 	protected void generalHeaders() {
-		writer.single("domain", StringUtils.defaultString(data.mailing.domain()));
-		writer.single("subject", StringUtils.defaultString(data.mailing.subject()));
-		writer.single("from_email", StringUtils.defaultString(data.mailing.getFromEmailFull()));
+		writer.single("domain", data.mailing.domain());
+		writer.single("subject", data.mailing.subject());
+		writer.single("from_email", data.mailing.getFromEmailFull());
 	}
 
 	/**
@@ -897,6 +896,7 @@ public class MailWriterMeta extends MailWriter {
 		opts.add("temporary=true");
 		opts.add("account-logfile=" + data.mailing.accountLogfile());
 		opts.add("bounce-logfile=" + data.mailing.bounceLogfile());
+		opts.add("mailtrack-logfile=" + data.mailing.mailtrackLogfile());
 		addGenerateMediaOptions(opts, mta);
 		return "generate:" + String.join(";", opts);
 	}
@@ -1097,7 +1097,7 @@ public class MailWriterMeta extends MailWriter {
 	 */
 	private void emitDescription() {
 		writer.openclose("licence", "id", data.licenceID());
-		writer.open(!data.company.infoAvailable(), "company", "id", data.company.id());
+		writer.open(!data.company.infoAvailable(), "company", "id", data.company.id(), "name", data.company.name());
 		if (data.company.infoAvailable()) {
 			for (String name : data.company.infoKeys()) {
 				String value = data.company.infoValue(name);
@@ -1113,8 +1113,8 @@ public class MailWriterMeta extends MailWriter {
 	}
 
 	protected void mailingInfo() {
-		writer.openclose("mailinglist", "id", data.mailinglist.id());
-		writer.open(data.mailingInfo == null, "mailing", "id", data.mailing.id(), "name", StringUtils.defaultString(data.mailing.name()));
+		writer.openclose("mailinglist", "id", data.mailinglist.id(), "name", data.mailinglist.name ());
+		writer.open(data.mailingInfo == null, "mailing", "id", data.mailing.id(), "name", data.mailing.name());
 		if (data.mailingInfo != null) {
 			for (String name : data.mailingInfo.keySet()) {
 				String value = data.mailingInfo.get(name);

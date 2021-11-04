@@ -13,9 +13,6 @@ package com.agnitas.emm.core.admin.form;
 import org.agnitas.web.forms.FormSearchParams;
 
 public class AdminListFormSearchParams implements FormSearchParams<AdminListForm>{
-
-    private static final long serialVersionUID = -644024464090435052L;
-
     private String firstName;
     private String lastName;
     private String email;

@@ -133,17 +133,13 @@ public class XmlUtilities {
 	}
 
 	private static void transformNode(Node node, String encoding, boolean removeXmlHeader, StreamResult result) throws Exception {
-		TransformerFactory transformerFactory = null;
-		Transformer transformer = null;
-		DOMSource source = null;
-
 		try {
-			transformerFactory = TransformerFactory.newInstance();
+			TransformerFactory transformerFactory = newXxeProtectedTransformerFactory();
 			if (transformerFactory == null) {
 				throw new Exception("TransformerFactory error");
 			}
 
-			transformer = transformerFactory.newTransformer();
+			Transformer transformer = transformerFactory.newTransformer();
 			if (transformer == null) {
 				throw new Exception("Transformer error");
 			}
@@ -155,7 +151,7 @@ public class XmlUtilities {
 				transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
 			}
 
-			source = new DOMSource(node);
+			DOMSource source = new DOMSource(node);
 
 			transformer.transform(source, result);
 		} catch (TransformerFactoryConfigurationError e) {
@@ -294,16 +290,13 @@ public class XmlUtilities {
 	}
 
 	public static String convertXML2String(Document pDocument, String encoding) throws Exception {
-		TransformerFactory transformerFactory = null;
-		Transformer transformer = null;
-		DOMSource domSource = null;
 		try (StringWriter writer = new StringWriter()) {
-			transformerFactory = TransformerFactory.newInstance();
+			TransformerFactory transformerFactory = newXxeProtectedTransformerFactory();
 			if (transformerFactory == null) {
 				throw new Exception("TransformerFactory error");
 			}
 
-			transformer = transformerFactory.newTransformer();
+			Transformer transformer = transformerFactory.newTransformer();
 			if (transformer == null) {
 				throw new Exception("Transformer error");
 			}
@@ -314,7 +307,7 @@ public class XmlUtilities {
 				transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			}
 
-			domSource = new DOMSource(pDocument);
+			DOMSource domSource = new DOMSource(pDocument);
 			StreamResult result = new StreamResult(writer);
 
 			transformer.transform(domSource, result);
@@ -331,7 +324,7 @@ public class XmlUtilities {
 
 	public static void writeXMLToStream(OutputStream outputStream, Document pDocument, String encoding) throws Exception {
 		try {
-			TransformerFactory transformerFactory = TransformerFactory.newInstance();
+			TransformerFactory transformerFactory = newXxeProtectedTransformerFactory();
 			if (transformerFactory == null) {
 				throw new Exception("TransformerFactory error");
 			}
@@ -360,16 +353,13 @@ public class XmlUtilities {
 	}
 
 	public static byte[] convertXML2ByteArray(Node pDocument, String encoding) throws Exception {
-		TransformerFactory transformerFactory = null;
-		Transformer transformer = null;
-		DOMSource domSource = null;
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-			transformerFactory = TransformerFactory.newInstance();
+			TransformerFactory transformerFactory = newXxeProtectedTransformerFactory();
 			if (transformerFactory == null) {
 				throw new Exception("TransformerFactory error");
 			}
 
-			transformer = transformerFactory.newTransformer();
+			Transformer transformer = transformerFactory.newTransformer();
 			if (transformer == null) {
 				throw new Exception("Transformer error");
 			}
@@ -380,7 +370,7 @@ public class XmlUtilities {
 				transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			}
 
-			domSource = new DOMSource(pDocument);
+			DOMSource domSource = new DOMSource(pDocument);
 			StreamResult result = new StreamResult(outputStream);
 
 			transformer.transform(domSource, result);
@@ -625,4 +615,50 @@ public class XmlUtilities {
 		
 		return returnValue;
 	}
+
+	/**
+	 * Creates a new {@link DocumentBuilderFactory} which is hardened against XXE attacks.
+	 * 
+	 * @return {@link DocumentBuilderFactory}
+	 */
+	public static final DocumentBuilderFactory newXxeProtectedDocumentBuilderFactory() {
+		final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		
+		dbf.setExpandEntityReferences(false);
+		/*
+		 * Currently disabled. Apache Xerces does not support these proerties.
+		 * See https://issues.apache.org/jira/browse/XERCESJ-1654
+		 * 
+		 * Problem:
+		 * Sun Xerces did support these constants, but has been removed in JDK 11.
+		 * 
+		dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+		dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+		*/
+
+		return dbf;
+	}
+	
+	/**
+	 * Creates a new {@link TransformerFactory} which is hardened against XXE attacks.
+	 * 
+	 * @return {@link TransformerFactory}
+	 */
+	public static final TransformerFactory newXxeProtectedTransformerFactory() {
+		final TransformerFactory tf = TransformerFactory.newInstance();
+		
+		/*
+		 * Currently disabled. Apache Xerces does not support these proerties.
+		 * See https://issues.apache.org/jira/browse/XERCESJ-1654
+		 * 
+		 * Problem:
+		 * Sun Xerces did support these constants, but has been removed in JDK 11.
+		 * 
+		tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+		tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+		*/
+		
+		return tf;
+	}
+
 }

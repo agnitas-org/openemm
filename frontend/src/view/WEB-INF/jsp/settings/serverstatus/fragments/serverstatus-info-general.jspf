@@ -1,0 +1,61 @@
+<div class="tile-header">
+	<div class="headline">
+		<mvc:message code="settings.general.information" />
+	</div>
+</div>
+<div class="tile-content table-responsive">
+	<table id="serverStatus_generalInfo" class="table table-striped js-table table-middle-border">
+		<tr>
+			<td><mvc:message code="serverStatus.general.license" /></td>
+			<td>${serverStatus.licenseName}</td>
+		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.hostname" /></td>
+			<td>${serverStatus.hostName}</td>
+		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.javaVersion" /></td>
+			<td>${serverStatus.javaVersion}</td>
+		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.version" /></td>
+			<td>${serverStatus.version}</td>
+		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.tempDirectory" /></td>
+			<td>${serverStatus.tempDir}</td>
+		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.installPath" /></td>
+			<td>${serverStatus.installPath}</td>
+		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.systemTime" /></td>
+			<td>${serverStatus.sysTime}</td>
+		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.buildTime" /></td>
+			<td>${serverStatus.buildTime}</td>
+		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.startupTime" /></td>
+			<td>${serverStatus.startupTime}</td>
+		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.upTime" /></td>
+			<td>${serverStatus.uptime}</td>
+		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.configExpireTime" /></td>
+			<td>${serverStatus.configExpirationTime}</td>
+		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.dbType" /></td>
+			<td>${serverStatus.dbType}</td>
+		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.dbUrl" /></td>
+			<td>${serverStatus.dbUrl}</td>
+		</tr>
+	</table>
+</div>

@@ -41,15 +41,15 @@ public class ActionOperationGetCustomerDaoImpl extends AbstractActionOperationDa
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationGetCustomerParameters operation) {
-		update(logger, "insert into actop_get_customer_tbl (action_operation_id, load_always) values (?,?)", 
-				operation.getId(), 
+		update(logger, "insert into actop_get_customer_tbl (action_operation_id, load_always) values (?,?)",
+				operation.getId(),
 				operation.isLoadAlways());
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processUpdateOperation(ActionOperationGetCustomerParameters operation) {
-		update(logger, "update actop_get_customer_tbl set load_always=? where action_operation_id=?", 
+		update(logger, "update actop_get_customer_tbl set load_always=? where action_operation_id=?",
 				operation.isLoadAlways(),
 				operation.getId());
 	}

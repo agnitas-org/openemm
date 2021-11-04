@@ -13,7 +13,7 @@ package com.agnitas.beans;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.context.ApplicationContext;
 
-import com.agnitas.beans.impl.ComCampaignStatsImpl;
+import com.agnitas.beans.impl.CampaignStatsImpl;
 
 public interface ComOptimization {
     
@@ -217,7 +217,7 @@ public interface ComOptimization {
     public boolean finishOptimization(boolean offPeak, ApplicationContext con);
 
     // public ComCampaign.Stats loadStats(boolean useMailtracking, ApplicationContext con);
-    public ComCampaignStatsImpl loadStats(boolean useMailtracking, ApplicationContext con);
+    public CampaignStatsImpl loadStats(boolean useMailtracking, ApplicationContext con);
 
     public boolean startOptimization(boolean offPeak, ApplicationContext con);
 

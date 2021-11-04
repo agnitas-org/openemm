@@ -32,7 +32,6 @@ import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.util.NetworkUtil;
 import org.agnitas.web.MailingSendAction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -133,54 +132,56 @@ public class PreviewImageServiceImpl implements PreviewImageService {
         
         String proxyString = "None";
 		String proxyHost = System.getProperty("http.proxyHost");
+		List<String> nonProxyHosts = new ArrayList<>();
 		if (StringUtils.isNotBlank(proxyHost)) {
-			boolean ignoreProxy = false;
-			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
-			if (StringUtils.isNotBlank(nonProxyHosts)) {
-				String urlDomain = NetworkUtil.getDomainFromUrl(url);
-				if (urlDomain != null) {
-					urlDomain = urlDomain.trim().toLowerCase();
-				}
-				
-				if (urlDomain != null) {
-	    			for (String nonProxyHost : nonProxyHosts.split("\\||,|;| ")) {
-						nonProxyHost = nonProxyHost.trim().toLowerCase();
-						if (urlDomain.equals(nonProxyHost) || urlDomain.endsWith("." + nonProxyHost)) {
-							ignoreProxy = true;
-							break;
-						}
-					}
+			String nonProxyHostsString = System.getProperty("http.nonProxyHosts");
+			if (StringUtils.isNotBlank(nonProxyHostsString)) {
+    			for (String nonProxyHost : nonProxyHostsString.split("\\||,|;| ")) {
+					nonProxyHost = nonProxyHost.trim().toLowerCase();
+					nonProxyHosts.add(nonProxyHost);
 				}
 			}
 			
-			if (!ignoreProxy) {
-    			proxyString = proxyHost;
-    			if (!proxyString.contains("://")) {
-    				proxyString = "http://" + proxyString;
-    			}
-    			
-    			String proxyPort = System.getProperty("http.proxyPort");
-    			if (StringUtils.isNotBlank(proxyPort)) {
-    				proxyString = proxyString + ":" + proxyPort;
-    			} else {
-    				proxyString = proxyString + ":" + 8080;
-    			}
+			proxyString = proxyHost;
+			if (!proxyString.contains("://")) {
+				proxyString = "http://" + proxyString;
+			}
+			
+			String proxyPort = System.getProperty("http.proxyPort");
+			if (StringUtils.isNotBlank(proxyPort)) {
+				proxyString = proxyString + ":" + proxyPort;
+			} else {
+				proxyString = proxyString + ":" + 8080;
 			}
 		}
 		
-		String[] command = new String[] {
-			configService.getValue(ConfigValue.WkhtmlToImageToolPath),
+		List<String> command = new ArrayList<>();
+		
+		command.add(configService.getValue(ConfigValue.WkhtmlToImageToolPath));
+		
 //			"--crop-x", Integer.toString(0),
 //			"--crop-y", Integer.toString(0),
 //			"--crop-w", Integer.toString(maxWidth),
 //			"--crop-h", Integer.toString(maxHeight),
 //			"--format, png",
-            "--quality", Integer.toString(50),
-			"--proxy", proxyString,
-			url,
-			imageTempFile.getAbsolutePath()};
 		
-		Process process = Runtime.getRuntime().exec(command);
+		command.add("--quality");
+		command.add(Integer.toString(50));
+		
+		if (StringUtils.isNotBlank(proxyString) && !"None".equals(proxyString)) {
+			command.add("--proxy");
+			command.add(proxyString);
+			for (String nonProxyHost : nonProxyHosts) {
+				command.add("--bypass-proxy-for");
+				command.add(nonProxyHost);
+			}
+		}
+		
+		command.add(url);
+		
+		command.add(imageTempFile.getAbsolutePath());
+		
+		Process process = Runtime.getRuntime().exec(command.toArray(new String[0]));
 		process.waitFor();
 		
 		if (!imageTempFile.exists() || imageTempFile.length() == 0) {

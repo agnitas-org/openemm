@@ -24,6 +24,9 @@ import org.springframework.jdbc.core.RowMapper;
  * The source column must be at index 1.
  */
 public class BlobRowMapper implements RowMapper<byte[]> {
+	
+	// TODO Performance improvement: Introduce static constant INSTANCE and reduce visibility of constructor to private.
+	
 	@Override
 	public byte[] mapRow(ResultSet resultSet, int index) throws SQLException {
 		Blob blob = resultSet.getBlob(1);

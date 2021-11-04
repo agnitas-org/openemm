@@ -14,3 +14,9 @@ com.agnitas.startuplistener.startupjobs.PasswordConversionStartupJob
 com.agnitas.startuplistener.startupjobs.LoginTrackSettingsMigrationStartupJob
 
 # Add new jobs here. Leave a comment on each job (JIRA issue, short description, ...)
+
+#
+# Assigns random tokens to companies without one.
+# EMM-8238
+#
+com.agnitas.startuplistener.startupjobs.AssignCompanyTokenStartupJob

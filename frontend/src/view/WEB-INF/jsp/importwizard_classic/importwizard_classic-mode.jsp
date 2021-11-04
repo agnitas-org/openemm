@@ -1,6 +1,6 @@
 <%@page import="org.agnitas.util.importvalues.ImportMode"%>
 <%@ page language="java" contentType="text/html; charset=utf-8"
-         import="org.agnitas.util.*, com.agnitas.web.ComImportWizardForm, org.agnitas.beans.CustomerImportStatus, com.agnitas.beans.ComAdmin"  errorPage="/error.do" %>
+         import="org.agnitas.util.*, com.agnitas.web.ComImportWizardForm,org.agnitas.beans.ImportStatus,com.agnitas.beans.ComAdmin"  errorPage="/error.do" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -59,39 +59,39 @@
                     <div class="col-sm-8">
                         <html:select property="mode" size="1" styleClass="form-control js-select">
                             <emm:ShowByPermission token="import.mode.add">
-                                <html:option value="<%= Integer.toString(ImportMode.ADD.getIntValue()) %>"><bean:message
+                                <html:option value="<%=Integer.toString(ImportMode.ADD.getIntValue())%>"><bean:message
                                         key="import.mode.add"/></html:option>
                             </emm:ShowByPermission>
                             <emm:ShowByPermission token="import.mode.add_update">
-                                <html:option value="<%= Integer.toString(ImportMode.ADD_AND_UPDATE.getIntValue()) %>"><bean:message
+                                <html:option value="<%=Integer.toString(ImportMode.ADD_AND_UPDATE.getIntValue())%>"><bean:message
                                         key="import.mode.add_update"/></html:option>
                             </emm:ShowByPermission>
                             <emm:ShowByPermission token="import.mode.only_update">
-                                <html:option value="<%= Integer.toString(ImportMode.UPDATE.getIntValue()) %>"><bean:message
+                                <html:option value="<%=Integer.toString(ImportMode.UPDATE.getIntValue())%>"><bean:message
                                         key="import.mode.only_update"/></html:option>
                             </emm:ShowByPermission>
                             <emm:ShowByPermission token="import.mode.bounce">
-                                <html:option value="<%= Integer.toString(ImportMode.MARK_BOUNCED.getIntValue()) %>"><bean:message
+                                <html:option value="<%=Integer.toString(ImportMode.MARK_BOUNCED.getIntValue())%>"><bean:message
                                         key="import.mode.bounce"/></html:option>
                             </emm:ShowByPermission>
                             <emm:ShowByPermission token="import.mode.blacklist">
-                                <html:option value="<%= Integer.toString(ImportMode.TO_BLACKLIST.getIntValue()) %>"><bean:message
+                                <html:option value="<%=Integer.toString(ImportMode.TO_BLACKLIST.getIntValue())%>"><bean:message
                                         key="import.mode.blacklist"/></html:option>
                             </emm:ShowByPermission>
                             <emm:ShowByPermission token="import.mode.blacklist_exclusive">
-                                <html:option value="<%= Integer.toString(ImportMode.BLACKLIST_EXCLUSIVE.getIntValue()) %>"><bean:message
+                                <html:option value="<%=Integer.toString(ImportMode.BLACKLIST_EXCLUSIVE.getIntValue())%>"><bean:message
                                         key="import.mode.blacklist"/></html:option>
                             </emm:ShowByPermission>
                             <emm:ShowByPermission token="import.mode.remove_status">
-                                <html:option value="<%= Integer.toString(ImportMode.MARK_SUSPENDED.getIntValue()) %>"><bean:message
+                                <html:option value="<%=Integer.toString(ImportMode.MARK_SUSPENDED.getIntValue())%>"><bean:message
                                         key="import.mode.remove_status"/></html:option>
                             </emm:ShowByPermission>
                             <emm:ShowByPermission token="import.mode.reactivateSuspended">
-                                <html:option value="<%= Integer.toString(ImportMode.REACTIVATE_SUSPENDED.getIntValue()) %>"><bean:message
+                                <html:option value="<%=Integer.toString(ImportMode.REACTIVATE_SUSPENDED.getIntValue())%>"><bean:message
                                         key="import.mode.reactivateSuspended"/></html:option>
                             </emm:ShowByPermission>
                             <emm:ShowByPermission token="import.mode.unsubscribe">
-                                <html:option value="<%= Integer.toString(ImportMode.MARK_OPT_OUT.getIntValue()) %>"><bean:message
+                                <html:option value="<%=Integer.toString(ImportMode.MARK_OPT_OUT.getIntValue())%>"><bean:message
                                         key="import.mode.unsubscribe"/></html:option>
                             </emm:ShowByPermission>
                         </html:select>
@@ -128,9 +128,9 @@
                         </div>
                         <div class="col-sm-8">
                             <html:select property="status.doubleCheck" size="1" styleClass="form-control js-select">
-                                <html:option value="<%= Integer.toString(CustomerImportStatus.DOUBLECHECK_FULL) %>"><bean:message
+                                <html:option value="<%=Integer.toString(ImportStatus.DOUBLECHECK_FULL)%>"><bean:message
                                         key="default.Yes"/></html:option>
-                                <html:option value="<%= Integer.toString(CustomerImportStatus.DOUBLECHECK_NONE) %>"><bean:message
+                                <html:option value="<%=Integer.toString(ImportStatus.DOUBLECHECK_NONE)%>"><bean:message
                                         key="default.No"/></html:option>
                             </html:select>
                         </div>

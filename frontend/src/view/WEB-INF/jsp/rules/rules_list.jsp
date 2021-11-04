@@ -1,11 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.ComTargetAction" %>
-<%@ page import="com.agnitas.web.forms.ComTargetForm" %>
 <%@ page import="org.agnitas.beans.Recipient" %>
 <%@ page import="org.agnitas.target.ChainOperator" %>
 <%@ page import="org.agnitas.target.ConditionalOperator" %>
 <%@ page import="org.agnitas.target.PseudoColumn" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="org.agnitas.target.ColumnType" %>
 <%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
@@ -26,15 +25,15 @@
 <c:set var="MAILTYPE_HTML" value="<%=Recipient.MAILTYPE_HTML%>" scope="page"/>
 <c:set var="MAILTYPE_HTML_OFFLINE" value="<%=Recipient.MAILTYPE_HTML_OFFLINE%>" scope="page"/>
 
-<c:set var="COLUMN_TYPE_DATE" value="<%= ComTargetForm.COLUMN_TYPE_DATE %>" scope="page" />
-<c:set var="COLUMN_TYPE_NUMERIC" value="<%= ComTargetForm.COLUMN_TYPE_NUMERIC %>" scope="page" />
-<c:set var="COLUMN_TYPE_INTERVAL_MAILING" value="<%= ComTargetForm.COLUMN_TYPE_INTERVAL_MAILING %>" scope="page" />
-<c:set var="COLUMN_TYPE_STRING" value="<%= ComTargetForm.COLUMN_TYPE_STRING %>" scope="page" />
-<c:set var="COLUMN_TYPE_MAILING_RECEIVED" value="<%= ComTargetForm.COLUMN_TYPE_MAILING_RECEIVED %>" scope="page" />
-<c:set var="COLUMN_TYPE_MAILING_OPENED" value="<%= ComTargetForm.COLUMN_TYPE_MAILING_OPENED %>" scope="page" />
-<c:set var="COLUMN_TYPE_MAILING_CLICKED" value="<%= ComTargetForm.COLUMN_TYPE_MAILING_CLICKED %>" scope="page" />
-<c:set var="COLUMN_TYPE_MAILING_REVENUE" value="<%= ComTargetForm.COLUMN_TYPE_MAILING_REVENUE %>" scope="page" />
-<c:set var="COLUMN_TYPE_MAILING_CLICKED_SPECIFIC_LINK" value="<%= ComTargetForm.COLUMN_TYPE_MAILING_CLICKED_SPECIFIC_LINK %>" scope="page" />
+<c:set var="COLUMN_TYPE_DATE" value="<%= ColumnType.COLUMN_TYPE_DATE %>" scope="page" />
+<c:set var="COLUMN_TYPE_NUMERIC" value="<%= ColumnType.COLUMN_TYPE_NUMERIC %>" scope="page" />
+<c:set var="COLUMN_TYPE_INTERVAL_MAILING" value="<%= ColumnType.COLUMN_TYPE_INTERVAL_MAILING %>" scope="page" />
+<c:set var="COLUMN_TYPE_STRING" value="<%= ColumnType.COLUMN_TYPE_STRING %>" scope="page" />
+<c:set var="COLUMN_TYPE_MAILING_RECEIVED" value="<%= ColumnType.COLUMN_TYPE_MAILING_RECEIVED %>" scope="page" />
+<c:set var="COLUMN_TYPE_MAILING_OPENED" value="<%= ColumnType.COLUMN_TYPE_MAILING_OPENED %>" scope="page" />
+<c:set var="COLUMN_TYPE_MAILING_CLICKED" value="<%= ColumnType.COLUMN_TYPE_MAILING_CLICKED %>" scope="page" />
+<c:set var="COLUMN_TYPE_MAILING_REVENUE" value="<%= ColumnType.COLUMN_TYPE_MAILING_REVENUE %>" scope="page" />
+<c:set var="COLUMN_TYPE_MAILING_CLICKED_SPECIFIC_LINK" value="<%= ColumnType.COLUMN_TYPE_MAILING_CLICKED_SPECIFIC_LINK %>" scope="page" />
 
 
 <c:set var="DATE_OPERATORS" value="<%= ConditionalOperator.getValidOperatorsForDate() %>" />
@@ -52,8 +51,6 @@
 <c:set var="COLUMN_MAILING_CLICKED" value="<%= PseudoColumn.CLICKED_IN_MAILING %>" scope="page" />
 <c:set var="COLUMN_MAILING_RECEIVED" value="<%= PseudoColumn.RECEIVED_MAILING %>" scope="page" />
 <c:set var="COLUMN_MAILING_CLICKED_ON_SPECIFIC_LINK" value="<%= PseudoColumn.CLICKED_SPECIFIC_LINK_IN_MAILING %>" scope="page" />
-
-<c:set var="ACTION_SAVE" value="<%=ComTargetAction.ACTION_SAVE%>" scope="page" />
 
 <c:if test="${empty TARGET_LOCKED}">
 	<c:set var="TARGET_LOCKED" value="false" scope="page" />

@@ -22,6 +22,8 @@ import com.agnitas.beans.impl.MaildropEntryImpl;
  * Implementation of {@link RowMapper} for {@link MaildropEntry}.
  */
 public final class MaildropRowMapper implements RowMapper<MaildropEntry> {
+	
+	// TODO Performance improvement: Introduce static constant INSTANCE and reduce visibility of constructor to private.
 
 	@Override
 	public final MaildropEntry mapRow(final ResultSet resultSet, final int row) throws SQLException {

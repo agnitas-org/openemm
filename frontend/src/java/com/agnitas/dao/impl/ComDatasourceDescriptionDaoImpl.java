@@ -69,15 +69,14 @@ public class ComDatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implem
         }
     }
 
-    @Override
-    public DatasourceDescription get(int dsDescriptionID, @VelocityCheck int companyID) {
-        if (dsDescriptionID == 0 || companyID == 0) {
-            return null;
-        } else {
-	        String sql = "SELECT datasource_id, company_id, sourcegroup_id, description, url, desc2 FROM datasource_description_tbl WHERE datasource_id = ? AND company_id = ?";
-	        return selectObjectDefaultNull(logger, sql, new DatasourceDescription_RowMapper(), dsDescriptionID, companyID);
-        }
-    }
+	/* unused
+	 * @Override public DatasourceDescription get(int
+	 * dsDescriptionID, @VelocityCheck int companyID) { if (dsDescriptionID == 0
+	 * || companyID == 0) { return null; } else { String sql =
+	 * "SELECT datasource_id, company_id, sourcegroup_id, description, url, desc2 FROM datasource_description_tbl WHERE datasource_id = ? AND company_id = ?"
+	 * ; return selectObjectDefaultNull(logger, sql, new
+	 * DatasourceDescription_RowMapper(), dsDescriptionID, companyID); } }
+	 */
 
     @Override
 	@DaoUpdateReturnValueCheck
@@ -131,7 +130,7 @@ public class ComDatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implem
 	@Override
     public PaginatedListImpl<DataSource> getPaginatedDataSources(@VelocityCheck int companyId, String sortColumn,
                                                 int pageNumber, int pageSize, boolean isAscending) {
-        String sql = "SELECT datasource_id, description FROM datasource_description_tbl WHERE company_id = ?";
+        String sql = "SELECT datasource_id, description FROM datasource_description_tbl WHERE company_id = 0 OR company_id = ?";
         return selectPaginatedList(logger, sql,
                 "datasource_description_tbl",
                 sortColumn,
@@ -140,6 +139,13 @@ public class ComDatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implem
                 pageSize,
                 new DataSourceRowMapper(),
                 companyId);
+    }
+
+    @Override
+    public List<DataSource> getDataSources(final int companyId) {
+        return select(logger, 
+                "SELECT datasource_id, description FROM datasource_description_tbl WHERE company_id = 0 OR company_id = ?", 
+                new DataSourceRowMapper(), companyId);
     }
 	
 	protected class DatasourceDescription_RowMapper implements RowMapper<DatasourceDescription> {

@@ -32,7 +32,7 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.dao.FollowUpType;
 import org.agnitas.target.ConditionalOperator;
@@ -57,9 +57,12 @@ import com.agnitas.emm.core.workflow.beans.WorkflowStartStop;
 
 public class WorkflowUtils {
 	public static final int GCD_ACCURACY = 10;
-	
+
 	public static final String WORKFLOW_TARGET_NAME_PATTERN = "[campaign target: %s]";
 	public static final String WORKFLOW_TARGET_NAME_SQL_PATTERN = "[campaign target: %]";
+
+	public static final int TESTING_MODE_DEADLINE_DURATION = 15;  // minutes
+	public static final Deadline TESTING_MODE_DEADLINE = new Deadline(TimeUnit.MINUTES.toMillis(TESTING_MODE_DEADLINE_DURATION));
 
 	public static Map<ConditionalOperator, String> getOperatorTypeSupportMap() {
 		Map<ConditionalOperator, String> map = new HashMap<>();
@@ -144,7 +147,7 @@ public class WorkflowUtils {
 		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP);
 		return bd.doubleValue();
 	}
-	
+
 	public static Date getStartStopIconDate(WorkflowStartStop icon) {
 		return getStartStopIconDate(icon, TimeZone.getTimeZone(icon.getAdminTimezone()));
 	}
@@ -158,16 +161,16 @@ public class WorkflowUtils {
 			return mergeIconDateAndTime(date, icon.getHour(), icon.getMinute(), timeZone);
 		}
 	}
-	
+
 	public static Date mergeIconDateAndTime(Date date, int hour, int minute) {
 		return mergeIconDateAndTime(date, hour, minute, TimeZone.getDefault());
 	}
-	
+
 	public static Date mergeIconDateAndTime(Date date, int hour, int minute, TimeZone timeZone) {
 		if (date == null) {
 			return null;
 		}
-		
+
 		LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 		LocalTime localTime = LocalTime.of(hour, minute);
 		LocalDateTime localDateTime = DateUtilities.merge(localDate, localTime);
@@ -218,13 +221,21 @@ public class WorkflowUtils {
 		}
 		return false;
 	}
-	
+
 	public static boolean isReactionCriteriaDecision(WorkflowDecision decision) {
 		return decision.getDecisionCriteria() == WorkflowDecision.WorkflowDecisionCriteria.DECISION_REACTION;
 	}
-	
+
 	public static boolean isProfileFieldCriteriaDecision(WorkflowDecision decision) {
 		return decision.getDecisionCriteria() == WorkflowDecision.WorkflowDecisionCriteria.DECISION_PROFILE_FIELD;
+	}
+
+	public static Deadline resolveDeadline(WorkflowDeadline deadline, TimeZone timezone, boolean testing) {
+		if (testing) {
+			return TESTING_MODE_DEADLINE;
+		} else {
+			return WorkflowUtils.asDeadline(deadline, timezone);
+		}
 	}
 
 	public static Deadline asDeadline(WorkflowStart start, TimeZone timezone) {
@@ -306,11 +317,11 @@ public class WorkflowUtils {
 	private static Deadline asDeadline(Date date, int hours, int minutes, TimeZone timezone) {
 		return new Deadline(WorkflowUtils.mergeIconDateAndTime(date, hours, minutes, timezone));
 	}
-	
+
 	public static void updateForwardParameters(HttpServletRequest request) {
 		updateForwardParameters(request, false);
 	}
-	
+
 	public static void updateForwardParameters(HttpServletRequest request, boolean checkKeepForward) {
 		WorkflowParameters workflowParameters = new WorkflowParameters();
 		if (checkKeepForward) {
@@ -327,10 +338,10 @@ public class WorkflowUtils {
 
         String forwardParams = request.getParameter(WORKFLOW_FORWARD_PARAMS);
         workflowParameters.setWorkflowForwardParams(StringUtils.trimToEmpty(forwardParams));
-		
+
 		AgnUtils.saveWorkflowForwardParamsToSession(request, workflowParameters, true);
 	}
-	
+
 	public static boolean isAutoOptWorkflow(List<WorkflowIcon> workflowIcons) {
 		for (WorkflowIcon icon: workflowIcons) {
 			if (WorkflowUtils.isAutoOptimizationIcon(icon)) {
@@ -339,7 +350,7 @@ public class WorkflowUtils {
 		}
 		return false;
 	}
-	
+
 	public static final class Deadline {
 		public static boolean equals(Deadline d1, Deadline d2) {
 			if (d1 == d2) {

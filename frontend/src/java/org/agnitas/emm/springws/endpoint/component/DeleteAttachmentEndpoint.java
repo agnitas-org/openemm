@@ -14,7 +14,9 @@ import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
 import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.exception.MailingNotEditableException;
 import org.agnitas.emm.springws.jaxb.DeleteAttachmentRequest;
 import org.agnitas.emm.springws.jaxb.DeleteAttachmentResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -27,13 +29,19 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 public class DeleteAttachmentEndpoint extends BaseEndpoint {
 
 	private ComponentService componentService;
+	private final MailingEditableCheck mailingEditableCheck;
 
-	public DeleteAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService) {
+	public DeleteAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService, final MailingEditableCheck mailingEditableCheck) {
 		this.componentService = componentService;
+		this.mailingEditableCheck = mailingEditableCheck;
 	}
 
 	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteAttachmentRequest")
-	public @ResponsePayload DeleteAttachmentResponse deleteAttachment(@RequestPayload DeleteAttachmentRequest request) {
+	public @ResponsePayload DeleteAttachmentResponse deleteAttachment(@RequestPayload DeleteAttachmentRequest request) throws MailingNotEditableException {
+		final int companyID = Utils.getUserCompany();
+		
+		this.mailingEditableCheck.requireMailingForComponentEditable(request.getComponentID(), companyID);
+		
 		DeleteAttachmentResponse response = new DeleteAttachmentResponse();
 		ComponentModel model = new ComponentModel();
 		model.setCompanyId(Utils.getUserCompany());

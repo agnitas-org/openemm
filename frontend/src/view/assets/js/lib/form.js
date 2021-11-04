@@ -545,7 +545,8 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
   Form.prototype.submit = function(type) {
     var actionId = 0;
     var validationOptions = {};
-    if ((type == 'confirm' || type == 'action') && typeof arguments[1] === 'number') {
+    if ((type == 'confirm' || type == 'action') &&
+        (typeof arguments[1] === 'number' || typeof arguments[1] === 'string')) {
       actionId = arguments[1];
       validationOptions = arguments[2];
     } else {

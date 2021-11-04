@@ -331,11 +331,7 @@ public class MailgunImpl implements Mailgun {
 			}
 		}
 
-		boolean	simplified = StringOps.atob (data.company.info ("development.use_new_blacklist_wildcards", data.mailing.id ()), false);
-		if (simplified) {
-			data.logging (Log.INFO, "readblist", "Using simplified blacklist wildcard matching");
-		}
-		
+		data.logging (Log.INFO, "readblist", "Using simplified blacklist wildcard matching");
 		for (int blacklistIndex = 0; blacklistIndex < blacklistTables.size(); ++blacklistIndex) {
 			String table = blacklistTables.get(blacklistIndex);
 			List<Map<String, Object>> rq;
@@ -348,7 +344,7 @@ public class MailgunImpl implements Mailgun {
 
 					String email = data.dbase.asString(row.get("email"));
 					if (email != null) {
-						blist.add(email, blacklistIndex != isLocal, simplified);
+						blist.add(email, blacklistIndex != isLocal);
 					}
 				}
 			} catch (Exception e) {

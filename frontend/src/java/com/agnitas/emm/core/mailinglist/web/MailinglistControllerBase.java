@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.Mailinglist;
@@ -44,6 +45,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.Mailing;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
@@ -169,6 +171,34 @@ public class MailinglistControllerBase {
 	
 	@GetMapping("/{id:\\d+}/confirmDelete.action")
 	public String confirmDelete(ComAdmin admin, @PathVariable("id") int mailinglistId, MailinglistForm form, Model model, Popups popups) {
+		return admin.permissionAllowed(Permission.UPDATE_MAILINGLIST_ALLOW_DELETION)
+                ? confirmDeleteWithMailingsStatusCheck(admin, mailinglistId, model, popups)
+                : confirmDeleteWithoutMailingsStatusCheck(admin, mailinglistId, form, model, popups);
+	}
+
+    /**
+     * after GWUA-4783 has been successfully tested
+     * place method code to {@link #confirmDelete(ComAdmin, int, MailinglistForm, Model, Popups)}
+     */
+    private String confirmDeleteWithMailingsStatusCheck(ComAdmin admin, int mailinglistId, Model model, Popups popups) {
+        int companyId = admin.getCompanyID();
+        Mailinglist mailinglist = mailinglistService.getMailinglist(mailinglistId, companyId);
+        if (mailinglist == null) {
+            popups.alert("Error");
+            return "messages";
+        }
+        if (isMailinglistsDependent(Collections.singleton(mailinglistId), companyId, model)) {
+            return "messages";
+        }
+        model.addAttribute("mailinglistId", mailinglist.getId());
+        model.addAttribute("mailinglistShortname", mailinglist.getShortname());
+        model.addAttribute("sentMailingsCount", mailinglistService.getSentMailingsCount(mailinglistId, companyId));
+        model.addAttribute("affectedReportsCount", mailinglistService.getAffectedReportsCount(mailinglistId, companyId));
+        return "mailinglist_delete";
+    }
+
+    // remove this method after GWUA-4783 has been successfully tested
+    private String confirmDeleteWithoutMailingsStatusCheck(ComAdmin admin, int mailinglistId, MailinglistForm form, Model model, Popups popups) {
 		int companyId = admin.getCompanyID();
 
 		if (isMailinglistIndependent(mailinglistId, companyId, model)) {
@@ -190,6 +220,30 @@ public class MailinglistControllerBase {
 
     @PostMapping("/confirmBulkDelete.action")
     public String confirmBulkDelete(ComAdmin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Model model, Popups popups) {
+        return admin.permissionAllowed(Permission.UPDATE_MAILINGLIST_ALLOW_DELETION)
+                ? confirmBulkDeleteWithMailingsStatusCheck(admin, form, model, popups)
+                : confirmBulkDeleteWithoutMailingsStatusCheck(admin, form, model, popups);
+    }
+    
+    /** 
+     * after GWUA-4783 has been successfully tested
+     * place method code to {@link #confirmBulkDelete(ComAdmin, BulkActionForm, Model, Popups)}
+     */
+    private String confirmBulkDeleteWithMailingsStatusCheck(ComAdmin admin, BulkActionForm form, Model model, Popups popups) {
+        Set<Integer> bulkIds = new HashSet<>(form.getBulkIds());
+        if (bulkIds.isEmpty() || bulkIds.stream().anyMatch(id -> id <= 0)) {
+            popups.alert("bulkAction.nothing.mailinglist");
+            return "messages";
+        }
+        if (isMailinglistsDependent(bulkIds, admin.getCompanyID(), model)) {
+            return "messages";
+        }
+
+        return "mailinglist_bulk_delete";
+    }
+    
+    // remove this method after GWUA-4783 has been successfully tested
+    private String confirmBulkDeleteWithoutMailingsStatusCheck(ComAdmin admin, BulkActionForm form, Model model, Popups popups) {
         if (form.getBulkIds().size() == 0) {
             popups.alert("bulkAction.nothing.mailinglist");
         } else if (!isMailinglistsIndependent(form.getBulkIds(), admin.getCompanyID(), model)) {
@@ -200,7 +254,33 @@ public class MailinglistControllerBase {
     }
 
 	@RequestMapping("/{id:\\d+}/delete.action")
-	public String delete(ComAdmin admin, @PathVariable("id") int mailinglistId, Popups popups) {
+	public String delete(ComAdmin admin, @PathVariable("id") int mailinglistId, Model model, Popups popups) {
+        return admin.permissionAllowed(Permission.UPDATE_MAILINGLIST_ALLOW_DELETION)
+                ? deleteWithMailingsStatusCheck(admin, mailinglistId, model, popups)
+                : deleteWithoutMailingsStatusCheck(admin, mailinglistId, popups);
+	}
+
+    /**
+     * after GWUA-4783 has been successfully tested
+     * place method code to {@link #delete(ComAdmin, int, Model, Popups)}
+     */
+    private String deleteWithMailingsStatusCheck(ComAdmin admin, int mailinglistId, Model model, Popups popups) {
+        int companyId = admin.getCompanyID();
+        if (isMailinglistsDependent(Collections.singleton(mailinglistId), companyId, model)) {
+            return "messages";
+        }
+        if (mailinglistService.deleteMailinglistWithReportsCleaning(mailinglistId, companyId)) {
+            popups.success("default.selection.deleted");
+            userActivityLogService.writeUserActivityLog(admin, "delete mailing list", getDescription(mailinglistId, companyId));
+        } else {
+            popups.alert("error.mailinglist.cannot_delete");
+            return "messages";
+        }
+        return "redirect:/mailinglist/list.action";
+    }
+
+    // remove this method after GWUA-4783 has been successfully tested
+    private String deleteWithoutMailingsStatusCheck(ComAdmin admin, @PathVariable("id") int mailinglistId, Popups popups) {
 		if(mailinglistService.deleteMailinglist(mailinglistId, admin.getCompanyID())) {
 			popups.success("default.selection.deleted");
 			userActivityLogService.writeUserActivityLog(admin, "delete mailing list", getDescription(mailinglistId, admin.getCompanyID()));
@@ -213,6 +293,34 @@ public class MailinglistControllerBase {
 	
 	@PostMapping("/bulkDelete.action")
 	public String bulkDelete(ComAdmin admin, BulkActionForm form, RedirectAttributes model, Popups popups) {
+		return admin.permissionAllowed(Permission.UPDATE_MAILINGLIST_ALLOW_DELETION) 
+                ? bulkDeleteWithMailingsStatusCheck(admin, form, model, popups) 
+                : bulkDeleteWithoutMailingsStatusCheck(admin, form, model, popups);
+	}
+
+    /**
+     * after GWUA-4783 has been successfully tested
+     * place method code to {@link #bulkDelete(ComAdmin, BulkActionForm, RedirectAttributes, Popups)}
+     */
+    private String bulkDeleteWithMailingsStatusCheck(ComAdmin admin, BulkActionForm form, RedirectAttributes model, Popups popups) {
+        int companyId = admin.getCompanyID();
+        Set<Integer> bulkIds = new HashSet<>(form.getBulkIds());
+        if (isMailinglistsDependent(bulkIds, companyId, model)) {
+            return "messages";
+        }
+        mailinglistService.bulkDelete(bulkIds, companyId);
+
+        bulkIds.stream()
+                .map(id -> getDescription(id, companyId))
+                .map(description -> new UserAction("delete mailinglist", description))
+                .forEach(action -> userActivityLogService.writeUserActivityLog(admin, action, logger));
+
+        popups.success("default.selection.deleted");
+        return "redirect:/mailinglist/list.action";
+    }
+
+    // remove this method after GWUA-4783 has been successfully tested
+    private String bulkDeleteWithoutMailingsStatusCheck(ComAdmin admin, BulkActionForm form, RedirectAttributes model, Popups popups) {
 		int companyId = admin.getCompanyID();
 		if(isMailinglistsIndependent(form.getBulkIds(), companyId, model)) {
 			List<UserAction> userActions = form.getBulkIds().stream()
@@ -301,6 +409,7 @@ public class MailinglistControllerBase {
 		form.setStatistic(statistic);
 	}
 
+    // remove this method after GWUA-4783 has been successfully tested
 	protected boolean isMailinglistsIndependent(List<Integer> bulkMailinglistIds, int companyId, Model model) {
 		List<Mailing> dependedMailings = mailinglistService.getAllDependedMailing(new HashSet<>(bulkMailinglistIds), companyId);
 
@@ -321,6 +430,7 @@ public class MailinglistControllerBase {
 		return true;
 	}
 
+    // remove this method after GWUA-4783 has been successfully tested
 	protected boolean isMailinglistIndependent(int mailinglistId, int companyId, Model model) {
 		if (!isMailinglistsIndependent(Collections.singletonList(mailinglistId), companyId, model)) {
 			return false;
@@ -338,6 +448,28 @@ public class MailinglistControllerBase {
 		return true;
 	}
 	
+    private boolean isMailinglistsDependent(Set<Integer> mailinglistIds, int companyId, Model model) {
+        List<Mailing> affectedMailinglists = mailinglistService.getUsedMailings(mailinglistIds, companyId);
+        if (!affectedMailinglists.isEmpty()) {
+            addAffectedMailingsToModel(model, affectedMailinglists);
+            return true;
+        }
+        return false;
+    }
+
+    private void addAffectedMailingsToModel(Model model, List<Mailing> affectedMailings) {
+        if(model instanceof RedirectAttributes) {
+            RedirectAttributes attributes = (RedirectAttributes) model;
+            attributes.addFlashAttribute("affectedMailingsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
+            attributes.addFlashAttribute("affectedMailingsMessageKey", "error.mailinglist.cannot_delete_mailinglists");
+            attributes.addFlashAttribute("affectedMailings", affectedMailings);
+        } else {
+            model.addAttribute("affectedMailingsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
+            model.addAttribute("affectedMailingsMessageKey","error.mailinglist.cannot_delete_mailinglists");
+            model.addAttribute("affectedMailings", affectedMailings);
+        }
+    }
+
 	protected String getDescription(String shortname, int id) {
 		return String.format("%s (%d)", shortname, id);
 	}

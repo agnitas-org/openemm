@@ -16,9 +16,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 import org.agnitas.service.FormImportResult;
 import org.agnitas.service.UserFormImporter;
@@ -26,7 +27,6 @@ import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.dao.UserFormDao;
@@ -55,14 +55,13 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 	protected ComUserformService userFormService;
 
 	@Override
-	public FormImportResult importUserForm(ComAdmin admin, InputStream input) throws Exception {
-		return importUserForm(admin, input, null, null);
+	public FormImportResult importUserForm(int companyID, InputStream input, Locale locale) throws Exception {
+		return importUserForm(companyID, input, null, null, locale);
 	}
 
 	@Override
-	public FormImportResult importUserForm(ComAdmin admin, InputStream input, String formName, String description) throws Exception {
+	public FormImportResult importUserForm(int companyID, InputStream input, String formName, String description, Locale locale) throws Exception {
 		try (JsonReader reader = new JsonReader(input, "UTF-8")) {
-			int companyId = admin.getCompanyID();
 			JsonNode jsonNode = reader.read();
 
 			checkIsJsonObject(jsonNode);
@@ -75,7 +74,7 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 			Map<Integer, Integer> actionIdMappings = new HashMap<>();
 			if (jsonObject.containsPropertyKey("actions")) {
 				for (Object actionObject : (JsonArray) jsonObject.get("actions")) {
-					importAction(companyId, (JsonObject) actionObject, actionIdMappings);
+					importAction(companyID, (JsonObject) actionObject, actionIdMappings);
 				}
 			}
 
@@ -85,12 +84,12 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 
 			FormImportResult.Builder importResult = FormImportResult.builder();
 
-			boolean formNameInUse = userFormService.isFormNameInUse(userFormName, companyId);
+			boolean formNameInUse = userFormService.isFormNameInUse(userFormName, companyID);
 			if (formNameInUse) {
 				importResult.addWarning("error.form.name_in_use");
 				String originName = userFormName;
-				userFormName = userFormService.getCloneUserFormName(userFormName, companyId, admin.getLocale());
-				logger.warn(String.format("User form name \"%s\" already exists, changes to \"%s\"", originName, userFormName));
+				userFormName = userFormService.getCloneUserFormName(userFormName, companyID, locale);
+				logger.warn("User form name \"" + originName + "\" already exists, changing to \"" + userFormName + "\"");
 			}
 			importResult.setUserFormName(userFormName);
 			userForm.setFormName(userFormName);
@@ -104,15 +103,15 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 				links = getUserFormLinks(jsonObject, actionIdMappings);
 			}
 
-			// Mark mailing as newly imported
-			String importDescription = String.format("Imported at %s %s",
-					new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM).format(new Date()),
-					StringUtils.isNotEmpty(description) ? "\n" + description : "");
-			userForm.setDescription(importDescription);
+			if (StringUtils.isEmpty(description)) {
+				// Mark mailing as newly imported
+				String importDescription = "Imported at " + new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM).format(new Date());
+				userForm.setDescription(importDescription);
+			}
 
-			int importedFormId = userFormDao.createUserForm(companyId, userForm);
+			int importedFormId = userFormDao.createUserForm(companyID, userForm);
 			if (importedFormId > 0) {
-				trackableLinkDao.saveUserFormTrackableLinks(importedFormId, companyId, links);
+				trackableLinkDao.saveUserFormTrackableLinks(importedFormId, companyID, links);
 				return importResult.setUserFormID(importedFormId).setSuccess(true).build();
 			} else {
 				logger.error("Cannot save userform");
@@ -168,7 +167,6 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 	}
 
 	private void importFormSettings(UserForm userForm, JsonObject jsonObject, Map<Integer, Integer> actionMappings) {
-
 		if (jsonObject.containsPropertyKey("startaction")) {
 			userForm.setStartActionID(actionMappings.get(jsonObject.get("startaction")));
 		}

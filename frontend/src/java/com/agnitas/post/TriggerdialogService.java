@@ -28,4 +28,7 @@ public interface TriggerdialogService {
 	List<TriggerdialogField> getExternalMailingFields(int companyID, int mailingID);
 	void storeExternalMailingFields(int companyID, int mailingID, List<TriggerdialogField> fields);
 	DeliveryStat getTriggerdialogDeliveryStatus(int mailingID) throws Exception;
+	boolean canStopMailing(int companyID, int mailingID) throws Exception;
+	void updateTriggerdialogDeliveryStatusByMailingID(int mailingID, TriggerdialogDeliveryStatus newStatus);
+	TriggerdialogDeliveryStatus getTriggerdialogDeliveryStatusByMailingID(int mailingID) throws Exception;
 }

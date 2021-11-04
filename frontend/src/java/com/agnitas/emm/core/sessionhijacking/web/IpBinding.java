@@ -13,17 +13,33 @@ package com.agnitas.emm.core.sessionhijacking.web;
 
 import java.net.InetAddress;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
+/**
+ * Utility class to bind session and IP address.
+ */
 final class IpBinding {
 
 	/** Name of the session attribute containing the bound IP address. */
 	public static final String IP_ATTRIBUTE = GroupingSessionHijackingPreventionFilter.class.getCanonicalName() + ".IP_ADDRESS";
 
+	/**
+	 * Returns the IP address bound to given session.
+	 * 
+	 * @param session HTTP session
+	 * 
+	 * @return bound IP address or <code>null</code>
+	 */
 	static final InetAddress getBoundIpAddress(final HttpSession session) {
 		return (InetAddress) session.getAttribute(IP_ATTRIBUTE);
 	}
 	
+	/**
+	 * Binds IP address to HTTP session.
+	 * 
+	 * @param session HTTP session
+	 * @param address IP address
+	 */
 	static final void bindIpAddress(final HttpSession session, final InetAddress address) {
 		session.setAttribute(IP_ATTRIBUTE, address);
 	}

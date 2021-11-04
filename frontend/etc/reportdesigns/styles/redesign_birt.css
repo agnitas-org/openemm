@@ -1,7 +1,7 @@
 @import "birt.css";
 
 #Document {
-    width: auto !important;
+    width: auto;
     height: auto !important;
 }
 

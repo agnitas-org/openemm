@@ -35,7 +35,7 @@ public class ActionOperationParametersParser {
     }
 
     public List<AbstractActionOperationParameters> deSerializeActionModulesList(String contentJson) {
-        TypeReference<List<AbstractActionOperationParameters>> type = new TypeReference<List<AbstractActionOperationParameters>>(){
+        TypeReference<List<AbstractActionOperationParameters>> type = new TypeReference<>(){
 			// nothing to do
         };
 

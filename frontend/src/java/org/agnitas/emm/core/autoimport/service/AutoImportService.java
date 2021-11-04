@@ -68,7 +68,7 @@ public interface AutoImportService {
 
     void writeResultData(int autoImportId, int durationInSeconds, String result, String detailedResult, int datasourceId, int fieldCount, int insertCount, int updateCount, long fileSize) throws Exception;
 
-    void saveAutoImport(AutoImport autoImport, @VelocityCheck int companyId) throws Exception;
+    void saveAutoImport(AutoImport autoImport) throws Exception;
 
     AutoImport copyAutoImport(ComAdmin admin, int autoImportId) throws Exception;
 

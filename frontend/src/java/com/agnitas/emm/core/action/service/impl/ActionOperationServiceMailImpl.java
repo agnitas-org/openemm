@@ -17,6 +17,7 @@ import java.util.Map;
 
 import org.agnitas.beans.Recipient;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.velocity.VelocityResult;
 import org.agnitas.emm.core.velocity.VelocityWrapper;
 import org.agnitas.emm.core.velocity.VelocityWrapperFactory;
@@ -24,6 +25,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.emm.core.JavaMailService;
@@ -32,6 +34,7 @@ import com.agnitas.emm.core.action.operations.ActionOperationServiceMailParamete
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 
 public class ActionOperationServiceMailImpl implements EmmActionOperation {
 	/** The logger */
@@ -42,9 +45,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 	private BeanLookupFactory beanLookupFactory;
 	
 	private BlacklistService blacklistService;
-
-	private ActionOperationServiceMailImpl() {
-	}
+	private RecipientService recipientService;
 
 	@Override
 	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors actionOperationErrors) {
@@ -52,6 +53,15 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 		int companyID = op.getCompanyId();
 
 		if (getRequestParameter(params, "sendServiceMail") != null && getRequestParameter(params, "sendServiceMail").equals("no")) {
+			/* 
+			 * TODO Introduce info flags
+			 * 
+			 * Cannot use actionOperationErrors.addErrorCode(ErrorCode.SERVICE_MAIL_MANUALLY_BLOCKED);
+			 * Adding an error results in a failed execution.
+			 * 
+			 * Info flags can be used to indicate something like this (blocked sending service mail)
+			 * without signaling a failed execution of an action step
+			 */
 			return true; // do nothing, manually blocked
 		}
 
@@ -59,12 +69,12 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 		if (getRequestParameter(params, "customerID") != null) {
 			fromCustomer = beanLookupFactory.getBeanRecipient();
 			fromCustomer.setCompanyID(companyID);
-			fromCustomer.loadCustDBStructure();
-			
+			fromCustomer.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
+
 			Integer tmpNum = Integer.parseInt(getRequestParameter(params, "customerID"));
 			fromCustomer.setCustomerID(tmpNum.intValue());
 			if (fromCustomer.getCustomerID() != 0) {
-				fromCustomer.getCustomerDataFromDb();
+            	fromCustomer.setCustParameters(recipientService.getCustomerDataFromDb(companyID, fromCustomer.getCustomerID(), fromCustomer.getDateFormat()));
 			}
 		}
 
@@ -85,6 +95,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 				} else if (singleAdr.toLowerCase().startsWith("$customerdata.")) {
 					if (fromCustomer == null) {
 						logger.error("Velocity errors: Missing customer");
+						actionOperationErrors.addErrorCode(ErrorCode.UNKNOWN_RECIPIENT);
 						return false;
 					} else {
 						String customerParameterName = singleAdr.substring("$customerdata.".length());
@@ -95,6 +106,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 				}
 				if (StringUtils.isNotBlank(singleAdr) && blacklistService.blacklistCheck(singleAdr, companyID)) {
 					logger.error("Velocity errors: Recipients address is blacklisted: " + singleAdr);
+					actionOperationErrors.addErrorCode(ErrorCode.RECEIVER_ADDRESS_BLACKLISTED);
 					return false;
 				} else {
 					toAddressList.add(singleAdr);
@@ -112,6 +124,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 			} else if (fromAddress.toLowerCase().startsWith("$customerdata.")) {
 				if (fromCustomer == null) {
 					logger.error("Velocity errors: Missing customer");
+					actionOperationErrors.addErrorCode(ErrorCode.UNKNOWN_RECIPIENT);
 					return false;
 				} else {
 					String customerParameterName = fromAddress.substring("$customerdata.".length());
@@ -133,13 +146,16 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 				fromAddress = AgnUtils.checkAndNormalizeEmail(fromAddress);
 				if (StringUtils.isNotBlank(fromAddress) && blacklistService.blacklistCheck(fromAddress, companyID)) {
 					logger.error("Velocity errors: From address is blacklisted: " + fromAddress);
+					actionOperationErrors.addErrorCode(ErrorCode.SENDER_ADDRESS_BLACKLISTED);
 					return false;
 				}
 			} catch (Exception e) {
 				logger.error("Velocity errors: " + e.getMessage(), e);
+				actionOperationErrors.addErrorCode(ErrorCode.GENERAL_ERROR);
 				return false;
 			}
 		} else {
+			actionOperationErrors.addErrorCode(ErrorCode.NO_SENDER_ADDRESS);
 			return false;
 		}
 		
@@ -152,6 +168,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 			} else if (replyAddress.toLowerCase().startsWith("$customerdata.")) {
 				if (fromCustomer == null) {
 					logger.error("Velocity errors: Missing customer");
+					actionOperationErrors.addErrorCode(ErrorCode.UNKNOWN_RECIPIENT);
 					return false;
 				} else {
 					String customerParameterName = replyAddress.substring("$customerdata.".length());
@@ -162,9 +179,12 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 				replyAddress = AgnUtils.normalizeEmail(replyAddress);
 				if (StringUtils.isNotBlank(replyAddress) && blacklistService.blacklistCheck(replyAddress, companyID)) {
 					logger.error("Velocity errors: Reply address is blacklisted: " + replyAddress);
+					actionOperationErrors.addErrorCode(ErrorCode.REPLY_ADDRESS_BLACKLISTED);
 					return false;
 				}
 			} catch (Exception e) {
+				logger.error("Error sending service mail", e);
+				actionOperationErrors.addErrorCode(ErrorCode.GENERAL_ERROR);
 				return false;
 			}
 		}
@@ -177,6 +197,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 			VelocityResult velocityResult = velocity.evaluate(params, op.getTextMail(), emailTextWriter, 0, op.getActionId());
 			if (velocityResult.hasErrors()) {
 				logger.error("Velocity errors: " + velocityResult.getErrors());
+				actionOperationErrors.addErrorCode(ErrorCode.GENERAL_ERROR);
 				return false;
 			}
 			String emailtext = emailTextWriter.toString();
@@ -185,6 +206,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 			velocityResult = velocity.evaluate(params, op.getSubjectLine(), subjectWriter, 0, op.getActionId());
 			if (velocityResult.hasErrors()) {
 				logger.error("Velocity errors: " + velocityResult.getErrors());
+				actionOperationErrors.addErrorCode(ErrorCode.GENERAL_ERROR);
 				return false;
 			}
 			String subject = subjectWriter.toString();
@@ -195,14 +217,16 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 				velocityResult = velocity.evaluate(params, op.getHtmlMail(), emailHtmlWriter, 0, op.getActionId());
 				if (velocityResult.hasErrors()) {
 					logger.error("Velocity errors: " + velocityResult.getErrors());
+					actionOperationErrors.addErrorCode(ErrorCode.GENERAL_ERROR);
 					return false;
 				}
 				emailhtml = emailHtmlWriter.toString();
 			}
 
-			return javaMailService.sendEmail(fromAddress, null, replyAddress, null, null, toAddress, null, subject, emailtext, emailhtml, "iso-8859-1");
+			return javaMailService.sendEmail(companyID, fromAddress, null, replyAddress, null, null, toAddress, null, subject, emailtext, emailhtml, "iso-8859-1");
 		} catch (Exception e) {
 			logger.error("Velocity error", e);
+			actionOperationErrors.addErrorCode(ErrorCode.GENERAL_ERROR);
 
 			return false;
 		}
@@ -239,5 +263,10 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 
 	public void setBlacklistService(BlacklistService blacklistService) {
 		this.blacklistService = blacklistService;
+	}
+
+	@Required
+	public void setRecipientService(RecipientService recipientService) {
+		this.recipientService = recipientService;
 	}
 }

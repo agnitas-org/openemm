@@ -13,7 +13,6 @@ package com.agnitas.emm.springws.throttling;
 import java.util.Locale;
 
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.apache.log4j.Logger;
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.soap.SoapBody;
 import org.springframework.ws.soap.SoapHeaderElement;
@@ -22,24 +21,22 @@ import org.springframework.ws.soap.server.SoapEndpointInterceptor;
 
 import com.agnitas.emm.springws.WebserviceUserDetails;
 import com.agnitas.emm.springws.common.EndpointClassUtil;
-import com.agnitas.emm.springws.throttling.service.ThrottlingService;
+import com.agnitas.emm.util.quota.api.QuotaService;
 
 /**
  * Interceptor to limit WS API calls.
  */
 public class ThrottlingInterceptor implements SoapEndpointInterceptor {
-	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ThrottlingInterceptor.class);
 	
 	/** Service for limiting WS calls. */
-	private ThrottlingService throttlingService;
+	private QuotaService throttlingService;
 
 	/**
-	 * Sets {@link ThrottlingService}.
+	 * Sets {@link QuotaService}.
 	 * 
-	 * @param throttlingService {@link ThrottlingService}
+	 * @param throttlingService {@link QuotaService}
 	 */
-	public void setThrottlingService(ThrottlingService throttlingService) {
+	public void setThrottlingService(QuotaService throttlingService) {
 		this.throttlingService = throttlingService;
 	}
 
@@ -54,14 +51,7 @@ public class ThrottlingInterceptor implements SoapEndpointInterceptor {
 		final String endpointName = EndpointClassUtil.endpointNameFromInstance(paramObject);
 		
 		try {
-			if (!throttlingService.checkAndTrack(webserviceUser, endpointName)) {
-				if(logger.isDebugEnabled()) {
-					logger.debug(String.format("Intercepted! User: '%s', Endpoint: '%s'", webserviceUser.getUsername(), endpointName));
-				}
-				
-				//TODO: exception resolver?
-				throw new Exception("API call limit exceeded");
-			}
+			throttlingService.checkAndTrack(webserviceUser.getUsername(), webserviceUser.getCompanyID(), endpointName);
 		} catch(Exception ex) {
             SoapBody response = ((SoapMessage) messageContext.getResponse()).getSoapBody();
             response.addClientOrSenderFault(ex.getMessage(), Locale.ENGLISH);

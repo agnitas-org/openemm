@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.mailing.MailingAllReadySentException;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.Tuple;
@@ -190,7 +191,7 @@ public class ComOptimizationScheduleServiceImpl implements ComOptimizationSchedu
 
 		mailing.getMaildropStatus().add(drop);
 		mailingDao.saveMailing(mailing, false);
-		mailingDao.updateStatus(drop.getMailingID(), testRun ? "test" : "scheduled");
+		mailingDao.updateStatus(drop.getMailingID(), testRun ? MailingStatus.TEST : MailingStatus.SCHEDULED);
 	}
 
 	private List<Mailing> getTestMailings(ComOptimization optimization) {

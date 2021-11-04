@@ -18,6 +18,8 @@ import org.springframework.jdbc.core.RowMapper;
 
 public class DateRowMapper implements RowMapper<Date> {
 	
+	// TODO Performance improvement: Introduce static constant INSTANCE and reduce visibility of constructor to private.
+
 	@Override
 	public Date mapRow(ResultSet resultSet, int row) throws SQLException {
 		return resultSet.getTimestamp(1);

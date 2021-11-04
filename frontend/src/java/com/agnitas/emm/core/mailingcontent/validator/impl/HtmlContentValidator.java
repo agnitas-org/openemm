@@ -51,6 +51,23 @@ public class HtmlContentValidator implements DynTagValidator {
                 popups.alert("error.mailing.content.illegal.script");
                 return false;
             }
+            if (HtmlUtils.containsElementByTag(contentBlock.getContent(), "iframe")) {
+                popups.alert("error.mailing.content.illegal.iframe");
+                return false;
+            }
+            if (HtmlUtils.containsElementByTag(contentBlock.getContent(), "object")) {
+                popups.alert("error.mailing.content.illegal.object");
+                return false;
+            }
+            if (HtmlUtils.containsElementByTag(contentBlock.getContent(), "embed")) {
+                popups.alert("error.mailing.content.illegal.embed");
+                return false;
+            }
+            if (HtmlUtils.containsElementByTag(contentBlock.getContent(), "applet")) {
+                popups.alert("error.mailing.content.illegal.applet");
+                return false;
+            }
+            
             try {
                 LinkService.LinkScanResult linkScanResult = linkService.scanForLinks(contentBlock.getContent(), dynTagDto.getCompanyId());
                 List<LinkService.ErrorneousLink> linksWithErros = linkScanResult.getErrorneousLinks();

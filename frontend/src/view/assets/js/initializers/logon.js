@@ -53,7 +53,7 @@
         $e.toggleClass('l-hide-frame', isFrameHidden());
         $e.removeClass('hidden');
 
-        if (isNotificationDismissExpired()) {
+        if (isNotificationDismissExpired() && this.config.SHOW_TAB_HINT === true) {
             var head = t('defaults.info');
             var content = t('logon.info.multiple_tabs');
 

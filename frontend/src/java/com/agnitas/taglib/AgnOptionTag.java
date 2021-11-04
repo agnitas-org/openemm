@@ -14,8 +14,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.tagext.DynamicAttributes;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.tagext.DynamicAttributes;
 
 import org.apache.struts.taglib.TagUtils;
 import org.apache.struts.taglib.html.Constants;
@@ -41,7 +41,7 @@ public class AgnOptionTag extends OptionTag implements DynamicAttributes {
     /**
      * Generate an HTML %lt;option&gt; element.
      *
-     * @throws javax.servlet.jsp.JspException
+     * @throws jakarta.servlet.jsp.JspException
      * @since Struts 1.1
      */
     @Override

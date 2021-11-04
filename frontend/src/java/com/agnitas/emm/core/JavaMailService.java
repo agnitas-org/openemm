@@ -11,13 +11,48 @@
 package com.agnitas.emm.core;
 
 public interface JavaMailService {
-	boolean sendVelocityExceptionMail(String formUrl, Exception e);
-	
-	boolean sendExceptionMail(String errorText, Throwable e);
+	/**
+	 * Sends an email via Java (not via EMM Backend)
+	 * 
+	 * For default senderaddress (from address) leave fromAddress empty or null
+	 * 
+	 * For pure textmails leave bodyHtml empty or null
+	 */
+	boolean sendVelocityExceptionMail(int dkimCompanyID, String formUrl, Exception e);
 
-	boolean sendEmail(String toAddressList, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments);
+	/**
+	 * Sends an email via Java (not via EMM Backend)
+	 * 
+	 * For default senderaddress (from address) leave fromAddress empty or null
+	 * 
+	 * For pure textmails leave bodyHtml empty or null
+	 */
+	boolean sendExceptionMail(int dkimCompanyID, String errorText, Throwable e);
 
-	boolean sendEmail(String toAddressList, String fromAddress, String replyToAddress, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments);
+	/**
+	 * Sends an email via Java (not via EMM Backend)
+	 * 
+	 * For default senderaddress (from address) leave fromAddress empty or null
+	 * 
+	 * For pure textmails leave bodyHtml empty or null
+	 */
+	boolean sendEmail(int dkimCompanyID, String toAddressList, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments);
 
-	boolean sendEmail(String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String subject, String bodyText, String bodyHtml, String charset, JavaMailAttachment... attachments);
+	/**
+	 * Sends an email via Java (not via EMM Backend)
+	 * 
+	 * For default senderaddress (from address) leave fromAddress empty or null
+	 * 
+	 * For pure textmails leave bodyHtml empty or null
+	 */
+	boolean sendEmail(int dkimCompanyID, String toAddressList, String fromAddress, String replyToAddress, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments);
+
+	/**
+	 * Sends an email via Java (not via EMM Backend)
+	 * 
+	 * For default senderaddress (from address) leave fromAddress empty or null
+	 * 
+	 * For pure textmails leave bodyHtml empty or null
+	 */
+	boolean sendEmail(int dkimCompanyID, String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String subject, String bodyText, String bodyHtml, String charset, JavaMailAttachment... attachments);
 }

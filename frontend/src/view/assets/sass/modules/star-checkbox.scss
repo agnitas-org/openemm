@@ -1,0 +1,20 @@
+
+.star-checkbox {
+  outline: 0;
+  cursor: pointer;
+  appearance: none;
+  color: $c-blue-23;
+  font-size: $fs-large;
+}
+
+.star-checkbox:before {
+  font-family: "Font Awesome 5 Regular Free";
+  font-weight: $fw-regular;
+  visibility: visible;
+  content: "\f005";
+}
+
+.star-checkbox:checked:before {
+  font-family: 'Font Awesome 5 Free';
+  font-weight: $fw-bold;
+}

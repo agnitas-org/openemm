@@ -16,6 +16,7 @@ import java.util.List;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.MaildropStatusDao;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.OnepixelDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -327,11 +328,11 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
     }
 
     private void updateStatusByMaildrop(int mailingID, MaildropEntry drop) {
-        String status = "scheduled";
+    	MailingStatus status = MailingStatus.SCHEDULED;
         if (drop.getStatus() == MaildropStatus.TEST.getCode()) {
-            status = "test";
+            status = MailingStatus.TEST;
         } else if (drop.getStatus() == MaildropStatus.ADMIN.getCode()) {
-            status = "admin";
+            status = MailingStatus.ADMIN;
         }
         mailingDao.updateStatus(mailingID, status);
     }

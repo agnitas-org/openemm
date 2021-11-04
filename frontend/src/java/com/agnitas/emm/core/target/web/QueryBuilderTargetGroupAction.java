@@ -15,9 +15,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupTooLargeException;
 import org.agnitas.emm.core.recipient.service.RecipientService;
@@ -60,8 +57,10 @@ import com.agnitas.emm.core.target.web.util.EditorContentSynchronizationExceptio
 import com.agnitas.emm.core.target.web.util.EditorContentSynchronizer;
 import com.agnitas.emm.core.target.web.util.FormHelper;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
-import com.agnitas.messages.I18nString;
 import com.agnitas.service.GridServiceWrapper;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Action handling the target group query builder editor view.
@@ -152,6 +151,7 @@ public class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 			form.setUseForAdminAndTestDelivery(target.isAdminTestDelivery());
 			form.setLocked(target.isLocked());
 			form.setComplexityGrade(TargetUtils.getComplexityGrade(target.getComplexityIndex(), recipientService.getNumberOfRecipients(companyId)));
+			form.setValid(target.isValid());
 
 			try {
 				// Make data for QueryBuilder available from EQL
@@ -225,8 +225,8 @@ public class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		final ComAdmin admin = AgnUtils.getAdmin(request);
 
 		form.setTargetID(0);
-		form.setShortname(I18nString.getLocaleString("Name", admin.getLocale()));
-		form.setDescription(I18nString.getLocaleString("default.description", admin.getLocale()));
+		form.setShortname("");
+		form.setDescription("");
 		form.setEql("");
 		form.setFormat(TargetgroupViewFormat.QUERY_BUILDER);
 
@@ -303,7 +303,7 @@ public class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		
 		form.setMailinglists(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
 		form.setComplexityGrade(getComplexityGrade(form.getEql(), admin.getCompanyID()));
-
+		form.setValid(targetService.isValid(admin.getCompanyID(), form.getTargetID()));
 		return mapping.findForward("view");
 	}
 
@@ -343,6 +343,7 @@ public class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		form.setMailinglists(mailinglistApprovalService.getEnabledMailinglistsForAdmin(AgnUtils.getAdmin(request)));
 		form.setFormat(targetFormat);
 		form.setComplexityGrade(getComplexityGrade(form.getEql(), admin.getCompanyID()));
+        form.setValid(targetService.isValid(admin.getCompanyID(), form.getTargetID()));
 
 		if (!errors.isEmpty()) {
 			saveErrors(request, errors);
@@ -417,6 +418,8 @@ public class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 					isTargetGroupValid = false;
 				}
 			} catch(final TargetGroupTooLargeException e) {
+				logger.warn("Target group was too large.", e);
+				
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.too_large"));
 				saveErrors(request, errors);
 
@@ -435,6 +438,10 @@ public class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 			}
 
 		} catch(final EqlSyntaxErrorException e) {
+			if(logger.isInfoEnabled()) {
+				logger.info("Found syntax error in EQL expression", e);
+			}
+			
 			final List<EqlSyntaxError> syntaxErrors = e.getErrors();
 
 			syntaxErrors.forEach(syntaxError -> {
@@ -446,7 +453,7 @@ public class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 
 			reloadTargetGroupFromDB = false;
 		} catch(final EditorContentSynchronizationException e) {
-			logger.info("There was an error synchronizing editor content.", e);
+			logger.error("There was an error synchronizing editor content.", e);
 
 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.saving"));
 			saveErrors(request, errors);

@@ -9,7 +9,7 @@
 
 <emm:CheckLogon />
 
-<emm:Permission token="campaign.autoopt" />
+<emm:Permission token="campaign.change" />
 <c:set var="agnNavigationKey" 		value="Campaign" 																										scope="request" />
 <c:set var="agnNavHrefAppend" 		value="&campaignID=${optimizationScheduleForm.campaignID}&optimizationID=${optimizationScheduleForm.optimizationID}"	scope="request" />
 <c:set var="agnTitleKey" 			value="mailing.archive" 																								scope="request" />

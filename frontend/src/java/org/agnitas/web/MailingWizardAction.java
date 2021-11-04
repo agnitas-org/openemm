@@ -19,11 +19,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
@@ -63,7 +58,7 @@ import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.dao.CampaignDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailing.service.MailingService;
@@ -71,11 +66,17 @@ import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilder;
 import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.web.util.EditorContentSynchronizer;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.util.preview.PreviewImageService;
+
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Action that handles creation of mailing using mailing wizard.
@@ -131,7 +132,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
     protected DynamicTagContentFactory dynamicTagContentFactory;
     
     /** DAO accessing campaigns. */
-    protected ComCampaignDao campaignDao;
+    protected CampaignDao campaignDao;
     
     protected ComTargetService targetService;
     
@@ -151,6 +152,8 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	protected CopyMailingService copyMailingService;
 	protected QueryBuilderFilterListBuilder filterListBuilder;
 	protected AdminService adminService;
+
+	protected EditorContentSynchronizer editorContentSynchronizer;
 
     // --------------------------------------------------------- Public Methods
 
@@ -238,6 +241,9 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 			int mailingIconId = NumberUtils.toInt(forwardParams.get("nodeId"));
 
 			workflowService.assignWorkflowDrivenSettings(AgnUtils.getAdmin(req), mailing, workflowId, mailingIconId);
+			if(mailing.getSplitID() == Mailing.YES_SPLIT_ID) {
+				mailing.setSplitID(Mailing.NONE_SPLIT_ID);
+			}
 		}
 	}
 
@@ -333,6 +339,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 				newMailing.setPlanDate(planDate);
 				newMailing.setMailingContentType(aForm.getMailingContentType());
 				newMailing.setPlanDate(planDate);
+				newMailing.setMailTemplateID(aForm.getMailing().getMailTemplateID());
 				setMailingWorkflowParameters(req, newMailing);
 
                 Map<Integer, Mediatype> mediatypes = newMailing.getMediatypes();
@@ -1074,11 +1081,11 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
         this.dynamicTagContentFactory = dynamicTagContentFactory;
     }
 
-    public ComCampaignDao getCampaignDao() {
+    public CampaignDao getCampaignDao() {
         return campaignDao;
     }
 
-    public void setCampaignDao(ComCampaignDao campaignDao) {
+    public void setCampaignDao(CampaignDao campaignDao) {
         this.campaignDao = campaignDao;
     }
 
@@ -1158,5 +1165,10 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	@Required
 	public void setAdminService(AdminService adminService) {
 		this.adminService = adminService;
+	}
+
+	@Required
+	public void setEditorContentSynchronizer(EditorContentSynchronizer editorContentSynchronizer) {
+		this.editorContentSynchronizer = editorContentSynchronizer;
 	}
 }

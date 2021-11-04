@@ -75,7 +75,6 @@
                         <option value="${TIME_UNIT_MINUTE}"><bean:message key="workflow.deadline.Minutes"/></option>
                         <option value="${TIME_UNIT_HOUR}"><bean:message key="Hours"/></option>
                         <option value="${TIME_UNIT_DAY}"><bean:message key="Days"/></option>
-                        <%-- TODO: remove beta state when GWUA-3941 will be tested --%>
                         <option value="${TIME_UNIT_WEEK}"><bean:message key="default.weeks"/></option>
                         <option value="${TIME_UNIT_MONTH}"><bean:message key="default.months"/></option>
                     </select>
@@ -177,11 +176,11 @@
                         <div class="col-sm-8">
                             <select class="form-control" data-action="deadline-editor-update" id="monthsPeriod">
                                 <option value="1">
-                                    1 <bean:message key="Month"/>
+                                    1 <bean:message key="Month"/> (30 <bean:message key="days"/> )
                                 </option>
                                 <c:forEach var="month" begin="2" end="12" step="1">
                                     <option value="${month}">
-                                            ${month} <bean:message key="default.months"/>
+                                            ${month} <bean:message key="default.months"/> (${month * 30} <bean:message key="days"/>)
                                     </option>
                                 </c:forEach>
                             </select>

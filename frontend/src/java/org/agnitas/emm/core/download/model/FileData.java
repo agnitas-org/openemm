@@ -10,7 +10,7 @@
 
 package org.agnitas.emm.core.download.model;
 
-import javax.activation.MimeType;
+import jakarta.activation.MimeType;
 
 /**
  * Data structure for download informations.

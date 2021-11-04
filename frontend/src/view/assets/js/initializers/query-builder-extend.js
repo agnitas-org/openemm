@@ -410,12 +410,12 @@
             createExtendedOperatorConditions: function(rule) {
                 var self = this;
                 var operatorConditionsContainer = rule.$el.find(Selectors.rule_operator_conditions_container);
-                if(rule.operator.type === 'not_equal') {
+                if (rule.operator.type === 'not_equal') {
                     rule.includeEmpty = true;
                     var $condition = $(
                         '<div class="qb-input-label">' +
                             '<label class="checkbox-inline">' +
-                                '<input type="checkbox" class="rule-include-empty" name="' + rule.id + '_include_empty" checked/>' +
+                                '<input type="checkbox" class="rule-include-empty" name="' + rule.id + '_include_empty" checked="checked"/>' +
                                 '<span class="text">' + t('querybuilder.common.include_empty') + '</span>' +
                             '</label>' +
                         '</div>');
@@ -942,20 +942,23 @@
             },
 
             deleteRuleByField: function(root, id, recursively) {
+                var self = this;
                 if (!root) {
-                    root = this.getModel().model.root;
-
+                    root = self.model.root;
+                    if (!root) {
+                        return;
+                    }
                 }
                 var del = false;
                 root.each('reverse', function(rule) {
                     if (rule && rule.filter && rule.filter.id == id) {
-                        del &= this.deleteRule(rule);
+                        del &= self.deleteRule(self.getModel(rule.$el));
                     }
                 }, function(group) {
-                    del &= this.deleteRuleByField(group, id, recursively);
-                }, this);
+                    del &= self.deleteRuleByField(group, id, recursively);
+                }, self);
 
-                return del;
+                return !!del;
             },
 
             setOrReplaceRule: function(rules, rule, recursively) {

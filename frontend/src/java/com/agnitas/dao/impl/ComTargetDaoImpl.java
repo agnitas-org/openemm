@@ -194,11 +194,10 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 				if (targetsql != null) {
 					target.setTargetSQL(targetsql);
 				}
-				targets.put(new Integer(id), target);
+				targets.put(id, target);
 			}
 		} catch (Exception e) {
 			logger.error("getAllowedTargets (sql: " + sql + ")", e);
-			javaMailService.sendExceptionMail("sql:" + sql, e);
 			return null;
 		}
 		return targets;
@@ -207,7 +206,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	@Override
 	public Map<Integer, TargetLight> getAllowedTargetLights(@VelocityCheck int companyID) {
 		Map<Integer, TargetLight> targets = new HashMap<>();
-		String sql = "SELECT target_id, company_id, target_shortname, target_description, locked, creation_date, change_date, invalid, deleted, component_hide, complexity, invalid " + getTargetExtendedColumnsAsString() +
+		String sql = "SELECT target_id, company_id, target_shortname, target_description, locked, creation_date, change_date, invalid, deleted, component_hide, complexity, invalid, favorite " + getTargetExtendedColumnsAsString() +
 				"FROM dyn_target_tbl WHERE company_id = ? " +
 				"ORDER BY target_id";
 
@@ -620,12 +619,12 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 		SqlPreparedStatementManager preparedStatementManager =
 				new SqlPreparedStatementManager(
 						"SELECT target_id, company_id, target_description, target_shortname, " +
-								"creation_date, change_date, deleted, locked, invalid, component_hide, complexity " + getTargetExtendedColumnsAsString() +
+								"creation_date, change_date, deleted, locked, invalid, component_hide, complexity, favorite " + getTargetExtendedColumnsAsString() +
 								"FROM dyn_target_tbl");
 
 		prepareWhereClauseForTargetsList(preparedStatementManager, options);
 
-		preparedStatementManager.finalizeStatement("ORDER BY LOWER(target_shortname), target_id");
+		preparedStatementManager.finalizeStatement("ORDER BY favorite DESC, LOWER(target_shortname), target_id");
 
 		return preparedStatementManager;
 	}
@@ -784,19 +783,19 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 		String deleted = includeDeleted ? "" : " AND deleted = 0";
 
 		return select(logger, "SELECT target_id, company_id, target_description, target_shortname, locked, " +
-				" creation_date, change_date, deleted, component_hide, complexity, invalid " + getTargetExtendedColumnsAsString() +
-				"FROM dyn_target_tbl WHERE (company_id = ? OR company_id = 0)" + deleted + " AND target_id IN (" + StringUtils.join(targetIds, ", ") + ") ORDER BY target_shortname", getTargetLightRowMapper(), companyID);
+				" creation_date, change_date, deleted, component_hide, complexity, invalid, favorite " + getTargetExtendedColumnsAsString() +
+				"FROM dyn_target_tbl WHERE (company_id = ? OR company_id = 0)" + deleted + " AND target_id IN (" + StringUtils.join(targetIds, ", ") + ") ORDER BY favorite DESC, target_shortname", getTargetLightRowMapper(), companyID);
 	}
 
 	@Override
 	public List<TargetLight> getUnchoosenTargetLights(int companyID, Collection<Integer> targetIds) {
 		if (CollectionUtils.isNotEmpty(targetIds)) {
 			String sqlGetTargetsExceptIds = "SELECT target_id, company_id, target_description, " +
-					"target_shortname, locked, creation_date, change_date, deleted, component_hide, complexity, invalid " + getTargetExtendedColumnsAsString() +
+					"target_shortname, locked, creation_date, change_date, deleted, component_hide, complexity, invalid, favorite " + getTargetExtendedColumnsAsString() +
 					"FROM dyn_target_tbl " +
 					"WHERE company_id = ? AND COALESCE(deleted, 0) = 0 AND COALESCE(hidden, 0) = 0 AND admin_test_delivery = 0 " +
 					"AND target_id NOT IN (" + StringUtils.join(targetIds, ", ") + ") " +
-					"ORDER BY LOWER(target_shortname)";
+					"ORDER BY favorite DESC, LOWER(target_shortname)";
 
 			return select(logger, sqlGetTargetsExceptIds, getTargetLightRowMapper(), companyID);
 		} else {
@@ -808,8 +807,8 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	public List<TargetLight> getChoosenTargetLights(String targetExpression, int companyID) {
 		if (StringUtils.isNotEmpty(targetExpression)) {
 			return select(logger, "SELECT target_id, company_id, target_description, target_shortname, locked, " +
-					" creation_date, change_date, deleted, component_hide, complexity, invalid " + getTargetExtendedColumnsAsString() +
-					"FROM dyn_target_tbl WHERE deleted = 0 AND admin_test_delivery = 0 AND target_id IN (" + targetExpression + ") ORDER BY target_shortname", getTargetLightRowMapper());
+					" creation_date, change_date, deleted, component_hide, complexity, invalid, favorite " + getTargetExtendedColumnsAsString() +
+					"FROM dyn_target_tbl WHERE deleted = 0 AND admin_test_delivery = 0 AND target_id IN (" + targetExpression + ") ORDER BY favorite DESC, target_shortname", getTargetLightRowMapper());
 		} else {
 			return new ArrayList<>();
 		}
@@ -825,7 +824,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 		StringBuilder sqlQueryBuilder = new StringBuilder();
 		List<Object> sqlParameters = new ArrayList<>();
 
-		sqlQueryBuilder.append("SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, complexity, invalid ")
+		sqlQueryBuilder.append("SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, complexity, invalid, favorite ")
 				.append(getTargetExtendedColumnsAsString())
 				.append("FROM dyn_target_tbl ")
 				.append("WHERE (company_id = ? OR company_id = 0) AND deleted = 0 ");
@@ -854,7 +853,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
         final MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("targetIds", targets);
         parameters.addValue("companyId", companyId);
-        return new HashSet<>(new NamedParameterJdbcTemplate(getDataSource()).query(query, parameters, new IntegerRowMapper()));
+        return new HashSet<>(new NamedParameterJdbcTemplate(getDataSource()).query(query, parameters, IntegerRowMapper.INSTANCE));
     }
 
 	private String makeShortNameMatchConditionClause(List<Object> sqlParameters) {
@@ -1033,6 +1032,27 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 
 		return select(logger, sqlGetTargets, new TargetEqlMapper(), companyId);
 	}
+
+    @Override
+    public boolean isValid(final int companyId, final int targetId) {
+        String query = "SELECT invalid FROM dyn_target_tbl WHERE company_id = ? AND target_id = ?";
+        return selectInt(logger, query, companyId, targetId) == 0;
+    }
+
+    @Override
+    public void addToFavorites(final int targetId, final int companyId) {
+        manageFavorite(targetId, true, companyId);
+    }
+
+    @Override
+    public void removeFromFavorites(final int targetId, final int companyId) {
+        manageFavorite(targetId, false, companyId);
+    }
+
+    private void manageFavorite(final int targetId, final boolean favorite, final int companyId) {
+        String query = "UPDATE dyn_target_tbl SET favorite = ? WHERE target_id = ? AND company_id = ?";
+        update(logger, query, favorite ? 1 : 0, targetId, companyId);
+    }
 
 	public TargetLightRowMapper getTargetLightRowMapper() {
 		return targetLightRowMapper;

@@ -144,14 +144,14 @@ public class JobQueueService implements ApplicationContextAware {
 			String errorText = "Hanging job working for more than " + hoursErrorLimit + " hours";
 			if (StringUtils.isNotBlank(job.getEmailOnError())) {
 				try {
-					mailNotificationService.sendNotificationMailWithDuplicateRetention(job.getEmailOnError(), errorSubject, errorText);
+					mailNotificationService.sendNotificationMailWithDuplicateRetention(0, job.getEmailOnError(), errorSubject, errorText);
 				} catch (Exception e) {
 					logger.error("Cannot send email with jobqueue error:\n" + errorSubject + "\n" + errorText, e);
 				}
 			}
 			if (StringUtils.isNotBlank(configService.getValue(ConfigValue.SystemAlertMail))) {
 				try {
-					mailNotificationService.sendNotificationMailWithDuplicateRetention(configService.getValue(ConfigValue.SystemAlertMail), errorSubject, errorText);
+					mailNotificationService.sendNotificationMailWithDuplicateRetention(0, configService.getValue(ConfigValue.SystemAlertMail), errorSubject, errorText);
 				} catch (Exception e) {
 					logger.error("Cannot send email with jobqueue error:\n" + errorSubject + "\n" + errorText, e);
 				}

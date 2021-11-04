@@ -10,8 +10,12 @@
 
 package com.agnitas.dao;
 
-public interface ComDkimDao {	
-	public boolean existsDkimKeyForDomain(int companyID, String domainname);
+import com.agnitas.beans.impl.DkimKeyEntry;
+
+public interface ComDkimDao {
+	boolean existsDkimKeyForDomain(int companyID, String domainname);
 	
-	public boolean deleteDkimKeyByCompany(int companyID);
+	boolean deleteDkimKeyByCompany(int companyID);
+
+	DkimKeyEntry getDkimKeyForDomain(int companyID, String domainname, boolean allowNonMatchingFallback);
 }

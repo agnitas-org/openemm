@@ -14,12 +14,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 import org.agnitas.beans.Recipient;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -40,14 +41,13 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
 	private static final Logger logger = Logger.getLogger(ActionOperationIdentifyCustomerImpl.class);
 
 	private ComCompanyDao companyDao;
+	private RecipientService recipientService;
 	private ExtensibleUIDService uidService;
 
 	private BeanLookupFactory beanLookupFactory;
 	
 	private ConfigService configService;
 	
-	private ActionOperationIdentifyCustomerImpl() {}
-
 	@Override
 	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors actionOperationErrors) {
 		ActionOperationIdentifyCustomerParameters op =(ActionOperationIdentifyCustomerParameters) operation;
@@ -61,19 +61,21 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
 		@SuppressWarnings("unchecked")
 		CaseInsensitiveMap<String, Object> reqParams = new CaseInsensitiveMap<>((Map<String, Object>) params.get("requestParameters"));
         aCust.setCompanyID(companyID);
-        aCust.loadCustDBStructure();
+        aCust.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
 
         keyVal=(String) reqParams.get(keyColumn.toUpperCase());
 
         if(passColumn.equals("none")) {
-            aCust.findByKeyColumn(keyColumn, keyVal);
+            recipientService.findByKeyColumn(aCust, keyColumn, keyVal);
         } else {
             passVal=(String) reqParams.get(passColumn);
-            aCust.findByUserPassword(keyColumn, keyVal, passColumn, passVal);
+            aCust.setCustomerID(recipientService.findByUserPassword(companyID, keyColumn, keyVal, passColumn, passVal));
         }
 
         if(aCust.getCustomerID()!=0) {
-            params.put("customerID", new Integer(aCust.getCustomerID()));
+            aCust.setCustParameters(recipientService.getCustomerDataFromDb(companyID, aCust.getCustomerID(), aCust.getDateFormat()));
+
+            params.put("customerID", aCust.getCustomerID());
             // generate new agnUID
             try {
             	// Create new-style UID.
@@ -94,7 +96,7 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
 					if (sessPar == null) {
 						sessPar = new HashMap<>();
 					}
-                    sessPar.put("customerID", new Integer(aCust.getCustomerID()));
+                    sessPar.put("customerID", aCust.getCustomerID());
                     sessPar.put("agnUID", uidString);
 					if (!passColumn.equals("none")) {
 						sessPar.put("authenticated", "1");
@@ -142,4 +144,8 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
 		this.configService = Objects.requireNonNull(service, "Config service cannot be null");
 	}
 
+	@Required
+    public void setRecipientService(RecipientService recipientService) {
+        this.recipientService = recipientService;
+    }
 }

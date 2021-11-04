@@ -13,7 +13,7 @@ package com.agnitas.service;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.activation.MimetypesFileTypeMap;
+import jakarta.activation.MimetypesFileTypeMap;
 
 public class MimeTypeService {
 	private static final String MIMETYPES_RESOURCE_FILE = "mimetypes";

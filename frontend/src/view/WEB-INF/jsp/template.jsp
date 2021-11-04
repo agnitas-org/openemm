@@ -189,7 +189,13 @@
                         if (!ConfigService.getInstance().getBooleanValue(ConfigValue.IsLiveInstance) || "Inhouse".equalsIgnoreCase(ConfigService.getInstance().getValue(ConfigValue.System_License_Type)) || ConfigService.getInstance().getIntegerValue(ConfigValue.System_Licence) == 0) {
                         %>
                             <p class="version-sign">
-                                <strong><%= ConfigService.getInstance().getValue(ConfigValue.ApplicationVersion) %></strong>
+                                <strong>
+                                <%= ConfigService.getInstance().getValue(ConfigValue.ApplicationVersion) %>
+                                </strong>
+                                <% if (ConfigService.getInstance().getBooleanValue(ConfigValue.ShowApplicationVersionWithDate)) { %>
+                                	<br />
+                                	(<%= ConfigService.getApplicationVersionInstallationTimeString(request) %>)
+                                <% } %>
                             </p>
                         <%
                         }

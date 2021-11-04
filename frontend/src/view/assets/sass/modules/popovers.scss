@@ -47,10 +47,11 @@ body.dark-theme .popover {
   color: $c-black-85;
   border-bottom: 1px solid $c-gray-11;
   border-radius: 2px 2px 0 0;
-}
 
-body.dark-theme .popover-title {
-  border-color: $c-dt-tile-border;
+  body.dark-theme & {
+    border-color: $c-dt-tile-border;
+    color: inherit;
+  }
 }
 
 .popover-content {

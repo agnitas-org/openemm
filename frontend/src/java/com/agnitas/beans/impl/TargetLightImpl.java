@@ -59,6 +59,8 @@ public class TargetLightImpl implements TargetLight {
 
 	private boolean accessLimitation;
 
+	private boolean favorite;
+	
 	@Override
 	public int getCompanyID() {
 		return companyID;
@@ -276,4 +278,14 @@ public class TargetLightImpl implements TargetLight {
 			return false;
 		}
 	}
+
+    @Override
+    public boolean isFavorite() {
+        return favorite;
+    }
+
+    @Override
+    public void setFavorite(boolean favorite) {
+        this.favorite = favorite;
+    }
 }

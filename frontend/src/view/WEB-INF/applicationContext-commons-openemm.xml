@@ -41,6 +41,7 @@
 <!-- ============================================================================================================================== Hash tags -->
 	<bean id="ProfileFieldHashTagSupport" class="com.agnitas.emm.core.hashtag.tags.ProfileFieldHashTagSupport">
 		<constructor-arg ref="RecipientFactory" />
+		<constructor-arg ref="recipientService" />
 	</bean>
 		  	
 <!-- ============================================================================================================================== EQL -->
@@ -219,6 +220,7 @@
 		<property name="columnInfoService" ref="ColumnInfoService" />
 		<property name="eqlFacade" ref="EqlFacade" />
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
+        <property name="configService" ref="ConfigService"/>
 	</bean>
 	
 	<bean id="ScriptHelper" class="com.agnitas.util.ScriptHelper" scope="prototype">
@@ -233,5 +235,6 @@
 		<property name="maildropStatusDao" ref="MaildropStatusDao" />
 		<property name="recipientService" ref="recipientService" />
 		<property name="extensibleUIDService" ref="ExtensibleUIDService" />
+		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
 	</bean>
 </beans>

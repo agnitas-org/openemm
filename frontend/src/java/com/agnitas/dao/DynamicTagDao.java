@@ -16,6 +16,7 @@ import java.util.Map;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
 
 public interface DynamicTagDao {
     /**
@@ -25,7 +26,6 @@ public interface DynamicTagDao {
      * @param mailingId The id of the mailing
      * @return List of DynamicTag
      */
-
 	List<DynamicTag> getNameList( @VelocityCheck int companyId, int mailingId);
 
 	void markNameAsDeleted( int mailingID, String name);
@@ -61,4 +61,43 @@ public interface DynamicTagDao {
 	String getDynamicTagName(@VelocityCheck int companyId, int mailingId, int dynTagId);
     
     Map<String, Integer> getDynTagIdsByName(@VelocityCheck int companyId, int mailingId, List<String> dynNames);
+
+	DynamicTag getDynamicTag(int dynNameId, int companyId);
+
+	/**
+	 * Retrieve a dynamic contents of a mailing referenced by {@code mailingId}.
+	 *
+	 * @param mailingId an identifier of a mailing whose dynamic content is to be retrieved.
+	 * @param companyId an identifier of a company of the current user.
+	 * @return a list of an entities representing dynamic contents.
+	 */
+	List<DynamicTag> getDynamicTags(int mailingId, int companyId, boolean includeDeletedDynTags);
+
+	void deleteAllDynTags(int mailingId);
+
+    /**
+     * Deletes all dyn content by dyn tag name
+	 * @param mailingId
+	 * @param companyId
+	 * @param dynName
+     * @return true if at least con row was affected otherwise return false
+     */
+	boolean cleanupContentForDynNames(int mailingId, int companyId, List<String> dynNames);
+
+    /**
+     * Deletes all dyn content by dyn tag name
+	 * @param mailingId
+	 * @param companyId
+	 * @param dynName
+     * @return true if at least con row was affected otherwise return false
+     */
+	boolean cleanupContentForDynName(int mailingId, int companyId, String dynName);
+
+	void updateDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception;
+
+	void createDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception;
+
+	void saveDynamicTags(Mailing mailing, Map<String, DynamicTag> dynTags) throws Exception;
+
+	void removeAbsentDynContent(DynamicTag oldDynamicTag, DynamicTag newDynamicTag);
 }

@@ -39,17 +39,25 @@
     </c:otherwise>
 </c:choose>
 
-<c:url var="recipientsOverviewLink" value="/recipient.do">
-    <c:param name="action" value="${ACTION_OVERVIEW_START}"/>
-    <c:param name="trgt_clear" value="1"/>
-    <c:param name="overview" value="true"/>
-    <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
-</c:url>
+<emm:HideByPermission token="recipient.rollback">
+    <c:url var="recipientOverviewUrl" value="/recipient/list.action">
+        <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
+    </c:url>
+    <c:url var="recipientViewLink" value="/recipient/${recipientForm.recipientID}/view.action"/>
+</emm:HideByPermission>
+<emm:ShowByPermission token="recipient.rollback">
+    <c:url var="recipientsOverviewLink" value="/recipient.do">
+        <c:param name="action" value="${ACTION_OVERVIEW_START}"/>
+        <c:param name="trgt_clear" value="1"/>
+        <c:param name="overview" value="true"/>
+        <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
+    </c:url>
 
-<c:url var="recipientViewLink" value="/recipient.do">
-    <c:param name="action" value="${ACTION_VIEW}"/>
-    <c:param name="recipientID" value="${recipientForm.recipientID}"/>
-</c:url>
+    <c:url var="recipientViewLink" value="/recipient.do">
+        <c:param name="action" value="${ACTION_VIEW}"/>
+        <c:param name="recipientID" value="${recipientForm.recipientID}"/>
+    </c:url>
+</emm:ShowByPermission>
 
 <c:choose>
     <c:when test="${not empty recipientForm.firstname and not empty recipientForm.lastname}">

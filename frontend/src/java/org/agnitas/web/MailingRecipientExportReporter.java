@@ -18,7 +18,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
-import com.agnitas.beans.Mailing;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.MailingRecipientExportWorker;
@@ -32,6 +31,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.JavaMailService;
@@ -131,7 +131,7 @@ public class MailingRecipientExportReporter {
 			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
 			String bodyText = generateLocalizedExportTextReport(exportWorker, locale) + "\n" + additionalContent;
 			
-			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+			javaMailService.sendEmail(exportWorker.getCompanyID(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 
@@ -382,7 +382,7 @@ public class MailingRecipientExportReporter {
 			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
 			String bodyText = "Export-ERROR:\n" + generateLocalizedExportTextReport(exportWorker, locale) + "\n" + additionalContent;
 						
-			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+			javaMailService.sendEmail(exportWorker.getCompanyID(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 

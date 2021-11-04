@@ -12,16 +12,7 @@ package com.agnitas.emm.core.target.service.impl;
 
 import static com.agnitas.beans.Mailing.NONE_SPLIT_ID;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -39,8 +30,10 @@ import org.agnitas.emm.core.target.exception.TargetGroupIsInUseException;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.emm.core.target.service.TargetGroupLocator;
 import org.agnitas.emm.core.target.service.UserActivityLog;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.ColumnInfoService;
+import org.agnitas.target.TargetFactory;
 import org.agnitas.util.beanshell.BeanShellInterpreterFactory;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -60,9 +53,12 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
+import com.agnitas.emm.core.recipient.dto.RecipientSaveTargetDto;
+import com.agnitas.emm.core.recipient.web.RejectAccessByTargetGroupLimit;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.TargetUtils;
 import com.agnitas.emm.core.target.beans.RawTargetGroup;
@@ -76,6 +72,8 @@ import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ReferenceTableResolveException;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConverter;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.eql.referencecollector.SimpleReferenceCollector;
 import com.agnitas.emm.core.target.exception.EqlFormatException;
@@ -100,9 +98,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	 */
 	private static final transient Logger logger = Logger.getLogger(ComTargetServiceImpl.class);
 
-	private static final String SIMPLE_TARGET_EXPRESSION = "1=1";
-
-	private static final Pattern GENDER_EQUATION_PATTERN = Pattern.compile("cust\\.gender\\s*=\\s*(-?\\d+)");
+	private static final Pattern GENDER_EQUATION_PATTERN = Pattern.compile("(?:cust\\.gender\\s*(?:=|<>|>|>=|<|<=)\\s*(-?\\d+))|(?:mod\\(cust\\.gender,\\s+(\\d+)\\))");
 
 	/**
 	 * DAO accessing target groups.
@@ -138,6 +134,12 @@ public class ComTargetServiceImpl implements ComTargetService {
 	private ColumnInfoService columnInfoService;
 	
 	private ReferencedItemsService referencedItemsService;
+
+	private AdminService adminService;
+
+	private TargetFactory targetFactory;
+
+	private QueryBuilderToEqlConverter queryBuilderToEqlConverter;
 
 	// ---------------------------------------------------------------------------------------- Business Code
 
@@ -318,79 +320,6 @@ public class ComTargetServiceImpl implements ComTargetService {
     	return targetIds;
     }
 
-    // -------------------------------------------------------------- Dependency Injection
-    /**
-     * Set DAO for accessing target group data.
-     *
-     * @param targetDao DAO for accessing target group data
-     */
-    @Required
-    public void setTargetDao(ComTargetDao targetDao) {
-    	this.targetDao = targetDao;
-    }
-
-    /**
-     * Set DAO for accessing mailing component data.
-     *
-     * @param mailingComponentDao DAO for accessing mailing component data
-     */
-    @Required
-    public void setMailingComponentDao( MailingComponentDao mailingComponentDao) {
-    	this.mailingComponentDao = mailingComponentDao;
-    }
-
-    /**
-     * Sets DAO for accessing mailing data.
-     *
-     * @param mailingDao DAO for accessing mailing data
-     */
-	@Required
-	public void setMailingDao(ComMailingDao mailingDao) {
-		this.mailingDao = mailingDao;
-	}
-
-    /**
-     * Set locator for target groups.
-     *
-     * @param locator locator for target groups
-     */
-    @Required
-    public void setTargetGroupLocator(TargetGroupLocator locator) {
-    	this.targetGroupLocator = locator;
-    }
-
-    /**
-     * Sets DAO for accessing recipient data.
-     *
-     * @param recipientDao DAO for accessing recipient data
-     */
-	@Required
-	public void setRecipientDao(ComRecipientDao recipientDao) {
-		this.recipientDao = recipientDao;
-	}
-
-	/**
-	 * Sets the EQL logic facade.
-	 *
-	 * @param eqlFacade EQL logic facade
-	 */
-	@Required
-	public void setEqlFacade(EqlFacade eqlFacade) {
-		this.eqlFacade = eqlFacade;
-	}
-
-	/**
-	 * Checks if target group rules differ by comparing EQL code.
-	 * 
-	 * @param newTarget new target group
-	 * @param oldTarget target group from DB
-	 * 
-	 * @return <code>true</code> if target groups differ
-	 */
-	private static final boolean isTargetGroupModified(final ComTarget newTarget, final ComTarget oldTarget) {
-		return Objects.equals(newTarget.getEQL(), oldTarget.getEQL());
-	}
-
     @Override
     public int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception {	// TODO: Remove "ActionMessages" to remove dependencies to Struts
     	final TargetSavingAndAnalysisResult result = saveTargetWithAnalysis(admin, newTarget, target, errors, userActivityLog);
@@ -398,45 +327,65 @@ public class ComTargetServiceImpl implements ComTargetService {
     	return result.getTargetID();
     }
 
-    @Override
+	@Override
 	public TargetSavingAndAnalysisResult saveTargetWithAnalysis(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception {	// TODO: Remove "ActionMessages" to remove dependencies to Struts
+		if (target == null) {
+			// be sure to use id 0 if there is no existing object
+			newTarget.setId(0);
+		}
+
+		if (validateTargetDefinition(admin.getCompanyID(), newTarget.getEQL())) {
+			newTarget.setComplexityIndex(calculateComplexityIndex(newTarget.getEQL(), admin.getCompanyID()));
+
+			final int newId = saveTarget(newTarget);
+
+			postValidation(admin, newTarget).forEach(error -> errors.add(ActionMessages.GLOBAL_MESSAGE, error));
+
+			newTarget.setId(newId);
+
+			final EqlAnalysisResult analysisResultOrNull = this.eqlFacade.analyseEql(newTarget.getEQL());
+
+			getSavingLogs(newTarget, target).forEach(action -> userActivityLog.write(admin, action.getAction(), action.getDescription()));
+
+			return new TargetSavingAndAnalysisResult(newId, analysisResultOrNull);
+		} else {
+			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.definition"));
+			return new TargetSavingAndAnalysisResult(0, null);
+		}
+	}
+
+    @Override
+    public int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, List<Message> errors, List<UserAction> userActions) throws TargetGroupPersistenceException {
         if (target == null) {
             // be sure to use id 0 if there is no existing object
             newTarget.setId(0);
         }
 
-        if (validateTargetDefinition(admin.getCompanyID(), newTarget.getEQL())) {
-			newTarget.setComplexityIndex(calculateComplexityIndex(newTarget.getEQL(), admin.getCompanyID()));
-
-			final int newId = saveTarget(newTarget);
-
-			// Check for maximum "compare to"-value of gender equations
-			// Must be done after saveTarget(..)-call because there the new target sql expression is generated
-			if (newTarget.getTargetSQL().contains("cust.gender")) {
-				final int maxGenderValue = getMaxGenderValue(admin);
-
-				Matcher matcher = GENDER_EQUATION_PATTERN.matcher(newTarget.getTargetSQL());
-				while (matcher.find()) {
-					int genderValue = NumberUtils.toInt(matcher.group(1));
-					if (genderValue < 0 || genderValue > maxGenderValue) {
-						errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.gender.invalid"));
-						break;
-					}
-				}
-			} else if (newTarget.getTargetSQL().equals("1=0")) {
-				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.definition"));
-			}
-			newTarget.setId(newId);
-
-			final EqlAnalysisResult analysisResultOrNull = this.eqlFacade.analyseEql(newTarget.getEQL());
-
-			logTargetGroupSave(admin, newTarget, target, userActivityLog);
-
-			return new TargetSavingAndAnalysisResult(newId, analysisResultOrNull);
-		} else {
-            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.definition"));
-            return new TargetSavingAndAnalysisResult(0, null);
+        Collection<Message> validationErrors = validateTarget(admin, newTarget.getEQL());
+        if(CollectionUtils.isNotEmpty(validationErrors)) {
+            errors.addAll(validationErrors);
+            return 0;
         }
+
+        newTarget.setComplexityIndex(calculateComplexityIndex(newTarget.getEQL(), admin.getCompanyID()));
+
+        final int newId = saveTarget(newTarget);
+
+        postValidation(newTarget).forEach(code -> errors.add(Message.of(code)));
+
+        newTarget.setId(newId);
+
+        userActions.addAll(getSavingLogs(newTarget, target));
+
+        return newId;
+    }
+
+    @Override
+    public int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, List<Message> errors, UserActivityLog userActivityLog) throws Exception {
+        List<UserAction> userActions = new LinkedList<>();
+        int newTargetId = saveTarget(admin, newTarget, target, errors, userActions);
+        userActions.forEach(userAction -> userActivityLog.write(admin, userAction.getAction(), userAction.getDescription()));
+        return newTargetId;
     }
 
 	@Override
@@ -559,7 +508,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	@Override
 	public String getTargetSQLWithSimpleIfNotExists(int targetId, @VelocityCheck int companyId) {
-    	String sql = SIMPLE_TARGET_EXPRESSION;
+    	String sql = TargetExpressionUtils.SIMPLE_TARGET_EXPRESSION;
 		if (targetId > 0) {
 			ComTarget targetGroup = targetDao.getTarget(targetId, companyId);
 			if (targetGroup != null) {
@@ -588,7 +537,13 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	@Override
 	public ComTarget getTargetGroupOrNull(int targetId, int companyId) {
-		return targetDao.getTarget(targetId, companyId);
+		try {
+			return getTargetGroup(targetId, companyId);
+		} catch (UnknownTargetGroupIdException e) {
+			logger.warn("Could not find target group ID: " + targetId + " CID: " + companyId);
+		}
+
+		return null;
 	}
 
 	@Override
@@ -661,59 +616,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 		return targetDao.getTargetName(targetId, companyId, includeDeleted);
 	}
 
-	private void logTargetGroupSave(ComAdmin admin, ComTarget newTarget, ComTarget target, UserActivityLog userActivityLog) {
-        try {
-			final String description = newTarget.getTargetName() + " (" + newTarget.getId() + ")";
-
-            if (target == null) {
-                userActivityLog.write(admin, "create target group", description + " created");
-            } else {
-                // Log target group changes:
-                // log rule(s) changes
-                if (isTargetGroupModified(newTarget, target)) {
-                    userActivityLog.write(admin, "edit target group", "Changed rule in target group " + description);
-                }
-
-                // Log name changes
-                if (!target.getTargetName().equals(newTarget.getTargetName())) {
-                    userActivityLog.write(admin, "edit target group", target.getTargetName() +
-							" (" + newTarget.getId() + ") renamed as " + newTarget.getTargetName());
-                }
-
-				final String oldDescription = StringUtils.trimToNull(target.getTargetDescription());
-				final String newDescription = StringUtils.trimToNull(newTarget.getTargetDescription());
-
-                // Log description changes
-                if (!StringUtils.equals(oldDescription, newDescription)) {
-					if (oldDescription == null) {
-						userActivityLog.write(admin, "edit target group", description + ". Description added");
-					} else {
-						if (newDescription == null) {
-							userActivityLog.write(admin, "edit target group", description + ". Description removed");
-						} else {
-							userActivityLog.write(admin, "edit target group", description + ". Description changed");
-						}
-					}
-                }
-
-				// Log if "For admin- and test-delivery" checkbox changed
-				if (target.isAdminTestDelivery() != newTarget.isAdminTestDelivery()) {
-					String state = (newTarget.isAdminTestDelivery() ? "checked" : "unchecked");
-					userActivityLog.write(admin, "edit target group", newTarget.getTargetName() +
-							" (" + newTarget.getId() + "). For admin- and test-delivery " + state);
-				}
-            }
-
-            if (logger.isInfoEnabled()) {
-                logger.info("saveTarget: save target " + newTarget.getId());
-            }
-        } catch (Exception e) {
-            if (logger.isInfoEnabled()) {
-                logger.error("Log Target Group changes error: " + e);
-            }
-        }
-    }
-
 	@Override
 	public boolean checkIfTargetNameAlreadyExists(@VelocityCheck int companyId, String targetName, int targetId) {
 		String existingName = StringUtils.defaultString(targetDao.getTargetName(targetId, companyId, true));
@@ -731,12 +633,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	@Override
 	public boolean isWorkflowManagerListSplit(final int companyID, final int targetID) throws UnknownTargetGroupIdException {
-		ComTarget target = this.getTargetGroupOrNull(targetID, companyID);
-
-		if (target == null || target.getId() == 0) {
-			throw new UnknownTargetGroupIdException(targetID);
-		}
-
+		ComTarget target = this.getTargetGroup(targetID, companyID);
 		return target.isWorkflowManagerListSplit();
 	}
 
@@ -749,18 +646,11 @@ public class ComTargetServiceImpl implements ComTargetService {
 	public List<TargetLight> getTargetLights(final ComAdmin admin) {
 		return getTargetLights(admin, true, true, false);
 	}
-
+	
 	@Override
-	public List<TargetLight> getTargetLights(final ComAdmin admin, boolean worldDelivery, boolean adminTestDelivery,
-			boolean content) {
-		return getTargetLights(admin, false, worldDelivery, adminTestDelivery, content);
-	}
-
-	@Override
-	public List<TargetLight> getTargetLights(final ComAdmin admin,  boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery,
-			boolean content) {
+	public List<TargetLight> getTargetLights(final int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
 		TargetLightsOptions options = TargetLightsOptions.builder()
-				.setCompanyId(admin.getCompanyID())
+				.setCompanyId(companyID)
 				.setWorldDelivery(worldDelivery)
 				.setAdminTestDelivery(adminTestDelivery)
 				.setIncludeDeleted(includeDeleted)
@@ -768,6 +658,16 @@ public class ComTargetServiceImpl implements ComTargetService {
 				.build();
 
 		return getTargetLights(options);
+	}
+
+	@Override
+	public List<TargetLight> getTargetLights(final ComAdmin admin, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
+		return getTargetLights(admin.getCompanyID(), false, worldDelivery, adminTestDelivery, content);
+	}
+
+	@Override
+	public List<TargetLight> getTargetLights(final ComAdmin admin,  boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
+		return getTargetLights(admin.getCompanyID(), includeDeleted,worldDelivery, adminTestDelivery, content); 
 	}
 
 	@Override
@@ -1074,6 +974,135 @@ public class ComTargetServiceImpl implements ComTargetService {
 		return false;
 	}
 
+	@Override
+	public void checkRecipientTargetGroupAccess(ComAdmin admin, int customerId) throws RejectAccessByTargetGroupLimit {
+		int altgId = adminService.getAccessLimitTargetId(admin);
+		boolean isAllowed = false;
+
+		try {
+			int companyId = admin.getCompanyID();
+			String targetExpression = targetDao.getTargetSQL(altgId, companyId);
+
+			if (StringUtils.isEmpty(targetExpression)) {
+				return;
+			}
+
+			isAllowed = recipientDao.isRecipientMatchTarget(companyId, targetExpression, customerId);
+		} catch (Exception e) {
+			logger.error("Error occurs while checking if recipient match target group: " + e.getMessage(), e);
+		}
+
+		if (!isAllowed) {
+			logger.warn("Recipient with id: " + customerId + " is not allowed for ALTG: " + altgId);
+			throw new RejectAccessByTargetGroupLimit(admin.getAdminID(), customerId);
+		}
+	}
+
+    @Override
+    public boolean isValid(final int companyId, final int targetId) {
+        return targetDao.isValid(companyId, targetId);
+    }
+
+    @Override
+    public boolean isLocked(final int companyId, final int targetId) {
+        return targetDao.isTargetGroupLocked(targetId, companyId);
+    }
+    
+    @Override
+    public void addToFavorites(final int targetId, final int companyId) {
+        targetDao.addToFavorites(targetId, companyId);
+    }
+
+    @Override
+    public void removeFromFavorites(final int targetId, final int companyId) {
+        targetDao.removeFromFavorites(targetId, companyId);
+    }
+
+	@Override
+	public int saveTargetFromRecipientSearch(ComAdmin admin, RecipientSaveTargetDto targetDto, List<Message> errors, List<UserAction> userActions) {
+		int targetId = 0;
+		try {
+			final ComTarget oldTarget = getTargetGroupOrNull(targetDto.getTargetId(), admin.getCompanyID());
+
+			final ComTarget newTarget = targetFactory.newTarget();
+			newTarget.setId(0);
+			newTarget.setTargetName(targetDto.getShortname());
+			newTarget.setTargetDescription(targetDto.getDescription());
+
+			newTarget.setEQL(queryBuilderToEqlConverter.convertQueryBuilderJsonToEql(targetDto.getQueryBuilderRules(), admin.getCompanyID()));
+			newTarget.setCompanyID(admin.getCompanyID());
+
+			targetId = saveTarget(admin, newTarget, oldTarget, errors, userActions);
+		} catch (QueryBuilderToEqlConversionException e) {
+			logger.error("Could not convert query builder rule.", e);
+		} catch (Exception e) {
+			logger.error("Could not save target group.");
+		}
+
+		return targetId;
+	}
+
+	// -------------------------------------------------------------- Dependency Injection
+	/**
+	 * Set DAO for accessing target group data.
+	 *
+	 * @param targetDao DAO for accessing target group data
+	 */
+	@Required
+	public void setTargetDao(ComTargetDao targetDao) {
+		this.targetDao = targetDao;
+	}
+
+	/**
+	 * Set DAO for accessing mailing component data.
+	 *
+	 * @param mailingComponentDao DAO for accessing mailing component data
+	 */
+	@Required
+	public void setMailingComponentDao( MailingComponentDao mailingComponentDao) {
+		this.mailingComponentDao = mailingComponentDao;
+	}
+
+	/**
+	 * Sets DAO for accessing mailing data.
+	 *
+	 * @param mailingDao DAO for accessing mailing data
+	 */
+	@Required
+	public void setMailingDao(ComMailingDao mailingDao) {
+		this.mailingDao = mailingDao;
+	}
+
+	/**
+	 * Set locator for target groups.
+	 *
+	 * @param locator locator for target groups
+	 */
+	@Required
+	public void setTargetGroupLocator(TargetGroupLocator locator) {
+		this.targetGroupLocator = locator;
+	}
+
+	/**
+	 * Sets DAO for accessing recipient data.
+	 *
+	 * @param recipientDao DAO for accessing recipient data
+	 */
+	@Required
+	public void setRecipientDao(ComRecipientDao recipientDao) {
+		this.recipientDao = recipientDao;
+	}
+
+	/**
+	 * Sets the EQL logic facade.
+	 *
+	 * @param eqlFacade EQL logic facade
+	 */
+	@Required
+	public void setEqlFacade(EqlFacade eqlFacade) {
+		this.eqlFacade = eqlFacade;
+	}
+
 	/**
 	 * Sets the service handling profile fields.
 	 *
@@ -1104,6 +1133,21 @@ public class ComTargetServiceImpl implements ComTargetService {
 		this.referencedItemsService = Objects.requireNonNull(service, "ReferencedItemsService is null");
 	}
 
+	@Required
+	public void setAdminService(AdminService adminService) {
+		this.adminService = adminService;
+	}
+
+	@Required
+	public void setTargetFactory(TargetFactory targetFactory) {
+		this.targetFactory = targetFactory;
+	}
+
+	@Required
+	public void setQueryBuilderToEqlConverter(QueryBuilderToEqlConverter queryBuilderToEqlConverter) {
+		this.queryBuilderToEqlConverter = queryBuilderToEqlConverter;
+	}
+
 	private int getMaxGenderValue(ComAdmin admin) {
 		if (admin.permissionAllowed(Permission.RECIPIENT_GENDER_EXTENDED)) {
 			return ConfigService.MAX_GENDER_VALUE_EXTENDED;
@@ -1111,6 +1155,22 @@ public class ComTargetServiceImpl implements ComTargetService {
 			return ConfigService.MAX_GENDER_VALUE_BASIC;
 		}
 	}
+
+    private Collection<Message> validateTarget(ComAdmin admin, String eql) {
+        String sql;
+        try {
+            sql = eqlFacade.convertEqlToSql(eql, admin.getCompanyID()).getSql();
+        } catch (Exception e) {
+            logger.error("Error occurred: " + e.getMessage(), e);
+            return Collections.singleton(Message.of("error.target.definition"));
+        }
+
+        if(!validateGender(admin, sql)) {
+            return Collections.singleton(Message.of("error.gender.invalid", getMaxGenderValue(admin)));
+        }
+
+        return Collections.emptyList();
+    }
 
 	private boolean validateTargetDefinition(int companyId, String eql) {
 		try {
@@ -1120,6 +1180,174 @@ public class ComTargetServiceImpl implements ComTargetService {
 			logger.error("Error occurred: " + e.getMessage(), e);
 			return false;
 		}
+	}
+
+	private List<UserAction> getSavingLogs(ComTarget newTarget, ComTarget oldTarget) {
+		List<UserAction> userActions;
+		try {
+			if (oldTarget == null) {
+				userActions = getCreatingLogs(newTarget);
+			} else {
+				userActions = getEditingLogs(newTarget, oldTarget);
+			}
+
+			if (logger.isInfoEnabled()) {
+				logger.info("saveTarget: save target " + newTarget.getId());
+			}
+		} catch (Exception e) {
+			if (logger.isInfoEnabled()) {
+				logger.error("Log Target Group changes error: " + e);
+			}
+			userActions = Collections.emptyList();
+		}
+
+		return userActions;
+	}
+
+	private List<UserAction> getCreatingLogs(ComTarget newTarget) {
+		final String CREATE_ACTION = "create target group";
+		final List<UserAction> userActions = new LinkedList<>();
+		final String descriptionPrefix = "Created new target group (id: %d) ";
+
+		if(StringUtils.isNotBlank(newTarget.getEQL())) {
+			String eqlDesc = String.format(descriptionPrefix + "with rule: \"%s\"", newTarget.getId(), newTarget.getEQL());
+			userActions.add(new UserAction(CREATE_ACTION, eqlDesc));
+		}
+
+		String state = newTarget.isAdminTestDelivery() ? "checked" : "unchecked";
+		String adminTestDelDesc = String.format(descriptionPrefix + "with admin- and test-delivery state: \"%s\"", newTarget.getId(), state);
+		userActions.add(new UserAction(CREATE_ACTION, adminTestDelDesc));
+
+		if(StringUtils.isNotBlank(newTarget.getTargetDescription())) {
+			String descriptionDesc = String.format( descriptionPrefix + "with description: \"%s\"", newTarget.getId(), newTarget.getTargetDescription());
+			userActions.add(new UserAction(CREATE_ACTION, descriptionDesc));
+		}
+
+		String nameDesc = String.format(descriptionPrefix + "with name: \"%s\"", newTarget.getId(), newTarget.getTargetName());
+		userActions.add(new UserAction(CREATE_ACTION, nameDesc));
+
+		return userActions;
+	}
+
+	private List<UserAction> getEditingLogs(ComTarget newTarget, ComTarget oldTarget) {
+		final String EDIT_ACTION = "edit target group";
+		final List<UserAction> userActions = new LinkedList<>();
+
+		// Log target group changes:
+		// log rule(s) changes
+		if (isEqlModified(newTarget, oldTarget)) {
+			final String desc = String.format("Changed rule in target group (id: %d), old rule: \"%s\"; new rule: \"%s\".",
+					newTarget.getId(),
+					oldTarget.getEQL(),
+					newTarget.getEQL());
+
+			userActions.add(new UserAction(EDIT_ACTION, desc));
+		}
+
+		// Log if "For admin- and test-delivery" checkbox changed
+		if (oldTarget.isAdminTestDelivery() != newTarget.isAdminTestDelivery()) {
+			final String newState = (newTarget.isAdminTestDelivery() ? "checked" : "unchecked");
+			final String oldState = (newTarget.isAdminTestDelivery() ? "unchecked" : "checked");
+			final String desc = String.format("Changed state for toggle admin- and test-delivery for target group (id:%d) from: \"%s\" to \"%s\"",
+					newTarget.getId(),
+					oldState,
+					newState);
+			userActions.add(new UserAction(EDIT_ACTION, desc));
+		}
+
+		final String oldDescription = StringUtils.trimToNull(oldTarget.getTargetDescription());
+		final String newDescription = StringUtils.trimToNull(newTarget.getTargetDescription());
+
+		// Log description changes
+		if (!StringUtils.equals(oldDescription, newDescription)) {
+			if (oldDescription == null) {
+				final String desc = String.format("Added description for target group (id: %d): \"%s\"",
+						newTarget.getId(),
+						newDescription);
+				userActions.add(new UserAction(EDIT_ACTION, desc));
+			} else if (newDescription == null) {
+				final String desc = String.format("Description for target group (id: %d) has been removed. Old description: \"%s\"",
+						newTarget.getId(),
+						oldDescription);
+				userActions.add(new UserAction(EDIT_ACTION, desc));
+			} else {
+				final String desc = String.format("Changed description for target group (id: %d) from: \"%s\" to: \"%s\"",
+						newTarget.getId(),
+						oldDescription,
+						newDescription);
+				userActions.add(new UserAction(EDIT_ACTION, desc));
+			}
+		}
+
+		// Log name changes
+		if (!oldTarget.getTargetName().equals(newTarget.getTargetName())) {
+			final String desc = String.format("Target group (id: %d) renamed from: \"%s\" to: \"%s\"",
+					newTarget.getId(),
+					oldTarget.getTargetName(),
+					newTarget.getTargetName());
+			userActions.add(new UserAction(EDIT_ACTION, desc));
+		}
+
+		return userActions;
+	}
+
+	/**
+	 * Checks if target group rules differ by comparing EQL code.
+	 *
+	 * @param newTarget new target group
+	 * @param oldTarget target group from DB
+	 *
+	 * @return <code>true</code> if target groups differ
+	 */
+	private static final boolean isEqlModified(final ComTarget newTarget, final ComTarget oldTarget) {
+		return !Objects.equals(newTarget.getEQL(), oldTarget.getEQL());
+	}
+
+    private boolean validateGender(ComAdmin admin, String targetSql) {
+        if (targetSql.contains("cust.gender")) {
+            final int maxGenderValue = getMaxGenderValue(admin);
+
+            Matcher matcher = GENDER_EQUATION_PATTERN.matcher(targetSql);
+            while (matcher.find()) {
+                int genderValue = NumberUtils.toInt(matcher.group(1));
+                if (genderValue < 0 || genderValue > maxGenderValue) {
+                    return false;
+                }
+                genderValue = NumberUtils.toInt(matcher.group(2));
+				if (genderValue < 0 || genderValue > maxGenderValue) {
+					return false;
+				}
+            }
+        }
+        return true;
+    }
+
+	private List<String> postValidation(ComTarget target) {
+		if (target.getTargetSQL().equals("1=0")) {
+			return Collections.singletonList("error.target.definition");
+		}
+
+		return Collections.emptyList();
+	}
+
+	private List<ActionMessage> postValidation(ComAdmin admin, ComTarget target) {
+		// Check for maximum "compare to"-value of gender equations
+		// Must be done after saveTarget(..)-call because there the new target sql expression is generated
+		if (target.getTargetSQL().contains("cust.gender")) {
+			final int maxGenderValue = getMaxGenderValue(admin);
+
+			Matcher matcher = GENDER_EQUATION_PATTERN.matcher(target.getTargetSQL());
+			while (matcher.find()) {
+				int genderValue = NumberUtils.toInt(matcher.group(1));
+				if (genderValue < 0 || genderValue > maxGenderValue) {
+					return Collections.singletonList(new ActionMessage("error.gender.invalid", maxGenderValue));
+				}
+			}
+		} else if (target.getTargetSQL().equals("1=0")) {
+			return Collections.singletonList(new ActionMessage("error.target.definition"));
+		}
+
+		return Collections.emptyList();
 	}
 
 }

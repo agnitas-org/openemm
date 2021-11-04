@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.CustomerImportStatus;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.ImportRecipientsDao;
@@ -209,7 +209,7 @@ public class ProfileImportReporter {
 //				// Only send invalid recipientsfile in email if its size is below 4 MB
 //				javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml, new MailAttachment("invalid_recipients.zip", FileUtils.readFileToByteArray(profileImportWorker.getStatus().getInvalidRecipientsCsv()), "application/zip"));
 //			} else {
-				javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+				javaMailService.sendEmail(profileImportWorker.getImportProfile().getCompanyId(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 //			}
 		}
 	}
@@ -1033,7 +1033,7 @@ public class ProfileImportReporter {
 	private List<ImportReportEntry> generateImportStatusEntries(ProfileImportWorker importWorker, int companyID, Locale locale, boolean noHeaders) {
 		List<ImportReportEntry> reportStatusEntries = new ArrayList<>();
 
-		CustomerImportStatus customerImportStatus = importWorker.getStatus();
+		ImportStatus customerImportStatus = importWorker.getStatus();
 		if (customerImportStatus.getFatalError() != null) {
 			String errorMessage;
 			if (importWorker.getError() != null && importWorker.getError() instanceof ImportException) {
@@ -1194,7 +1194,7 @@ public class ProfileImportReporter {
 			String bodyHtml = generateLocalizedImportHtmlReport(profileImportWorker, admin, true);
 			String bodyText = "Import-ERROR:\n" + generateLocalizedImportTextReport(profileImportWorker, admin, true);
 			
-			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+			javaMailService.sendEmail(profileImportWorker.getImportProfile().getCompanyId(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 
@@ -1222,7 +1222,7 @@ public class ProfileImportReporter {
 			String bodyHtml = generateLocalizedImportHtmlReportForAlreadyImportedFile(alreadyImportedFile, autoImport, importProfile, admin, true);
 			String bodyText = generateLocalizedImportTextReportForAlreadyImportedFile(alreadyImportedFile, autoImport, importProfile, admin, true);
 			
-			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+			javaMailService.sendEmail(autoImport.getCompanyId(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 

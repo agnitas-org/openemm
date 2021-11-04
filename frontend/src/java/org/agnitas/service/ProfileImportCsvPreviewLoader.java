@@ -146,6 +146,11 @@ public class ProfileImportCsvPreviewLoader {
 			} else if ("JSON".equalsIgnoreCase(importProfile.getDatatype())) {
 				try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
 					jsonReader.readNextToken();
+
+					while (jsonReader.getCurrentToken() != null && jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+						jsonReader.readNextToken();
+					}
+					
 					if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
 						throw new Exception("Json data does not contain expected JsonArray");
 					}
@@ -195,11 +200,16 @@ public class ProfileImportCsvPreviewLoader {
 			try {
 				if (importProfile.getZipPassword() == null) {
 					InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile));
-					ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-					if (zipEntry == null) {
-						throw new ImportException(false, "error.unzip.noEntry");
+					try {
+						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
+						if (zipEntry == null) {
+							throw new ImportException(false, "error.unzip.noEntry");
+						}
+						return dataInputStream;
+					} catch (Exception e) {
+						dataInputStream.close();
+						throw e;
 					}
-					return dataInputStream;
 				} else {
 					ZipFile zipFile = new ZipFile(importFile);
 					zipFile.setPassword(importProfile.getZipPassword().toCharArray());
@@ -342,6 +352,11 @@ public class ProfileImportCsvPreviewLoader {
 			} else if ("JSON".equalsIgnoreCase(importProfile.getDatatype())) {
 				try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
 					jsonReader.readNextToken();
+
+					while (jsonReader.getCurrentToken() != null && jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+						jsonReader.readNextToken();
+					}
+					
 					if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
 						throw new Exception("Json data does not contain expected JsonArray");
 					}

@@ -150,7 +150,6 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 			return selectObjectDefaultNull(logger, componentSelect, new MailingComponentRowMapper(), compID, companyID);
 		} catch (Exception e) {
 			logger.error("Cannot read MailingComponent: " + e.getMessage(), e);
-			javaMailService.sendExceptionMail("SQL: " + componentSelect, e);
 			return mailingComponentFactory.newMailingComponent();
 		}
 	}
@@ -182,7 +181,6 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 			}
 		} catch (Exception e) {
 			logger.error("Error getting component " + name + " for mailing " + mailingID, e);
-			javaMailService.sendExceptionMail("SQL: " + componentSelect, e);
 			return mailingComponentFactory.newMailingComponent();
 		}
 	}
@@ -275,8 +273,6 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 			update(logger, sql, comp.getId());
 		} catch (Exception e) {
 			logger.error("Error deleting component " + comp.getId(), e);
-
-			javaMailService.sendExceptionMail("SQL: " + sql + ", " + comp.getId(), e);
 		}
 	}
 	
@@ -350,7 +346,6 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 			return select(logger, sql, Date.class, companyID, mailingID, name);
 		} catch (Exception e) {
 			logger.error("Error getting time of component " + name, e);
-			javaMailService.sendExceptionMail("SQL: " + sql + ", " + companyID + ", " + mailingID + ", " + name, e);
 			return null;
 		}
 	}
@@ -367,7 +362,18 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 		int total = selectInt(logger, sql, mailingID, companyID, componentID);
 		return total > 0;
 	}
-	
+
+	@Override
+	public boolean attachmentExists(int companyId, int mailingId, String name, int targetId) {
+		return selectInt(logger,
+				"SELECT COUNT(*) FROM component_tbl " +
+						" WHERE (comptype = ? OR comptype = ?) AND compname = ? AND target_id = ?" +
+						" AND mailing_id = ? AND company_id = ?  ORDER BY component_id",
+				MailingComponentType.Attachment.getCode(),
+				MailingComponentType.PersonalizedAttachment.getCode(),
+				name, targetId, mailingId, companyId) > 0;
+	}
+
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean deleteMailingComponentsByCompanyID(int companyID) {

@@ -96,7 +96,7 @@ public class BirtReportExecutor implements Runnable {
 		        	content = birtReport.getEmailDescription();
 		        }
 		        final String emailDescription = content;
-		        serviceLookupFactory.getBeanJavaMailService().sendEmail(emailRecipientStringList, emailSubject, emailDescription, emailDescription, attachments.toArray(new JavaMailAttachment[0]));
+		        serviceLookupFactory.getBeanJavaMailService().sendEmail(birtReport.getCompanyID(), emailRecipientStringList, emailSubject, emailDescription, emailDescription, attachments.toArray(new JavaMailAttachment[0]));
 				serviceLookupFactory.getBeanBirtReportService().logSentReport(birtReport);
 				
 				birtReport.setLastresult("OK");
@@ -108,7 +108,7 @@ public class BirtReportExecutor implements Runnable {
 			logger.error("Error in " + this.getClass().getName() + ": " + t.getMessage(), t);
 			// Watchout: NullpointerExceptions have Message "null", which would result in another jobrun, so enter some additional text (classname)
 			birtReport.setLastresult(t.getClass().getSimpleName() + ": " + t.getMessage() + "\n" + AgnUtils.getStackTraceString(t));
-			serviceLookupFactory.getBeanJavaMailService().sendExceptionMail("BirtReport error", t);
+			serviceLookupFactory.getBeanJavaMailService().sendExceptionMail(birtReport.getCompanyID(), "BirtReport error", t);
 			try {
 				serviceLookupFactory.getBeanBirtReportService().announceEnd(birtReport);
 			} catch (Exception e1) {

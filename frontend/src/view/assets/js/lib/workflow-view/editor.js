@@ -9,7 +9,7 @@
         DraggableButtons = AGN.Lib.WM.DraggableButtons,
         AutoAlignment = AGN.Lib.WM.AutoAlignment,
         UndoManager = AGN.Lib.WM.UndoManager,
-        EditorsHelper = AGN.Lib.WM.EditorsHelperNew,
+        EditorsHelper = AGN.Lib.WM.EditorsHelper,
         Dialogs = AGN.Lib.WM.Dialogs,
         Snippets = AGN.Lib.WM.Snippets,
         ContextMenu = AGN.Lib.ContextMenu,
@@ -88,10 +88,10 @@
                     .map(function(node) { return Node.getCollisionBox($(node)); });
             },
             onStart: function() {
-                self.canvas.setMouseWheelZoomEnabled(false);
+                //nothing do
             },
             onStop: function() {
-                self.canvas.setMouseWheelZoomEnabled(true);
+                //nothing do
             },
             onDrop: function(type, position) {
                 self.newNode(type, position);
@@ -1108,10 +1108,8 @@
                     self.drag = {lead: $node, selected: selected, unselected: unselected};
                 }
 
-                self.canvas.setMouseWheelZoomEnabled(false);
             },
             stop: function() {
-                self.canvas.setMouseWheelZoomEnabled(true);
                 self.drag.lead.removeClass('js-no-drop');
                 self.drag.selected.forEach(function($n) {
                     Node.get($n).setTitleEnabled(true);
@@ -1268,7 +1266,6 @@
 
         if (node.isFilled()) {
             if (Def.NODE_TYPES_MAILING.includes(node.getType())) {
-                // TODO: move supplement code here from mailing-editor-helper.js
                 mailingEditorBase.trySupplementChain(this.getFirstIncomingChain(node), mailingContent, function(chain) {
                     self.batch(function() {
                         // First delete connections between node pairs that now have new nodes inserted in between.
@@ -1816,6 +1813,10 @@
         }
     };
 
+    Editor.prototype.setMouseWheelZoomEnabled = function (isEnabled) {
+        this.canvas.setMouseWheelZoomEnabled(isEnabled);
+    }
+
     Editor.prototype.setMultiConnectionEnabled = function(isEnabled) {
         this.multiConnectionEnabled = isEnabled;
     };
@@ -1998,6 +1999,10 @@
 
         return deferred.promise();
     };
+
+    Editor.prototype.fitPdfPage = function() {
+        this.canvas.fitPdfPage(Def.PDF_SIZE, Def.PDF_ORIENTATION);
+    }
 
     AGN.Lib.WM.Editor = Editor;
 })();

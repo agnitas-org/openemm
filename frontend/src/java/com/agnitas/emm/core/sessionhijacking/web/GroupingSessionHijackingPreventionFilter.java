@@ -14,14 +14,14 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Objects;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.log4j.Logger;
@@ -76,6 +76,8 @@ public final class GroupingSessionHijackingPreventionFilter implements Filter {
 	
 						// Create new session with current IP address of client
 						final HttpSession newHttpSession = ((HttpServletRequest) request).getSession();
+						newHttpSession.setAttribute(SessionHijackingPreventionConstants.FORCED_LOGOUT_MARKER_ATTRIBUTE_NAME, Boolean.TRUE);
+						
 						IpBinding.bindIpAddress(newHttpSession, clientIpAddress);
 					} else {
 						// Hijacking prevention disabled? Log warning, but keep session alive.

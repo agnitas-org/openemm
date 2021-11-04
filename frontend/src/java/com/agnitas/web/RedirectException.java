@@ -14,7 +14,7 @@ public class RedirectException extends Exception {
 	private static final long serialVersionUID = 6832572203216682950L;
 
 	public RedirectException() {
-		// Empty constructor	
+		// Empty constructor
 	}
 
 	public RedirectException(String message) {

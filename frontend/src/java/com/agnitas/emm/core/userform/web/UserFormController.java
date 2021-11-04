@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -56,7 +57,9 @@ import org.springframework.web.multipart.MultipartFile;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.ComEmmActionService;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
+import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import com.agnitas.emm.core.userform.dto.ResultSettings;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.emm.core.userform.form.UserFormForm;
@@ -86,11 +89,12 @@ public class UserFormController {
     private LinkService linkService;
 	private VelocityDirectiveScriptValidator velocityValidator;
 	private UserFormImporter userFormImporter;
+	private CompanyTokenService companyTokenService;
 
 	public UserFormController(WebStorage webStorage, ComUserformService userformService, ComEmmActionService emmActionService,
 							  ConfigService configService, UserActivityLogService userActivityLogService,
 							  ExtendedConversionService conversionService, LinkService linkService,
-							  VelocityDirectiveScriptValidator velocityValidator, UserFormImporter userFormImporter) {
+							  VelocityDirectiveScriptValidator velocityValidator, UserFormImporter userFormImporter, final CompanyTokenService companyTokenService) {
 		this.webStorage = webStorage;
 		this.userformService = userformService;
 		this.emmActionService = emmActionService;
@@ -100,6 +104,7 @@ public class UserFormController {
 		this.linkService = linkService;
 		this.velocityValidator = velocityValidator;
 		this.userFormImporter = userFormImporter;
+		this.companyTokenService = Objects.requireNonNull(companyTokenService, "CompanyTokenService is null");
 	}
 
 	@RequestMapping("/list.action")
@@ -109,8 +114,6 @@ public class UserFormController {
 			FormUtils.syncNumberOfRows(webStorage, WebStorage.USERFORM_OVERVIEW, form);
 			
 			model.addAttribute("webformListJson", userformService.getUserFormsJson(admin));
-
-			loadUserFormUrlPatterns(admin, model);
 		} catch (Exception e) {
 			logger.error("Getting user form list failed!", e);
 			popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
@@ -119,9 +122,15 @@ public class UserFormController {
 		return "userform_list";
 	}
 
-	private void loadUserFormUrlPatterns(ComAdmin admin, Model model) {
-		model.addAttribute("userFormURLPattern", userformService.getUserFormUrlPattern(admin, false));
-		model.addAttribute("userFormFullURLPattern", userformService.getUserFormUrlPattern(admin, true));
+	private void loadUserFormUrlPatterns(ComAdmin admin, final String formName, Model model, final Optional<String> companyToken) {
+		model.addAttribute("userFormURLPattern", userformService.getUserFormUrlPattern(admin, formName, false, companyToken));
+		model.addAttribute("userFormFullURLPattern", userformService.getUserFormUrlPattern(admin, formName, true, companyToken));
+	}
+	
+	private void loadUserformUrlPatternsAllTestRecipients(ComAdmin admin, final String formName, Model model, final Optional<String> companyToken) {
+		model.addAttribute("userFormURLPattern", userformService.getUserFormUrlPattern(admin, formName, false, companyToken));
+		model.addAttribute("userFormFullURLPatterns", userformService.getUserFormUrlForAllAdminAndTestRecipients(admin, formName, companyToken));
+		model.addAttribute("userFormFullURLPatternNoUid", userformService.getUserFormUrlWithoutUID(admin, formName, companyToken));
 	}
 
 	@PostMapping("/saveActiveness.action")
@@ -146,7 +155,9 @@ public class UserFormController {
             return "redirect:/webform/" + forwardedId + "/view.action";
         }
 
-		loadUserFormUrlPatterns(admin, model);
+		final Optional<String> companyToken = companyTokenForAdmin(admin);
+        
+		loadUserFormUrlPatterns(admin, "", model, companyToken);
 		List<EmmAction> emmActions = emmActionService.getEmmNotLinkActions(admin.getCompanyID(), false);
 		model.addAttribute("emmActions", emmActions);
 
@@ -164,16 +175,15 @@ public class UserFormController {
 			if (id == 0 && workflowParams.getTargetItemId() > 0) {
          	   id = workflowParams.getTargetItemId();
         	}
+			final Optional<String> companyToken = companyTokenForAdmin(admin);
 
 			UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), id);
 			model.addAttribute("form", conversionService.convert(userForm, UserFormForm.class));
 
-			loadUserFormUrlPatterns(admin, model);
+			loadUserformUrlPatternsAllTestRecipients(admin, userForm.getName(), model, companyToken);
 
 			List<EmmAction> emmActions = emmActionService.getEmmNotLinkActions(admin.getCompanyID(), false);
 			model.addAttribute("emmActions", emmActions);
-
-			model.addAttribute("formCssLocation", configService.getValue(ConfigValue.UserFormCssLocation));
 
 			if(admin.permissionAllowed(Permission.FORMS_CREATOR)) {
 				loadFormBuilderData(admin, model);
@@ -270,7 +280,7 @@ public class UserFormController {
         FormImportResult result;
         try (InputStream input = uploadFile.getInputStream()) {
             // Import userform data from upload file
-            result = userFormImporter.importUserForm(admin, input);
+            result = userFormImporter.importUserForm(admin.getCompanyID(), input, admin.getLocale());
 
             if (result.isSuccess()) {
             	popups.success("userform.imported");
@@ -403,6 +413,13 @@ public class UserFormController {
         return "messages";
     }
 
+    private final Optional<String> companyTokenForAdmin(final ComAdmin admin) {
+    	try {
+    		return this.companyTokenService.getCompanyToken(admin.getCompanyID());
+    	} catch(final UnknownCompanyIdException e) {
+    		return Optional.empty();
+    	}
+    }
 	private void writeUserActivityLog(ComAdmin admin, String action, String description) {
 		writeUserActivityLog(admin, new UserAction(action, description));
 	}
@@ -417,11 +434,13 @@ public class UserFormController {
 	}
 
 	private void loadFormBuilderData(final  ComAdmin admin, final Model model) {
+		model.addAttribute("companyId", admin.getCompanyID());
 		model.addAttribute("names", userformService.getUserFormNames(admin.getCompanyID()));
 		model.addAttribute("mediapoolImages", userformService.getMediapoolImages(admin));
 		model.addAttribute("textProfileFields", userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Characters));
 		model.addAttribute("dateProfileFields", userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Date, DbColumnType.SimpleDataType.DateTime));
 		model.addAttribute("numberProfileFields", userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Numeric, DbColumnType.SimpleDataType.Float));
+		model.addAttribute("formCssLocation", configService.getValue(ConfigValue.UserFormCssLocation));
 	}
 
 }

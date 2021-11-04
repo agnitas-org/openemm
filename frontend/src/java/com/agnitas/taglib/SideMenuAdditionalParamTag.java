@@ -13,7 +13,7 @@ package com.agnitas.taglib;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.jsp.tagext.TagSupport;
+import jakarta.servlet.jsp.tagext.TagSupport;
 
 public class SideMenuAdditionalParamTag extends TagSupport {
 

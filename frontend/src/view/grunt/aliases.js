@@ -9,5 +9,6 @@ module.exports = {
   "styleguide": ['svg_sprite', 'uglify:build', 'sass:build', 'clean:styleguide','copy:assets_for_styleguide', 'shell:styleguide', 'clean:styleguide_source_assets'],
   "compile_js": ['uglify:build_js', 'uglify:compile_js', 'usebanner:js'],
   "compile_birtjs": ['uglify:build_birtjs', 'uglify:compile_birtjs', 'usebanner:birtjs'],
-  "compile_css": ['sass:build', 'cssmin:compile', 'usebanner:css']
+  "compile_css": ['sass:build', 'cssmin:compile', 'usebanner:css', 'compile_forms_css'],
+  "compile_forms_css": ['sass:build_formcss']
 };

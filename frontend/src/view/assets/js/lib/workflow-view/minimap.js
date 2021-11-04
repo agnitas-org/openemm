@@ -311,12 +311,7 @@
   };
 
   Minimap.prototype.getIcons = function() {
-    var icons = [];
-    this.getCanvas$().children('.node').each(function(index, element) {
-      icons.push($(element));
-    });
-
-    return icons;
+    return this.canvas.getIcons();
   };
 
   Minimap.prototype.getPureIconsPosition = function() {
@@ -332,37 +327,7 @@
   };
 
   Minimap.prototype.getPureIconsBox = function() {
-    var icons = this.getIcons();
-    var zoom = this.getCanvasZoom();
-
-    if (icons.length) {
-      var box = icons.map(function($node) {
-        return Node.getBox($node);
-      }).reduce(function(result, current, index) {
-        return {
-          minX: Math.min(result.minX, current.minX),
-          minY: Math.min(result.minY, current.minY),
-          maxX: Math.max(result.maxX, current.maxX),
-          maxY: Math.max(result.maxY, current.maxY)
-        };
-      });
-
-      return {
-        minX: box.minX / zoom - Def.CANVAS_GRID_SIZE,
-        minY: box.minY / zoom - Def.CANVAS_GRID_SIZE,
-        maxX: box.maxX / zoom + Def.CANVAS_GRID_SIZE,
-        maxY: box.maxY / zoom + Def.CANVAS_GRID_SIZE
-      };
-    } else {
-      var $viewport = this.getCanvasParent$();
-
-      return {
-        minX: -Def.CANVAS_GRID_SIZE,
-        minY: -Def.CANVAS_GRID_SIZE,
-        maxX: $viewport.width() / zoom + Def.CANVAS_GRID_SIZE,
-        maxY: $viewport.height() / zoom + Def.CANVAS_GRID_SIZE
-      };
-    }
+    return this.canvas.getPureIconsBox();
   };
 
   Minimap.prototype.getMiniCanvasScale = function() {

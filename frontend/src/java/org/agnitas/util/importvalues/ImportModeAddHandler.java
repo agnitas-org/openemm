@@ -14,10 +14,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.CustomerImportStatus;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.UserStatus;
@@ -30,6 +31,7 @@ import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
@@ -40,9 +42,15 @@ public class ImportModeAddHandler implements ImportModeHandler {
     private static final transient Logger logger = Logger.getLogger(ImportModeAddHandler.class);
     
     private ImportRecipientsDao importRecipientsDao;
+    private ConfigService configService;
     
 	public void setImportRecipientsDao(ImportRecipientsDao importRecipientsDao) {
 		this.importRecipientsDao = importRecipientsDao;
+	}
+	
+	@Required
+	public final void setConfigService(final ConfigService service) {
+		this.configService = Objects.requireNonNull(service, "ConfigService is null");
 	}
 
 	@Override
@@ -101,18 +109,18 @@ public class ImportModeAddHandler implements ImportModeHandler {
 	}
 	
 	@Override
-	public void handlePreProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign) throws Exception {
+	public void handlePreProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign) throws Exception {
 		// Do nothing
 	}
 
 	@Override
-	public void handleNewCustomers(CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String duplicateIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
+	public void handleNewCustomers(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String duplicateIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
 		// Insert customer data
 		// Check if customer limit is reached
-		int numberOfCustomersLimit = ConfigService.getInstance().getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers);
+		int numberOfCustomersLimit = this.configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers);
 		// Check global license maximum first
 		if (numberOfCustomersLimit < 0) {
-			numberOfCustomersLimit = ConfigService.getInstance().getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, importProfile.getCompanyId());
+			numberOfCustomersLimit = this.configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, importProfile.getCompanyId());
 		}
 		if (numberOfCustomersLimit >= 0) {
 			int currentNumberOfCustomers = importRecipientsDao.getAllRecipientsCount(importProfile.getCompanyId());
@@ -129,17 +137,17 @@ public class ImportModeAddHandler implements ImportModeHandler {
 		int invalidNullValueEntries = importRecipientsDao.removeNewCustomersWithInvalidNullValues(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, importProfile.getColumnMapping());
 		status.setInvalidNullValues(invalidNullValueEntries);
 		
-		int insertedEntries = importRecipientsDao.insertNewCustomers(temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, datasourceId, importProfile.getDefaultMailType(), importProfile.getColumnMapping(), importProfile.getCompanyId());
+		int insertedEntries = importRecipientsDao.insertNewCustomers(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, datasourceId, importProfile.getDefaultMailType(), importProfile.getColumnMapping(), importProfile.getCompanyId());
 		status.setInserted(insertedEntries);
 	}
 
 	@Override
-	public void handleExistingCustomers(CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
+	public void handleExistingCustomers(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
 		// Do nothing
 	}
 
 	@Override
-	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
+	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
 		if (mailingListIdsToAssign != null && mailingListIdsToAssign.size() > 0) {
 			Map<Integer, Integer> mailinglistAssignStatistics = new HashMap<>();
 			if (importProfile.getActionForNewRecipients() > 0) {

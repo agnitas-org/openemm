@@ -110,7 +110,7 @@ public class EMMTag {
 	/**
 	 * Names of all internal tags
 	 */
-	protected final static String[] TAG_INTERNALS = { "agnDBV", "agnDB", "agnIMAGE", "agnEMAIL", "agnSUBSCRIBERCOUNT", "agnDATE", "agnSYSINFO", "agnDYN", "agnDVALUE", "agnTITLE", "agnTITLEFULL", "agnTITLEFIRST", "agnIMGLINK", null, "agnSWYN", "agnSENDDATE", "gridPH", null };
+	protected final static String[] TAG_INTERNALS = { null, "agnDB", "agnIMAGE", "agnEMAIL", "agnSUBSCRIBERCOUNT", "agnDATE", "agnSYSINFO", "agnDYN", "agnDVALUE", "agnTITLE", "agnTITLEFULL", "agnTITLEFIRST", "agnIMGLINK", null, "agnSWYN", "agnSENDDATE", "gridPH", null };
 	/**
 	 * The generic tag reference for an extrernal implementation
 	 */
@@ -248,7 +248,7 @@ public class EMMTag {
 		int pcnt;
 
 		if ((parsed == null) || ((pcnt = parsed.size()) == 0)) {
-			throw new EMMTagException(data, this, "failed in parsing (empty?) tag");
+			throw new EMMTagException(data, this, "failed in parsing (empty?) tag", "error.agnTag.parsing");
 		}
 
 		mTagName = parsed.get(0);
@@ -275,11 +275,11 @@ public class EMMTag {
 				mSelectString = entry.selectValue();
 				mSelectType = entry.type();
 				if (mSelectString == null) {
-					throw new EMMTagException(data, this, "unknown empty tag");
+					throw new EMMTagException(data, this, "unknown empty tag", "error.agnTag.unknownEmpty");
 				}
 				interpretTagType(data);
 			} else if (!dynamicTag(data)) {
-				throw new EMMTagException(data, this, "unknown tag");
+				throw new EMMTagException(data, this, "unknown tag", "error.agnTag.unknown");
 			}
 
 			if (tagType == TAG_DBASE) {
@@ -307,16 +307,17 @@ public class EMMTag {
 					for (String e : mTagParameters.keySet()) {
 						String alias = "{" + e + "}";
 						if (mSelectString.indexOf(alias) == -1) {
-							throw new EMMTagException(data, this, "parameter '" + alias + "' not found in tag entry");
+							throw new EMMTagException(data, this, "parameter '" + alias + "' not found in tag entry", "error.agnTag.param.notFound", alias);
 						}
 						mSelectString = StringOps.replace(mSelectString, alias, mTagParameters.get(alias.substring(1, alias.length() - 1)));
 					}
 
 					if (mSelectString.indexOf("{") != -1) {
-						throw new EMMTagException(data, this, "missing required parameter '" + this.mSelectString.substring(mSelectString.indexOf("{") + 1, this.mSelectString.indexOf("}")) + "'");
+						String param = this.mSelectString.substring(mSelectString.indexOf("{") + 1, this.mSelectString.indexOf("}"));
+						throw new EMMTagException(data, this, "missing required parameter '" + param + "'", "error.agnTag.param.required", param);
 					}
 				} else if (mTagParameters.size() > 0) {
-					throw new EMMTagException(data, this, "no parameters supported in simple tag");
+					throw new EMMTagException(data, this, "no parameters supported in simple tag", "error.agnTag.simple.params.notSupported");
 				}
 
 				if (isPureData(mSelectString)) {
@@ -399,7 +400,7 @@ public class EMMTag {
 					}
 				}
 				if (notAllowed != null) {
-					throw new EMMTagException(data, this, "tag does not support these parameter: " + notAllowed);
+					throw new EMMTagException(data, this, "tag does not support these parameter: " + notAllowed, "error.agnTag.param.notAllowed", notAllowed.toString());
 				}
 			}
 		}
@@ -1112,6 +1113,7 @@ public class EMMTag {
 						collect.add("expression");
 						break;
 					case TI_SYSINFO:
+						collect.add("name");
 						collect.add("default");
 						break;
 					case TI_DYN:
@@ -1224,9 +1226,9 @@ public class EMMTag {
 				dbColumn = null;
 				dbFormat = new Format(mTagParameters.get("format"), mTagParameters.get("encode"), data.getLocale(mTagParameters.get("language"), mTagParameters.get("country")), data.getTimeZone(mTagParameters.get("timezone")));
 				if (dbFormat.error() != null) {
-					data.logging(Log.WARNING, "emmtag", mTagFullname + ": error in formating: " + dbFormat.error());
+					data.logging(Log.WARNING, "emmtag", mTagFullname + ": error in formatting: " + dbFormat.error());
 					if (strict) {
-						throw new EMMTagException(data, this, "invalid formating: " + dbFormat.error());
+						throw new EMMTagException(data, this, "invalid formatting: " + dbFormat.error(), "error.agnTag.format.invalid", dbFormat.error());
 					}
 				}
 				if (tagSpec == TI_DBV) {
@@ -1235,14 +1237,14 @@ public class EMMTag {
 					} else {
 						data.logging(Log.WARNING, "emmtag", mTagFullname + ": missing virtual column");
 						if (strict) {
-							throw new EMMTagException(data, this, "missing parameter \"column\"");
+							throw new EMMTagException(data, this, "missing parameter \"column\"", "error.default.missing.param", "column");
 						}
 					}
 				} else if (tagSpec == TI_DB) {
 					if (mSelectString == null) {
 						data.logging(Log.WARNING, "emmtag", mTagFullname + ": missing column parameter for " + TAG_INTERNALS[TI_DB]);
 						if (strict) {
-							throw new EMMTagException(data, this, "missing parameter \"column\"");
+							throw new EMMTagException(data, this, "missing parameter \"column\"", "error.default.missing.param", "column");
 						}
 					} else {
 						Column col = findColumn(data, strict, mSelectString);
@@ -1253,7 +1255,7 @@ public class EMMTag {
 							if (err != null) {
 								data.logging(Log.WARNING, "emmtag", mTagFullname + ": invalid format: " + err);
 								if (strict) {
-									throw new EMMTagException(data, this, "invalid formating using parameter \"format\"");
+									throw new EMMTagException(data, this, "invalid formatting using parameter \"format\"", "error.agnTag.param.format.invalid", "format");
 								}
 							}
 							mSelectString = col.getQname();
@@ -1275,7 +1277,7 @@ public class EMMTag {
 					} catch (Exception e) {
 						data.logging(Log.WARNING, "emmtag", mTagFullname + ": invalid expression: " + e);
 						if (strict) {
-							throw new EMMTagException(data, this, "invalid \"expression\"");
+							throw new EMMTagException(data, this, "invalid \"expression\"", "error.agnTag.expression.invalid", expression);
 						}
 					}
 				} else {
@@ -1289,7 +1291,7 @@ public class EMMTag {
 					} else {
 						data.logging(Log.WARNING, "emmtag", mTagFullname + ": invalid code: " + encode);
 						if (strict) {
-							throw new EMMTagException(data, this, "invalid value for parameter \"code\"");
+							throw new EMMTagException(data, this, "invalid value for parameter \"code\"", "error.agnTag.value.invalid", "code");
 						}
 					}
 				}
@@ -1304,13 +1306,13 @@ public class EMMTag {
 					if (imagePatternName.indexOf('*') == -1) {
 						data.logging(Log.WARNING, "emmtag", mTagFullname + ": no placeholder found");
 						if (strict) {
-							throw new EMMTagException(data, this, "missing placeholder \"*\" in \"namepattern\"");
+							throw new EMMTagException(data, this, "missing placeholder \"*\" in \"namepattern\"", "error.agnTag.placeholder.missing", "namepattern");
 						}
 					}
 					if (patternSource == null) {
 						data.logging(Log.WARNING, "emmtag", mTagFullname + ": no pattrern source supplied");
 						if (strict) {
-							throw new EMMTagException(data, this, "missing parameter \"patternsource\"");
+							throw new EMMTagException(data, this, "missing parameter \"patternsource\"", "error.default.missing.param", "patternsource");
 						}
 					} else {
 						imagePatternColumn = findColumn(data, strict, patternSource);
@@ -1319,7 +1321,7 @@ public class EMMTag {
 					if (name == null) {
 						data.logging(Log.WARNING, "emmtag", mTagFullname + ": missing name");
 						if (strict) {
-							throw new EMMTagException(data, this, "missing parameter \"name\"");
+							throw new EMMTagException(data, this, "missing parameter \"name\"", "error.default.missing.param", "name");
 						}
 					}
 					mTagValue = data.defaultImageLink(name, imageSource, true);
@@ -1337,7 +1339,7 @@ public class EMMTag {
 					} else {
 						data.logging(Log.WARNING, "emmtag", mTagFullname + ": unknown coding for email found: " + tagCode);
 						if (strict) {
-							throw new EMMTagException(data, this, "invalid value for parameter \"code\"");
+							throw new EMMTagException(data, this, "invalid value for parameter \"code\"", "error.agnTag.value.invalid", "code");
 						}
 					}
 				}
@@ -1365,7 +1367,7 @@ public class EMMTag {
 							if (dateColumn.getTypeID() != Column.DATE) {
 								data.logging(Log.WARNING, "emmtag", mTagFullname + ": invalid column type for " + temp);
 								if (strict) {
-									throw new EMMTagException(data, this, "invalid column data type (expect date) using parameter \"column\"");
+									throw new EMMTagException(data, this, "invalid column data type (expect date) using parameter \"column\"", "error.agnTag.column.type.invalid", "date", "column");
 								}
 							}
 						}
@@ -1377,7 +1379,7 @@ public class EMMTag {
 								default:
 									data.logging(Log.WARNING, "emmtag", mTagFullname + ": unknown base date value: " + temp);
 									if (strict) {
-										throw new EMMTagException(data, this, "unknown base date value " + temp + " for parameter \"base\"");
+										throw new EMMTagException(data, this, "unknown base date value " + temp + " for parameter \"base\"", "error.agnTag.baseDate.unknown", temp, "base");
 									}
 									break;
 								case "now":
@@ -1398,7 +1400,7 @@ public class EMMTag {
 						} catch (NumberFormatException e) {
 							data.logging(Log.WARNING, "emmtag", mTagFullname + ": invalid offset " + temp + " for date found");
 							if (strict) {
-								throw new EMMTagException(data, this, "invalid offset \"" + temp + "\"");
+								throw new EMMTagException(data, this, "invalid offset \"" + temp + "\"", "error.agnTag.offset.invalid", temp);
 							}
 						}
 					}
@@ -1419,13 +1421,13 @@ public class EMMTag {
 							} else {
 								data.logging(Log.WARNING, "emmtag", mTagFullname + ": no format in date_tbl found for " + mTagFullname);
 								if (strict) {
-									throw new EMMTagException(data, this, "No format in database found for parameter \"type\" " + type);
+									throw new EMMTagException(data, this, "No format in database found for parameter \"type\" " + type, "error.agnTag.format.notFound", "type");
 								}
 							}
 						} catch (Exception e) {
 							data.logging(Log.WARNING, "emmtag", mTagFullname + ": query failed for data_tbl: " + e);
 							if (strict) {
-								throw new EMMTagException(data, this, e.toString());
+								throw new EMMTagException(data, this, e.toString(), "Error");
 							}
 						} finally {
 							data.dbase.release(jdbc, query);
@@ -1472,7 +1474,7 @@ public class EMMTag {
 							} catch (Exception e) {
 								data.logging(Log.WARNING, "emmtag", mTagFullname + ": invalid expression: " + e);
 								if (strict) {
-									throw new EMMTagException(data, this, "invalid \"expression\"");
+									throw new EMMTagException(data, this, "invalid \"expression\"", "error.agnTag.expression.invalid", s);
 								}
 								dateExpressions = null;
 								break;
@@ -1505,7 +1507,7 @@ public class EMMTag {
 				} catch (Exception e) {
 					data.logging(Log.WARNING, "emmtag", mTagFullname + ": failed parsing tag: " + e.toString());
 					if (strict) {
-						throw new EMMTagException(data, this, e.toString());
+						throw new EMMTagException(data, this, e.toString(), "Error");
 					}
 				}
 				if (dateColumn == null) {
@@ -1523,7 +1525,7 @@ public class EMMTag {
 			case TI_DYNVALUE:
 				if (strict) {
 					if (mTagParameters.get("name") == null) {
-						throw new EMMTagException(data, this, "missing parameter \"name\"");
+						throw new EMMTagException(data, this, "missing parameter \"name\"", "error.default.missing.param", "name");
 					}
 				}
 				break;
@@ -1539,7 +1541,7 @@ public class EMMTag {
 						data.logging(Log.WARNING, "emmtag", mTagFullname + ": invalid type string type=\"" + temp + "\", using default 0");
 						titleType = 1;
 						if (strict) {
-							throw new EMMTagException(data, this, "invalid value for parameter \"type\"");
+							throw new EMMTagException(data, this, "invalid value for parameter \"type\"", "error.agnTag.invalidParamValue", "type");
 						}
 					}
 				} else {
@@ -1562,15 +1564,15 @@ public class EMMTag {
 					try {
 						title = data.getTitle(titleType);
 					} catch (SQLException e) {
-						throw new EMMTagException(data, this, "failed to query for title type=\"" + temp + "\": " + e.toString());
+						throw new EMMTagException(data, this, "failed to query for title type=\"" + temp + "\": " + e.toString(), "error.agnTag.loadTitle.failed", temp);
 					}
 					if (title == null) {
-						throw new EMMTagException(data, this, "no title for title type=\"" + temp + "\" found");
+						throw new EMMTagException(data, this, "no title for title type=\"" + temp + "\" found", "error.agnTag.title.type.unknown", temp);
 					}
 					title.requestFields(cols, titleMode);
 					for (String col : cols) {
 						if (data.columnByName(col) == null) {
-							throw new EMMTagException(data, this, "column \"" + col + "\" required by title type=\"" + temp + "\" not found in customer table");
+							throw new EMMTagException(data, this, "column \"" + col + "\" required by title type=\"" + temp + "\" not found in customer table", "error.agnTag.error.agnTag.requiredTitleData.notFound", col, temp);
 						}
 					}
 				}
@@ -1590,7 +1592,7 @@ public class EMMTag {
 				} else {
 					data.logging(Log.WARNING, "emmtag", mTagFullname + ": missing name");
 					if (strict) {
-						throw new EMMTagException(data, this, "missing parameter \"name\"");
+						throw new EMMTagException(data, this, "missing parameter \"name\"", "error.default.missing.param", "name");
 					}
 				}
 			}
@@ -1611,7 +1613,7 @@ public class EMMTag {
 				if ((cname == null) || ((code = data.findCode(cname)) == null)) {
 					data.logging(Log.WARNING, "emmtag", mTagFullname + ": no code \"" + cname + "\" for function '" + func + "' found");
 					if (strict) {
-						throw new EMMTagException(data, this, "function \"" + func + "\" not found");
+						throw new EMMTagException(data, this, "function \"" + func + "\" not found", "error.agnTag.function.notFound", func);
 					}
 				}
 				mTagValue = "";
@@ -1659,7 +1661,7 @@ public class EMMTag {
 			case TI_GRIDPH:
 				if (strict) {
 					if (mTagParameters.get("name") == null) {
-						throw new EMMTagException(data, this, "Missing parameter \"name\"");
+						throw new EMMTagException(data, this, "Missing parameter \"name\"", "error.default.missing.param", "name");
 					}
 				}
 				break;

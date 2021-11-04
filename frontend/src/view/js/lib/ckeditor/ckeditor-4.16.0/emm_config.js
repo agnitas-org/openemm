@@ -52,8 +52,11 @@ CKEDITOR.editorConfig = function(config) {
     config.disallowedContent = 'script; iframe; *[on*];';
 
     // Protect all custom tags having a namespace.
-    config.protectedSource.push(/<\/?\w+:\w+[^>]*>/g);
-    //config.protectedSource.push(/<!--[\s\S]*?-->\s*/g);
+    if(!config.protectedSource.emmConfigured) {
+        config.protectedSource.push(/<\/?\w+:\w+[^>]*>/g);
+        //config.protectedSource.push(/<!--[\s\S]*?-->\s*/g);
+        config.protectedSource.emmConfigured = true;
+    }
 
     /**
      * Completely turns off filter rules for next tags and their children.

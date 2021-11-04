@@ -25,9 +25,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.BaseTrackableLink;
@@ -232,7 +232,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
                         } else {
 							Set<LinkProperty> extensionsToDelete = getExtensionsToDelete(aForm.getBulkIDs(), admin.getCompanyID());
 							if (CollectionUtils.isEmpty(extensionsToDelete)) {
-								errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("GWUA.mailing.trackablelinks.extensions.empty"));
+								errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.trackablelinks.extension.empty"));
 								destination = mapping.findForward("view");
 								break;
 							}
@@ -351,6 +351,12 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 		if (CollectionUtils.isNotEmpty(sortedLinks)) {
 			aForm.setNumberOfRows(sortedLinks.size());
 		}
+		
+		for (ComTrackableLink link : sortedLinks) {
+			if (link.getFullUrl().contains("##")) {
+				link.setUsage(-1);
+			}
+		}
 
 		req.setAttribute("paginatedTrackableLinks", new PaginatedListImpl<>(sortedLinks, sortedLinks.size(),
 				aForm.getNumberOfRows(),1, aForm.getSort(), aForm.getOrder()));
@@ -371,6 +377,10 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 		ComTrackableLink aLink = trackableLinkService.getTrackableLink(companyId, form.getLinkID());
 
 		if (aLink != null) {
+			if (aLink.getFullUrl().contains("##")) {
+				aLink.setUsage(-1);
+			}
+			
 			form.setLinkName(aLink.getShortname());
 			form.setTrackable(aLink.getUsage());
 			form.setLinkUrl(aLink.getFullUrl());
@@ -502,13 +512,17 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 					writeTrackableLinkActionChange(aLink, linkAction, logMessage);
 					aLink.setActionID(linkAction);
 				}
-				if (aLink.getUsage() != linkItemTrackable) {
+				
+				if (aLink.getFullUrl().contains("##")) {
+					aLink.setUsage(TrackableLink.TRACKABLE_TEXT_HTML);
+				} else if (aLink.getUsage() != linkItemTrackable) {
 					writeTrackableLinkTrackableChange(aLink, linkItemTrackable, logMessage);
 					aLink.setUsage(linkItemTrackable);
 				} else if ((globalUsage != KEEP_UNCHANGED) && bulkIds.contains(id)) {
 					writeTrackableLinkTrackableChange(aLink, globalUsage, logMessage);
 					aLink.setUsage(globalUsage);
 				}
+				
 				String newName = aForm.getLinkItemName(id);
 				if (!newName.equals(aLink.getShortname())) {
 					writeTrackableLinkDescriptionChange(aLink, newName, logMessage);

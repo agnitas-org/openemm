@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.stat.CampaignStatEntry;
@@ -240,7 +241,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 
 		mailing.getMaildropStatus().add(drop);
 		mailingDao.saveMailing(mailing, false);
-		mailingDao.updateStatus(drop.getMailingID(), testRun ? "test" : "scheduled");
+		mailingDao.updateStatus(drop.getMailingID(), testRun ? MailingStatus.TEST : MailingStatus.SCHEDULED);
 
 		if (testRun) {
 			return true;

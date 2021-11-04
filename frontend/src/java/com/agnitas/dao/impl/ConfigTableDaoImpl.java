@@ -146,15 +146,19 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 
 		String buildTimeString = ConfigService.getInstance().getValue(ConfigValue.BuildTime);
 		Date buildTime;
-		try {
-			buildTime = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS).parse(buildTimeString);
-		} catch (ParseException e) {
+		if (StringUtils.isNotBlank(buildTimeString)) {
 			try {
-				buildTime = DateUtilities.parseUnknownDateFormat(buildTimeString);
-			} catch (Exception e1) {
-				logger.error("Unparseable BuldTime: " + buildTimeString);
-				buildTime = null;
+				buildTime = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS).parse(buildTimeString);
+			} catch (ParseException e) {
+				try {
+					buildTime = DateUtilities.parseUnknownDateFormat(buildTimeString);
+				} catch (Exception e1) {
+					logger.error("Unparseable BuldTime: " + buildTimeString);
+					buildTime = null;
+				}
 			}
+		} else {
+			buildTime = null;
 		}
 		String buildHost = ConfigService.getInstance().getValue(ConfigValue.BuildHost);
 		String buildUser = ConfigService.getInstance().getValue(ConfigValue.BuildUser);
@@ -164,15 +168,26 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 			update(logger, "DELETE FROM release_log_tbl WHERE host_name = ? AND application_name = ? AND startup_timestamp < ?", AgnUtils.getHostName(), applicationType.name(), DateUtilities.getDateOfDaysAgo(365));
 			
 			String versionString = ConfigService.getInstance().getValue(ConfigValue.ApplicationVersion);
-			String lastStartedVersion;
+			String lastStartedVersion = null;
+			
+			// Time of installation of lastStartedVersion, because it is only inserted in DB on version change
+			Date lastStartedVersionStartupTime = null;
+			
+			List<Map<String, Object>> result;
 			if (ConfigService.isOracleDB()) {
-				lastStartedVersion = selectObjectDefaultNull(logger, "SELECT * FROM (SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", new StringRowMapper(), AgnUtils.getHostName(), applicationType.name());
+				result = select(logger, "SELECT version_number, startup_timestamp FROM (SELECT version_number, startup_timestamp FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", AgnUtils.getHostName(), applicationType.name());
 			} else {
-				lastStartedVersion = selectObjectDefaultNull(logger, "SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", new StringRowMapper(), AgnUtils.getHostName(), applicationType.name());
+				result = select(logger, "SELECT version_number, startup_timestamp FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", AgnUtils.getHostName(), applicationType.name());
+			}
+			if (result != null && result.size() > 0) {
+				lastStartedVersion = (String) result.get(0).get("version_number");
+				lastStartedVersionStartupTime = (Date) result.get(0).get("startup_timestamp");
 			}
 			if (!versionString.equals(lastStartedVersion)) {
-				update(logger, "INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)", AgnUtils.getHostName(), applicationType.name(), versionString, buildTime, buildHost, buildUser);
+				lastStartedVersionStartupTime = new Date();
+				update(logger, "INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)", AgnUtils.getHostName(), applicationType.name(), versionString, buildTime, buildHost, buildUser, lastStartedVersionStartupTime);
 			}
+			ConfigService.setApplicationVersionInstallationTime(lastStartedVersionStartupTime);
 		}
 		
 		// Check and set Runtime version

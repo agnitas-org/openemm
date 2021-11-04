@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Werte vorgeben]]></title>
+	<content><![CDATA[Mit der Option "Werte vorgeben" k&#xF6;nnen Sie festlegen, welche Werte dieses Feld annehmen darf. Die Werte werden im Empf&#xE4;ngerprofil in einem Dropdown zur Auswahl angeboten, so k&#xF6;nnen Benutzer diese schnell und einfach ausw&#xE4;hlen. Die Vorgaben m&#xFC;ssen nat&#xFC;rlich zum Datentyp des Feldes passen. Bitte beachten Sie, dass auch bei Importen ausschlie&#xDF;lich die vorgegebenen Werte &#xFC;bergeben werden, da sonst abweichende Werte im Empf&#xE4;ngerprofil angelegt werden und darauf aufbauende Logiken/Zielgruppen nicht greifen.]]></content>
+</HelpBalloon>

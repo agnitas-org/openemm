@@ -22,8 +22,8 @@ import org.agnitas.emm.core.velocity.VelocityWrapperFactoryImpl;
 public class ComVelocityWrapperFactoryImpl extends VelocityWrapperFactoryImpl {
 
 	@Override
-	protected VelocityWrapper createVelocityWrapper(@VelocityCheck int companyId, String velocityLogDir) throws Exception {
-		return new ComVelocityWrapperImpl(companyId, getUberspectDelegateTargetFactory(), velocityLogDir);
+	protected VelocityWrapper createVelocityWrapper(@VelocityCheck int companyId) throws Exception {
+		return new ComVelocityWrapperImpl(companyId, getUberspectDelegateTargetFactory());
 	}
 
 }

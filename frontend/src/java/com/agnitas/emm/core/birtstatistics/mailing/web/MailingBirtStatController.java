@@ -10,14 +10,7 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.web;
 
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.BOUNCES;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.CLICK_STATISTICS_PER_LINK;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_CLICKS;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_DELIVERY;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_OPENINGS;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY_AUTO_OPT;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.TOP_DOMAINS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.*;
 import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
 import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 
@@ -30,6 +23,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.emm.company.service.CompanyService;
@@ -166,39 +161,38 @@ public class MailingBirtStatController {
         form.setStatisticType(getReportType(form.getStatisticType(), adminPreferences));
         form.setDateMode(getDateMode(form.getStatisticType(), mailingId, form.getDateMode()));
 
-        if (form.getMonth() == -1) {
-            form.setMonth(YearMonth.now().getMonth());
-        }
-        if (form.getYear() == 0) {
-            form.setYear(YearMonth.now().getYear());
-        }
+        checkAbsentDateFields(form);
 
-        MailingStatisticDto mailingStatisticDto = convertFormToDto(form, admin, mailingId);
+        MailingStatisticDto mailingStatisticDto = convertFormToDto(form, admin, mailing);
 
         if (form.getStatisticType() == SUMMARY) {
-            int optimizationId = optimizationService.getOptimizationIdByFinalMailing(mailingId, admin.getCompanyID());
-            if (optimizationId > 0) {
-                mailingStatisticDto.setType(SUMMARY_AUTO_OPT);
-                mailingStatisticDto.setDateMode(DateMode.NONE);
-                mailingStatisticDto.setOptimizationId(optimizationId);
-                
-                model.addAttribute("isTotalAutoOpt", true);
-            }
+            prepareForSummaryStatistic(mailingStatisticDto, admin.getCompanyID(), mailingId, model);
         }
-        
+
         if (mailingStatisticDto.getType() == TOP_DOMAINS) {
             processMailingInfo(admin, mailingId, mailingStatisticDto, model);
         }
 
         processStatisticView(admin, model, mailingStatisticDto, form, mailing);
 
+        model.addAttribute("workflowId", mailingBaseService.getWorkflowId(mailingId, admin.getCompanyID()));
+
         userActivityLogService.writeUserActivityLog(admin, "view statistics", form.getShortname() + " (" + mailingId + ")" + " active tab - statistics", logger);
 
         return "stats_mailing_view";
     }
 
-    protected MailingStatisticDto convertFormToDto(final MailingStatisticForm form, final ComAdmin admin, int mailingId) {
-        Date mailingStartDate = mailingBaseService.getMailingLastSendDate(mailingId);
+    protected MailingStatisticDto convertFormToDto(final MailingStatisticForm form, final ComAdmin admin, Mailing mailing) {
+        int mailingId = mailing.getId();
+
+        List<Date> sendDates = Arrays.stream(new Date[]{mailing.getSenddate(), mailingBaseService.getMailingLastSendDate(mailingId)})
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        Date mailingStartDate = null;
+        if (sendDates.size() > 0) {
+            mailingStartDate = Collections.min(sendDates);
+        }
 
         final MailingStatisticDto mailingStatisticDto = conversionService.convert(form, MailingStatisticDto.class);
         mailingStatisticDto.setMailingStartDate(mailingStartDate);
@@ -252,7 +246,6 @@ public class MailingBirtStatController {
         model.addAttribute("monthlist", AgnUtils.getMonthList());
         model.addAttribute("yearlist", AgnUtils.getYearList(getStartYear(mailingStatisticDto.getMailingStartDate())));
         model.addAttribute("localDatePattern", localeFormat.toPattern());
-        model.addAttribute("workflowId", mailingBaseService.getWorkflowId(mailingStatisticDto.getMailingId(), admin.getCompanyID()));
         model.addAttribute("birtUrl", StringUtils.defaultString(birtUrl));
         model.addAttribute("downloadBirtUrl", StringUtils.defaultString(birtDownloadUrl));
     }
@@ -417,5 +410,25 @@ public class MailingBirtStatController {
         }
 
         return new Tuple<>(startDate, endDate);
+    }
+
+    private void checkAbsentDateFields(MailingStatisticForm form) {
+        if (form.getMonth() == -1) {
+            form.setMonth(YearMonth.now().getMonth());
+        }
+        if (form.getYear() == 0) {
+            form.setYear(YearMonth.now().getYear());
+        }
+    }
+
+    private void prepareForSummaryStatistic(MailingStatisticDto mailingStatisticDto, int companyId, int mailingId, Model model) {
+        int optimizationId = optimizationService.getOptimizationIdByFinalMailing(mailingId, companyId);
+        if (optimizationId > 0) {
+            mailingStatisticDto.setType(SUMMARY_AUTO_OPT);
+            mailingStatisticDto.setDateMode(DateMode.NONE);
+            mailingStatisticDto.setOptimizationId(optimizationId);
+
+            model.addAttribute("isTotalAutoOpt", true);
+        }
     }
 }

@@ -15,25 +15,19 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.emm.core.commons.database.configuration.DatabaseConfiguration;
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchReservedLiteralsConfig;
 import com.agnitas.emm.core.commons.database.fulltext.impl.MySqlFulltextSearchReservedLiteralsConfig;
+import com.agnitas.emm.core.commons.database.fulltext.impl.OracleFulltextSearchReservedLiteralsConfig;
 
 public class FulltextSearchReservedLiteralsFactoryImpl implements FulltextSearchReservedLiteralsFactory {
 
     private DatabaseConfiguration databaseConfiguration;
 
-    private FulltextSearchReservedLiteralsConfig oracleReservedLiteralsConfig;
-
     @Override
     public FulltextSearchReservedLiteralsConfig createdReservedLiteralsConfig() {
-        return databaseConfiguration.isOracle() ? oracleReservedLiteralsConfig : new MySqlFulltextSearchReservedLiteralsConfig();
+        return databaseConfiguration.isOracle() ? new OracleFulltextSearchReservedLiteralsConfig() : new MySqlFulltextSearchReservedLiteralsConfig();
     }
 
     @Required
     public void setDatabaseConfiguration(DatabaseConfiguration databaseConfiguration) {
         this.databaseConfiguration = databaseConfiguration;
-    }
-
-    @Required
-    public void setOracleReservedLiteralsConfig(FulltextSearchReservedLiteralsConfig oracleReservedLiteralsConfig) {
-        this.oracleReservedLiteralsConfig = oracleReservedLiteralsConfig;
     }
 }

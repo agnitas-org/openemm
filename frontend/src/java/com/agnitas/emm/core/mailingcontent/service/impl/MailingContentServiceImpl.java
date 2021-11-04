@@ -21,9 +21,9 @@ import java.util.stream.Collectors;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.DynamicTagContent;
-import com.agnitas.beans.Mailing;
 import org.agnitas.beans.factory.DynamicTagContentFactory;
 import org.agnitas.dao.EmmActionDao;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.struts.action.ActionMessage;
@@ -34,7 +34,9 @@ import org.springframework.stereotype.Service;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
@@ -52,26 +54,22 @@ public class MailingContentServiceImpl implements MailingContentService {
     private ApplicationContext applicationContext;
     private ComMailingDao mailingDao;
     private EmmActionDao actionDao;
+    private DynamicTagDao dynamicTagDao;
 
-    public MailingContentServiceImpl(DynamicTagContentFactory dynamicTagContentFactory,
+	public MailingContentServiceImpl(DynamicTagContentFactory dynamicTagContentFactory,
                                      ComMailingBaseService mailingBaseService,
                                      ConversionService conversionService,
                                      ApplicationContext applicationContext,
                                      ComMailingDao mailingDao,
-                                     EmmActionDao actionDao) {
+                                     EmmActionDao actionDao,
+                                     DynamicTagDao dynamicTagDao) {
         this.dynamicTagContentFactory = dynamicTagContentFactory;
         this.mailingBaseService = mailingBaseService;
         this.conversionService = conversionService;
         this.applicationContext = applicationContext;
         this.mailingDao = mailingDao;
         this.actionDao = actionDao;
-    }
-
-    private void removeAbsentDynContent(DynamicTag oldDynamicTag, DynamicTag newDynamicTag) {
-        List<Integer> idForRemoving = getIdForRemoving(oldDynamicTag, newDynamicTag);
-        idForRemoving.forEach(contentId -> {
-            mailingDao.deleteContentFromMailing(oldDynamicTag.getCompanyID(), oldDynamicTag.getMailingID(), contentId);
-        });
+        this.dynamicTagDao = dynamicTagDao;
     }
 
 	@Override
@@ -93,10 +91,10 @@ public class MailingContentServiceImpl implements MailingContentService {
         }
         boolean hasNoCleanPermission = admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_NOCLEANUP);
         mailingBaseService.saveMailingWithUndo(mailing, admin.getAdminID(), hasNoCleanPermission);
-        mailingDao.updateStatus(mailing.getId(), "edit");
+        mailingDao.updateStatus(mailing.getId(), MailingStatus.EDIT);
 
         List<UserAction> userActions = getUserActions(oldDynamicTag, newDynamicTag, mailing);
-        removeAbsentDynContent(oldDynamicTag, newDynamicTag);
+        dynamicTagDao.removeAbsentDynContent(oldDynamicTag, newDynamicTag);
         return ServiceResult.success(userActions);
     }
 
@@ -109,18 +107,6 @@ public class MailingContentServiceImpl implements MailingContentService {
         }
 
         return conversionService.convert(tag, DynTagDto.class);
-    }
-
-    private List<Integer> getIdForRemoving(DynamicTag oldDynamicTag, DynamicTag newDynamicTag) {
-        Set<Integer> oldIds = oldDynamicTag.getDynContent().values().stream()
-                .map(DynamicTagContent::getId)
-                .collect(Collectors.toSet());
-
-        Set<Integer> newIds = newDynamicTag.getDynContent().values().stream()
-                .map(DynamicTagContent::getId)
-                .collect(Collectors.toSet());
-
-        return oldIds.stream().filter(oldId -> !newIds.contains(oldId)).collect(Collectors.toList());
     }
 
     private List<Integer> getCreatedId(DynamicTag oldDynamicTag, DynamicTag newDynamicTag) {
@@ -219,6 +205,18 @@ public class MailingContentServiceImpl implements MailingContentService {
         });
 
         return userActions;
+    }
+
+    private List<Integer> getIdForRemoving(DynamicTag oldDynamicTag, DynamicTag newDynamicTag) {
+        Set<Integer> oldIds = oldDynamicTag.getDynContent().values().stream()
+                .map(DynamicTagContent::getId)
+                .collect(Collectors.toSet());
+
+        Set<Integer> newIds = newDynamicTag.getDynContent().values().stream()
+                .map(DynamicTagContent::getId)
+                .collect(Collectors.toSet());
+
+        return oldIds.stream().filter(oldId -> !newIds.contains(oldId)).collect(Collectors.toList());
     }
 
     private DynamicTagContent convertDynContentDtoToDynamicTagContent(int companyId, DynamicTagContent oldDynContent, DynContentDto dynContentDto, DynTagDto dynTagDto) {

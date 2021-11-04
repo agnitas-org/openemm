@@ -108,113 +108,11 @@
 <tiles:insert attribute="head-tag"/>
 <body style="background-color: #fff">
 
-    <emm:ShowByPermission token="workflow.jsplumb2">
-        <div class="emm-container" data-controller="workflow-view-new">
-    </emm:ShowByPermission>
-    <emm:HideByPermission token="workflow.jsplumb2">
-        <div class="emm-container" data-controller="workflow-view">
-    </emm:HideByPermission>
-
-    <emm:HideByPermission token="workflow.jsplumb2">
-    <script data-initializer="workflow-view-constants" type="application/json">
-        {
-            "startTypeOpen": "<%= WorkflowStart.WorkflowStartType.OPEN %>",
-            "startTypeDate": "<%= WorkflowStart.WorkflowStartType.DATE %>",
-            "startTypeEvent": "<%= WorkflowStart.WorkflowStartType.EVENT %>",
-            "endTypeAutomatic": "<%= WorkflowStop.WorkflowEndType.AUTOMATIC %>",
-            "endTypeDate": "<%= WorkflowStop.WorkflowEndType.DATE %>",
-            "startEventReaction": "<%= WorkflowStart.WorkflowStartEventType.EVENT_REACTION %>",
-            "startEventDate": "<%= WorkflowStart.WorkflowStartEventType.EVENT_DATE %>",
-            "deadlineTypeDelay": "<%= WorkflowDeadline.WorkflowDeadlineType.TYPE_DELAY %>",
-            "deadlineTypeFixedDeadline": "<%= WorkflowDeadline.WorkflowDeadlineType.TYPE_FIXED_DEADLINE %>",
-            "deadlineTimeUnitMinute": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_MINUTE %>",
-            "deadlineTimeUnitHour": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_HOUR %>",
-            "deadlineTimeUnitDay": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_DAY %>",
-            "deadlineTimeUnitWeek": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_WEEK %>",
-            "deadlineTimeUnitMonth": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_MONTH %>",
-            "defaultImportDelayLimit" : "<%=WorkflowDeadlineImpl.DEFAULT_AUTOIMPORT_DELAY_LIMIT%>",
-            "reactionOpened": "<%=  WorkflowReactionType.OPENED %>",
-            "reactionNotOpened": "<%=  WorkflowReactionType.NOT_OPENED %>",
-            "reactionClicked": "<%=  WorkflowReactionType.CLICKED %>",
-            "reactionNotClicked": "<%=  WorkflowReactionType.NOT_CLICKED %>",
-            "reactionBought": "<%=  WorkflowReactionType.BOUGHT %>",
-            "reactionNotBought": "<%=  WorkflowReactionType.NOT_BOUGHT %>",
-            "reactionDownload": "<%=  WorkflowReactionType.DOWNLOAD %>",
-            "reactionChangeOfProfile": "<%=  WorkflowReactionType.CHANGE_OF_PROFILE %>",
-            "reactionWaitingForConfirm": "<%=  WorkflowReactionType.WAITING_FOR_CONFIRM %>",
-            "reactionOptIn": "<%=  WorkflowReactionType.OPT_IN %>",
-            "reactionOptOut": "<%=  WorkflowReactionType.OPT_OUT %>",
-            "reactionClickedLink": "<%=  WorkflowReactionType.CLICKED_LINK %>",
-            "reactionOpenedAndClicked": "<%=  WorkflowReactionType.OPENED_AND_CLICKED %>",
-            "reactionOpenedOrClicked": "<%=  WorkflowReactionType.OPENED_OR_CLICKED %>",
-            "reactionConfirmedOptIn": "<%=  WorkflowReactionType.CONFIRMED_OPT_IN %>",
-            "decisionTypeDecision": "<%= WorkflowDecision.WorkflowDecisionType.TYPE_DECISION %>",
-            "decisionTypeAutoOptimization": "<%= WorkflowDecision.WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION %>",
-            "decisionReaction": "<%= WorkflowDecision.WorkflowDecisionCriteria.DECISION_REACTION %>",
-            "decisionProfileField": "<%= WorkflowDecision.WorkflowDecisionCriteria.DECISION_PROFILE_FIELD %>",
-            "decisionAOCriteriaClickRate": "<%= WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_CLICKRATE %>",
-            "decisionAOCriteriaOpenrate": "<%= WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_OPENRATE %>",
-            "decisionAOCriteriaTurnover": "<%= WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_REVENUE %>",
-            "genderOptions": {
-                "<%= Recipient.GENDER_MALE %>": "Male",
-                "<%= Recipient.GENDER_FEMALE %>": "Female",
-                "<%= Recipient.GENDER_UNKNOWN %>": "Unknown"
-            },
-            "chainOperatorOptions": {
-                "<%= ChainOperator.AND.getOperatorCode() %>": "<bean:message key="default.and"/>",
-                "<%= ChainOperator.OR.getOperatorCode() %>": "<bean:message key="default.or"/>"
-            },
-            "operators": [
-                <c:forEach items="${operators}" var="operator" varStatus="index">
-                    <c:set var="types" value="${operatorsTypeSupportMap[operator]}"/>
-                {
-                    "id": "${operator.operatorCode}",
-                    "text": "${operator.eqlSymbol}",
-                    "data": {
-                        "types": "${empty types ? '' : types}"
-                    }
-                }${!index.last ? ',':''}
-                </c:forEach>
-            ],
-            "operatorsMap": {
-                <c:forEach  items="${operators}" var="operator" varStatus="index">
-                  "${operator.operatorCode}": "${operator.eqlSymbol}"${!index.last ? ',':''}
-                </c:forEach>
-            },
-            "mailingThumbnailURL" : "<c:url value='/workflow/getMailingThumbnail.action'/>",
-            "componentURL" : "<c:url value='/sc?compID={component-id}'/>"
-        }
-    </script>
-    </emm:HideByPermission>
+<div class="emm-container" data-controller="workflow-view">
 
     <emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
 
-    <emm:HideByPermission token="workflow.jsplumb2">
-    <script type="application/json" data-initializer="workflow-pdf-initialize">
-        {
-            "sessionId": "${pageContext.session.id}",
-            "imageUrl": "${absoluteImagePath}",
-            "locale": "<bean:write name="emm.admin" property="adminLang" scope="session"/>",
-            "icons": ${workflowForm.workflowSchema},
-            "editorPositionLeft": "${workflowForm.editorPositionLeft}",
-            "editorPositionTop": "${workflowForm.editorPositionTop}",
-            "localeDateTimePattern": "${localeDateTimePattern}",
-            "noContextMenu": true,
-            "workflowId": "${workflowForm.workflowId}",
-            "allMailings":${emm:toJson(mailings)},
-            "allMailingLists":${emm:toJson(mailingLists)},
-            "allTargets":${emm:toJson(targets)},
-            "allReports":${emm:toJson(reports)},
-            "allUserForms":${emm:toJson(allForms)},
-            "allAutoExports" :${emm:toJson(autoExports)},
-            "allAutoImports" :${emm:toJson(allImports)},
-            "allCampaigns":${emm:toJson(allCampaigns)}
-        }
-    </script>
-    </emm:HideByPermission>
-
-    <emm:ShowByPermission token="workflow.jsplumb2">
-    <script type="application/json" data-initializer="workflow-view-new">
+    <script type="application/json" data-initializer="workflow-view">
         {
             "icons": ${workflowForm.workflowSchema},
             "workflowId": ${workflowForm.workflowId},
@@ -223,6 +121,7 @@
             "isEditable": false,
             "isContextMenuEnabled": false,
             "isMinimapEnabled": false,
+            "fitPdfPage": true,
             "isFootnotesEnabled": true,
             "isStatisticEnabled": "${showStatistics}",
             "initializerFinishStatus": "initializerPdfFinished",
@@ -321,7 +220,6 @@
 	        }
         }
     </script>
-    </emm:ShowByPermission>
 
     <script id="workflow-node" type="text/x-mustache-template">
         <%-- Toggle 'active' class to toggle active/inactive node images --%>
@@ -353,63 +251,36 @@
     </script>
 
     <div id="viewPort">
-        <emm:ShowByPermission token="workflow.jsplumb2">
-            <div id="canvas">
-                <div id="icon-titles-container"></div>
-            </div>
-        </emm:ShowByPermission>
+        <div id="canvas">
+            <div id="icon-titles-container"></div>
+        </div>
     </div>
 
-    <emm:ShowByPermission token="workflow.jsplumb2">
-        <div id="footnotes-container" class="footnotes"><ol></ol></div>
+    <div id="footnotes-container" class="footnotes"><ol></ol></div>
 
-        <script type="application/javascript">
-            jQuery(window).on('load', function() {
-                 function loading() {
-                   if (window.status == 'initializerPdfFinished') {
-                     var images = jQuery('.node .node-image');
-                     if (images.length > 0) {
-                       images
-                         .imagesLoaded()
-                         .always(function(){window.status = "wmLoadFinished";});
-                     } else {
-                       window.status = "wmLoadFinished";
-                     }
-                   } else {
-                     window.setTimeout(loading, 100);
-                   }
+    <script type="application/javascript">
+        jQuery(window).on('load', function() {
+             function loading() {
+               if (window.status == 'initializerPdfFinished') {
+                 var images = jQuery('.node .node-image');
+                 if (images.length > 0) {
+                   images
+                     .imagesLoaded()
+                     .always(function(){window.status = "wmLoadFinished";});
+                 } else {
+                   window.status = "wmLoadFinished";
                  }
-                 loading();
-                 return false;
-            }).on('error', function (e) {
-              window.status = "wmLoadFinished";
-              return false;
-            });
-        </script>
-    </emm:ShowByPermission>
-    <emm:HideByPermission token="workflow.jsplumb2">
-        <footer id="footnotes-container">
-            <table id="comment-footnotes-list"></table>
-        </footer>
-
-        <script type="application/javascript">
-            jQuery(window).on('load', function() {
-                 function loading() {
-                   if (window.status == 'initializerFinished') {
-                     jQuery(".iconNode .node-image")
-                       .imagesLoaded()
-                       .always(function(){window.status = "wmLoadFinished";});
-                   } else {
-                     window.setTimeout(loading, 100);
-                   }
-                 }
-                 loading();
-            }).on('error', function (e) {
-              window.status = "wmLoadFinished";
-              return false;
-            });
-        </script>
-    </emm:HideByPermission>
+               } else {
+                 window.setTimeout(loading, 100);
+               }
+             }
+             loading();
+             return false;
+        }).on('error', function (e) {
+          window.status = "wmLoadFinished";
+          return false;
+        });
+    </script>
 
     <div id="invisible">
         <div id="connectRapidButton">

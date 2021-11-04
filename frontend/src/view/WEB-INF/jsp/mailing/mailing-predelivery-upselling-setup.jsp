@@ -8,6 +8,8 @@
 <%--@elvariable id="predeliveryForm" type="org.agnitas.web.forms.ComPredeliveryForm"--%>
 <%--@elvariable id="limitedRecipientOverview" type="java.lang.Boolean"--%>
 
+<%--TODO: GWUA-4803: migrate upselling page after migration code test successfully --%>
+
 <c:set var="BASE_ACTION_LIST" value="<%= MailingBaseAction.ACTION_LIST %>" />
 <c:set var="BASE_ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>" />
 

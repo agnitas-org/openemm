@@ -20,8 +20,12 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 
 public class TarGzUtilities {
+	/** The logger. */
+	private static final transient Logger LOGGER = Logger.getLogger(TarGzUtilities.class);
+	
 	public static void decompress(File zipFileToDecompress, File decompressToPath) throws Exception {
 		if (!zipFileToDecompress.exists()) {
 			throw new Exception("Source path does not exist: " + decompressToPath.getAbsolutePath());
@@ -51,7 +55,10 @@ public class TarGzUtilities {
 	                if (!parent.exists()) {
 	                    parent.mkdirs();
 	                }
-	                IOUtils.copy(fin, new FileOutputStream(currentfile));
+	                
+	                try(final FileOutputStream fos = new FileOutputStream(currentfile)) {
+	                	IOUtils.copy(fin, fos);
+	                }
 	            }
 	        } catch (Exception e) {
 	        	try {
@@ -59,8 +66,9 @@ public class TarGzUtilities {
 	        			FileUtils.deleteDirectory(decompressToPath);
 	        		}
 				} catch (Exception e2) {
-					// do nothing
-					e2.printStackTrace();
+					LOGGER.error("Error deleting temporary directory", e2);
+					
+					// do nothing else
 				}
 	        
 				throw new Exception("Cannot decompress '" + zipFileToDecompress + "'", e);

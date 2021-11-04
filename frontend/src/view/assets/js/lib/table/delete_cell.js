@@ -42,8 +42,10 @@
         $modal = $resp.all('.modal');
 
         if ($modal.length == 1) {
-          Confirm.create(resp).done(function() {
+          Confirm.create(resp).done(function(positiveResp) {
+            var $positiveResp = $(positiveResp);
             Table.get($(self)).api.updateRowData({remove: [params.data]});
+            AGN.Lib.RenderMessages($positiveResp);
           });
         } else {
           Page.render(resp);

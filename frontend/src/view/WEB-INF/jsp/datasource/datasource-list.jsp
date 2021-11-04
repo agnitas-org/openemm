@@ -28,7 +28,70 @@
         }
     </script>
     
-	<div class="tile">
+    <emm:HideByPermission token="datasource_id.overview.js_table.rollback">
+    <div class="tile js-data-table" data-table="datasource-id-overview">
+        <div class="tile-header">
+            <h2 class="headline"><bean:message key="default.Overview"/></h2>
+            <ul class="tile-header-actions">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <i class="icon icon-eye"></i>
+                        <span class="text"><mvc:message code="button.Show"/></span>
+                        <i class="icon icon-caret-down"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li class="dropdown-header"><mvc:message code="listSize"/></li>
+                        <li>
+                            <label class="label js-data-table-paginate" data-page-size="20"
+                                   data-table-body=".js-data-table-body"
+                                   data-web-storage="datasource-overview">
+                                <span class="label-text">20</span>
+                            </label>
+                            <label class="label js-data-table-paginate" data-page-size="50"
+                                   data-table-body=".js-data-table-body"
+                                   data-web-storage="datasource-overview">
+                                <span class="label-text">50</span>
+                            </label>
+                            <label class="label js-data-table-paginate" data-page-size="100"
+                                   data-table-body=".js-data-table-body"
+                                   data-web-storage="datasource-overview">
+                                <span class="label-text">100</span>
+                            </label>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="tile-content" data-sizing="scroll">
+            <div class="l-tile-recipient-info-box align-left">
+                <span> <bean:message key="recipient.datasource.info"/></span>
+            </div>
+            <div class="js-data-table-body" data-web-storage="datasource-overview" style="height: 100%;"></div>
+        </div>
+
+        <script id="datasource-id-overview" type="application/json">
+        {
+            "columns": [
+                 {
+                    "field": "id",
+                    "headerName": "<mvc:message code='recipient.DatasourceId'/>",
+                    "editable": false
+                },
+                {
+                    "field": "description",
+                    "headerName": "<mvc:message code='Description'/>",
+                    "editable": false
+                }
+            ],
+            "data": ${datasources}
+        }
+        </script>
+    </div>
+    </emm:HideByPermission>
+    
+    <emm:ShowByPermission token="datasource_id.overview.js_table.rollback">
+    <div class="tile">
     	<div class="tile-header">
         	<h2 class="headline"><bean:message key="default.Overview"/></h2>
         	<ul class="tile-header-actions">
@@ -98,4 +161,5 @@
         	</div>
     	</div>
 	</div>
+    </emm:ShowByPermission>
 </mvc:form>

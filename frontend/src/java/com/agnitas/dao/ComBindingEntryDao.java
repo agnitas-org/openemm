@@ -67,6 +67,10 @@ public interface ComBindingEntryDao {
 	 */
 	boolean updateBinding(BindingEntry entry, @VelocityCheck int companyID);
 
+	void updateBindings(@VelocityCheck int companyId, List<BindingEntry> bindings) throws Exception;
+
+	void insertBindings(@VelocityCheck int companyId, List<BindingEntry> bindings) throws Exception;
+
 	/**
 	 * Inserts a new binding into the database.
 	 *

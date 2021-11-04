@@ -12,7 +12,7 @@ package com.agnitas.web;
 
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.struts.action.ActionErrors;

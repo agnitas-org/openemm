@@ -13,8 +13,10 @@ package org.agnitas.emm.springws.security;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -39,6 +41,7 @@ public class LoginTrackingXwsSecurityInterceptor extends XwsSecurityInterceptor 
 	
 	private LoginTrackService loginTrackService;
 	private final WebserviceUserService webserviceUserService;
+	private ConfigService configService;
 	
 	public LoginTrackingXwsSecurityInterceptor(final WebserviceUserService webserviceUserService) {
 		this.webserviceUserService = Objects.requireNonNull(webserviceUserService, "WebserviceUserService is null");
@@ -46,7 +49,17 @@ public class LoginTrackingXwsSecurityInterceptor extends XwsSecurityInterceptor 
 	
 	@Override
 	protected void validateMessage(final SoapMessage message, final MessageContext context) throws WsSecurityValidationException {
+		final boolean loginTrackingEnabled = this.configService.getBooleanValue(ConfigValue.LoginTracking.LoginTrackingWebserviceEnabled);		
 
+		if(loginTrackingEnabled) {
+			validateMessageWithLoginTracking(message, context);
+		} else {
+			super.validateMessage(message, context);
+		}
+		
+	}
+	
+	private void validateMessageWithLoginTracking(final SoapMessage message, final MessageContext context) throws WsSecurityValidationException {
 		try {
 			super.validateMessage(message, context);
 		} catch(final WsSecurityValidationException e) {
@@ -68,7 +81,7 @@ public class LoginTrackingXwsSecurityInterceptor extends XwsSecurityInterceptor 
 			}
 
 			this.loginTrackService.trackLoginFailed(ip, usernameOrNull);
-			
+				
 			throw e;
 		}
 	
@@ -130,4 +143,8 @@ public class LoginTrackingXwsSecurityInterceptor extends XwsSecurityInterceptor 
 		this.loginTrackService = Objects.requireNonNull(service, "Login tracking service is null");
 	}
 
+	@Required
+	public final void setConfigService(final ConfigService service) {
+		this.configService = Objects.requireNonNull(service, "ConfigService is null");
+	}
 }

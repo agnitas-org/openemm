@@ -1,7 +1,7 @@
 (function() {
     var Def = AGN.Lib.WM.Definitions,
         Node = AGN.Lib.WM.Node,
-        EditorsHelper = AGN.Lib.WM.EditorsHelperNew,
+        EditorsHelper = AGN.Lib.WM.EditorsHelper,
         Dialogs = AGN.Lib.WM.Dialogs;
 
     var MailingEditorHelper = function(data, submitWorkflowForm) {
@@ -321,7 +321,7 @@
 
         this.createNewMailing = function(forwardName) {
             hasMailingIconMailingList({
-                iconId: this.node.id,
+                node: this.node,
                 successCallback: checkMailingListAndDoProcessForward,
                 forwardName: forwardName,
                 mailingEditorBase: this
@@ -346,8 +346,7 @@
                     additionalParams.push('workflowFollowUpParentMailing=' + self.node.data.baseMailingId);
                     additionalParams.push('workflowFollowUpDecisionCriterion=' + self.node.data.decisionCriterion);
                 }
-                EditorsHelper.processForward(forwardName, self.formNameJId + ' ' + self.selectNameJId, [],
-                    submitWorkflowForm, additionalParams.join(';'));
+                EditorsHelper.processForward(forwardName, self.formNameJId + ' ' + self.selectNameJId, submitWorkflowForm, additionalParams.join(';'));
             }
         };
 
@@ -359,9 +358,9 @@
                 additionalParams.push('workflowFollowUpDecisionCriterion=' + this.node.data.decisionCriterion);
             }
             if (additionalParams.length > 0) {
-                EditorsHelper.processForward(forwardName, formNameJId + ' ' + selectNameJId, [], submitWorkflowForm, additionalParams.join(';'));
+                EditorsHelper.processForward(forwardName, formNameJId + ' ' + selectNameJId, submitWorkflowForm, additionalParams.join(';'));
             } else {
-                EditorsHelper.processForward(forwardName, formNameJId + ' ' + selectNameJId, [], submitWorkflowForm);
+                EditorsHelper.processForward(forwardName, formNameJId + ' ' + selectNameJId, submitWorkflowForm);
             }
         };
 
@@ -701,67 +700,23 @@
 
         // Method get true if recipient icon has mailing list for mailing with iconId
         var hasMailingIconMailingList = function(options) {
-            var forIconId = options.iconId || EditorsHelper.getCurrentNodeId();
+            var node = options.node || EditorsHelper.curEditingNode;
             var successCallback = options.successCallback;
             var forwardName = options.forwardName;
 
-            var icons = campaignManager.getIconsForSubmission();
-            var iconMap = {};  // iconId -> icon
-            var connectionBackMap = {};  // target -> {source...}
-
-            icons.forEach(function(icon) {
-                iconMap[icon.id] = icon;
-
-                // Generate reversed connection map (target icon id to object having source icon ids as keys).
-                if (icon.connections) {
-                    icon.connections.forEach(function(connection) {
-                        var sourceId = icon.id;
-                        var targetId = connection.targetIconId;
-
-                        if (!connectionBackMap[targetId]) {
-                            connectionBackMap[targetId] = {};
-                        }
-
-                        connectionBackMap[targetId][sourceId] = true;
-                    });
-                }
-            });
-
-            function checkHasMailinglist(iconId) {
-                var previousIds = Object.keys(connectionBackMap[iconId] || {});
-                var visitedIds = {};
-
-                while (previousIds.length > 0) {
-                    var ids = previousIds;
-
-                    previousIds = [];
-
-                    for (var i = 0; i < ids.length; i++) {
-                        var id = ids[i];
-                        var icon = iconMap[id];
-
-                        if (icon.type === Def.NODE_TYPE_RECIPIENT) {
-                            return (icon.mailinglistId > 0);
-                        }
-
-                        visitedIds[id] = true;
-
-                        Object.keys(connectionBackMap[id] || {}).forEach(function(previousId) {
-                            if (!visitedIds[previousId]) {
-                                previousIds.push(previousId);
-                            }
-                        });
+            function checkHasMailinglist(node) {
+                var mailinglistId = 0;
+                EditorsHelper.curEditingNode = node;
+                EditorsHelper.forEachPreviousNode(function(prevNode) {
+                    if (prevNode.type === Def.NODE_TYPE_RECIPIENT) {
+                        mailinglistId = prevNode.data.mailinglistId;
+                        return false;
                     }
-                }
-
-                return false;
+                })
+                return mailinglistId > 0;
             }
 
-            successCallback({hasMailingList: checkHasMailinglist(forIconId)}, forwardName, options.mailingEditorBase);
-        };
-
-        this.closeTransferDialog = function() {
-            $(this.containerId + '-transfer-dialog').dialog('close');
+            successCallback({hasMailingList: checkHasMailinglist(node)}, forwardName, options.mailingEditorBase);
         };
 
         this.transferMailingData = function(checkedParams) {

@@ -12,6 +12,7 @@ package com.agnitas.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,6 +33,8 @@ import org.agnitas.dao.MailinglistApprovalDao;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
@@ -81,6 +84,8 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 	
 	/** Encryptor for passwords. */
 	protected PasswordEncryptor passwordEncryptor;
+	
+	private ConfigService configService;
 
     /**
      * Set DAO for accessing admin group data.
@@ -106,6 +111,11 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
     public void setMailinglistApprovalDao(MailinglistApprovalDao mailinglistApprovalDao) {
     	this.mailinglistApprovalDao = mailinglistApprovalDao;
     }
+    
+    @Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
 	
 	/**
 	 * Sets password encryptor.
@@ -683,7 +693,15 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 				readAdminEntry.setCreationDate(resultSet.getTimestamp("creation_date"));
 				readAdminEntry.setChangeDate(resultSet.getTimestamp("timestamp"));
 				readAdminEntry.setLoginDate(resultSet.getTimestamp("last_login_date"));
-				
+				boolean passwordExpired;
+				Timestamp pwdChangeDate = resultSet.getTimestamp("pwdchange_date");
+				int passwordInvalidAfter = configService.getIntegerValue(ConfigValue.UserPasswordFinalExpirationDays, resultSet.getInt("company_id"));
+	        	if (pwdChangeDate != null && passwordInvalidAfter > 0) {
+	        		passwordExpired = pwdChangeDate.before(DateUtilities.getDateOfDaysAgo(passwordInvalidAfter));
+	        	} else {
+	        		passwordExpired = false;
+	        	}
+	        	readAdminEntry.setPasswordExpired(passwordExpired);
 			return readAdminEntry;
 		}
 	}

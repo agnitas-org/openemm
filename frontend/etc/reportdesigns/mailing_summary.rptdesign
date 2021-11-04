@@ -32,6 +32,7 @@
     </simple-property-list>
     <property name="units">in</property>
     <method name="initialize"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
+importPackage(Packages.com.agnitas.reporting.birt.external.utils);
 importPackage(Packages.org.eclipse.birt.report.model.api.util);
 importPackage(org.eclipse.birt.chart.model.attribute.impl);
 importPackage(Packages.com.agnitas.messages);
@@ -47,10 +48,12 @@ if(reportContext.getOutputFormat() == "pdf" || reportContext.getOutputFormat() =
 	reportContext.setPersistentGlobalVariable("showGross", new Boolean(params["showGross"] == true));
 }
 
+var periodExists;
+
 if ((params["startDate"] != null) &amp;&amp; (params["startDate"] != "")) {
-	reportContext.setPersistentGlobalVariable("periodExists", "true");
+    periodExists = "true";
 } else {
-	reportContext.setPersistentGlobalVariable("periodExists", "false");
+    periodExists = "false";
 }
 
 selectedTargets = null;
@@ -115,13 +118,13 @@ if(reportContext.getOutputFormat() == "csv" ) {
 mailingSummaryDataDefinition = {};
 mailingSummaryDataDefinition[CommonKeys.RECIPIENTS_NUMBER] 			= {"position": 1, "color": "color-pure-blue"};
 mailingSummaryDataDefinition[CommonKeys.DELIVERED_EMAILS] 			= {"position": 2, "color": "color-blue"};
-mailingSummaryDataDefinition[CommonKeys.DELIVERED_EMAILS_DELIVERED] = {"position": 3, "color": "color-dark-blue"};
-mailingSummaryDataDefinition[CommonKeys.OPENERS_MEASURED] 			= {"position": 4, "color": "color-light-green", "translationKey": "report.opens.measured"};
-mailingSummaryDataDefinition[CommonKeys.OPENERS_INVISIBLE] 			= {"position": 5, "color": "color-middle-green", "translationKey": "report.opens.invisible"};
-mailingSummaryDataDefinition[CommonKeys.OPENERS_TOTAL] 				= {"position": 6, "color": "color-dark-green"};
-mailingSummaryDataDefinition[CommonKeys.OPENINGS_ANONYMOUS] 		= {"position": 7, "color": "color-light-grey", "hasNoPercentageRepresentation": true};
-mailingSummaryDataDefinition[CommonKeys.CLICKER] 					= {"position": 8, "color": "color-petrol"};
-mailingSummaryDataDefinition[CommonKeys.CLICKS_ANONYMOUS] 			= {"position": 9, "color": "color-light-grey", "hasNoPercentageRepresentation": true};
+mailingSummaryDataDefinition[CommonKeys.DELIVERED_EMAILS_DELIVERED] = {"position": 3, "color": "color-dark-blue", "successExpirationCheck": true};
+mailingSummaryDataDefinition[CommonKeys.OPENERS_MEASURED] 			= {"position": 4, "color": "color-light-green", "translationKey": "report.opens.measured", "onepixelExpirationCheck": true};
+mailingSummaryDataDefinition[CommonKeys.OPENERS_INVISIBLE] 			= {"position": 5, "color": "color-middle-green", "translationKey": "report.opens.invisible", "onepixelExpirationCheck": true};
+mailingSummaryDataDefinition[CommonKeys.OPENERS_TOTAL] 				= {"position": 6, "color": "color-dark-green", "onepixelExpirationCheck": true};
+mailingSummaryDataDefinition[CommonKeys.OPENINGS_ANONYMOUS] 		= {"position": 7, "color": "color-light-grey", "hasNoPercentageRepresentation": true, "onepixelExpirationCheck": true};
+mailingSummaryDataDefinition[CommonKeys.CLICKER] 					= {"position": 8, "color": "color-petrol", "onepixelExpirationCheck": true};
+mailingSummaryDataDefinition[CommonKeys.CLICKS_ANONYMOUS] 			= {"position": 9, "color": "color-light-grey", "hasNoPercentageRepresentation": true, "onepixelExpirationCheck": true};
 mailingSummaryDataDefinition[CommonKeys.OPT_OUTS] 					= {"position": 10, "color": "color-red"};
 mailingSummaryDataDefinition[CommonKeys.SOFT_BOUNCES] 				= {"position": 11, "color": "color-vivid-orange"};
 mailingSummaryDataDefinition[CommonKeys.HARD_BOUNCES] 				= {"position": 12, "color": "color-orange"};
@@ -183,7 +186,31 @@ function getTranslationByCategory(categoryKey) {
 	}
 	return getTranslation(categoryKey)
 };
+  
+if(periodExists == "true") {
+  successStatisticExpired = ExpirationUtils.isDateOlderThenDays(params["startDate"], params["successExpirePeriod"]);
+  onepixelStatisticExpired = ExpirationUtils.isDateOlderThenDays(params["startDate"], params["onepixelExpirePeriod"]);
+} else {
+  successStatisticExpired = false;
+  onepixelStatisticExpired = false;
+}
 
+function needSuccessExpirationCheck(categoryKey) {
+	return mailingSummaryDataDefinition[categoryKey] &amp;&amp; mailingSummaryDataDefinition[categoryKey]["successExpirationCheck"] == true;
+}
+
+function needOnepixelExpirationCheck(categoryKey) {
+	return mailingSummaryDataDefinition[categoryKey] &amp;&amp; mailingSummaryDataDefinition[categoryKey]["onepixelExpirationCheck"] == true;
+}
+
+function isCategoryDataExpired(categoryKey) {
+	return (successStatisticExpired &amp;&amp; needSuccessExpirationCheck(categoryKey)) || 
+		(onepixelStatisticExpired &amp;&amp; needOnepixelExpirationCheck(categoryKey));
+}
+
+function getMinimalExpirationPeriod() {
+	return params["successExpirePeriod"] < params["onepixelExpirePeriod"] ? params["successExpirePeriod"] : params["onepixelExpirePeriod"];
+}
 
 reportContext.setGlobalVariable("mailingSummaryDataDefinition", mailingSummaryDataDefinition);
 reportContext.setGlobalVariable("hasPercentageRepresentationFunction", hasPercentageRepresentation);
@@ -193,6 +220,7 @@ reportContext.setGlobalVariable("getColorByCategoryFunction", getColorByCategory
 reportContext.setGlobalVariable("getTranslationFunction", getTranslation);
 reportContext.setGlobalVariable("isDataDefinitionContainsTranslationFunction", isDataDefinitionContainsTranslation);
 reportContext.setGlobalVariable("getTranslationByCategoryFunction", getTranslationByCategory);
+reportContext.setGlobalVariable("isCategoryDataExpired", isCategoryDataExpired);
 
 ]]></method>
     <method name="afterRender"><![CDATA[mailingSummaryDataSet.dropTempTable(reportContext.getPersistentGlobalVariable("tempTableID"));
@@ -428,6 +456,36 @@ reportContext.setGlobalVariable("getTranslationByCategoryFunction", getTranslati
             <property name="paramType">simple</property>
             <property name="controlType">check-box</property>
             <structure name="format"/>
+        </scalar-parameter>
+        <scalar-parameter name="successExpirePeriod" id="1133">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">180</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="onepixelExpirePeriod" id="1134">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">1100</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
         </scalar-parameter>
     </parameters>
     <data-sources>
@@ -1359,7 +1417,7 @@ return false;]]></method>
                         <row id="448">
                             <cell id="449">
                                 <text-data id="450">
-                                    <expression name="valueExpr">(row["isMailTrackingAvailable"] ? getTranslation("report.numberRecipients.notracking") : getTranslation("report.numberRecipients"))</expression>
+                                    <expression name="valueExpr">(row["isMailTrackingAvailable"] &amp;&amp; successStatisticExpired != true ? getTranslation("report.numberRecipients.notracking") : getTranslation("report.numberRecipients"))</expression>
                                 </text-data>
                             </cell>
                             <cell id="452">
@@ -1367,7 +1425,7 @@ return false;]]></method>
                                 <property name="borderLeftStyle">solid</property>
                                 <property name="borderLeftWidth">medium</property>
                                 <text-data id="1131">
-                                    <expression name="valueExpr">row["numMails"] + (row["isMailTrackingAvailable"] ? " (" + row["anonymousUsers"] + ")" : '')</expression>
+                                    <expression name="valueExpr">row["numMails"] + (row["isMailTrackingAvailable"] &amp;&amp; successStatisticExpired != true ? " (" + row["anonymousUsers"] + ")" : '')</expression>
                                     <property name="contentType">html</property>
                                 </text-data>
                             </cell>
@@ -2100,8 +2158,10 @@ return false;]]></method>
   <Script>importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.com.agnitas.messages);
 importPackage(Packages.org.apache.commons.lang);
+importPackage(Packages.com.agnitas.messages);
 
-var	ignoredBarIndexes = {}
+var	ignoredBarIndexes = {};
+var naIndexes = {};
 
 /**
  * Called before generation of chart model to GeneratedChartState.
@@ -2115,6 +2175,8 @@ function beforeGeneration(chart, icsc){
 
 	// global functions
 	var hasPercentageRepresentation = externalScriptableContext.getGlobalVariable(&quot;hasPercentageRepresentationFunction&quot;);
+	
+	var isCategoryDataExpired = externalScriptableContext.getGlobalVariable(&quot;isCategoryDataExpired&quot;);
 
 	// axis
 	var xAxis = chart.getAxes().get(0);
@@ -2127,6 +2189,10 @@ function beforeGeneration(chart, icsc){
  		 // uses in beforeDrawDataPointLabel method
  		 if (!hasPercentageRepresentation(categoryKey)) {
  		 	ignoredBarIndexes[i] = 0;
+ 		 }
+ 		 
+ 		 if(isCategoryDataExpired(categoryKey)) {
+ 		 	naIndexes[i] = 0;
  		 }
 	}
 	chart.setSeriesThickness(30);
@@ -2155,7 +2221,10 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	var totalSent = parseInt(reportContext.getGlobalVariable(&quot;total_sent&quot;));
 
 	// code to display the percent value
-	if (!(dph.getIndex() in ignoredBarIndexes)) {
+	
+	if (dph.getIndex() in naIndexes) {
+		label.getCaption().setValue(I18nString.getLocaleString(&quot;NotAvailableShort&quot;, reportContext.getLocale()));
+	} else if (!(dph.getIndex() in ignoredBarIndexes)) {
 		currentValue = label.getCaption().getValue();
 		curValue = Packages.java.text.NumberFormat.getNumberInstance(getLocale()).parse(currentValue);
 		totalSentNumber = new Number(totalSent);
@@ -3883,8 +3952,11 @@ importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.java.util);
 importPackage(Packages.java.text);
 importPackage(Packages.org.apache.commons.lang);
+importPackage(Packages.com.agnitas.messages);
 
 var	ignoredBarIndexes = {}
+var naIndexes = {};
+
 
 /**
  * Called before generation of chart model to GeneratedChartState.
@@ -3898,6 +3970,8 @@ function beforeGeneration(chart, icsc) {
 
 	// global functions
 	var hasPercentageRepresentation = externalScriptableContext.getGlobalVariable(&quot;hasPercentageRepresentationFunction&quot;);
+	
+	var isCategoryDataExpired = externalScriptableContext.getGlobalVariable(&quot;isCategoryDataExpired&quot;);
 
 	var xAxis = chart.getAxes().get(0);
 	var xSeriesDefinition = xAxis.getSeriesDefinitions().get(0);
@@ -3910,6 +3984,10 @@ function beforeGeneration(chart, icsc) {
  		 // uses in beforeDrawDataPointLabel method
  		 if (!hasPercentageRepresentation(categoryKey)) {
  		 	ignoredBarIndexes[i] = 0;
+ 		 }
+ 		 
+ 		 if(isCategoryDataExpired(categoryKey)) {
+ 		 	naIndexes[i] = 0;
  		 }
 	}
 	chart.setSeriesThickness(30);
@@ -3940,7 +4018,9 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	var totalDelivered = parseInt(getGlobalVariable(&quot;total_delivered&quot;));
 
 	// code to display the percent value
-	if (!(dph.getIndex() in ignoredBarIndexes)) {
+	if (dph.getIndex() in naIndexes) {
+		label.getCaption().setValue(I18nString.getLocaleString(&quot;NotAvailableShort&quot;, reportContext.getLocale()));
+	} else if (!(dph.getIndex() in ignoredBarIndexes)) {
 		currentValue = label.getCaption().getValue();
 		totalSentNumber = new Number(totalSent);
 		totalDeliveredNumber = new Number(totalDelivered);
@@ -5402,7 +5482,8 @@ row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
                                                     <structure>
                                                         <property name="format">all</property>
                                                         <expression name="valueExpr" type="javascript">data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] >= 0 &amp;&amp;
-data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] != null</expression>
+data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] != null &amp;&amp;
+isCategoryDataExpired(data["categoryKey"]) == false</expression>
                                                     </structure>
                                                 </list-property>
                                                 <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
@@ -5432,7 +5513,8 @@ data["index"] != CommonKeys.REVENUE_INDEX</expression>
                                                         <property name="format">all</property>
                                                         <expression name="valueExpr" type="javascript">data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] &lt; 0 ||
 data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] == null ||
-data["index"] == CommonKeys.REVENUE_INDEX</expression>
+data["index"] == CommonKeys.REVENUE_INDEX ||
+isCategoryDataExpired(data["categoryKey"]) == true</expression>
                                                     </structure>
                                                 </list-property>
                                                 <property name="resultSetColumn">value_CategoryGroup/category_TargetgroupGroup/targetgroup</property>
@@ -5473,7 +5555,8 @@ data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] != null</expre
                                                     <structure>
                                                         <property name="format">all</property>
                                                         <expression name="valueExpr" type="javascript">data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] &lt; 0 ||
-data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] == null</expression>
+data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] == null ||
+isCategoryDataExpired(data["categoryKey"]) == true</expression>
                                                     </structure>
                                                 </list-property>
                                                 <property name="resultSetColumn">rate_CategoryGroup/category_TargetgroupGroup/targetgroup</property>
@@ -5649,6 +5732,11 @@ hasPercentageRepresentation(dimension["CategoryGroup"]["category"]["categoryKey"
                                 <expression name="expression" type="javascript">data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"]/100</expression>
                                 <property name="dataType">float</property>
                             </structure>
+                            <structure>
+                                <property name="name">categoryKey</property>
+                                <expression name="expression" type="javascript">dimension["CategoryGroup"]["category"]["categoryKey"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
                         </list-property>
                         <property name="style">table table-striped</property>
                     </extended-item>
@@ -5668,7 +5756,8 @@ hasPercentageRepresentation(dimension["CategoryGroup"]["category"]["categoryKey"
                                                     <structure>
                                                         <property name="format">all</property>
                                                         <expression name="valueExpr" type="javascript">data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] >= 0 &amp;&amp;
-data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] != null</expression>
+data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] != null &amp;&amp;
+isCategoryDataExpired(data["categoryKey"]) == false</expression>
                                                     </structure>
                                                 </list-property>
                                                 <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
@@ -5698,7 +5787,8 @@ data["index"] != CommonKeys.REVENUE_INDEX</expression>
                                                         <property name="format">all</property>
                                                         <expression name="valueExpr" type="javascript">data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] &lt; 0 ||
 data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] == null ||
-data["index"] == CommonKeys.REVENUE_INDEX</expression>
+data["index"] == CommonKeys.REVENUE_INDEX ||
+isCategoryDataExpired(data["categoryKey"]) == true</expression>
                                                     </structure>
                                                 </list-property>
                                                 <property name="resultSetColumn">value_CategoryGroup/category_TargetgroupGroup/targetgroup</property>
@@ -5739,7 +5829,8 @@ data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] != null</expre
                                                     <structure>
                                                         <property name="format">all</property>
                                                         <expression name="valueExpr" type="javascript">data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] &lt; 0 ||
-data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] == null</expression>
+data["value_CategoryGroup/category_TargetgroupGroup/targetgroup"] == null ||
+isCategoryDataExpired(data["categoryKey"]) == true</expression>
                                                     </structure>
                                                 </list-property>
                                                 <property name="resultSetColumn">deliveredRate_Binding</property>
@@ -5936,26 +6027,23 @@ dimension["CategoryGroup"]["category"]["category_index"] == CommonKeys.CLICKS_AN
                                 <expression name="filterExpr" type="javascript">dimension["CategoryGroup"]["category"]["category_index"] &lt; CommonKeys.REVENUE_INDEX &amp;&amp; 
 hasPercentageRepresentation(dimension["CategoryGroup"]["category"]["categoryKey"])</expression>
                             </structure>
+                            <structure>
+                                <property name="name">categoryKey</property>
+                                <expression name="expression" type="javascript">dimension["CategoryGroup"]["category"]["categoryKey"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
                         </list-property>
                         <property name="style">table table-striped</property>
                     </extended-item>
                 </cell>
             </row>
-            <row id="1082">
+            <row id="974">
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("periodExists") == "false"</expression>
+                        <expression name="valueExpr" type="javascript">onepixelStatisticExpired == true</expression>
                     </structure>
                 </list-property>
-                <cell id="1083">
-                    <property name="style">full-width</property>
-                </cell>
-                <cell id="1084">
-                    <property name="style">full-width</property>
-                </cell>
-            </row>
-            <row id="974">
                 <cell id="975">
                     <property name="style">half-width</property>
                     <grid id="977">
@@ -7809,12 +7897,28 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                         <property name="aggregationOnRow">CategoryGroup/category</property>
                                         <property name="aggregationOnColumn">TargetgroupGroup/targetgroup</property>
                                         <property name="content">
+                                            <text-data id="1142">
+                                                <list-property name="visibility">
+                                                    <structure>
+                                                        <property name="format">all</property>
+                                                        <expression name="valueExpr" type="javascript">onepixelStatisticExpired != true</expression>
+                                                    </structure>
+                                                </list-property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
                                             <data id="804">
                                                 <property name="marginLeft">0px</property>
                                                 <structure name="numberFormat">
                                                     <property name="category">Currency</property>
                                                     <property name="pattern">#,##0</property>
                                                 </structure>
+                                                <list-property name="visibility">
+                                                    <structure>
+                                                        <property name="format">all</property>
+                                                        <expression name="valueExpr" type="javascript">onepixelStatisticExpired == true</expression>
+                                                    </structure>
+                                                </list-property>
                                                 <property name="resultSetColumn">value_CategoryGroup/category_TargetgroupGroup/targetgroup</property>
                                             </data>
                                         </property>
@@ -7845,6 +7949,12 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                                     <property name="category">Custom</property>
                                                     <property name="pattern">(0.0%)</property>
                                                 </structure>
+                                                <list-property name="visibility">
+                                                    <structure>
+                                                        <property name="format">all</property>
+                                                        <expression name="valueExpr" type="javascript">onepixelStatisticExpired == true</expression>
+                                                    </structure>
+                                                </list-property>
                                                 <property name="resultSetColumn">rate_CategoryGroup/category_TargetgroupGroup/targetgroup_new</property>
                                             </data>
                                         </property>
@@ -8050,7 +8160,23 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                         <property name="aggregationOnRow">CategoryGroup/category</property>
                                         <property name="aggregationOnColumn">TargetgroupGroup/targetgroup</property>
                                         <property name="content">
+                                            <text-data id="1143">
+                                                <list-property name="visibility">
+                                                    <structure>
+                                                        <property name="format">all</property>
+                                                        <expression name="valueExpr" type="javascript">onepixelStatisticExpired != true</expression>
+                                                    </structure>
+                                                </list-property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
                                             <data id="1045">
+                                                <list-property name="visibility">
+                                                    <structure>
+                                                        <property name="format">all</property>
+                                                        <expression name="valueExpr" type="javascript">onepixelStatisticExpired == true</expression>
+                                                    </structure>
+                                                </list-property>
                                                 <property name="resultSetColumn">value_string_CategoryGroup/category_TargetgroupGroup/targetgroup</property>
                                             </data>
                                         </property>
@@ -8283,6 +8409,17 @@ dimension["CategoryGroup"]["category"]["category_index"] &lt;= CommonKeys.ACTIVI
                             </structure>
                         </list-property>
                         <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("noTrackingData", reportContext.getLocale())</expression>
+                    </text-data>
+                    <text-data id="1141">
+                        <property name="style">footnote</property>
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">successStatisticExpired != true &amp;&amp; onepixelStatisticExpired != true</expression>
+                            </structure>
+                        </list-property>
+                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.nodata.hint", reportContext.getLocale(), getMinimalExpirationPeriod())</expression>
+                        <property name="contentType">html</property>
                     </text-data>
                 </cell>
             </row>

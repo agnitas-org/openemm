@@ -12,9 +12,9 @@ package com.agnitas.web;
 
 import java.util.concurrent.ExecutorService;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 import org.apache.log4j.Logger;
 import org.springframework.web.context.WebApplicationContext;

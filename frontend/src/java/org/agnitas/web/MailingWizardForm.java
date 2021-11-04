@@ -16,9 +16,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 
-import javax.mail.internet.InternetAddress;
-import javax.servlet.http.HttpServletRequest;
-
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -38,6 +35,9 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+
+import jakarta.mail.internet.InternetAddress;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class MailingWizardForm extends StrutsFormBase {
 	
@@ -749,5 +749,15 @@ public class MailingWizardForm extends StrutsFormBase {
 
     public void setNewModuleTargetID(int newModuleTargetID) {
         this.newModuleTargetID = newModuleTargetID;
+    }
+
+    private int viewTargetId;
+
+    public int getViewTargetId() {
+        return viewTargetId;
+    }
+
+    public void setViewTargetId(int viewTargetId) {
+        this.viewTargetId = viewTargetId;
     }
 }

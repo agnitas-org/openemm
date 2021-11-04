@@ -15,7 +15,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;

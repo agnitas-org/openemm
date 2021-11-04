@@ -9,7 +9,7 @@
 <c:set var="ACTION_VIEW" value="<%= StrutsActionBase.ACTION_VIEW %>" scope="request"/>
 
 <emm:CheckLogon/>
-<emm:Permission token="campaign.autoopt"/>
+<emm:Permission token="campaign.change"/>
 
 <c:set var="agnNavigationKey" 		value="Campaign" 									scope="request"/>
 <c:set var="agnNavHrefAppend" 		value="&campaignID=${optimizationForm.campaignID}"	scope="request"/>

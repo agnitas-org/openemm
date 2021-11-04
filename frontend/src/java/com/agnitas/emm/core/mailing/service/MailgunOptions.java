@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.mail.internet.InternetAddress;
+import jakarta.mail.internet.InternetAddress;
 
 import org.agnitas.backend.Mailgun;
 import org.agnitas.util.AgnUtils;
@@ -50,6 +50,18 @@ public final class MailgunOptions {
 		this.userStatusList = new ArrayList<>();
 		this.overwriteMap = new HashMap<>();
 		this.staticMap = new HashMap<>();
+	}
+
+	public static MailgunOptions empty() {
+		return new MailgunOptions();
+	}
+	
+	public static MailgunOptions from(Map<String, String> overwrite) {
+		final MailgunOptions mo = MailgunOptions.empty();
+		
+		mo.options.putAll(overwrite);
+
+		return mo;
 	}
 
 	/**

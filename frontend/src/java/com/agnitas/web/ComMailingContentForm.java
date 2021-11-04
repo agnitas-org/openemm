@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.impl.DynamicTagContentImpl;
@@ -94,8 +94,12 @@ public class ComMailingContentForm extends StrutsFormBase {
      * Is mailing not active {@link MaildropService#isActiveMailing(int, int)}
      * or user has permission {@link Permission#MAILING_CONTENT_CHANGE_ALWAYS}
      */
+    @Deprecated // Replace by request attribute
     private boolean mailingEditable = false;
+    @Deprecated // Replace by request attribute
     private boolean mailingExclusiveLockingAcquired = false;
+    @Deprecated // Replace by request attribute
+    private String anotherLockingUserName;
 
     private List<String> dynTagNames = new ArrayList<>();
 	
@@ -626,18 +630,22 @@ public class ComMailingContentForm extends StrutsFormBase {
         this.isMailingUndoAvailable = isMailingUndoAvailable;
     }
 
+    @Deprecated // Replace by request attribute
     public boolean isMailingEditable() {
         return mailingEditable;
     }
 
+    @Deprecated // Replace by request attribute
     public void setMailingEditable(boolean mailingEditable) {
         this.mailingEditable = mailingEditable;
     }
 
+    @Deprecated // Replace by request attribute
     public boolean isMailingExclusiveLockingAcquired() {
         return mailingExclusiveLockingAcquired;
     }
 
+    @Deprecated // Replace by request attribute
     public void setMailingExclusiveLockingAcquired(boolean mailingExclusiveLockingAcquired) {
         this.mailingExclusiveLockingAcquired = mailingExclusiveLockingAcquired;
     }
@@ -709,4 +717,14 @@ public class ComMailingContentForm extends StrutsFormBase {
 	public Map<String, String[]> getVariabletypes() {
 		return variabletypes;
 	}
+
+    @Deprecated // Replace by request attribute
+    public String getAnotherLockingUserName() {
+        return anotherLockingUserName;
+    }
+
+    @Deprecated // Replace by request attribute
+    public void setAnotherLockingUserName(String anotherLockingUserName) {
+        this.anotherLockingUserName = anotherLockingUserName;
+    }
 }

@@ -1,5 +1,4 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.ComTargetAction" %>
 <%@ page import="org.agnitas.target.ChainOperator" %>
 <%@ page import="org.agnitas.target.ConditionalOperator" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>

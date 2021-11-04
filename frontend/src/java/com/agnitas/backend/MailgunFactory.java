@@ -20,7 +20,7 @@ import org.apache.catalina.core.ApplicationContext;
  */
 public interface MailgunFactory {
 
-	/** 
+	/**
 	 * Creates a new {@link Mailgun}..
 	 * The {@link Mailgun} instance is not configured, but could be taken from a cache.
 	 * 

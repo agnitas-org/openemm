@@ -11,31 +11,19 @@
 package com.agnitas.emm.core.target.eql.emm.querybuilder;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.impl.ProfileFieldImpl;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.ClickedInMailingRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.ContainsRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.DateRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.DefaultRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.EmptyRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.GenericRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.LikeRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.ModRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.NotContainsRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.NotEmptyRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.NotLikeRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.NotStartsWithRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.OpenedMailingRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.ReceivedMailingRuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.RuleConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.StartsWithRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.*;
 import com.agnitas.emm.core.target.eql.emm.resolver.EmmProfileFieldResolverFactory;
 
 public class QueryBuilderConfiguration {
@@ -56,11 +44,11 @@ public class QueryBuilderConfiguration {
     	addIndependentField("Received mailing", "VARCHAR", "target.rule.mailingReceived");
 		addIndependentField("Opened mailing", "VARCHAR", "target.rule.mailingOpened");
 		addIndependentField("Clicked in mailing", "VARCHAR", "target.rule.mailingClicked");
-		
+
 		filterConvertersByName.put("received mailing", new ReceivedMailingRuleConverter());
 		filterConvertersByName.put("opened mailing", new OpenedMailingRuleConverter());
 		filterConvertersByName.put("clicked in mailing", new ClickedInMailingRuleConverter());
-		
+
 		filterConvertersByOperator.put("mod", new ModRuleConverter());
 		filterConvertersByOperator.put("like", new LikeRuleConverter());
 		filterConvertersByOperator.put("not_like", new NotLikeRuleConverter());
@@ -70,9 +58,9 @@ public class QueryBuilderConfiguration {
 		filterConvertersByOperator.put("not_begins_with", new NotStartsWithRuleConverter());
 		filterConvertersByOperator.put("is_empty", new EmptyRuleConverter());
 		filterConvertersByOperator.put("is_not_empty", new NotEmptyRuleConverter());
-		
+
 		filterConvertersByType.put("date", new DateRuleConverter());
-		
+
 		defaultRuleConverter = new DefaultRuleConverter();
     }
 
@@ -80,14 +68,15 @@ public class QueryBuilderConfiguration {
         return independentFields;
     }
 
-    public List<ProfileField> getIndependentFields(final boolean mailTrackingAvailable) {
-    	final List<ProfileField> fields = getIndependentFields();
+    public List<ProfileField> getIndependentFieldsExcluding(TargetRuleKey[] excludedRulesKeys) {
+        final List<ProfileField> fields = getIndependentFields();
 
-    	if(mailTrackingAvailable) {
-    		return new ArrayList<>(fields);
-		}
+        if(ArrayUtils.isEmpty(excludedRulesKeys)) {
+            return new ArrayList<>(fields);
+        }
 
-    	return fields.stream().filter(pf -> !"Received mailing".equals(pf.getShortname())).collect(Collectors.toList());
+        Collection<String> excludedRulesNames = Stream.of(excludedRulesKeys).map(TargetRuleKey::getShortname).collect(Collectors.toList());
+        return fields.stream().filter(pf -> !excludedRulesNames.contains(pf.getShortname())).collect(Collectors.toList());
     }
 
 	protected void addIndependentField(String shortname, String dataType, String label) {

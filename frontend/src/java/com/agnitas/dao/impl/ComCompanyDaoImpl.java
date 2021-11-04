@@ -10,6 +10,12 @@
 
 package com.agnitas.dao.impl;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -36,10 +42,13 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.service.UserFormExporter;
+import org.agnitas.service.UserFormImporter;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.Tuple;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -54,7 +63,6 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.company.rowmapper.CompanyEntryRowMapper;
 import com.agnitas.emm.core.recipient.dao.BindingHistoryDao;
@@ -66,8 +74,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	/** Configuration service. */
 	private ConfigService configService;
 	
-	private EmmActionService emmActionService;
-	
 	/** Mailing DAO. */
 	private ComMailingDao mailingDao;
 
@@ -76,6 +82,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	private CopyMailingService copyMailingService;
 	
 	private BindingHistoryDao bindingHistoryDao;
+	
+	private UserFormExporter userFormExporter;
+	
+	private UserFormImporter userFormImporter;
 	
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
@@ -95,13 +105,18 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 
 	@Required
-	public void setEmmActionService(EmmActionService emmActionService) {
-		this.emmActionService = emmActionService;
+	public void setCopyMailingService(CopyMailingService copyMailingService) {
+		this.copyMailingService = copyMailingService;
 	}
 
 	@Required
-	public void setCopyMailingService(CopyMailingService copyMailingService) {
-		this.copyMailingService = copyMailingService;
+	public void setUserFormExporter(UserFormExporter userFormExporter) {
+		this.userFormExporter = userFormExporter;
+	}
+
+	@Required
+	public void setUserFormImporter(UserFormImporter userFormImporter) {
+		this.userFormImporter = userFormImporter;
 	}
 
 	@Required
@@ -132,6 +147,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	public static final String STANDARD_FIELD_LATEST_DATASOURCE_ID = "latest_datasource_id";
 	public static final String STANDARD_FIELD_DO_NOT_TRACK = "sys_tracking_veto";
 	public static final String STANDARD_FIELD_CLEANED_DATE = "cleaned_date";
+	public static final String STANDARD_FIELD_ENCRYPTED_SENDING = "sys_encrypted_sending";
 
 	private static final String TABLESPACE_CUSTOMER_HISTORY = "customer_history";
 	private static final String TABLESPACE_CUSTOMER_HISTORY_INDEX = "index_customer_history";
@@ -164,7 +180,8 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		STANDARD_FIELD_LATEST_DATASOURCE_ID,
 		STANDARD_FIELD_DO_NOT_TRACK,
 		STANDARD_FIELD_CLEANED_DATE,
-		STANDARD_FIELD_BOUNCELOAD};
+		STANDARD_FIELD_BOUNCELOAD,
+		STANDARD_FIELD_ENCRYPTED_SENDING};
 	
 	/**
 	 * Socialmedia fields to be ignored in limit checks for profile field counts until they are removed entirely in all client tables
@@ -616,17 +633,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					nextRangeStart += CLICK_STAT_RANGES[i];
 				}
 
-				// create statistic table for mobile devices.
-				String createCustHistoryTblSql = "CREATE TABLE cust_" +newCompanyId+ "_devicehistory_tbl (device_id NUMBER, customer_id NUMBER, mailing_id NUMBER, creation_date TIMESTAMP)";
-				String createCustHistoryTblSeq = "CREATE SEQUENCE cust_"+ newCompanyId +"_devicehistory_seq START WITH 1 INCREMENT BY 1";
-				try {
-					executeWithRetry(logger, 0, 3, 120, createCustHistoryTblSql);
-					executeWithRetry(logger, 0, 3, 120, createCustHistoryTblSeq);
-				} catch (Exception e) {
-					logger.error("Error creating devicehistory_tbl or sequence: " + e);
-					updateCompanyStatus(newCompanyId, CompanyStatus.LOCKED);
-				}
-
 				// Copy mailinglist
 				int mailingListToCopyID = selectIntWithDefaultValue(logger, "SELECT MIN(mailinglist_id) FROM mailinglist_tbl WHERE company_id = 1 AND deleted = 0", 0);
 				if (mailingListToCopyID > 0) {
@@ -674,14 +680,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					nextRangeStart += CLICK_STAT_RANGES[i];
 				}
 				
-				String createCustHistoryTblSql = "CREATE TABLE cust_" + newCompanyId + "_devicehistory_tbl (device_id INT(11) PRIMARY KEY AUTO_INCREMENT NOT NULL, customer_id INTEGER UNSIGNED, mailing_id INT(11), creation_date TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
-				try {
-					executeWithRetry(logger, 0, 3, 120, createCustHistoryTblSql);
-				} catch (Exception e) {
-					logger.error("Error creating devicehistory_tbl: " + e);
-					updateCompanyStatus(newCompanyId, CompanyStatus.LOCKED);
-				}
-								
 				// Copy mailinglist
 				int mailingListToCopyID = selectIntWithDefaultValue(logger, "SELECT MIN(mailinglist_id) FROM mailinglist_tbl WHERE company_id = 1 AND deleted = 0", 0);
 				if (mailingListToCopyID > 0) {
@@ -724,78 +722,30 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 			// All following actions do not use the db transaction, so it must be closed/commited in forehand to prevent deadlocks
 			
 			targetDao.createSampleTargetGroups(newCompanyId);
+			
+			String rdirDomain = getRedirectDomain(newCompanyId);
 
-			copySampleMailings(newCompanyId, mailinglistID, getRedirectDomain(newCompanyId));
+			copySampleMailings(newCompanyId, mailinglistID, rdirDomain);
 
 			// Copy sample form templates (some form actions need the sample mailings)
 			for (int sampleFormID : getSampleFormIDs()) {
+				File userFormTempFile = File.createTempFile("UserFormTempFile_", ".json");
 				try {
-					// Copy start action for this form
-					int copiedStartActionID = 0;
-					int startActionID = selectInt(logger, "SELECT startaction_id FROM userform_tbl WHERE form_id = ?", sampleFormID);
-					if (startActionID > 0) {
-						Map<String,Object> actionResult = selectSingleRow(logger, "SELECT shortname, description, action_type FROM rdir_action_tbl WHERE action_id = ?", startActionID);
-						String shortname = (String) actionResult.get("shortname");
-						String description = (String) actionResult.get("description");
-						int actiontype = ((Number) actionResult.get("action_type")).intValue();
-						
-						if (isOracleDB()) {
-							copiedStartActionID = selectInt(logger, "SELECT rdir_action_tbl_seq.NEXTVAL FROM DUAL");
-							update(logger, "INSERT INTO rdir_action_tbl (action_id, company_id, shortname, description, action_type) VALUES  (?, ?, ?, ?, ?)", copiedStartActionID, newCompanyId, shortname, description, actiontype);
-						} else {
-							copiedStartActionID = insertIntoAutoincrementMysqlTable(logger, "action_id", "INSERT INTO rdir_action_tbl (company_id, shortname, description, action_type) VALUES (?, ?, ?, ?)", newCompanyId, shortname, description, actiontype);
-						}
-						
-						// Copy operations
-						emmActionService.copyActionOperations(1, startActionID, newCompanyId, copiedStartActionID);
-					}
-	
-					// Copy end action for this form
-					int copiedEndActionID = 0;
-					int endActionID = selectInt(logger, "SELECT endaction_id FROM userform_tbl WHERE form_id = ?", sampleFormID);
-					if (endActionID > 0) {
-						Map<String,Object> actionResult = selectSingleRow(logger, "SELECT shortname, description, action_type FROM rdir_action_tbl WHERE action_id = ?", endActionID);
-						String shortname = (String) actionResult.get("shortname");
-						String description = (String) actionResult.get("description");
-						int actiontype = ((Number) actionResult.get("action_type")).intValue();
-						
-						if (isOracleDB()) {
-							copiedEndActionID = selectInt(logger, "SELECT rdir_action_tbl_seq.NEXTVAL FROM DUAL");
-							update(logger, "INSERT INTO rdir_action_tbl (action_id, company_id, shortname, description, action_type) VALUES (?, ?, ?, ?, ?)", copiedEndActionID, newCompanyId, shortname, description, actiontype);
-						} else {
-							copiedEndActionID = insertIntoAutoincrementMysqlTable(logger, "action_id", "INSERT INTO rdir_action_tbl (company_id, shortname, description, action_type) VALUES (?, ?, ?, ?)", newCompanyId, shortname, description, actiontype);
-						}
-						
-						// Copy operations
-						emmActionService.copyActionOperations(1, endActionID, newCompanyId, copiedEndActionID);
+					try (OutputStream userFormOutputStream = new FileOutputStream(userFormTempFile)) {
+						userFormExporter.exportUserFormToJson(1, sampleFormID, userFormOutputStream);
 					}
 					
-					// Copy sample form
-					Map<String,Object> formResult = selectSingleRow(logger, "SELECT formname, description, startaction_id, endaction_id, success_template, error_template FROM userform_tbl WHERE form_id = ?", sampleFormID);
-					String formname = (String) formResult.get("formname");
-					String description = (String) formResult.get("description");
-					String successtemplate = (String) formResult.get("success_template");
-					if (successtemplate != null) {
-						successtemplate = successtemplate.replace("<CID>", Integer.toString(newCompanyId)).replace("<cid>", Integer.toString(newCompanyId));
-						successtemplate = successtemplate.replace("[Company_id]", Integer.toString(newCompanyId)).replace("[company_id]", Integer.toString(newCompanyId));
-						successtemplate = successtemplate.replace("<MLID>", Integer.toString(mailinglistID)).replace("<mlid>", Integer.toString(mailinglistID));
-						successtemplate = successtemplate.replace("[Mailinglist_id]", Integer.toString(mailinglistID)).replace("[mailinglist_id]", Integer.toString(mailinglistID));
-					}
-					String errortemplate = (String) formResult.get("error_template");
-					if (errortemplate != null) {
-						errortemplate = errortemplate.replace("<CID>", Integer.toString(newCompanyId)).replace("<cid>", Integer.toString(newCompanyId));
-						errortemplate = errortemplate.replace("[Company_id]", Integer.toString(newCompanyId)).replace("[company_id]", Integer.toString(newCompanyId));
-						errortemplate = errortemplate.replace("<MLID>", Integer.toString(mailinglistID)).replace("<mlid>", Integer.toString(mailinglistID));
-						errortemplate = errortemplate.replace("[Mailinglist_id]", Integer.toString(mailinglistID)).replace("[mailinglist_id]", Integer.toString(mailinglistID));
-					}
+					replaceTextInFile(userFormTempFile, newCompanyId, mailinglistID, rdirDomain);
 					
-					if (isOracleDB()) {
-						update(logger, "INSERT INTO userform_tbl (form_id, company_id, formname, description, startaction_id, endaction_id, success_template, error_template) VALUES (userform_tbl_seq.NEXTVAL, ?, ?, ?, ?, ?, ?, ?)", newCompanyId, formname, description, copiedStartActionID, copiedEndActionID, successtemplate, errortemplate);
-					} else {
-						insertIntoAutoincrementMysqlTable(logger, "form_id", "INSERT INTO userform_tbl (company_id, formname, description, startaction_id, endaction_id, success_template, error_template) VALUES (?, ?, ?, ?, ?, ?, ?)", newCompanyId, formname, description, copiedStartActionID, copiedEndActionID, successtemplate, errortemplate);
+					try (InputStream userFormInputStream = new FileInputStream(userFormTempFile)) {
+						userFormImporter.importUserForm(newCompanyId, userFormInputStream, null);
 					}
 				} catch (Exception e) {
-					logger.error("Could not copy user form (" + sampleFormID + ") for new company: " + e.getMessage(), e);
+					logger.error("Could not copy user form (" + sampleFormID + ") for new company (" + newCompanyId + "): " + e.getMessage(), e);
+				} finally {
+					if (userFormTempFile.exists()) {
+						userFormTempFile.delete();
+					}
 				}
 			}
 
@@ -805,6 +755,22 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 			updateCompanyStatus(newCompanyId, CompanyStatus.LOCKED);
 			return false;
 		}
+	}
+
+	private void replaceTextInFile(File userFormTempFile, int companyID, int mailinglistID, String rdirDomain) throws IOException {
+		String content = FileUtils.readFileToString(userFormTempFile, "UTF-8");
+		
+		String cid = Integer.toString(companyID);
+		content = StringUtils.replaceEach(content, new String[]{"<CID>", "<cid>", "[COMPANY_ID]", "[company_id]", "[Company_ID]"},
+					new String[]{cid, cid, cid, cid, cid});
+
+		String mlid = Integer.toString(mailinglistID);
+		content = StringUtils.replaceEach(content, new String[]{"<MLID>", "<mlid>", "[MAILINGLIST_ID]", "[mailinglist_id]", "[Mailinglist_ID]"},
+					new String[]{mlid, mlid, mlid, mlid, mlid});
+
+		content = content.replace("<rdir-domain>", StringUtils.defaultIfBlank(rdirDomain, "RDIR-Domain"));
+		
+		FileUtils.writeStringToFile(userFormTempFile, content, "UTF-8");
 	}
 
 	@Override
@@ -910,6 +876,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	@Override
 	public boolean initCustomerTables(int newCompanyId) throws SQLException {
 		try {
+			boolean createPreventConstraint = true;
+			if (!configService.getBooleanValue(ConfigValue.UsePreventTableDropConstraint, newCompanyId)) {
+				createPreventConstraint = false;
+			}
 			String sql;
 			if (isOracleDB()) {
 				String tablespaceClauseCustomer = "";
@@ -948,7 +918,8 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					+ STANDARD_FIELD_LASTSEND_DATE + " DATE, "
 					+ STANDARD_FIELD_LATEST_DATASOURCE_ID + " NUMBER, "
 					+ STANDARD_FIELD_DO_NOT_TRACK + " NUMBER(1), "
-					+ STANDARD_FIELD_CLEANED_DATE + " DATE"
+					+ STANDARD_FIELD_CLEANED_DATE + " DATE, "
+					+ STANDARD_FIELD_ENCRYPTED_SENDING + " NUMBER(1) DEFAULT 1"
 					+ ")"
 					+ tablespaceClauseCustomer;
 				executeWithRetry(logger, 0, 3, 120, sql);
@@ -964,8 +935,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "ALTER TABLE customer_" + newCompanyId + "_tbl ADD CONSTRAINT cust" + newCompanyId + "$mailtype$nn CHECK (mailtype IS NOT NULL)";
 				executeWithRetry(logger, 0, 3, 120, sql);
-				sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + newCompanyId + "_tbl FOREIGN KEY (customer_id) REFERENCES customer_" + newCompanyId + "_tbl (customer_id)";
-				executeWithRetry(logger, 0, 3, 120, sql);
+				if (createPreventConstraint) {
+					sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + newCompanyId + "_tbl FOREIGN KEY (customer_id) REFERENCES customer_" + newCompanyId + "_tbl (customer_id)";
+					executeWithRetry(logger, 0, 3, 120, sql);
+				}
 				sql = "CREATE INDEX cust" + newCompanyId + "$email$idx ON customer_" + newCompanyId + "_tbl (email)" + tablespaceClauseCustomerBindIndex;
 				executeWithRetry(logger, 0, 3, 120, sql);
 				
@@ -995,8 +968,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "ALTER TABLE customer_" + newCompanyId + "_binding_tbl ADD CONSTRAINT cust" + newCompanyId + "b$ustat$nn CHECK (user_status IS NOT NULL)";
 				executeWithRetry(logger, 0, 3, 120, sql);
-				sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + newCompanyId + "_binding_tbl FOREIGN KEY (customer_id, mailinglist_id, mediatype) REFERENCES customer_" + newCompanyId + "_binding_tbl (customer_id, mailinglist_id, mediatype)";
-				executeWithRetry(logger, 0, 3, 120, sql);
+				if (createPreventConstraint) {
+					sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + newCompanyId + "_binding_tbl FOREIGN KEY (customer_id, mailinglist_id, mediatype) REFERENCES customer_" + newCompanyId + "_binding_tbl (customer_id, mailinglist_id, mediatype)";
+					executeWithRetry(logger, 0, 3, 120, sql);
+				}
 				sql = "CREATE INDEX cust" + newCompanyId + "b$tmst$idx ON customer_" + newCompanyId + "_binding_tbl (timestamp)" + tablespaceClauseCustomerBindIndex;
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "CREATE INDEX cust" + newCompanyId + "b$cuid_utype_mlid$idx ON customer_" + newCompanyId + "_binding_tbl (customer_id, user_type, mailinglist_id)" + tablespaceClauseCustomerBindIndex;
@@ -1015,8 +990,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	        	if (!DbUtilities.checkIfTableExists(getDataSource(), "cust" + newCompanyId + "_ban_tbl")) {
 	        		sql = "CREATE TABLE cust" + newCompanyId + "_ban_tbl (email VARCHAR2(150) PRIMARY KEY, timestamp DATE DEFAULT SYSDATE, reason VARCHAR2(500))" + tablespaceClauseCustomerTable;
 	        		executeWithRetry(logger, 0, 3, 120, sql);
-	        		sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$cust" + newCompanyId + "_ban_tbl FOREIGN KEY (text) REFERENCES cust" + newCompanyId + "_ban_tbl (email)";
-	        		executeWithRetry(logger, 0, 3, 120, sql);
+	        		if (createPreventConstraint) {
+	        			sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$cust" + newCompanyId + "_ban_tbl FOREIGN KEY (text) REFERENCES cust" + newCompanyId + "_ban_tbl (email)";
+	        			executeWithRetry(logger, 0, 3, 120, sql);
+	        		}
 	        	}
 			} else {
 				// Watch out: Mysql does not support check constraints
@@ -1037,11 +1014,14 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					+ STANDARD_FIELD_LASTSEND_DATE + " TIMESTAMP NULL, "
 					+ STANDARD_FIELD_LATEST_DATASOURCE_ID + " INT(11), "
 					+ STANDARD_FIELD_DO_NOT_TRACK + " INT(1), "
-					+ STANDARD_FIELD_CLEANED_DATE + " TIMESTAMP NULL "
+					+ STANDARD_FIELD_CLEANED_DATE + " TIMESTAMP NULL, "
+					+ STANDARD_FIELD_ENCRYPTED_SENDING + " INT(1) DEFAULT 1"
 					+ ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				executeWithRetry(logger, 0, 3, 120, sql);
-				sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + newCompanyId + "_tbl FOREIGN KEY (customer_id) REFERENCES customer_" + newCompanyId + "_tbl (customer_id)";
-				executeWithRetry(logger, 0, 3, 120, sql);
+				if (createPreventConstraint) {
+					sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + newCompanyId + "_tbl FOREIGN KEY (customer_id) REFERENCES customer_" + newCompanyId + "_tbl (customer_id)";
+					executeWithRetry(logger, 0, 3, 120, sql);
+				}
 				sql = "CREATE INDEX cust" + newCompanyId + "$email$idx ON customer_" + newCompanyId + "_tbl (email)";
 				executeWithRetry(logger, 0, 3, 120, sql);
 				
@@ -1072,15 +1052,19 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "ALTER TABLE customer_" + newCompanyId + "_binding_tbl ADD CONSTRAINT cust" + newCompanyId + "b$ustat$nn CHECK (user_status IS NOT NULL)";
 				executeWithRetry(logger, 0, 3, 120, sql);
-				sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + newCompanyId + "_binding_tbl FOREIGN KEY (customer_id, mailinglist_id, mediatype) REFERENCES customer_" + newCompanyId + "_binding_tbl (customer_id, mailinglist_id, mediatype)";
-				executeWithRetry(logger, 0, 3, 120, sql);
+				if (createPreventConstraint) {
+					sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + newCompanyId + "_binding_tbl FOREIGN KEY (customer_id, mailinglist_id, mediatype) REFERENCES customer_" + newCompanyId + "_binding_tbl (customer_id, mailinglist_id, mediatype)";
+					executeWithRetry(logger, 0, 3, 120, sql);
+				}
 				sql = "CREATE INDEX cust" + newCompanyId + "b$cuid_ustat_mlid$idx ON customer_" + newCompanyId + "_binding_tbl (customer_id, user_status, mailinglist_id)";
 				executeWithRetry(logger, 0, 3, 120, sql);
 				
 				sql = "CREATE TABLE cust" + newCompanyId + "_ban_tbl (email VARCHAR(150) COLLATE utf8mb4_bin NOT NULL, timestamp timestamp DEFAULT CURRENT_TIMESTAMP, reason varchar(500), PRIMARY KEY (email)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				executeWithRetry(logger, 0, 3, 120, sql);
-				sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$cust" + newCompanyId + "ban_tbl FOREIGN KEY (email_ban) REFERENCES cust" + newCompanyId + "_ban_tbl (email)";
-				executeWithRetry(logger, 0, 3, 120, sql);
+				if (createPreventConstraint) {
+					sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$cust" + newCompanyId + "ban_tbl FOREIGN KEY (email_ban) REFERENCES cust" + newCompanyId + "_ban_tbl (email)";
+					executeWithRetry(logger, 0, 3, 120, sql);
+				}
 			}
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
@@ -1174,7 +1158,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	@Override
 	public boolean createHistoryTables(int companyID) {
 		if (!DbUtilities.checkIfTableExists(getDataSource(), "hst_customer_" + companyID + "_binding_tbl")) {
-
+			boolean createPreventConstraint = true;
+			if (!configService.getBooleanValue(ConfigValue.UsePreventTableDropConstraint, companyID)) {
+				createPreventConstraint = false;
+			}
 			String sql = "";
 			try {
 				if (isOracleDB()) {
@@ -1213,8 +1200,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 					sql = "ALTER TABLE hst_customer_" + companyID + "_binding_tbl ADD CONSTRAINT hstcb" + companyID + "$pk PRIMARY KEY (customer_id, mailinglist_id, mediatype, timestamp_change)";
 					executeWithRetry(logger, 0, 3, 120, sql);
-					sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$hcustomer_" + companyID + "_bind FOREIGN KEY (customer_id, mailinglist_id, mediatype, change_date) REFERENCES hst_customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, mediatype, timestamp_change)";
-					executeWithRetry(logger, 0, 3, 120, sql);
+					if (createPreventConstraint) {
+						sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$hcustomer_" + companyID + "_bind FOREIGN KEY (customer_id, mailinglist_id, mediatype, change_date) REFERENCES hst_customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, mediatype, timestamp_change)";
+						executeWithRetry(logger, 0, 3, 120, sql);
+					}
 				} else {
 					sql = "CREATE TABLE hst_customer_" + companyID + "_binding_tbl "
 							+ "("
@@ -1242,8 +1231,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 					sql = "ALTER TABLE hst_customer_" + companyID + "_binding_tbl ADD CONSTRAINT hstcb" + companyID + "$pk PRIMARY KEY (customer_id, mailinglist_id, mediatype, timestamp_change)";
 					executeWithRetry(logger, 0, 3, 120, sql);
-					sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$hcustomer_" + companyID + "_bind FOREIGN KEY (customer_id, mailinglist_id, mediatype, change_date) REFERENCES hst_customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, mediatype, timestamp_change)";
-					executeWithRetry(logger, 0, 3, 120, sql);
+					if (createPreventConstraint) {
+						sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$hcustomer_" + companyID + "_bind FOREIGN KEY (customer_id, mailinglist_id, mediatype, change_date) REFERENCES hst_customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, mediatype, timestamp_change)";
+						executeWithRetry(logger, 0, 3, 120, sql);
+					}
 				}
 				
 				bindingHistoryDao.recreateBindingHistoryTrigger(companyID);
@@ -1452,7 +1443,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	
 	@Override
 	public void changeFeatureRights(String featureName, int companyID, boolean activate, String comment) {
-		List<Integer> subCompanyIDs = select(logger, "SELECT company_id FROM company_tbl WHERE parent_company_id = ?", new IntegerRowMapper(), companyID);
+		List<Integer> subCompanyIDs = select(logger, "SELECT company_id FROM company_tbl WHERE parent_company_id = ? AND status = ?", new IntegerRowMapper(), companyID, CompanyStatus.ACTIVE.dbValue);
 		List<String> rightsToSet = select(logger, "SELECT permission_name FROM permission_tbl WHERE feature_package = ?", new StringRowMapper(), featureName);
 
 		for (String rightToCheck : rightsToSet) {
@@ -1539,7 +1530,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				executeWithRetry(logger, 0, 3, 120, "CREATE INDEX cust" + companyID + "$freq$idx ON customer_" + companyID + "_tbl (freq_count_day, freq_count_week,freq_count_month )");
 			}
 		} catch (Exception e) {
-			logger.error("Cannot add missing foreign keys for prevent_table_drop (CID " + companyID + "): " + e.getMessage(), e);
+			logger.error("Cannot add missing fields (CID " + companyID + "): " + e.getMessage(), e);
 		}
 		return true;
 	}

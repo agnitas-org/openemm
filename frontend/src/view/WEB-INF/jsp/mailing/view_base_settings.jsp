@@ -4,7 +4,6 @@
 <%@ page import="com.agnitas.beans.Mailing" %>
 <%@ page import="com.agnitas.beans.TargetLight" %>
 <%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
-<%@ page import="com.agnitas.web.ComTargetAction" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>  <%-- Required for view_base_settings-follow3.jspf --%>
@@ -21,7 +20,6 @@
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
-<c:set var="ACTION_VIEW" value="<%=ComTargetAction.ACTION_VIEW%>" scope="request" />
 <c:set var="ACTION_REMOVE_TARGET" value="<%=MailingBaseAction.ACTION_REMOVE_TARGET%>" scope="page"/>
 
 <c:set var="MAILING_SETTINGS_EXPANDED" value="<%=ComAdminPreferences.MAILING_SETTINGS_EXPANDED%>"/>
@@ -53,11 +51,6 @@
 <c:if test="${mailingBaseForm.isTemplate}">
     <c:set target="${mailingBaseForm}" property="showTemplate" value="${true}"/>
 </c:if>
-
-<c:set var="isMailingEditable" value="${not mailingBaseForm.worldMailingSend}"/>
-<emm:ShowByPermission token="mailing.content.change.always">
-    <c:set var="isMailingEditable" value="${true}"/>
-</emm:ShowByPermission>
 
 <c:set var="isEmailSettingsEditable" value="${mailingBaseForm.canChangeEmailSettings}"/>
 <c:set var="isMailinglistEditable" value="${mailingBaseForm.canChangeMailinglist}"/>
@@ -133,16 +126,33 @@
             <div class="col-sm-8">
                 <div class="input-group">
                     <div class="input-group-controls">
-                        <c:set var="isMailinglistDenied" value="${not isMailinglistEditable or not isMailingEditable or not isEmailSettingsEditable or isWorkflowDriven}"/>
-                        <agn:agnSelect styleId="settingsGeneralMailingList" styleClass="form-control js-select" property="mailinglistID" size="1"
-                                       data-action="save-mailing-list-id"
-                                       disabled="${isMailinglistDenied}" data-field-validator="required-id">
-                            <agn:agnOption value="0" styleId="0-mailinglist">--</agn:agnOption>
+                        <c:set var="isMailinglistDenied" value="${not isMailinglistEditable or not IS_MAILING_EDITABLE or not isEmailSettingsEditable or isWorkflowDriven}"/>
+                        <emm:ShowByPermission token="update.mailinglist.allowDeletion">
+                            <agn:agnSelect styleId="settingsGeneralMailingList" styleClass="form-control js-select" property="mailinglistID" size="1"
+                                           data-action="save-mailing-list-id"
+                                           disabled="${isMailinglistDenied}"
+                                           data-field-validator="mailinglist-exist"
+                                           data-validator-options='removedMailinglistId: ${not empty mailingBaseForm.selectedRemovedMailinglist ? mailingBaseForm.selectedRemovedMailinglist.id : ""}'>
+                                <c:if test="${not empty mailingBaseForm.selectedRemovedMailinglist and not mailingBaseForm.copiedMailing}">
+                                    <agn:agnOption value="${mailingBaseForm.selectedRemovedMailinglist.id}" styleId="${mailingBaseForm.selectedRemovedMailinglist.id}-mailinglist">${mailingBaseForm.selectedRemovedMailinglist.shortname}</agn:agnOption>
+                                </c:if>
+                                <agn:agnOption value="0" styleId="0-mailinglist">--</agn:agnOption>
+                                <logic:iterate id="mailinglist" name="mailingBaseForm" property="mailingLists">
+                                    <agn:agnOption value="${mailinglist.id}" styleId="${mailinglist.id}-mailinglist">${mailinglist.shortname}</agn:agnOption>
+                                </logic:iterate>
+                            </agn:agnSelect>
+                        </emm:ShowByPermission>
+                        <emm:HideByPermission token="update.mailinglist.allowDeletion">
+                            <agn:agnSelect styleId="settingsGeneralMailingList" styleClass="form-control js-select" property="mailinglistID" size="1"
+                                           data-action="save-mailing-list-id"
+                                           disabled="${isMailinglistDenied}" data-field-validator="required-id">
+                                <agn:agnOption value="0" styleId="0-mailinglist">--</agn:agnOption>
 
-                            <logic:iterate id="mailinglist" name="mailingBaseForm" property="mailingLists">
-                                <agn:agnOption value="${mailinglist.id}" styleId="${mailinglist.id}-mailinglist">${mailinglist.shortname}</agn:agnOption>
-                            </logic:iterate>
-                        </agn:agnSelect>
+                                <logic:iterate id="mailinglist" name="mailingBaseForm" property="mailingLists">
+                                    <agn:agnOption value="${mailinglist.id}" styleId="${mailinglist.id}-mailinglist">${mailinglist.shortname}</agn:agnOption>
+                                </logic:iterate>
+                            </agn:agnSelect>
+                        </emm:HideByPermission>
                     </div>
                     <c:if test="${isWorkflowDriven}">
                         <div class="input-group-btn">
@@ -212,7 +222,7 @@
                     <div class="input-group">
                         <div class="input-group-controls">
                             <agn:agnSelect property="mailingType" id="settingsGeneralMailType" class="form-control" data-action="change-general-mailing-type"
-                                           disabled="${not isMailingEditable or isWorkflowDriven or not isEmailSettingsEditable}">
+                                           disabled="${not IS_MAILING_EDITABLE or isWorkflowDriven or not isEmailSettingsEditable}">
                                 <html:option value="${MAILING_TYPE_NORMAL}">
                                     <bean:message key="Normal_Mailing"/>
                                 </html:option>
@@ -255,6 +265,7 @@
         <c:set var="complexTargetExpression" value="${mailingBaseForm.complexTargetExpression}" scope="page"/>
         <c:set var="targetComplexities" value="${mailingBaseForm.targetComplexities}" scope="page"/>
         <c:set var="targets" value="${mailingBaseForm.targets}" scope="page"/>
+        <c:set var="worldMailingSend" value="${mailingBaseForm.worldMailingSend}" scope="page"/>
         <%@include file="fragments/mailing-targets-select.jspf" %>
 
         <c:set var="isTargetModeCheckboxDisabled" value="${isWorkflowDriven or mailingBaseForm.worldMailingSend}"/>
@@ -299,7 +310,7 @@
                     <div class="col-sm-8">
                         <html:hidden property="__STRUTS_CHECKBOX_needsTarget" value="false"/>
 
-                        <c:set var="isNeedsTargetCheckboxDisabled" value="${not isMailingEditable or mailingBaseForm.mailingType eq MAILING_TYPE_DATEBASED or  mailingBaseForm.mailingType eq MAILING_TYPE_INTERVAL}"/>
+                        <c:set var="isNeedsTargetCheckboxDisabled" value="${not IS_MAILING_EDITABLE or mailingBaseForm.mailingType eq MAILING_TYPE_DATEBASED or  mailingBaseForm.mailingType eq MAILING_TYPE_INTERVAL}"/>
                         <label class="toggle">
                             <html:checkbox property="needsTarget" disabled="${isNeedsTargetCheckboxDisabled}"/>
                             <div class="toggle-control"></div>
@@ -326,7 +337,7 @@
 
             <div class="col-sm-8">
                 <html:select styleId="settingsTargetgroupsListSplit" styleClass="form-control js-double-select-trigger"
-                             property="splitBase" disabled="${not isMailingEditable or mailingBaseForm.wmSplit or isWorkflowDriven}">
+                             property="splitBase" disabled="${not IS_MAILING_EDITABLE or mailingBaseForm.wmSplit or isWorkflowDriven}">
                     <c:if test="${mailingBaseForm.splitId eq -1}">
                         <html:option value="yes"><bean:message key="default.Yes"/></html:option>
                     </c:if>
@@ -372,7 +383,7 @@
                 <div class="input-group">
 
                     <div class="input-group-controls">
-                        <html:select styleId="settingsTargetgroupsListSplitPart" property="splitPart" disabled="${not isMailingEditable or mailingBaseForm.wmSplit or isWorkflowDriven}"
+                        <html:select styleId="settingsTargetgroupsListSplitPart" property="splitPart" disabled="${not IS_MAILING_EDITABLE or mailingBaseForm.wmSplit or isWorkflowDriven}"
                                      styleClass="form-control js-double-select-target">
 
                             <c:choose>

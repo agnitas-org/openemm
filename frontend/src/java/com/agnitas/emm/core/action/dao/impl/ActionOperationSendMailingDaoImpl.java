@@ -33,7 +33,7 @@ public class ActionOperationSendMailingDaoImpl extends AbstractActionOperationDa
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationSendMailingParameters operation) {
 		update(logger, "insert into actop_send_mailing_tbl (action_operation_id, mailing_id, delay_minutes, bcc) values (?,?,?,?)",
-				operation.getId(), 
+				operation.getId(),
 				operation.getMailingID(),
 				operation.getDelayMinutes(),
                 operation.getBcc());

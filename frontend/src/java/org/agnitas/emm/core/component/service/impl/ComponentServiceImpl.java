@@ -62,7 +62,7 @@ public abstract class ComponentServiceImpl implements ComponentService {
 	public List<MailingComponent> getComponents(ComponentModel model) {
 		modelValidator.assertIsValidToGetOrDelete(model);
 		if (!mailingDao.exist(model.getMailingId(), model.getCompanyId())) {
-			throw new MailingNotExistException();
+			throw new MailingNotExistException(model.getCompanyId(), model.getMailingId());
 		}
 		return mailingComponentDao.getMailingComponents(model.getMailingId(), model.getCompanyId(), model.getComponentType());
 	}
@@ -88,7 +88,7 @@ public abstract class ComponentServiceImpl implements ComponentService {
 	protected int addComponentImpl(ComponentModel model) throws Exception {
 		MailingComponent component = getMailingComponent();
 		if (!mailingDao.exist(model.getMailingId(), model.getCompanyId())) {
-			throw new MailingNotExistException();
+			throw new MailingNotExistException(model.getCompanyId(), model.getMailingId());
 		}
 		if (null != mailingComponentDao.getMailingComponentByName(model.getMailingId(), model.getCompanyId(), model.getComponentName())) {
 			throw new ComponentAlreadyExistException();
@@ -112,7 +112,7 @@ public abstract class ComponentServiceImpl implements ComponentService {
 		if (component == null || component.getType() != model.getComponentType()) {
 			throw new ComponentNotExistException();
 		}
-		if (!component.getComponentName().equals(model.getComponentName()) 
+		if (!component.getComponentName().equals(model.getComponentName())
 				&& null != mailingComponentDao.getMailingComponentByName(component.getMailingID(), component.getCompanyID(), model.getComponentName())) {
 			throw new ComponentAlreadyExistException();
 		}

@@ -1265,7 +1265,7 @@ public class ComWorkflowValidationService {
             nextNode.deletePrevNode(node);
             i--;
             hasLoops = searchLoops(sawingNodes, nextNode);
-            sawingNodes.remove(new Integer(nextNodeIcon.getId()));
+            sawingNodes.remove(Integer.valueOf(nextNodeIcon.getId()));
             if (hasLoops) {
                 return true;
             }

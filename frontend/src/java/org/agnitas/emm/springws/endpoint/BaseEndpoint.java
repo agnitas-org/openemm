@@ -10,7 +10,7 @@
 
 package org.agnitas.emm.springws.endpoint;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 import org.agnitas.service.UserActivityLogService;
 import org.springframework.context.annotation.Lazy;

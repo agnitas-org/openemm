@@ -21,8 +21,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -382,7 +382,7 @@ public class ServerStatusControllerBasic {
 							int idToAcknowledge = Integer.parseInt(request.getParameter("acknowledge"));
 							serverStatusService.acknowledgeErrorneousJob(idToAcknowledge);
 							JobDto job = jobQueueService.getJob(idToAcknowledge);
-							javaMailService.sendEmail(job.getEmailOnError(), "Erorrneous Job \"" + job.getDescription() + "\" (ID: " + idToAcknowledge + ", Criticality: " + job.getCriticality() + ") acknowledged", "No more further emails about this error will be sent: \n" + job.getLastResult(), "No more further emails about this error will be sent: <br />\n" + job.getLastResult());
+							javaMailService.sendEmail(admin.getCompanyID(), job.getEmailOnError(), "Erroneous Job \"" + job.getDescription() + "\" (ID: " + idToAcknowledge + ", Criticality: " + job.getCriticality() + ") acknowledged", "No more further emails about this error will be sent: \n" + job.getLastResult(), "No more further emails about this error will be sent: <br />\n" + job.getLastResult());
 						}
 						
 						resultJsonObject.add("message", "WARNING: Some jobqueue jobs have errors");
@@ -566,8 +566,10 @@ public class ServerStatusControllerBasic {
 	    	        	byte [] licenseSignatureDataArray = FileUtils.readFileToByteArray(licenseSignatureDataFile);
 	    	        	if (licenseDataArray == null || licenseDataArray.length == 0) {
 	    	        		throw new Exception("Missing license data content");
-	    	        	} else if (licenseDataArray == null | licenseDataArray.length == 0) {
+	    	        	} else if (licenseSignatureDataArray == null || licenseSignatureDataArray.length == 0) {
 	    	        		throw new Exception("Missing license data signature content");
+	    	        	} else if (!new String(licenseDataArray).contains("<licenseID>" + configService.getLicenseID() + "</licenseID>")) {
+	    	        		throw new Exception("Wrong license id in license data content. Expected license id: " + configService.getLicenseID());
 	    	        	} else {
 							licenseDao.storeLicense(licenseDataArray, licenseSignatureDataArray, new Date());
 							userActivityLogService.writeUserActivityLog(admin, "license update", "License update");
@@ -585,8 +587,9 @@ public class ServerStatusControllerBasic {
 		        	try {
 						FileUtils.deleteDirectory(unzippedLicenseDataDirectory);
 					} catch (Exception e) {
-						// do nothing
-						e.printStackTrace();
+						logger.error("Error deleting temporary directory", e);
+
+						// do nothing else
 					}
 		        }
 	        	

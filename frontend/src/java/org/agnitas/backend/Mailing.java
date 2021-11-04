@@ -86,6 +86,7 @@ public class Mailing {
 	 * the envelope address
 	 */
 	private EMail envelopeFrom;
+	private boolean envelopeForced;
 	/**
 	 * the encoding for this mailing
 	 */
@@ -123,6 +124,10 @@ public class Mailing {
 	 */
 	private String bounceLogfile;
 	/**
+	 * path to mailtrack logfile
+	 */
+	private String mailtrackLogfile;
+	/**
 	 * name of system MTA
 	 */
 	private String messageTransferAgent;
@@ -146,6 +151,7 @@ public class Mailing {
 		spoolDirectory = StringOps.makePath ("$home", "var", "spool");
 		accountLogfile = StringOps.makePath ("$home", "log", "account.log");
 		bounceLogfile = StringOps.makePath ("$home", "log", "extbounce.log");
+		mailtrackLogfile = StringOps.makePath ("$home", "log", "mailtrack.log");
 		outputDirectories.put ("meta", spool ("META"));
 		outputDirectories.put ("direct", spool ("DIRECT"));
 		outputDirectories.put ("mail", spool ("mailer"));
@@ -236,6 +242,10 @@ public class Mailing {
 
 	public int priority() {
 		return exists() ? mailing.priority() : -1;
+	}
+	
+	public String contentType () {
+		return exists () ? mailing.contentType () : null;
 	}
 
 	public boolean frequencyCounterDisabled() {
@@ -334,9 +344,14 @@ public class Mailing {
 	public EMail envelopeFrom() {
 		return envelopeFrom;
 	}
+	
+	public boolean envelopeForced () {
+		return envelopeForced;
+	}
 
 	public void envelopeFrom(EMail nEnvelopeFrom) {
 		envelopeFrom = nEnvelopeFrom;
+		envelopeForced = envelopeFrom != null;
 	}
 
 	public String encoding() {
@@ -385,6 +400,10 @@ public class Mailing {
 
 	public String bounceLogfile() {
 		return bounceLogfile;
+	}
+	
+	public String mailtrackLogfile() {
+		return mailtrackLogfile;
 	}
 
 	public String messageTransferAgent() {
@@ -464,9 +483,7 @@ public class Mailing {
 
 		env = null;
 		if ((temp = data.company.info("envelope-from", id)) != null) {
-			EMail temail = new EMail(temp);
-
-			env = temail.pure_puny;
+			env = (new EMail (temp)).pure_puny;
 		}
 		if ((env == null) && (envelopeFrom != null)) {
 			env = envelopeFrom.pure_puny;
@@ -495,6 +512,20 @@ public class Mailing {
 		}
 	}
 
+	/**
+	 * Check if the we need a dedicated mailerset for this mailer
+	 */
+	public void checkMailerset () {
+		if (exists ()) {
+			String	mailerset = data.sendEncrypted ? "crypt" : null;
+			try {
+				mailing.mailerset (data.dbase, mailerset);
+			} catch (SQLException e) {
+				data.logging (Log.ERROR, "mailing", "Failed to set new mailerset " + (mailerset != null ? mailerset : "*default*") + " for mailing " + id + ": " + e);
+			}
+		}
+	}
+	
 	/**
 	 * returns the X-Mailer: header content
 	 *
@@ -560,6 +591,8 @@ public class Mailing {
 			data.logging(Log.DEBUG, "init", "\tmailing.mailingType = " + mailing.mailingType());
 			data.logging(Log.DEBUG, "init", "\tmailing.workStatus = " + mailing.workStatus());
 			data.logging(Log.DEBUG, "init", "\tmailing.priority = " + mailing.priority());
+			data.logging(Log.DEBUG, "init", "\tmailing.contentType = " + mailing.contentType());
+			data.logging(Log.DEBUG, "init", "\tmailing.mailerset = " + mailing.mailerset());
 			data.logging(Log.DEBUG, "init", "\tmailing.frequencyCounterDisabled = " + mailing.frequencyCounterDisabled());
 			data.logging(Log.DEBUG, "init", "\tmailing.isWorkflowMailing = " + mailing.isWorkflowMailing());
 			data.logging(Log.DEBUG, "init", "\tmailing.sourceTemplateID = " + mailing.sourceTemplateID());
@@ -576,6 +609,7 @@ public class Mailing {
 		data.logging(Log.DEBUG, "init", "\tmailing.fromEmail = " + (fromEmail == null ? "*not set*" : fromEmail.toString()));
 		data.logging(Log.DEBUG, "init", "\tmailing.replyTo = " + (replyTo == null ? "*not set*" : replyTo.toString()));
 		data.logging(Log.DEBUG, "init", "\tmailing.envelopeFrom = " + (envelopeFrom == null ? "*not set*" : envelopeFrom.toString()));
+		data.logging(Log.DEBUG, "init", "\tmailing.envelopeForced = " + envelopeForced);
 		data.logging(Log.DEBUG, "init", "\tmailing.encoding = " + encoding);
 		data.logging(Log.DEBUG, "init", "\tmailing.charset = " + charset);
 		data.logging(Log.DEBUG, "init", "\tmailing.domain = " + domain);
@@ -585,6 +619,7 @@ public class Mailing {
 				.forEach((e) -> data.logging(Log.DEBUG, "init", "\tmailing.outputDirectory[" + e.getKey() + "] = " + e.getValue()));
 		data.logging(Log.DEBUG, "init", "\tmailing.accountLogfile = " + accountLogfile);
 		data.logging(Log.DEBUG, "init", "\tmailing.bounceLogfile = " + bounceLogfile);
+		data.logging(Log.DEBUG, "init", "\tmailing.mailtrackLogfile = " + mailtrackLogfile);
 		data.logging(Log.DEBUG, "init", "\tmailing.messageTransferAgent = " + (messageTransferAgent == null ? "*not set*" : messageTransferAgent));
 	}
 
@@ -607,6 +642,7 @@ public class Mailing {
 		}
 		accountLogfile = cfg.cget("account_logfile", accountLogfile);
 		bounceLogfile = cfg.cget("bounce_logfile", bounceLogfile);
+		mailtrackLogfile = cfg.cget("mailtrack_logfile", mailtrackLogfile);
 		messageTransferAgent = Data.syscfg.get ("mta", System.getenv("MTA"));
 	}
 

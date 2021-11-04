@@ -17,6 +17,9 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.springframework.jdbc.core.RowMapper;
 
 public class CaseInsensitiveMapRowMapper implements RowMapper<CaseInsensitiveMap<String, Object>> {
+	
+	// TODO Performance improvement: Introduce static constant INSTANCE and reduce visibility of constructor to private.
+
 	@Override
 	public CaseInsensitiveMap<String, Object> mapRow(ResultSet resultSet, int row) throws SQLException {
 		CaseInsensitiveMap<String, Object> returnMap = new CaseInsensitiveMap<>();

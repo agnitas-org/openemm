@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import javax.sql.DataSource;
 
 import org.agnitas.beans.impl.CompanyStatus;
@@ -46,6 +46,7 @@ public final class RebuildBindingHistoryTriggersOnStartupListener implements Ser
 	private DataSource dataSource;
 	private ComCompanyDao companyDao;
 	private BindingHistoryDao bindingHistoryDao;
+	private ConfigService configService;
 
 	@Override
 	public final void contextInitialized(final ServletContextEvent servletContextEvent) {
@@ -83,7 +84,7 @@ public final class RebuildBindingHistoryTriggersOnStartupListener implements Ser
 						getBindingHistoryDao().recreateBindingHistoryTrigger(companyID);
 						final JdbcTemplate template1 = new JdbcTemplate(getDataSource());
 						
-						ConfigService.getInstance().getBooleanValue(ConfigValue.RecipientBindingFieldHistoryRebuildOnStartup, companyID);
+						getConfigService().getBooleanValue(ConfigValue.RecipientBindingFieldHistoryRebuildOnStartup, companyID);
 						template1.update("UPDATE company_info_tbl SET cvalue = 'false', timestamp = CURRENT_TIMESTAMP, description = 'History binding triggers rebuilt' WHERE company_id = ? and cname = ?", companyID, ConfigValue.RecipientBindingFieldHistoryRebuildOnStartup.toString());
 					} catch (final Exception e) {
 						logger.error(String.format("Could not rebuild binding history trigger for company %d", companyID), e);
@@ -97,7 +98,7 @@ public final class RebuildBindingHistoryTriggersOnStartupListener implements Ser
 
 	private DataSource getDataSource() {
 		if (dataSource == null) {
-			dataSource = (DataSource) webApplicationContext.getBean("dataSource");
+			dataSource = webApplicationContext.getBean("dataSource", DataSource.class);
 		}
 		
 		return this.dataSource;
@@ -105,7 +106,7 @@ public final class RebuildBindingHistoryTriggersOnStartupListener implements Ser
 	
 	private BindingHistoryDao getBindingHistoryDao() {
 		if (bindingHistoryDao == null) {
-			bindingHistoryDao = (BindingHistoryDao) webApplicationContext.getBean("BindingHistoryDao");
+			bindingHistoryDao = webApplicationContext.getBean("BindingHistoryDao", BindingHistoryDao.class);
 		}
 		
 		return bindingHistoryDao;
@@ -113,9 +114,17 @@ public final class RebuildBindingHistoryTriggersOnStartupListener implements Ser
 	
 	private ComCompanyDao getCompanyDao() {
 		if (companyDao == null) {
-			companyDao = (ComCompanyDao) webApplicationContext.getBean("CompanyDao");
+			companyDao = webApplicationContext.getBean("CompanyDao", ComCompanyDao.class);
 		}
 		
 		return companyDao;
+	}
+	
+	private final ConfigService getConfigService() {
+		if(this.configService == null) {
+			this.configService = webApplicationContext.getBean("ConfigService", ConfigService.class);
+		}
+		
+		return this.configService;
 	}
 }

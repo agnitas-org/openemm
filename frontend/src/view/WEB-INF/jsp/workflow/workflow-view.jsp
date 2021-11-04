@@ -15,7 +15,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
@@ -96,144 +96,20 @@
     </c:forEach>
 </emm:instantiate>
 
+<script>
+    (function() {
+      window.addEventListener('wheel', function(e) { if (e.ctrlKey == true) {e.preventDefault();}}, { passive: false });
+      window.addEventListener('mousewheel', function(e) { if (e.ctrlKey == true) {e.preventDefault();}}, { passive: false });
+      window.addEventListener('DOMMouseScroll', function(e) { if (e.ctrlKey == true) {e.preventDefault();}}, { passive: false });
+    })();
+</script>
 
-<emm:ShowByPermission token="workflow.jsplumb2">
-    <div data-controller="workflow-view-new">
-</emm:ShowByPermission>
-<emm:HideByPermission token="workflow.jsplumb2">
-    <div data-controller="workflow-view">
-</emm:HideByPermission>
 
-    <emm:HideByPermission token="workflow.jsplumb2">
-    <script data-initializer="workflow-view-constants" type="application/json">
-        {
-            "startTypeOpen": "<%=WorkflowStart.WorkflowStartType.OPEN%>",
-            "startTypeDate": "<%=WorkflowStart.WorkflowStartType.DATE%>",
-            "startTypeEvent": "<%=WorkflowStart.WorkflowStartType.EVENT%>",
-            "startEventReaction": "<%=WorkflowStart.WorkflowStartEventType.EVENT_REACTION%>",
-            "startEventDate": "<%=WorkflowStart.WorkflowStartEventType.EVENT_DATE%>",
-            "endTypeAutomatic": "<%=WorkflowStop.WorkflowEndType.AUTOMATIC %>",
-            "endTypeDate": "<%=WorkflowStop.WorkflowEndType.DATE %>",
-            "deadlineTypeDelay": "<%=WorkflowDeadline.WorkflowDeadlineType.TYPE_DELAY%>",
-            "deadlineTypeFixedDeadline": "<%=WorkflowDeadline.WorkflowDeadlineType.TYPE_FIXED_DEADLINE%>",
-            "deadlineTimeUnitMinute": "<%=WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_MINUTE%>",
-            "deadlineTimeUnitHour": "<%=WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_HOUR%>",
-            "deadlineTimeUnitDay": "<%=WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_DAY%>",
-            "deadlineTimeUnitWeek": "<%=WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_WEEK%>",
-            "deadlineTimeUnitMonth": "<%=WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_MONTH%>",
-            "defaultImportDelayLimit" : "<%=WorkflowDeadlineImpl.DEFAULT_AUTOIMPORT_DELAY_LIMIT%>",
-            "reactionOpened": "<%= WorkflowReactionType.OPENED %>",
-            "reactionNotOpened": "<%= WorkflowReactionType.NOT_OPENED %>",
-            "reactionClicked": "<%= WorkflowReactionType.CLICKED %>",
-            "reactionNotClicked": "<%= WorkflowReactionType.NOT_CLICKED %>",
-            "reactionBought": "<%= WorkflowReactionType.BOUGHT %>",
-            "reactionNotBought": "<%= WorkflowReactionType.NOT_BOUGHT %>",
-            "reactionDownload": "<%= WorkflowReactionType.DOWNLOAD %>",
-            "reactionChangeOfProfile": "<%= WorkflowReactionType.CHANGE_OF_PROFILE %>",
-            "reactionWaitingForConfirm": "<%= WorkflowReactionType.WAITING_FOR_CONFIRM %>",
-            "reactionOptIn": "<%= WorkflowReactionType.OPT_IN %>",
-            "reactionOptOut": "<%= WorkflowReactionType.OPT_OUT %>",
-            "reactionClickedLink": "<%= WorkflowReactionType.CLICKED_LINK %>",
-            "reactionOpenedAndClicked": "<%= WorkflowReactionType.OPENED_AND_CLICKED %>",
-            "reactionOpenedOrClicked": "<%= WorkflowReactionType.OPENED_OR_CLICKED %>",
-            "reactionConfirmedOptIn": "<%= WorkflowReactionType.CONFIRMED_OPT_IN %>",
-            "decisionTypeDecision": "<%=WorkflowDecision.WorkflowDecisionType.TYPE_DECISION %>",
-            "decisionTypeAutoOptimization": "<%=WorkflowDecision.WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION %>",
-            "decisionReaction": "<%= WorkflowDecision.WorkflowDecisionCriteria.DECISION_REACTION %>",
-            "decisionProfileField": "<%= WorkflowDecision.WorkflowDecisionCriteria.DECISION_PROFILE_FIELD %>",
-            "decisionAOCriteriaClickRate": "<%= WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_CLICKRATE %>",
-            "decisionAOCriteriaOpenrate": "<%= WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_OPENRATE %>",
-            "decisionAOCriteriaTurnover": "<%= WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_REVENUE %>",
-            "chainOperatorAnd": "${CHAIN_OPERATOR_AND}",
-            "chainOperatorOr": "${CHAIN_OPERATOR_OR}",
-            "operatorIs": "${OPERATOR_IS}",
-            "forwardTargetGroupCreate": "${FORWARD_TARGETGROUP_CREATE}",
-            "forwardTargetGroupEdit": "${FORWARD_TARGETGROUP_EDIT}",
-            "forwardMailingCreate": "<%= WorkflowController.FORWARD_MAILING_CREATE%>",
-            "forwardMailingEdit": "<%= WorkflowController.FORWARD_MAILING_EDIT%>",
-            "forwardMailingCopy": "<%= WorkflowController.FORWARD_MAILING_COPY%>",
-            "forwardUserFormCreate": "<%= WorkflowController.FORWARD_USERFORM_CREATE%>",
-            "forwardUserFormEdit": "<%= WorkflowController.FORWARD_USERFORM_EDIT%>",
-            "forwardReportCreate": "<%= WorkflowController.FORWARD_REPORT_CREATE%>",
-            "forwardReportEdit": "<%= WorkflowController.FORWARD_REPORT_EDIT%>",
-            "forwardAutoExportCreate": "<%= WorkflowController.FORWARD_AUTOEXPORT_CREATE%>",
-            "forwardAutoExportEdit": "<%= WorkflowController.FORWARD_AUTOEXPORT_EDIT%>",
-            "forwardAutoImportCreate": "<%= WorkflowController.FORWARD_AUTOIMPORT_CREATE%>",
-            "forwardAutoImportEdit": "<%= WorkflowController.FORWARD_AUTOIMPORT_EDIT%>",
-            "forwardArchiveCreate": "<%= WorkflowController.FORWARD_ARCHIVE_CREATE%>",
-            "statusInactive":"${STATUS_INACTIVE}",
-            "statusActive": "${STATUS_ACTIVE}",
-            "genderOptions": {
-                "<%= Recipient.GENDER_MALE %>": "Male",
-                "<%= Recipient.GENDER_FEMALE %>": "Female",
-                "<%= Recipient.GENDER_UNKNOWN %>": "Unknown"
-            },
-            "chainOperatorOptions": {
-                "<%= ChainOperator.AND.getOperatorCode() %>": "<bean:message key="default.and"/>",
-                "<%= ChainOperator.OR.getOperatorCode() %>": "<bean:message key="default.or"/>"
-            },
-            "operators": [
-                 <c:forEach items="${operators}"  var="operator" varStatus="index">
-                    <c:set var="types" value="${operatorsTypeSupportMap[operator]}"/>
-                {
-                    "id": "${operator.operatorCode}",
-                    "text": "${operator.eqlSymbol}",
-                    "data": {
-                        "types": "${empty types ? '' : types}"
-                    }
-                }${!index.last ? ',':''}
-                </c:forEach>
-            ],
-            "operatorsMap": {
-                <c:forEach items="${operators}"  var="operator" varStatus="index">
-                  "${operator.operatorCode}": "${operator.eqlSymbol}"${!index.last ? ',':''}
-                </c:forEach>
-            },
-            "mailingThumbnailURL" : "<c:url value='/workflow/getMailingThumbnail.action'/>",
-            "componentURL" : "<c:url value='/sc?compID={component-id}'/>",
-            "accessLimitTargetId": ${accessLimitTargetId}
-        }
-    </script>
-    </emm:HideByPermission>
+<div data-controller="workflow-view">
 
     <emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
 
-    <emm:HideByPermission token="workflow.jsplumb2">
-    <script data-initializer="campaign-manager-init" type="application/json">
-        {
-            "icons":${workflowForm.workflowSchema},
-            "editorPositionLeft": "${workflowForm.editorPositionLeft}",
-            "editorPositionTop": "${workflowForm.editorPositionTop}",
-            "resizeTimeoutId": "false",
-            "localeDateTimePattern": "${localeDateTimePattern}",
-            "pageContextSessionId": "${pageContext.session.id}",
-            "newStatus": "${workflowForm.statusMaybeChangedTo}",
-            "workflowId": "${workflowForm.workflowId}",
-            "workflowUndoHistoryData":${workflowForm.workflowUndoHistoryData},
-            "workflowAutoOptData": ${emm:toJson(autoOptData)},
-            "imageUrl": "${absoluteImagePath}",
-            "enabledToggleButton": "${workflowToggleTestingButtonEnabled}",
-            "isStatusOpen": "${workflowForm.status == STATUS_OPEN}",
-            "shortName": "${workflowForm.shortname}",
-            "emmLocal": "<bean:write name="emm.admin" property="adminLang" scope="session"/>",
-            "isActivated": ${workflowForm.status == STATUS_ACTIVE || workflowForm.status == STATUS_TESTING},
-            "workflowStatus": "${workflowForm.status}",
-            "pdfGenerationUrl": "<c:url value='/workflow/{workflow-ID}/generatePDF.action?showStatistics={show-statistic}'/>",
-            "allMailings":${emm:toJson(mailings)},
-            "allMailingLists":${emm:toJson(mailingLists)},
-            "allTargets":${emm:toJson(targets)},
-            "allReports":${emm:toJson(reports)},
-            "allUserForms":${emm:toJson(allForms)},
-            "allAutoExports" :${emm:toJson(autoExports)},
-            "allAutoImports" :${emm:toJson(allImports)},
-            "allCampaigns":${emm:toJson(allCampaigns)},
-            "mailingThumbnailURL" : "<c:url value='/workflow/getMailingThumbnail.action'/>"
-        }
-    </script>
-    </emm:HideByPermission>
-
-    <emm:ShowByPermission token="workflow.jsplumb2">
-    <script type="application/json" data-initializer="workflow-view-new">
+    <script type="application/json" data-initializer="workflow-view">
         {
             "icons": ${workflowForm.workflowSchema},
             "workflowId": ${workflowForm.workflowId},
@@ -335,7 +211,6 @@
             "accessLimitTargetId": ${accessLimitTargetId}
         }
     </script>
-    </emm:ShowByPermission>
 
     <script id="workflow-node" type="text/x-mustache-template">
         <%-- Toggle 'active' class to toggle active/inactive node images --%>
@@ -478,8 +353,6 @@
         <jsp:include page="editors/workflow-report-editor.jsp"/>
         <jsp:include page="editors/workflow-recipient-editor.jsp"/>
         <jsp:include page="editors/workflow-archive-editor.jsp"/>
-        <jsp:include page="editors/workflow-form-editor.jsp"/>
-        <jsp:include page="editors/workflow-ownworkflow-editor.jsp"/>
         <jsp:include page="editors/workflow-mailing-editor.jsp"/>
         <jsp:include page="editors/workflow-action-based-mailing-editor.jsp"/>
         <jsp:include page="editors/workflow-date-based-mailing-editor.jsp"/>
@@ -487,14 +360,10 @@
         <jsp:include page="editors/workflow-import-editor.jsp"/>
         <jsp:include page="editors/workflow-export-editor.jsp"/>
         <jsp:include page="editors/workflow-icon-comment-editor.jsp"/>
-        <jsp:include page="editors/workflow-ownworkflow-usecopy-dialog.jsp"/>
         <jsp:include page="editors/mailing-data-transfer-modal.jsp"/>
         <jsp:include page="editors/own-workflow-expanding-modal.jsp"/>
         <jsp:include page="workflow-save-before-pdf-dialog.jsp"/>
-        <jsp:include page="workflow-copy-dialog.jsp">
-            <jsp:param name="workflowId" value="${workflowForm.workflowId}"/>
-        </jsp:include>
-        <jsp:include page="workflow-undoHistoryIsEmpty-dialog.jsp"/>
+        <jsp:include page="workflow-copy-dialog-new.jsp"/>
         <jsp:include page="workflow-simple-dialog.jsp">
             <jsp:param name="messageKey" value="error.workflow.connection.notAllowed"/>
             <jsp:param name="titleKey" value="error.workflow.connection.deactivated"/>
@@ -513,34 +382,11 @@
         <jsp:include page="workflow-simple-dialog.jsp">
             <jsp:param name="messageKey" value="error.workflow.noStatistics.description"/>
             <jsp:param name="titleKey" value="error.workflow.noStatistics.title"/>
-            <jsp:param name="dialogName" value="noStatistics"/>
+            <jsp:param name="dialogName" value="NoStatistics"/>
         </jsp:include>
 
         <c:if test="${workflowToggleTestingButtonEnabled}">
-            <emm:ShowByPermission token="workflow.jsplumb2">
-                <jsp:include page="workflow-testing-dialog-new.jsp"/>
-            </emm:ShowByPermission>
-
-            <emm:HideByPermission token="workflow.jsplumb2">
-                <c:choose>
-                    <c:when test="${workflowToggleTestingButtonState}">
-                        <!-- Start testing dialog -->
-                        <jsp:include page="workflow-testing-dialog.jsp">
-                            <jsp:param name="newStatus" value="${STATUS_TESTING}"/>
-                            <jsp:param name="dialogMessage" value="workflow.test.start.question"/>
-                            <jsp:param name="positiveButtonName" value="button.Start"/>
-                        </jsp:include>
-                    </c:when>
-                    <c:otherwise>
-                        <!-- Stop testing dialog -->
-                        <jsp:include page="workflow-testing-dialog.jsp">
-                            <jsp:param name="newStatus" value="${STATUS_OPEN}"/>
-                            <jsp:param name="dialogMessage" value="workflow.test.stop.question"/>
-                            <jsp:param name="positiveButtonName" value="default.Yes"/>
-                        </jsp:include>
-                    </c:otherwise>
-                </c:choose>
-            </emm:HideByPermission>
+            <jsp:include page="workflow-testing-dialog-new.jsp"/>
         </c:if>
     </div>
 
@@ -571,17 +417,19 @@
                 <div class="col-sm-5 col-lg-4">
                     <div class="form-group">
                         <label for="name" class="form-label">
-                            <bean:message key="workflow.view.shortname"/>
+                            <mvc:message var="nameMsg" code="default.Name"/>
+                            ${nameMsg}
                         </label>
-                        <mvc:text path="shortname" cssClass="form-control" id="name"/>
+                        <mvc:text path="shortname" cssClass="form-control" id="name" placeholder="${nameMsg}"/>
                     </div>
                 </div>
                 <div class="col-sm-5 col-lg-4">
                     <div class="form-group">
                         <label for="workflow_description" class="form-label">
-                            <bean:message key="default.description"/>
+                            <mvc:message var="descriptionMsg" code="default.description"/>
+                            ${descriptionMsg}
                         </label>
-                        <mvc:text path="description" cssClass="form-control" id="workflow_description"/>
+                        <mvc:text path="description" cssClass="form-control" id="workflow_description" placeholder="${descriptionMsg}"/>
                     </div>
                 </div>
 
@@ -609,12 +457,7 @@
                                     </b>
                                 </label>
                                 <label class="toggle">
-                                    <emm:HideByPermission token="workflow.jsplumb2">
-                                    <input id="workflow_active" data-action="workflow-view-change-status" name="status" value="${workflowForm.status}" ${workflowForm.status == STATUS_ACTIVE.name() ? 'checked="checked"':''}  type="checkbox"/>
-                                    </emm:HideByPermission>
-                                    <emm:ShowByPermission token="workflow.jsplumb2">
                                     <input id="workflow_active" data-action="workflow-view-change-status" ${workflowForm.status == STATUS_ACTIVE.name() ? 'checked="checked"':''}  type="checkbox"/>
-                                    </emm:ShowByPermission>
                                     <div class="toggle-control"></div>
                                 </label>
                             </c:if>
@@ -831,7 +674,10 @@
                         <div class="toolbarLeftTitle">
                             <bean:message key="workflow.sampleCampaign"/>:
                         </div>
-                        <%@include file="fragments/workflow-view-auto-optimization-icon.jspf" %>
+                        <emm:ShowByPermission token="campaign.change" ignoreException="true">
+                            <div class="toolbarButtonLeft js-draggable-button" data-type="scABTest" title="<bean:message key='mailing.autooptimization'/>"></div>
+                            <div class="leftMenuLabel"><bean:message key="workflow.sampleCampaign.ABTest"/></div>
+                        </emm:ShowByPermission>
 
                         <div class="toolbarButtonLeft js-draggable-button" data-type="scDOI" title="<bean:message key='workflow.icon.DOI'/>"></div>
                         <div id="scDOIButtonLabel" class="leftMenuLabel"><bean:message key="recipient.DOI"/></div>
@@ -847,16 +693,14 @@
                         <div class="toolbarButtonLeft js-draggable-button" data-type="ownWorkflow" title="<bean:message key='workflow.ownCampaign'/>"></div>
                     </div>
                     <div id="viewPort">
-                        <emm:ShowByPermission token="workflow.jsplumb2">
-                            <div id="canvas">
-                                <div id="icon-titles-container"></div>
-                            </div>
-                            <div id="minimap" class="minimap">
-                                <div class="minimap-canvas"></div>
-                                <div class="minimap-panner"></div>
-                                <div class="minimap-collapse"></div>
-                            </div>
-                        </emm:ShowByPermission>
+                        <div id="canvas">
+                            <div id="icon-titles-container"></div>
+                        </div>
+                        <div id="minimap" class="minimap">
+                            <div class="minimap-canvas"></div>
+                            <div class="minimap-panner"></div>
+                            <div class="minimap-collapse"></div>
+                        </div>
                     </div>
                     <div id="navigator" class="js-navigation hidden"></div>
                 </div>
@@ -864,11 +708,9 @@
         </div>
         <!-- Tile Content END -->
 
-        <emm:ShowByPermission token="workflow.jsplumb2">
-            <div id="selection-backdrop">
-                <!-- Required to disable all the hover-related effects while selection lasso is visible -->
-            </div>
-        </emm:ShowByPermission>
+        <div id="selection-backdrop">
+            <!-- Required to disable all the hover-related effects while selection lasso is visible -->
+        </div>
 
         <script data-initializer="open-edit-icon-initializer" type="application/json">
             {

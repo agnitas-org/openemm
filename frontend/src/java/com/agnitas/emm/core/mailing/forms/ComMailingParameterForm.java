@@ -12,11 +12,9 @@ package com.agnitas.emm.core.mailing.forms;
 
 import java.util.Date;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.SafeString;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -160,16 +158,14 @@ public class ComMailingParameterForm extends StrutsFormBase {
 	/**
 	 * The reset form from StrutsFormBase is not used, because tomcat would call
 	 * it every time before populating the values...
-	 * @param mapping
-	 * @param request
 	 */
-	public void resetFormValues(ActionMapping mapping, HttpServletRequest request) {
+	public void resetFormValues() {
 		setMailingInfoID(0);
 		setMailingID(0);
 		setCompanyID(0);
-		setParameterName(SafeString.getLocaleString("default.Name", AgnUtils.getLocale(request)));
+		setParameterName("");
 		setValue("");
-		setDescription(SafeString.getLocaleString("default.description", AgnUtils.getLocale(request)));
+		setDescription("");
 		setCreation_date(null);
 		setChange_date(null);
 		setCreation_admin_id(0);

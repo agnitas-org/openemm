@@ -11,9 +11,9 @@
 package org.agnitas.util.importvalues;
 
 public enum MailType {
-	TEXT("recipient.mailingtype.text", 0),
-	HTML("HTML", 1),
-	HTML_OFFLINE("recipient.mailingtype.htmloffline", 2),
+	TEXT("MailType.0", 0),
+	HTML("MailType.1", 1),
+	HTML_OFFLINE("MailType.2", 2),
 	
 	/**
 	 * Historical Mailtype, used in old mailingaccount data. Use HTML_OFFLINE for new data instead

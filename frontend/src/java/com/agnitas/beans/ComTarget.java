@@ -10,12 +10,6 @@
 
 package com.agnitas.beans;
 
-import com.agnitas.emm.core.target.eql.EqlFacade;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.core.target.service.RecipientTargetGroupMatcher;
-
-import bsh.Interpreter;
-
 /**
  * Heavy-weight extension of {@link TargetLight} interface providing additional and structural
  * information on target groups.
@@ -28,17 +22,6 @@ public interface ComTarget extends TargetLight {
      * @return Value of property targetSQL.
      */
     String getTargetSQL();
-
-    /**
-     * Getter for property customerInGroup.
-     * 
-     * @return Value of property customerInGroup.
-     * 
-     * @see ComTargetService#createRecipientTargetGroupMatcher(int, int)
-     * @see RecipientTargetGroupMatcher
-     */
-    @Deprecated
-    boolean isCustomerInGroup(Interpreter interpreter, final EqlFacade eqlFacade);
 
     /**
      * Setter for property targetSQL.

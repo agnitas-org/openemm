@@ -28,21 +28,23 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label for="parameter-name" class="control-label">
-                            <bean:message key="Name"/>
+                            <c:set var="nameMsg"><bean:message key="default.Name"/></c:set>
+                            ${nameMsg}
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <html:text styleClass="form-control" styleId="parameter-name" property="parameterName" maxlength="99" size="32"/>
+                        <agn:agnText styleClass="form-control" styleId="parameter-name" property="parameterName" maxlength="99" size="32" placeholder="${nameMsg}"/>
                     </div>
                 </div>
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label for="parameter-description" class="control-label">
-                            <bean:message key="Description"/>
+                            <c:set var="descriptionMsg"><bean:message key="default.description"/></c:set>
+                            ${descriptionMsg}
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <html:textarea styleClass="form-control" styleId="parameter-description" property="description" rows="5" cols="32"/>
+                        <agn:agnTextarea property="description" styleId="parameter-description" styleClass="form-control" rows="5" cols="32" placeholder="${descriptionMsg}"/>
                     </div>
                 </div>
                 <div class="form-group">

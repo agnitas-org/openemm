@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    <div id='bulkActionExtensions' data-show-by-checkbox="#bulkActions_modifyLinkExtensions">
+    <div id="bulkActionExtensions" data-show-by-checkbox="#bulkActions_modifyLinkExtensions">
         <c:set var="extensionTableTitle"><bean:message  key="LinkExtensions"/></c:set>
         <c:set var="enterdownAction" value="bulkActionExtensionsEnterdown"/>
         <%@ include file="../extensions-table.jspf" %>

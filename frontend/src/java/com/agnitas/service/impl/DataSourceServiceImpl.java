@@ -28,6 +28,9 @@ import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
 import com.agnitas.service.DataSourceService;
 import com.agnitas.service.FailedCreateDataSourceException;
 
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
 public class DataSourceServiceImpl implements DataSourceService {
 	
 	private static final Logger logger = Logger.getLogger(DataSourceServiceImpl.class);
@@ -84,6 +87,18 @@ public class DataSourceServiceImpl implements DataSourceService {
 		sortColumn = StringUtils.defaultIfEmpty(sortColumn, "datasource_id");
 		return datasourceDescriptionDao.getPaginatedDataSources(companyId, sortColumn, pageNumber, pageSize, isAscending);
 	}
+	
+    @Override
+    public JSONArray getDataSourcesJson(final int companyId) {
+        JSONArray jsonArray = new JSONArray();
+        for (DataSource dataSource : datasourceDescriptionDao.getDataSources(companyId)) {
+            JSONObject entry = new JSONObject();
+            entry.put("id", dataSource.getId());
+            entry.put("description", dataSource.getDescription());
+            jsonArray.add(entry);
+        }
+        return jsonArray;
+    }
 	
 	private int getDataSourceId(int companyId, int dsGroup, String dsDescription) {
 		DatasourceDescription dataSource = datasourceDescriptionDao.getByDescription(dsGroup, companyId, dsDescription);

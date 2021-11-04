@@ -36,8 +36,8 @@ public class ActionOperationServiceMailDaoImpl extends AbstractActionOperationDa
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationServiceMailParameters operation) {
-		update(logger, "INSERT INTO actop_service_mail_tbl (action_operation_id, text_mail, subject_line, to_addr, from_address, reply_address, mailtype, html_mail) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
-				operation.getId(), 
+		update(logger, "INSERT INTO actop_service_mail_tbl (action_operation_id, text_mail, subject_line, to_addr, from_address, reply_address, mailtype, html_mail) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+				operation.getId(),
 				operation.getTextMail(),
 				operation.getSubjectLine(),
 				operation.getToAddress(),
@@ -50,7 +50,7 @@ public class ActionOperationServiceMailDaoImpl extends AbstractActionOperationDa
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processUpdateOperation(ActionOperationServiceMailParameters operation) {
-		update(logger, "UPDATE actop_service_mail_tbl SET text_mail = ?, subject_line = ?, to_addr = ?, from_address = ?, reply_address = ?, mailtype = ?, html_mail = ? WHERE action_operation_id = ?", 
+		update(logger, "UPDATE actop_service_mail_tbl SET text_mail = ?, subject_line = ?, to_addr = ?, from_address = ?, reply_address = ?, mailtype = ?, html_mail = ? WHERE action_operation_id = ?",
 				operation.getTextMail(),
 				operation.getSubjectLine(),
 				operation.getToAddress(),

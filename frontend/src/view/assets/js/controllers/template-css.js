@@ -12,6 +12,15 @@ AGN.Lib.Controller.new('template-css', function() {
   this.addAction({
     click: 'saveLayoutCss'
   }, function() {
-    $('#gridTemplateForm').submit();
+    var formObj = AGN.Lib.Form.get($('#gridTemplateForm'));
+    var mailingsIds = $('#save-css-approve-modal-form select[name="templatesToUpdate"]').val();
+
+    var currentTemplateId = formObj.getValue("templateId");
+    if(currentTemplateId) {
+      mailingsIds.push(currentTemplateId);
+    }
+
+    formObj.setValueOnce("bulkIds", mailingsIds);
+    formObj.submit();
   });
 });

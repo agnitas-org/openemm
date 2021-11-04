@@ -46,15 +46,15 @@ public class TargetGroupLocatorChain implements TargetGroupLocator {
 	public TargetDeleteStatus isTargetGroupCanBeDeleted(int companyID, int targetGroupID) throws TargetGroupException {
         boolean isCanBeOnlyMarkedAsDeleted = false;
 
-		for(TargetGroupLocator locator : this.locators) {
-			if(logger.isDebugEnabled()) {
+		for (TargetGroupLocator locator : this.locators) {
+			if (logger.isDebugEnabled()) {
 				logger.debug("Invoking target group locator type " + locator.getClass().getCanonicalName());
 			}
             TargetDeleteStatus status = locator.isTargetGroupCanBeDeleted(companyID, targetGroupID);
-            if(status == TargetDeleteStatus.CANT_BE_DELETED){
+            if (status == TargetDeleteStatus.CANT_BE_DELETED){
                 return TargetDeleteStatus.CANT_BE_DELETED;
             }
-            if(status == TargetDeleteStatus.CAN_BE_MARKED_AS_DELETED){
+            if (status == TargetDeleteStatus.CAN_BE_MARKED_AS_DELETED){
                 isCanBeOnlyMarkedAsDeleted = true;
             }
 		}

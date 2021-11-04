@@ -253,11 +253,11 @@ public class Json5Reader extends JsonReader {
 				return Integer.parseInt(hexNumberString.substring(2), 16);
 			} else {
 				BigInteger value = new BigInteger(hexNumberString.substring(2), 16);
-				boolean isInteger = new BigInteger(Integer.toString(Integer.MIN_VALUE)).compareTo(value) == -1 && value.compareTo(new BigInteger(Integer.toString(Integer.MAX_VALUE))) == -1;
+				boolean isInteger = BigInteger.valueOf(Integer.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) < 0;
 				if (isInteger) {
 					return Integer.parseInt(hexNumberString.substring(2), 16);
 				} else {
-					boolean isLong = new BigInteger(Long.toString(Long.MIN_VALUE)).compareTo(value) == -1 && value.compareTo(new BigInteger(Long.toString(Long.MAX_VALUE))) == -1;
+					boolean isLong = BigInteger.valueOf(Long.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) < 0;
 					if (isLong) {
 						return Long.parseLong(hexNumberString.substring(2), 16);
 					} else {

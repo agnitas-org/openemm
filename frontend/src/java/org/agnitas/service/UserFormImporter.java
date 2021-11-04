@@ -11,12 +11,10 @@
 package org.agnitas.service;
 
 import java.io.InputStream;
-
-import com.agnitas.beans.ComAdmin;
+import java.util.Locale;
 
 public interface UserFormImporter {
+	FormImportResult importUserForm(int companyID, InputStream input, Locale locale) throws Exception;
 
-	FormImportResult importUserForm(ComAdmin admin, InputStream input) throws Exception;
-
-	FormImportResult importUserForm(ComAdmin admin, InputStream input, String formName, String description) throws Exception;
+	FormImportResult importUserForm(int companyID, InputStream input, String formName, String description, Locale locale) throws Exception;
 }

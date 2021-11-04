@@ -24,43 +24,43 @@ import org.agnitas.util.Triple;
 public interface GenericImportDao {
 	String createTemporaryImportTable(int companyID, String destinationTableName, int adminID, int datasourceID, List<String> keyColumns, String sessionId, String description) throws Exception;
 
-	String addIndexedIntegerColumn(String tableName, String baseColumnName, String indexName) throws Exception;
+	String addIndexedIntegerColumn(int companyID, String tableName, String baseColumnName, String indexName) throws Exception;
 
-	void dropTemporaryImportTable(String tempTableName);
+	void dropTemporaryImportTable(int companyID, String tempTableName);
 
 	DataSource getDataSource();
 
-	int markDuplicatesEntriesCrossTable(String destinationTableName, String sourceTableName, List<String> keyColumns, String duplicateSignColumn);
+	int markDuplicatesEntriesCrossTable(int companyID, String destinationTableName, String sourceTableName, List<String> keyColumns, String duplicateSignColumn);
 
-	int markDuplicatesEntriesSingleTable(String temporaryImportTableName, List<String> keyColumns, String importIndexColumn, String duplicateIndexColumn);
+	int markDuplicatesEntriesSingleTable(int companyID, String temporaryImportTableName, List<String> keyColumns, String importIndexColumn, String duplicateIndexColumn);
 	
-	int removeNewEntriesWithInvalidNullValues(String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateInDestinationTableColumn) throws Exception;
+	int removeNewEntriesWithInvalidNullValues(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateInDestinationTableColumn) throws Exception;
 
-	int insertNewEntries(String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, String duplicateInDestinationTableColumn);
+	int insertNewEntries(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, String duplicateInDestinationTableColumn);
 
 	int updateAllExistingEntriesByKeyColumn(String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, String duplicateIndexColumn, String duplicateInDestinationTableColumn, UpdateMethod updateMethod, int datasourceId, int companyId) throws Exception;
 
 	String createTemporaryImportErrorTable(int companyId, int adminId, int datasourceId, List<String> columns, String sessionId) throws Exception;
 
-	void addErrorneousCsvEntry(String temporaryErrorTableName, List<Integer> importedCsvFileColumnIndexes, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String errorneousFieldName);
+	void addErrorneousCsvEntry(int companyID, String temporaryErrorTableName, List<Integer> importedCsvFileColumnIndexes, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String errorneousFieldName);
 
 	Map<ImportErrorType, Integer> getReasonStatistics(String temporaryErrorTableName);
 
 	boolean hasRepairableErrors(String temporaryErrorTableName);
 
-	List<Integer> updateTemporaryErrors(String temporaryErrorTableName, List<String> importedCsvFileColumns, Map<String, String> changedValues);
+	List<Integer> updateTemporaryErrors(int companyID, String temporaryErrorTableName, List<String> importedCsvFileColumns, Map<String, String> changedValues);
 
 	Map<String, Object> getErrorLine(String temporaryErrorTableName, int csvIndex);
 
-	void addErrorneousCsvEntry(String temporaryErrorTableName, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String errorneousFieldName);
+	void addErrorneousCsvEntry(int companyID, String temporaryErrorTableName, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String errorneousFieldName);
 
 	int getResultEntriesCount(String selectIntStatement);
 
-	void markErrorLineAsRepaired(String temporaryErrorTableName, int csvIndex);
+	void markErrorLineAsRepaired(int companyID, String temporaryErrorTableName, int csvIndex);
 
 	boolean isKeyColumnIndexed(String tablename, List<String> keyColumns);
 
-	int clearTable(String destinationTableName);
+	int clearTable(int companyID, String destinationTableName);
 
 	boolean checkIfTableExists(String destinationTableName);
 

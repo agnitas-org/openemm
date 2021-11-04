@@ -115,16 +115,22 @@ public class MaildropServiceImpl implements MaildropService {
 
 	@Override
 	public final boolean isActiveMailing(final int mailingID, final int companyID) {
-		return hasMaildropStatus(mailingID, companyID, MaildropStatus.ACTION_BASED, MaildropStatus.DATE_BASED, MaildropStatus.WORLD);
+		if (hasMaildropStatus(mailingID, companyID, MaildropStatus.ACTION_BASED, MaildropStatus.DATE_BASED, MaildropStatus.WORLD)) {
+			return true;
+		} else if (mailingDao.isActiveIntervalMailing(companyID, mailingID)) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	@Override
 	public final boolean hasMaildropStatus(final int mailingID, final int companyID, final MaildropStatus... statusList) {
-		final Collection<MaildropEntry> entries = this.maildropStatusDao.listMaildropStatus(mailingID, companyID);
+		final Collection<MaildropEntry> entries = maildropStatusDao.listMaildropStatus(mailingID, companyID);
 		
-		for(final MaildropEntry entry : entries) {
-			for(MaildropStatus status : statusList) {
-				if(entry.getStatus() == status.getCode()) {
+		for (final MaildropEntry entry : entries) {
+			for (MaildropStatus status : statusList) {
+				if (entry.getStatus() == status.getCode()) {
 					return true;
 				}
 			}

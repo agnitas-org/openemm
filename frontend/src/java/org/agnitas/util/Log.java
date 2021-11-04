@@ -17,11 +17,14 @@ import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.EmptyStackException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Stream;
 
 import org.apache.log4j.Appender;
 import org.apache.log4j.AppenderSkeleton;
@@ -65,6 +68,8 @@ public class Log {
 	};
 	/** the level up to we will write to the logfile */
 	private int			level;
+	/** a unique number for this thread */
+	private String			unique;
 	/** optional output print */
 	private PrintStream		printer;
 	/** to provide some hirarchical log IDs */
@@ -153,9 +158,11 @@ public class Log {
 	 *
 	 * @param program the name of the application
 	 * @param level the maximum log level to report
+	 * @param uniqueValue a unique number to unify parallel logging
 	 */
-	public Log (String program, int level) {
+	public Log (String program, int level, long uniqueValue) {
 		this.level = level;
+		unique = uniqueValue != 0 ? "/ID:" + Long.toHexString (uniqueValue) : null;
 		printer = null;
 
 		String	separator = System.getProperty ("file.separator");
@@ -320,8 +327,10 @@ public class Log {
 		if (loglvl <= level) {
 			Date			now = new Date ();
 			String			fname = mkfname (append);
-			StringBuilder		output = new StringBuilder (fmt_msg.format (now) + levelDescription (loglvl) + (mid != null ? "/" + mid : "") + ": " + msg + "\n");
+			String			marker = fmt_msg.format (now) + levelDescription (loglvl) + (unique != null ? unique : "") + (mid != null ? "/" + mid : "");
+			List <String>		output = new ArrayList <> ();
 			
+			Stream.of (msg.split ("\n")).forEach (s -> output.add (s));
 			if (th != null) {
 				Set <Throwable>	seen = new HashSet<>();
 				
@@ -329,22 +338,25 @@ public class Log {
 					StackTraceElement[] elements = th.getStackTrace ();
 
 					if (elements != null) {
-						output.append ("\tStacktrace for " + th.toString () + ":\n");
+						output.add ("Stacktrace for " + th.toString () + ":");
 						for (StackTraceElement element : elements) {
-							output.append ("\tat " + element.toString () + "\n");
+							output.add ("\tat " + element.toString ());
 						}
 					}
 					seen.add (th);
 					th = th.getCause ();
 					if ((th != null) && seen.contains (th)) {
-						output.append ("\t ... recursive stack trace detected, aborting\n");
+						output.add ("\t... recursive stack trace detected, aborting");
 					}
 				}
 			}
-			
 			try {
 				try (FileOutputStream file = new FileOutputStream (fname, true)) {
-					file.write (output.toString ().getBytes ());
+					file.write ((output
+						     .stream ()
+						     .map (s -> marker + ": " + s)
+						     .reduce ((s, e) -> s + "\n" + e).orElse ("") + "\n")
+						    .getBytes ());
 					if (printer != null) {
 						printer.println (msg);
 					}
@@ -401,7 +413,7 @@ public class Log {
 			out (ERROR, name, fname + " io failed (" + e.toString () + "): " + msg);
 		}
 	}
-
+	
 	/* Allow linking log4j to internal logger */
 	static class LogFilter extends Filter {
 		@Override

@@ -333,18 +333,23 @@
             }
         };
 
-        this.processForward = function(forwardName, elementId, multiSelectors, submitFn, extraForwardParams) {
-            $('#forwardName').val(forwardName);
-            $('#forwardParams').val(
-                'nodeId=' + this.curEditingNode.getId()
-                + ';elementId=' + encodeURIComponent(elementId) + (extraForwardParams ? ';' + extraForwardParams : '')
-            );
+        this.processForward = function (forwardName, elementId, submitFn, extraForwardParams) {
+            var forwardParams = [];
+            forwardParams.push('nodeId=' + this.curEditingNode.getId());
+            forwardParams.push('elementId=' + encodeURIComponent(elementId));
+            if (!!extraForwardParams) {
+                forwardParams.push(extraForwardParams);
+            }
+            var options = {
+                forwardName: forwardName,
+                forwardParams: forwardParams.join(';')
+            }
 
             if (this.curEditor.safeToSave) {
                 this.saveCurrentEditor();
             }
 
-            submitFn(false);
+            submitFn(false, options);
         };
 
         this.getFirstOptionValue = function($el) {
@@ -451,6 +456,5 @@
         });
     }
 
-    //TODO: rename to EditorsHelper after old code deleted
-    AGN.Lib.WM.EditorsHelperNew = new EditorsHelper();
+    AGN.Lib.WM.EditorsHelper = new EditorsHelper();
 })();

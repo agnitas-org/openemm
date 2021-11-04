@@ -41,8 +41,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -169,41 +169,41 @@ public class HttpUtils {
 		}
 	}
 	
-	public static String executeHttpGetRequest(String httpUrl) throws Exception {
-		return executeHttpRequest(httpUrl, null, null);
+	public static String executeHttpGetRequest(String httpUrl, final String secureTransportLayerProtocol) throws Exception {
+		return executeHttpRequest(httpUrl, null, null, secureTransportLayerProtocol);
 	}
 	
-	public static String executeHttpGetRequest(String httpUrl, Map<String, Object> httpUrlParameter) throws Exception {
-		return executeHttpRequest(httpUrl, httpUrlParameter, null);
+	public static String executeHttpGetRequest(String httpUrl, Map<String, Object> httpUrlParameter, final String secureTransportLayerProtocol) throws Exception {
+		return executeHttpRequest(httpUrl, httpUrlParameter, null, secureTransportLayerProtocol);
 	}
 	
-	public static String executeHttpGetRequest(String httpUrl, Map<String, Object> httpUrlParameter, boolean checkSslServerCert) throws Exception {
-		return executeHttpRequest(httpUrl, httpUrlParameter, null, checkSslServerCert);
+	public static String executeHttpGetRequest(String httpUrl, Map<String, Object> httpUrlParameter, boolean checkSslServerCert, final String secureTransportLayerProtocol) throws Exception {
+		return executeHttpRequest(httpUrl, httpUrlParameter, null, checkSslServerCert, secureTransportLayerProtocol);
 	}
 	
-	public static String executeHttpPostRequest(String httpUrl, Map<String, Object> httpPostParameter) throws Exception {
-		return executeHttpRequest(httpUrl, null, httpPostParameter);
+	public static String executeHttpPostRequest(String httpUrl, Map<String, Object> httpPostParameter, final String secureTransportLayerProtocol) throws Exception {
+		return executeHttpRequest(httpUrl, null, httpPostParameter, secureTransportLayerProtocol);
 	}
 	
-	public static String executeHttpPostRequest(String httpUrl, Map<String, Object> httpPostParameter, boolean checkSslServerCert) throws Exception {
-		return executeHttpRequest(httpUrl, null, httpPostParameter, checkSslServerCert);
+	public static String executeHttpPostRequest(String httpUrl, Map<String, Object> httpPostParameter, boolean checkSslServerCert, final String secureTransportLayerProtocol) throws Exception {
+		return executeHttpRequest(httpUrl, null, httpPostParameter, checkSslServerCert, secureTransportLayerProtocol);
 	}
 	
-	public static String executeHttpRequest(String httpUrlString, Map<String, Object> httpUrlParameter, Map<String, Object> httpPostParameter) throws Exception {
-		return executeHttpRequest(httpUrlString, httpUrlParameter, httpPostParameter, true);
+	public static String executeHttpRequest(String httpUrlString, Map<String, Object> httpUrlParameter, Map<String, Object> httpPostParameter, final String secureTransportLayerProtocol) throws Exception {
+		return executeHttpRequest(httpUrlString, httpUrlParameter, httpPostParameter, true, secureTransportLayerProtocol);
 	}
 	
-	public static String executeHttpRequest(String httpUrlString, Map<String, Object> httpUrlParameter, Map<String, Object> httpPostParameter, boolean checkSslServerCert) throws Exception {
-		return executeHttpRequest(httpUrlString, null, httpUrlParameter, httpPostParameter, checkSslServerCert);
+	public static String executeHttpRequest(String httpUrlString, Map<String, Object> httpUrlParameter, Map<String, Object> httpPostParameter, boolean checkSslServerCert, final String secureTransportLayerProtocol) throws Exception {
+		return executeHttpRequest(httpUrlString, null, httpUrlParameter, httpPostParameter, checkSslServerCert, secureTransportLayerProtocol);
 	}
 	
-	public static String executeHttpRequest(String httpUrlString, Map<String, String> httpRequestHeaders, Map<String, Object> httpUrlParameter, Map<String, Object> httpPostParameter, boolean checkSslServerCert) throws Exception {
+	public static String executeHttpRequest(String httpUrlString, Map<String, String> httpRequestHeaders, Map<String, Object> httpUrlParameter, Map<String, Object> httpPostParameter, boolean checkSslServerCert, final String secureTransportLayerProtocol) throws Exception {
 		String httpRequestBody = null;
 		if (httpPostParameter != null && httpPostParameter.size() > 0) {
 			httpRequestBody = HttpUtils.convertToParameterString(httpPostParameter, null);
 		}
 		
-		HttpResponse response = executeHttpRequest(null, httpUrlString, httpRequestHeaders, httpUrlParameter, httpRequestBody, checkSslServerCert);
+		HttpResponse response = executeHttpRequest(null, httpUrlString, httpRequestHeaders, httpUrlParameter, httpRequestBody, checkSslServerCert, secureTransportLayerProtocol);
 		
 		if (response.getHttpCode() == HttpURLConnection.HTTP_OK) {
 			return response.getContent();
@@ -212,15 +212,15 @@ public class HttpUtils {
 		}
 	}
 	
-	public static HttpResponse executeHttpRequest(RequestMethod requestMethod, String httpUrlString, Map<String, String> httpRequestHeaders, Map<String, Object> httpUrlParameter, String httpRequestBody, boolean checkSslServerCert) throws Exception {
-		return executeHttpRequest(requestMethod, httpUrlString, httpRequestHeaders, httpUrlParameter, httpRequestBody, null, checkSslServerCert);
+	public static HttpResponse executeHttpRequest(RequestMethod requestMethod, String httpUrlString, Map<String, String> httpRequestHeaders, Map<String, Object> httpUrlParameter, String httpRequestBody, boolean checkSslServerCert, final String secureTransportLayerProtocol) throws Exception {
+		return executeHttpRequest(requestMethod, httpUrlString, httpRequestHeaders, httpUrlParameter, httpRequestBody, null, checkSslServerCert, secureTransportLayerProtocol);
 	}
 	
-	public static HttpResponse executeHttpRequest(RequestMethod requestMethod, String urlString, Map<String, String> httpRequestHeaders, Map<String, Object> httpUrlParameter, String httpRequestBody, String requestEncoding, boolean checkSslServerCert) throws Exception {
-		return executeHttpRequest(requestMethod, urlString, httpRequestHeaders,httpUrlParameter, httpRequestBody, requestEncoding, checkSslServerCert, null);
+	public static HttpResponse executeHttpRequest(RequestMethod requestMethod, String urlString, Map<String, String> httpRequestHeaders, Map<String, Object> httpUrlParameter, String httpRequestBody, String requestEncoding, boolean checkSslServerCert, final String secureTransportLayerProtocol) throws Exception {
+		return executeHttpRequest(requestMethod, urlString, httpRequestHeaders,httpUrlParameter, httpRequestBody, requestEncoding, checkSslServerCert, null, secureTransportLayerProtocol);
 	}
 	 
-	public static HttpResponse executeHttpRequest(RequestMethod requestMethod, String urlString, Map<String, String> httpRequestHeaders, Map<String, Object> httpUrlParameter, String httpRequestBody, String requestEncoding, boolean checkSslServerCert, Proxy proxy) throws Exception {
+	public static HttpResponse executeHttpRequest(RequestMethod requestMethod, String urlString, Map<String, String> httpRequestHeaders, Map<String, Object> httpUrlParameter, String httpRequestBody, String requestEncoding, boolean checkSslServerCert, Proxy proxy, final String secureTransportLayerProtocol) throws Exception {
 		if (StringUtils.isBlank(urlString)) {
 			throw new RuntimeException("Invalid empty URL for http request");
 		}
@@ -250,7 +250,7 @@ public class HttpUtils {
 			}
 			
 			if (urlString.startsWith(SECURE_HTTP_PROTOCOL_SIGN) && !checkSslServerCert) {
-				SSLContext sslContext = SSLContext.getInstance("SSL");
+				SSLContext sslContext = SSLContext.getInstance(secureTransportLayerProtocol);
 				sslContext.init(null, new TrustManager[] { TRUSTALLCERTS_TRUSTMANAGER }, new java.security.SecureRandom());
 				SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 				((HttpsURLConnection) urlConnection).setSSLSocketFactory(sslSocketFactory);

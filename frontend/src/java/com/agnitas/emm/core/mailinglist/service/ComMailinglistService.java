@@ -17,6 +17,7 @@ import com.agnitas.beans.Mailing;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
@@ -57,7 +58,20 @@ public interface ComMailinglistService {
     
     boolean deleteMailinglist(int mailinglistId, @VelocityCheck int companyId);
     
+    @Transactional
+    boolean deleteMailinglistWithReportsCleaning(int mailinglistId, int companyId);
+
     void deleteMailinglistBindingRecipients(@VelocityCheck int companyId, int mailinglistId, boolean onlyActiveUsers, boolean withoutAdminAndTestUsers);
 
 	JSONArray getMailingListsJson(ComAdmin admin);
+
+    boolean mailinglistDeleted(int mailinglistId, int companyId);
+
+    Mailinglist getDeletedMailinglist(int mailinglistId, int companyId);
+
+    List<Mailing> getUsedMailings(Set<Integer> mailinglistIds, int companyId);
+
+    int getSentMailingsCount(int mailinglistId, int companyId);
+
+    int getAffectedReportsCount(int mailinglistId, int companyId);
 }

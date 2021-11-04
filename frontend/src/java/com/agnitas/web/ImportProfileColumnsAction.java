@@ -15,7 +15,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,15 +24,10 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.impl.ColumnMappingImpl;
 import org.agnitas.dao.ImportRecipientsDao;
-import org.agnitas.dao.ProfileFieldDao;
 import org.agnitas.service.ImportException;
 import org.agnitas.service.ImportProfileService;
 import org.agnitas.util.AgnUtils;
@@ -45,7 +39,6 @@ import org.agnitas.util.DbUtilities;
 import org.agnitas.util.ImportUtils;
 import org.agnitas.util.ZipUtilities;
 import org.agnitas.util.importvalues.Charset;
-import org.agnitas.util.importvalues.DateFormat;
 import org.agnitas.util.importvalues.ImportMode;
 import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
@@ -62,6 +55,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.Permission;
@@ -70,6 +64,9 @@ import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader.JsonToken;
 import com.agnitas.web.forms.ImportProfileColumnsForm;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
 
@@ -92,7 +89,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 
     protected ImportProfileService importProfileService;
     protected ComRecipientDao recipientDao;
-    protected ProfileFieldDao profileFieldDao;
+    protected ComProfileFieldDao profileFieldDao;
     protected ImportRecipientsDao importRecipientsDao;
 
     @Override
@@ -314,7 +311,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
     }
 
     @Required
-    public void setProfileFieldDao(ProfileFieldDao profileFieldDao) {
+    public void setProfileFieldDao(ComProfileFieldDao profileFieldDao) {
         this.profileFieldDao = profileFieldDao;
     }
 
@@ -336,40 +333,16 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
         // Check for valid default values
         for (ColumnMapping mapping : aForm.getProfile().getColumnMapping()) {
             String dbColumnName = mapping.getDatabaseColumn();
-            String defaultValue = mapping.getDefaultValue();
-            boolean checkThisValue;
-
-            if (StringUtils.isNotBlank(mapping.getFileColumn())) {
-                // Default value for normal db column which is included in csv data
+            if ((mapping.getDefaultValue().startsWith("'") && mapping.getDefaultValue().endsWith("'")) && StringUtils.isNotEmpty(mapping.getDefaultValue()) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(dbColumnName)) {
+                String defaultValue = mapping.getDefaultValue();
                 if (defaultValue != null && defaultValue.startsWith("'") && defaultValue.endsWith("'")) {
-                    defaultValue = defaultValue.substring(1, mapping.getDefaultValue().length() - 1);
+                    defaultValue = defaultValue.substring(1, defaultValue.length() - 1);
                 }
-                checkThisValue = true;
-            } else if (mapping.getDefaultValue().startsWith("'") && mapping.getDefaultValue().endsWith("'")) {
-                // Additional db value which is NOT included in csv data
-                defaultValue = defaultValue.substring(1, mapping.getDefaultValue().length() - 1);
-                checkThisValue = true;
-            } else {
-                // Additional db function
-                checkThisValue = false;
-            }
-
-            if (checkThisValue && StringUtils.isNotEmpty(mapping.getDefaultValue()) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(dbColumnName)) {
-                ProfileField profileField = profileFieldDao.getProfileField(aForm.getProfile().getCompanyId(), dbColumnName);
-                if ((profileField.getSimpleDataType() == DbColumnType.SimpleDataType.Numeric || profileField.getSimpleDataType() == DbColumnType.SimpleDataType.Float) && !AgnUtils.isDouble(defaultValue)) {
-                    errors.add("global", new ActionMessage("error.import.column.invalid_default.numeric", dbColumnName));
+                
+                DbColumnType dbColumnType = profileFieldDao.getColumnType(aForm.getProfile().getCompanyId(), dbColumnName);
+                if (!DbUtilities.isAllowedValueForDataType(profileFieldDao.isOracleDB(), dbColumnType, defaultValue)) {
+                    errors.add("global", new ActionMessage("error.import.invalidDataForField", dbColumnName));
                     return true;
-                } else if (profileField.getSimpleDataType() == DbColumnType.SimpleDataType.Date || profileField.getSimpleDataType() == DbColumnType.SimpleDataType.DateTime) {
-                	if (!DbUtilities.isNowKeyword(defaultValue)) {
-	                    String dateFormatPattern = DateFormat.getDateFormatById(aForm.getProfile().getDateFormat()).getValue();
-	                    SimpleDateFormat dateFormat = new SimpleDateFormat(dateFormatPattern);
-	                    try {
-	                        dateFormat.parse(defaultValue);
-	                    } catch (Exception e) {
-	                        errors.add("global", new ActionMessage("error.import.column.invalid_default.date", dbColumnName, dateFormatPattern));
-	                        return true;
-	                    }
-                	}
                 }
             }
         }
@@ -538,18 +511,24 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
      * @param aForm a form
      */
     protected void addColumn(ImportProfileColumnsForm aForm) {
-        String columnValue = aForm.getNewColumn();
+        String columnValue = aForm.getNewColumnMappingValue();
         if ("value".equalsIgnoreCase(aForm.getValueType())) {
-            columnValue = "'" + columnValue + "'";
+        	if (columnValue.length() >= 2 && columnValue.startsWith("'") && columnValue.endsWith("'")) {
+        		columnValue = "'" + columnValue.substring(1, columnValue.length() - 1) + "'";
+        	} else if (columnValue.length() >= 2 && columnValue.startsWith("\"") && columnValue.endsWith("\"")) {
+        		columnValue = "'" + columnValue.substring(1, columnValue.length() - 1) + "'";
+        	} else {
+        		columnValue = "'" + columnValue + "'";
+        	}
         }
         ColumnMappingImpl mapping = new ColumnMappingImpl();
         mapping.setFileColumn("");
-        mapping.setDatabaseColumn("");
+        mapping.setDatabaseColumn(aForm.getNewColumnMappingName());
         mapping.setProfileId(aForm.getProfileId());
         mapping.setMandatory(false);
         mapping.setDefaultValue(columnValue);
         aForm.getProfile().getColumnMapping().add(mapping);
-        aForm.setNewColumn("");
+        aForm.setNewColumnMappingValue("");
     }
 
     /**
@@ -672,6 +651,11 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 			} else if ("JSON".equalsIgnoreCase(profile.getDatatype())) {
 				try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(profile, file), Charset.getCharsetById(profile.getCharset()).getCharsetName())) {
 					jsonReader.readNextToken();
+
+					while (jsonReader.getCurrentToken() != null && jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+						jsonReader.readNextToken();
+					}
+					
 					if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
 						throw new Exception("Json data does not contain expected JsonArray");
 					}
@@ -749,12 +733,17 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 	    	try {
 	            if (profile.getZipPassword() == null) {
 	            	InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(file));
-	                ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-	                if (zipEntry == null) {
-	                	throw new ImportException(false, "error.unzip.noEntry");
-	                } else {
-	                	return dataInputStream;
-	                }
+	                try {
+						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
+						if (zipEntry == null) {
+							throw new ImportException(false, "error.unzip.noEntry");
+						} else {
+							return dataInputStream;
+						}
+					} catch (Exception e) {
+						dataInputStream.close();
+						throw e;
+					}
 	            } else {
 					ZipFile zipFile = new ZipFile(file);
 					zipFile.setPassword(profile.getZipPassword().toCharArray());

@@ -10,7 +10,7 @@
 
 package org.agnitas.service;
 
-import com.restfb.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class RecipientDuplicateSqlOptions implements RecipientOptions {
 

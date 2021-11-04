@@ -10,7 +10,7 @@
 
 package org.agnitas.emm.springws.endpoint.mailinglist;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 
 import org.agnitas.emm.core.mailinglist.service.MailinglistModel;
 import org.agnitas.emm.core.mailinglist.service.MailinglistService;

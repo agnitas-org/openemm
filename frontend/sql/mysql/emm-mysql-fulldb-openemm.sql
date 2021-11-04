@@ -2,7 +2,8 @@ DELETE FROM config_tbl;
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('system', 'licence', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('system', 'support_emergency_url', 'http://www.openemm.org/systemstoerung', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('system', 'RdirLandingpage', 'http://www.openemm.org', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
-INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('system', '<hostname>[to be defined].IsActive', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
+DELETE FROM config_tbl WHERE class = 'system' AND name = '<hostname>[to be defined].IsActive';
+INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('jobqueue', 'execute', '1', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('mailloop', 'actionbased_autoresponder_ui', 'enabled', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('clean', 'mastercompany', 'true', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 

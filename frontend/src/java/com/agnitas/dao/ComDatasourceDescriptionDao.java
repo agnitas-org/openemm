@@ -10,6 +10,8 @@
 
 package com.agnitas.dao;
 
+import java.util.List;
+
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -21,7 +23,7 @@ public interface ComDatasourceDescriptionDao {
     
     DatasourceDescription getByDescription(int group, @VelocityCheck int companyID, String description);
 
-    DatasourceDescription get(int dsDescriptionID, @VelocityCheck int companyID);
+   // DatasourceDescription get(int dsDescriptionID, @VelocityCheck int companyID); unused
 
     int save(DatasourceDescription dsDescription);
     
@@ -30,4 +32,6 @@ public interface ComDatasourceDescriptionDao {
     boolean deleteByCompanyID(@VelocityCheck int companyId);
 
     PaginatedListImpl<DataSource> getPaginatedDataSources(@VelocityCheck int companyId, String sortColumn, int pageNumber, int pageSize, boolean isAscending);
+
+    List<DataSource> getDataSources(final int companyId);
 }

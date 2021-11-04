@@ -587,7 +587,7 @@
         </description>
         <name>originUri</name>
         <function-class>org.agnitas.util.HttpUtils</function-class>
-        <function-signature>java.lang.String originUri(javax.servlet.http.HttpServletRequest)</function-signature>
+        <function-signature>java.lang.String originUri(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             &lt;c:set var="originUri" value="${emm:originUri(pageContext.request)}" scope="page"/&gt;
             &lt;h4&gt;You currently are at ${originUri}&lt;/h4&gt;
@@ -601,7 +601,7 @@
         </description>
         <name>ckEditorPath</name>
         <function-class>org.agnitas.util.AgnUtils</function-class>
-        <function-signature>java.lang.String getCkEditorPath(javax.servlet.http.HttpServletRequest)</function-signature>
+        <function-signature>java.lang.String getCkEditorPath(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             &lt;jsp:include page="/${emm:ckEditorPath(request)}/ckeditor-emm-helper.jsp"&gt;
                 &lt;jsp:param name="toolbarType" value="Classic"/&gt;
@@ -615,7 +615,7 @@
         </description>
         <name>isCKEditorTrimmed</name>
         <function-class>org.agnitas.util.CKEditorUtils</function-class>
-        <function-signature>boolean isCKEditorTrimmed(javax.servlet.http.HttpServletRequest)</function-signature>
+        <function-signature>boolean isCKEditorTrimmed(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             &lt;c:set var="editorType" value="${emm:isCKEditorTrimmed(pageContext.request) ? 'EMC' : 'EMM'}"/&gt;
         </example>
@@ -639,7 +639,7 @@
         </description>
         <name>getLocale</name>
         <function-class>org.agnitas.util.AgnUtils</function-class>
-        <function-signature>java.util.Locale getLocale(javax.servlet.http.HttpServletRequest)</function-signature>
+        <function-signature>java.util.Locale getLocale(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             ${emm:getLocale(pageContext.request)}
         </example>
@@ -651,7 +651,7 @@
         </description>
         <name>getTimeZoneId</name>
         <function-class>com.agnitas.util.JspUtilities</function-class>
-        <function-signature>java.lang.String getTimeZoneId(javax.servlet.http.HttpServletRequest)</function-signature>
+        <function-signature>java.lang.String getTimeZoneId(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             ${emm:getTimeZoneId(pageContext.request)}
         </example>
@@ -702,7 +702,7 @@
         </description>
         <name>getWorkflowParams</name>
         <function-class>org.agnitas.web.forms.WorkflowParametersHelper</function-class>
-        <function-signature>org.agnitas.web.forms.WorkflowParameters find(javax.servlet.http.HttpServletRequest)</function-signature>
+        <function-signature>org.agnitas.web.forms.WorkflowParameters find(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             ${emm:getWorkflowParams(pageContext.request)}
         </example>
@@ -714,7 +714,7 @@
         </description>
         <name>getWorkflowParamsWithDefault</name>
         <function-class>org.agnitas.web.forms.WorkflowParametersHelper</function-class>
-        <function-signature>org.agnitas.web.forms.WorkflowParameters defaultIfEmpty(javax.servlet.http.HttpServletRequest, java.lang.Integer)</function-signature>
+        <function-signature>org.agnitas.web.forms.WorkflowParameters defaultIfEmpty(jakarta.servlet.http.HttpServletRequest, java.lang.Integer)</function-signature>
         <example>
             ${emm:defaultIfEmpty(pageContext.request, 0)}
         </example>
@@ -738,7 +738,7 @@
         </description>
         <name>makeUnitSignNumber</name>
         <function-class>org.agnitas.util.AgnUtils</function-class>
-        <function-signature>java.lang.String getHumanReadableNumber(java.lang.Number, java.lang.String, boolean, javax.servlet.http.HttpServletRequest)</function-signature>
+        <function-signature>java.lang.String getHumanReadableNumber(java.lang.Number, java.lang.String, boolean, jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             ${emm:makeUnitSignNumber(0, 'B', false, pageContext.request)}
         </example>

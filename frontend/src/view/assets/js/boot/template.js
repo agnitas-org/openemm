@@ -266,3 +266,29 @@ AGN.Opt.Templates['session-expired'] = '\
         </div> \
     </div> \
 </div>';
+
+AGN.Opt.Templates['datetime-picker'] = '\
+<div class="col-sm-5"> \
+  <div class="input-group"> \
+    <div class="input-group-controls"> \
+      <input type="text" id="{{- property }}_date" class="form-control datepicker-input js-datepicker" \
+        data-value="{{- date}}" data-datepicker-options="format: {{- format}}"/> \
+    </div> \
+    <div class="input-group-btn"> \
+      <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1"> \
+        <i class="icon icon-calendar-o"></i> \
+      </button> \
+    </div> \
+  </div> \
+</div> \
+<div class="col-sm-3"> \
+  <div class="input-group"> \
+    <div class="input-group-controls"> \
+      <input type="text" id="{{- property }}_time" class="form-control js-timepicker" value="{{- time}}" \
+           data-timepicker-options=\"mask: \'h:s\'\"/> \
+    </div> \
+    <div class="input-group-addon"> \
+      <span class="addon"><i class="icon icon-clock-o"></i></span> \
+    </div> \
+  </div> \
+</div>';

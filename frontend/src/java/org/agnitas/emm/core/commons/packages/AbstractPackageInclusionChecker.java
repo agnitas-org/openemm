@@ -14,7 +14,7 @@ public abstract class AbstractPackageInclusionChecker implements PackageInclusio
 
 	@Override
 	public boolean includePackage(Package p) {
-		return includePackage( p.getName());
+		return p == null || includePackage( p.getName());
 	}
 
 }

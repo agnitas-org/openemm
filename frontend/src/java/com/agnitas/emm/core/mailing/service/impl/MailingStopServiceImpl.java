@@ -14,13 +14,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.commons.util.CompanyInfoDao;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.MailingService;
@@ -75,7 +78,7 @@ public final class MailingStopServiceImpl implements MailingStopService {
 		final boolean mailingStoppedBeforeGeneration = this.maildropService.stopWorldMailingBeforeGeneration(mailing.getCompanyID(), mailing.getMailingID());
 
 		if(mailingStoppedBeforeGeneration) {
-            mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), "canceled");
+            mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), MailingStatus.CANCELED);
 			stopFollowUpMailings(mailing, includeUnscheduled);
 			
 			return true;
@@ -84,7 +87,7 @@ public final class MailingStopServiceImpl implements MailingStopService {
 			final boolean result = serverPrioService.pauseMailGenerationAndDelivery(mailing.getMailingID());
 			
 			if(result) {
-                mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), "canceled");
+                mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), MailingStatus.CANCELED);
     			stopFollowUpMailings(mailing, includeUnscheduled);
 			}
 			
@@ -109,31 +112,34 @@ public final class MailingStopServiceImpl implements MailingStopService {
 		// Check that designated mailing can be resumed
 		requireResumableMailing(mailing);
 		
-		// Resuming mailing is only possible with a ServerPrioService set for this service
+		// Resuming mailing is only possible with a ServerPriorService set for this service
 		return serverPrioService.resumeMailGenerationAndDelivery(mailingID);
 	}
 
 	@Override
-	public final int copyMailingForResume(final int companyID, final int mailingID, final String shortnameOfCopy, final String descriptionOfCopy) throws MailingStopServiceException {
+	public final int copyMailingForResume(ComAdmin admin, int mailingID) throws MailingStopServiceException {
+		int companyId = admin.getCompanyID();
 		try {
+			final LightweightMailing mailing = mailingService.getLightweightMailing(admin.getCompanyID(), mailingID);
+
 		   	// Copy mailing
-	    	final int newMailingId = this.copyMailingService.copyMailing(
-	    			companyID,
+	    	final int newMailingId = copyMailingService.copyMailing(
+					companyId,
 	    			mailingID,
-	    			companyID,
-	    			shortnameOfCopy,
-	    			descriptionOfCopy);
+					companyId,
+	    			mailing.getShortname(),
+	    			AgnUtils.makeCloneName(admin.getLocale(), mailing.getShortname()));
 	
 	    	try {
 		    	// Create and register exclusion SQL
 		    	final String exclusionEQL = String.format("NOT RECEIVED MAILING %d", mailingID);
-		    	final SqlCode exclusionSqlCode = this.eqlFacade.convertEqlToSql(
+		    	final SqlCode exclusionSqlCode = eqlFacade.convertEqlToSql(
 		    			exclusionEQL,
-		    			companyID,
+						companyId,
 		    			CodeGenerationFlags.DEFAULT_FLAGS.setFlag(Flag.IGNORE_TRACKING_VETO));
 		    	
-		    	this.companyInfoDao.writeConfigValue(
-		    			companyID,
+		    	companyInfoDao.writeConfigValue(
+						companyId,
 		    			String.format("fixed-target-clause[%d]", newMailingId),
 		    			exclusionSqlCode.getSql(),
 		    			"Added by copying stopped mailing");
@@ -141,7 +147,7 @@ public final class MailingStopServiceImpl implements MailingStopService {
 		    	
 		    	// Delete original mailing
 		    	final MailingModel mailingToDelete = new MailingModel();
-		    	mailingToDelete.setCompanyId(companyID);
+		    	mailingToDelete.setCompanyId(companyId);
 		    	mailingToDelete.setMailingId(mailingID);
 		    	mailingToDelete.setTemplate(false);
 		    	mailingService.deleteMailing(mailingToDelete);
@@ -150,7 +156,7 @@ public final class MailingStopServiceImpl implements MailingStopService {
 	    	} catch(final Exception e) {
 	    		// Clean up
 		    	final MailingModel mailingToDelete = new MailingModel();
-		    	mailingToDelete.setCompanyId(companyID);
+		    	mailingToDelete.setCompanyId(companyId);
 		    	mailingToDelete.setMailingId(newMailingId);
 		    	mailingToDelete.setTemplate(false);
 	    		

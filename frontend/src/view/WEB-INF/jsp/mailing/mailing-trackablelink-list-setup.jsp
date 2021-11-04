@@ -137,17 +137,15 @@
         <jsp:param name="isMailingUndoAvailable" value="${trackableLinkForm.isMailingUndoAvailable}"/>
     </jsp:include>
 
-    <c:if test="${not trackableLinkForm.isMailingGrid}">
-        <%-- Save button for grid mailing is located at tile footer --%>
-        <emm:instantiate var="element" type="java.util.LinkedHashMap">
-            <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
+    <%-- Save button for grid mailing is located at tile footer --%>
+    <emm:instantiate var="element" type="java.util.LinkedHashMap">
+        <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
 
-            <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-            <c:set target="${element}" property="extraAttributes" value="data-form-target='#trackableLinkForm' data-form-set='everyPositionLink: false' data-action='save'"/>
-            <c:set target="${element}" property="iconBefore" value="icon-save"/>
-            <c:set target="${element}" property="name">
-                <bean:message key="button.Save"/>
-            </c:set>
-        </emm:instantiate>
-    </c:if>
+        <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
+        <c:set target="${element}" property="extraAttributes" value="data-form-target='#trackableLinkForm' data-form-set='everyPositionLink: false' data-action='save'"/>
+        <c:set target="${element}" property="iconBefore" value="icon-save"/>
+        <c:set target="${element}" property="name">
+            <bean:message key="button.Save"/>
+        </c:set>
+    </emm:instantiate>
 </emm:instantiate>

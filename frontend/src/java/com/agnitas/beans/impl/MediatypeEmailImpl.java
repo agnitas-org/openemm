@@ -13,7 +13,7 @@ package com.agnitas.beans.impl;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.mail.internet.InternetAddress;
+import jakarta.mail.internet.InternetAddress;
 
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;

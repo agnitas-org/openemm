@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.delivery.service.impl;
 
+import static com.agnitas.emm.core.Permission.RECIPIENT_HISTORY_MAILING_DELIVERY;
+
 import java.util.List;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -18,6 +20,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
 import com.agnitas.emm.core.delivery.dao.DeliveryDao;
 import com.agnitas.emm.core.delivery.service.DeliveryService;
@@ -41,8 +44,12 @@ public class DeliveryServiceImpl implements DeliveryService {
     }
 
     @Override
-    public boolean checkIfDeliveryTableIsInDb(@VelocityCheck final int companyId) {
-        return deliveryDao.checkIfDeliveryTableExists(companyId);
+    public boolean isDeliveryHistoryEnabled(ComAdmin admin) {
+        if (admin != null) {
+            return admin.permissionAllowed(RECIPIENT_HISTORY_MAILING_DELIVERY)
+                    && deliveryDao.checkIfDeliveryTableExists(admin.getCompanyID());
+        }
+        return false;
     }
 
     private JSONArray mapToJson(final List<DeliveryInfo> deliveriesInfo) {

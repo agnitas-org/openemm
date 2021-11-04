@@ -22,6 +22,10 @@ import org.apache.commons.collections4.list.GrowthList;
 import org.apache.commons.collections4.list.LazyList;
 import org.apache.commons.lang3.StringUtils;
 
+/*
+ * Remove class when recipient search has been completely switched
+ * to QueryBuilder. (GWUA-4678?)
+ */
 @Deprecated
 public class TargetEqlBuilder {
 

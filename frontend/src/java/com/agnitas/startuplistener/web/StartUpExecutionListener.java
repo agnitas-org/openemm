@@ -12,8 +12,8 @@ package com.agnitas.startuplistener.web;
 
 import java.io.File;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 import org.apache.log4j.Logger;
 import org.springframework.web.context.WebApplicationContext;

@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
@@ -82,10 +82,14 @@ public class DomainStatImpl extends BaseDaoImpl implements org.agnitas.stat.Doma
                     targetSQL = " WHERE (" + aTarget.getTargetSQL() + ")";
                 }
                 csvfile += SafeString.getLocaleString("target.Target", locale) + ":;" + aTarget.getTargetName() + "\n";
-                if (logger.isInfoEnabled()) logger.info("getStatFromDB: target loaded " + targetID);
+                if (logger.isInfoEnabled()) {
+					logger.info("getStatFromDB: target loaded " + targetID);
+				}
             } else {
                 csvfile += SafeString.getLocaleString("target.Target", locale) + ":;" + SafeString.getLocaleString("statistic.all_subscribers", locale) + "\n";
-                if (logger.isInfoEnabled()) logger.info("getStatFromDB: could not load target " + targetID);
+                if (logger.isInfoEnabled()) {
+					logger.info("getStatFromDB: could not load target " + targetID);
+				}
             }
         }
         
@@ -100,7 +104,7 @@ public class DomainStatImpl extends BaseDaoImpl implements org.agnitas.stat.Doma
             sqlCount += " AND bind.user_status =1";
             sqlCount += targetSQL;
         } else {
-            if(targetID==0) {                
+            if(targetID==0) {
                 sqlCount += " WHERE cust.customer_id = bind.customer_id ";
                 sqlCount += " AND bind.user_status =1";
                 csvfile += SafeString.getLocaleString("Mailinglist", locale) + "\n";
@@ -112,10 +116,9 @@ public class DomainStatImpl extends BaseDaoImpl implements org.agnitas.stat.Doma
             }
         }
        
-        try { 
-            total= selectInt(logger, sqlCount);
+        try {
+            total = selectInt(logger, sqlCount);
         } catch(Exception e) {
-        	javaMailService.sendExceptionMail("sql:" + sqlCount, e);
             logger.error("getStatFromDB: "+e);
             logger.error("SQL: "+sqlCount);
         }
@@ -134,20 +137,19 @@ public class DomainStatImpl extends BaseDaoImpl implements org.agnitas.stat.Doma
         
         csvfile += "\n";
         csvfile += SafeString.getLocaleString("statistic.domain", locale) + "\n";
-        try { 
+        try {
             select(logger, sqlStmt, new Object[] {}, new RowCallbackHandler() {
                 @Override
 				public void processRow(ResultSet rs) throws SQLException {
                     lines++;
                     domains.add(rs.getString(2));
-                    subscribers.add(new Integer(rs.getInt(1)));
+                    subscribers.add(rs.getInt(1));
                     sum += rs.getInt(1);
                     csvfile += rs.getString(2) + ";" + rs.getString(1) + "\n";
                 }
             }
             );
-        } catch(Exception e) {
-        	javaMailService.sendExceptionMail("sql:" + sqlStmt, e);
+        } catch (Exception e) {
             logger.error("getStatFromDB(query): "+e);
             logger.error("SQL: "+sqlStmt);
         }

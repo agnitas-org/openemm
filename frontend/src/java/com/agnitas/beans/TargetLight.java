@@ -195,4 +195,8 @@ public interface TargetLight {
 	void setAccessLimitation(boolean accessLimitation);
 
 	boolean isAccessLimitation();
+	
+	boolean isFavorite();
+	
+	void setFavorite(boolean favorite);
 }

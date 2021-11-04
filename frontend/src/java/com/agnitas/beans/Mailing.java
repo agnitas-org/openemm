@@ -30,7 +30,6 @@ import org.springframework.context.ApplicationContext;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
-import com.agnitas.mailing.preview.service.MailingPreviewService;
 
 public interface Mailing extends MailingBase {
     int TARGET_MODE_OR = 0;
@@ -90,18 +89,6 @@ public interface Mailing extends MailingBase {
     void cleanupMailingComponents(Vector<String> keepComps);
 
     boolean parseTargetExpression(String tExp);
-
-    /**
-     * @see MailingPreviewService#renderPreview(int, int)
-     */
-    @Deprecated
-    String getPreview(String input, int inputType, int customerID, boolean overwriteMailtype, ApplicationContext con) throws Exception;
-
-    /**
-     * @see MailingPreviewService#renderPreview(int, int)
-     */
-    @Deprecated
-    String getPreview(String input, int inputType, int customerID, ApplicationContext con) throws Exception;
 
     Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, ActionMessages messages, ActionMessages errors) throws Exception;
     Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, ActionMessages messages, ActionMessages errors, ComAdmin admin) throws Exception;

@@ -1,5 +1,5 @@
 <%--checked --%>
-<%@ page language="java" contentType="text/html; charset=utf-8" import="org.agnitas.web.CampaignAction"  errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="com.agnitas.web.CampaignAction"  errorPage="/error.do" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -42,22 +42,24 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="archive-name" class="control-label">
-                        <bean:message key="default.Name"/>
+                        <c:set var="nameMsg"><bean:message key="default.Name"/></c:set>
+                        ${nameMsg}
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text styleClass="form-control" styleId="archive-name" property="shortname" maxlength="99" />
+                    <agn:agnText styleClass="form-control" styleId="archive-name" property="shortname" maxlength="99" placeholder="${nameMsg}"/>
                 </div>
             </div>
 
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="archive-description" class="control-label">
-                        <bean:message key="default.description"/>
+                        <c:set var="descriptionMsg"><bean:message key="default.description"/></c:set>
+                        ${descriptionMsg}
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:textarea styleClass="form-control" styleId="archive-description" property="description" rows="5" />
+                    <agn:agnTextarea property="description" styleId="archive-description" styleClass="form-control" rows="5" placeholder="${descriptionMsg}"/>
                 </div>
             </div>
 

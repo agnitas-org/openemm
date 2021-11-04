@@ -10,8 +10,8 @@
 
 package com.agnitas.taglib.spring;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.jsp.JspException;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.jsp.JspException;
 
 import org.apache.taglibs.standard.util.UrlUtil;
 import org.springframework.web.servlet.tags.form.FormTag;

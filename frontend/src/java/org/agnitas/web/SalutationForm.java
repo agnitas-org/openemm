@@ -13,7 +13,7 @@ package org.agnitas.web;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">UrlClicksCube.UrlClicksDataSet.x</property>
@@ -733,13 +733,6 @@ allTargets</expression>
                                 <property name="aggregations">
                                     <extended-item extensionName="AggregationCell" id="1274">
                                         <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <property name="content">
-                                            <data id="1275">
-                                                <property name="fontWeight">bold</property>
-                                                <property name="textAlign">right</property>
-                                                <property name="resultSetColumn">clicks_gross_TargergroupGroup/targetgroup_2</property>
-                                            </data>
-                                        </property>
                                     </extended-item>
                                 </property>
                                 <property name="header">
@@ -834,13 +827,6 @@ allTargets</expression>
                                 <property name="aggregations">
                                     <extended-item extensionName="AggregationCell" id="1287">
                                         <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <property name="content">
-                                            <data id="1288">
-                                                <property name="fontWeight">bold</property>
-                                                <property name="textAlign">right</property>
-                                                <property name="resultSetColumn">clicks_net_TargergroupGroup/targetgroup_2</property>
-                                            </data>
-                                        </property>
                                     </extended-item>
                                 </property>
                                 <property name="header">
@@ -938,13 +924,6 @@ allTargets</expression>
                                 <property name="aggregations">
                                     <extended-item extensionName="AggregationCell" id="1566">
                                         <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <property name="content">
-                                            <data id="1599">
-                                                <property name="fontWeight">bold</property>
-                                                <property name="textAlign">right</property>
-                                                <property name="resultSetColumn">clicks_anonym_TargetGroup</property>
-                                            </data>
-                                        </property>
                                     </extended-item>
                                 </property>
                                 <property name="header">
@@ -962,16 +941,6 @@ allTargets</expression>
                         </property>
                         <property name="rows">
                             <extended-item extensionName="CrosstabView" id="1297">
-                                <property name="grandTotal">
-                                    <extended-item extensionName="CrosstabCell" id="1298">
-                                        <property name="content">
-                                            <text-data id="1299">
-                                                <property name="textAlign">left</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("GrandTotal", reportContext.getLocale())</expression>
-                                            </text-data>
-                                        </property>
-                                    </extended-item>
-                                </property>
                                 <property name="views">
                                     <extended-item extensionName="DimensionView" id="1300">
                                         <property name="dimension">UrlIdGroup</property>
@@ -1514,13 +1483,6 @@ allTargets</expression>
                                 <property name="aggregations">
                                     <extended-item extensionName="AggregationCell" id="1486">
                                         <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <property name="content">
-                                            <data id="1487">
-                                                <property name="fontWeight">bold</property>
-                                                <property name="textAlign">right</property>
-                                                <property name="resultSetColumn">clicks_gross_TargergroupGroup/targetgroup_2</property>
-                                            </data>
-                                        </property>
                                     </extended-item>
                                 </property>
                                 <property name="header">
@@ -1615,13 +1577,6 @@ allTargets</expression>
                                 <property name="aggregations">
                                     <extended-item extensionName="AggregationCell" id="1499">
                                         <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <property name="content">
-                                            <data id="1500">
-                                                <property name="fontWeight">bold</property>
-                                                <property name="textAlign">right</property>
-                                                <property name="resultSetColumn">clicks_net_TargergroupGroup/targetgroup_2</property>
-                                            </data>
-                                        </property>
                                     </extended-item>
                                 </property>
                                 <property name="header">
@@ -1719,13 +1674,6 @@ allTargets</expression>
                                 <property name="aggregations">
                                     <extended-item extensionName="AggregationCell" id="1584">
                                         <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <property name="content">
-                                            <data id="1585">
-                                                <property name="fontWeight">bold</property>
-                                                <property name="textAlign">right</property>
-                                                <property name="resultSetColumn">clicks_anonym_TargergroupGroup/targetgroup</property>
-                                            </data>
-                                        </property>
                                     </extended-item>
                                 </property>
                                 <property name="header">
@@ -1743,16 +1691,6 @@ allTargets</expression>
                         </property>
                         <property name="rows">
                             <extended-item extensionName="CrosstabView" id="1509">
-                                <property name="grandTotal">
-                                    <extended-item extensionName="CrosstabCell" id="1510">
-                                        <property name="content">
-                                            <text-data id="1511">
-                                                <property name="textAlign">left</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("GrandTotal", reportContext.getLocale())</expression>
-                                            </text-data>
-                                        </property>
-                                    </extended-item>
-                                </property>
                                 <property name="views">
                                     <extended-item extensionName="DimensionView" id="1512">
                                         <property name="dimension">UrlIdGroup</property>
@@ -2251,114 +2189,16 @@ allTargets</expression>
             <row id="1529">
                 <cell id="1530">
                     <property name="style">full-width</property>
+                    <text-data id="2800">
+                        <property name="style">info_box</property>
+                        <structure name="toc"/>
+                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clickers.infoBox", reportContext.getLocale())</expression>
+                        <property name="contentType">plain</property>
+                    </text-data>
                     <extended-item extensionName="Crosstab" extensionVersion="3.7.0" name="standardElements222"
  id="1406">
                         <property name="cube">UrlClicksCube</property>
                         <property name="measures">
-                            <extended-item extensionName="MeasureView" id="1407">
-                                <property name="measure">clicks_percent_gross</property>
-                                <property name="detail">
-                                    <extended-item extensionName="AggregationCell" id="1408">
-                                        <property name="aggregationOnRow">mobileGroup/mobile</property>
-                                        <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <list-property name="highlightRules">
-                                            <structure>
-                                                <property name="operator">is-true</property>
-                                                <expression name="testExpr" type="javascript">data["mobile"]</expression>
-                                                <property name="style">noTopBorder</property>
-                                            </structure>
-                                        </list-property>
-                                        <property name="content">
-                                            <data id="1409">
-                                                <structure name="numberFormat">
-                                                    <property name="category">Unformatted</property>
-                                                </structure>
-                                                <property name="textAlign">right</property>
-                                                <list-property name="highlightRules">
-                                                    <structure>
-                                                        <property name="operator">is-false</property>
-                                                        <property name="fontWeight">bold</property>
-                                                        <expression name="testExpr" type="javascript">data["mobile"]</expression>
-                                                    </structure>
-                                                </list-property>
-                                                <property name="resultSetColumn">clicks_gross_mobileGroup/mobile_TargergroupGroup/targetgroup</property>
-                                            </data>
-                                        </property>
-                                    </extended-item>
-                                </property>
-                                <property name="aggregations">
-                                    <extended-item extensionName="AggregationCell" id="1410">
-                                        <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <property name="content">
-                                            <data id="1411">
-                                                <property name="fontWeight">bold</property>
-                                                <property name="textAlign">right</property>
-                                                <property name="resultSetColumn">clicks_gross_TargergroupGroup/targetgroup_2</property>
-                                            </data>
-                                        </property>
-                                    </extended-item>
-                                </property>
-                                <property name="header">
-                                    <extended-item extensionName="CrosstabCell" id="1412">
-                                        <property name="content">
-                                            <text-data id="1413">
-                                                <property name="textAlign">center</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Clicks", reportContext.getLocale())</expression>
-                                            </text-data>
-                                        </property>
-                                        <property name="style">table-head</property>
-                                    </extended-item>
-                                </property>
-                            </extended-item>
-                            <extended-item extensionName="MeasureView" id="1414">
-                                <property name="measure">clicks_gross</property>
-                                <property name="detail">
-                                    <extended-item extensionName="AggregationCell" id="1415">
-                                        <property name="aggregationOnRow">mobileGroup/mobile</property>
-                                        <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <list-property name="highlightRules">
-                                            <structure>
-                                                <property name="operator">is-true</property>
-                                                <expression name="testExpr" type="javascript">data["mobile"]</expression>
-                                                <property name="style">noTopBorder</property>
-                                            </structure>
-                                        </list-property>
-                                        <property name="content">
-                                            <data id="1416">
-                                                <structure name="numberFormat">
-                                                    <property name="category">Percent</property>
-                                                    <property name="pattern">Percent</property>
-                                                </structure>
-                                                <property name="textAlign">right</property>
-                                                <list-property name="highlightRules">
-                                                    <structure>
-                                                        <property name="operator">is-false</property>
-                                                        <property name="fontWeight">bold</property>
-                                                        <expression name="testExpr" type="javascript">data["mobile"]</expression>
-                                                    </structure>
-                                                </list-property>
-                                                <property name="resultSetColumn">clicks_percent_gross_mobileGroup/mobile_TargergroupGroup/targetgroup</property>
-                                            </data>
-                                        </property>
-                                    </extended-item>
-                                </property>
-                                <property name="aggregations">
-                                    <extended-item extensionName="AggregationCell" id="1417">
-                                        <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                    </extended-item>
-                                </property>
-                                <property name="header">
-                                    <extended-item extensionName="CrosstabCell" id="1418">
-                                        <property name="content">
-                                            <text-data id="1419">
-                                                <property name="textAlign">center</property>
-                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clicksGrossInPercent", reportContext.getLocale())</expression>
-                                            </text-data>
-                                        </property>
-                                        <property name="style">table-head</property>
-                                    </extended-item>
-                                </property>
-                            </extended-item>
                             <extended-item extensionName="MeasureView" id="1420">
                                 <property name="measure">clicks_net</property>
                                 <property name="detail">
@@ -2454,62 +2294,6 @@ allTargets</expression>
                                             <text-data id="1432">
                                                 <property name="textAlign">center</property>
                                                 <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clicksNetInPercent", reportContext.getLocale())</expression>
-                                            </text-data>
-                                        </property>
-                                        <property name="style">table-head</property>
-                                    </extended-item>
-                                </property>
-                            </extended-item>
-                            <extended-item extensionName="MeasureView" id="1590">
-                                <property name="measure">clicks_anonym</property>
-                                <property name="detail">
-                                    <extended-item extensionName="AggregationCell" id="1591">
-                                        <property name="aggregationOnRow">mobileGroup/mobile</property>
-                                        <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <list-property name="highlightRules">
-                                            <structure>
-                                                <property name="operator">is-true</property>
-                                                <expression name="testExpr" type="javascript">data["mobile"]</expression>
-                                                <property name="style">noTopBorder</property>
-                                            </structure>
-                                        </list-property>
-                                        <property name="content">
-                                            <data id="1594">
-                                                <structure name="numberFormat">
-                                                    <property name="category">Unformatted</property>
-                                                </structure>
-                                                <property name="textAlign">right</property>
-                                                <list-property name="highlightRules">
-                                                    <structure>
-                                                        <property name="operator">is-false</property>
-                                                        <property name="fontWeight">bold</property>
-                                                        <expression name="testExpr" type="javascript">data["mobile"]</expression>
-                                                    </structure>
-                                                </list-property>
-                                                <property name="resultSetColumn">clicks_anonym_mobileGroup/mobile_TargergroupGroup/targetgroup</property>
-                                            </data>
-                                        </property>
-                                    </extended-item>
-                                </property>
-                                <property name="aggregations">
-                                    <extended-item extensionName="AggregationCell" id="1592">
-                                        <property name="aggregationOnColumn">TargergroupGroup/targetgroup</property>
-                                        <property name="content">
-                                            <data id="1593">
-                                                <property name="fontWeight">bold</property>
-                                                <property name="textAlign">right</property>
-                                                <property name="resultSetColumn">clicks_anonym_TargergroupGroup/targetgroup</property>
-                                            </data>
-                                        </property>
-                                    </extended-item>
-                                </property>
-                                <property name="header">
-                                    <extended-item extensionName="CrosstabCell" id="1595">
-                                        <property name="content">
-                                            <text-data id="1598">
-                                                <property name="fontWeight">bold</property>
-                                                <property name="textAlign">right</property>
-                                                <expression name="valueExpr" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicks.anonym", reportContext.getLocale())</expression>
                                             </text-data>
                                         </property>
                                         <property name="style">table-head</property>
@@ -3409,18 +3193,13 @@ allTargets</expression>
                     <row id="2782">
                         <cell id="2783">
                             <text-data id="2792">
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.summary", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.summary", reportContext.getLocale()) + "(" +  Packages.com.agnitas.messages.I18nString.getLocaleString("report.clickers.infoBox", reportContext.getLocale()) + ")"</expression>
                             </text-data>
                         </cell>
                         <cell id="2784"/>
                         <cell id="2785"/>
                         <cell id="2786"/>
-                        <cell id="2787">
-                            <data id="2793">
-                                <property name="fontWeight">normal</property>
-                                <property name="resultSetColumn">clicks_gross_grandtotal</property>
-                            </data>
-                        </cell>
+                        <cell id="2787"/>
                         <cell id="2788"/>
                         <cell id="2789">
                             <data id="2794">
@@ -3429,11 +3208,7 @@ allTargets</expression>
                             </data>
                         </cell>
                         <cell id="2790"/>
-                        <cell id="2791">
-                            <data id="2795">
-                                <property name="resultSetColumn">clicks_anonym_grandtotal</property>
-                            </data>
-                        </cell>
+                        <cell id="2791"/>
                     </row>
                 </footer>
             </group>
@@ -3457,17 +3232,6 @@ allTargets</expression>
                             <property name="colSpan">1</property>
                             <property name="rowSpan">1</property>
                             <property name="fontWeight">normal</property>
-                            <data id="2561">
-                                <property name="fontWeight">bold</property>
-                                <property name="resultSetColumn">group_admin_links_header</property>
-                            </data>
-                            <label id="2598">
-                                <text-property name="text">: </text-property>
-                            </label>
-                            <text-data id="2597">
-                                <property name="fontWeight">bold</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("GrandTotal", reportContext.getLocale())</expression>
-                            </text-data>
                         </cell>
                         <cell id="2570">
                             <property name="fontWeight">normal</property>
@@ -3480,46 +3244,18 @@ allTargets</expression>
                         </cell>
                         <cell id="1677">
                             <property name="fontWeight">normal</property>
-                            <data id="2557">
-                                <property name="fontWeight">bold</property>
-                                <property name="resultSetColumn">clicks_gross_grandtotal_group</property>
-                            </data>
                         </cell>
                         <cell id="1678">
                             <property name="fontWeight">normal</property>
-                            <data id="2594">
-                                <structure name="numberFormat">
-                                    <property name="category">Percent</property>
-                                    <property name="pattern">###0.00%{RoundingMode=HALF_UP}</property>
-                                </structure>
-                                <property name="textAlign">left</property>
-                                <property name="resultSetColumn">clicks_gross_percent_grandtotal_group</property>
-                            </data>
                         </cell>
                         <cell id="1679">
                             <property name="fontWeight">normal</property>
-                            <data id="2580">
-                                <property name="fontWeight">bold</property>
-                                <property name="textAlign">left</property>
-                                <property name="resultSetColumn">clicks_net_grandtotal_group</property>
-                            </data>
                         </cell>
                         <cell id="1680">
                             <property name="fontWeight">normal</property>
-                            <data id="2595">
-                                <structure name="numberFormat">
-                                    <property name="category">Percent</property>
-                                    <property name="pattern">###0.00%{RoundingMode=HALF_UP}</property>
-                                </structure>
-                                <property name="textAlign">left</property>
-                                <property name="resultSetColumn">clicks_net_percent_grandtotal_group</property>
-                            </data>
                         </cell>
                         <cell id="1681">
                             <property name="fontWeight">normal</property>
-                            <data id="2596">
-                                <property name="resultSetColumn">clicks_anonym_grandtotal_group</property>
-                            </data>
                         </cell>
                     </row>
                 </footer>

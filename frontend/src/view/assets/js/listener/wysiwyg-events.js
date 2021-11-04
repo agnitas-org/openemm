@@ -58,7 +58,11 @@
 
     var formId = $editor.data('form-target');
 
-    var $form = !!formId ? $(formId) : $editor;
+    var $form = !!formId ? $(formId) : null;
+    if(!$form || $form.length === 0) {
+      return null;
+    }
+
     var form = Form.get($form);
 
     mailingId = form.getValue("mailingID");

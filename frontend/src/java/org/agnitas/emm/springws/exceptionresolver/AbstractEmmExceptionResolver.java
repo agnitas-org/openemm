@@ -30,6 +30,7 @@ import org.agnitas.emm.core.recipient.service.RecipientNotExistException;
 import org.agnitas.emm.core.recipient.service.impl.ProfileFieldNotExistException;
 import org.agnitas.emm.core.target.service.TargetNotExistException;
 import org.agnitas.emm.springws.exception.DateFormatException;
+import org.agnitas.emm.springws.exception.MailingNotEditableException;
 import org.agnitas.exceptions.FormNotFoundException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
@@ -141,8 +142,10 @@ public abstract class AbstractEmmExceptionResolver extends AbstractSoapFaultDefi
         	definition.setFaultStringOrReason("Subscription rejection by anti-spam rules.");
         } else if(ex instanceof WebServiceFileDataEmptyException) {
         	definition.setFaultStringOrReason("File is missing or empty.");
-        } else if (ex instanceof DateFormatException) {
+        } else if(ex instanceof DateFormatException) {
             definition.setFaultStringOrReason("Invalid date format");
+        } else if(ex instanceof MailingNotEditableException) {
+        	definition.setFaultStringOrReason(ex.getMessage());
         } else {
             definition.setFaultStringOrReason("Unknown error");
         }

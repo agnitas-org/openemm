@@ -24,13 +24,14 @@ public class CompanySettingsDto {
     private String timeZone;
     private boolean hasForceSending;
     private boolean hasRecipientsCleanup;
-    private boolean hasRecipientsAnonymisation;
     private boolean hasTrackingVeto;
     private int sector;
     private int business;
     private int maxAdminMails;
     private boolean hasTwoFactorAuthentication;
-    
+    private int recipientAnonymization;
+    private int recipientCleanupTracking;
+    private int recipientDeletion;
     private String loginlockSettingsName;
     private String passwordPolicyName;
     private int passwordExpireDays;
@@ -132,14 +133,6 @@ public class CompanySettingsDto {
         this.hasRecipientsCleanup = hasRecipientsCleanup;
     }
     
-    public boolean isHasRecipientsAnonymisation() {
-		return hasRecipientsAnonymisation;
-	}
-
-	public void setHasRecipientsAnonymisation(boolean hasRecipientsAnonymisation) {
-		this.hasRecipientsAnonymisation = hasRecipientsAnonymisation;
-	}
-
 	public boolean isHasTrackingVeto() {
         return hasTrackingVeto;
     }
@@ -211,5 +204,28 @@ public class CompanySettingsDto {
 	public final void setHostauthCookieExpireDays(final int hostauthCookieExpireDays) {
 		this.hostauthCookieExpireDays = hostauthCookieExpireDays;
 	}
-	 
+
+	public int getRecipientAnonymization() {
+		return recipientAnonymization;
+	}
+
+	public void setRecipientAnonymization(int recipientAnonymization) {
+		this.recipientAnonymization = recipientAnonymization;
+	}
+
+	public int getRecipientCleanupTracking() {
+		return recipientCleanupTracking;
+	}
+
+	public void setRecipientCleanupTracking(int recipientCleanupTracking) {
+		this.recipientCleanupTracking = recipientCleanupTracking;
+	}
+
+	public int getRecipientDeletion() {
+		return recipientDeletion;
+	}
+
+	public void setRecipientDeletion(int recipientDeletion) {
+		this.recipientDeletion = recipientDeletion;
+	}
 }

@@ -9,6 +9,8 @@ AGN.Lib.Controller.new('facebook-leadads', function() {
 
   this.addDomInitializer('facebook-leadads', function(){
     config = this.config;
+    // necessary to get real status if user logged out from facebook
+    AGN.Lib.Storage.delete('fblst_' + config.FACEBOOK_LEADADS_APP_ID);
     SDK.load_sdk(config.FACEBOOK_LEADADS_APP_ID, afterInit);
   });
 
@@ -45,13 +47,13 @@ AGN.Lib.Controller.new('facebook-leadads', function() {
     };
     Login.attach_login_function(".facebook-login-btn", loginCallback, 'pages_read_engagement, leads_retrieval');
 
-    //Currently, the login button is always shown. jQuery is not able to show the button, if it is hidden by class or style...
-    Login.show_login_button_if_needed(".facebook-login-btn");
     setGuiAccordingLoginState();
   };
 
   var setGuiAccordingLoginState = function() {
-    Login.do_by_login_state(onLoggedIn, onNotLoggedIn);
+    //Currently, the login button is always shown. jQuery is not able to show the button, if it is hidden by class or style...
+    Login.doByLoginStatus(null, function() {$(".facebook-login-btn").show()});
+    Login.doByLoginStatus(onLoggedIn, onNotLoggedIn);
   };
 
   var onNotLoggedIn = function() {

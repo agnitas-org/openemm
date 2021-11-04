@@ -21,6 +21,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.XmlUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -81,7 +82,7 @@ public class JsonUtilities {
 
 	public static Document convertToXmlDocument(JsonNode jsonNode, boolean useAttributes) throws Exception {
 		try {
-			DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilderFactory documentBuilderFactory = XmlUtilities.newXxeProtectedDocumentBuilderFactory();
 			DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
 			Document xmlDocument = documentBuilder.newDocument();
 			xmlDocument.setXmlStandalone(true);

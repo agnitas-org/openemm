@@ -25,14 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
-import com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria;
-import com.agnitas.mailing.autooptimization.beans.ComOptimization;
-import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
-import com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl;
-import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
-import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
@@ -41,6 +33,15 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
+import com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria;
+import com.agnitas.mailing.autooptimization.beans.ComOptimization;
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
+import com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl;
+import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
 
 /**
  * Implementation of {@link ComOptimization}.
@@ -152,7 +153,7 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 			return result;
 		} catch(Exception e) {
 			logger.error("Error getting split-groups", e);
-			javaMailService.sendExceptionMail("SQL: "+sql+", "+companyID+", "+campaignID, e);
+			javaMailService.sendExceptionMail(companyID, "SQL: "+sql+", "+companyID+", "+campaignID, e);
 			return null;
 		}
 	}
@@ -174,7 +175,6 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 			return result;
 		} catch(Exception e) {
 			logger.error("Error retrieving on-due optimizations", e);
-			javaMailService.sendExceptionMail("SQL: " + sql, e);
 		}
 
 		return null;

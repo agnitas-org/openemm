@@ -624,11 +624,30 @@ public class BlockCollection {
 		if ((method == null) || (method.length() == 0)) {
 			rc = "";
 		} else {
-			rc = "HList-Unsubscribe: " + method + "\n";
-			String listUnsubscribePost = data.company.infoSubstituted("list-unsubscribe-post", data.mailing.id());
+			String	listHelpURL = null;
+			
+			if ("transaction".equals (data.mailing.contentType ())) {
+				listHelpURL = data.company.info ("list-help-url");
+				if (listHelpURL != null) {
+					if ((! "-".equals (listHelpURL)) && (! listHelpURL.startsWith ("https://"))) {
+						data.logging (Log.INFO, "list-help", "Invalid list help url \"" + listHelpURL + "\" found, not starting with \"https://\"");
+						listHelpURL = null;
+					}
+				}
+			}
+			if (listHelpURL != null) {
+				if ("-".equals (listHelpURL)) {
+					rc = null;
+				} else {
+					rc = "HList-Help: <" + listHelpURL + ">\n";
+				}
+			} else {
+				rc = "HList-Unsubscribe: " + method + "\n";
+				String listUnsubscribePost = data.company.infoSubstituted("list-unsubscribe-post", data.mailing.id());
 
-			if (!"-".equals(listUnsubscribePost)) {
-				rc += "HList-Unsubscribe-Post: " + (listUnsubscribePost != null ? listUnsubscribePost : "List-Unsubscribe=One-Click") + "\n";
+				if (!"-".equals(listUnsubscribePost)) {
+					rc += "HList-Unsubscribe-Post: " + (listUnsubscribePost != null ? listUnsubscribePost : "List-Unsubscribe=One-Click") + "\n";
+				}
 			}
 		}
 
@@ -823,8 +842,8 @@ public class BlockCollection {
 						EMMTag ntag = mkEMMTag(current_tag);
 
 						if ((ntag.tagType == EMMTag.TAG_INTERNAL) &&
-								(ntag.tagSpec == EMMTag.TI_DYN) &&
-								((dyName = ntag.mTagParameters.get("name")) != null)) {
+						    (ntag.tagSpec == EMMTag.TI_DYN) &&
+						    ((dyName = ntag.mTagParameters.get("name")) != null)) {
 							int n;
 
 							for (n = 0; n < dynCount; ++n) {

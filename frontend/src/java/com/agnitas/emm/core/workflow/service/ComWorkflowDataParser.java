@@ -14,12 +14,12 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.log4j.Logger;
 
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ComWorkflowDataParser {
     private static final transient Logger logger = Logger.getLogger(ComWorkflowDataParser.class);
@@ -34,7 +34,7 @@ public class ComWorkflowDataParser {
     }
 
     public List<WorkflowIcon> deSerializeWorkflowIconsList(String contentJson) {
-        TypeReference<List<WorkflowIcon>> type = new TypeReference<List<WorkflowIcon>>(){
+        TypeReference<List<WorkflowIcon>> type = new TypeReference<>(){
 			// nothing to do
         };
 

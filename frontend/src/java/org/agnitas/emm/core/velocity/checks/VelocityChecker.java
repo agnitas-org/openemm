@@ -17,6 +17,7 @@ import org.agnitas.emm.core.velocity.CheckType;
 /**
  * Generic interface for runtime checks on Velocity scripts.
  */
+@Deprecated // After completion of EMM-8360, this class can be removed without replacement
 public interface VelocityChecker {
 	
 	/**

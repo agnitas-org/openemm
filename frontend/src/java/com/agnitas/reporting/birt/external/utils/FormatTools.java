@@ -20,7 +20,7 @@ public class FormatTools {
 	 * @return
 	 */
 	public static double roundDecimal(double value, int size) {
-		BigDecimal decimal = new BigDecimal( value );
+		BigDecimal decimal = BigDecimal.valueOf( value );
 		decimal = decimal.setScale(size, BigDecimal.ROUND_HALF_UP);
 		return decimal.doubleValue();
 	}

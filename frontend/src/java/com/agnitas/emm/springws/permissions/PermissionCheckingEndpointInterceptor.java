@@ -57,7 +57,7 @@ public final class PermissionCheckingEndpointInterceptor implements SoapEndpoint
 			return true;
 		} else {
             final SoapBody response = ((SoapMessage) messageContext.getResponse()).getSoapBody();
-            response.addClientOrSenderFault("Access to endpoint denied", Locale.ENGLISH);
+            response.addClientOrSenderFault(String.format("Access to endpoint '%s' denied", endpointName), Locale.ENGLISH);
 			
 			return false;
 		}

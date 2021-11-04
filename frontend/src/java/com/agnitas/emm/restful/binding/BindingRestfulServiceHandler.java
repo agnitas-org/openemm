@@ -11,16 +11,11 @@
 package com.agnitas.emm.restful.binding;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
@@ -54,6 +49,10 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
+
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * This restful service is available at:
@@ -103,17 +102,17 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, String requestDataFilePath, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getBindingEntry(request, admin)));
 		} else if (requestMethod == RequestMethod.DELETE) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(deleteBindingEntry(request, admin)));
-		} else if (requestDataFilePath == null || new File(requestDataFilePath).length() <= 0) {
+		} else if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
 			restfulResponse.setError(new RestfulClientException("Missing request data"), ErrorCode.REQUEST_DATA_ERROR);
 		} else if (requestMethod == RequestMethod.POST) {
-			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createNewBindingEntry(request, new File(requestDataFilePath), admin)));
+			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createNewBindingEntry(request, requestData, requestDataFile, admin)));
 		} else if (requestMethod == RequestMethod.PUT) {
-			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createOrUpdateBindingEntry(request, new File(requestDataFilePath), admin)));
+			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createOrUpdateBindingEntry(request, requestData, requestDataFile, admin)));
 		} else {
 			throw new RestfulClientException("Invalid http request method");
 		}
@@ -296,7 +295,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createNewBindingEntry(HttpServletRequest request, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createNewBindingEntry(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.RECIPIENT_CHANGE.toString() + "'");
 		}
@@ -322,7 +321,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 		Integer actionID = null;
 		boolean runActionAsynchronous = false;
 		
-		try (InputStream inputStream = new FileInputStream(requestDataFile)) {
+		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 				JsonNode jsonNode = jsonReader.read();
 				if (JsonDataType.OBJECT == jsonNode.getJsonDataType()) {
@@ -489,7 +488,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createOrUpdateBindingEntry(HttpServletRequest request, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createOrUpdateBindingEntry(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.RECIPIENT_CHANGE.toString() + "'");
 		}
@@ -515,7 +514,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 		Integer actionID = null;
 		boolean runActionAsynchronous = false;
 		
-		try (InputStream inputStream = new FileInputStream(requestDataFile)) {
+		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 				JsonNode jsonNode = jsonReader.read();
 				if (JsonDataType.OBJECT == jsonNode.getJsonDataType()) {

@@ -16,7 +16,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Optional;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.emm.core.logintracking.bean.LoginData;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;

@@ -75,7 +75,7 @@ public final class MailAdminPasswordChangedNotifier implements AdminPasswordChan
 					}
 				}
 
-				javaMailService.sendEmail(admin.getEmail(), mailSubject, mailContentText, mailContentHtml);
+				javaMailService.sendEmail(admin.getCompanyID(), admin.getEmail(), mailSubject, mailContentText, mailContentHtml);
 			} catch (final Exception e) {
 				LOGGER.error("Unable to send notification mail on changed admin password", e);
 			}

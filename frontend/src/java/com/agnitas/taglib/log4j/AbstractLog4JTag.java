@@ -10,7 +10,7 @@
 
 package com.agnitas.taglib.log4j;
 
-import javax.servlet.jsp.tagext.TagSupport;
+import jakarta.servlet.jsp.tagext.TagSupport;
 
 import org.apache.log4j.Logger;
 

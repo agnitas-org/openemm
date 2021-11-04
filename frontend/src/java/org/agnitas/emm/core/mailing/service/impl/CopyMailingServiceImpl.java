@@ -13,6 +13,7 @@ package org.agnitas.emm.core.mailing.service.impl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.Map.Entry;
 
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.service.ImportResult;
@@ -22,64 +23,41 @@ import org.agnitas.util.FileUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.util.TimingLogger;
-
 public class CopyMailingServiceImpl implements CopyMailingService {
-    @SuppressWarnings("unused")
 	private static final Logger logger = Logger.getLogger(CopyMailingService.class);
     
     private MailingExporter mailingExporter;
     
     private MailingImporter mailingImporter;
-
-	@Override
-	public int copyMailing(int sourceCompanyID, int sourceMailingID, int destinationCompanyID, String nameOfCopy, String descriptionOfCopy) throws Exception {
-		return copyMailing(null, sourceCompanyID, sourceMailingID, destinationCompanyID, nameOfCopy, descriptionOfCopy);
-	}
     
 	@Override
-	public int copyMailing(final TimingLogger timingLogger, int sourceCompanyID, int sourceMailingID, int destinationCompanyID, String nameOfCopy, String descriptionOfCopy) throws Exception {
-		if(timingLogger != null) {
-			timingLogger.log("Entered CopyMailingServiceImpl.copyMailing()");
-		}
-		
+	public int copyMailing(int sourceCompanyID, int sourceMailingID, int destinationCompanyID, String nameOfCopy, String descriptionOfCopy) throws Exception {
 		File tempFile = null;
 		try {
 			tempFile = File.createTempFile("CopyMailing_", FileUtils.JSON_EXTENSION);
 			try (FileOutputStream output = new FileOutputStream(tempFile)) {
-				mailingExporter.exportMailingToJson(timingLogger, sourceCompanyID, sourceMailingID, output, false);
-			}
-			
-			if(timingLogger != null) {
-				timingLogger.log("Mailing exported. Starting import");
+				mailingExporter.exportMailingToJson(sourceCompanyID, sourceMailingID, output, false);
 			}
 			
 			try (FileInputStream input = new FileInputStream(tempFile)) {
 				// set importGridTemplateAllowed to true for copy, because permissions have to exists, when hit copy button
 				// set checkIsTemplate to false for copy, because imported template to mailing
-				ImportResult result = mailingImporter.importMailingFromJson(timingLogger, destinationCompanyID, input, false, nameOfCopy, descriptionOfCopy, true, false, true);
-	
-				if(timingLogger != null) {
-					timingLogger.log("Mailing imported.");
-				}
+				ImportResult result = mailingImporter.importMailingFromJson(destinationCompanyID, input, false, nameOfCopy, descriptionOfCopy, true, false, true);
 				
 				if (result.isSuccess()) {
+					if (result.getWarnings() != null) {
+						for (Entry<String, Object[]> entry : result.getWarnings().entrySet()) {
+							logger.warn("Copy mailing warning: " + entry.getKey() + ": " + entry.getValue());
+						}
+					}
 					return result.getMailingID();
 				} else {
 					throw new Exception("Error while copy mailing");
 				}
 			}
 		} finally {
-			if(timingLogger != null) {
-				timingLogger.log("Deleting temp file");
-			}
-			
 			if (tempFile != null) {
 				tempFile.delete();
-			}
-
-			if(timingLogger != null) {
-				timingLogger.log("Leaving CopyMailingServiceImpl.copyMailing()");
 			}
 		}
 	}

@@ -13,12 +13,15 @@ package com.agnitas.emm.core.components.service.impl;
 import static com.agnitas.util.ImageUtils.makeMobileDescriptionIfNecessary;
 import static com.agnitas.util.ImageUtils.makeMobileFilenameIfNecessary;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,6 +41,8 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.Const;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -45,18 +50,27 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.upload.FormFile;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.commons.StreamHelper;
 import com.agnitas.emm.core.components.dto.NewFileDto;
+import com.agnitas.emm.core.components.dto.UpdateMailingAttachmentDto;
+import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
+import com.agnitas.emm.core.components.form.AttachmentType;
 import com.agnitas.emm.core.components.service.ComMailingComponentsService;
+import com.agnitas.emm.core.components.service.ComponentValidationService;
+import com.agnitas.emm.core.components.util.ComponentsUtils;
+import com.agnitas.emm.core.upload.bean.DownloadData;
+import com.agnitas.emm.core.upload.dao.ComUploadDao;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ComSftpService;
 import com.agnitas.service.MimeTypeService;
 import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.ImageUtils;
 
 public class ComMailingComponentsServiceImpl implements	ComMailingComponentsService {
@@ -67,6 +81,8 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 	private ComMailingDao mailingDao;
 	private ComMailingComponentDao mailingComponentDao;
 	private MimeTypeService mimeTypeService;
+	private ComUploadDao uploadDao;
+	private ComponentValidationService componentValidationService;
 	private ComSftpService sftpService;
 	private MailingComponentFactory mailingComponentFactory;
 	private ConfigService configService;
@@ -129,7 +145,112 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
     public MailingComponent getComponent(int componentId, @VelocityCheck int companyID) {
 		return mailingComponentDao.getMailingComponent(componentId, companyID);
     }
-    
+
+    @Override
+	public MailingComponent getComponent(@VelocityCheck int companyId, int mailingId, int componentId) {
+		return mailingComponentDao.getMailingComponent(mailingId, componentId, companyId);
+    }
+
+	@Override
+	public SimpleServiceResult uploadMailingAttachment(ComAdmin admin, int mailingId, UploadMailingAttachmentDto attachment) {
+		List<Message> errors = new ArrayList<>();
+		List<Message> warnings = new ArrayList<>();
+
+		if (StringUtils.isEmpty(attachment.getName())) {
+			// get file's name in case if name field is not specified by user
+			if (attachment.isUsePdfUpload() && attachment.getUploadId() > 0) {
+				DownloadData downloadData = uploadDao.getDownloadData(attachment.getUploadId());
+				if (downloadData != null) {
+					attachment.setName(downloadData.getFilename());
+				}
+			} else if (attachment.getAttachmentFile() != null) {
+				attachment.setName(attachment.getAttachmentFile().getName());
+			}
+		}
+
+		boolean valid = componentValidationService.validateAttachment(admin.getCompanyID(), mailingId, attachment, errors, warnings);
+
+		if (!valid) {
+			return new SimpleServiceResult(false, Collections.emptyList(), warnings, errors);
+		}
+
+		if (mailingComponentDao.attachmentExists(admin.getCompanyID(), mailingId, attachment.getName(), attachment.getTargetId())) {
+			return SimpleServiceResult.simpleSuccess();
+		}
+
+		try {
+			MailingComponent component = mailingComponentFactory.newMailingComponent();
+			component.setCompanyID(admin.getCompanyID());
+			component.setMailingID(mailingId);
+			component.setTargetID(attachment.getTargetId());
+
+			String fileName = attachment.getName();
+			byte[] content;
+			String mimeType;
+
+			if (attachment.isUsePdfUpload()) {
+				int uploadId = attachment.getUploadId();
+				mimeType = "application/pdf";
+
+				try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+					uploadDao.sendDataToStream(uploadId, os);
+					content = os.toByteArray();
+				}
+			} else {
+				content = attachment.getAttachmentFile().getBytes();
+				mimeType = attachment.getAttachmentFile().getContentType();
+			}
+
+			component.setComponentName(fileName);
+
+			if (AttachmentType.PERSONALIZED == attachment.getType()) {
+				component.setType(MailingComponentType.PersonalizedAttachment);
+				mimeType = "application/pdf";
+
+				component.setBinaryBlock(attachment.getBackgroundFile().getBytes(), mimeType);
+				component.setEmmBlock(new String(attachment.getAttachmentFile().getBytes(), StandardCharsets.UTF_8), mimeType);
+			} else {
+				component.setType(MailingComponentType.Attachment);
+
+				component.setBinaryBlock(content, mimeType);
+			}
+
+			mailingComponentDao.saveMailingComponent(component);
+
+			return SimpleServiceResult.simpleSuccess(Message.of("default.changes_saved"));
+
+		} catch (Exception e) {
+			logger.error("Uploading attachment failed for mailing ID: " + mailingId, e);
+
+			return SimpleServiceResult.simpleError(Message.of("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
+		}
+	}
+
+    @Override
+	@Transactional
+    public SimpleServiceResult updateMailingAttachments(ComAdmin admin, int mailingId, Map<Integer, UpdateMailingAttachmentDto> attachments) {
+    	try {
+			if (MapUtils.isNotEmpty(attachments)) {
+				List<MailingComponent> existingComponents = mailingComponentDao.getPreviewHeaderComponents(mailingId, admin.getCompanyID());
+
+				for (MailingComponent origin : existingComponents) {
+					UpdateMailingAttachmentDto attachment = attachments.get(origin.getId());
+					if (attachment != null) {
+						origin.setTargetID(attachment.getTargetId());
+					}
+					mailingComponentDao.saveMailingComponent(origin);
+				}
+			}
+
+			return SimpleServiceResult.simpleSuccess(Message.of("default.changes_saved"));
+		} catch (Exception e) {
+    		logger.error("Updating attachments failed for mailing ID: " + mailingId, e);
+
+			return SimpleServiceResult.simpleError(Message.of("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
+		}
+    }
+
+
     @Override
     public List<MailingComponent> getComponentsByType(@VelocityCheck int companyID, int mailingId, List<MailingComponentType> types) {
 		if (CollectionUtils.isEmpty(types)) {
@@ -138,8 +259,30 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 		
 		return mailingComponentDao.getMailingComponentsByType(companyID, mailingId, types);
     }
-	
+
 	@Override
+	public List<MailingComponent> getPreviewHeaderComponents(int companyId, int mailingId) {
+		return mailingComponentDao.getPreviewHeaderComponents(mailingId, companyId);
+	}
+
+	@Override
+	public Map<String, String> getUrlsByNamesForEmmImages(final ComAdmin admin, final int mailingId) {
+		final String rdirDomain = admin.getCompany().getRdirDomain();
+		final List<MailingComponent> imagesComponents =
+				mailingComponentDao.getMailingComponents(mailingId, admin.getCompanyID(), MailingComponentType.HostedImage, false);
+		return imagesComponents.stream().collect(Collectors.toMap(
+				MailingComponent::getComponentName,
+				(e) -> ComponentsUtils.getImageUrl(rdirDomain, admin.getCompanyID(), mailingId, e.getComponentName()),
+				(x, y) -> x, LinkedHashMap::new));
+	}
+
+    @Override
+    public void deleteComponent(int companyId, int mailingId, int componentId) {
+		MailingComponent component = mailingComponentDao.getMailingComponent(mailingId, componentId, companyId);
+		deleteComponent(component);
+	}
+
+    @Override
 	public void deleteComponent(MailingComponent component) {
 		if (component != null) {
 			mailingComponentDao.deleteMailingComponent(component);
@@ -244,7 +387,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 
 		List<String> sizeWarningFiles = importer.getSizeWarningFiles();
 		if (sizeWarningFiles.size() > 0) {
-			String message = I18nString.getLocaleString("warning.component.size", admin.getLocale(), maximumWarningImageSize / 1024f / 1024) +
+			String message = I18nString.getLocaleString("warning.component.size", admin.getLocale(), FileUtils.byteCountToDisplaySize(maximumWarningImageSize)) +
 					filenamesToHtml(sizeWarningFiles);
 
 			warnings.add(Message.exact(message));
@@ -252,7 +395,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 
 		List<String> sizeErrorFiles = importer.getSizeErrorFiles();
 		if (sizeErrorFiles.size() > 0) {
-			String message = I18nString.getLocaleString("component.size.error", admin.getLocale(), maximumUploadImageSize / 1024f / 1024) +
+			String message = I18nString.getLocaleString("error.component.size", admin.getLocale(), FileUtils.byteCountToDisplaySize(maximumUploadImageSize)) +
 					filenamesToHtml(sizeErrorFiles);
 
 			errors.add(Message.exact(message));
@@ -368,6 +511,16 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 	@Required
 	public void setConfigService(ConfigService configService) {
     	this.configService = configService;
+	}
+
+	@Required
+	public void setComponentValidationService(ComponentValidationService componentValidationService) {
+		this.componentValidationService = componentValidationService;
+	}
+
+	@Required
+	public void setUploadDao(ComUploadDao uploadDao) {
+		this.uploadDao = uploadDao;
 	}
 
 	private static class ImportStats implements ImportStatistics {

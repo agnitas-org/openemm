@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.ecs.EcsGlobals;
 import org.agnitas.ecs.backend.beans.ClickStatColor;
 import org.agnitas.ecs.backend.beans.ClickStatInfo;
 import org.agnitas.ecs.backend.beans.impl.ClickStatColorImpl;
@@ -26,6 +25,8 @@ import org.agnitas.ecs.backend.dao.EmbeddedClickStatDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.emm.ecs.EcsModeType;
 
 /**
  * Implementation of {@link org.agnitas.ecs.backend.dao.EmbeddedClickStatDao}
@@ -43,11 +44,6 @@ public class EmbeddedClickStatDaoImpl extends BaseDaoImpl implements EmbeddedCli
 	}
 
 	@Override
-	public ClickStatInfo getClickStatInfo(@VelocityCheck int companyId, int mailingId, int mode) throws Exception {
-		return getClickStatInfo(companyId, mailingId, mode, 0);
-	}
-
-	@Override
 	public ClickStatInfo getClickStatInfo(@VelocityCheck int companyId, int mailingId, int mode, int deviceClass) throws Exception {
         try {
 			String sqlClicksPerMail;
@@ -55,7 +51,7 @@ public class EmbeddedClickStatDaoImpl extends BaseDaoImpl implements EmbeddedCli
 			List<Object> optionsClicksPerMail = new ArrayList<>();
 			List<Object> optionsClicksPerLink = new ArrayList<>();
 			
-			if (mode == EcsGlobals.MODE_GROSS_CLICKS) {
+			if (EcsModeType.GROSS_CLICKS.getId() == mode) {
 				sqlClicksPerMail = "SELECT COUNT(customer_id) clicks"
 					+ " FROM rdirlog_" + companyId + "_tbl"
 					+ " WHERE mailing_id = ?";
@@ -71,7 +67,7 @@ public class EmbeddedClickStatDaoImpl extends BaseDaoImpl implements EmbeddedCli
 				sqlClicksPerLink += getDeviceClassClause(deviceClass, optionsClicksPerLink);
 				sqlClicksPerLink += " GROUP BY url_id"
 					+ " ORDER BY clicks DESC";
-			} else if (mode == EcsGlobals.MODE_NET_CLICKS) {
+			} else if (EcsModeType.NET_CLICKS.getId() == mode) {
 				sqlClicksPerMail = "SELECT COUNT(DISTINCT customer_id) clicks"
 					+ " FROM rdirlog_" + companyId + "_tbl"
 					+ " WHERE mailing_id = ?";

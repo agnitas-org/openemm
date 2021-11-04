@@ -15,32 +15,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.TimeZone;
-import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
 import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.ImportProfile;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.ColumnMappingImpl;
 import org.agnitas.beans.impl.DatasourceDescriptionImpl;
@@ -93,6 +78,11 @@ import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.emm.core.upload.bean.UploadData;
 import com.agnitas.emm.core.upload.dao.ComUploadDao;
 import com.agnitas.messages.I18nString;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Classic Import
@@ -445,7 +435,7 @@ public final class ComImportWizardAction extends StrutsActionBase {
 					}
 					//$FALL-THROUGH$ - MODE_BLACKLIST => fall through to ACTION_WRITE
 				case ACTION_WRITE:
-					if (aForm.isImportIsRunning() == true) {
+					if (aForm.isImportIsRunning()) {
 						destination=mapping.findForward("error");
 						break;
 					}
@@ -650,7 +640,7 @@ public final class ComImportWizardAction extends StrutsActionBase {
 		reportService.createAndSaveImportReport(admin, filename, comImportWizardForm.getDatasourceID(), new Date(), csvfile, -1, isError);
 	}
 	
-	private String generateLocalizedImportCSVReport(Locale locale, Date my_time, ImportProfile importProfile, CustomerImportStatus status, int mode) {
+	private String generateLocalizedImportCSVReport(Locale locale, Date my_time, ImportProfile importProfile, ImportStatus status, int mode) {
 		String csvfile = "";
 		csvfile += SafeString.getLocaleString("import.SubscriberImport", locale);
 		csvfile += "\n" + SafeString.getLocaleString("settings.fieldType.DATE", locale) + ": ; \"" + my_time + "\"\n";
@@ -740,9 +730,9 @@ public final class ComImportWizardAction extends StrutsActionBase {
 		importProfile.setKeyColumn(aForm.getStatus().getKeycolumn());
 		
 		// Translate CustomerImportStatus.DoubleCheckInt into CheckForDuplicates.DoubleCheckInt
-		if (aForm.getStatus().getDoubleCheck() == CustomerImportStatus.DOUBLECHECK_NONE) {
+		if (aForm.getStatus().getDoubleCheck() == ImportStatus.DOUBLECHECK_NONE) {
 			importProfile.setCheckForDuplicates(CheckForDuplicates.NO_CHECK.getIntValue());
-		} else if (aForm.getStatus().getDoubleCheck() == CustomerImportStatus.DOUBLECHECK_FULL) {
+		} else if (aForm.getStatus().getDoubleCheck() == ImportStatus.DOUBLECHECK_FULL) {
 			importProfile.setCheckForDuplicates(CheckForDuplicates.COMPLETE.getIntValue());
 		} else {
 			throw new Exception("Invalid duplicate check index int: " + aForm.getStatus().getDoubleCheck());

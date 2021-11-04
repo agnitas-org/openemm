@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -132,4 +133,17 @@ public class ImportMode {
 		}
 		throw new Exception("Invalid int value for ImportMode: " + intValue);
 	}
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ImportMode that = (ImportMode) o;
+        return storageInt == that.storageInt;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(storageInt);
+    }
 }

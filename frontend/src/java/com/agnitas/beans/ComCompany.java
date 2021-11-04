@@ -70,4 +70,8 @@ public interface ComCompany extends Company {
 	String getContactTech();
 
 	void setContactTech(String contactTech);
+
+	int getMaxAdminMails();
+	
+	void setMaxAdminMails(int maxAdminMails);
 }

@@ -1,0 +1,155 @@
+<%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
+
+<c:set var="COMPLEXITY_RED" value="<%= TargetComplexityGrade.RED %>" scope="page"/>
+<c:set var="COMPLEXITY_YELLOW" value="<%= TargetComplexityGrade.YELLOW %>" scope="page"/>
+<c:set var="COMPLEXITY_GREEN" value="<%= TargetComplexityGrade.GREEN %>" scope="page"/>
+
+<%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
+<%--@elvariable id="targetForm" type="com.agnitas.emm.core.target.form.TargetForm"--%>
+<%--@elvariable id="targetComplexities" type="java.util.Map<java.lang.Integer, com.agnitas.emm.core.target.beans.TargetComplexityGrade>"--%>
+
+<script type="application/json" data-initializer="web-storage-persist">
+    {
+        "target-overview": {
+            "rows-count": ${targetForm.numberOfRows},
+            "show-world-targets": ${targetForm.showWorldDelivery},
+            "show-test-and-admin-targets": ${targetForm.showTestAndAdminDelivery}
+        }
+    }
+</script>
+
+<div class="table-wrapper" data-controller="targets-list">
+    <display:table
+            class="table table-bordered table-striped table-hover js-table"
+            id="target"
+            name="targets"
+            pagesize="${targetForm.numberOfRows}"
+            sort="list"
+            requestURI="/target/list.action"
+            excludedParams="*">
+        <emm:ShowByPermission token="targets.delete">
+            <c:set var="checkboxSelectAll">
+                <input type="checkbox" data-form-bulk="bulkIds"/>
+            </c:set>
+
+            <display:column title="${checkboxSelectAll}" class="js-checkable" sortable="false" headerClass="squeeze-column">
+                <input type="checkbox" name="bulkIds" value="${target.id}"/>
+            </display:column>
+        </emm:ShowByPermission>
+
+        <display:column headerClass="js-table-sort squeeze-column" property="id" titleKey="MailinglistID"/>
+        
+        <display:column class="js-checkable align-center" headerClass="js-table-sort squeeze-column"  
+                        sortable="true" titleKey="default.favourite">
+                <input type="checkbox" class="star-checkbox icon-fa5 far" ${target.favorite ? 'checked' : ''} 
+                       data-action="check-favorites" data-target-id="${target.id}" autocomplete="off" />
+        </display:column>
+            
+        <display:column headerClass="js-table-sort" titleKey="target.Target" sortable="true"
+                        sortProperty="targetName">
+            <c:choose>
+                <%-- Show icon for the target which is unavailable in dropdowns--%>
+                <c:when test="${target.componentHide}">
+                    <emm:HideByPermission token="mailing.content.showExcludedTargetgroups">
+                        <i class="icon icon-exclamation-triangle text-state-alert"
+                           data-tooltip="<mvc:message code="target.tooltip.not_available_in_components"/>"></i>
+                    </emm:HideByPermission>
+                    <emm:ShowByPermission token="mailing.content.showExcludedTargetgroups">
+                        <i class="icon icon-exclamation-triangle hidden"></i>
+                    </emm:ShowByPermission>
+                </c:when>
+                <%-- Add hidden icon to keep the intendation--%>
+                <c:otherwise>
+                    <i class="icon icon-exclamation-triangle hidden"></i>
+                </c:otherwise>
+            </c:choose>
+            <span class="multiline-xs-200 multiline-sm-250 multiline-md-max" style="display: inline">
+                    ${target.targetName}
+            </span>
+        </display:column>
+
+        <display:column headerClass="js-table-sort" titleKey="default.description" sortable="true"
+                        sortProperty="targetDescription">
+            <span class="multiline-xs-200 multiline-sm-250 multiline-md-max">${target.targetDescription}</span>
+        </display:column>
+
+        <display:column class="align-center bold" titleKey="target.group.complexity" sortable="false"
+                        headerClass="squeeze-column">
+            <c:set var="complexityGrade" value="${targetComplexities[target.id]}"/>
+            <c:choose>
+                <c:when test="${target.valid}">
+                    <c:choose>
+                        <c:when test="${complexityGrade eq COMPLEXITY_GREEN}">
+                            <div class="form-badge complexity-green">
+                                <mvc:message code="target.group.complexity.low"/>
+                            </div>
+                        </c:when>
+                        <c:when test="${complexityGrade eq COMPLEXITY_YELLOW}">
+                            <div class="form-badge complexity-yellow"
+                                 data-tooltip="<mvc:message code="warning.target.group.performance.yellow"/>">
+                                <mvc:message code="target.group.complexity.medium"/>
+                            </div>
+                        </c:when>
+                        <c:when test="${complexityGrade eq COMPLEXITY_RED}">
+                            <div class="form-badge complexity-red"
+                                 data-tooltip="<mvc:message code="warning.target.group.performance.red"/>">
+                                <mvc:message code="target.group.complexity.high"/>
+                            </div>
+                        </c:when>
+                    </c:choose>
+                </c:when>
+                <c:otherwise>
+                    <div class="form-badge complexity-red">
+                        <mvc:message code="default.invalid"/>
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </display:column>
+
+        <display:column headerClass="js-table-sort" titleKey="default.creationDate" sortable="true"
+                        format="{0, date, ${adminDateFormat}}" property="creationDate"/>
+
+        <display:column headerClass="js-table-sort" titleKey="default.changeDate" sortable="true"
+                        format="{0, date, ${adminDateFormat}}" property="changeDate"/>
+
+        <display:column class="table-actions">
+            <a href="<c:url value='/target/${target.id}/view.action'/>" class="hidden js-row-show"
+               title="<mvc:message code='target.Edit'/>"></a>
+            <emm:ShowByPermission token="targets.delete">
+                <c:set var="targetDeleteMessage" scope="page">
+                    <mvc:message code="target.Delete"/>
+                </c:set>
+                <agn:agnLink class="btn btn-regular btn-alert js-row-delete"
+                             data-tooltip="${targetDeleteMessage}"
+                        page="/target/${target.id}/confirm/delete.action">
+                    <i class="icon icon-trash-o"></i>
+                </agn:agnLink>
+            </emm:ShowByPermission>
+        </display:column>
+    </display:table>
+</div>
+
+<emm:instantiate var="appliedFilters" type="java.util.LinkedHashMap">
+    <c:if test="${targetForm.showWorldDelivery}">
+        <c:set target="${appliedFilters}" property="${appliedFilters.size()}">
+        <mvc:message code="target.worldDelivery"/></c:set>
+    </c:if>
+
+    <c:if test="${targetForm.showTestAndAdminDelivery}">
+        <c:set target="${appliedFilters}" property="${appliedFilters.size()}">
+        <mvc:message code="target.adminAndTestDelivery"/></c:set>
+    </c:if>
+</emm:instantiate>
+
+<script data-initializer="targetgroup-overview-filters" type="application/json">
+    {
+        "filters": ${emm:toJson(appliedFilters.values())}
+    }
+</script>
+
+<script id="targetgroup-overview-filters" type="text/x-mustache-template">
+    <div class='well'>
+        <strong><mvc:message code="mailing.showing"/></strong>
+        {{-filters.join(', ') }}
+    </div>
+</script>

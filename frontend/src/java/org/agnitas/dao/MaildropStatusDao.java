@@ -75,6 +75,8 @@ public interface MaildropStatusDao {
 
 	List<Integer> getMaildropEntryIds(int mailingID, int companyID);
 	
+	List<Integer> getMaildropEntryIds(int mailingID, int companyID, MaildropStatus maildropStatus);
+	
 	/**
 	 * Returns maildrop entry for given status field or <code>null</code> if no such entry exists.
 	 *
@@ -122,4 +124,6 @@ public interface MaildropStatusDao {
     
     // TODO Remove "companyID" and "mailingID" from method. Both arguments are superfluous, because they are already included in the MaildropEntry items of the list
 	void saveMaildropEntries(int companyId, int mailingId, Set<MaildropEntry> maildropStatusList);
+
+	boolean reactivateMaildropStatusEntry(int maildropStatusID);
 }

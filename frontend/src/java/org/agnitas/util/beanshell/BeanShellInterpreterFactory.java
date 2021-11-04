@@ -98,7 +98,7 @@ public final class BeanShellInterpreterFactory {
 	 * 
 	 * @param nameSpace namespace
 	 * @param companyID company ID of recipient
-	 * @param customerID ID of recpient
+	 * @param customerID ID of recipient
 	 *
 	 * @throws Exception on errors populating profile fields
 	 */

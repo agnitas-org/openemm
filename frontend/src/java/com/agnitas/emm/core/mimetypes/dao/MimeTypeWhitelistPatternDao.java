@@ -12,7 +12,7 @@ package com.agnitas.emm.core.mimetypes.dao;
 
 import java.util.List;
 
-import javax.activation.MimeType;
+import jakarta.activation.MimeType;
 
 public interface MimeTypeWhitelistPatternDao {
 

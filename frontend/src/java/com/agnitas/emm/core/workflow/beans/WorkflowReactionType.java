@@ -24,7 +24,7 @@ public enum WorkflowReactionType implements IntEnum {
     WAITING_FOR_CONFIRM(9, "icon-history", "waiting_for_confirm"),
     OPT_IN(10, "icon-sign-in", "opt_in"),
     OPT_OUT(11, "icon-sign-out", "opt_out"),
-    CLICKED_LINK(12, "", "clicled_on_link"),
+    CLICKED_LINK(12, "", "clicked_on_link"),
     OPENED_AND_CLICKED(13, "", "opened_and_clicked"),
     OPENED_OR_CLICKED(14, "", "opened_or_clicked"),
     CONFIRMED_OPT_IN(15, "", "confirmed_opt_in");

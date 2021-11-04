@@ -20,11 +20,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.userforms.impl.UserformServiceImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -43,15 +46,19 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.impl.ComRecipientLiteImpl;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.commons.ActivenessStatus;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
+import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import com.agnitas.emm.core.trackablelinks.service.FormTrackableLinkService;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.emm.core.userform.service.ComUserformService;
-import com.agnitas.emm.core.userform.util.WebFormUtils;
+import com.agnitas.emm.core.userform.service.UserFormTestUrl;
+import com.agnitas.emm.core.userform.web.WebFormUrlBuilder;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
@@ -73,8 +80,10 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     private UserFormExporter userFormExporter;
     private ConfigService configService;
     private ExtensibleUIDService uidService;
-    private ComRecipientDao comRecipientDao;
+    private ComRecipientDao comRecipientDao;				// TODO Replace by RecipientService
     private ProfileFieldService profileFieldService;
+    private CompanyTokenService companyTokenService;
+    private RecipientService recipentService;
 
     @Override
 	public String getUserFormName(int formId, @VelocityCheck int companyId) {
@@ -139,28 +148,34 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
 
     @Override
     public JSONArray getUserFormsJson(ComAdmin admin) {
-        JSONArray actionsJson = new JSONArray();
-		List<UserForm> userForms = userFormDao.getUserForms(admin.getCompanyID());
+    	final String placeholder = "{%FORMNAME%}";
+    	
+    	final Optional<String> companyTokenOpt = companyTokenForAdmin(admin);
+    	
+        final JSONArray actionsJson = new JSONArray();
+		final List<UserForm> userForms = userFormDao.getUserForms(admin.getCompanyID());
 
 		//collect action ID which are used by forms
-        List<Integer> usedActionIds = new ArrayList<>();
-        for (UserForm userForm : userForms) {
+        final List<Integer> usedActionIds = new ArrayList<>();
+        for (final UserForm userForm : userForms) {
             if (userForm.isUsesActions()) {
                 usedActionIds.addAll(userForm.getUsedActionIds());
             }
         }
 
         //set action names
-        Map<Integer, String> actionNames = emmActionDao.getEmmActionNames(admin.getCompanyID(), usedActionIds);
+        final Map<Integer, String> actionNames = emmActionDao.getEmmActionNames(admin.getCompanyID(), usedActionIds);
 
-		for (UserForm userForm: userForms) {
-            JSONObject entry = new JSONObject();
+        final String userFormUrlPattern = getUserFormUrlPattern(admin, placeholder, false, companyTokenOpt);
+        
+		for (final UserForm userForm: userForms) {
+            final JSONObject entry = new JSONObject();
 
 			entry.element("id", userForm.getId());
 			entry.element("name", userForm.getFormName());
 			entry.element("description", userForm.getDescription());
 
-			JSONArray actions = new JSONArray();
+			final JSONArray actions = new JSONArray();
 			int actionId = userForm.getStartActionID();
             if (actionId > 0) {
                 actions.add(actionNames.get(actionId));
@@ -170,10 +185,13 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
                 actions.add(actionNames.get(actionId));
             }
 
+            final String url = userFormUrlPattern.replace(URLEncoder.encode(placeholder), userForm.getFormName());
+
 			entry.element("actionNames", actions);
 			entry.element("creationDate", DateUtilities.toLong(userForm.getCreationDate()));
 			entry.element("changeDate", DateUtilities.toLong(userForm.getChangeDate()));
 			entry.element("activeStatus", userForm.getIsActive() ? ActivenessStatus.ACTIVE : ActivenessStatus.INACTIVE);
+			entry.element("webformUrl", url);
 
 			actionsJson.add(entry);
 		}
@@ -280,24 +298,70 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     }
 
 	@Override
-	public String getUserFormUrlPattern(ComAdmin admin, boolean resolveUID) {
-        if (resolveUID) {
-            try {
-                int testCustomerId = comRecipientDao.getAdminOrTestRecipientId(admin.getCompanyID(), admin.getAdminID());
+	public String getUserFormUrlPattern(final ComAdmin admin, final String formName, final boolean resolveUID, final Optional<String> companyToken) {
+		try {
+			int testCustomerId = comRecipientDao.getAdminOrTestRecipientId(admin.getCompanyID(), admin.getAdminID());
+			final int licenseID = configService.getLicenseID();
+			final ComExtensibleUID uid = UIDFactory.from(licenseID, admin.getCompanyID(), testCustomerId);
+            final String uidString = uidService.buildUIDString(uid);
 
-                final int licenseID = configService.getLicenseID();
-                final ComExtensibleUID uid = UIDFactory.from(licenseID, admin.getCompanyID(), testCustomerId);
-                final String urlEncodedUID = URLEncoder.encode(uidService.buildUIDString(uid), "UTF-8");
-                return WebFormUtils.getFormFullViewPattern(AgnUtils.getRedirectDomain(admin.getCompany()), admin.getCompanyID(), urlEncodedUID);
-            } catch (Exception e) {
-                logger.error("Could not generate UID for companyID/adminID " + admin.getCompanyID() + "/" + admin.getAdminID());
-            }
+
+			return WebFormUrlBuilder.from(admin.getCompany(), formName)
+				.withCompanyToken(companyToken)
+				.withResolvedUID(resolveUID)
+				.withUID(uidString)
+				.build();
+        } catch (Exception e) {
+            logger.error(String.format("Could not generate user form URL (company ID %d, admin ID %d)", admin.getCompanyID(), admin.getAdminID()), e);
+            
+            throw new RuntimeException(e);
         }
-
-        return WebFormUtils.getFormFullViewPattern(AgnUtils.getRedirectDomain(admin.getCompany()), admin.getCompanyID(), "##AGNUID##");
 	}
 
+	@Override
+	public final List<UserFormTestUrl> getUserFormUrlForAllAdminAndTestRecipients(final ComAdmin admin, final String formName, final Optional<String> companyToken) {
+		try {
+			final List<ComRecipientLiteImpl> recipients = this.recipentService.listAdminAndTestRecipients(admin);
+			final List<UserFormTestUrl> urls = new ArrayList<>();
+			
+			final int licenseID = configService.getLicenseID();
+			
+			for(final ComRecipientLiteImpl recipient : recipients) {
+				final ComExtensibleUID uid = UIDFactory.from(licenseID, admin.getCompanyID(), recipient.getId());
+	            final String uidString = uidService.buildUIDString(uid);
+
+	            final String url = WebFormUrlBuilder.from(admin.getCompany(), formName)
+					.withCompanyToken(companyToken)
+					.withResolvedUID(true)
+					.withUID(uidString)
+					.build();
+	            
+	            urls.add(new UserFormTestUrl(recipient.getFirstname(), recipient.getLastname(), recipient.getEmail(), url));
+			}
+			
+			return urls;
+        } catch (Exception e) {
+            logger.error(String.format("Could not generate user form URL (company ID %d, admin ID %d)", admin.getCompanyID(), admin.getAdminID()), e);
+            
+            throw new RuntimeException(e);
+        }
+	}
+	
     @Override
+	public final String getUserFormUrlWithoutUID(ComAdmin admin, String formName, Optional<String> companyToken) {
+    	try {
+	        return WebFormUrlBuilder.from(admin.getCompany(), formName)
+				.withCompanyToken(companyToken)
+				.withResolvedUID(true)
+				.build();
+    	} catch(final Exception e) {
+            logger.error(String.format("Could not generate user form URL (company ID %d, admin ID %d)", admin.getCompanyID(), admin.getAdminID()), e);
+            
+            throw new RuntimeException(e);
+    	}
+	}
+
+	@Override
     public List<String> getUserFormNames(final int companyId) {
         final List<UserForm> userForms = userFormDao.getUserForms(companyId);
 
@@ -325,6 +389,14 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
             }
         }
         return resultMap;
+    }
+    
+    private final Optional<String> companyTokenForAdmin(final ComAdmin admin) {
+    	try {
+    		return this.companyTokenService.getCompanyToken(admin.getCompanyID());
+    	} catch(final UnknownCompanyIdException e) {
+    		return Optional.empty();
+    	}
     }
 
     @Required
@@ -365,5 +437,15 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     @Required
     public void setProfileFieldService(ProfileFieldService profileFieldService) {
         this.profileFieldService = profileFieldService;
+    }
+    
+    @Required
+    public final void setCompanyTokenService(final CompanyTokenService service) {
+    	this.companyTokenService = Objects.requireNonNull(service, "CompanyTokenService is null");
+    }
+
+    @Required
+    public final void setRecipientService(final RecipientService service) {
+    	this.recipentService = Objects.requireNonNull(service, "RecipientService is null");
     }
 }

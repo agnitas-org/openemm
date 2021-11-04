@@ -17,9 +17,9 @@ import java.util.concurrent.ExecutionException;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.emm.springws.WebserviceUserDetails;
-import com.agnitas.emm.springws.throttling.service.ThrottlingService;
-import com.agnitas.emm.springws.throttling.service.ThrottlingServiceException;
+import com.agnitas.emm.util.quota.api.QuotaLimitExceededException;
+import com.agnitas.emm.util.quota.api.QuotaService;
+import com.agnitas.emm.util.quota.api.QuotaServiceException;
 import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 
@@ -29,10 +29,10 @@ import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 
 /**
- * Simple implementatinon of {@link ThrottlingService}.
+ * Simple implementatinon of {@link QuotaService}.
  */
 @Deprecated // Replaced by Bucket4jThrottlingService (remove after rollout EMM-8146)
-public class SimpleSlidingAverageThrottlingServiceImpl implements ThrottlingService {
+public class SimpleSlidingAverageThrottlingServiceImpl implements QuotaService {
 	private static final transient Logger logger = Logger.getLogger(SimpleSlidingAverageThrottlingServiceImpl.class);
 	
 	private static final int CACHE_SIZE = 10000;
@@ -60,11 +60,15 @@ public class SimpleSlidingAverageThrottlingServiceImpl implements ThrottlingServ
 	}
 	
 	@Override
-	public synchronized boolean checkAndTrack(final WebserviceUserDetails user, final String endpointName) throws ThrottlingServiceException {
+	public synchronized void checkAndTrack(String username, int companyID, String apiServiceName) throws QuotaLimitExceededException, QuotaServiceException {
 		try {
-			return checkAndTrack(user.getUsername());
+			final boolean result = checkAndTrack(username);
+			
+			if(!result) {
+				throw new QuotaLimitExceededException(username, companyID, apiServiceName);
+			}
 		} catch (final IllegalStateException | ExecutionException | CacheException e) {
-			throw new ThrottlingServiceException(e);
+			throw new QuotaServiceException(e);
 		}
 	}
 	
@@ -112,7 +116,7 @@ public class SimpleSlidingAverageThrottlingServiceImpl implements ThrottlingServ
 		}
 	}
 	
-	private class LimitMeter implements Serializable {
+	private static class LimitMeter implements Serializable {
 		private static final long serialVersionUID = 3586882607020373003L;
 		
 		private SlidingAverageRateMeter meter;

@@ -2,7 +2,7 @@
 <div class="form-group">
     <div class="col-sm-4">
         <label for="modifyBulkDescription" class="control-label">
-            <bean:message key="GWUA.mailing.trackablelinks.description.change"/>
+            <bean:message key="default.description.edit"/>
         </label>
     </div>
     <div class="col-sm-8">

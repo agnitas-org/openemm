@@ -35,10 +35,37 @@ public final class HtmlXSSPreventer {
 	 */
 	
     private static final String[] ALLOWED_HTML_TAGS = { "u", "i", "b", "sup", "sub", "strong", "em" };
+    
+    private static final String[] UNSUPPORTED_TAGS = { "applet", "object", "embed", "iframe" };
 
     @SuppressWarnings("unchecked")
 	private static final Set<String> END_TAG_REQUIRED_ELEMENTS = HTMLElements.getEndTagRequiredElementNames();
 
+    public static final void checkUnsupportedTags(final String string) throws XSSHtmlException {
+		final Set<HtmlCheckError> errors = new HashSet<>();
+    	
+		final Source source = new Source(string);
+
+		@SuppressWarnings("unchecked")
+		final List<Tag> tags = source.findAllTags();
+		
+		for(final Tag tag : tags) {
+			if(tag instanceof StartTag || tag instanceof EndTag) {
+				// isWhitelisted() is misused here to check, if tag is listed in given array.
+				if(isWhitelisted(tag, UNSUPPORTED_TAGS)) {
+					errors.add(new ForbiddenTagError(tag.getName()));
+				}
+			}
+		}
+		
+		// Found at least one error? Throw an exception
+		if(!errors.isEmpty()) {
+			throw new XSSHtmlException(errors);
+		}
+
+    }
+    
+    
     public static void checkString(final String string) throws XSSHtmlException {
 		checkString(string, ALLOWED_HTML_TAGS);
 	}

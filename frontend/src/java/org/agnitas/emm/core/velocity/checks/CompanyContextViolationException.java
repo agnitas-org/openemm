@@ -13,6 +13,7 @@ package org.agnitas.emm.core.velocity.checks;
 /**
  * Exception indicating a violation of the company context.
  */
+@Deprecated // After completion of EMM-8360, this class can be removed without replacement
 public class CompanyContextViolationException extends VelocityCheckerException {
 
 	/** Serial version UID. */

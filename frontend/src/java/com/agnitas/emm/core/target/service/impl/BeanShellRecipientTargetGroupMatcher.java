@@ -21,6 +21,7 @@ import com.agnitas.emm.core.target.service.RecipientTargetGroupMatcher;
 
 import bsh.Interpreter;
 
+@Deprecated // Replace by some implementation not using BeanShell
 public final class BeanShellRecipientTargetGroupMatcher implements RecipientTargetGroupMatcher {
 	
 	private static final transient Logger logger = Logger.getLogger(BeanShellRecipientTargetGroupMatcher.class);

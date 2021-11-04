@@ -17,11 +17,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.CompanyStatus;
@@ -41,7 +36,6 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -68,11 +62,15 @@ import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.ComAccessDataService;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
-import com.agnitas.emm.push.pushtracking.RedirectTokenException;
-import com.agnitas.emm.push.pushtracking.service.PushRedirectTokenService;
 import com.agnitas.util.DeepTrackingToken;
 import com.agnitas.util.backend.Decrypt;
+import com.agnitas.web.cookies.SameSiteCookiePolicy;
 import com.agnitas.web.util.RequestUtils;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class RedirectServlet extends HttpServlet {
 
@@ -100,7 +98,6 @@ public class RedirectServlet extends HttpServlet {
 	private ComMailingDao mailingDao;
 	private IntelliAdMailingSettingsCache intelliAdMailingSettingsCache;
 	private SnowflakeMailingCache snowflakeMailingCache;
-	private Optional<PushRedirectTokenService> pushRedirectTokenServiceCache;
 	private RecipientService recipientService;
 	
 	private ClickTrackingService clickTrackingService;
@@ -175,8 +172,6 @@ public class RedirectServlet extends HttpServlet {
 				if (isIntelliAdUsed(trackableLink.getMailingID(), trackableLink.getCompanyID())) {
 					fullUrl = createIntelliAdLink(fullUrl, trackableLink.getMailingID(), trackableLink.getCompanyID());
 				}
-				
-				fullUrl = buildPushTrackingUrl(fullUrl, uid);
 
 				sendRedirect(response, fullUrl, trackableLink.getCompanyID());
 
@@ -300,30 +295,6 @@ public class RedirectServlet extends HttpServlet {
 			return url;
 		}
 	}
-	
-	private final String buildPushTrackingUrl(final String targetUrl, final ComExtensibleUID uid) {
-		final PushRedirectTokenService service = getPushRedirectTokenService();
-		
-		if (service != null) {
-			try {
-				if (getConfigService().isPushNotificationEnabled(uid.getCompanyID())) {
-					return service.registerRedirectData(targetUrl, uid.getCustomerID(), uid.getCompanyID());
-				} else {
-					if (logger.isInfoEnabled()) {
-						logger.info(String.format("Push notifications not enabled for company ID %d - redirecting to target directly", uid.getCompanyID()));
-					}
-					
-					return targetUrl;
-				}
-			} catch(final RedirectTokenException e) {
-				logger.error("Error creating redirect URL for push recipient tracking. Skipping recipient tracking and forwarding to target URL");
-				
-				return targetUrl;
-			}
-		} else {
-			return targetUrl;
-		}
-	}
 
 	private final void executeLinkActions(final ComExtensibleUID uid, final int deviceID, final DeviceClass deviceClass, final TrackableLink trackableLink, final HttpServletRequest request) throws Exception {
 		final int companyID = uid.getCompanyID();
@@ -360,15 +331,18 @@ public class RedirectServlet extends HttpServlet {
 	
 	// TODO Remove setting max-age? According to EMM-8086, the cookie is session-based. (-> max-age < 0)
 	private void setDeepTrackingCookie(HttpServletResponse response, int maximumAge, int companyID, long deepTrackingSession, String deepTrackingUID) {
+		final Optional<SameSiteCookiePolicy> sameSiteOpt = configService.getEnum(ConfigValue.DeepTrackingCookieSameSitePolicy, companyID, SameSiteCookiePolicy.class);
+		final SameSiteCookiePolicy sameSite = sameSiteOpt.orElse(null);
+		
 		if (maximumAge != 0) {
 			// Persist cookie for given period of time
-			DeepTrackingCookieUtil.addTrackingCookie(response, maximumAge, companyID, deepTrackingSession, deepTrackingUID);
+			DeepTrackingCookieUtil.addTrackingCookie(response, maximumAge, companyID, deepTrackingSession, deepTrackingUID, sameSite);
 		} else if (getConfigService().getIntegerValue(ConfigValue.CookieExpire) != 0) {
 			// Persist cookie for configured period of time
-			DeepTrackingCookieUtil.addTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.CookieExpire), companyID, deepTrackingSession, deepTrackingUID);
+			DeepTrackingCookieUtil.addTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.CookieExpire), companyID, deepTrackingSession, deepTrackingUID, sameSite);
 		} else {
 			// Do not persist cookie
-			DeepTrackingCookieUtil.addTrackingCookie(response, -1, companyID, deepTrackingSession, deepTrackingUID);
+			DeepTrackingCookieUtil.addTrackingCookie(response, -1, companyID, deepTrackingSession, deepTrackingUID, sameSite);
 		}
 	}
 	
@@ -553,22 +527,6 @@ public class RedirectServlet extends HttpServlet {
 	
 	public void setIntelliAdMailingSettingsCache(IntelliAdMailingSettingsCache intelliAdMailingSettingsCache) {
 		this.intelliAdMailingSettingsCache = intelliAdMailingSettingsCache;
-	}
-	
-	private PushRedirectTokenService getPushRedirectTokenService() {
-		if (pushRedirectTokenServiceCache == null) {
-			try {
-				pushRedirectTokenServiceCache = Optional.of(getApplicationContext().getBean("PushRedirectTokenService", PushRedirectTokenService.class));
-			} catch (NoSuchBeanDefinitionException e) {
-				pushRedirectTokenServiceCache = Optional.empty();
-			}
-		}
-		
-		if (pushRedirectTokenServiceCache.isPresent()) {
-			return pushRedirectTokenServiceCache.get();
-		} else {
-			return null;
-		}
 	}
 	
 	private IntelliAdMailingSettingsCache getIntelliAdMailingSettingsCache() {

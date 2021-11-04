@@ -29,7 +29,6 @@ import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType.SimpleDataType;
@@ -318,21 +317,15 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 	 */
 	@Override
 	public boolean blacklistCheckCompanyOnly(String email, @VelocityCheck int companyID) {
-		final boolean useNewWildcards = this.getConfigService().getBooleanValue(ConfigValue.Development.UseNewBlacklistWildcards, companyID);
-		
 		try {
-			if(useNewWildcards) {
-				final String escapeClause = isOracleDB() ? " ESCAPE '\\'" : "";
-				
-				final String sql = String.format(
-						"SELECT COUNT(*) FROM %s WHERE ? LIKE REPLACE(REPLACE(email, '_', '\\_'), '*', '%%') %s", 
-						getCustomerBanTableName(companyID),
-						escapeClause);
+			final String escapeClause = isOracleDB() ? " ESCAPE '\\'" : "";
+			
+			final String sql = String.format(
+					"SELECT COUNT(*) FROM %s WHERE ? LIKE REPLACE(REPLACE(email, '_', '\\_'), '*', '%%') %s", 
+					getCustomerBanTableName(companyID),
+					escapeClause);
 
-				return selectInt(logger, sql, AgnUtils.normalizeEmail(email)) > 0;
-			} else {
-				return selectInt(logger, "SELECT COUNT(*) FROM " + getCustomerBanTableName(companyID) + " WHERE ? LIKE REPLACE(REPLACE(email, '?', '_'), '*', '%')", AgnUtils.normalizeEmail(email)) > 0;
-			}
+			return selectInt(logger, sql, AgnUtils.normalizeEmail(email)) > 0;
 		} catch (Exception e) {
 			logger.error("Error checking blacklist for email '" + email + "'", e);
 
@@ -372,20 +365,13 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 
 	@Override
 	public List<BlackListEntry> getBlacklistCheckEntries(int companyID, String email) {
-		final boolean useNewWildcards = this.getConfigService().getBooleanValue(ConfigValue.Development.UseNewBlacklistWildcards, companyID);
+		final String escapeClause = isOracleDB() ? " ESCAPE '\\'" : "";
+		
+		final String sql = String.format(
+				"SELECT email, reason, timestamp AS creation_date FROM %s WHERE ? LIKE REPLACE(REPLACE(email, '_', '\\_'), '*', '%%') %s ORDER BY email", 
+				getCustomerBanTableName(companyID),
+				escapeClause);
 
-		if(useNewWildcards) {
-			final String escapeClause = isOracleDB() ? " ESCAPE '\\'" : "";
-			
-			final String sql = String.format(
-					"SELECT email, reason, timestamp AS creation_date FROM %s WHERE ? LIKE REPLACE(REPLACE(email, '_', '\\_'), '*', '%%') %s ORDER BY email", 
-					getCustomerBanTableName(companyID),
-					escapeClause);
-
-			return select(logger, sql, new BlackListEntry_RowMapper(), AgnUtils.normalizeEmail(email));
-			
-		} else {
-			return select(logger, "SELECT email, reason, timestamp AS creation_date FROM " + getCustomerBanTableName(companyID) + " WHERE ? LIKE REPLACE(REPLACE(email, '?', '_'), '*', '%') ORDER BY email", new BlackListEntry_RowMapper(), AgnUtils.normalizeEmail(email));
-		}
+		return select(logger, sql, new BlackListEntry_RowMapper(), AgnUtils.normalizeEmail(email));
 	}
 }

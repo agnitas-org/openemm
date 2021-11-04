@@ -31,7 +31,7 @@
                 </thead>
                 <tbody>
                 <tr>
-                    <td><bean:message key="settings.fieldType.DATE"/></td>
+                    <td><bean:message key="Date"/></td>
                     <td><fmt:formatDate value="${mailingSendForm.deliveryStat.lastDate}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}" /></td>
                 </tr>
                 <tr>
@@ -163,7 +163,7 @@
     </c:if>
     
     <emm:ShowByPermission token="mailing.resume.world">
-	    <c:if test="${mailingSendForm.deliveryStat ne null && mailingSendForm.deliveryStat.stopped}">
+	    <c:if test="${not empty mailingSendForm.deliveryStat and mailingSendForm.deliveryStat.stopped}">
             <c:choose>
                 <c:when test="${mailingSendForm.deliveryStat.resumable}">
                     <c:set var="ACTION_RESUME_MAILING_REQUEST" value="<%= MailingSendAction.ACTION_RESUME_MAILING_REQUEST %>"/>
@@ -226,6 +226,27 @@
 			</c:if>
 		</c:if>
    </emm:ShowByPermission>
+
+
+    <c:if test="${not empty isPostMailing and isPostMailing eq 'true'}">
+        <div class="tile-content-forms form-vertical">
+            <div class="form-group">
+                <div class="notification notification-info">
+                    <div class="notification-header">
+                        <p class="headline">
+                            <i class="icon icon-state-info"></i>
+                            <span class="text"><bean:message key="Info" /></span>
+                        </p>
+                    </div>
+                    <div class="notification-content">
+                        <p>
+                            <bean:message key="mailing.send.post.hint" />
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </c:if>
 
     <script id="config:transmission-status" type="application/json">
         {

@@ -12,6 +12,12 @@ package org.agnitas.emm.core.mailinglist.service;
 
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 
+/**
+ * TODO:
+ * Duplicates:
+ * - UnknownMailingException
+ * - UnknownMailingIdException
+ */
 public class MailinglistNotExistException extends MailinglistException {
 	private static final long serialVersionUID = -1182381885122181120L;
 

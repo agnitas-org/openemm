@@ -18,7 +18,7 @@
                     <div class="form-group">
                         <div class="col-xs-12">
                             <div class="well">
-                                {{ if (isStart) { }}
+                                {{ if (startTesting) { }}
                                     <mvc:message code="workflow.test.start.question"/>
                                 {{ } else { }}
                                     <mvc:message code="workflow.test.stop.question"/>
@@ -37,10 +37,10 @@
                             </span>
                         </button>
 
-                        <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal" data-form-set="status: {{- newStatus }}" data-action="start-stop-dry-run">
+                        <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal" data-confirm-positive="{{- startTesting }}">
                             <i class="icon icon-check"></i>
                             <span class="text">
-                                {{ if (isStart) { }}
+                                {{ if (startTesting) { }}
                                     <mvc:message code="button.Start"/>
                                 {{ } else { }}
                                     <mvc:message code="default.Yes"/>

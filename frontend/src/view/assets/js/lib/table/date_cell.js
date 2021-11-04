@@ -16,7 +16,7 @@
 
   // gets called once before the renderer is used
   DateCellRenderer.prototype.init = function(params) {
-    this.eGui = document.createElement('div');
+    this.eGui = AGN.Lib.TableCellWrapper(params.data.show);
 
     if (params.optionDateFormat) {
       this.format = params.optionDateFormat;

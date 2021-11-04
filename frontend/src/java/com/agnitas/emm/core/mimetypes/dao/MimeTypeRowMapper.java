@@ -13,8 +13,8 @@ package com.agnitas.emm.core.mimetypes.dao;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
+import jakarta.activation.MimeType;
+import jakarta.activation.MimeTypeParseException;
 
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;

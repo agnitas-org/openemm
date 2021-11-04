@@ -64,7 +64,7 @@ public abstract class RecipientsBasedDataSet extends BIRTDataSet {
 	}
     
     protected static void calculateAmount(UserStatus status, int amount, RecipientsDetailedStatisticsRow row) {
-    	if (status == null) {
+    	if (status == null || row == null) {
     		return;
 		}
 		
@@ -76,8 +76,6 @@ public abstract class RecipientsBasedDataSet extends BIRTDataSet {
 				row.countBounced += amount;
 				break;
 			case AdminOut:
-				row.countOptout += amount;
-				break;
 			case UserOut:
 				row.countOptout += amount;
 				break;

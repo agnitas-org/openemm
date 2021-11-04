@@ -25,8 +25,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
@@ -64,10 +64,11 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.mailing.web.RequestAttributesHelper;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
@@ -100,7 +101,7 @@ public class MailingBaseAction extends StrutsActionBase {
     protected ComTargetService targetService;
     protected TAGCheckFactory tagCheckFactory;
     protected ExecutorService workerExecutorService;
-    protected ComCampaignDao campaignDao;
+    protected CampaignDao campaignDao;
     protected CharacterEncodingValidator characterEncodingValidator;
     protected MailingFactory mailingFactory;
 	protected ConfigService configService;
@@ -188,6 +189,9 @@ public class MailingBaseAction extends StrutsActionBase {
     	ActionForward destination = null;
         final ComAdmin admin = AgnUtils.getAdmin(request);
         final int companyId = admin.getCompanyID();
+        
+        // Fallback. Mailing is by default editable. Other methods may change this value afterwards
+        request.setAttribute(RequestAttributesHelper.MAILNG_EDITABLE_REQUEST_ATTRIBUTE_NAME, true);
 
         aForm = (MailingBaseForm)form;
 
@@ -467,7 +471,7 @@ public class MailingBaseAction extends StrutsActionBase {
             if (aForm.getMailinglistID() == 0) {
             	//send mail
             	String message = "Mailinglist ID in mailing template (" + aForm.getMailingID() + ") was set to 0.  Please check if the content still exists!";
-            	javaMailService.sendEmail(configService.getValue(ConfigValue.Mailaddress_Error), "Mailinglist set to 0", message, HtmlUtils.replaceLineFeedsForHTML(message));
+            	javaMailService.sendEmail(aMailing.getCompanyID(), configService.getValue(ConfigValue.Mailaddress_Error), "Mailinglist set to 0", message, HtmlUtils.replaceLineFeedsForHTML(message));
             }
 
             actions.add(actionMessage.toString());
@@ -717,11 +721,29 @@ public class MailingBaseAction extends StrutsActionBase {
             form.setMailingLists(Collections.singletonList(mailinglistService.getMailinglist(form.getMailinglistID(), admin.getCompanyID())));
             form.setCanChangeMailinglist(false);
         } else {
-            if (!exists) {
-                form.setMailinglistID(0);
-            }
+                if (admin.permissionAllowed(Permission.UPDATE_MAILINGLIST_ALLOW_DELETION)) {
+                    checkIfSelectedMailinglistRemoved(form, admin.getCompanyID(), exists);
+                } else {
+                    if (!exists) {
+                        form.setMailinglistID(0);
+                    }
+                }
             form.setMailingLists(enabledMailinglists);
             form.setCanChangeMailinglist(true);
+        }
+    }
+
+    private void checkIfSelectedMailinglistRemoved(MailingBaseForm form, int companyId, boolean exists) {
+        if (!exists && !form.isIsTemplate()) {
+            if (mailinglistService.mailinglistDeleted(form.getMailinglistID(), companyId)
+                    && (!form.isCopiedMailing() && !form.isCreatedAsFollowUp())) {
+                form.setSelectedRemovedMailinglist(mailinglistService.getDeletedMailinglist(form.getMailinglistID(), companyId));
+            } else {
+                form.setSelectedRemovedMailinglist(null);
+                form.setMailinglistID(0);
+            }
+        } else {
+            form.setSelectedRemovedMailinglist(null);
         }
     }
 
@@ -739,7 +761,7 @@ public class MailingBaseAction extends StrutsActionBase {
         return mailingDao;
     }
 
-    public ComCampaignDao getCampaignDao() {
+    public CampaignDao getCampaignDao() {
         return campaignDao;
     }
 
@@ -765,7 +787,7 @@ public class MailingBaseAction extends StrutsActionBase {
 			// For mailings, checkbox is always shows if and only if referenced mailing-record defines template
 			// Checkbox is only enabled, if such a mailing has ID 0 (new mailing)
 
-			showCheckbox = mailingDao.checkMailingReferencesTemplate( mailingBaseForm.getTemplateID(), AgnUtils.getCompanyID( request));
+			showCheckbox = mailingDao.checkMailingReferencesTemplate(mailingBaseForm.getTemplateID(), AgnUtils.getCompanyID( request));
 		} else {
 			// in all other cases, the checkbox is hidden
 			showCheckbox = false;
@@ -808,7 +830,7 @@ public class MailingBaseAction extends StrutsActionBase {
         this.futureHolder = futureHolder;
     }
 
-    public void setCampaignDao(ComCampaignDao campaignDao) {
+    public void setCampaignDao(CampaignDao campaignDao) {
         this.campaignDao = campaignDao;
     }
 

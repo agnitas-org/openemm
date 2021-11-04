@@ -18,6 +18,7 @@ import org.agnitas.beans.Recipient;
 import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.dao.OnepixelDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -48,6 +49,8 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 	
 	/** Cache for content types of mailings. */
 	private MailingContentTypeCache mailingContentTypeCache;
+
+	private RecipientService recipientService;
 	
 	private final List<OnMailingOpenedHandler> mailingOpenedHandlerList;
 
@@ -57,9 +60,10 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 	
 	@Override
 	public final void trackOpening(final int companyID, final int customerID, final int mailingID, final String remoteAddr, final DeviceClass deviceClass, final int deviceID, final int clientID) {
-		final Recipient recipient = this.recipientFactory.newRecipient(companyID);
+		final Recipient recipient = recipientFactory.newRecipient(companyID);
+
 		recipient.setCustomerID(customerID);
-		recipient.getCustomerDataFromDb();
+		recipient.setCustParameters(recipientService.getCustomerDataFromDb(companyID, customerID, recipient.getDateFormat()));
 		
 		final int licenseID = configService.getLicenseID();
 		
@@ -164,5 +168,10 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 		if(handlers != null) {
 			this.mailingOpenedHandlerList.addAll(handlers);
 		}
+	}
+
+	@Required
+	public void setRecipientService(RecipientService recipientService) {
+		this.recipientService = recipientService;
 	}
 }

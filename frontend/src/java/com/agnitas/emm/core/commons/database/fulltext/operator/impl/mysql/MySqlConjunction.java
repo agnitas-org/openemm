@@ -25,7 +25,7 @@ public class MySqlConjunction extends BinaryOperator {
     public String process(List<String> operands) {
         checkOperands(operands);
         return operands.stream()
-                .map(operand -> PLUS + operand)
+                .map(operand -> operand.startsWith(PLUS) ? operand : PLUS + operand)
                 .collect(Collectors.joining(WHITESPACE));
     }
 

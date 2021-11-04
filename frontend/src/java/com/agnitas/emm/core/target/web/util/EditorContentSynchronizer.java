@@ -21,13 +21,14 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBu
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConverter;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
+import com.agnitas.emm.core.target.form.TargetEditForm;
 import com.agnitas.emm.core.target.web.QueryBuilderTargetGroupForm;
 import com.agnitas.emm.core.target.web.TargetgroupViewFormat;
 
 /**
  * Presentation layer utility class to synchronize the data of all target group editors.
  */
-public final class EditorContentSynchronizer {
+public class EditorContentSynchronizer {
 
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(EditorContentSynchronizer.class);
@@ -54,9 +55,9 @@ public final class EditorContentSynchronizer {
 		if(newFormat == null) {
 			throw new IllegalArgumentException("New format cannot be null");
 		}
-		
+
 		final TargetgroupViewFormat currentFormat = TargetgroupViewFormat.fromCode(form.getFormat());
-		
+
 		if(currentFormat == null) {
 			if(logger.isDebugEnabled()) {
 				logger.debug(String.format("Current format ('%s') is unknown", form.getFormat()));
@@ -68,6 +69,7 @@ public final class EditorContentSynchronizer {
 		// Call synchronization method
 		return callSynchronizationMethod(admin, currentFormat, newFormat, form);
 	}
+
 	
 	private final TargetgroupViewFormat callSynchronizationMethod(final ComAdmin admin, final TargetgroupViewFormat currentFormat, final TargetgroupViewFormat newFormat, final QueryBuilderTargetGroupForm form) throws EditorContentSynchronizationException {
 		if(currentFormat != newFormat) {
@@ -85,6 +87,21 @@ public final class EditorContentSynchronizer {
 			}
 		} else {
 			return currentFormat;
+		}
+	}
+
+	public void synchronizeEditors(final ComAdmin admin, final TargetgroupViewFormat synchronizeFrom, final TargetEditForm form) throws EditorContentSynchronizationException {
+		switch (synchronizeFrom) {
+			case EQL:
+				synchronizeEqlToQuerybuilder(admin, form);
+				break;
+
+			case QUERY_BUILDER:
+				synchronizeQuerybuilderToEql(admin.getCompanyID(), form);
+				break;
+
+			default:
+				throw new EditorContentSynchronizationException(String.format("Synchronizing from %s format not supported", synchronizeFrom));
 		}
 	}
 	
@@ -118,11 +135,62 @@ public final class EditorContentSynchronizer {
 			throw new EditorContentSynchronizationException("General error converting EQL to QueryBuilder", e);
 		}
 	}
-	
+
+	public final void synchronizeEqlToQuerybuilder(final ComAdmin admin, final TargetEditForm form) throws EditorContentSynchronizationException {
+		try {
+			form.setQueryBuilderRules(eqlToQueryBuilderConverter.convertEqlToQueryBuilderJson(form.getEql(), admin.getCompanyID()));
+			form.setQueryBuilderFilters(filterListBuilder.buildFilterListJson(admin));
+		} catch(final EqlParserException e) {
+			if(logger.isInfoEnabled()) {
+				logger.info("Syntax error in EQL code", e);
+			}
+
+			throw new EditorContentSynchronizationException("Syntax error in EQL code", e);
+		} catch(final EqlToQueryBuilderConversionException e) {
+			if(logger.isInfoEnabled()) {
+				logger.info("Error converting EQL to QueryBuilder", e);
+			}
+
+			throw new EditorContentSynchronizationException("Error converting EQL to QueryBuilder", e);
+		} catch(final QueryBuilderFilterListBuilderException e) {
+			if(logger.isInfoEnabled()) {
+				logger.info("Error building QB filters", e);
+			}
+
+			throw new EditorContentSynchronizationException("Error building QB filters", e);
+		} catch(final Exception e) {
+			if(logger.isInfoEnabled()) {
+				logger.info("General error converting EQL to QueryBuilder", e);
+			}
+
+			throw new EditorContentSynchronizationException("General error converting EQL to QueryBuilder", e);
+		}
+	}
+
 	public final void synchronizeQuerybuilderToEql(final int companyID, final QueryBuilderTargetGroupForm form) throws EditorContentSynchronizationException {
 		try {
 			final String eql = this.queryBuilderToEqlConverter.convertQueryBuilderJsonToEql(form.getQueryBuilderRules(), companyID);
-			
+
+			form.setEql(eql);
+		} catch(final QueryBuilderToEqlConversionException e) {
+			if(logger.isInfoEnabled()) {
+				logger.info("Error converting QueryBuilder to EQL", e);
+			}
+
+			throw new EditorContentSynchronizationException("Error converting QueryBuilder to EQL", e);
+		} catch(final Exception e) {
+			if(logger.isInfoEnabled()) {
+				logger.info("General error converting EQL to QueryBuilder", e);
+			}
+
+			throw new EditorContentSynchronizationException("General error converting EQL to QueryBuilder", e);
+		}
+	}
+
+	public final void synchronizeQuerybuilderToEql(final int companyID, final TargetEditForm form) throws EditorContentSynchronizationException {
+		try {
+			final String eql = this.queryBuilderToEqlConverter.convertQueryBuilderJsonToEql(form.getQueryBuilderRules(), companyID);
+
 			form.setEql(eql);
 		} catch(final QueryBuilderToEqlConversionException e) {
 			if(logger.isInfoEnabled()) {

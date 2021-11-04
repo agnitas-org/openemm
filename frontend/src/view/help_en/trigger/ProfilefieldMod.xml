@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Format for date fields]]></title>
+	<content><![CDATA[If you want to use a date profile field, the following format must be used: yyyyMMdd<br/><br/>Example: 20210531 for 31 May 2021<br/><br/>You can also use the expression "current_timestamp" if you want to set the current date.]]></content>
+</HelpBalloon>

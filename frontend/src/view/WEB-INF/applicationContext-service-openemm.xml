@@ -40,11 +40,12 @@
 		<property name="companyDao" ref="CompanyDao" />
 		<property name="uidService" ref="ExtensibleUIDService" />
 		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
-		<property name="recipientDao" ref="RecipientDao" />
 		<property name="beanLookupFactory" ref="beanLookupFactory" />
 		<property name="pushSubscriptionService"><null /></property>
 		<property name="configService" ref="ConfigService" />
 		<property name="mobilephoneNumberWhitelist" ref="MobilephoneNumberWhitelist" />
+		<property name="recipientService" ref="recipientService"/>
+		<property name="blacklistService" ref="BlacklistService"/>
 	</bean>
 
 	<bean id="serviceLookupFactory" class="com.agnitas.service.impl.ServiceLookupFactory">
@@ -131,11 +132,13 @@
 		<property name="mailingBaseService" ref="MailingBaseService" />
 		<property name="agnTagService" ref="AgnTagService" />
 		<property name="mailingDao" ref="MailingDao" />
+		<property name="dynamicTagDao" ref="DynamicTagDao"/>
 	</bean>
 
 <!-- ============================================================================================================================== Export -->
 	<bean id="RecipientExportWorkerFactory" class="org.agnitas.service.OpenemmRecipientExportWorkerFactory">
 		<property name="targetService" ref="targetService"/>
+		<property name="columnInfoService" ref="ColumnInfoService" />
 	</bean>
 
 	<bean id="ExportPredefService" class="com.agnitas.service.impl.ExportPredefServiceImpl">
@@ -167,6 +170,7 @@
 		<property name="adminService" ref="AdminService"/>
 		<property name="userActivityLogService" ref="UserActivityLogService"/>
         <property name="bounceFilterService" ref="BounceFilterService"/>
+        <property name="companyTokenService" ref="CompanyTokenService" />
     </bean>
 
 	<bean id="ProfileImportWorkerFactory" class="org.agnitas.service.ProfileImportWorkerFactory">
@@ -191,8 +195,10 @@
 		<property name="maildropService" ref="MaildropService" />
 		<property name="classicTemplateGenerator" ref="ClassicTemplateGenerator" />
 		<property name="sendActionbasedMailingService" ref="SendActionbasedMailingService" />
-		<property name="recipientDao" ref="RecipientDao" />
+		<property name="recipientService" ref="recipientService" />
 		<property name="configService" ref="ConfigService" />
 		<property name="mailingPreviewService" ref="MailingPreviewService" />
+		<property name="bindingEntryDao" ref="BindingEntryDao" />
+		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
 	</bean>
 </beans>

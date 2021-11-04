@@ -15,19 +15,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
-import javax.activation.DataHandler;
-import javax.mail.Address;
-import javax.mail.Message;
-import javax.mail.Multipart;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-import javax.mail.internet.MimeUtility;
-import javax.mail.util.ByteArrayDataSource;
+import jakarta.activation.DataHandler;
+import jakarta.mail.Address;
+import jakarta.mail.Message;
+import jakarta.mail.Multipart;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.internet.MimeUtility;
+import jakarta.mail.util.ByteArrayDataSource;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -36,22 +35,32 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.impl.DkimKeyEntry;
+import com.agnitas.dao.ComDkimDao;
+import com.agnitas.emm.dkim.DkimSignedMessage;
+import com.agnitas.util.CryptographicUtilities;
+
 public class JavaMailServiceImpl implements JavaMailService {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(JavaMailServiceImpl.class);
 	
 	private ConfigService configService;
+	private ComDkimDao dkimDao;
 
-	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
+	}
+
+	@Required
+	public void setDkimDao(ComDkimDao dkimDao) {
+		this.dkimDao = dkimDao;
 	}
 
 	/**
 	 * Send an email with error comment and error-Exception and stack trace to the address taken from mailaddress.velocity property.
 	 */
 	@Override
-	public boolean sendVelocityExceptionMail(String formUrl, Exception e) {
+	public boolean sendVelocityExceptionMail(int dkimCompanyID, String formUrl, Exception e) {
 		String toAddress = configService.getValue(ConfigValue.Mailaddress_Velocity);
 		
 		if (StringUtils.isNotBlank(toAddress)) {
@@ -67,7 +76,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 			String subjectText = "EMM Fehler";
 	
 			try {
-				return sendEmail(toAddress, subjectText, message, null);
+				return sendEmail(dkimCompanyID, toAddress, subjectText, message, null);
 			} catch (Exception me) {
 				logger.error("Error sending VelocityExceptionMail with exception: " + e.getMessage() + "\nEmailmessage:\n" + subjectText + "\n" + message, e);
 				return false;
@@ -87,7 +96,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 	 * @return true if all went ok.
 	 */
 	@Override
-	public boolean sendExceptionMail(String errorText, Throwable e) {
+	public boolean sendExceptionMail(int dkimCompanyID, String errorText, Throwable e) {
 		String toAddress = configService.getValue(ConfigValue.Mailaddress_Error);
 		if (toAddress != null) {
 			if (StringUtils.isNotBlank(toAddress)) {
@@ -104,7 +113,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 				}
 	
 				try {
-					final boolean result = sendEmail(toAddress, subjectText, messageBuilder.toString(), null);
+					final boolean result = sendEmail(dkimCompanyID, toAddress, subjectText, messageBuilder.toString(), null);
 					
 					if (!result) {
 						logger.error("Could not send exception mail - unreported exception is:", e);
@@ -130,13 +139,13 @@ public class JavaMailServiceImpl implements JavaMailService {
 	 * For pure textmails leave bodyHtml empty or null
 	 */
 	@Override
-	public boolean sendEmail(String toAddressList, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments) {
-		return sendEmail(null, null, null, null, null, toAddressList, null, subject, bodyText, bodyHtml, null, attachments);
+	public boolean sendEmail(int dkimCompanyID, String toAddressList, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments) {
+		return sendEmail(dkimCompanyID, null, null, null, null, null, toAddressList, null, subject, bodyText, bodyHtml, null, attachments);
 	}
 
 	@Override
-	public boolean sendEmail(String toAddressList, String fromAddress, String replyToAddress, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments) {
-		return sendEmail(fromAddress, null, replyToAddress, null, null, toAddressList, null, subject, bodyText, bodyHtml, null, attachments);
+	public boolean sendEmail(int dkimCompanyID, String toAddressList, String fromAddress, String replyToAddress, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments) {
+		return sendEmail(dkimCompanyID, fromAddress, null, replyToAddress, null, null, toAddressList, null, subject, bodyText, bodyHtml, null, attachments);
 	}
 
 	/**
@@ -147,7 +156,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 	 * For pure textmails leave bodyHtml empty or null
 	 */
 	@Override
-	public boolean sendEmail(String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String subject, String bodyText, String bodyHtml, String charset, JavaMailAttachment... attachments) {
+	public boolean sendEmail(int dkimCompanyID, String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String subject, String bodyText, String bodyHtml, String charset, JavaMailAttachment... attachments) {
 		String smtpMailRelayHostname = configService.getValue(ConfigValue.SmtpMailRelayHostname);
 		if (StringUtils.isBlank(smtpMailRelayHostname)) {
 			logger.error("smtpMailRelayHostname is missing, so no mail was sent. emailSubject: " + subject);
@@ -187,8 +196,8 @@ public class JavaMailServiceImpl implements JavaMailService {
 			// Set bounce address
 			if (StringUtils.isNotBlank(bounceAddress)) {
 				props.put("mail.smtp.from", bounceAddress);
-			} else if (StringUtils.isNotBlank(configService.getValue(ConfigValue.Mailaddress_Bounce))) {
-				props.put("mail.smtp.from", configService.getValue(ConfigValue.Mailaddress_Bounce));
+			} else if (StringUtils.isNotBlank(configService.getValue(ConfigValue.Mailaddress_Bounce, dkimCompanyID))) {
+				props.put("mail.smtp.from", configService.getValue(ConfigValue.Mailaddress_Bounce, dkimCompanyID));
 			} else {
 				// Use fromAddress as fallback
 				props.put("mail.smtp.from", fromAddress);
@@ -197,60 +206,60 @@ public class JavaMailServiceImpl implements JavaMailService {
 			Session session = Session.getDefaultInstance(props, null);
 
 			// create a message
-			MimeMessage msg = new MimeMessage(session);
+			DkimSignedMessage mimeMessage = new DkimSignedMessage(session);
 			if (StringUtils.isBlank(fromName)) {
-				msg.setFrom(new InternetAddress(fromAddress));
+				mimeMessage.setFrom(new InternetAddress(fromAddress));
 			} else {
-				msg.setFrom(new InternetAddress(fromAddress, fromName));
+				mimeMessage.setFrom(new InternetAddress(fromAddress, fromName));
 			}
-			msg.setSubject(subject, charset);
-			msg.setSentDate(new Date());
+			mimeMessage.setSubject(subject, charset);
+			mimeMessage.setSentDate(new Date());
 			
 			// Set reply-to address
 			if (StringUtils.isNotBlank(replyToAddress)) {
 				if (StringUtils.isBlank(replyToName)) {
-					msg.setReplyTo(new Address[] { new InternetAddress(replyToAddress) });
+					mimeMessage.setReplyTo(new Address[] { new InternetAddress(replyToAddress) });
 				} else {
-					msg.setReplyTo(new Address[] { new InternetAddress(replyToAddress, replyToName) });
+					mimeMessage.setReplyTo(new Address[] { new InternetAddress(replyToAddress, replyToName) });
 				}
 			} else if (StringUtils.isNotBlank(configService.getValue(ConfigValue.Mailaddress_ReplyTo))) {
 				if (StringUtils.isBlank(configService.getValue(ConfigValue.Mailaddress_ReplyToName))) {
-					msg.setReplyTo(new Address[] { new InternetAddress(configService.getValue(ConfigValue.Mailaddress_ReplyTo)) });
+					mimeMessage.setReplyTo(new Address[] { new InternetAddress(configService.getValue(ConfigValue.Mailaddress_ReplyTo)) });
 				} else {
-					msg.setReplyTo(new Address[] { new InternetAddress(configService.getValue(ConfigValue.Mailaddress_ReplyTo), configService.getValue(ConfigValue.Mailaddress_ReplyToName)) });
+					mimeMessage.setReplyTo(new Address[] { new InternetAddress(configService.getValue(ConfigValue.Mailaddress_ReplyTo), configService.getValue(ConfigValue.Mailaddress_ReplyToName)) });
 				}
 			} else {
 				// Use fromAddress as fallback
 				if (StringUtils.isBlank(fromName)) {
-					msg.setReplyTo(new Address[] { new InternetAddress(fromAddress) });
+					mimeMessage.setReplyTo(new Address[] { new InternetAddress(fromAddress) });
 				} else {
-					msg.setReplyTo(new Address[] { new InternetAddress(fromAddress, fromName) });
+					mimeMessage.setReplyTo(new Address[] { new InternetAddress(fromAddress, fromName) });
 				}
 			}
 
 			// Set to-recipient email addresses
 			InternetAddress[] toAddresses = getEmailAddressesFromList(toAddressList);
 			if (toAddresses.length > 0) {
-				msg.setRecipients(Message.RecipientType.TO, toAddresses);
+				mimeMessage.setRecipients(Message.RecipientType.TO, toAddresses);
 			}
 
 			// Set cc-recipient email addresses
 			InternetAddress[] ccAddresses = getEmailAddressesFromList(ccAddressList);
 			if (ccAddresses.length > 0) {
-				msg.setRecipients(Message.RecipientType.CC, ccAddresses);
+				mimeMessage.setRecipients(Message.RecipientType.CC, ccAddresses);
 			}
 
 			if (attachments == null || attachments.length <= 0) {
 				if (StringUtils.isBlank(bodyText) && StringUtils.isBlank(bodyHtml)) {
 					// Use a simple text email with only text content
 					// Set to a single space. If body is totally empty, Commons Emails rejects sending email with exception "Invalid message supplied" (-> EMM-4133)
-					msg.setText(" ", charset);
+					mimeMessage.setText(" ", charset);
 				} else if (StringUtils.isBlank(bodyHtml)) {
 					// Use a simple text email with only text content
-					msg.setText(bodyText, charset);
+					mimeMessage.setText(bodyText, charset);
 				} else if (StringUtils.isBlank(bodyText)) {
 					// Use a simple html email with only html content
-					msg.setContent(bodyHtml, "text/html; charset=" + charset);
+					mimeMessage.setContent(bodyHtml, "text/html; charset=" + charset);
 				} else {
 					// Use a multipart email with text and html content
 					Multipart multipart = new MimeMultipart("alternative");
@@ -263,7 +272,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 					htmlMimeBodyPart.setContent(bodyHtml, "text/html; charset=" + charset);
 					multipart.addBodyPart(htmlMimeBodyPart);
 					
-					msg.setContent(multipart);
+					mimeMessage.setContent(multipart);
 				}
 			} else {
 				Multipart multipartMixed = new MimeMultipart("mixed");
@@ -309,12 +318,19 @@ public class JavaMailServiceImpl implements JavaMailService {
 					multipartMixed.addBodyPart(attachmentMimeBodyPart);
 				}
 				
-				msg.setContent(multipartMixed);
+				mimeMessage.setContent(multipartMixed);
 			}
 			
-			try(final Transport transport = session.getTransport("smtp")) {
+			try (final Transport transport = session.getTransport("smtp")) {
+				DkimKeyEntry dkimKeyEntry = dkimDao.getDkimKeyForDomain(dkimCompanyID, AgnUtils.getDomainFromEmail(fromAddress), true);
+				if (dkimKeyEntry != null) {
+					mimeMessage.setDkimKeyData(dkimKeyEntry.getDomain(), dkimKeyEntry.getSelector(), CryptographicUtilities.getPrivateRsaKeyPairFromString(dkimKeyEntry.getDomainKey()), fromAddress);
+					mimeMessage.setCanonicalization(true, false);
+					mimeMessage.setExcludedHeaders("Return-Path", "Received", "Comments", "Keywords", "Bcc", "Resent-Bcc");
+				}
+				
 				transport.connect();
-				transport.sendMessage(msg, msg.getRecipients(Message.RecipientType.TO));
+				transport.sendMessage(mimeMessage, mimeMessage.getRecipients(Message.RecipientType.TO));
 				
 				if (logger.isDebugEnabled()) {
 					logger.debug("Sending java email:\nfrom: " + fromAddress + "\nto: " + toAddressList + "\nsubject: " + subject);

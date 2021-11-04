@@ -12,18 +12,30 @@ package org.agnitas.emm.core.recipient;
 
 import static java.util.Map.Entry.comparingByKey;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.util.MapUtils;
 
@@ -41,13 +53,19 @@ public class RecipientUtils {
     public static final String COLUMN_GENDER = "gender";
 	public static final String COLUMN_TITLE = "title";
 	public static final String COLUMN_MAILTYPE = "mailtype";
+    public static final String COLUMN_DATASOURCE_ID = "datasource_id";
     public static final String COLUMN_LATEST_DATASOURCE_ID = "latest_datasource_id";
+
     public static final String COLUMN_FREQUENCY_COUNT_DAY = "freq_count_day";
     public static final String COLUMN_FREQUENCY_COUNTER_WEEK = "freq_count_week";
     public static final String COLUMN_FREQUENCY_COUNT_MONTH = "freq_count_month";
 
+    public static final String COLUMN_DO_NOT_TRACK = "sys_tracking_veto";
+	public static final String COLUMN_BOUNCELOAD = "bounceload";
+
     public static final String COLUMN_TIMESTAMP = "timestamp";
     public static final String COLUMN_CREATION_DATE = "creation_date";
+    public static final String COLUMN_CLEANED_DATE = "cleaned_date";
     public static final String COLUMN_LASTOPEN_DATE = "lastopen_date";
     public static final String COLUMN_LASTCLICK_DATE = "lastclick_date";
     public static final String COLUMN_LASTSEND_DATE = "lastsend_date";
@@ -58,6 +76,28 @@ public class RecipientUtils {
     public static int COLUMN_OTHER_ORDER = 4;
     
     public static final int MAX_SELECTED_FIELDS_COUNT = 8;
+
+    public static final List<String> MAIN_COLUMNS = Arrays.asList(
+            COLUMN_CUSTOMER_ID,
+            COLUMN_EMAIL,
+            COLUMN_TITLE,
+            COLUMN_GENDER,
+            COLUMN_MAILTYPE,
+            COLUMN_FIRSTNAME,
+            COLUMN_LASTNAME,
+            COLUMN_TIMESTAMP,
+            COLUMN_CLEANED_DATE,
+
+            COLUMN_LATEST_DATASOURCE_ID,
+            COLUMN_DATASOURCE_ID,
+
+            COLUMN_DO_NOT_TRACK,
+            COLUMN_BOUNCELOAD,
+
+            COLUMN_FREQUENCY_COUNT_DAY,
+            COLUMN_FREQUENCY_COUNTER_WEEK,
+            COLUMN_FREQUENCY_COUNT_MONTH
+    );
 
     
     public static String getRecipientDescription(Map<String, Object> data) {
@@ -73,18 +113,13 @@ public class RecipientUtils {
     }
     
     public static String getRecipientDescription(int id, String firstName, String lastName, String email) {
-		final boolean hasFirstName = StringUtils.isNotBlank(firstName);
-		final boolean hasLastName = StringUtils.isNotBlank(lastName);
-		if (hasFirstName || hasLastName) {
-			if (hasFirstName && hasLastName) {
-				return firstName + " " + lastName + " (" + id + ")";
-			} else {
-				if (hasFirstName) {
-					return firstName + " (" + id + ")";
-				} else {
-					return lastName + " (" + id + ")";
-				}
-			}
+        return getRecipientDescription(id, StringUtils.trim(firstName + " " + lastName), email);
+    }
+
+    public static String getRecipientDescription(int id, String fullName, String email) {
+        fullName = StringUtils.trim(fullName);
+        if (StringUtils.isNotEmpty(fullName)) {
+            return fullName + " (" + id + ")";
 		} else {
 			return email + " (" + id + ")";
 		}
@@ -149,33 +184,144 @@ public class RecipientUtils {
                 return COLUMN_THIRD_ORDER;
             }
         } else {
-            if(COLUMN_GENDER.equals(columnName)){
+            if (COLUMN_GENDER.equals(columnName)){
                 return COLUMN_FIRST_ORDER;
             }
-            if(COLUMN_FIRSTNAME.equals(columnName)){
+            if (COLUMN_FIRSTNAME.equals(columnName)){
                 return COLUMN_SECOND_ORDER;
             }
-            if(COLUMN_LASTNAME.equals(columnName)){
+            if (COLUMN_LASTNAME.equals(columnName)){
                 return COLUMN_THIRD_ORDER;
             }
         }
         
         return COLUMN_OTHER_ORDER;
     }
+
+    public static Map<String, String> getSortedFieldsMap(CaseInsensitiveMap<String, ProfileField> columnMap) {
+		return getSortedFieldsMap(columnMap, false);
+    }
+
+    public static Map<String, String> getSortedFieldsMap(CaseInsensitiveMap<String, ProfileField> columnMap, boolean isDuplicateList) {
+		final LinkedHashMap<String, String> fieldsMap = new LinkedHashMap<>();
+		columnMap.forEach((key, value) -> fieldsMap.put(key, value.getShortname()));
+		MapUtils.reorderLinkedHashMap(fieldsMap, RecipientUtils.getFieldOrderComparator(isDuplicateList));
+		return fieldsMap;
+    }
     
     public static Map<String, String> sortDuplicateAnalysisFields(CaseInsensitiveMap<String, ProfileField> columnMap) {
-		final LinkedHashMap<String, String> fieldsMap = new LinkedHashMap<>();
-		
-		columnMap.forEach((key, value) -> fieldsMap.put(key, value.getShortname()));
-		
-		MapUtils.reorderLinkedHashMap(fieldsMap, RecipientUtils.getFieldOrderComparator(true));
-		
-		return fieldsMap;
+		return getSortedFieldsMap(columnMap, true);
     }
 
     public static Map<String, String> getFieldsForDuplicateAnalysis(Map<String, String> columnMap) {
         return columnMap.entrySet().stream()
                 .sorted(comparingByKey())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2, HashMap::new));
+    }
+
+    public static final String SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT = "_FORMAT";
+
+    public static final String SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY = "_DAY_DATE";
+    public static final String SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH = "_MONTH_DATE";
+    public static final String SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR = "_YEAR_DATE";
+    public static final String SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR = "_HOUR_DATE";
+    public static final String SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE = "_MINUTE_DATE";
+    public static final String SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND = "_SECOND_DATE";
+
+    private static final List<String> SUPPLEMENTAL_SUFFIXES = Arrays.asList(
+        SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY,
+        SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH,
+        SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR,
+        SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR,
+        SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE,
+        SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND);
+
+    public static String removeColumnSupplementalSuffix(String column) {
+        for (String suffix : SUPPLEMENTAL_SUFFIXES) {
+            if (StringUtils.upperCase(column).endsWith(suffix)) {
+                return StringUtils.removeEndIgnoreCase(column, suffix);
+            }
+        }
+        return column;
+    }
+
+    public static boolean hasSupplementalSuffix(String column) {
+        for (String suffix : SUPPLEMENTAL_SUFFIXES) {
+            if (StringUtils.upperCase(column).endsWith(suffix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static String formatRecipientDateValue(ComAdmin admin, String value) throws Exception {
+        if (DbUtilities.isNowKeyword(value)) {
+            return LocalDate.now(AgnUtils.getZoneId(admin)).format(admin.getDateFormatter());
+        }
+
+        if (StringUtils.isNotEmpty(value)) {
+            return formatRecipientDateValue(admin, parseUnknownDateFormat(value));
+        }
+
+        return "";
+    }
+
+    public static String formatRecipientDateTimeValue(ComAdmin admin, String value) throws Exception {
+        if (DbUtilities.isNowKeyword(value)) {
+            return LocalDateTime.now(AgnUtils.getZoneId(admin)).format(admin.getDateTimeFormatter());
+        }
+
+        if (StringUtils.isNotEmpty(value)) {
+            return formatRecipientDateTimeValue(admin, parseUnknownDateFormat(value));
+        }
+
+        return "";
+    }
+
+    public static Date parseUnknownDateFormat(String value) throws Exception {
+        Date dateValue = null;
+        try {
+            dateValue = new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).parse(value);
+        } catch (Exception e1) {
+            dateValue = DateUtilities.parseUnknownDateFormat(value);
+        }
+        return dateValue;
+    }
+
+    public static String formatRecipientDateValue(ComAdmin admin, Date dateValue) {
+        return StringUtils.defaultString(DateUtilities.format(dateValue, admin.getDateFormat()));
+    }
+
+    public static String formatRecipientDateTimeValue(ComAdmin admin, Date dateTimeValue) {
+        return StringUtils.defaultString(DateUtilities.format(dateTimeValue, admin.getDateTimeFormat()));
+    }
+
+    public static String formatRecipientDoubleValue(ComAdmin admin, String value) {
+        return formatRecipientDoubleValue(admin, NumberUtils.toDouble(value));
+    }
+
+    public static String formatRecipientDoubleValue(ComAdmin admin, double value) {
+        DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols(admin.getLocale());
+        DecimalFormat floatFormat = new DecimalFormat("###0.###", decimalFormatSymbols);
+        return floatFormat.format(value);
+    }
+
+    public static String getSalutationByGenderId(int gender) {
+        switch (gender) {
+            case 0:
+                return "Mr.";
+            case 1:
+                return "Mrs.";
+            case 2:
+                return "Unknown";
+            case 3:
+                return "Miss";
+            case 4:
+                return "Practice";
+            case 5:
+                return "Company";
+            default:
+                return "not set";
+        }
     }
 }

@@ -4,13 +4,13 @@
 
     // gets called once before the renderer is used
     WorkflowEndCellRenderer.prototype.init = function(params) {
-        this.eGui = document.createElement('div');
+        this.eGui = AGN.Lib.TableCellWrapper(params.data.show);
         var innerHtml = "";
 
         if (params.value.endTypeId === 1) {
             innerHtml = t('workflow.stop.automatic_end');
         } else if(params.value.endTypeId === 2) {
-            innerHtml = moment(params.value.dateLong).format(params.adminDateTimeFormat);
+            innerHtml = params.value.date;
         }
 
         this.eGui.innerHTML = innerHtml;

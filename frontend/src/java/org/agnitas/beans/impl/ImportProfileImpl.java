@@ -66,6 +66,9 @@ public class ImportProfileImpl implements ImportProfile {
     private Set<MediaTypes> mediatypes = new HashSet<>();
     private String datatype = "CSV";
 	private boolean mailinglistsAll;
+    // Used to get mapping from form. Try to delete this field or replace
+    // Map<String, Integer> genderMapping with Map<Integer, Set<String>> genderMapping while migration to Spring
+    protected Map<Integer, String> genderMappingsToSave = new HashMap<>();
     
     public ImportProfileImpl() {
     	keyColumns = new ArrayList<>();
@@ -185,6 +188,16 @@ public class ImportProfileImpl implements ImportProfile {
     @Override
 	public Map<String, Integer> getGenderMapping() {
         return genderMapping;
+    }
+
+    @Override
+    public Map<Integer, String> getGenderMappingsToSave() {
+        return genderMappingsToSave;
+    }
+
+    @Override
+	public void setGenderMappingsToSave(Map<Integer, String> genderMappingsToSave) {
+        this.genderMappingsToSave = genderMappingsToSave;
     }
 
     @Override

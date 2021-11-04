@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Fixed values]]></title>
+	<content><![CDATA[With the option "Fixed values" you can define which values this field may take. The values are offered for selection in a dropdown in the recipient profile, so users can select them quickly and easily. The defaults must of course match the data type of the field. Please note that only the predefined values are transferred for imports, as otherwise deviating values are created in the recipient profile and the logic or target groups that are based on them do not work.]]></content>
+</HelpBalloon>

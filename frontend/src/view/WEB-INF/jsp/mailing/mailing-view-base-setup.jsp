@@ -257,7 +257,7 @@
                         <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
 
                         <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-                        <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingBaseForm' data-form-set='save:save' data-form-submit='' data-controls-group='save'"/>
+                        <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingBaseForm' data-form-set='save:save' data-action='save' data-controls-group='save'"/>
                         <c:set target="${element}" property="iconBefore" value="icon-save"/>
                         <c:set target="${element}" property="name">
                             <bean:message key="button.Save"/>
@@ -282,6 +282,43 @@
                         <c:if test="${not mailingBaseForm.isTemplate}">
                         	<bean:message key="button.save.mailing.create"/>
                         </c:if>
+                    </c:set>
+                </emm:instantiate>
+            </c:otherwise>
+        </c:choose>
+    </c:if>
+
+    <%-- Grid Mailing save button --%>
+    <c:if test="${mailingBaseForm.isMailingGrid}">
+        <c:choose>
+            <c:when test="${mailingExists}">
+
+                <%-- Save button --%>
+
+                <emm:ShowByPermission token="mailing.change">
+                    <emm:instantiate var="element" type="java.util.LinkedHashMap">
+                        <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
+
+                        <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
+                        <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingBaseForm' data-form-set='save:save' data-action='save' data-controls-group='save'"/>
+                        <c:set target="${element}" property="iconBefore" value="icon-save"/>
+                        <c:set target="${element}" property="name">
+                            <bean:message key="button.Save"/>
+                        </c:set>
+                    </emm:instantiate>
+                </emm:ShowByPermission>
+            </c:when>
+            <c:otherwise>
+                <%-- Generate (save new) button --%>
+
+                <emm:instantiate var="element" type="java.util.LinkedHashMap">
+                    <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
+
+                    <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
+                    <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingBaseForm' data-form-set='save:save' data-form-submit='' data-controls-group='save'"/>
+                    <c:set target="${element}" property="iconBefore" value="icon-save"/>
+                    <c:set target="${element}" property="name">
+                        <bean:message key="button.save.mailing.create"/>
                     </c:set>
                 </emm:instantiate>
             </c:otherwise>

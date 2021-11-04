@@ -31,7 +31,7 @@ public class MailoutServerXMLRPC extends XMLRPCServer {
 	 */
 	public MailoutServerXMLRPC(String hostname, int port) throws Exception {
 		super(hostname, port);
-		log = new Log("mailoutserver", Log.INFO);
+		log = new Log("mailoutserver", Log.INFO, 0);
 		log.link("xml-rpc");
 		log.setPrinter(System.out);
 		phm.addHandler("Merger", Merger.class);

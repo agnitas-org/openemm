@@ -12,6 +12,9 @@ package com.agnitas.emm.core.company.factory.impl;
 
 import java.util.Objects;
 
+import org.agnitas.emm.core.commons.anonymization.RecipientAnonymizationSettings;
+import org.agnitas.emm.core.commons.anonymization.RecipientCleanupTracking;
+import org.agnitas.emm.core.commons.anonymization.RecipientDeletion;
 import org.agnitas.emm.core.commons.password.PasswordExpireSettings;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -42,6 +45,9 @@ public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory 
         companySettingsDto.setLoginlockSettingsName(LoginlockSettings.DEFAULT.getName());
         companySettingsDto.setPasswordPolicyName(PasswordPolicies.DEFAULT_POLICY.getPolicyName());
         companySettingsDto.setPasswordExpireDays(PasswordExpireSettings.DEFAULT.getExpireDays());
+        companySettingsDto.setRecipientAnonymization(RecipientAnonymizationSettings.DEFAULT.getRecipientAnonymization());
+        companySettingsDto.setRecipientCleanupTracking(RecipientCleanupTracking.DEFAULT.getRecipientCleanupTracking());
+        companySettingsDto.setRecipientDeletion(RecipientDeletion.DEFAULT.getRecipientDeletion());
         companySettingsDto.setHostauthCookieExpireDays(HostAuthenticationCookieExpirationSettings.DEFAULT.getExpireDays());
         companySettingsDto.setRecipientExpireDays(configService.getIntegerValue(ConfigValue.ExpireRecipient));
         companySettingsDto.setStatisticsExpireDays(configService.getIntegerValue(ConfigValue.ExpireStatisticsMax));

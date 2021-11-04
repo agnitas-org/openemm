@@ -17,12 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.ImportProfile;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.CustomerImportStatusImpl;
+import org.agnitas.beans.impl.ImportStatusImpl;
 import org.agnitas.service.impl.CSVColumnState;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.ImportReportEntry;
@@ -33,7 +31,10 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 
+import com.agnitas.emm.core.imports.beans.ImportItemizedProgress;
 import com.agnitas.emm.core.upload.bean.UploadData;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 public class ComNewImportWizardForm extends ImportBaseFileForm {
 	private static final long serialVersionUID = 7123335604116366489L;
@@ -50,6 +51,7 @@ public class ComNewImportWizardForm extends ImportBaseFileForm {
     private String calendarDateFormat;
     private String mailinglistAddMessage;
     private int completedPercent = -1;
+    private ImportItemizedProgress currentProgressStatus;
     private List<List<String>> previewParsedContent;
     private int all;
     private File invalidRecipientsFile;
@@ -61,7 +63,7 @@ public class ComNewImportWizardForm extends ImportBaseFileForm {
 	private ActionMessages errorsDuringImport;
 	private CSVColumnState[] columns = null;
 	
-	private CustomerImportStatus status = new CustomerImportStatusImpl();
+	private ImportStatus status = new ImportStatusImpl();
 	
     protected Collection<ImportReportEntry> reportEntries;
 	private Mailinglist enforceMailinglist;
@@ -99,11 +101,11 @@ public class ComNewImportWizardForm extends ImportBaseFileForm {
         return defaultProfileId;
     }
 
-    public CustomerImportStatus getStatus() {
+    public ImportStatus getStatus() {
         return status;
     }
 
-    public void setStatus(CustomerImportStatus status) {
+    public void setStatus(ImportStatus status) {
     	this.status = status;
     }
 
@@ -171,7 +173,7 @@ public class ComNewImportWizardForm extends ImportBaseFileForm {
         }
         
         if (action == ProfileImportAction.ACTION_START) {
-        	status = new CustomerImportStatusImpl();
+        	status = new ImportStatusImpl();
         }
         
         if (request.getParameter("start_proceed") != null) {
@@ -270,7 +272,15 @@ public class ComNewImportWizardForm extends ImportBaseFileForm {
     	return completedPercent;
     }
 
-	public void setColumns(CSVColumnState[] columns) {
+    public void setCurrentProgressStatus(ImportItemizedProgress currentProgressStatus) {
+        this.currentProgressStatus = currentProgressStatus;
+    }
+
+    public ImportItemizedProgress getCurrentProgressStatus() {
+        return currentProgressStatus;
+    }
+
+    public void setColumns(CSVColumnState[] columns) {
 		this.columns = columns;
 	}
 

@@ -31,13 +31,14 @@ import java.util.Objects;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.agnitas.beans.BindingEntry;
+import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.dao.MaildropStatusDao;
@@ -50,10 +51,12 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.emm.core.velocity.emmapi.VelocityRecipientWrapper;
 import org.agnitas.preview.Preview;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils;
+import org.agnitas.util.TimeoutLRUMap;
 import org.agnitas.util.XmlUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -70,9 +73,11 @@ import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.ComBindingEntryDao;
+import com.agnitas.dao.ComDatasourceDescriptionDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ScripthelperEmailLogDao;
+import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
@@ -109,6 +114,8 @@ public class ScriptHelper {
 	private ScriptHelperService helperService;
 
 	private ConfigService configService;
+	
+	private ComDatasourceDescriptionDao datasourceDescriptionDao;
 
 	private HttpServletResponse res = null;
 
@@ -127,6 +134,8 @@ public class ScriptHelper {
 	private ExtensibleUIDService extensibleUIDService;
 
 	protected int companyID;
+	
+    protected TimeoutLRUMap<Integer, Integer> datasourceIdCache = new TimeoutLRUMap<>(100, 300000);
 
 	/**
 	 * Caution: mailingID may be null
@@ -407,7 +416,7 @@ public class ScriptHelper {
 	 * @return
 	 */
 	public boolean sendEmail(final String from_adr, final String to_adr, final String to_cc_adr, final String subject, final String body_text, final String body_html, final String charset) {
-		final boolean success = javaMailService.sendEmail(from_adr, null, null, null, null, to_adr, to_cc_adr, subject, body_text, body_html, charset);
+		final boolean success = javaMailService.sendEmail(companyID, from_adr, null, null, null, null, to_adr, to_cc_adr, subject, body_text, body_html, charset);
 		if (success) {
 			// Create log Entry
 			scripthelperEmailLogDao.writeLogEntry(companyID, mailingID, formID, from_adr, to_adr, to_cc_adr, subject);
@@ -509,7 +518,7 @@ public class ScriptHelper {
     	 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
     	 */
 
-		return new Integer(i);
+		return i;
 	}
 
 	public String padROrTrim(final String input, final int size) {
@@ -726,26 +735,64 @@ public class ScriptHelper {
 		}
 	}
 
-	public boolean storeRecipient(final Recipient recipient) {
-
-    	/*
-    	 * **************************************************
-    	 *   IMPORTANT  IMPORTANT    IMPORTANT    IMPORTANT
-    	 * **************************************************
-    	 *
-    	 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
-    	 */
-
+	/*
+	 * TODO When EMM-8506 is rolled out completely:
+	 * 
+	 * 1. Change type of method parameter to VelocityRecipient
+	 * 2. Remove "recipient instanceof Recipient" path
+	 */
+	public boolean storeRecipient(final Object recipient) {
+		/*
+		 * **************************************************
+		 *   IMPORTANT  IMPORTANT    IMPORTANT    IMPORTANT
+		 * **************************************************
+		 *
+		 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
+		 */
+		
+		final Recipient rcp = recipientFrom(recipient);
+		
+		if (rcp == null) {
+			logger.error(String.format("Error in storeRecipient - Unsupported type of recipient: %s", recipient.getClass().getCanonicalName()));
+			return false;
+		}
+		
+		// Set velocity specific datasource id
 		try {
-			return recipientDao.updateInDB(recipient, false);
+			Integer datasourceDescriptionId = datasourceIdCache.get(companyID);
+			if (datasourceDescriptionId == null) {
+				DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription("V", companyID, "Velocity");
+				if (datasourceDescription == null) {
+					datasourceDescription = datasourceDescriptionDao.getByDescription("V", 0, "Velocity");
+				}
+				if (datasourceDescription != null) {
+					datasourceDescriptionId = datasourceDescription.getId();
+					datasourceIdCache.put(companyID, datasourceDescriptionId);
+				}
+			}
+			
+			if (datasourceDescriptionId != null) {
+				rcp.getCustParameters().put(ComCompanyDaoImpl.STANDARD_FIELD_LATEST_DATASOURCE_ID, datasourceDescriptionId);
+			}
 		} catch (Exception e) {
-			logger.error("Error in storeRecipient: " + e.getMessage());
+			logger.error("Cannot set velocity datasource_id in recipient for company " + companyID, e);
+		}
+		
+		try {
+			return recipientDao.updateInDbWithException(rcp, false);
+		} catch (Exception e) {
+			logger.error("Error in storeRecipient", e);
 			return false;
 		}
 	}
 
-	public boolean updateDatasourceID(final Recipient cust) {
-
+	/*
+	 * TODO When EMM-8506 is rolled out completely:
+	 * 
+	 * 1. Change type of method parameter to VelocityRecipient
+	 * 2. Remove "recipient instanceof Recipient" path
+	 */
+	public boolean updateDatasourceID(final Object cust) {
     	/*
     	 * **************************************************
     	 *   IMPORTANT  IMPORTANT    IMPORTANT    IMPORTANT
@@ -753,8 +800,15 @@ public class ScriptHelper {
     	 *
     	 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
     	 */
+		
+		final Recipient rcp = recipientFrom(cust);
+		
+		if(rcp == null) {
+			logger.error(String.format("Error in updateDatasourceID - Unsupported type of recipient: %s", cust.getClass().getCanonicalName()));
+			return false;
+		}
 
-		return recipientDao.updateDataSource(cust);
+		return recipientDao.updateDataSource(rcp);
 	}
 
 	/**
@@ -914,8 +968,13 @@ public class ScriptHelper {
 		return result;
 	}
 
-    public final int updateRecipientWithEmailChangeConfirmation(final Recipient recipient, final int mailingIdToSet, final String profileFieldForConfirmationCode) {
-
+	/*
+	 * TODO When EMM-8506 is rolled out completely:
+	 * 
+	 * 1. Change type of method parameter to VelocityRecipient
+	 * 2. Remove "recipient instanceof Recipient" path
+	 */
+    public final int updateRecipientWithEmailChangeConfirmation(final Object recipient, final int mailingIdToSet, final String profileFieldForConfirmationCode) {
     	/*
     	 * **************************************************
     	 *   IMPORTANT  IMPORTANT    IMPORTANT    IMPORTANT
@@ -924,12 +983,23 @@ public class ScriptHelper {
     	 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
     	 */
 
-    	try {
-    		this.recipientService.updateRecipientWithEmailChangeConfiguration(recipient, mailingIdToSet, profileFieldForConfirmationCode);
+    	Recipient rcp;
+    	
+    	if(recipient instanceof Recipient) {
+    		rcp = (Recipient) recipient;
+    	} else if(recipient instanceof VelocityRecipientWrapper) {
+    		rcp = ((VelocityRecipientWrapper) recipient).getWrappedRecipient();
+    	} else {
+			logger.error(String.format("Error in updateRecipientWithEmailChangeConfirmation - Unsupported type of recipient: %s", recipient.getClass().getCanonicalName()));
+			return -1;
+    	}
 
-    		return recipient.getCustomerID();
+    	try {
+    		this.recipientService.updateRecipientWithEmailChangeConfiguration(rcp, mailingIdToSet, profileFieldForConfirmationCode);
+
+    		return rcp.getCustomerID();
     	} catch(final Exception e) {
-    		final String msg = String.format("Error updating recipient %d with email change confirmation (mailing ID %d)", recipient.getCustomerID(), mailingIdToSet);
+    		final String msg = String.format("Error updating recipient %d with email change confirmation (mailing ID %d)", rcp.getCustomerID(), mailingIdToSet);
     		logger.error(msg, e);
 
     		return -1;
@@ -1027,7 +1097,7 @@ public class ScriptHelper {
 					messageEntry = new HashMap<>();
 					allAttr = aMessage.getAttributes();
 					messageType = Integer.parseInt(allAttr.getNamedItem("type").getNodeValue());
-					messageEntry.put("messageType", new Integer(messageType));
+					messageEntry.put("messageType", messageType);
 					allMessageChilds = aMessage.getChildNodes();
 					messageEntry.put("recipient", buildRecipient(allMessageChilds));
 					result.add(messageEntry);
@@ -1263,7 +1333,7 @@ public class ScriptHelper {
 			Map<String, Object> httpPostParameter = new HashMap<>();
 			httpPostParameter.put("secret", apiKey);
 			httpPostParameter.put("response", captchaResponseToken);
-			String response = HttpUtils.executeHttpPostRequest("https://www.google.com/recaptcha/api/siteverify", httpPostParameter);
+			String response = HttpUtils.executeHttpPostRequest("https://www.google.com/recaptcha/api/siteverify", httpPostParameter, configuredSecureTransportLayerProtocol(companyID));
 			JsonObject jsonResponse = (JsonObject) Json5Reader.readJsonItemString(response).getValue();
 			Boolean success = (Boolean) jsonResponse.get("success");
 			return success != null && success;
@@ -1318,6 +1388,37 @@ public class ScriptHelper {
 	
 	private boolean emailMatchesPattern(String emailAddress, String emailPattern) {
 		return Pattern.matches(emailPattern.replace(".", "\\.").replace("*", ".*").replace("?", "."), emailAddress);
+	}
+	
+	/**
+	 * <b>For internal use only!!!!</b>
+	 * 
+	 * Returns the recipient object from given object:
+	 * 
+	 * <ul>
+	 *   <li><code>obj</code> is of type {@link Recipient}, then the given object is returned</li>
+	 *   <li><code>obj</code> is of type {@link VelocityRecipientWrapper} then the wrapped recipient is returned</li>
+	 *   <li>In any other case, <code>null</code> is returned.
+	 * </ul>
+	 * 
+	 * @param obj object representating a recipient
+	 * 
+	 * @return recipient
+	 */
+	private Recipient recipientFrom(final Object obj) {
+    	if(obj instanceof Recipient) {
+    		return (Recipient) obj;
+    	} else if(obj instanceof VelocityRecipientWrapper) {
+    		return ((VelocityRecipientWrapper) obj).getWrappedRecipient();
+    	} else {
+			logger.error(String.format("Unsupported type of recipient: %s", obj.getClass().getCanonicalName()));
+			return null;
+    	}
+
+	}
+	
+	private final String configuredSecureTransportLayerProtocol(final int companyIdParam) {
+		return this.configService.getValue(ConfigValue.SecureTransportLayerProtocol, companyIdParam);
 	}
 	
 	/**
@@ -1467,5 +1568,10 @@ public class ScriptHelper {
 	@Required
 	public final void setExtensibleUIDService(final ExtensibleUIDService extensibleUIDService) {
 		this.extensibleUIDService = extensibleUIDService;
+	}
+	
+	@Required
+	public final void setDatasourceDescriptionDao(final ComDatasourceDescriptionDao datasourceDescriptionDao) {
+		this.datasourceDescriptionDao = Objects.requireNonNull(datasourceDescriptionDao, "datasourceDescriptionDao is null");
 	}
 }

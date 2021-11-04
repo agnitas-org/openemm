@@ -10,8 +10,8 @@
 
 package org.agnitas.emm.core.validator;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.validator.annotation.MailingType;

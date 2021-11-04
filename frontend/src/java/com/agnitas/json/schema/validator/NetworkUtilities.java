@@ -36,8 +36,13 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 public class NetworkUtilities {
+	
+	/** The logger. */
+	private static final transient Logger LOGGER = Logger.getLogger(NetworkUtilities.class);
+	
 	private static final String SPECIAL_CHARS_REGEXP = "\\p{Cntrl}\\(\\)<>@,;:'\\\\\\\"\\.\\[\\]";
 	private static final String VALID_CHARS_REGEXP = "[^\\s" + SPECIAL_CHARS_REGEXP + "]";
 	private static final String QUOTED_USER_REGEXP = "(\"[^\"]*\")";
@@ -83,6 +88,7 @@ public class NetworkUtilities {
 
 	private static final Pattern DOMAIN_NAME_PATTERN = Pattern.compile(DOMAIN_NAME_REGEX);
 
+	@Deprecated // TODO Never used
 	public static boolean testConnection(final String hostname, final int port) throws Exception {
 		try (Socket socket = new Socket()) {
 			final InetSocketAddress endPoint = new InetSocketAddress(hostname, port);
@@ -100,6 +106,7 @@ public class NetworkUtilities {
 		}
 	}
 
+	@Deprecated // TODO Never used
 	public static boolean ping(final String ipOrHostname) {
 		try {
 			if (ipOrHostname.toLowerCase().trim().startsWith("http://")) {
@@ -121,7 +128,7 @@ public class NetworkUtilities {
 			} else {
 				return InetAddress.getByName(getHostnameFromRequestString(ipOrHostname)).isReachable(5000);
 			}
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (final Exception e) {
 			return false;
 		}
 	}
@@ -147,6 +154,7 @@ public class NetworkUtilities {
 		}
 	}
 
+	@Deprecated // TODO Never used
 	public static boolean wakeOnLanPing(final String macAddress) {
 		try {
 			final byte[] macBytes = getMacAddressBytes(macAddress);
@@ -161,11 +169,12 @@ public class NetworkUtilities {
 			}
 
 			return true;
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (final Exception e) {
 			return false;
 		}
 	}
 
+	@Deprecated // TODO Never used
 	public static boolean checkForNetworkConnection() {
 		try {
 			for (final NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
@@ -175,7 +184,8 @@ public class NetworkUtilities {
 			}
 			return false;
 		} catch (final SocketException e) {
-			e.printStackTrace();
+			LOGGER.warn("Error checking network connection", e);
+
 			return false;
 		}
 	}
@@ -201,10 +211,11 @@ public class NetworkUtilities {
 	 *
 	 * @return
 	 */
+	@Deprecated // TODO Never used
 	public static String getHostName() {
 		try {
 			return InetAddress.getLocalHost().getHostName();
-		} catch (@SuppressWarnings("unused") final UnknownHostException e) {
+		} catch (final UnknownHostException e) {
 			return "unbekannter Rechnername";
 		}
 	}
@@ -213,7 +224,7 @@ public class NetworkUtilities {
 		String asciiDomainName;
 		try {
 			asciiDomainName = java.net.IDN.toASCII(domain);
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (final Exception e) {
 			// invalid domain name like abc@.ch
 			return false;
 		}
@@ -226,6 +237,7 @@ public class NetworkUtilities {
 		return DOMAIN_NAME_PATTERN.matcher(asciiDomainName).matches();
 	}
 
+	@Deprecated // TODO Never used
 	public static boolean isValidEmail(final String emailAddress) {
 		final Matcher m = EMAIL_PATTERN.matcher(emailAddress);
 
@@ -247,6 +259,7 @@ public class NetworkUtilities {
 		return true;
 	}
 
+	@Deprecated // TODO Used by isValidEmail() only, which is never used itself
 	public static boolean isValidUser(final String user) {
 		return USER_PATTERN.matcher(user).matches();
 	}
@@ -255,11 +268,12 @@ public class NetworkUtilities {
 		return isValidDomain(value);
 	}
 
+	@Deprecated // TODO Never used
 	public static boolean isValidHostnameOnline(final String value) {
 		try {
 			InetAddress.getByName(value);
 			return true;
-		} catch (@SuppressWarnings("unused") final UnknownHostException e) {
+		} catch (final UnknownHostException e) {
 			return false;
 		}
 	}
@@ -276,12 +290,13 @@ public class NetworkUtilities {
 		try {
 			new URL(uri).toURI();
 			return true;
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (final Exception e) {
 			return false;
 		}
 	}
 
-	public static InputStream openHttpsDataInputStreamWithPemCertificate(final String urlString, final InputStream pemCertificateInputStream) throws Exception {
+	@Deprecated // TODO Never used
+	public static InputStream openHttpsDataInputStreamWithPemCertificate(final String urlString, final InputStream pemCertificateInputStream, final String secureTransportLayerProtocol) throws Exception {
 		if (urlString == null || !urlString.toLowerCase().startsWith("https://")) {
 			throw new Exception("Invalid urlString for https connection: " + urlString);
 		}
@@ -296,7 +311,7 @@ public class NetworkUtilities {
 
 		final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 		tmf.init(keyStore);
-		final SSLContext context = SSLContext.getInstance("TLS");
+		final SSLContext context = SSLContext.getInstance(secureTransportLayerProtocol);
 		context.init(null, tmf.getTrustManagers(), null);
 
 		final URL url = new URL(urlString);

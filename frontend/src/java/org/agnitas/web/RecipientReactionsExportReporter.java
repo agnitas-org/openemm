@@ -122,7 +122,7 @@ public class RecipientReactionsExportReporter {
 			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
 			String bodyText = generateLocalizedExportTextReport(exportWorker, admin) + "\n" + additionalContent;
 			
-			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+			javaMailService.sendEmail(company.getId(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 
@@ -340,7 +340,7 @@ public class RecipientReactionsExportReporter {
 			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
 			String bodyText = "Export-ERROR:\n" + generateLocalizedExportTextReport(exportWorker, admin) + "\n" + additionalContent;
 						
-			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+			javaMailService.sendEmail(company.getId(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 

@@ -12,8 +12,8 @@ package com.agnitas.emm.core.mailing.web;
 
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.service.WebStorage;
@@ -128,7 +128,7 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 	
 	//show empty form to enter new parameter values
 	public ActionForward newParameter(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-		((ComMailingParameterForm)form).resetFormValues(mapping, request);
+		((ComMailingParameterForm)form).resetFormValues();
 		((ComMailingParameterForm)form).setCompanyID(AgnUtils.getCompanyID(request));
 		loadMailings(request);
 		return mapping.findForward("view");

@@ -66,4 +66,9 @@ public interface ProfileFieldService {
     UserAction getEmmChangeLog(ProfileField field, ProfileFieldForm form);
 
     List<Dependent<ProfileFieldDependentType>> getDependents(@VelocityCheck int companyId, String fieldName);
+    
+    List<ProfileField> listVisibleProfileFields(final int companyID) throws Exception;
+
+	boolean isReservedKeyWord(String fieldname);
+    
 }

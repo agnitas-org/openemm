@@ -10,7 +10,7 @@
 
 package org.agnitas.service.impl;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 

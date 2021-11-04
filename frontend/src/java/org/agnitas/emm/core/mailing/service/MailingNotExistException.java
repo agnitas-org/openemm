@@ -11,7 +11,23 @@
 package org.agnitas.emm.core.mailing.service;
 
 public class MailingNotExistException extends RuntimeException {
-
 	private static final long serialVersionUID = -3092412854773424599L;
+	
+	private int companyID;
+	private int mailingID;
+	
+	public int getCompanyID() {
+		return companyID;
+	}
 
+	public int getMailingID() {
+		return mailingID;
+	}
+	
+	public MailingNotExistException(int companyID, int mailingID) {
+		super("Mailing does not exist. CompanyID: " + companyID + ", MailingID: " + mailingID);
+		
+		this.companyID = companyID;
+		this.mailingID = mailingID;
+	}
 }

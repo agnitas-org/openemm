@@ -53,10 +53,6 @@
         </div>
     </div>
 
-    <jsp:include page="transfer-dialog.jsp">
-        <jsp:param name="containerId" value="mailing-editor"/>
-        <jsp:param name="baseMailingEditor" value="mailing-editor-base"/>
-    </jsp:include>
     <jsp:include page="oneMailinglistWarning-dialog.jsp">
         <jsp:param name="containerId" value="mailing-editor"/>
         <jsp:param name="baseMailingEditor" value="mailing-editor-base"/>

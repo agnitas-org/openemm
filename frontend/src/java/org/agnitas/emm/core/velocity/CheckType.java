@@ -13,6 +13,7 @@ package org.agnitas.emm.core.velocity;
 /**
  * Type of checks that can be performed during Velocity execution.
  */
+@Deprecated // After completion of EMM-8360, this class can be removed without replacement
 public enum CheckType {
 	/** Check company context. */
 	COMPANY_CONTEXT

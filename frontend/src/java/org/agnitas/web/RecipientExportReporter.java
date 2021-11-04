@@ -18,7 +18,9 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
+import org.agnitas.beans.ExportColumnMapping;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.RecipientExportWorker;
@@ -144,7 +146,7 @@ public class RecipientExportReporter {
 			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
 			String bodyText = generateLocalizedExportTextReport(exportWorker, locale) + "\n" + additionalContent;
 			
-			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+			javaMailService.sendEmail(admin.getCompanyID(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 
@@ -207,8 +209,9 @@ public class RecipientExportReporter {
 			profileContent += I18nString.getLocaleString("csv.DecimalSeparator", locale) + ": " + Character.toString(decimalSeparator) + "\n";
 		}
 		
-		if (StringUtils.isNotBlank(exportWorker.getExportProfile().getColumns())) {
-			profileContent += I18nString.getLocaleString("htmled.columns", locale) + ": " + StringUtils.join(AgnUtils.removeEmptyFromStringlist(AgnUtils.splitAndTrimList(exportWorker.getExportProfile().getColumns())), ", ") + "\n";
+		if (exportWorker.getExportProfile().getExportColumnMappings() != null && !exportWorker.getExportProfile().getExportColumnMappings().isEmpty()) {
+			String exportedColumns = StringUtils.join(exportWorker.getExportProfile().getExportColumnMappings().stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toList()), ";");
+			profileContent += I18nString.getLocaleString("htmled.columns", locale) + ": " + StringUtils.join(AgnUtils.removeEmptyFromStringlist(AgnUtils.splitAndTrimList(exportedColumns)), ", ") + "\n";
 		} else {
 			profileContent += I18nString.getLocaleString("htmled.columns", locale) + ": " + I18nString.getLocaleString("default.none", locale) + "\n";
 		}
@@ -353,9 +356,10 @@ public class RecipientExportReporter {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.DecimalSeparator", locale), Character.toString(decimalSeparator)));
 		}
 		
-		if (StringUtils.isNotBlank(exportWorker.getExportProfile().getColumns())) {
+		if (exportWorker.getExportProfile().getExportColumnMappings() != null && !exportWorker.getExportProfile().getExportColumnMappings().isEmpty()) {
+			String exportedColumns = StringUtils.join(exportWorker.getExportProfile().getExportColumnMappings().stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toList()), ";");
 			htmlContent.append(HtmlReporterHelper.getOutputTableSubHeader(I18nString.getLocaleString("htmled.columns", locale), false));
-			for (String columnName : AgnUtils.removeEmptyFromStringlist(AgnUtils.splitAndTrimList(exportWorker.getExportProfile().getColumns()))) {
+			for (String columnName : AgnUtils.removeEmptyFromStringlist(AgnUtils.splitAndTrimList(exportedColumns))) {
 				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("", columnName));
 			}
 		} else {
@@ -451,7 +455,7 @@ public class RecipientExportReporter {
 			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
 			String bodyText = "Export-ERROR:\n" + generateLocalizedExportTextReport(exportWorker, locale) + "\n" + additionalContent;
 						
-			javaMailService.sendEmail(StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+			javaMailService.sendEmail(company.getId(),StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 	

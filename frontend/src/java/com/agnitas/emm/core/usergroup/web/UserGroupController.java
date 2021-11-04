@@ -236,6 +236,20 @@ public class UserGroupController implements XssCheckAware {
         return "redirect:/administration/usergroup/list.action";
     }
 
+    @GetMapping("/{id:\\d+}/copy.action")
+    public String copy(@PathVariable int id, ComAdmin admin, Popups popups) {
+        int copiedGroupId = tryCopyUserGroup(id, admin);
+        
+        if (copiedGroupId < 0) {
+            logger.error("Couldn't copy user group ID:" + id);
+            popups.alert("Error");
+            return "redirect:/administration/usergroup/" + id + "/view.action";
+        }
+        userActivityLogService.writeUserActivityLog(admin, "copied user group", 
+                String.format("User group ID = %d - copied from ID = %d)", copiedGroupId, id));
+        return "redirect:/administration/usergroup/" + copiedGroupId + "/view.action";
+    }
+
     private boolean isValid(ComAdmin admin, UserGroupForm form, Popups popups) {
         int userGroupId = form.getId();
 
@@ -345,5 +359,13 @@ public class UserGroupController implements XssCheckAware {
                     userAction.getDescription()));
         }
     }
-
+    
+    private int tryCopyUserGroup(int id, ComAdmin admin) {
+        try {
+            return userGroupService.copyUserGroup(id, admin);
+        } catch (Exception e) {
+            logger.error("Error while copying the user group ID = " + id, e);
+            return NEW_USER_GROUP_ID;
+        }
+    }
 }

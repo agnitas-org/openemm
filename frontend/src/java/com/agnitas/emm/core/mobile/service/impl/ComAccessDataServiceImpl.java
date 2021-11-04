@@ -12,7 +12,7 @@ package com.agnitas.emm.core.mobile.service.impl;
 
 import java.util.Objects;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Required;
 

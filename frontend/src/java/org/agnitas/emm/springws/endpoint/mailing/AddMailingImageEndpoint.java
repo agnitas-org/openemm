@@ -10,7 +10,6 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
-import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.TrackableLink;
@@ -34,6 +33,7 @@ import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.emm.core.components.service.ComComponentService;
 import com.agnitas.service.MimeTypeService;
@@ -106,7 +106,7 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
         int companyId = Utils.getUserCompany();
 
         if(!isValidMailingId(req.getMailingID(), companyId)) {
-            throw new MailingNotExistException();
+            throw new MailingNotExistException(companyId, req.getMailingID());
         }
 
         if (!isValidMandatoryFields(req.getContent(), req.getFileName())) {

@@ -22,15 +22,15 @@ class ComVelocityWrapperImpl extends AbstractVelocityWrapper {
 	
 	/**
 	 * Creates a new ComVelocityWrapperImpl using the
-	 * {@link AgnVelocityUberspector}. 
+	 * {@link AgnVelocityUberspector}.
 	 * 
 	 * @param companyId company ID
 	 * @param factory factory for Uberspect delegate targets
 	 * 
 	 * @throws Exception on errors creating new instance
 	 */
-	protected ComVelocityWrapperImpl( @VelocityCheck int companyId, UberspectDelegateTargetFactory factory, String velocityLogDir) throws Exception {
-		super( companyId, factory, velocityLogDir);
+	protected ComVelocityWrapperImpl( @VelocityCheck int companyId, UberspectDelegateTargetFactory factory) throws Exception {
+		super( companyId, factory);
 	}
 
 }

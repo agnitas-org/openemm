@@ -13,7 +13,7 @@ package org.agnitas.emm.core.mailinglist.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
@@ -84,11 +84,7 @@ public class MailinglistServiceImpl implements MailinglistService {
 		} else if(mailinglistDao.checkMailinglistInUse(mailingListId, companyId)){
 			throw new MailinglistInUseException(mailingListId, companyId);
 		} else {
-				// delete bindings, only if no mailing refers to this mailinglist
-
-				// EMM-5636: Removing bindings is done by a separate process in background
-				// mailinglistDao.deleteBindings(model.getMailinglistId(), model.getCompanyId());
-				return mailinglistDao.deleteMailinglist(mailingListId, companyId);
+			return mailinglistDao.deleteMailinglist(mailingListId, companyId);
 		}
 	}
 

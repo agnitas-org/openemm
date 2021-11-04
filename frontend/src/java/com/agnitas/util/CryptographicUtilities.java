@@ -177,12 +177,21 @@ public class CryptographicUtilities {
 		try {
 			Security.addProvider(new BouncyCastleProvider());
 		    String privateKeyPEM = key.trim();
+		    
 		    final String pemBegin = "-----BEGIN PRIVATE KEY-----";
 		    final String pemEnd = "-----END PRIVATE KEY-----";
-			if (privateKeyPEM.startsWith(pemBegin) && privateKeyPEM.endsWith(pemEnd)) {
-		    	privateKeyPEM = privateKeyPEM.substring(pemBegin.length(), privateKeyPEM.length() - pemEnd.length()).trim();
+		    
+		    final String pemRsaBegin = "-----BEGIN RSA PRIVATE KEY-----";
+		    final String pemRsaEnd = "-----END RSA PRIVATE KEY-----";
+		    
+		    if (privateKeyPEM.contains(pemRsaBegin) && privateKeyPEM.contains(pemRsaEnd) && privateKeyPEM.indexOf(pemRsaBegin) < privateKeyPEM.indexOf(pemRsaEnd)) {
+		    	privateKeyPEM = privateKeyPEM.substring(privateKeyPEM.indexOf(pemRsaBegin) + pemRsaBegin.length(), privateKeyPEM.indexOf(pemRsaEnd)).trim();
+		    } else if (privateKeyPEM.contains(pemBegin) && privateKeyPEM.contains(pemEnd) && privateKeyPEM.indexOf(pemBegin) < privateKeyPEM.indexOf(pemEnd)) {
+		    	privateKeyPEM = privateKeyPEM.substring(privateKeyPEM.indexOf(pemBegin) + pemBegin.length(), privateKeyPEM.indexOf(pemEnd)).trim();
 		    }
+		    
 		    privateKeyPEM = privateKeyPEM.replace("\r", "").replace("\n", "");
+		    
 		    byte[] privateKeyData = Base64.getDecoder().decode(privateKeyPEM);
 	        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 	        PrivateKey privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKeyData));

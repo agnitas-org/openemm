@@ -12,7 +12,7 @@ package com.agnitas.emm.core.mailing.service.impl;
 
 import org.springframework.stereotype.Component;
 
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.MailingStatisticsDao;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.emm.core.mailing.service.CalculationRecipients;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
@@ -21,17 +21,17 @@ import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 public class DefaultCalculation implements CalculationRecipients<CalculationRecipientsConfig> {
 
     private ComMailingBaseService mailingBaseService;
-    private ComMailingDao mailingDao;
+    private MailingStatisticsDao mailingStatisticsDao;
 
-    public DefaultCalculation(ComMailingBaseService mailingBaseService, ComMailingDao mailingDao) {
+    public DefaultCalculation(ComMailingBaseService mailingBaseService, MailingStatisticsDao mailingStatisticsDao) {
         this.mailingBaseService = mailingBaseService;
-        this.mailingDao = mailingDao;
+        this.mailingStatisticsDao = mailingStatisticsDao;
     }
 
     @Override
     public int calculate(CalculationRecipientsConfig config) throws Exception {
         if (config.getFollowUpMailing() > 0) {
-            return mailingDao.getFollowUpStat(config.getMailingId(), config.getFollowUpMailing(), config.getFollowUpType(), config.getCompanyId(), true);
+            return mailingStatisticsDao.getFollowUpStat(config.getMailingId(), config.getFollowUpMailing(), config.getFollowUpType(), config.getCompanyId(), true);
         }
         return mailingBaseService.calculateRecipients(config.getCompanyId(), config.getMailingId());
     }

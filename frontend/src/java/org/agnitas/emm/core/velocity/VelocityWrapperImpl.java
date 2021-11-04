@@ -17,7 +17,6 @@ import com.agnitas.emm.core.velocity.AgnVelocityUberspector;
  * {@link AgnVelocityUberspector}.
  */
 class VelocityWrapperImpl extends AbstractVelocityWrapper {
-
 	/**
 	 * Creates a new VelocityWrapperImpl running in the context of the
 	 * given company ID.
@@ -27,8 +26,7 @@ class VelocityWrapperImpl extends AbstractVelocityWrapper {
 	 * 
 	 * @throws Exception on errors initializing the {@link VelocityWrapper}
 	 */
-	public VelocityWrapperImpl( int companyId, UberspectDelegateTargetFactory factory, String velocityLogDir) throws Exception {
-		super( companyId, factory, velocityLogDir);
+	public VelocityWrapperImpl(int companyId, UberspectDelegateTargetFactory factory) throws Exception {
+		super(companyId, factory);
 	}
-
 }

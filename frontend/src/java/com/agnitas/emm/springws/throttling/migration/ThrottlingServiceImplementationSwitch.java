@@ -16,20 +16,20 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.emm.springws.WebserviceUserDetails;
 import com.agnitas.emm.springws.throttling.impl.SimpleSlidingAverageThrottlingServiceImpl;
-import com.agnitas.emm.springws.throttling.service.ThrottlingService;
-import com.agnitas.emm.springws.throttling.service.ThrottlingServiceException;
+import com.agnitas.emm.util.quota.api.QuotaLimitExceededException;
+import com.agnitas.emm.util.quota.api.QuotaService;
+import com.agnitas.emm.util.quota.api.QuotaServiceException;
 
 /**
  * Switch between old {@link SimpleSlidingAverageThrottlingServiceImpl} and
- * new implementation of {@link ThrottlingService}.
+ * new implementation of {@link QuotaService}.
  */
 @Deprecated // Removed without replacement after rollout EMM-8124
-public final class ThrottlingServiceImplementationSwitch implements ThrottlingService {
+public final class ThrottlingServiceImplementationSwitch implements QuotaService {
 
-	private ThrottlingService legacyService;
-	private ThrottlingService newService;
+	private QuotaService legacyService;
+	private QuotaService newService;
 	private ConfigService configService;
 	
 	@Required
@@ -38,20 +38,22 @@ public final class ThrottlingServiceImplementationSwitch implements ThrottlingSe
 	}
 	
 	@Required
-	public final void setLegacyThrottlingService(final ThrottlingService service) {
+	public final void setLegacyThrottlingService(final QuotaService service) {
 		this.legacyService = Objects.requireNonNull(service, "Legacy ThrottlingService is null");
 	}
 	
 	@Required
-	public final void setNewThrottlingService(final ThrottlingService service) {
+	public final void setNewThrottlingService(final QuotaService service) {
 		this.newService = Objects.requireNonNull(service, "New ThrottlingService is null");
 	}
 	
 	@Override
-	public final boolean checkAndTrack(WebserviceUserDetails webserviceUser, final String endpointName) throws ThrottlingServiceException {
-		return configService.getBooleanValue(ConfigValue.Development.UseNewWebserviceRateLimiting, webserviceUser.getCompanyID())
-				? newService.checkAndTrack(webserviceUser, endpointName)
-				: legacyService.checkAndTrack(webserviceUser, endpointName);
+	public final void checkAndTrack(final String username, final int companyID, final String endpointName) throws QuotaServiceException, QuotaLimitExceededException {
+		if(configService.getBooleanValue(ConfigValue.Development.UseNewWebserviceRateLimiting, companyID)) {
+			newService.checkAndTrack(username, companyID, endpointName);
+		} else {
+			legacyService.checkAndTrack(username, companyID, endpointName);
+		}
 	}
 
 }

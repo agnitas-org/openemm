@@ -13,7 +13,7 @@ package org.agnitas.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.CustomerImportStatus;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.MailinglistDao;
@@ -57,7 +57,7 @@ public class ProfileImportWorkerFactory {
 		this.importRecipientsDao = importRecipientsDao;
 	}
 	
-	public ProfileImportWorker getProfileImportWorker(boolean interactiveMode, List<Integer> mailingListIdsToAssign, String sessionId, ComAdmin admin, int datasourceId, ImportProfile importProfile, RemoteFile importFile, CustomerImportStatus importStatus) throws Exception {
+	public ProfileImportWorker getProfileImportWorker(boolean interactiveMode, List<Integer> mailingListIdsToAssign, String sessionId, ComAdmin admin, int datasourceId, ImportProfile importProfile, RemoteFile importFile, ImportStatus importStatus) throws Exception {
 		ProfileImportWorker profileImportWorker = new ProfileImportWorker();
 
 		profileImportWorker.setConfigService(configService);

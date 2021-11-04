@@ -19,11 +19,14 @@
 <c:set var="GENERIC_TYPE_FLOAT" value="<%= DbColumnType.GENERIC_TYPE_FLOAT %>" scope="page" />
 <c:set var="GENERIC_TYPE_DATE" value="<%= DbColumnType.GENERIC_TYPE_DATE %>" scope="page" />
 <c:set var="GENERIC_TYPE_DATETIME" value="<%= DbColumnType.GENERIC_TYPE_DATETIME %>" scope="page" />
+<c:set var="BOUNCE_USER_STATUS_CODE" value="<%= UserStatus.Bounce.getStatusCode() %>" scope="page" />
 
 <%--@elvariable id="exportWizardForm" type="org.agnitas.web.forms.ExportWizardForm"--%>
 <c:set var="localeDatePattern" value="${fn:toLowerCase(exportWizardForm.localeDatePattern)}"/>
 
-<agn:agnForm action="/exportwizard" id="exportWizardForm" data-form="resource" data-form-focus="shortname">
+<agn:agnForm action="/exportwizard" id="exportWizardForm" data-form="resource" data-form-focus="shortname"
+             data-controller="exportwizard-view"
+             data-initializer="exportwizard-view">
     <html:hidden property="action"/>
     <html:hidden property="exportPredefID"/>
 
@@ -33,6 +36,22 @@
     <html:hidden property="datesPanelVisible"/>
     <html:hidden property="fileFormatPanelVisible"/>
 
+    <emm:ShowByPermission token="export.ownColumns">
+        <c:set var="adminHasOwnColumnPermission" value="${true}"/>
+    </emm:ShowByPermission>
+    <emm:HideByPermission token="export.ownColumns">
+        <c:set var="adminHasOwnColumnPermission" value="${false}"/>
+    </emm:HideByPermission>
+    
+    <script id="config:exportwizard-view" type="application/json">
+        {
+            "adminHasOwnColumnPermission": ${adminHasOwnColumnPermission},
+            "bounceUserStatusCode": ${BOUNCE_USER_STATUS_CODE},
+            "profileFieldColumns": ${emm:toJson(availableColumns)},
+            "columnMappings": ${emm:toJson(exportWizardForm.customColumnMappings)}
+        }
+    </script>
+    
     <div class="tile">
         <div class="tile-header">
             <h2 class="headline">
@@ -43,21 +62,23 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="recipient-export-name" class="control-label">
-                        <bean:message key="default.Name"/>
+                        <c:set var="nameMsg"><bean:message key="default.Name"/></c:set>
+                        ${nameMsg}
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text styleId="recipient-export-name" styleClass="form-control" property="shortname" maxlength="99" />
+                    <agn:agnText styleId="recipient-export-name" styleClass="form-control" property="shortname" maxlength="99" placeholder="${nameMsg}"/>
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="recipient-export-description" class="control-label">
-                        <bean:message key="default.description"/>
+                        <c:set var="descriptionMsg"><bean:message key="default.description"/></c:set>
+                        ${descriptionMsg}
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:textarea styleId="recipient-export-description" styleClass="form-control v-resizable" property="description" rows="5" />
+                    <agn:agnTextarea styleId="recipient-export-description" styleClass="form-control v-resizable" property="description" rows="5" placeholder="${descriptionMsg}"/>
                 </div>
             </div>
         </div>
@@ -133,7 +154,7 @@
                         <bean:message key="recipient.RecipientStatus"/>
                     </label>
                 </div>
-                <div class="col-sm-8">
+                <div class="col-sm-8" data-action="add-bounce-col-to-choose">
                     <html:select styleClass="form-control" styleId="recipient-export-recipientstatus" property="userStatus">
                         <html:option value="0" key="default.All" />
                             <html:option value="1" key="recipient.MailingState1" />
@@ -161,6 +182,7 @@
 
 
         <div class="tile-content tile-content-forms" id="recipient-export-tile-columns">
+            <emm:HideByPermission token="export.ownColumns">
             <div class="notification-simple notification-info">
                 <bean:message key="export.wizard.hint.export.columns"/>
             </div>
@@ -232,7 +254,75 @@
 
                 </table>
             </div>
-
+            </emm:HideByPermission>
+            <emm:ShowByPermission token="export.ownColumns">
+            <div class="form-group">
+                <div class="col-sm-offset-4 col-sm-8">
+                    <div class="notification-simple notification-info">
+                        <bean:message key="export.wizard.hint.export.columns"/>
+                    </div>
+                </div>
+            </div>                
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label class="control-label" for="chooseColumns"><bean:message key="export.columns"/></label>
+                </div>
+                <div id="chooseColumns" class="col-sm-8">
+                    <agn:agnSelect property="columns"
+                                   styleClass="form-control js-select"
+                                   multiple="true">
+                        <c:forEach var="column" items="${availableColumns}">
+                            <c:choose>
+                                <c:when test='${column.dataType.indexOf(GENERIC_TYPE_VARCHAR) ne -1}'>
+                                    <c:set var="colType"><bean:message key='statistic.alphanumeric'/></c:set>
+                                </c:when>
+                                <c:when test='${column.dataType.toUpperCase().indexOf(GENERIC_TYPE_INTEGER) ne -1}'>
+                                    <c:set var="colType"><bean:message key='statistic.numeric'/></c:set>
+                                </c:when>
+                                <c:when test='${column.dataType.toUpperCase().indexOf(GENERIC_TYPE_FLOAT) ne -1}'>
+                                    <c:set var="colType"><bean:message key='statistic.numeric'/></c:set>
+                                </c:when>
+                                <c:when test='${column.dataType.toUpperCase().indexOf(GENERIC_TYPE_DATETIME) ne -1}'>
+                                    <c:set var="colType"><bean:message key='settings.fieldType.DATETIME'/></c:set>
+                                </c:when>
+                                <c:when test='${column.dataType.toUpperCase().indexOf(GENERIC_TYPE_DATE) ne -1}'>
+                                    <c:set var="colType"><bean:message key='settings.fieldType.DATE'/></c:set>
+                                </c:when>
+                                <c:otherwise>
+                                    <c:set var="colType">${column}</c:set>
+                                </c:otherwise>
+                            </c:choose>
+                            
+                            <agn:agnOption value="${fn:toUpperCase(column.column)}">${fn:escapeXml(column.shortname)} (${colType})</agn:agnOption>
+                        </c:forEach>
+                        <agn:agnOption styleId="mailing-bounce-column-option" value="MAILING_BOUNCE"><bean:message key="report.bounce.reason"/> (<bean:message key="statistic.alphanumeric"/>)</agn:agnOption>
+                    </agn:agnSelect>
+                    ${exportWizardForm.customColumnMappings.clear()}
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label class="control-label" for="columnMappings"><bean:message key="export.columns.add.own"/></label>
+                </div>
+                <div id="columnMappings" class="col-sm-8">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th><bean:message key="export.Column_Name"/></th>
+                                    <th><bean:message key="default.value.optional"/></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <%-- this block load by JS--%>
+                                <%@ include file="fragments/export-column-mapping-row-template.jspf" %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            </emm:ShowByPermission>
         </div>
     </div>
 

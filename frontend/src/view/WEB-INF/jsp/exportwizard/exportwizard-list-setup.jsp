@@ -28,14 +28,16 @@
 </emm:instantiate>
 
 <jsp:useBean id="itemActionsSettings" class="java.util.LinkedHashMap" scope="request">
-    <jsp:useBean id="element0" class="java.util.LinkedHashMap" scope="request">
-        <c:set target="${itemActionsSettings}" property="1" value="${element0}"/>
-        <c:set target="${element0}" property="url">
-            <html:rewrite page="/exportwizard.do?action=${ACTION_VIEW}&exportPredefID=0"/>
-        </c:set>
-        <c:set target="${element0}" property="type" value="href"/>
-        <c:set target="${element0}" property="btnCls" value="btn btn-regular btn-inverse"/>
-        <c:set target="${element0}" property="iconBefore" value="icon-plus"/>
-        <c:set target="${element0}" property="name"><bean:message key="button.New"/></c:set>
-    </jsp:useBean>
+	<emm:ShowByPermission token="export.change">
+    	<jsp:useBean id="element0" class="java.util.LinkedHashMap" scope="request">
+        	<c:set target="${itemActionsSettings}" property="1" value="${element0}"/>
+        	<c:set target="${element0}" property="url">
+            	<html:rewrite page="/exportwizard.do?action=${ACTION_VIEW}&exportPredefID=0"/>
+        	</c:set>
+        	<c:set target="${element0}" property="type" value="href"/>
+        	<c:set target="${element0}" property="btnCls" value="btn btn-regular btn-inverse"/>
+        	<c:set target="${element0}" property="iconBefore" value="icon-plus"/>
+        	<c:set target="${element0}" property="name"><bean:message key="button.New"/></c:set>
+    	</jsp:useBean>
+    </emm:ShowByPermission>
 </jsp:useBean>

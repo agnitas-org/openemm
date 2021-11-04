@@ -52,13 +52,13 @@ public final class QueryBuilderToEqlConverter {
 		String eqlOperator = QueryBuilderHelper.booleanEqlOperator(condition);
 		
 		boolean first = true;
-		for(QueryBuilderBaseNode subNode : groupNode.getRules()) {
-			if(!first) {
+		for (QueryBuilderBaseNode subNode : groupNode.getRules()) {
+			if (!first) {
 				buffer.append(" ").append(eqlOperator).append(" ");
 			}
-			if(subNode instanceof QueryBuilderRuleNode) {
+			if (subNode instanceof QueryBuilderRuleNode) {
 				buffer.append(convertRuleNodeToEql((QueryBuilderRuleNode) subNode, companyID));
-			} else if(subNode instanceof QueryBuilderGroupNode) {
+			} else if (subNode instanceof QueryBuilderGroupNode) {
 				QueryBuilderGroupNode subGroupNode = (QueryBuilderGroupNode) subNode;
 				String subGroup = convertGroupNodeToEql(subGroupNode, companyID);
 				

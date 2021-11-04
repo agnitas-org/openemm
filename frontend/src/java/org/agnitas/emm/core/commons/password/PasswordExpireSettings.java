@@ -33,8 +33,8 @@ public enum PasswordExpireSettings {
 	}
 	
 	public static final Optional<PasswordExpireSettings> findByDays(final int days) {
-		for(final PasswordExpireSettings settings : values()) {
-			if(settings.expireDays == days) {
+		for (final PasswordExpireSettings settings : values()) {
+			if (settings.expireDays == days) {
 				return Optional.of(settings);
 			}
 		}

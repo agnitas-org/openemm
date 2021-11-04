@@ -18,13 +18,14 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.TimeZone;
 
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
-import org.agnitas.util.NetworkUtil;
 import org.agnitas.util.SafeString;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -81,75 +82,85 @@ public class GenerationPDFService {
             
             String proxyString = "None";
     		String proxyHost = System.getProperty("http.proxyHost");
+    		List<String> nonProxyHosts = new ArrayList<>();
     		if (StringUtils.isNotBlank(proxyHost)) {
-    			boolean ignoreProxy = false;
-    			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
-    			if (StringUtils.isNotBlank(nonProxyHosts)) {
-    				String urlDomain = NetworkUtil.getDomainFromUrl(url);
-    				if (urlDomain != null) {
-    					urlDomain = urlDomain.trim().toLowerCase();
-    				}
-    				
-    				if (urlDomain != null) {
-		    			for (String nonProxyHost : nonProxyHosts.split("\\||,|;| ")) {
-							nonProxyHost = nonProxyHost.trim().toLowerCase();
-							if (urlDomain.equals(nonProxyHost) || urlDomain.endsWith("." + nonProxyHost)) {
-								ignoreProxy = true;
-								break;
-							}
-						}
-    				}
+    			String nonProxyHostsString = System.getProperty("http.nonProxyHosts");
+    			if (StringUtils.isNotBlank(nonProxyHostsString)) {
+	    			for (String nonProxyHost : nonProxyHostsString.split("\\||,|;| ")) {
+						nonProxyHost = nonProxyHost.trim().toLowerCase();
+						nonProxyHosts.add(nonProxyHost);
+					}
     			}
     			
-    			if (!ignoreProxy) {
-	    			proxyString = proxyHost;
-	    			if (!proxyString.contains("://")) {
-	    				proxyString = "http://" + proxyString;
-	    			}
-	    			
-	    			String proxyPort = System.getProperty("http.proxyPort");
-	    			if (StringUtils.isNotBlank(proxyPort)) {
-	    				proxyString = proxyString + ":" + proxyPort;
-	    			} else {
-	    				proxyString = proxyString + ":" + 8080;
-	    			}
+    			proxyString = proxyHost;
+    			if (!proxyString.contains("://")) {
+    				proxyString = "http://" + proxyString;
+    			}
+    			
+    			String proxyPort = System.getProperty("http.proxyPort");
+    			if (StringUtils.isNotBlank(proxyPort)) {
+    				proxyString = proxyString + ":" + proxyPort;
+    			} else {
+    				proxyString = proxyString + ":" + 8080;
     			}
     		}
 
-            String[] command;
-            if ("".equals(windowStatusForWaiting)) {
-                command = new String[] {
-                        wkhtmltopdf,                         // path to pdf-generator executable
-                        "-s", "A4",                          // size: A4
-                        "-O", orientation,                   // orientation
-                        "-T", "25mm", "-B", "12mm",          // top and bottom margins
-                        "--print-media-type",
-						"--enable-smart-shrinking",
-						"--user-style-sheet",
-						stylesheetName,                      // use an additional external stylesheet
-						"--proxy", proxyString,
-						url,                                 // url - source for generation
-                        pdfName                              // file path of pdf to generate
-                };
-            } else {
-                command = new String[] {
-                        wkhtmltopdf,                         // path to pdf-generator executable
-                        "-s", "A4",                          // size: A4
-                        "-O", orientation,                   // orientation
-                        "-T", "25mm", "-B", "12mm",          // top and bottom margins
-                        "--print-media-type",
-						"--enable-smart-shrinking",
-						"--load-error-handling", "ignore",
-						"--window-status",
-                        windowStatusForWaiting,              // wait until WM is loaded
-                        "--user-style-sheet",
-                        stylesheetName,                      // use an additional external stylesheet
-                        "--proxy", proxyString,
-                        url,                                 // url - source for generation
-                        pdfName                              // file path of pdf to generate
-                };
-            }
-            Process process = Runtime.getRuntime().exec(command);
+			List<String> command = new ArrayList<>();
+			
+			// path to pdf-generator executable
+			command.add(wkhtmltopdf);
+
+			// size: A4
+			command.add("-s");
+			command.add("A4");
+
+			// orientation
+			command.add("-O");
+			command.add(orientation);
+
+			// top and bottom margins
+			command.add("-T");
+			command.add("25mm");
+			command.add("-B");
+			command.add("12mm");
+
+			command.add("--print-media-type");
+
+			command.add("--enable-smart-shrinking");
+
+			if (StringUtils.isNotBlank(windowStatusForWaiting)) {
+				// wait until WM is loaded
+				command.add("--load-error-handling");
+				command.add("ignore");
+				command.add("--window-status");
+				command.add(windowStatusForWaiting);
+			}
+
+			// use an additional external stylesheet
+			command.add("--user-style-sheet");
+			command.add(stylesheetName);
+
+			if (StringUtils.isNotBlank(proxyString) && !"None".equals(proxyString)) {
+				// Proxy settings
+				command.add("--proxy");
+				command.add(proxyString);
+				for (String nonProxyHost : nonProxyHosts) {
+					command.add("--bypass-proxy-for");
+					command.add(nonProxyHost);
+				}
+			}
+
+			// url - source for generation
+			command.add(url);
+
+			// file path of pdf to generate
+			command.add(pdfName);
+			
+			if (logger.isDebugEnabled()) {
+				logger.debug("wkhtmltopdf command:\n" + StringUtils.join(command, " "));
+			}
+            
+            Process process = Runtime.getRuntime().exec(command.toArray(new String[0]));
             process.waitFor();
             
             if (!pdfInitialFile.exists() || pdfInitialFile.length() == 0) {

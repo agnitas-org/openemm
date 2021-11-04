@@ -10,23 +10,45 @@
 
 package com.agnitas.emm.core.wysiwyg.web;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.service.AgnTagService;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.wysiwyg.service.WysiwygService;
+import com.agnitas.service.AgnTagService;
+
+import net.sf.json.JSONObject;
 
 @Controller
 @RequestMapping("/wysiwyg")
 public class WysiwygController {
-    private AgnTagService agnTagService;
+    private final AgnTagService agnTagService;
+    private final WysiwygService wysiwygService;
 
-    public WysiwygController(AgnTagService agnTagService) {
+    public WysiwygController(AgnTagService agnTagService, WysiwygService wysiwygService) {
         this.agnTagService = agnTagService;
+        this.wysiwygService = wysiwygService;
     }
 
     @RequestMapping("/dialogs/agn-tags.action")
     public ModelAndView showAgnTags(ComAdmin admin) {
         return new ModelAndView("wysiwyg_agn_tags_dialog", "tags", agnTagService.getSupportedAgnTags(admin));
+    }
+
+    @RequestMapping("/images/names-urls.action")
+    public @ResponseBody JSONObject getNamesUrlsJsonMap(final ComAdmin admin,
+                                                        @RequestParam(name = "mi", required = false) final int mailingId) {
+        return wysiwygService.getImagesLinksWithDescriptionJson(admin, mailingId);
+    }
+
+    @RequestMapping("/image-browser.action")
+    public String imageBrowser(ComAdmin admin, Model model) {
+        model.addAttribute("rdirDomain", admin.getCompany().getRdirDomain());
+        model.addAttribute("companyId", admin.getCompanyID());
+        return "wysiwyg_agn_tags_window";
     }
 }

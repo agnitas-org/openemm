@@ -13,7 +13,7 @@ package org.agnitas.service.impl;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.dao.EmmActionDao;

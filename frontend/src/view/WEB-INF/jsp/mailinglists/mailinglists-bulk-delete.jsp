@@ -5,6 +5,7 @@
 
 <%--@elvariable id="excludeDialog" type="java.lang.Boolean"--%>
 
+<%-- delete next line after GWUA-4783 has been successfully tested--%>
 <c:if test="${not excludeDialog}">
     <div class="modal">
         <div class="modal-dialog">
@@ -41,4 +42,5 @@
             </div>
         </div>
     </div>
+<%-- delete next line after GWUA-4783 has been successfully tested--%>
 </c:if>

@@ -73,11 +73,11 @@ public class DownloadData {
 	 * @param adminName
 	 * @param creation_date
 	 * @param change_date
-	 * @param contact_name
-	 * @param contact_firstname
-	 * @param contact_phone
-	 * @param contact_mail
-	 * @param sendto_mail
+	 * @param contactName
+	 * @param contactFirstname
+	 * @param contactPhone
+	 * @param contactMail
+	 * @param sendtoMail
 	 * @param description
 	 */
 	public DownloadData(

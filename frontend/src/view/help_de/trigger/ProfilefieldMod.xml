@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Format f&#xFC;r Datumsfelder]]></title>
+	<content><![CDATA[Wenn Sie ein Datum-Profilfeld verwenden wollen, muss das folgende Format verwendet werden: yyyyMMdd<br/><br/>Beispiel: 20210531 f&#xFC;r den 31. Mai 2021<br/><br/>Sie k&#xF6;nnen auch den Ausdruck "current_timestamp" verwenden, wenn Sie das aktuelle Datum setzen m&#xF6;chten.]]></content>
+</HelpBalloon>

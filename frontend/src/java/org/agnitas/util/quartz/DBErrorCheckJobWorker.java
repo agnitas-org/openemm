@@ -73,7 +73,7 @@ public class DBErrorCheckJobWorker extends JobWorker {
 			}
 			
 			if (StringUtils.isNotBlank(infoMailAddress)) {
-				serviceLookupFactory.getBeanJavaMailService().sendEmail(infoMailAddress, infoMailSubject, infoMailContent.toString(), infoMailContent.toString());
+				serviceLookupFactory.getBeanJavaMailService().sendEmail(0, infoMailAddress, infoMailSubject, infoMailContent.toString(), infoMailContent.toString());
 			}
 		}
 		

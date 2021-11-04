@@ -35,8 +35,14 @@ public interface Recipient {
      * Checks if E-Mail-Adress given in customerData-Map is valid.
      *
      * @return true if E-Mail-Adress is valid
+	 *
+	 * @deprecated use {@link org.agnitas.util.AgnUtils#isEmailValid(String)}
+	 *
      */
+	@Deprecated
 	boolean emailValid();
+
+	DateFormat getDateFormat();
 
     /**
      * Checks if E-Mail-Adress given in customerData-Map is registered in blacklist(s)
@@ -106,16 +112,16 @@ public interface Recipient {
 
 	@Deprecated
 	String getCustParameters(String key);
-	
+
 	/**
 	 * Checks, if customer has given profile field.
-	 * 
+	 *
 	 * @param key name of profileField
-	 * 
+	 *
 	 * @return true, if customer has profile field set
 	 */
 	boolean hasCustParameter(String key);
-	
+
     /**
      * Load complete Subscriber-Data from DB. customerID must be set first for this method.
      *
@@ -153,10 +159,27 @@ public interface Recipient {
 
     /**
      * Inserts new customer record in Database with a fresh customer-id.
+     * Use {@value #insertNewCustWithException()} instead.
      *
      * @return true on success
      */
+	/*
+	 * TODO Move to Velocity API class (EMM-8360) and remove from this class.
+	 * 
+	 * Do not modify signature. This is part of the API used by Velocity scripts.
+	 * Do not remove method before completing EMM-8360!!!
+	 */
+	@Deprecated // Do not remove method before completing EMM-8360!!!
 	int insertNewCust();
+	
+    /**
+     * Inserts new customer record in Database with a fresh customer-id.
+     *
+     * @return true on success
+     * 
+     * @throws Exception on inserting new customer
+     */
+	int insertNewCustWithException() throws Exception;
 
     /**
      * Iterates through already loaded Mailinglist-Informations and checks if subscriber is active on at least one mailinglist.
@@ -237,7 +260,7 @@ public interface Recipient {
      * @param doubleOptIn true means use Double-Opt-In
      * @param remoteAddr IP-address of the client when subscribing.
      * @return true on success
-     * @throws Exception 
+     * @throws Exception
      */
 	void updateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn, String remoteAddr, String referrer) throws Exception;
 
@@ -245,36 +268,63 @@ public interface Recipient {
 
 	/**
  	 * function of tafWriteBack was removed with TellaFriend feature (EMM-5308)
-	 * 
-	 * @deprecated useupdateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn, String remoteAddr) instead.  
+	 *
+	 * @deprecated useupdateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn, String remoteAddr) instead.
 	 */
-	@Deprecated 
+	@Deprecated
 	void updateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn, boolean tafWriteBack, String remoteAddr, String referrer) throws Exception;
 	/**
  	 * function of tafWriteBack was removed with TellaFriend feature (EMM-5308)
-	 * 
-	 * @deprecated updateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn) instead.  
+	 *
+	 * @deprecated updateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn) instead.
 	 */
 	@Deprecated
 	void updateBindingsFromRequest(Map<String, Object> params, boolean doubleOptIn, boolean tafWriteBack) throws Exception;
 
     /**
      * Updates Customer in DB. customerID must be set to a valid id, customer-data is taken from this.customerData.
-     *
+     * Use {@link #updateInDbWithException()} instead.
+     * 
      * @return true on success
+     * @throws Exception
+     * 
+     * @see #updateInDbWithException()
      */
-	boolean updateInDB();
+	/*
+	 * TODO Move to Velocity API class (EMM-8360) and remove from this class.
+	 * 
+	 * Do not modify signature. This is part of the API used by Velocity scripts.
+	 * Do not remove method before completing EMM-8360!!!
+	 */
+	@Deprecated
+	boolean updateInDB(); 
+	
+	/**
+     * Updates customer data in DB.
+     * customerID must be set to a valid id.
+     * 
+     * @return <code>true</code> on success
+     * 
+     * @throws Exception on errors updating data
+     */
+	boolean updateInDbWithException() throws Exception;
 
 	Map<Integer, Map<Integer, BindingEntry>> getAllMailingLists();
-    
+
+	boolean isSecure(String value);
+
+	boolean copyDateFromRequest(Map<String, Object> req, String name, String suffix);
+
+	boolean isAllowedName(String name);
+
 	boolean isChangeFlag();
-    
+
 	void setChangeFlag(boolean changeFlag);
-	
+
 	void setDateFormatForProfileFieldConversion(final DateFormat ddMmYyyyHhMmSs);
-	
+
 	boolean isDoNotTrackMe();
-	
+
 	void setDoNotTrackMe(final boolean doNotTrack);
 
 	BindingEntry getBindingsByMailinglist(int mailinglistId, int index);

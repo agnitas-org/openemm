@@ -1,0 +1,32 @@
+.serverstatus_status {color: #FFFFFF !important; font-weight: 700; text-align: center;}
+.serverstatus_status-success {background-color: #109e4d !important;}
+.serverstatus_status-error {background-color: #fa6861 !important;}
+.serverstatus_import_status_ok {display: none;}
+.serverstatus_import_status_error {display: initial;}
+
+.table-middle-border:not(.disabled) > tbody > tr > td:nth-child(2n), .table-middle-border:not(.disabled) > tbody > tr > th:nth-child(2n) { 
+	border-left: 1px solid #e2e3e3;
+}
+
+.serverstatus_licenceupload_file-input {padding: 3px; border: 1px solid #cccdcd;}
+
+.serverstatus_licenceupload_status {border: 1px solid #cccdcd; padding: 0 5px;}
+
+.whitespace_normal {white-space: normal;}
+
+.no_margin {margin:0;}
+
+.kill-import-modal {display: none;}
+.kill-import-modal-content {padding: 10px;}
+.kill-import-btn, .serverstatus_settings_btn {padding: 5px;}
+.kill-import-text-warning {padding-bottom: 5px; color: #fa6861;}
+
+.serverstatus_settings_content {
+	padding: 5px; 
+	margin-left: -12px !important; 
+	margin-right: -12px !important;
+}
+
+.vspace-bottom-5 {
+ margin-bottom: 5px!important
+}

@@ -17,7 +17,7 @@ public class ProfileImportCsvException extends Exception {
 		MissingMandatory("error.mandatory.missing"),
 		InvalidEmail("error.email.invalid"),
 		InvalidMailtype("error.mailtype.invalid"),
-		InvalidGender("error.gender.invalid"),
+		InvalidGender("GWUA.error.gender.invalid.short"),
 		InvalidDate("error.date.invalid"),
 		InvalidNumber("error.number.invalid"),
 		InvalidEncryption("error.encryption.invalid"),
