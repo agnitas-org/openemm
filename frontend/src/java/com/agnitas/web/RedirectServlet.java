@@ -36,6 +36,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -62,6 +63,8 @@ import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.ComAccessDataService;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
+import com.agnitas.rdir.processing.SubstituteLinkRdirPostProcessor;
+import com.agnitas.rdir.processing.SubstituteLinkResult;
 import com.agnitas.util.DeepTrackingToken;
 import com.agnitas.util.backend.Decrypt;
 import com.agnitas.web.cookies.SameSiteCookiePolicy;
@@ -73,6 +76,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class RedirectServlet extends HttpServlet {
+	
+	private static final class LinkAndUrl {
+		public ComTrackableLink link;
+		public String url;
+		
+		public LinkAndUrl(final ComTrackableLink link, final String url) {
+			this.link = link;
+			this.url = url;
+		}
+	}
 
 	/** Serial version UID. */
 	private static final long serialVersionUID = 7767318643176056518L;
@@ -99,6 +112,7 @@ public class RedirectServlet extends HttpServlet {
 	private IntelliAdMailingSettingsCache intelliAdMailingSettingsCache;
 	private SnowflakeMailingCache snowflakeMailingCache;
 	private RecipientService recipientService;
+	private SubstituteLinkRdirPostProcessor substituteLinkRdirPostProcessor;
 	
 	private ClickTrackingService clickTrackingService;
 
@@ -116,7 +130,7 @@ public class RedirectServlet extends HttpServlet {
 		}
 	}
 		
-	private final void doResolveLink(final HttpServletRequest request, final HttpServletResponse response) throws IOException, ServletException {
+	private final void doResolveLink(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
 		/*
 		 * Do not use a simple "return" in case of an error.
 		 * 
@@ -133,7 +147,7 @@ public class RedirectServlet extends HttpServlet {
         }
 
         try {
-			final ComExtensibleUID uid = decodeUid(agnUidString, request);
+			ComExtensibleUID uid = decodeUid(agnUidString, request);
 			final int deviceID = getDeviceService().getDeviceId(request.getHeader("User-Agent"));
 			final int clientID = getClientService().getClientId(request.getHeader("User-Agent"));
 			
@@ -150,17 +164,32 @@ public class RedirectServlet extends HttpServlet {
 			}
 
 			final boolean cachingDisabled = StringUtils.equals(uid.getPrefix(), "nc"); // StringUtils.equals() is null-safe
-			final ComTrackableLink trackableLink = loadTrackableLink(uid, cachingDisabled);
+			ComTrackableLink trackableLink = loadTrackableLink(uid, cachingDisabled);
 			final ComCompany company = getCompanyDao().getCompany(uid.getCompanyID());
 			final String referenceTableRecordSelector = referenceTableRecordSelector(request, company, uid.getCustomerID());
 			final String encryptedStaticValueMapOrNull = request.getParameter("stc");
 			final Recipient recipientForUid = getRecipientService().getRecipient(uid.getCompanyID(), uid.getCustomerID());
 			
 			String fullUrl = getLinkService().personalizeLink(trackableLink, agnUidString, uid.getCustomerID(), referenceTableRecordSelector, !NamedUidBit.isBitSet(uid.getBitField(), NamedUidBit.NO_LINK_EXTENSION), encryptedStaticValueMapOrNull);
+			
 			if (fullUrl == null) {
 				logger.error("service: could not personalize link");
 				throw new RedirectException("service: could not personalize link");
 			} else {
+				// Create substitute link if needed. This link has all the properties from original link but a different id and full URL.
+				if(getConfigService().getBooleanValue(ConfigValue.RedirectMakeAgnDynMultiLinksTrackable, trackableLink.getCompanyID())) {
+					if(this.getSubstituteLinkRdirPostProcessor() != null) {
+						final SubstituteLinkResult result = this.getSubstituteLinkRdirPostProcessor().createSubstituteLink(trackableLink, fullUrl, uid);
+						
+						trackableLink = result.getTrackableLink();
+						fullUrl = result.getFullUrl();
+						uid = result.getUid();
+					} else {
+						logger.fatal(String.format("Config key '%s' is set to true, but no SubstituteLinkRdirPostProcessor is defined", ConfigValue.RedirectMakeAgnDynMultiLinksTrackable.getName()));
+					}
+				}
+				
+				
 				fullUrl = emitDeeptrackingToken(trackableLink, recipientForUid, uid, fullUrl, response, company);
 				
 				// Check for company-specific configuration to embed links in other measure system links like metalyzer
@@ -233,7 +262,19 @@ public class RedirectServlet extends HttpServlet {
 		}
 	}
 	
-	private final String emitDeeptrackingToken(final TrackableLink trackableLink, final Recipient recipient, final ComExtensibleUID uid, final String fullUrl, final HttpServletResponse response, final ComCompany company) throws UnsupportedEncodingException {
+	private final SubstituteLinkRdirPostProcessor getSubstituteLinkRdirPostProcessor() {
+		if(this.substituteLinkRdirPostProcessor == null) {
+			try {
+				this.substituteLinkRdirPostProcessor = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("SubstituteLinkRdirPostProcessor", SubstituteLinkRdirPostProcessor.class);
+			} catch(final NoSuchBeanDefinitionException e) {
+				this.substituteLinkRdirPostProcessor = null;
+			}
+		}
+
+		return this.substituteLinkRdirPostProcessor;
+	}
+
+	private final String emitDeeptrackingToken(final TrackableLink trackableLink, final Recipient recipient, final ComExtensibleUID uid, final String fullUrl, final HttpServletResponse response, final ComCompany company) {
 		String newFullUrl = fullUrl;
 		
 		if(!recipient.isDoNotTrackMe()) {
@@ -644,5 +685,5 @@ public class RedirectServlet extends HttpServlet {
 
 		return trackableLink;
 	}
-	
+
 }

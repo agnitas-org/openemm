@@ -13,6 +13,7 @@ package com.agnitas.dao;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.agnitas.beans.TrackableLink;
@@ -77,4 +78,8 @@ public interface ComTrackableLinkDao extends TrackableLinkDao {
 	Map<Integer, String> getTrackableLinkUrl(@VelocityCheck int companyId, int mailingId, List<Integer> linkIds);
 
     void bulkClearExtensions(int mailingId, int companyId, Set<Integer> bulkIds) throws ClearLinkExtensionsException;
+
+	Optional<ComTrackableLink> findLinkByFullUrl(String fullUrl, int mailingID, int companyID);
+	
+	void reactiveLink(final ComTrackableLink link);
 }

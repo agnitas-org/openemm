@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID.NamedUidBit;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
@@ -67,17 +66,17 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 		
 		final int licenseID = configService.getLicenseID();
 		
-		final ComExtensibleUID uid = UIDFactory.from(licenseID, companyID, customerID, mailingID, recipient.isDoNotTrackMe() ? null : NamedUidBit.DO_NO_TRACK);
+		final ComExtensibleUID uid = UIDFactory.from(licenseID, companyID, customerID, mailingID);
 
-		trackOpening(uid, remoteAddr, deviceClass, deviceID, clientID);
+		trackOpening(uid, recipient.isDoNotTrackMe(), remoteAddr, deviceClass, deviceID, clientID);
 	}
 	
 	@Override
-	public final void trackOpening(final ComExtensibleUID uid, final String remoteAddr, final DeviceClass deviceClass, final int deviceID, final int clientID) {
+	public final void trackOpening(final ComExtensibleUID uid, final boolean doNotTrackRecipient, final String remoteAddr, final DeviceClass deviceClass, final int deviceID, final int clientID) {
 		if(uid == null) {
 			logger.warn("No UID", new Exception("No UID"));
 		} else {
-			final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, configService, mailingContentTypeCache);
+			final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, doNotTrackRecipient, configService, mailingContentTypeCache);
 			
 			if(trackingLevel == TrackingLevel.ANONYMOUS) {
 				if(logger.isInfoEnabled()) {

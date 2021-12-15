@@ -54,6 +54,9 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
     private boolean bulkModifyLinkExtensions;
     
     private boolean modifyExtensionsForAllLinks;
+    
+    private boolean createSubstituteLink;
+    private Set<Integer> createSubstituteLinks = new HashSet<>();
 
     private Map<Integer, LinkProperty> commonExtensions = new HashMap<>();
 
@@ -331,6 +334,7 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
             setLinkItemTrackable(id, link.getUsage());
             setLinkItemName(id, link.getShortname());
             setAdminLink(id, link.isAdminLink());
+            setCreateSubstituteLinkFor(id, link.isCreateSubstituteLinkForAgnDynMulti());
         }
     }
 
@@ -384,5 +388,25 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 
     public void setModifyExtensionsForAllLinks(boolean modifyExtensionsForAllLinks) {
         this.modifyExtensionsForAllLinks = modifyExtensionsForAllLinks;
+    }
+    
+    public final void setCreateSubstituteLink(final boolean create) {
+    	this.createSubstituteLink = create;
+    }
+    
+    public final boolean isCreateSubstituteLink() {
+    	return this.createSubstituteLink;
+    }
+    
+    public final void setCreateSubstituteLinkFor(final int id, final boolean create) {
+		if (create) {
+			this.createSubstituteLinks.add(id);
+		} else {
+			createSubstituteLinks.remove(id);
+		}
+    }
+    
+    public final boolean getCreateSubstituteLinkFor(final int id) {
+    	return this.createSubstituteLinks.contains(id);
     }
 }

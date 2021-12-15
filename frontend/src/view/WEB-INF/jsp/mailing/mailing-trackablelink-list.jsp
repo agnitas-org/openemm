@@ -194,6 +194,15 @@
                                                 <div class="toggle-control"></div>
                                             </label>
                                         </display:column>
+                                        
+                                        <c:if test="${SHOW_CREATE_SUBSTITUTE_LINK}">
+                                        	<display:column class="js-checkable align-center" titleKey="CreateSubstituteLink" sortable="false">
+	                                           <label class="toggle">
+	                                               <agn:agnCheckbox property="createSubstituteLinkFor[${link.id}]"/>
+	                                               <div class="toggle-control"></div>
+	                                           </label>
+                                        	</display:column>
+                                        </c:if>
 
                                         <c:set var="deepTrackingTitle">
                                             <bean:message key="deeptracking"/>

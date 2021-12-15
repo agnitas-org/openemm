@@ -183,6 +183,19 @@
 									</div>
 								</div>
 								
+							<c:if test="${SHOW_CREATE_SUBSTITUTE_LINK}">
+								<div class="form-group">
+									<div class="col-sm-4">
+										<label class="control-label" for="createSubstituteLink"> 
+											<bean:message key="CreateSubstituteLink" />
+										</label>
+									</div>
+									<div class="col-sm-8">
+										<html:checkbox property="createSubstituteLink" styleId="createSubstituteLink"/>
+									</div>
+								</div>
+							</c:if>								
+								
 							<emm:ShowByPermission token="mailing.extend_trackable_links">
                                 <div id="linkProperties">
                                     <div class="form-group">

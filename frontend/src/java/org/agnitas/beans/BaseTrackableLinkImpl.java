@@ -32,6 +32,21 @@ public abstract class BaseTrackableLinkImpl implements BaseTrackableLink {
 	protected int deepTracking;
 	protected List<LinkProperty> linkProperties = new ArrayList<>();
 
+	public BaseTrackableLinkImpl() {
+		// Empty
+	}
+	
+	public BaseTrackableLinkImpl(final BaseTrackableLink original) {
+		this.setActionID(original.getActionID());
+		this.setCompanyID(original.getCompanyID());
+		this.setDeepTracking(original.getDeepTracking());
+		this.setFullUrl(original.getFullUrl());
+		this.setId(0);											// Do not use same link ID for copy
+		this.setProperties(original.getProperties());
+		this.setShortname(original.getShortname());
+		this.setUsage(original.getUsage());
+	}
+	
 	@Override
 	public int getId() {
 		return id;

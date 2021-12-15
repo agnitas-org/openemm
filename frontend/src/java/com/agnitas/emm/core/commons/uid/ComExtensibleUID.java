@@ -30,7 +30,7 @@ public interface ComExtensibleUID {
 	enum NamedUidBit {
 
 		/** 
-		 * <i>Do not track</i> bit.
+		 * Was previously <i>Do not track</i> bit.
 		 * 
 		 * Do not use this bit for links in mailings. 
 		 * The tracking veto state for recipients is determined from DB.
@@ -42,7 +42,7 @@ public interface ComExtensibleUID {
 		 * @see Recipient#setDoNotTrackMe(boolean) 
 		 */
 		@Deprecated
-		DO_NO_TRACK(0),
+		RESERVED(0),
 		
 		/** <i>No link extension</i> bit. */
 		NO_LINK_EXTENSION(1);

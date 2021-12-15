@@ -27,7 +27,7 @@ public interface OpenTrackingService {
 	 * @param deviceID device type
 	 * @param clientID client type 
 	 */
-	public void trackOpening(final ComExtensibleUID uid, final String remoteAddr, final DeviceClass deviceClass, final int deviceID, final int clientID);
+	public void trackOpening(final ComExtensibleUID uid, final boolean doNotTrackRecipient, final String remoteAddr, final DeviceClass deviceClass, final int deviceID, final int clientID);
 
 	/**
 	 * Track opening by given IDs.

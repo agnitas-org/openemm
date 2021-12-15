@@ -21,6 +21,8 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.Company;
+import org.agnitas.beans.Recipient;
+import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.dao.MailingDao;
@@ -28,6 +30,7 @@ import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
@@ -61,6 +64,9 @@ public class ComOnePixelCount extends HttpServlet {
 	private ClientService clientService;
 	private MailingDao mailingDao;
 	private EmmActionDao actionDao;
+	
+	private RecipientFactory recipientFactory;
+	private RecipientService recipientService;
 	
 	public void setComAccessDataService(ComAccessDataService accessDataService) {
 		this.accessDataService = accessDataService;
@@ -144,6 +150,10 @@ public class ComOnePixelCount extends HttpServlet {
 			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
 			companyDaoCache = (CompanyDaoCache) applicationContext.getBean("CompanyDaoCache");
 			uidService = (ExtensibleUIDService) applicationContext.getBean(ExtensibleUIDConstants.SERVICE_BEAN_NAME);
+			
+			this.recipientFactory = applicationContext.getBean("RecipientFactory", RecipientFactory.class);
+			this.recipientService = applicationContext.getBean("recipientService", RecipientService.class);
+			
 		} catch (NoSuchBeanDefinitionException e) {
 			logger.error("Cannot instantiate ComOnePixelCount servlet: " + e.getMessage(), e);
 		}
@@ -218,7 +228,12 @@ public class ComOnePixelCount extends HttpServlet {
 						DeviceClass deviceClass = getComDeviceService().getDeviceClassForStatistics(deviceID);
 						if (deviceID != ComDeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
 							if (!noCount) {
-								getOpenTrackingService().trackOpening(uid, request.getRemoteAddr(), deviceClass, deviceID, clientID);
+								final Recipient recipient = recipientFactory.newRecipient(uid.getCompanyID());
+
+								recipient.setCustomerID(uid.getCustomerID());
+								recipient.setCustParameters(recipientService.getCustomerDataFromDb(uid.getCompanyID(), uid.getCustomerID(), recipient.getDateFormat()));
+								
+								getOpenTrackingService().trackOpening(uid, recipient.isDoNotTrackMe(), request.getRemoteAddr(), deviceClass, deviceID, clientID);
 								if (logger.isInfoEnabled()) {
 									logger.info("OnepixelLog: cust: " + uid.getCustomerID() + " mi: " + uid.getMailingID() + " ci: " + uid.getCompanyID());
 								}

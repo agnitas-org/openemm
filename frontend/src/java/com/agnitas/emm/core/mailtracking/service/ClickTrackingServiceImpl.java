@@ -14,8 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.agnitas.beans.Recipient;
 import org.agnitas.beans.TrackableLink;
+import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -43,6 +46,9 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 	/** Cache for content types of mailings. */
 	private MailingContentTypeCache mailingContentTypeCache;
 	
+	private RecipientFactory recipientFactory;
+	private RecipientService recipientService;
+	
 	private final List<OnLinkClickedHandler> linkClickedHandlerList;
 	
 	public ClickTrackingServiceImpl() {
@@ -57,7 +63,17 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 			final TrackableLink link = trackableLinkDao.getTrackableLink(uid.getUrlID(), uid.getCompanyID());
 
 			if(link != null) {
-				final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, configService, mailingContentTypeCache);
+				TrackingLevel trackingLevel = uid.getCustomerID() > 0 ? TrackingLevel.ANONYMOUS : TrackingLevel.PERSONAL;
+				
+				if(uid.getCustomerID() > 0) {
+					final Recipient recipient = recipientFactory.newRecipient(uid.getCompanyID());
+
+					recipient.setCustomerID(uid.getCustomerID());
+					recipient.setCustParameters(recipientService.getCustomerDataFromDb(uid.getCompanyID(), uid.getCustomerID(), recipient.getDateFormat()));
+
+					trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, recipient.isDoNotTrackMe(), configService, mailingContentTypeCache);
+				}
+				
 				
 				if(trackingLevel == TrackingLevel.ANONYMOUS) {
 					if(logger.isInfoEnabled()) {
@@ -140,5 +156,15 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 		if(handlers != null) {
 			this.linkClickedHandlerList.addAll(handlers);
 		}
+	}
+	
+	@Required
+	public final void setRecipientFactory(final RecipientFactory factory) {
+		this.recipientFactory = Objects.requireNonNull(factory, "recipientFactory is null");
+	}
+	
+	@Required
+	public final void setRecipientService(final RecipientService service) {
+		this.recipientService = Objects.requireNonNull(service, "recipientService is null");
 	}
 }

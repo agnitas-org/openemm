@@ -172,6 +172,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 				req.setAttribute("isMailingGrid", req.getParameter("isMailingGrid"));
 				req.setAttribute("templateId", req.getParameter("templateId"));
 				req.setAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, aForm.getMailingID()));
+				req.setAttribute("SHOW_CREATE_SUBSTITUTE_LINK", configService.getBooleanValue(ConfigValue.RedirectMakeAgnDynMultiLinksTrackable, admin.getCompanyID()));
 
 				switch (aForm.getAction()) {
                     case ACTION_LIST:
@@ -390,6 +391,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			form.setAdministrativeLink(aLink.isAdminLink());
 			form.setLinkToView(aLink);
 			form.setStaticLink(aLink.isStaticValue());
+			form.setCreateSubstituteLink(aLink.isCreateSubstituteLinkForAgnDynMulti());
 		} else {
 			logger.error("could not load link: " + form.getLinkID());
 		}
@@ -457,9 +459,10 @@ public class ComTrackableLinkAction extends StrutsActionBase {
         }
 
         // saveAdminLinks(aForm, req);
-        for (TrackableLink trackableLink : aMailing.getTrackableLinks().values()) {
+        for (ComTrackableLink trackableLink : aMailing.getTrackableLinks().values()) {
             if (trackableLink != null) {
                 trackableLink.setAdminLink(aForm.getAdminLink(trackableLink.getId()));
+                trackableLink.setCreateSubstituteLinkForAgnDynMulti(aForm.getCreateSubstituteLinkFor(trackableLink.getId()));
             }
         }
 
@@ -607,6 +610,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			aLink.setActionID(aForm.getLinkAction());
 			aLink.setAdminLink(aForm.isAdministrativeLink());
 			aLink.setStaticValue(aForm.isStaticLink());
+			aLink.setCreateSubstituteLinkForAgnDynMulti(aForm.isCreateSubstituteLink());
 
 			if (req.getParameter("deepTracking") != null) { // only if parameter is provided in form
 				writeTrackableLinkDeepTrackableChange(aLink, aForm.getDeepTracking(), logMessage);

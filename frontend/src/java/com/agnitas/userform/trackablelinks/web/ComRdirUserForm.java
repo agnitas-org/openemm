@@ -13,6 +13,7 @@ package com.agnitas.userform.trackablelinks.web;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
+import java.util.Objects;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -20,12 +21,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.BaseTrackableLink;
+import org.agnitas.beans.Recipient;
+import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -63,6 +67,9 @@ public class ComRdirUserForm extends HttpServlet {
 	private ComDeviceService comDeviceService;
 	private ClientService clientService;
 	private MailingContentTypeCache mailingContentTypeCache;
+	
+	private RecipientFactory recipientFactory;
+	private RecipientService recipientService;
 
 	@Required
 	public void setConfigService(ConfigService configService) {
@@ -149,6 +156,22 @@ public class ComRdirUserForm extends HttpServlet {
 		}
 		return mailingContentTypeCache;
 	}
+	
+	private RecipientFactory getRecipientFactory() {
+		if(this.recipientFactory == null) {
+			this.recipientFactory = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("RecipientFactory", RecipientFactory.class);
+		}
+		
+		return this.recipientFactory;
+	}
+	
+	private RecipientService getRecipientService() {
+		if(this.recipientService == null) {
+			this.recipientService = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("recipientService", RecipientService.class);
+		}
+		
+		return this.recipientService;
+	}
 
 	// ----------------------------------------------------------------------------------------------------------------
 	// Business Logic
@@ -221,19 +244,30 @@ public class ComRdirUserForm extends HttpServlet {
 		}
 
 		if (deviceID != ComDeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
+			TrackingLevel trackingLevel = uid != null && uid.getCustomerID() > 0 ? TrackingLevel.ANONYMOUS : TrackingLevel.PERSONAL;
+			
 			// The available mailing_id and customer_id should be logged in any case of a trackable link
 			if (comTrackableUserFormLink.getUsage() == BaseTrackableLink.TRACKABLE_YES
 					|| comTrackableUserFormLink.getUsage() == BaseTrackableLink.TRACKABLE_YES_WITH_MAILING_INFO
 					|| comTrackableUserFormLink.getUsage() == BaseTrackableLink.TRACKABLE_YES_WITH_MAILING_AND_USER_INFO) {
-				final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, getConfigService(), getMailingContentTypeCache());
-				String remoteAddr;
-				if (trackingLevel == TrackingLevel.ANONYMOUS) {
-					customerIdInt = 0;
-					remoteAddr = null;
-				} else {
-					remoteAddr = request.getRemoteAddr();
+				
+				if(uid != null && uid.getCustomerID() > 0) {
+					final Recipient recipient = getRecipientFactory().newRecipient(uid.getCompanyID());
+
+					recipient.setCustomerID(uid.getCustomerID());
+					recipient.setCustParameters(getRecipientService().getCustomerDataFromDb(uid.getCompanyID(), uid.getCustomerID(), recipient.getDateFormat()));
+
+					trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, recipient.isDoNotTrackMe(), configService, mailingContentTypeCache);
 				}
-				getUserFormDao().logUserFormTrackableLinkClickInDB(comTrackableUserFormLink, customerIdInt, mailingIdInt, remoteAddr, deviceClass, deviceID, clientID);
+
+				getUserFormDao().logUserFormTrackableLinkClickInDB(
+						comTrackableUserFormLink, 
+						(trackingLevel == TrackingLevel.ANONYMOUS) ? Integer.valueOf(0) : customerIdInt, 
+						mailingIdInt, 
+						(trackingLevel == TrackingLevel.ANONYMOUS) ? null : request.getRemoteAddr(), 
+						deviceClass, 
+						deviceID, 
+						clientID);
 			}
 		}
 
@@ -273,5 +307,15 @@ public class ComRdirUserForm extends HttpServlet {
 			}
 		}
 		return linkString;
+	}
+	
+	@Required
+	public final void setRecipientFactory(final RecipientFactory factory) {
+		this.recipientFactory = Objects.requireNonNull(factory, "recipientFactory is null");
+	}
+	
+	@Required
+	public final void setRecipientService(final RecipientService service) {
+		this.recipientService = Objects.requireNonNull(service, "recipientService is null");
 	}
 }

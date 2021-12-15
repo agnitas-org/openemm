@@ -19,11 +19,14 @@ import java.util.Objects;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.BaseTrackableLink;
+import org.agnitas.beans.Recipient;
+import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.exceptions.FormNotFoundException;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -69,6 +72,9 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	private ComRecipientDao recipientDao;
 	private MailingContentTypeCache mailingContentTypeCache;
 	private FormTrackableLinkDao trackableLinkDao;
+	
+	private RecipientFactory recipientFactory;
+	private RecipientService recipientService;
 
 	private ApplicationContext applicationContext;
 
@@ -202,14 +208,29 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		if (deviceID != ComDeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
 			final ComTrackableUserFormLink formStatisticsDummyLink = trackableLinkDao.getDummyUserFormTrackableLinkForStatisticCount(userForm.getCompanyID(), userForm.getId());
 			if (formStatisticsDummyLink != null) {
+				TrackingLevel trackingLevel = uid != null && uid.getCustomerID() > 0 ? TrackingLevel.ANONYMOUS : TrackingLevel.PERSONAL;
+				
 				if (uid != null) {
-					final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, configService, mailingContentTypeCache);
-					if (trackingLevel == TrackingLevel.ANONYMOUS) {
-						customerIdInt = 0;
-						remoteAddress = null;
+					if(uid.getCustomerID() != 0) {
+						final Recipient recipient = recipientFactory.newRecipient(uid.getCompanyID());
+
+						recipient.setCustomerID(uid.getCustomerID());
+						recipient.setCustParameters(recipientService.getCustomerDataFromDb(uid.getCompanyID(), uid.getCustomerID(), recipient.getDateFormat()));
+
+						trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, recipient.isDoNotTrackMe(), configService, mailingContentTypeCache);
 					}
 				}
-				trackableLinkDao.logUserFormCallInDB(userForm.getCompanyID(), userForm.getId(), formStatisticsDummyLink.getId(), mailingIdInt, customerIdInt, remoteAddress, deviceClass, deviceID, clientID);
+				
+				trackableLinkDao.logUserFormCallInDB(
+						userForm.getCompanyID(), 
+						userForm.getId(), 
+						formStatisticsDummyLink.getId(), 
+						mailingIdInt, 
+						(trackingLevel == TrackingLevel.ANONYMOUS) ? Integer.valueOf(0) : customerIdInt, 
+						(trackingLevel == TrackingLevel.ANONYMOUS) ? null : remoteAddress, 
+						deviceClass, 
+						deviceID, 
+						clientID);
 			}
 		}
 	}
@@ -423,5 +444,15 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	@Required
 	public void setTrackableLinkDao(FormTrackableLinkDao trackableLinkDao) {
 		this.trackableLinkDao = trackableLinkDao;
+	}
+	
+	@Required
+	public final void setRecipientFactory(final RecipientFactory factory) {
+		this.recipientFactory = Objects.requireNonNull(factory, "recipientFactory is null");
+	}
+	
+	@Required
+	public final void setRecipientService(final RecipientService service) {
+		this.recipientService = Objects.requireNonNull(service, "recipientService is null");
 	}
 }

@@ -24,8 +24,27 @@ public class ComTrackableLinkImpl extends BaseTrackableLinkImpl implements ComTr
 	/** Original URL of link. Only set, if link URL is modified after sending mailing. */
 	private String originalUrl;
 	private boolean staticValue;
-	public String altText;
-	public boolean measureSeparately;
+	private String altText;
+	private boolean measureSeparately;
+	private boolean createSubstituteForAgnDynMulti;
+	
+	public ComTrackableLinkImpl() {
+		// Empty
+	}
+	
+	public ComTrackableLinkImpl(final ComTrackableLink original) {
+		super(original);
+		
+		this.setMailingID(original.getMailingID());
+		this.setAdminLink(original.isAdminLink());
+		this.setDeleted(original.isDeleted());
+		this.setExtendByMailingExtensions(original.isExtendByMailingExtensions());
+		this.setOriginalUrl(original.getOriginalUrl());
+		this.setStaticValue(original.isStaticValue());
+		this.setAltText(original.getAltText());
+		this.setMeasureSeparately(original.isMeasureSeparately());
+		this.setCreateSubstituteLinkForAgnDynMulti(original.isCreateSubstituteLinkForAgnDynMulti());
+	}
 
 	@Override
 	public final boolean isStaticValue() {
@@ -110,5 +129,15 @@ public class ComTrackableLinkImpl extends BaseTrackableLinkImpl implements ComTr
     @Override
     public boolean isUrlModified() {
     	return StringUtils.isNotEmpty(getOriginalUrl());
+    }
+    
+    @Override
+    public final boolean isCreateSubstituteLinkForAgnDynMulti() {
+    	return this.createSubstituteForAgnDynMulti;
+    }
+    
+    @Override
+    public final void setCreateSubstituteLinkForAgnDynMulti(final boolean createSubstituteForAgnDynMulti) {
+    	this.createSubstituteForAgnDynMulti = createSubstituteForAgnDynMulti; 
     }
 }

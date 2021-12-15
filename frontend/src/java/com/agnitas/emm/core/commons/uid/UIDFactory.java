@@ -89,7 +89,6 @@ public final class UIDFactory {
  	/**
  	 * Creates a UID used to identify a recipient.
  	 * All other properties than given ones are set to 0.
- 	 * This method respects the Do-Not-Track flag of the recipient.
  	 * 
  	 * @param licenseID license ID (must be <> 0)
  	 * @param recipient recipient
@@ -99,11 +98,6 @@ public final class UIDFactory {
  	 */
  	public static final ComExtensibleUID from(final int licenseID, final Recipient recipient, final NamedUidBit...additionalBits) {
  		long bits = NamedUidBit.namedBitsToLong(additionalBits);
- 		
- 		// Always set NamedBit#DO_NOT_TRACK if customer is marked so 
- 		if(recipient.isDoNotTrackMe()) {
- 			bits = NamedUidBit.setBit(bits, NamedUidBit.DO_NO_TRACK);
- 		}
  		
  		return new ComExtensibleUIDImpl(
  				null, 
@@ -118,7 +112,6 @@ public final class UIDFactory {
  	/**
  	 * Creates a UID used to identify a recipient and mailing.
  	 * All other properties than given ones are set to 0.
- 	 * This method respects the Do-Not-Track flag of the recipient.
  	 * 
  	 * @param licenseID license ID (must be <> 0)
  	 * @param recipient recipient
@@ -129,11 +122,6 @@ public final class UIDFactory {
  	 */
  	public static final ComExtensibleUID from(final int licenseID, final Recipient recipient, final int mailingID, final NamedUidBit...additionalBits) {
  		long bits = NamedUidBit.namedBitsToLong(additionalBits);
- 		
- 		// Always set NamedBit#DO_NOT_TRACK if customer is marked so 
- 		if(recipient.isDoNotTrackMe()) {
- 			bits = NamedUidBit.setBit(bits, NamedUidBit.DO_NO_TRACK);
- 		}
  		
  		return new ComExtensibleUIDImpl(
  				null, 

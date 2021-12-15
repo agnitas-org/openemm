@@ -75,4 +75,8 @@ public interface ComTrackableLink extends TrackableLink {
     void setMeasureSeparately(boolean measureSeparately);
 
     boolean isMeasureSeparately();
+
+	boolean isCreateSubstituteLinkForAgnDynMulti();
+	
+	void setCreateSubstituteLinkForAgnDynMulti(final boolean createSubstituteForAgnDynMulti);
 }

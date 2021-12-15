@@ -15,7 +15,6 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID.NamedUidBit;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
 
 /**
@@ -23,7 +22,7 @@ import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
  */
 public final class TrackingVetoHelper {
 	
-	/** 
+	/**
 	 * Level of tracking.
 	 */
 	public enum TrackingLevel {
@@ -43,7 +42,7 @@ public final class TrackingVetoHelper {
 	 * 
 	 * @return tracking level
 	 */
-	public static final TrackingLevel computeTrackingLevel(final ComExtensibleUID uid, final ConfigService configService, final MailingContentTypeCache mailingContentTypeCache) {
+	public static final TrackingLevel computeTrackingLevel(final ComExtensibleUID uid, final boolean doNotTrackRecipient, final ConfigService configService, final MailingContentTypeCache mailingContentTypeCache) {
 		// Tracking Veto feature disabled? Allow personalized tracking
 		if(!configService.getBooleanValue(ConfigValue.EnableTrackingVeto, uid.getCompanyID())) {
 			return TrackingLevel.PERSONAL;
@@ -59,13 +58,13 @@ public final class TrackingVetoHelper {
 			}
 		}
 		
-		// Check if personal tracking is disabled for the whole company. 
+		// Check if personal tracking is disabled for the whole company.
 		if(configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, uid.getCompanyID())) {
 			return TrackingLevel.ANONYMOUS;
 		}
 
 		// At least, check Tracking Veto settings of the recipient
-		return NamedUidBit.isBitSet(uid.getBitField(), NamedUidBit.DO_NO_TRACK) ? TrackingLevel.ANONYMOUS : TrackingLevel.PERSONAL;
+		return doNotTrackRecipient ? TrackingLevel.ANONYMOUS : TrackingLevel.PERSONAL;
 	}
 
 }

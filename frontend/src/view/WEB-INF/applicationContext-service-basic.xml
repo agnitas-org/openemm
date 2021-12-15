@@ -822,6 +822,8 @@
 		<property name="companyDao" ref="CompanyDao" />
 		<property name="mailingContentTypeCache" ref="MailingContentTypeCache" />
         <property name="trackableLinkDao" ref="FormTrackableLinkDao"/>
+		<property name="recipientFactory" ref="RecipientFactory" />
+		<property name="recipientService" ref="recipientService"/>
     </bean>
 	
 <!-- ============================================================================================================================== Hash tags -->
@@ -962,6 +964,8 @@
 		<property name="trackableLinkDao" ref="TrackableLinkDao" />
 		<property name="configService" ref="ConfigService" />
 		<property name="mailingContentTypeCache" ref="MailingContentTypeCache" />
+		<property name="recipientFactory" ref="RecipientFactory" />
+		<property name="recipientService" ref="recipientService"/>
 	</bean>
 	
 	<bean id="MailOpenTrackingService" class="com.agnitas.emm.core.mailtracking.service.OpenTrackingServiceImpl">

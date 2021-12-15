@@ -367,6 +367,9 @@ public class ConfigValue {
 
 	/** Maximum cachetime of miscellaneous keys in the rdir application */
 	public static final ConfigValue RedirectKeysMaxCacheTimeMillis = new ConfigValue("rdir.keys.maxCacheTimeMillis", "300000");
+	
+	public static final ConfigValue RedirectMakeAgnDynMultiLinksTrackable = new ConfigValue("rdir.agnDynMulti.makeLinksTrackable", "false");
+	
 
 	/** Url of the birt statistic application to be used for internal purposes like email reports only by birt itself when behind firewall **/
 	public static final ConfigValue BirtUrlIntern = new ConfigValue("birt.url.intern");
@@ -728,6 +731,7 @@ public class ConfigValue {
 	public static final ConfigValue DbDeadlockRetriesWaitSeconds = new ConfigValue("database.DeadlockRetriesWaitSeconds", "10");
 
 	public static final ConfigValue ExtendedRestfulLogging = new ConfigValue("restful.ExtendedLogging", "false");
+
 	
 	private final String name;
 	private final String defaultValue;
