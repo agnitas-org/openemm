@@ -24,7 +24,6 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.impl.ImportProfileImpl;
@@ -588,13 +587,19 @@ public class ImportProfileAction extends StrutsActionBase {
         importProfile.setId(aForm.getProfileId());
         importProfile.setCompanyId(AgnUtils.getCompanyID(request));
         importProfile.setAdminId(AgnUtils.getAdminId(request));
-        importProfile.setMailinglists(new ArrayList<>(aForm.getMailinglists()));
+        if (admin.permissionAllowed(Permission.MAILINGLIST_SHOW) && importProfile.getActionForNewRecipients() <= 0) {
+            importProfile.setMailinglists(new ArrayList<>(aForm.getMailinglists()));
+        }
         importProfile.setMediatypes(aForm.getMediatypes());
         
         setupGenderMappings(importProfile);
 
         if (aForm.getProfileId() != 0) {
             ImportProfile oldImportProfile = importProfileService.getImportProfileById(aForm.getProfileId());
+            if (!admin.permissionAllowed(Permission.MAILINGLIST_SHOW)) {
+                importProfile.setMailinglistsAll(oldImportProfile.isMailinglistsAll());
+                importProfile.setMailinglists(oldImportProfile.getMailinglistIds());
+            }
             importProfileService.saveImportProfileWithoutColumnMappings(importProfile);
 
             writeImportChangeLog(oldImportProfile, importProfile, aForm, admin);
@@ -685,8 +690,8 @@ public class ImportProfileAction extends StrutsActionBase {
         }
         logDescription.append(getPreImportActionLog(oldImport.getImportProcessActionID(), newImport.getImportProcessActionID(), admin.getCompanyID()));
         logDescription.append(addChangedFieldLog("Action for new recipients",
-                getActionForNewRecipientsName(newImport.getActionForNewRecipients(), form),
-                getActionForNewRecipientsName(oldImport.getActionForNewRecipients(),form)));
+                getActionForNewRecipientsName(newImport.getActionForNewRecipients(), admin.getCompanyID()),
+                getActionForNewRecipientsName(oldImport.getActionForNewRecipients(),admin.getCompanyID())));
         logDescription.append(addChangedFieldLog("Report mail", newImport.getMailForReport(), oldImport.getMailForReport()))
                 .append(addChangedFieldLog("Error mail", newImport.getMailForError(), oldImport.getMailForError()))
                 .append(addChangedFieldLog("Handling of duplicates",
@@ -753,9 +758,10 @@ public class ImportProfileAction extends StrutsActionBase {
         return NONE;
     }
 
-    private String getActionForNewRecipientsName(int actionId, ImportProfileForm form) {
+    private String getActionForNewRecipientsName(int actionId, int companyId) {
         if (actionId != 0) {
-            EmmAction emmAction = form.getActionsForNewRecipients().stream().filter(action -> action.getId() == actionId).findFirst().orElse(null);
+            var emmAction = emmActionDao.getEmmActionsByOperationType(companyId, false, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING)
+                    .stream().filter(action -> action.getId() == actionId).findFirst().orElse(null);
             return emmAction != null ? emmAction.getShortname() : UNKNOWN_ACTION;
         }
         return NONE;

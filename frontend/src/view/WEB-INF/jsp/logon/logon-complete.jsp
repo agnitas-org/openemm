@@ -6,6 +6,7 @@
 
 <%--@elvariable id="webStorageBundleNames" type="java.util.List"--%>
 <%--@elvariable id="isFrameShown" type="java.lang.Boolean"--%>
+<%--@elvariable id="adminId" type="java.lang.Integer"--%>
 
 <!DOCTYPE html>
 <html>
@@ -30,7 +31,8 @@
             <script id="config:logon-complete" type="application/json">
                 {
                     "webStorageBundleNames": ${emm:toJson(webStorageBundleNames)},
-                    "isFrameShown": ${isFrameShown}
+                    "isFrameShown": ${isFrameShown},
+                    "adminId": ${adminId}
                 }
             </script>
         </form>

@@ -23,7 +23,7 @@ public class RecipientColumnDefinition {
     private DbColumnType.SimpleDataType dataType;
     private int editMode;
     private boolean nullable;
-    private int maxSize;
+    private long maxSize;
     private boolean lineAfter;
     private String defaultValue;
     private List<String> fixedValues;
@@ -76,11 +76,12 @@ public class RecipientColumnDefinition {
     public boolean isNullable() {
         return nullable;
     }
-    public void setMaxSize(int maxSize) {
+    
+    public void setMaxSize(long maxSize) {
         this.maxSize = maxSize;
     }
 
-    public int getMaxSize() {
+    public long getMaxSize() {
         return maxSize;
     }
 

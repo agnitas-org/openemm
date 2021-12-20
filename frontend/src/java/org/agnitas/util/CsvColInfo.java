@@ -12,20 +12,20 @@ package org.agnitas.util;
 
 public class CsvColInfo {
 
-	/** 
-     * Holds value of property name. 
+	/**
+     * Holds value of property name.
      */
     private String name;
     
     /**
-     * Holds value of property type. 
+     * Holds value of property type.
      */
     private int type;
     
     /**
-     * Holds value of property lenght. 
+     * Holds value of property lenght.
      */
-    private int length;
+    private long length;
 
 	/**
      * Holds value of property nullable.
@@ -33,7 +33,7 @@ public class CsvColInfo {
 	private boolean nullable;
     
     /**
-     * Holds value of property active. 
+     * Holds value of property active.
      */
     private boolean active;
     
@@ -46,7 +46,7 @@ public class CsvColInfo {
     public static final int TYPE_UNKNOWN = 0;
     
     /**
-     * Creates a new instance of CsvColInfo 
+     * Creates a new instance of CsvColInfo
      */
     public CsvColInfo() {
     }
@@ -92,16 +92,16 @@ public class CsvColInfo {
      *
      * @return Value of property lenght.
      */
-    public int getLength() {
+    public long getLength() {
         return length;
     }
     
     /**
      * Setter for property lenght.
      *
-     * @param len 
+     * @param len
      */
-    public void setLength(int len) {
+    public void setLength(long len) {
         this.length = len;
     }
     

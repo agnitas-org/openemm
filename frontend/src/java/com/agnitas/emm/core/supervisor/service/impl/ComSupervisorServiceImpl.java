@@ -68,7 +68,7 @@ public class ComSupervisorServiceImpl implements ComSupervisorService {
 	}
 
 	@Override
-    public boolean save(Supervisor supervisor, String password, List<Integer> allowedCompanyIds, Popups popups) {
+    public boolean save(Supervisor supervisor, String password, List<Integer> allowedCompanyIdsOrNull, Popups popups) {
 	    Objects.requireNonNull(supervisor, "supervisor == null");
 
         try {
@@ -111,7 +111,9 @@ public class ComSupervisorServiceImpl implements ComSupervisorService {
                 }
             }
 
-            supervisorDao.setAllowedCompanyIds(supervisor.getId(), allowedCompanyIds);
+            if(allowedCompanyIdsOrNull != null) {
+            	supervisorDao.setAllowedCompanyIds(supervisor.getId(), allowedCompanyIdsOrNull);
+            }
         } catch (UnknownSupervisorIdException e) {
             popups.alert("supervisor.error.not.exists");		// TODO This is UI-related code. Let this method throw exceptions (remove boolean return value) and move exception handling to SupervisorController
             return false;

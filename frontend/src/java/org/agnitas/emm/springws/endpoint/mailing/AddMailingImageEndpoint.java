@@ -10,6 +10,8 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
+import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
+
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.TrackableLink;
@@ -110,6 +112,10 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
         }
 
         if (!isValidMandatoryFields(req.getContent(), req.getFileName())) {
+            throw new IllegalArgumentException();
+        }
+        
+        if (StringUtils.length(req.getFileName()) > COMPONENT_NAME_MAX_LENGTH) {
             throw new IllegalArgumentException();
         }
     }

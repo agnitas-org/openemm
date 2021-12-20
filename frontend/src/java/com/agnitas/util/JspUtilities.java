@@ -36,6 +36,16 @@ public class JspUtilities {
         return admin.getAdminTimezone();
     }
 
+    public static String getAdminId(HttpServletRequest request){
+        ComAdmin admin = AgnUtils.getAdmin(request);
+
+        if (admin == null) {
+            return null;
+        }
+
+        return String.valueOf(admin.getAdminID());
+    }
+
     public static String asJsTableColumnType(DbColumnType type) {
         if (type == null) {
             return null;

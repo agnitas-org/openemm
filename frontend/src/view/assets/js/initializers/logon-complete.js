@@ -1,6 +1,7 @@
 AGN.Lib.DomInitializer.new('logon-complete', function($form) {
   var form = AGN.Lib.Form.get($form);
   var data = {};
+  window.adminId = this.config.adminId;
 
   if (this.config) {
     $.each(this.config.webStorageBundleNames, function(index, name) {

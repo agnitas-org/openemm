@@ -655,7 +655,7 @@ public class ConfigService {
 			Set<String> allowedPremiumFeatures = new HashSet<>();
 			Set<String> unAllowedPremiumFeatures = new HashSet<>();
 			for (String allowedPremiumFeature : allowedPremiumFeaturesData.split(" |;|,|\\t|\\n")) {
-				if (StringUtils.isNotBlank(allowedPremiumFeature)) {
+				if (StringUtils.isNotBlank(allowedPremiumFeature) && !allowedPremiumFeature.trim().startsWith("<!--")) {
 					allowedPremiumFeatures.add(allowedPremiumFeature.trim());
 				}
 			}

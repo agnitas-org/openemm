@@ -14,7 +14,7 @@ package com.agnitas.emm.springws.exception;
 public class BulkDataSizeLimitExeededExeption extends Exception {
 	private static final long serialVersionUID = -9170958147019018324L;
 
-	public BulkDataSizeLimitExeededExeption(String endpoint, String user, int limit, int size) {
+	public BulkDataSizeLimitExeededExeption(String endpoint, String user, long limit, long size) {
 		super(String.format("Total data size in endpoint %s requested by %s: limit is %d, requested size is %d",
 				endpoint, user, limit, size));
 	}

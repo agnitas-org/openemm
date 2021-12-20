@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.components.service.impl;
 
+import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
+
 import java.util.List;
 
 import org.agnitas.beans.MailingComponent;
@@ -74,13 +76,19 @@ public class ComponentValidationServiceImpl implements ComponentValidationServic
 
 	private boolean validateAttachmentFields(UploadMailingAttachmentDto attachment, List<Message> errors, List<Message> warnings) {
 		MultipartFile file = attachment.getAttachmentFile();
+		String attachmentName = attachment.getName();
 		if (file == null || file.isEmpty()) {
             errors.add(Message.of("mailing.errors.no_attachment_file"));
             return false;
         }
 
-        if (StringUtils.isBlank(attachment.getName())) {
+        if (StringUtils.isBlank(attachmentName)) {
             errors.add(Message.of("mailing.errors.no_attachment_name"));
+        }        
+        
+        if (attachmentName.length() > COMPONENT_NAME_MAX_LENGTH) {
+            errors.add(Message.of("error.compname.too.long", attachmentName));
+            return false;
         }
 
         if (!validateAttachmentSize(file, errors, warnings)) {

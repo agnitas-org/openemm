@@ -323,6 +323,10 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				if (linkJsonObject.containsPropertyKey("administrative")) {
 					trackableLink.setAdminLink((Boolean) linkJsonObject.get("administrative"));
 				}
+				
+				if(linkJsonObject.containsPropertyKey("create_substitute_link")) {
+					trackableLink.setCreateSubstituteLinkForAgnDynMulti((Boolean) linkJsonObject.get("create_substitute_link"));
+				}
 
 				if (linkJsonObject.containsPropertyKey("properties")) {
 					List<LinkProperty> linkProperties = new ArrayList<>();

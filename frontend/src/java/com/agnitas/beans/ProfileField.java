@@ -37,9 +37,9 @@ public interface ProfileField extends LightProfileField {
 
 	void setDataType(String dataType);
 
-	int getDataTypeLength();
+	long getDataTypeLength();
 
-	void setDataTypeLength(int dataTypeLength);
+	void setDataTypeLength(long dataTypeLength);
 
 	String getDefaultValue();
 
@@ -119,9 +119,9 @@ public interface ProfileField extends LightProfileField {
     
     int getNumericScale();
 
-	int getMaxDataSize();
+    long getMaxDataSize();
 
-	void setMaxDataSize(int maxDataSize);
+	void setMaxDataSize(long maxDataSize);
 
 	SimpleDataType getOverrideSimpleDataType();
 

@@ -22,7 +22,7 @@ public class ProfileFieldForm extends PaginationForm {
     private boolean useAllowedValues;
     private String[] allowedValues;
     private boolean[] allowedValuesValidationResults;
-    private int fieldLength;
+    private long fieldLength;
     private String fieldname;
     private String description = StringUtils.EMPTY;
     private String fieldType;
@@ -96,11 +96,11 @@ public class ProfileFieldForm extends PaginationForm {
         this.allowedValuesValidationResults = allowedValuesValidationResults;
     }
 
-    public int getFieldLength() {
+    public long getFieldLength() {
         return fieldLength;
     }
 
-    public void setFieldLength(int fieldLength) {
+    public void setFieldLength(long fieldLength) {
         this.fieldLength = fieldLength;
     }
 

@@ -122,7 +122,7 @@
 
   get = function(key) {
     try {
-      var result = currentStorage.getItem(key);
+      var result = currentStorage.getItem(generateKeyForAdmin(key));
       if (result) {
         return JSON.parse(result);
       }
@@ -135,7 +135,7 @@
   set = function(key, value) {
     try {
       value = JSON.stringify(value);
-      currentStorage.setItem(key, value);
+      currentStorage.setItem(generateKeyForAdmin(key), value);
     } catch (e) {
       console.warn("Could not set Storage key:value " + key + ":" + value + " cause: " + e)
     }
@@ -321,6 +321,14 @@
       return key;
     }
     return undefined;
+  }
+
+  function generateKeyForAdmin(key) {
+    if (window.adminId) {
+      return window.adminId + "-" + key;
+    }
+
+    return key;
   }
 
   AGN.Lib.Storage = {

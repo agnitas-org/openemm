@@ -748,7 +748,7 @@ public class DbUtilities {
 			throw new Exception("Invalid empty columnName for getColumnDataType");
 		} else {
 			try (final Connection connection = dataSource.getConnection()) {
-				int characterLength;
+				long characterLength;
 				int numericPrecision;
 				int numericScale;
 				boolean isNullable;
@@ -821,10 +821,12 @@ public class DbUtilities {
 							if (resultSet.next()) {
 								String dataType = resultSet.getString("data_type");
 
-								if (resultSet.wasNull() || dataType.toUpperCase().contains("DATE") || dataType.toUpperCase().contains("TIMESTAMP") || dataType.toUpperCase().contains("LONGTEXT") || dataType.toUpperCase().contains("BLOB")) {
+								if (resultSet.wasNull() || dataType.toUpperCase().contains("DATE") || dataType.toUpperCase().contains("TIMESTAMP") || dataType.toUpperCase().contains("BLOB")) {
 									characterLength = -1;
+								} else if (dataType.toUpperCase().contains("TINYTEXT") || dataType.toUpperCase().contains("MEDIUMTEXT") || dataType.toUpperCase().contains("TEXT") || dataType.toUpperCase().contains("LONGTEXT")) {
+									characterLength = resultSet.getLong("character_maximum_length");
 								} else {
-									characterLength = resultSet.getInt("character_maximum_length");
+									characterLength = resultSet.getLong("character_maximum_length");
 								}
 
 								numericPrecision = resultSet.getInt("numeric_precision");
@@ -944,11 +946,13 @@ public class DbUtilities {
 							while (resultSet.next()) {
 								String dataType = resultSet.getString("data_type");
 
-								int characterLength;
-								if (resultSet.wasNull() || dataType.toUpperCase().contains("DATE") || dataType.toUpperCase().contains("TIMESTAMP") || dataType.toUpperCase().contains("LONGTEXT") || dataType.toUpperCase().contains("BLOB")) {
+								long characterLength;
+								if (resultSet.wasNull() || dataType.toUpperCase().contains("DATE") || dataType.toUpperCase().contains("TIMESTAMP") || dataType.toUpperCase().contains("BLOB")) {
 									characterLength = -1;
+								} else if (dataType.toUpperCase().contains("TINYTEXT") || dataType.toUpperCase().contains("MEDIUMTEXT") || dataType.toUpperCase().contains("TEXT") || dataType.toUpperCase().contains("LONGTEXT")) {
+									characterLength = resultSet.getLong("character_maximum_length");
 								} else {
-									characterLength = resultSet.getInt("character_maximum_length");
+									characterLength = resultSet.getLong("character_maximum_length");
 								}
 
 								int numericPrecision = resultSet.getInt("numeric_precision");
@@ -1132,7 +1136,7 @@ public class DbUtilities {
 		}
 	}
 
-	public static boolean addColumnToDbTable(DataSource dataSource, String tablename, String fieldname, String fieldType, int length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
+	public static boolean addColumnToDbTable(DataSource dataSource, String tablename, String fieldname, String fieldType, long length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
 		boolean isOracle = checkDbVendorIsOracle(dataSource);
 
 		if (StringUtils.isBlank(fieldname)) {
@@ -1306,7 +1310,7 @@ public class DbUtilities {
 
 				if (tempFieldType.startsWith("VARCHAR")) {
 					// Bugfix for Oracle: Oracle dialect returns long for varchar
-					// Bugfix for MySQL: The jdbc-Driver for mysql maps VARCHAR to longtext. This might be ok in most cases, but longtext doesn't support length restrictions. So the correct tpye for mysql should be varchar
+					// Bugfix for MySQL: The jdbc-Driver for mysql maps VARCHAR to longtext. This might be ok in most cases, but longtext doesn't support length restrictions. So the correct type for mysql should be varchar
 					dbType = new DbColumnType("VARCHAR", length, -1, -1, !notNull);
 				} else {
 					String dbTypeString;

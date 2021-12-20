@@ -16,18 +16,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import jakarta.servlet.jsp.JspException;
-import jakarta.servlet.jsp.JspTagException;
-import jakarta.servlet.jsp.tagext.BodyContent;
-import jakarta.servlet.jsp.tagext.BodyTag;
-import jakarta.servlet.jsp.tagext.TagSupport;
-
 import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ProfileField;
 import com.agnitas.service.ComColumnInfoService;
+
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.JspTagException;
+import jakarta.servlet.jsp.tagext.BodyContent;
+import jakarta.servlet.jsp.tagext.BodyTag;
+import jakarta.servlet.jsp.tagext.TagSupport;
  
 /**
  * Prepares a list of userdefined fields for use in web-templates.
@@ -154,7 +154,7 @@ public class ComShowColumnInfoTag extends TagSupport implements BodyTag {
 						pageContext.setAttribute("_" + iteratorID + "_data_type", fieldMap.getDataType());
 						pageContext.setAttribute("_" + iteratorID + "_column_name",	fieldMap.getColumn().toUpperCase());
 						if (fieldMap.getDataType().equalsIgnoreCase("VARCHAR")) {
-							pageContext.setAttribute("_" + iteratorID + "_data_length",	Integer.toString(fieldMap.getDataTypeLength()));
+							pageContext.setAttribute("_" + iteratorID + "_data_length",	Long.toString(fieldMap.getDataTypeLength()));
 						}
 						pageContext.setAttribute("_" + iteratorID + "_shortname", fieldMap.getShortname());
 						if (fieldMap.getDefaultValue() != null) {

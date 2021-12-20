@@ -4961,4 +4961,15 @@
         </example>
     </function>
 
+    <function>
+        <description>
+            Gets an ID of admin (if authorized) or null.
+        </description>
+        <name>getAdminId</name>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
+        <function-signature>java.lang.String getAdminId(jakarta.servlet.http.HttpServletRequest)</function-signature>
+        <example>
+            ${agn:getAdminId(pageContext.request)}
+        </example>
+    </function>
 </taglib>

@@ -2,10 +2,7 @@ AGN.Lib.Controller.new('import-profile', function () {
   var genderMappingRowTemplate;
   var $genderMappingTable;
   var isGenderSectionFocused = false;
-
-  this.addDomInitializer('new-recipients-action-select', function() {
-    setMailingListSelectionEnabled(this.el.val() <= 0);
-  });
+  var mailinglistShowPermissionAllowed;
 
   this.addAction({click: 'save'}, function () {
     if (isTextGendersUnique(getGenderTextValues(getGenderTableLastRow()))) {
@@ -17,16 +14,18 @@ AGN.Lib.Controller.new('import-profile', function () {
   });
 
   this.addDomInitializer('import-profile-view', function () {
+    mailinglistShowPermissionAllowed = this.config.mailinglistShowPermissionAllowed;
     $('#importProfileForm').on('click change', function (event) {
       var $el = $(event.target)
       isGenderSectionFocused = ($el.is('input') || $el.is('select') || $el.is('button') || $el.parent().is('button'))
         && $el.parents('#recipient-import-gender-settings').length > 0;
     });
     initGenderMappingTable(sortMappingsByValue(this.config.genderMappings));
+    processMailingListsTileDisplaying();
   });
 
   this.addAction({change: 'new-recipients-action-select'}, function() {
-    setMailingListSelectionEnabled(this.el.val() <= 0);
+    processMailingListsTileDisplaying();
   });
 
   this.addAction({click: 'add-gender-mapping', enterdown: 'gender-enterdown'}, function () {
@@ -48,7 +47,7 @@ AGN.Lib.Controller.new('import-profile', function () {
   };
 
   this.addDomInitializer('allMailinglists-checkbox', function() {
-    setSeparateMailinglistChecboxes($('#allMalinglistsCheckbox').is(':checked'));
+    processMailingListsTileDisplaying();
   });
 
   //#all-mailinglists-wrapper is visible just for ${allowedModesForAllMailinglists} import modes
@@ -67,6 +66,25 @@ AGN.Lib.Controller.new('import-profile', function () {
   var setSeparateMailinglistChecboxes = function (disabled) {
     $('#mailinglists [type="checkbox"]').prop('disabled', disabled);
   };
+  
+  function processAllMailinglistsToggle(newRecipientsActionSelected) {
+    var $allMalinglistsCheckbox = $('#allMalinglistsCheckbox');
+    if (newRecipientsActionSelected) {
+      $allMalinglistsCheckbox.attr("checked", false);
+      $('#all-mailinglists-wrapper').hide();
+    } else {
+      $('#all-mailinglists-wrapper').show();
+    }
+    $allMalinglistsCheckbox.attr("disabled", newRecipientsActionSelected || !mailinglistShowPermissionAllowed);
+  }
+  
+  function processMailinglistsCheckboxes(newRecipientsActionSelected) {
+    setMailingListSelectionEnabled(!newRecipientsActionSelected);
+    setSeparateMailinglistChecboxes($('#allMalinglistsCheckbox').is(':checked') 
+      || !mailinglistShowPermissionAllowed
+      || newRecipientsActionSelected
+    );
+  }
 
   function initGenderMappingTable(mappings) {
     $genderMappingTable = $('#recipient-import-gender-settings tbody');
@@ -169,5 +187,13 @@ AGN.Lib.Controller.new('import-profile', function () {
       return a[1] - b[1];
     });
     return result;
+  }
+  
+  function processMailingListsTileDisplaying() {
+    var $newRecipientsActionSelect = $('#import_actionnewrecipients');
+    var newRecipientsActionSelected = $newRecipientsActionSelect.length && $newRecipientsActionSelect.val() > 0;
+
+    processAllMailinglistsToggle(newRecipientsActionSelected);
+    processMailinglistsCheckboxes(newRecipientsActionSelected);
   }
 });

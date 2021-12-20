@@ -94,12 +94,12 @@ public interface ProfileFieldDao {
      * @return true on success.
      * @throws Exception
      */
-    boolean addColumnToDbTable(@VelocityCheck int companyID, String fieldname, String fieldType, int length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception;
+    boolean addColumnToDbTable(@VelocityCheck int companyID, String fieldname, String fieldType, long length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception;
 
     /**
      * Changes a custom column in customer_tbl for given company_id to a new type and/or default value.
      */
-    boolean alterColumnTypeInDbTable(@VelocityCheck int companyID, String fieldname, String fieldType, int length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception;
+    boolean alterColumnTypeInDbTable(@VelocityCheck int companyID, String fieldname, String fieldType, long length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception;
 
     /**
      * Removes custom column in customer_tbl for given company_id.

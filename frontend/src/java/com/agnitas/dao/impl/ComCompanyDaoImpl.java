@@ -497,12 +497,12 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					throw new Exception("Cannot create Customer tables for company id: " + newCompanyId);
 				}
 				
-				sql = "CREATE TABLE interval_track_" + newCompanyId + "_tbl (customer_id NUMBER NOT NULL, mailing_id NUMBER NOT NULL, send_date TIMESTAMP NOT NULL)" + tablespaceClauseCustomerTable;
+				sql = "CREATE TABLE interval_track_" + newCompanyId + "_tbl (customer_id NUMBER NOT NULL, mailing_id NUMBER NOT NULL, send_date TIMESTAMP NOT NULL)" + tablespaceClauseDataSuccess;
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "CREATE INDEX intervtrack$" + newCompanyId + "mid$idx ON interval_track_" + newCompanyId + "_tbl (mailing_id)" + tablespaceClauseCustomerBindIndex;
 				executeWithRetry(logger, 0, 3, 120, sql);
 				
-				sql = "CREATE TABLE mailtrack_" + newCompanyId + "_tbl (mailing_id NUMBER, maildrop_status_id NUMBER, customer_id NUMBER, timestamp date default SYSDATE)" + tablespaceClauseCustomerTable;
+				sql = "CREATE TABLE mailtrack_" + newCompanyId + "_tbl (mailing_id NUMBER, maildrop_status_id NUMBER, customer_id NUMBER, timestamp date default SYSDATE)" + tablespaceClauseDataSuccess;
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "ALTER TABLE mailtrack_" + newCompanyId + "_tbl ADD CONSTRAINT mt" + newCompanyId + "$cuid$nn CHECK (customer_id IS NOT NULL)";
 				executeWithRetry(logger, 0, 3, 120, sql);
@@ -1005,8 +1005,8 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					+ STANDARD_FIELD_TITLE + " VARCHAR(100), "
 					+ STANDARD_FIELD_GENDER + " INT(1) NOT NULL, "
 					+ STANDARD_FIELD_MAILTYPE + " INT(1) NOT NULL, "
-					+ STANDARD_FIELD_TIMESTAMP + " TIMESTAMP DEFAULT '2000-01-01 01:00:00', "
-					+ STANDARD_FIELD_CREATION_DATE + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+					+ STANDARD_FIELD_TIMESTAMP + " TIMESTAMP NULL, "
+					+ STANDARD_FIELD_CREATION_DATE + " TIMESTAMP NULL, "
 					+ STANDARD_FIELD_DATASOURCE_ID + " INT(11), "
 					+ STANDARD_FIELD_BOUNCELOAD + " INT(1) NOT NULL DEFAULT 0, "
 					+ STANDARD_FIELD_LASTOPEN_DATE + " TIMESTAMP NULL, "
@@ -1032,8 +1032,8 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					+ " user_type CHAR(1) COLLATE utf8mb4_bin,"
 					+ " user_status INT(11) NOT NULL,"
 					+ " user_remark VARCHAR(150),"
-					+ " timestamp TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
-					+ " creation_date TIMESTAMP NULL DEFAULT NULL,"
+					+ " timestamp TIMESTAMP NULL,"
+					+ " creation_date TIMESTAMP NULL,"
 					+ " exit_mailing_id INT(11),"
 					+ " entry_mailing_id INT(11),"
 					+ " mediatype INTEGER UNSIGNED DEFAULT 0,"
@@ -1212,8 +1212,8 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 							+ "user_type CHAR(1) COLLATE utf8mb4_bin, "
 							+ "user_status INT(11), "
 							+ "user_remark VARCHAR(150), "
-							+ "timestamp TIMESTAMP, "
-							+ "creation_date TIMESTAMP, "
+							+ "timestamp TIMESTAMP NULL, "
+							+ "creation_date TIMESTAMP NULL, "
 							+ "exit_mailing_id INT(11), "
 							+ "entry_mailing_id INT(11), "
 							+ "mediatype INTEGER UNSIGNED, "

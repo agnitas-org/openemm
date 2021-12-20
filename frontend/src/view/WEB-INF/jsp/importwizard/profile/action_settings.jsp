@@ -37,7 +37,7 @@
                     <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/Mode.xml" tabindex="-1" type="button"></button>
                 </label>
             </div>
-            <div class="col-sm-8">
+            <div class="col-sm-8" data-tooltip="${isUserHasPermissionForSelectedMode ? '' : notAllowedMsg}">
                 <agn:agnSelect styleId="import_mode_select" styleClass="form-control" property="profile.importMode"
                                data-action="mode-select-change" data-field-vis="" disabled="${!isUserHasPermissionForSelectedMode && !isNewProfile}">
                     <c:forEach var="importMode" items="${importProfileForm.importModes}">

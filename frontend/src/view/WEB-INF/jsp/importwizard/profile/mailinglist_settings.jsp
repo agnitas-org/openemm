@@ -22,15 +22,14 @@
     <div class="tile-content tile-content-forms" id="tile-recipient-autoimport-mailinglists">
         <emm:ShowByPermission token="import.mailinglists.all">
             <div class="form-group" id="all-mailinglists-wrapper"
-                 data-initializer="allMailinglists-checkbox"
                     data-show-by-select="#import_mode_select" data-show-by-select-values="${allowedModesForAllMailinglists}">
                 <div class="col-sm-4">
                     <label class="control-label"><bean:message key="import.mailinglists.all"/></label>
                 </div>
                 <div class="col-sm-8">
                     <html:hidden property="__STRUTS_CHECKBOX_profile.mailinglistsAll" value="false"/>
-                    <label class="toggle">
-                        <agn:agnCheckbox styleId="allMalinglistsCheckbox" property="profile.mailinglistsAll" data-action="allMailinglists-checkbox"/>
+                    <label class="toggle" data-tooltip="${mailinglistShowPermissionAllowed ? '' : notAllowedMsg}">
+                        <agn:agnCheckbox styleId="allMalinglistsCheckbox" property="profile.mailinglistsAll" data-action="allMailinglists-checkbox" disabled="${!mailinglistShowPermissionAllowed}"/>
                         <div class="toggle-control"></div>
                     </label>
                 </div>
@@ -45,11 +44,11 @@
             </div>
 
             <div class="col-sm-8 ${isMailingListSelectionEditable ? '' : 'hidden'}" id="mailinglists">
-                <ul class="list-group">
+                <ul class="list-group" data-tooltip="${mailinglistShowPermissionAllowed ? '' : notAllowedMsg}">
                     <c:forEach var="mailinglist" items="${importProfileForm.availableMailinglists}">
                         <li class="list-group-item">
                             <label class="checkbox-inline">
-                                <html:checkbox property="mailinglist[${mailinglist.id}]"/>
+                                <html:checkbox property="mailinglist[${mailinglist.id}]" disabled="${!mailinglistShowPermissionAllowed}"/>
                                 ${fn:escapeXml(mailinglist.shortname)}
                             </label>
                         </li>
@@ -58,7 +57,7 @@
             </div>
 
             <div class="col-sm-8 ${isMailingListSelectionEditable ? 'hidden' : ''}" id="mailinglists-to-show">
-                <ul class="list-group">
+                <ul class="list-group" data-tooltip="${notAllowedMsg}">
                     <c:forEach var="mailinglist" items="${importProfileForm.availableMailinglists}">
                         <li class="list-group-item">
                             <label class="checkbox-inline">

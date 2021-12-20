@@ -4,13 +4,7 @@
 
 <%--@elvariable id="availableGenderIntValues" type="java.util.List"--%>
 
-<div class="tile" data-initializer="import-profile-view">
-    <script id="config:import-profile-view" type="application/json">
-        {
-            "genderMappings": ${emm:toJson(importProfileForm.profile.genderMappingJoined)}
-        }
-    </script>
-    
+<div class="tile">
     <div class="tile-header">
         <a href="#" class="headline" data-toggle-tile="#recipient-import-gender-settings">
             <i class="tile-toggle icon icon-angle-up"></i>

@@ -79,17 +79,22 @@ public class SafeString {
     public static String getEmailSafeString(String input) {
         int at,pt;
         
-        if(input == null)
-            return null;
+        if(input == null) {
+			return null;
+		}
         input=input.toLowerCase().trim();
-        if(input.length() < 1)
-            return null;
-        if((at=input.indexOf('@')) < 1)		// [1-n chars]@
-            return null;
-        if((pt=input.indexOf('.',at)) < (at+2))	// @[1-n chars].
-            return null;
-        if(pt >= (input.length()-1))		// .[1-n chars]
-            return null;
+        if(input.length() < 1) {
+			return null;
+		}
+        if((at=input.indexOf('@')) < 1) {
+			return null;
+		}
+        if((pt=input.indexOf('.',at)) < (at+2)) {
+			return null;
+		}
+        if(pt >= (input.length()-1)) {
+			return null;
+		}
         return input;
     }
     
@@ -99,8 +104,9 @@ public class SafeString {
      * @param len Fixed length.
      */
     public static String cutLength(String input, int len) {
-        if(input.length()>len)
-            input=input.substring(0, len);
+        if(input.length()>len) {
+			input=input.substring(0, len);
+		}
         
         return input;
     }
@@ -110,7 +116,7 @@ public class SafeString {
      *
      * @param len Fixed length.
      */
-    public static String cutByteLength(String input, int len) {
+    public static String cutByteLength(String input, long len) {
         
         try {
             while(input.getBytes("UTF-8").length>len) {
@@ -138,8 +144,9 @@ public class SafeString {
         
         posA=0;
         posB=input.indexOf('\n', posA);
-        if(posB==-1)
-            posB=input.length();
+        if(posB==-1) {
+			posB=input.length();
+		}
         
         while(true) {
             if((posB-posA) >= lineLength) {
@@ -163,12 +170,14 @@ public class SafeString {
             } else {
                 posA=posB+1;
             }
-            if(posA+lineLength >= input.length())
-                break;
+            if(posA+lineLength >= input.length()) {
+				break;
+			}
             
             posB=input.indexOf('\n', posA);
-            if(posB==-1)
-                posB=input.length();
+            if(posB==-1) {
+				posB=input.length();
+			}
         }
         return input;
     }

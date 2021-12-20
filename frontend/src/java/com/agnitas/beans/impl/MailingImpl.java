@@ -10,6 +10,8 @@
 
 package com.agnitas.beans.impl;
 
+import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -52,6 +54,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.preview.AgnTagError;
 import org.agnitas.preview.TagSyntaxChecker;
+import org.agnitas.service.UserMessageException;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.util.MailoutClient;
 import org.agnitas.util.SafeString;
@@ -1361,6 +1364,11 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 			logger.error(e.getMessage(), e);
 		}
 		cleanupMailingComponents(componentsToCheck);
+        for (MailingComponent component : components.values()) {
+            if (StringUtils.length(component.getComponentName()) > COMPONENT_NAME_MAX_LENGTH) {
+                throw new UserMessageException("error.compname.too.long", component.getComponentName());
+            }
+        }
 
 		// scan for Links
 		// in template-components and dyncontent

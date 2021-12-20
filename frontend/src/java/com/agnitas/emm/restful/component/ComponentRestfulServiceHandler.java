@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.restful.component;
 
+import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -377,11 +379,12 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 					boolean mimeTypePropertyUsed = false;
 					for (Entry<String, Object> entry : jsonObject.entrySet()) {
 						if ("name".equals(entry.getKey())) {
-							if (entry.getValue() != null && entry.getValue() instanceof String) {
-								mailingComponent.setComponentName((String) entry.getValue());
-							} else {
-								throw new RestfulClientException("Invalid data type for 'name'. String expected");
-							}
+							if (!(entry.getValue() instanceof String)) {
+                                throw new RestfulClientException("Invalid data type for 'name'. String expected");
+                            } else if (StringUtils.length(((String) entry.getValue())) > COMPONENT_NAME_MAX_LENGTH) {
+                                throw new RestfulClientException("Invalid value for 'name'. Max length = " + COMPONENT_NAME_MAX_LENGTH);
+                            }
+                            mailingComponent.setComponentName((String) entry.getValue());
 						} else if ("description".equals(entry.getKey())) {
 							if (entry.getValue() == null || entry.getValue() instanceof String) {
 								mailingComponent.setDescription((String) entry.getValue());

@@ -25,9 +25,6 @@
 			<div class="tile">
 				<%@ include file="fragments/serverstatus-config.jspf" %>
 			</div>
-			<div class="tile">
-				<%@ include file="fragments/serverstatus-license-upload.jspf" %>
-			</div>
 		</div>
 		<div class="col-sm-4">
 			<div class="tile">
@@ -39,3 +36,6 @@
 		</div>
 	</div>
 </mvc:form>
+
+
+<%@ include file="fragments/serverstatus-license-upload.jspf" %>

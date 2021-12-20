@@ -33,7 +33,7 @@ public interface ProfileFieldValidationService {
 
     boolean isDefaultValueAllowedInDb(@VelocityCheck int companyId, String fieldName, String defaultValue);
 
-    boolean isInvalidVarcharField(String fieldType, int fieldLength);
+    boolean isInvalidVarcharField(String fieldType, long fieldLength);
 
     boolean mayAddNewColumn(@VelocityCheck int companyId);
 

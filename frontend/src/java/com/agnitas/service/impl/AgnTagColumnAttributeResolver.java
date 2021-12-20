@@ -38,7 +38,7 @@ public class AgnTagColumnAttributeResolver implements AgnTagAttributeResolver {
             Map<String, String> options = new LinkedHashMap<>(fields.size());
 
             for (LightProfileField field : fields) {
-                options.put(field.getShortname(), field.getColumn());
+                options.put(field.getColumn(), field.getShortname());
             }
 
             return new AgnTagSelectAttributeDto(attribute, options);

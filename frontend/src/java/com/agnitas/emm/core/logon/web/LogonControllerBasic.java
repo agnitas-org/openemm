@@ -621,6 +621,8 @@ public class LogonControllerBasic {
     private String getLogonCompletePage(ComAdmin admin, Model model) {
         model.addAttribute("isFrameShown", configService.getBooleanValue(ConfigValue.LoginIframe_Show, admin.getCompanyID()));
         model.addAttribute("webStorageBundleNames", getWebStorageBundleNames());
+        model.addAttribute("adminId", admin.getAdminID());
+
         return "logon_complete";
     }
 

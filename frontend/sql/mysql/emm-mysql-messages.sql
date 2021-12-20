@@ -10287,20 +10287,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('18.08.2020 08:51:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'admin.passwordChanged.mail.body.text',
-	'Dear EMM user,
-
-Your password has just been changed. If you made the change yourself or the change was made on your behalf, you do not need to do anything else. If you have not initiated this change, please change the password immediately using the forgotten password function and inform AGNITAS support.
-
-Sincerely yours
-
-Your AGNITAS team',
-	'Lieber EMM-Nutzer,
-
-Ihr Passwort wurde soeben geändert. Wenn Sie die Änderung selbst durchgeführt haben oder die Änderung in Ihrem Auftrag ausgeführt wurde, brauchen Sie nichts weiter zu tun. Sollte diese Änderung nicht durch Sie angestoßen worden sein, ändern Sie bitte umgehend über die Passwort-vergessen-Funktion das Passwort und informieren Sie den AGNITAS-Support.
-
-Mit freundlichen Grüßen
-
-Ihr AGNITAS-Team',
+	'Dear EMM user,\n\nYour password has just been changed. If you made the change yourself or the change was made on your behalf, you do not need to do anything else. If you have not initiated this change, please change the password immediately using the forgotten password function and inform AGNITAS support.\n\nSincerely yours\n\nYour AGNITAS team',
+	'Lieber EMM-Nutzer,\n\nIhr Passwort wurde soeben geändert. Wenn Sie die Änderung selbst durchgeführt haben oder die Änderung in Ihrem Auftrag ausgeführt wurde, brauchen Sie nichts weiter zu tun. Sollte diese Änderung nicht durch Sie angestoßen worden sein, ändern Sie bitte umgehend über die Passwort-vergessen-Funktion das Passwort und informieren Sie den AGNITAS-Support.\n\nMit freundlichen Grüßen\n\nIhr AGNITAS-Team',
 	NULL,
 	NULL,
 	NULL,

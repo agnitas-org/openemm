@@ -10,6 +10,8 @@
 
 package com.agnitas.web;
 
+import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -453,36 +455,30 @@ public class ComMailingComponentsAction extends StrutsActionBase {
     }
 
     private void saveComponents(ComAdmin admin, ComMailingComponentsForm form, String sessionId, ActionMessages messages, ActionMessages errors) {
-	    // Make sure that all uploaded files are allowed images or zip-archives.
-	    if (validateFileExtensions(admin, form, errors)) {
-	        // Validate links for images (not applicable for zip-archives).
-            if (validateFileLinks(form, errors)) {
-                List<NewFileDto> newImages = getNewFiles(form);
+	    // Make sure that all uploaded files are allowed images or zip-archives. Validate links for images (not applicable for zip-archives).
+	    if (validateFileExtensions(admin, form, errors) && validateFileLinks(form, errors)) {
+            List<NewFileDto> newImages = getNewFiles(form);
+            if (isValidNewImages(newImages, errors)) {
+                List<UserAction> userActions = new ArrayList<>();
+                ServiceResult<ImportStatistics> result = mailingComponentService.importImagesBulk(admin, form.getMailingID(), newImages, userActions);
 
-                if (newImages.size() > 0) {
-                    List<UserAction> userActions = new ArrayList<>();
-                    ServiceResult<ImportStatistics> result = mailingComponentService.importImagesBulk(admin, form.getMailingID(), newImages, userActions);
+                if (result.isSuccess()) {
+                    previewImageService.generateMailingPreview(admin, sessionId, form.getMailingID(), true);
 
-                    if (result.isSuccess()) {
-                        previewImageService.generateMailingPreview(admin, sessionId, form.getMailingID(), true);
+                    // Files found / files effectively stored.
+                    ImportStatistics statistics = result.getResult();
 
-                        // Files found / files effectively stored.
-                        ImportStatistics statistics = result.getResult();
-
-                        // Show numbers if multiple files or at least one archive uploaded (otherwise show default success message).
-                        if (statistics.getFound() > 1 || containsArchives(newImages)) {
-                            messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("items_saved", statistics.getStored(), statistics.getFound()));
-                        } else {
-                            messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
-                        }
-
-                        userActions.forEach(userAction -> writeUserActivityLog(admin, userAction));
+                    // Show numbers if multiple files or at least one archive uploaded (otherwise show default success message).
+                    if (statistics.getFound() > 1 || containsArchives(newImages)) {
+                        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("items_saved", statistics.getStored(), statistics.getFound()));
+                    } else {
+                        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
                     }
 
-                    result.extractMessagesTo(messages, errors);
-                } else {
-                    errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.errors.no_component_file"));
+                    userActions.forEach(userAction -> writeUserActivityLog(admin, userAction));
                 }
+
+                result.extractMessagesTo(messages, errors);
             }
         }
     }
@@ -493,7 +489,9 @@ public class ComMailingComponentsAction extends StrutsActionBase {
 		try {
 		    if (StringUtils.isEmpty(sftpFilePath)) {
 		        errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.errors.no_sftp_file"));
-		    } else {
+		    } else if (StringUtils.length(FilenameUtils.getName(sftpFilePath)) > COMPONENT_NAME_MAX_LENGTH) {
+                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.compname.too.long", FilenameUtils.getName(sftpFilePath)));
+            } else  {
 		        final ComAdmin admin = AgnUtils.getAdmin(req);
                 final int companyId = AgnUtils.getCompanyID(req);
                 final String serverAndCredentials = configService.getEncryptedValue(ConfigValue.DefaultSftpServerAndCredentials, companyId);
@@ -611,6 +609,21 @@ public class ComMailingComponentsAction extends StrutsActionBase {
             return false;
         }
 
+        return true;
+    }    
+    
+    private boolean isValidNewImages(List<NewFileDto> files, ActionMessages errors) {
+        if (files.isEmpty()) {
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.errors.no_component_file"));
+            return false;
+        }
+        for (NewFileDto file : files) {
+            String fileName = file.getFile().getFileName();
+            if (StringUtils.length(fileName) > COMPONENT_NAME_MAX_LENGTH) {
+                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.compname.too.long", fileName));
+                return false;
+            }
+        }
         return true;
     }
 

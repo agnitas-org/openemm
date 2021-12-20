@@ -58,7 +58,17 @@ public interface ComSupervisorService {
 	 */
 	void setSupervisorPassword(int id, String password) throws SupervisorException;
 
-	boolean save(Supervisor supervisor, String password, List<Integer> allowedCompanyIds, Popups popups);
+	/**
+	 * Saves the given supervisors.
+	 * If <code>allowedCompanyIdsOrNull</code> is <code>null</code>, the companies allowed for this supervisor are not changed.
+	 * 
+	 * @param supervisor
+	 * @param password
+	 * @param allowedCompanyIdsOrNull
+	 * @param popups
+	 * @return
+	 */
+	boolean save(Supervisor supervisor, String password, List<Integer> allowedCompanyIdsOrNull, Popups popups);
 
 	/**
 	 * Determines expiration state of supervisor password.

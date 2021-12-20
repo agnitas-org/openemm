@@ -4,10 +4,16 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="importProfileForm" type="org.agnitas.web.forms.ImportProfileForm"--%>
 
 <c:set var="isNewProfile" value="${importProfileForm.profileId == 0}" />
+<c:set var="notAllowedMsg" ><bean:message key="default.error.notallowed"/></c:set>
+<c:set var="mailinglistShowPermissionAllowed" value="${false}"/>
+<emm:ShowByPermission token="mailinglist.show">
+    <c:set var="mailinglistShowPermissionAllowed" value="${true}"/>
+</emm:ShowByPermission>
 
 <c:choose>
     <c:when test="${isNewProfile}">
@@ -22,7 +28,16 @@
     </c:otherwise>
 </c:choose>
 
-<agn:agnForm action="/importprofile" data-form-focus="${isGenderSectionFocused ? 'genderTextValue' : 'profile.name'}" id="importProfileForm" data-form="resource" data-controller="import-profile">
+<agn:agnForm action="/importprofile" data-form-focus="${isGenderSectionFocused ? 'genderTextValue' : 'profile.name'}" id="importProfileForm" 
+             data-form="resource" 
+             data-controller="import-profile"
+             data-initializer="import-profile-view">
+    <script id="config:import-profile-view" type="application/json">
+        {
+            "mailinglistShowPermissionAllowed": ${mailinglistShowPermissionAllowed},        
+            "genderMappings": ${emm:toJson(importProfileForm.profile.genderMappingJoined)}
+        }
+    </script>
 
     <html:hidden property="profileId"/>
     <html:hidden property="action"/>

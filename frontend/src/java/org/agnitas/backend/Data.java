@@ -1901,10 +1901,14 @@ public class Data {
 	}
 
 	public static class Layout implements ResultSetExtractor<Object> {
+		private Data data;
+		private String table;
 		private List<Column> layout;
 		private String ref;
 
-		public Layout(List<Column> nLayout, String nRef) {
+		public Layout(Data nData, String nTable, List<Column> nLayout, String nRef) {
+			data = nData;
+			table = nTable;
 			layout = nLayout;
 			ref = nRef;
 		}
@@ -1921,16 +1925,13 @@ public class Data {
 			for (int n = 0; n < ccnt; ++n) {
 				String cname = meta.getColumnName(n + 1);
 				int ctype = meta.getColumnType(n + 1);
+				String tname = meta.getColumnTypeName(n + 1);
 
-				if (ctype == -1) {
-					String tname = meta.getColumnTypeName(n + 1);
-
-					if (tname != null) {
-						tname = tname.toLowerCase();
-						if (tname.equals("varchar")) {
-							ctype = Types.VARCHAR;
-						}
-					}
+				if (tname != null) {
+					tname = tname.toLowerCase();
+				}
+				if ((ctype == -1) && (tname != null) && (tname.equals("varchar") || tname.equals ("longtext"))) {
+					ctype = Types.VARCHAR;
 				}
 				if (Column.typeStr(ctype) != null) {
 					Column c = new Column(cname, ctype);
@@ -1940,6 +1941,8 @@ public class Data {
 						layout = new ArrayList<>();
 					}
 					layout.add(c);
+				} else if (data != null) {
+					data.logging (Log.WARNING, "layout", "Column \"" + table + "." + cname + "\" has unsupported type id " + ctype + " and name is \"" + (tname != null ? tname : "unknown") + "\"");
 				}
 			}
 			return this;
@@ -1947,11 +1950,12 @@ public class Data {
 	}
 
 	protected void getTableLayout(String table, String ref) throws Exception {
+		Data data = this;
 		DBase.Retry<List<Column>> r = dbase.new Retry<>("layout", dbase, dbase.jdbc()) {
 			@Override
 			public void execute() throws SQLException {
 				String query = "SELECT * FROM " + table + " WHERE 1 = 0";
-				Layout temp = new Layout(layout, ref);
+				Layout temp = new Layout(data, table, layout, ref);
 
 				jdbc.query(query, temp);
 				priv = temp.getLayout();

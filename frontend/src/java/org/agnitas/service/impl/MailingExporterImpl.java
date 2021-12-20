@@ -25,7 +25,6 @@ import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.beans.Mediatype;
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
@@ -303,7 +302,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 		if (mailing.getTrackableLinks() != null && mailing.getTrackableLinks().size() > 0) {
 			writer.openJsonObjectProperty("links");
 			writer.openJsonArray();
-			for (TrackableLink trackableLink : mailing.getTrackableLinks().values()) {
+			for (final ComTrackableLink trackableLink : mailing.getTrackableLinks().values()) {
 				writer.openJsonObject();
 				
 				writeJsonObjectAttribute(writer, "id", trackableLink.getId());
@@ -327,7 +326,11 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 					writeJsonObjectAttribute(writer, "administrative", trackableLink.isAdminLink());
 				}
 				
-				List<LinkProperty> linkProperties = ((ComTrackableLink) trackableLink).getProperties();
+				if(trackableLink.isCreateSubstituteLinkForAgnDynMulti()) {
+					writeJsonObjectAttribute(writer, "create_substitute_link", trackableLink.isCreateSubstituteLinkForAgnDynMulti());
+				}
+				
+				List<LinkProperty> linkProperties = trackableLink.getProperties();
 				exportProperties(writer, linkProperties);
 				
 				writer.closeJsonObject();

@@ -248,7 +248,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	
 	@Override
     public boolean existWithExactShortname(final int companyID, final String shortName) {
-        return selectInt(logger, "SELECT count(*) FROM customer_field_tbl WHERE company_id = ? AND shortname = ?", 
+        return selectInt(logger, "SELECT count(*) FROM customer_field_tbl WHERE company_id = ? AND shortname = ?",
                 companyID, shortName) > 0;
     }
 
@@ -466,7 +466,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 		}
 	}
 
-	private final int maxDataSize(final DbColumnType type) {
+	private final long maxDataSize(final DbColumnType type) {
 		switch(type.getSimpleDataType()) {
 		case Blob:				return type.getCharacterLength();
 		case Characters:		return type.getCharacterLength();
@@ -836,7 +836,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	}
 
 	@Override
-	public boolean addColumnToDbTable(@VelocityCheck int companyID, String fieldname, String fieldType, int length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
+	public boolean addColumnToDbTable(@VelocityCheck int companyID, String fieldname, String fieldType, long length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
 		if (companyID <= 0) {
     		return false;
     	} else if (StringUtils.isBlank(fieldname)) {
@@ -860,7 +860,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	}
 	
 	@Override
-	public boolean alterColumnTypeInDbTable(@VelocityCheck int companyID, String fieldname, String fieldType, int length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
+	public boolean alterColumnTypeInDbTable(@VelocityCheck int companyID, String fieldname, String fieldType, long length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
 		if (companyID <= 0) {
     		return false;
     	} else if (StringUtils.isBlank(fieldname)) {

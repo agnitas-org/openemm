@@ -2026,7 +2026,7 @@ public class RecipientServiceImpl implements RecipientService {
 		if (mutableField != null) {
 			switch (mutableField) {
 				case USER_TYPE:
-					description = getRecipientTypeTitleByLetter((String) history.getOldValue());
+					description = getRecipientTypeTitleByLetter((String) value);
 					break;
 				case USER_STATUS:
 					int statusValue = value != null ? ((Number) value).intValue() : 0;

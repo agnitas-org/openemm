@@ -29,6 +29,8 @@ import com.agnitas.util.ImageUtils;
 public class MailingComponentImpl implements MailingComponent {
 	private static final transient Logger logger = Logger.getLogger( MailingComponentImpl.class);
 
+	public static final int COMPONENT_NAME_MAX_LENGTH = 500;
+	
 	protected int id;
 
 	protected String mimeType;

@@ -22,7 +22,7 @@ public class DbColumnType {
 	public static final String GENERIC_TYPE_BLOB = "BLOB";
 
 	private String typeName;
-	private int characterLength; // only for VARCHAR and VARCHAR2 types
+	private long characterLength; // only for VARCHAR and VARCHAR2 types
 	private int numericPrecision; // only for numeric types
 	private int numericScale; // only for numeric types
 	private boolean nullable;
@@ -55,7 +55,7 @@ public class DbColumnType {
 		}
 	}
 	
-	public DbColumnType(String typeName, int characterLength, int numericPrecision, int numericScale, boolean nullable) {
+	public DbColumnType(String typeName, long characterLength, int numericPrecision, int numericScale, boolean nullable) {
 		this.typeName = typeName;
 		this.characterLength = characterLength;
 		this.numericPrecision = numericPrecision;
@@ -67,7 +67,7 @@ public class DbColumnType {
 		return typeName;
 	}
 	
-	public int getCharacterLength() {
+	public long getCharacterLength() {
 		return characterLength;
 	}
 	
@@ -128,7 +128,11 @@ public class DbColumnType {
 				|| typeName.equalsIgnoreCase("VARCHAR")
 				|| typeName.equalsIgnoreCase("VARCHAR2")
 				|| typeName.equalsIgnoreCase("LONGVARCHAR")
-				|| typeName.equalsIgnoreCase("CLOB")) {
+				|| typeName.equalsIgnoreCase("CLOB")
+				|| typeName.equalsIgnoreCase("TINYTEXT")
+				|| typeName.equalsIgnoreCase("TEXT")
+				|| typeName.equalsIgnoreCase("MEDIUMTEXT")
+				|| typeName.equalsIgnoreCase("LONGTEXT")) {
 			return GENERIC_TYPE_VARCHAR;
 		} else if (typeName.equalsIgnoreCase("DATE")) {
 			return GENERIC_TYPE_DATE;

@@ -11,7 +11,6 @@
 <%--@elvariable id="isUserHasPermissionForSelectedMode" type="java.lang.Boolean"--%>
 
 <emm:CheckLogon/>
-<emm:Permission token="mailinglist.show"/>
 
 <c:set var="ACTION_START" value="<%= ProfileImportAction.ACTION_START %>" scope="request" />
 <c:set var="ACTION_LIST" value="<%= ImportProfileAction.ACTION_LIST %>" scope="request" />

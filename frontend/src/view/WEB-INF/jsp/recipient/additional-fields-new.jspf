@@ -25,7 +25,7 @@
 
             <c:otherwise>
                 <c:set var="titleKey" value="${titles.get(column)}"/>
-                <c:set var="title" value="${column}"/>
+                <c:set var="title" value="${field.value}"/>
                 <c:if test="${not empty titleKey}">
                     <mvc:message var="title" code="${titleKey}"/>
                 </c:if>

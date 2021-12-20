@@ -106,7 +106,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 			if (!columnDataType.getValue().isNullable()) {
 				String typeString = columnDataType.getValue().getTypeName();
 				if (columnDataType.getValue().getSimpleDataType() == SimpleDataType.Characters) {
-					typeString += "(" + (Integer.toString(columnDataType.getValue().getCharacterLength())) + ")";
+					typeString += "(" + (Long.toString(columnDataType.getValue().getCharacterLength())) + ")";
 				} else if (columnDataType.getValue().getSimpleDataType() == SimpleDataType.Numeric || columnDataType.getValue().getSimpleDataType() == SimpleDataType.Float) {
 					typeString += "(" + (Integer.toString(columnDataType.getValue().getNumericPrecision())) + ")";
 				}

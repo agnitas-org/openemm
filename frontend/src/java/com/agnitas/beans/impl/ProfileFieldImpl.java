@@ -26,8 +26,8 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	protected String description = "";
 	protected String dataType;
 	protected SimpleDataType overrideSimpleDataType = null;
-	protected int dataTypeLength;
-	private int maxDataSize;
+	protected long dataTypeLength;
+	private long maxDataSize;
 	protected String defaultValue = "";
 	protected boolean nullable = true;
 	protected int modeEdit = 0;
@@ -268,7 +268,7 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	}
 
 	@Override
-	public int getDataTypeLength() {
+	public long getDataTypeLength() {
 		if (DbColumnType.GENERIC_TYPE_VARCHAR.equals(getDataType())) {
 			return dataTypeLength;
 		} else {
@@ -277,7 +277,7 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	}
 
 	@Override
-	public void setDataTypeLength(int dataTypeLength) {
+	public void setDataTypeLength(long dataTypeLength) {
 		this.dataTypeLength = dataTypeLength;
 	}
 
@@ -316,12 +316,12 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	}
 
 	@Override
-	public final int getMaxDataSize() {
+	public final long getMaxDataSize() {
 		return maxDataSize;
 	}
 
 	@Override
-	public final void setMaxDataSize(final int maxDataSize) {
+	public final void setMaxDataSize(final long maxDataSize) {
 		this.maxDataSize = maxDataSize;
 	}
 
@@ -340,7 +340,7 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	 */
 	@Override
 	public String toString() {
-		int length = getDataTypeLength() ;
+		long length = getDataTypeLength() ;
 		return "(" + companyID + ") " + column + " shortname:" + shortname + " "
 				+ dataType + (length > 0 ? "(" + length + ")" : "")
 				+ (StringUtils.isNotEmpty(defaultValue) ? " default:" + defaultValue : "")
