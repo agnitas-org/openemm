@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -14,33 +14,43 @@ import	sys, argparse
 from	datetime import datetime, timedelta
 from	typing import Dict
 from	agn3.db import DB
+from	agn3.definitions import fqdn
+from	agn3.log import log
+from	agn3.emm.config import Responsibility
 from	agn3.runtime import CLI
 #
 class InProgress (CLI):
-	__slots__ = ['interactive']
+	__slots__ = ['interactive', 'verbose']
 	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
 		parser.add_argument (
 			'-i', '--interactive', action = 'store_true',
 			help = 'start in interactive mode to cleanup jobs'
 		)
+		parser.add_argument (
+			'-v', '--verbose', action = 'store_true',
+			help = 'enable verbose logging'
+		)
 
 	def use_arguments (self, args: argparse.Namespace) -> None:
 		self.interactive = args.interactive
+		self.verbose = args.verbose
+		if self.verbose:
+			log.set_verbosity (1)
 
 	def executor (self) -> bool:
 		active = 0
-		with DB () as db:
+		with DB () as db, Responsibility (db = db, log = self.verbose) as responsibility:
 			companies: Dict[int, str] = {}
 			now = datetime.now ()
 			for row in db.queryc (
-				'SELECT mdrop.status_id, mdrop.mailing_id, mdrop.genstatus, mdrop.genchange, mdrop.status_field, mt.shortname '
+				'SELECT mdrop.status_id, mdrop.company_id, mdrop.mailing_id, mdrop.genstatus, mdrop.genchange, mdrop.status_field, mdrop.processed_by, mt.shortname '
 				'FROM maildrop_status_tbl mdrop INNER JOIN mailing_tbl mt ON mt.mailing_id = mdrop.mailing_id '
 				'WHERE genchange > :limit AND (genstatus = 2 OR (genstatus = 1 AND status_field IN (\'A\', \'T\', \'W\')))',
 				{
 					'limit': datetime.fromordinal (now.toordinal () - 1)
 				}
 			):
-				if self.is_active (now, row.genstatus, row.genchange, row.status_field):
+				if (self.verbose or row.company_id in responsibility or row.processed_by == fqdn) and self.is_active (now, row.genstatus, row.genchange, row.status_field):
 					active += 1
 					rqm = db.querys (
 						'SELECT company_id, shortname '
@@ -110,7 +120,9 @@ class InProgress (CLI):
 
 	def is_active (self, now: datetime, genstatus: int, genchange: datetime, status_field: str) -> bool:
 		if genstatus == 2:
-			if status_field in ('W', 'R', 'D'):
+			if status_field in ('R', 'D'):
+				offset = timedelta (minutes = 45)
+			elif status_field == 'W':
 				offset = timedelta (hours = 2)
 			else:
 				offset = timedelta (minutes = 15)

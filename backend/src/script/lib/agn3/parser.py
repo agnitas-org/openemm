@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -16,7 +16,7 @@ from	datetime import datetime
 from	io import StringIO
 from	itertools import takewhile, zip_longest
 from	typing import Any, Callable, Iterable, Optional, Protocol, Union
-from	typing import Dict, Iterator, List, NamedTuple, Type
+from	typing import Dict, Iterator, List, NamedTuple, Tuple, Type
 from	typing import cast
 from	.exceptions import error
 from	.ignore import Ignore
@@ -151,6 +151,34 @@ convertion values can be added. Examples:
 		'G':	1024 * 1024 * 1024,		# GByte
 		'T':	1024 * 1024 * 1024 * 1024,	# TByte
 	}
+	__decode = {
+		'time': [(60, 'sec'), (60, 'min'), (24, 'hour'), (0, 'day')],
+		'size': [(1024, 'B'), (1024, 'K'), (1024, 'M'), (1024, 'G'), (1024, 'T')]
+	}
+	@classmethod
+	def decode (cls, value: int, name: str = 'time', seps: Tuple[str, str] = (' ', ' ')) -> str:
+		rc: List[Tuple[int, str]] = []
+		decoder = cls.__decode[name]
+		if value < 0:
+			sign = '-'
+			value = abs (value)
+		else:
+			sign = ''
+		if value == 0:
+			rc.append ((0, decoder[0][1]))
+		else:
+			while value > 0 and decoder:
+				(div, unit) = decoder.pop (0)
+				if div == 0:
+					current = value
+					value = 0
+				else:
+					current = value % div
+					value //= div
+				if current > 0:
+					rc.insert (0, (current, unit))
+		return Stream (rc).map (lambda vu: '{v}{s}{u}{m}'.format (v = vu[0], s = seps[0], u = vu[1], m = '' if vu[0] == 1 else 's')).join (seps[1], finisher = lambda v: f'{sign}{v}')
+
 	def __init__ (self, **kwargs: int) -> None:
 		"""Further conversion units can be passed as keywords"""
 		self.eunit = self.__eunit.copy ()

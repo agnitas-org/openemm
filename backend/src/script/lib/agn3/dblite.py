@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -10,7 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-from	typing import Optional
+from	typing import Final, Optional
 from	typing import List
 from	.db import DB, Row
 from	.dbcore import Core
@@ -20,7 +20,8 @@ __all__ = ['DBLite', 'DB', 'Row', 'Layout']
 #
 class DBLite (DB):
 	__slots__ = ['_path', '_layout', '_lock']
-	def __init__ (self, path: str, layout: Optional[List[Layout]] = None, lock: bool = False) -> None:
+	in_memory_db: Final[str] = ':memory:'
+	def __init__ (self, path: str = in_memory_db, layout: Optional[List[Layout]] = None, lock: bool = False) -> None:
 		super ().__init__ ()
 		self._path = path
 		self._layout = layout

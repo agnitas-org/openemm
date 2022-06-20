@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -17,7 +17,7 @@ from	typing import Any, Optional
 from	typing import Dict, List
 from	agn3.daemon import Daemonic, Watchdog, EWatchdog
 from	agn3.definitions import base, program, syscfg
-from	agn3.emm.companyconfig import CompanyConfig
+from	agn3.emm.config import EMMConfig
 from	agn3.exceptions import error
 from	agn3.ignore import Ignore
 from	agn3.io import expand_command
@@ -144,13 +144,13 @@ class Main (CLI):
 	
 	def apply_namespaces (self, namespaces: List[str]) -> None:
 		ns: Dict[str, str] = {}
-		with CompanyConfig () as ccfg:
+		with EMMConfig () as emmcfg:
 			for entry in namespaces:
 				with Ignore (ValueError):
 					(target, configuration) = entry.split ('=', 1)
 					(class_name, name, syscfg_key, default) = configuration.strip ().split (None, 3)
 					try:
-						value = ccfg.get_config (class_name, name)
+						value = emmcfg.get (class_name, name)
 					except KeyError:
 						value = syscfg.get (syscfg_key) if syscfg_key and syscfg_key != '-' else None
 						if value is None:

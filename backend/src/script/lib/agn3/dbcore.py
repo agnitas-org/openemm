@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -221,11 +221,10 @@ portable across different databases."""
 				return self.executor (statement, parameter)
 		except self.db.driver.Error as e:
 			self.error (e)
-			if self.db.log:
-				if parameter is None:
-					self.db.log ('{what} {statement} failed: {error}'.format (what = what, statement = statement, error = self.last_error ()))
-				else:
-					self.db.log ('{what} {statement} using {parameter!r} failed: {error}'.format (what = what, statement = statement, parameter = parameter, error = self.last_error ()))
+			if parameter is None:
+				self.db.log ('{what} {statement} failed: {error}'.format (what = what, statement = statement, error = self.last_error ()))
+			else:
+				self.db.log ('{what} {statement} using {parameter!r} failed: {error}'.format (what = what, statement = statement, parameter = parameter, error = self.last_error ()))
 			raise error ('{what} using statement {statement} {parameter!r} start failed: {error}'.format (
 				what = what.lower (),
 				statement = statement,
@@ -256,17 +255,15 @@ This method return an iterable realizied by itself."""
 				return data
 			except self.db.driver.Error as e:
 				self.error (e)
-				if self.db.log:
-					if parameter is None:
-						self.db.log ('Queryc {statement} fetch failed: {error}'.format (statement = statement, error = self.last_error ()))
-					else:
-						self.db.log ('Queryc {statement} using {parameter!r} fetch failed: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
+				if parameter is None:
+					self.db.log ('Queryc {statement} fetch failed: {error}'.format (statement = statement, error = self.last_error ()))
+				else:
+					self.db.log ('Queryc {statement} using {parameter!r} fetch failed: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
 				raise error ('query all failed: {error}'.format (error = self.last_error ()))
-		if self.db.log:
-			if parameter is None:
-				self.db.log ('Queryc {statement} failed: {error}'.format (statement = statement, error = self.last_error ()))
-			else:
-				self.db.log ('Queryc {statement} using {parameter} failed: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
+		if parameter is None:
+			self.db.log ('Queryc {statement} failed: {error}'.format (statement = statement, error = self.last_error ()))
+		else:
+			self.db.log ('Queryc {statement} using {parameter} failed: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
 		raise error ('unable to setup query: {error}'.format (error = self.last_error ()))
 
 	def querys (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Optional[Row]:
@@ -281,25 +278,22 @@ This method return an iterable realizied by itself."""
 		if self.db is not None:
 			if self.db.db is not None:
 				try:
-					if self.db.log:
-						if commit:
-							self.db.log ('Sync: commit')
-						else:
-							self.db.log ('Sync: rollback')
+					if commit:
+						self.db.log ('Sync: commit')
+					else:
+						self.db.log ('Sync: rollback')
 					self.db.sync (commit)
-					if self.db.log:
-						if commit:
-							self.db.log ('Sync done commiting')
-						else:
-							self.db.log ('Sync done rollbacking')
+					if commit:
+						self.db.log ('Sync done commiting')
+					else:
+						self.db.log ('Sync done rollbacking')
 					rc = True
 				except self.db.driver.Error as e:
 					self.error (e)
-					if self.db.log:
-						if commit:
-							self.db.log ('Sync failed commiting')
-						else:
-							self.db.log ('Sync failed rollbacking')
+					if commit:
+						self.db.log ('Sync failed commiting')
+					else:
+						self.db.log ('Sync failed rollbacking')
 			else:
 				self.db.log ('Sync failed: database not open')
 		else:
@@ -332,11 +326,10 @@ This method return an iterable realizied by itself."""
 		self.rowcount = cast (DBAPI.Cursor, self.curs).rowcount
 		if self.rowcount > 0 and (commit or self.autocommit):
 			if not self.sync ():
-				if self.db.log:
-					if parameter is None:
-						self.db.log ('Commit after execute failed for {statement}: {error}'.format (statement = statement, error = self.last_error ()))
-					else:
-						self.db.log ('Commit after execute failed for {statement} using {parameter!r}: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
+				if parameter is None:
+					self.db.log ('Commit after execute failed for {statement}: {error}'.format (statement = statement, error = self.last_error ()))
+				else:
+					self.db.log ('Commit after execute failed for {statement} using {parameter!r}: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
 				raise error ('commit failed: {error}'.format (error = self.last_error ()))
 		return self.rowcount
 	

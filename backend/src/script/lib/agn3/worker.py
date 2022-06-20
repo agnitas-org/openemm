@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -61,7 +61,7 @@ worker part, the executor.
 - executor_request_next: prepare the next object (or objects as a list, if "handle-multiple-requests" is True); must return the value to finally process
 - executor_request_handle: processes the object (or the list of objects) in a subprocess
 """
-	__slots__: List[str] = []
+	__slots__ = ['cfg', 'queue', 'backlog', 'ctrl']
 	nameCtrl = 'ctrl'
 	nameExec = 'exec'
 	

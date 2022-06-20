@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -17,7 +17,7 @@ from	dataclasses import dataclass
 import	email
 import	email.policy
 from	email.charset import QP, BASE64, add_charset
-from	email.message import Message, EmailMessage
+from	email.message import Message, EmailMessage, MIMEPart
 from	email.header import Header
 from	email.policy import EmailPolicy, compat32
 from	email.utils import parseaddr
@@ -27,7 +27,6 @@ from	typing import Dict, Generator, List, Match, NamedTuple, Pattern, Set, TextI
 from	typing import cast
 from	.db import DB
 from	.definitions import fqdn, user, program
-from	.emm.companyconfig import CompanyConfig
 from	.exceptions import error
 from	.id import IDs
 from	.ignore import Ignore
@@ -74,7 +73,12 @@ class EMail (IDs):
 	nofold_policy = EmailPolicy (refold_source = 'none')
 	@staticmethod
 	def as_string (msg: EmailMessage, unixfrom: bool) -> str:
-		method = partial (Message.as_string, msg)
+		#
+		#	workaround as EmailMessage.as_string
+		#	has currently a bug not forwarding
+		#	the "unixfrom" parameter to its
+		#	ancestor
+		method = partial ((Message if unixfrom else EmailMessage).as_string, msg)
 		try:
 			return method (unixfrom = unixfrom)
 		except Exception:
@@ -85,14 +89,14 @@ class EMail (IDs):
 
 	class Content:
 		"""Stores one part of a multipart message"""
-		__slots__ = ['content', 'charset', 'content_type', 'related']
-		def __init__ (self, content: str, charset: Optional[str], content_type: Optional[str]) -> None:
+		__slots__ = ['content', 'content_type', 'charset', 'related']
+		def __init__ (self, content: str, content_type: Optional[str], charset: Optional[str]) -> None:
 			self.content = content
-			self.charset = charset
 			self.content_type = content_type
+			self.charset = charset
 			self.related: List[EMail.Content] = []
 
-		def set_message (self, msg: EmailMessage, charset: Optional[str]) -> None:
+		def set_message (self, msg: MIMEPart, charset: Optional[str]) -> None:
 			if self.content_type is not None:
 				msg.set_type (self.content_type)
 			msg.set_payload (self.content, self.charset if self.charset is not None else charset)
@@ -100,12 +104,12 @@ class EMail (IDs):
 	class Attachment (Content):
 		"""Stores an attachemnt as part of a multipart message"""
 		__slots__ = ['raw_content', 'filename']
-		def __init__ (self, raw_content: bytes, charset: Optional[str], content_type: Optional[str], filename: Optional[str]) -> None:
-			super ().__init__ ('', charset, content_type)
+		def __init__ (self, raw_content: bytes, content_type: Optional[str], charset: Optional[str], filename: Optional[str]) -> None:
+			super ().__init__ ('', content_type, charset)
 			self.raw_content = raw_content
 			self.filename = filename
 
-		def set_message (self, msg: EmailMessage, charset: Optional[str]) -> None:
+		def set_message (self, msg: MIMEPart, charset: Optional[str]) -> None:
 			content_type = self.content_type if self.content_type is not None else 'application/octet-stream'
 			if self.filename:
 				content_type += f'; name="{self.filename}"'
@@ -187,9 +191,9 @@ class EMail (IDs):
 		"""Clears all definied header"""
 		self.headers.clear ()
 	
-	def add_content (self, content: str, charset: Optional[str], content_type: str) -> EMail.Content:
+	def add_content (self, content: str, content_type: str, charset: Optional[str] = None) -> EMail.Content:
 		"""Add ``content'' (str), store it using ``charset'' and mark it of type ``content_type''"""
-		rc = self.Content (content, charset, content_type)
+		rc = self.Content (content, content_type, charset)
 		self.content.append (rc)
 		return rc
 	
@@ -199,11 +203,11 @@ class EMail (IDs):
 		
 	def set_text (self, text: str, charset: Optional[str] = None) -> EMail.Content:
 		"""Add a plain ``text'' variant for the mail using ``charset''"""
-		return self.add_content (text, charset, 'text/plain')
+		return self.add_content (text, 'text/plain', charset)
 	
 	def set_html (self, html: str, charset: Optional[str] = None) -> EMail.Content:
 		"""Add a ``html'' variant for the mail using ``charset''"""
-		return self.add_content (html, charset, 'text/html')
+		return self.add_content (html, 'text/html', charset)
 
 	def set_charset (self, charset: str) -> None:
 		"""Set global ``charset'' to be used for this mail"""
@@ -218,8 +222,8 @@ class EMail (IDs):
 			
 	def add_text_attachment (self,
 		content: str,
-		charset: Optional[str] = None,
 		content_type: Optional[str] = None,
+		charset: Optional[str] = None,
 		filename: Optional[str] = None,
 		related: Optional[EMail.Content] = None
 	) -> EMail.Attachment:
@@ -227,7 +231,7 @@ class EMail (IDs):
 		if charset is None:
 			charset = 'UTF-8'
 		content_type = self.__content_type (content_type, filename, 'text/plain')
-		at = self.Attachment (content.encode (charset), charset, content_type, filename)
+		at = self.Attachment (content.encode (charset), content_type, charset, filename)
 		if related is not None:
 			related.related.append (at)
 		else:
@@ -242,7 +246,7 @@ class EMail (IDs):
 	) -> EMail.Attachment:
 		"""Add a binary attachment"""
 		content_type = self.__content_type (content_type, filename, 'application/octet-stream')
-		at = self.Attachment (raw_content, None, content_type, filename)
+		at = self.Attachment (raw_content, content_type, None, filename)
 		if related is not None:
 			related.related.append (at)
 		else:
@@ -397,7 +401,7 @@ content. These are the ``sender'', a list of ``receivers'', the
 ``text'' part of the mail, the iterable ``data'' which is used as the
 source for the csv content, the ``filename'' of the csv attachment,
 the ``charset'' of the csv content and the csv ``dialect'' to be used."""
-	__slots__ = ['status']
+	__slots__ = ['data', 'status']
 	def __init__ (self,
 		sender: Optional[str],
 		receivers: List[str],
@@ -423,7 +427,7 @@ the ``charset'' of the csv content and the csv ``dialect'' to be used."""
 		excel = csv.writer (self, dialect = dialect)
 		for row in data:
 			excel.writerow (row)
-		mail.add_text_attachment (self.data, charset, content_type = 'text/csv', filename = filename)
+		mail.add_text_attachment (self.data, content_type = 'text/csv', charset = charset, filename = filename)
 		self.status = mail.send_mail ()
 			
 	def write (self, s: str, n: Optional[int] = None) -> int:
@@ -582,7 +586,7 @@ class ParseMessageID:
 		timestamp: Optional[datetime]
 		licence_id: int
 		domain: str
-	pattern_generic = '<(V[^-]*-)?(([a-z]{2})?[0-9]{14}_([0-9]+)(\\.[0-9a-z_-]+){6,7})@([^>]+)>'
+	pattern_generic = '<(V[^-]*-)?(([a-z]{2})?[0-9]{14}_([0-9]+)(\\.[0-9a-z_-]+){6,8})@([^>]+)>'
 	pattern_match = re.compile (f'^{pattern_generic}$', re.IGNORECASE)
 	pattern_search = re.compile (pattern_generic, re.IGNORECASE)
 	@classmethod
@@ -853,10 +857,6 @@ blacklists."""
 					self.blacklists = {0: self.__read_blacklist (mydb, 0)}
 				if company_id is not None and company_id not in self.blacklists:
 					self.blacklists[company_id] = self.__read_blacklist (mydb, company_id)
-				ccfg = CompanyConfig (mydb)
-				ccfg.read ()
-				if company_id is not None:
-					ccfg.set_company_id (company_id)
 			finally:
 				if db is None:
 					mydb.done ()

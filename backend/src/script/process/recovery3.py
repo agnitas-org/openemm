@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -19,7 +19,7 @@ from	typing import Dict, List, NamedTuple, Pattern, Set
 from	agn3.db import DB
 from	agn3.definitions import base, fqdn, user
 from	agn3.email import EMail
-from	agn3.emm.companyconfig import CompanyConfig
+from	agn3.emm.config import EMMConfig, Responsibility
 from	agn3.exceptions import error
 from	agn3.ignore import Ignore
 from	agn3.io import copen
@@ -138,6 +138,7 @@ class Recovery (CLI): #{{{
 
 	def prepare (self) -> None:
 		self.db = DB ()
+		self.responsibilities = Responsibility (db = self.db)
 		self.mailings: List[Mailing] = []
 		self.mailing_info: Dict[int, Recovery.MailingInfo] = {}
 		self.report: List[str] = []
@@ -203,7 +204,7 @@ class Recovery (CLI): #{{{
 		expire = now - timedelta (days = self.max_age)
 		yesterday = now - timedelta (days = 1)
 		query = (
-			'SELECT status_id, mailing_id '
+			'SELECT status_id, mailing_id, company_id, processed_by '
 			'FROM maildrop_status_tbl '
 			'WHERE genstatus = 2 AND status_field = \'R\' AND genchange > :expire AND genchange < CURRENT_TIMESTAMP'
 		)
@@ -216,27 +217,36 @@ class Recovery (CLI): #{{{
 			'SET genstatus = 1, genchange = CURRENT_TIMESTAMP '
 			'WHERE status_id = :sid'
 		)
-		for (status_id, mailing_id) in self.db.queryc (query, {'expire': expire}):
-			if (self.restrict_to_mailings is None or mailing_id in self.restrict_to_mailings) and self.__mailing_valid (mailing_id):
-				count = self.db.querys (check_query, {'mid': mailing_id})
-				if count is not None and count[0] == 1:
-					logger.info ('Reactivate rule based mailing %d: %s' % (mailing_id, self.__mailing_name (mailing_id)))
-					if not self.dryrun:
-						self.db.update (update, {'sid': status_id})
-					self.report.append ('%s [%d]: Reactivate rule based mailing' % (self.__mailing_name (mailing_id), mailing_id))
-				else:
-					logger.warning ('Rule based mailing %d (%s) not reactivated as it had not been sent out yesterday' % (mailing_id, self.__mailing_name (mailing_id)))
-					self.report.append ('%s [%d]: Not reactivating rule based mailing as it had not been sent out yesterday' % (self.__mailing_name (mailing_id), mailing_id))
+		for row in (self.db.streamc (query, {'expire': expire})
+			.filter (lambda r: r.company_id in self.responsibilities and (not r.processed_by or r.processed_by == fqdn))
+			.filter (lambda r: self.restrict_to_mailings is None or r.mailing_id in self.restrict_to_mailings)
+			.filter (lambda r: self.__mailing_valid (r.mailing_id))
+		):
+			count = self.db.querys (check_query, {'mid': row.mailing_id})
+			if count is not None and count[0] == 1:
+				logger.info ('Reactivate rule based mailing %d: %s' % (row.mailing_id, self.__mailing_name (row.mailing_id)))
+				if not self.dryrun:
+					self.db.update (update, {'sid': row.status_id})
+				self.report.append ('%s [%d]: Reactivate rule based mailing' % (self.__mailing_name (row.mailing_id), row.mailing_id))
+			else:
+				logger.warning ('Rule based mailing %d (%s) not reactivated as it had not been sent out yesterday' % (row.mailing_id, self.__mailing_name (row.mailing_id)))
+				self.report.append ('%s [%d]: Not reactivating rule based mailing as it had not been sent out yesterday' % (self.__mailing_name (row.mailing_id), row.mailing_id))
 		if not self.dryrun:
 			self.db.sync ()
-		query = ('SELECT status_id, mailing_id, company_id, status_field, senddate '
-			 'FROM maildrop_status_tbl '
-			 'WHERE genstatus IN (1, 2) AND genchange > :expire AND genchange < CURRENT_TIMESTAMP AND status_field = \'W\'')
-		for (status_id, mailing_id, company_id, status_field, senddate) in self.db.queryc (query, {'expire': expire}):
-			if (self.restrict_to_mailings is None or mailing_id in self.restrict_to_mailings) and self.__mailing_valid (mailing_id):
-				check = self.__make_range (senddate, now)
-				self.mailings.append (Mailing (status_id, status_field, mailing_id, company_id, check))
-				logger.info ('Mark mailing %d (%s) for recovery' % (mailing_id, self.__mailing_name (mailing_id)))
+		#
+		query = (
+			'SELECT status_id, mailing_id, company_id, status_field, senddate, processed_by '
+			'FROM maildrop_status_tbl '
+			'WHERE genstatus IN (1, 2) AND genchange > :expire AND genchange < CURRENT_TIMESTAMP AND status_field = \'W\''
+		)
+		for row in (self.db.streamc (query, {'expire': expire})
+			.filter (lambda r: r.company_id in self.responsibilities and (not r.processed_by or r.processed_by == fqdn))
+			.filter (lambda r: self.restrict_to_mailings is None or r.mailing_id in self.restrict_to_mailings)
+			.filter (lambda r: self.__mailing_valid (r.mailing_id))
+		):
+			check = self.__make_range (row.senddate, now)
+			self.mailings.append (Mailing (row.status_id, row.status_field, row.mailing_id, row.company_id, check))
+			logger.info ('Mark mailing %d (%s) for recovery' % (row.mailing_id, self.__mailing_name (row.mailing_id)))
 		self.mailings.sort (key = lambda m: m.status_id)
 		logger.info ('Found %d mailing(s) to recover' % len (self.mailings))
 	#}}}
@@ -351,22 +361,25 @@ class Recovery (CLI): #{{{
 			genchange: datetime
 			senddate: datetime
 		mails = []
-		query = 'SELECT status_id, mailing_id, genstatus, genchange, status_field, senddate FROM maildrop_status_tbl WHERE '
-		query += 'genstatus IN (1, 2) AND status_field IN (\'W\', \'R\', \'D\')'
-		for (status_id, mailing_id, genstatus, genchange, status_field, senddate) in self.db.queryc (query):
-			if status_field in ('R', 'D') and genstatus == 1:
-				continue
-			info = self.__mail (mailing_id)
+		for row in (self.db.streamc (
+				'SELECT status_id, mailing_id, company_id, genstatus, genchange, status_field, senddate, processed_by '
+				'FROM maildrop_status_tbl '
+				'WHERE genstatus IN (1, 2) AND status_field IN (\'W\', \'R\', \'D\')'
+			)
+			.filter (lambda r: r.company_id in self.responsibilities and (not r.processed_by or r.processed_by == fqdn))
+			.filter (lambda r: bool (r.status_field == 'W' or r.genstatus == 2))
+		):
+			info = self.__mail (row.mailing_id)
 			mails.append (
 				MailInfo (
-					status_id = status_id,
-					status_field = status_field,
-					mailing_id = mailing_id,
+					status_id = row.status_id,
+					status_field = row.status_field,
+					mailing_id = row.mailing_id,
 					mailing_name = info.name,
 					company_id = info.company_id,
 					deleted = info.deleted,
-					genchange = genchange,
-					senddate = senddate
+					genchange = row.genchange,
+					senddate = row.senddate
 				)
 			)
 		if self.report or mails:
@@ -391,9 +404,9 @@ class Recovery (CLI): #{{{
 						subject = 'Recovery report for %s' % ns['host']
 					else:
 						subject = Template (subject).fill (ns)
-					with CompanyConfig (db = self.db) as ccfg:
-						sender = ccfg.get_config ('recover-report', 'sender', tmpl.property ('sender', f'{user}@{fqdn}'))
-						receiver = ccfg.get_config ('recover-report', 'receiver', tmpl.property ('receiver'))
+					with EMMConfig (db = self.db, class_names = ['recover-report']) as emmcfg:
+						sender = emmcfg.get ('recover-report', 'sender', tmpl.property ('sender', f'{user}@{fqdn}'))
+						receiver = emmcfg.get ('recover-report', 'receiver', tmpl.property ('receiver'))
 					if receiver:
 						receiver = Template (receiver).fill (ns)
 						if self.dryrun:

@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -37,7 +37,7 @@ class DB:
 	"""Higher level database abstraction class
 
 This class is used to wrap a database driver and its connections to
-one class which provides some convinient methods for dtabase
+one class which provides some convenient methods for dtabase
 handling."""
 	__slots__ = [
 		'dbid', 'db', 'cursor',
@@ -273,7 +273,7 @@ queryc() and a querys() method is also available using the cache."""
 		cleanup: bool = False,
 		sync_and_retry: bool = False
 	) -> int:
-		"""Update database content, a convinient method to complete the minimal cursor interface"""
+		"""Update database content, a convenient method to complete the minimal cursor interface"""
 		return self.check_open_cursor ().update (statement, parameter, commit, cleanup, sync_and_retry)
 	
 	def execute (self, statement: str) -> int:
@@ -410,25 +410,28 @@ queryc() and a querys() method is also available using the cache."""
 		indexes: Optional[List[str]] = None,
 		select: Optional[str] = None,
 		tablespace: Optional[str] = None,
+		unique: Optional[str] = None,
 		reuse: bool = False
 	) -> Optional[str]:
 		"""Request (and create) a scratch table for temporary data
 
 ``name'' will become part of the table name of the scratch table, so
 keep it short. ``layout'' is the layout of the table as one string
-where the columns are comma separated. ``indexes'' can be None or
-a list of strings with columns to create as index on the scratch
-table, ``select'' is a select statement to fill the scratch table.
+where the columns are comma separated. ``indexes'' can be None or a
+list of strings with columns to create as index on the scratch table,
+``select'' is a select statement to fill the scratch table.
 ``tablespace'' is the the tablespace where the table should be created
-in (Oracle ony) and if ``reuse'' is True, then an existing table is
-reused by this process, otherwise it will scan for a non existing
-one."""
+in (Oracle ony), ``unique'' a host unique ID to avoid clashes in an
+active/active enviroment and if ``reuse'' is True, then an existing
+table is reused by this process, otherwise it will scan for a non
+existing one."""
 		if name is None:
 			name = program
 		cursor = self.check_open_cursor ()
 		while True:
 			self._scratch_number += 1
-			table = f'TMP_SCRATCH_{name}_{self._scratch_number}_TBL'
+			scratch_unique = str (self._scratch_number) if unique is None else f'{unique}{self._scratch_number}'
+			table = f'TMP_SCRATCH_{name}_{scratch_unique}_TBL'
 			exists = self.exists (table)
 			if exists and reuse:
 				cursor.execute (f'TRUNCATE TABLE {table}')
@@ -445,15 +448,21 @@ one."""
 							query += f' TABLESPACE {tablespace}'
 					if select:
 						query += f' AS SELECT {select}'
-					cursor.execute (query)
-					if indexes is not None:
-						for (index_number, index) in enumerate (indexes, start = 1):
-							iname = 'TS${name}${self._scratch_number}${index_number}$IDX'
-							query = f'CREATE INDEX {iname} ON {table} ({index})'
-							if self.dbms == 'oracle' and tablespace:
-								query += f' TABLESPACE {tablespace}'
-							cursor.execute (query)
-					self.setup_table_optimizer (table)
+					try:
+						cursor.execute (query)
+					except error as e:
+						if not self.exists (table):
+							raise
+						logger.debug (f'{table}: try create already existing table, ignored error condition {e}')
+					else:
+						if indexes is not None:
+							for (index_number, index) in enumerate (indexes, start = 1):
+								iname = 'TS${name}${scratch_unique}${index_number}$IDX'
+								query = f'CREATE INDEX {iname} ON {table} ({index})'
+								if self.dbms == 'oracle' and tablespace:
+									query += f' TABLESPACE {tablespace}'
+								cursor.execute (query)
+						self.setup_table_optimizer (table)
 				self._scratch_tables.append (table)
 				break
 		return table

@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -271,18 +271,20 @@ class Processtitle:
 				self._set (self._current)
 	
 	class ProcesstitleContext:
-		__slots__ = ['ref', 'title']
+		__slots__ = ['ref', 'title', 'log_id']
 		def __init__ (self, ref: Processtitle, title: str) -> None:
 			self.ref = ref
 			self.title = title
+			self.log_id = log (title)
 			
 		def __enter__ (self) -> Processtitle.ProcesstitleContext:
+			self.log_id.__enter__ ()
 			self.ref.push (self.title)
 			return self
 
 		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
 			self.ref.pop ()
-			return None
+			return self.log_id.__exit__ (exc_type, exc_value, traceback)
 	
 	def title (self, title: str) -> Processtitle.ProcesstitleContext:
 		return Processtitle.ProcesstitleContext (self, title)

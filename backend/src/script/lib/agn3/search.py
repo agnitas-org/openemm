@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -17,6 +17,7 @@ from	typing import Any, Callable, Final, Optional
 from	typing import Dict, List, Pattern, Type
 from	.ignore import Ignore
 from	.parser import ParseTimestamp
+from	.tools import atob
 #
 __all__ = ['Search']
 #
@@ -37,7 +38,11 @@ class OP:
 			return False
 		if type (self.source) is not str:
 			try:
-				return bool (getattr (self.source, method) (type (self.source) (self.value)))
+				if isinstance (self.source, bool):
+					converter = atob
+				else:
+					converter = type (self.source)
+				return bool (getattr (self.source, method) (converter (self.value)))
 			except Exception:
 				with Ignore ():
 					result = getattr (self.source, method) (self.internal_conversion[type (self.source)] (self.value))
@@ -183,5 +188,5 @@ fields.
 		self.ns[op] = OP
 		self.code = compile (' '.join (statement), expression, 'eval')
 	
-	def __call__ (self, source: Dict[str, str]) -> bool:
+	def __call__ (self, source: Dict[str, Any]) -> bool:
 		return bool (eval (self.code, self.ns, {'source': source}))

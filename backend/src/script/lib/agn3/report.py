@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -10,8 +10,9 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, logging
-import	html.parser, zipfile, mimetypes
+import	os, logging, re
+import	zipfile, mimetypes
+import	html.parser, html.entities
 from	typing import Any, Optional
 from	typing import Dict, List, NamedTuple, Set, Tuple
 from	typing import cast
@@ -35,7 +36,7 @@ class Report:
 	class ImageFinder (html.parser.HTMLParser):
 		__slots__ = ['images']
 		def __init__ (self, *args: Any, **kwargs: Any) -> None:
-			super ().__init__ ()
+			super ().__init__ (*args, **kwargs)
 			self.images: Set[str] = set ()
 	
 		def handle_starttag (self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
@@ -43,11 +44,69 @@ class Report:
 				for (name, value) in attrs:
 					if name == 'src' and value is not None:
 						self.images.add (value)
+	
+	class HTMLConverter (html.parser.HTMLParser):
+		__slots__ = ['output', 'inscript']
+		def __init__ (self, *args: Any, **kwargs: Any) -> None:
+			super ().__init__ (*args, **kwargs)
+			self.output: List[str] = []
+			self.inscript = False
+		
+		compact_pattern = re.compile ('([ \t]*\n){2,}', re.MULTILINE)
+		remove_trailing_spaces = re.compile ('[ \t]+$')
+		def convert (self, html: str) -> str:
+			self.output.clear ()
+			self.inscript = False
+			self.reset ()
+			self.feed (html)
+			self.close ()
+			return self.remove_trailing_spaces.sub ('', self.compact_pattern.sub ('\n\n', ''.join (self.output)))
 
-	def __init__ (self, name: Optional[str] = None) -> None:
+		def handle_starttag (self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
+			if tag == 'script':
+				self.inscript = True
+			elif tag == 'p':
+				self.output.append ('\n\n')
+			elif tag == 'br':
+				self.output.append ('\n')
+			
+		def handle_endtag (self, tag: str) -> None:
+			if tag == 'script':
+				self.inscript = False
+		
+		def handle_data (self, data: str) -> None:
+			if not self.inscript:
+				self.output.append (data)
+
+		def handle_entityref (self, name: str) -> None:
+			try:
+				cp = html.entities.name2codepoint[name]
+				self.output.append (f'{cp:c}')
+			except KeyError:
+				self.output.append ('?')
+	
+		def handle_charref (self, name: str) -> None:
+			if name.startswith ('x'):
+				cp = int (name[1:], 16)
+			else:
+				cp = int (name)
+			self.output.append (f'{cp:c}')
+
+	language_splitter = re.compile ('^>[a-z]{2}$', re.MULTILINE | re.IGNORECASE)
+	def __init__ (self, name: Optional[str] = None, language: Optional[str] = None) -> None:
 		self.name = name if name is not None else program
 		with open (os.path.join (base, 'scripts', f'{self.name}.tmpl')) as fd:
-			self.template = Template (fd.read ())
+			content = fd.read ()
+		current_position = 0
+		current_language: Optional[str] = None
+		sources: Dict[Optional[str], str] = {}
+		for match in self.language_splitter.finditer (content):
+			(start, end) = match.span ()
+			sources[current_language] = content[current_position:start].strip ()
+			current_language = match.group ()[1:].lower ()
+			current_position = end + 1
+		sources[current_language] = content[current_position:].strip ()
+		self.template = Template (sources.get (language.lower () if isinstance (language, str) else language, sources[None]))
 		self.template.compile ()
 		self.images: Dict[str, Report.Image] = {}
 		with Ignore (IOError), zipfile.ZipFile (os.path.join (base, 'scripts', f'{self.name}.zip'), 'r') as zip:
@@ -85,7 +144,9 @@ class Report:
 		bodies: Dict[str, str] = {}
 		for mode in 'text', 'html':
 			ns['_mode'] = mode
-			bodies[mode] = self.template.fill (ns)
+			bodies[mode] = self.template.fill (ns).strip ()
+		if not bodies['text'] and bodies['html']:
+			bodies['text'] = Report.HTMLConverter ().convert (bodies['html'])
 		#
 		mail = EMail ()
 		mail.set_charset ('UTF-8')
@@ -111,8 +172,11 @@ class Report:
 			ifinder.close ()
 			for iname in ifinder.images:
 				try:
-					image = self.images[iname]
-					mail.add_binary_attachment (image.content, content_type = image.mime, filename = image.name, related = content)
+					try:
+						image = self.images[iname]
+					except KeyError:
+						image = self.images[iname.split ('/')[-1]]
+					mail.add_binary_attachment (image.content, content_type = image.mime, filename = iname, related = content)
 					logger.debug (f'Image {iname} added')
 				except KeyError:
 					logger.warning (f'Failed to find used image {iname}')

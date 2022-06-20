@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -24,14 +24,14 @@ reads and stores configuration from a configuration file"""
 	def __init__ (self, path: Optional[str] = None) -> None:
 		self.path = path if path is not None else self.default_config_path
 		self.data: Dict[str, DBConfig.DBRecord] = {}
-		self.read ()
 		dbid = syscfg.get ('dbid')
 		if dbid is not None:
 			self.default_id = dbid
-		elif len (self.data) == 1:
-			self.default_id = list (self.data.keys ())[0]
 		else:
 			self.default_id = 'emm'
+		self.read ()
+		if len (self.data) == 1:
+			self.default_id = list (self.data.keys ())[0]
 
 	class DBRecord:
 		"""A Record for one database configuration line"""

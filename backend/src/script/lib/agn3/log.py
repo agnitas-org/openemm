@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -11,13 +11,13 @@
 #
 from	__future__ import annotations
 import	sys, os, time, stat
-import	logging
+import	logging, threading
 from	dataclasses import dataclass
 from	datetime import datetime, timedelta
 from	traceback import format_exception
 from	types import TracebackType
 from	typing import Any, Callable, Optional, Union
-from	typing import Dict, Generator, List, Set, TextIO, Type
+from	typing import Dict, Generator, List, Set, TextIO, Tuple, Type
 from	.definitions import base, host, program
 from	.exceptions import error
 from	.ignore import Ignore
@@ -27,25 +27,28 @@ from	.parser import Unit
 __all__ = ['LogID', 'log', 'mark', 'log_limit', 'interactive']
 #
 class Limiter:
-	__slots__ = ['seen']
+	__slots__ = ['seen', 'lock']
 	unit = Unit ()
 	def __init__ (self) -> None:
-		self.seen: Dict[str, datetime] = {}
+		self.seen: Dict[str, Tuple[str, datetime]] = {}
+		self.lock = threading.Lock ()
 	
-	def __call__ (self, method: Callable[[str], None], message: str, *, key: Optional[str] = None, duration: Unit.Parsable = None) -> None:
-		now = datetime.now ()
-		with Ignore (KeyError):
-			expire = self.seen[key if key is not None else message]
-			if expire > now:
-				return
-		#
-		method (message)
-		if duration is None:
-			expire = datetime.fromordinal (now.toordinal () + 1)
-		else:
-			expire = now + timedelta (seconds = self.unit.parse (duration))
-		self.seen[key if key is not None else message] = expire
-		
+	def __call__ (self, method: Callable[[str], None], message: str, *, key: Optional[str] = None, duration: Unit.Parsable = None, limit_identical: bool = False) -> None:
+		with self.lock:
+			now = datetime.now ()
+			seen_key = key if key is not None else message
+			with Ignore (KeyError):
+				(previous, expire) = self.seen[seen_key]
+				if expire > now and (not limit_identical or previous == message):
+					return
+			#
+			method (message)
+			if duration is None:
+				expire = datetime.fromordinal (now.toordinal () + 1)
+			else:
+				expire = now + timedelta (seconds = self.unit.parse (duration))
+			self.seen[seen_key] = (message, expire)
+
 log_limit = Limiter ()
 #
 class LogID:
@@ -90,7 +93,7 @@ class LogID:
 			self.set_id ()
 		
 class _Log:
-	__slots__ = ['loglevel', 'outlevel', 'outstream', 'verbosity', 'host', 'name', 'path', 'intercept', 'last', 'custom_id']
+	__slots__ = ['loglevel', 'outlevel', 'outstream', 'verbosity', 'host', 'name', 'path', 'intercept', 'last', 'custom_ids', 'lock']
 	log_directories_seen: Set[str] = set ()
 	def __init__ (self) -> None:
 		self.loglevel = logging.INFO
@@ -103,7 +106,8 @@ class _Log:
 		self.intercept: Optional[Callable[[logging.LogRecord, str], None]] = None
 		#
 		self.last = 0
-		self.custom_id: Optional[str] = None
+		self.custom_ids: Dict[int, Optional[str]] = {}
+		self.lock = threading.RLock ()
 	
 	def __call__ (self, new_id: str) -> LogID:
 		return LogID (self, new_id)
@@ -117,6 +121,16 @@ class _Log:
 		else:
 			dt = ts
 		return os.path.join (self.path, f'{dt.year:04d}{dt.month:02d}{dt.day:02d}-{name}.log')
+	
+	def _get_custom_id (self) -> Optional[str]:
+		return self.custom_ids.get (threading.get_ident ())
+	def _set_custom_id (self, custom_id: Optional[str]) -> None:
+		self.custom_ids[threading.get_ident ()] = custom_id
+	def _del_custom_id (self) -> None:
+		with Ignore (KeyError):
+			del self.custom_ids[threading.get_ident ()]
+	custom_id = property (_get_custom_id, _set_custom_id, _del_custom_id)
+		
 
 	def set_loglevel (self, loglevel: str) -> None:
 		loglevel = loglevel.lower ()
@@ -136,6 +150,17 @@ class _Log:
 				log.loglevel = int (loglevel)
 			except ValueError:
 				raise error (f'{loglevel}: unknown logging level')
+	
+	def set_verbosity (self, verbosity: int) -> None:
+		if verbosity < 0:
+			self.loglevel = logging.ERROR
+		elif verbosity == 0:
+			self.loglevel = logging.INFO
+		else:
+			self.loglevel = logging.DEBUG
+			self.outlevel = logging.DEBUG
+			self.outstream = sys.stderr
+			self.verbosity = verbosity
 
 	def filename (self, name: Optional[str] = None, epoch: Union[None, int, float] = None, ts: Optional[datetime] = None) -> str:
 		"""Build a logfile in the defined conventions
@@ -166,39 +191,40 @@ s may either be a string or a list or tuple containing strings. If it
 is neither then it tries to write a string representation of the
 passed object."""
 		fname = self.filename ()
-		try:
-			with open (fname, 'a') as fd:
-				if isinstance (s, str):
-					fd.write (s)
-				elif isinstance (s, list) or isinstance (s, tuple):
-					for l in s:
-						fd.write (l)
-				else:
-					fd.write (str (s) + '\n')
-				fd.close ()
-				self.last = int (time.time ())
-		except Exception as e:
-			directory = os.path.dirname (fname)
-			if directory in self.log_directories_seen:
-				sys.stderr.write ('LOGFILE write failed[{typ!r}, {e}, {fname}]: {s!r}\n'.format (
-					typ = type (e),
-					e = e,
-					fname = fname,
-					s = s
-				))
-			else:
-				self.log_directories_seen.add (directory)
-				with Ignore (OSError):
-					st = os.stat (directory)
-					if stat.S_ISDIR (st.st_mode):
-						sys.stderr.write (f'{fname}: failed to write to logfile or log directory {directory}: {e}\n')
+		with self.lock:
+			try:
+				with open (fname, 'a') as fd:
+					if isinstance (s, str):
+						fd.write (s)
+					elif isinstance (s, list) or isinstance (s, tuple):
+						for l in s:
+							fd.write (l)
 					else:
-						sys.stderr.write (f'{directory}: expected a directory, access failed due to {e}\n')
-				try:
-					create_path (directory)
-					self.append (s)
-				except error as e:
-					sys.stderr.write (f'{directory}: failed to create missing log directory: {e}\n')
+						fd.write (str (s) + '\n')
+					fd.close ()
+					self.last = int (time.time ())
+			except Exception as e:
+				directory = os.path.dirname (fname)
+				if directory in self.log_directories_seen:
+					sys.stderr.write ('LOGFILE write failed[{typ!r}, {e}, {fname}]: {s!r}\n'.format (
+						typ = type (e),
+						e = e,
+						fname = fname,
+						s = s
+					))
+				else:
+					self.log_directories_seen.add (directory)
+					with Ignore (OSError):
+						st = os.stat (directory)
+						if stat.S_ISDIR (st.st_mode):
+							sys.stderr.write (f'{fname}: failed to write to logfile or log directory {directory}: {e}\n')
+						else:
+							sys.stderr.write (f'{directory}: expected a directory, access failed due to {e}\n')
+					try:
+						create_path (directory)
+						self.append (s)
+					except error as e:
+						sys.stderr.write (f'{directory}: failed to create missing log directory: {e}\n')
 
 	def add (self, record: logging.LogRecord) -> None:
 		"""add an entry to the logfile
@@ -302,7 +328,7 @@ def log_filter (predicate: Callable[[logging.LogRecord], bool]) -> None:
 			return predicate (record)
 	_rootHandler.addFilter (Filter ())
 
-def _except (type_: Type[BaseException], value: BaseException, traceback: TracebackType) -> None:
+def _except (type_: Type[BaseException], value: BaseException, traceback: Optional[TracebackType]) -> None:
 	logging.critical (f'CAUGHT EXCEPTION: {value}', exc_info = value)
 	
 _original_excepthook = sys.excepthook

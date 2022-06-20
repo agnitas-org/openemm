@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -56,17 +56,18 @@ used MTA."""
 		"""return path to ``cmd'' for a typical postifx installation"""
 		return which (cmd, '/usr/sbin', '/sbin', '/etc')
 	
-	def postfix_make (self, filename: str) -> None:
+	def postfix_make (self, hash: Optional[str], filename: str) -> None:
 		"""creates a postfix hash file for ``filename''"""
 		cmd = self.postfix_command ('postmap')
+		filespec = f'{hash}:{filename}' if hash else filename
 		if cmd is not None:
-			n = call ([cmd, filename])
+			n = call ([cmd, filespec])
 			if n == 0:
-				logger.info (f'{filename} written using {cmd}')
+				logger.info (f'{filespec} written using {cmd}')
 			else:
-				logger.error (f'{filename} not written using {cmd}: {n}')
+				logger.error (f'{filespec} not written using {cmd}: {n}')
 		else:
-			logger.error (f'{filename} not written due to missing postmap command')
+			logger.error (f'{filespec} not written due to missing postmap command')
 
 	def __getitem__ (self, key: str) -> str:
 		return self.conf[key]

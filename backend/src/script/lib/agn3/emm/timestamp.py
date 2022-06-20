@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -26,23 +26,35 @@ class Timestamp:
 for incremental processes it is important to keep track of last
 timestamp it ran. To keep track of this timestamp this class manages
 the persistance and offers some handy methods."""
-	__slots__ = ['name', 'initial_timestamp', 'description', 'db', 'mydb', 'parm', 'lowmark', 'highmark', 'parse_timestamp']
+	__slots__ = [
+		'name', 'initial_timestamp', 'initial_timestamp_from',
+		'description', 'db', 'mydb', 'parm',
+		'lowmark', 'highmark'
+	]
 	class Interval (NamedTuple):
 		start: datetime
 		end: datetime
 	class Cascade (NamedTuple):
 		clause: str
 		cascade: List[Dict[str, Any]]
-	def __init__ (self, name: str, initial_timestamp: Any = None, description: Optional[str] = None) -> None:
+		
+	parse_timestamp = ParseTimestamp ()
+	def __init__ (self,
+		name: str,
+		*,
+		initial_timestamp: Any = None,
+		initial_timestamp_from: Optional[str] = None,
+		description: Optional[str] = None
+	) -> None:
 		self.name = name
 		self.initial_timestamp = initial_timestamp
+		self.initial_timestamp_from = initial_timestamp_from
 		self.description = description
 		self.db: Optional[DB] = None
 		self.mydb = False
 		self.parm: Dict[str, Any] = {'name': self.name}
 		self.lowmark: Optional[datetime] = None
 		self.highmark: Optional[datetime] = None
-		self.parse_timestamp = ParseTimestamp ()
 
 	def __cleanup (self) -> None:
 		if self.mydb and self.db:
@@ -66,7 +78,20 @@ the persistance and offers some handy methods."""
 				tid = rc[0]
 			else:
 				tid = 1
-			ts = self.parse_timestamp (self.initial_timestamp)
+			ts = None
+			if self.initial_timestamp_from is not None:
+				rq = self.db.querys (
+					'SELECT cur '
+					'FROM timestamp_tbl '
+					'WHERE name = :name',
+					{
+						'name': self.initial_timestamp_from
+					}
+				)
+				if rq is not None:
+					ts = rq.cur
+			if ts is None:
+				ts = self.parse_timestamp (self.initial_timestamp)
 			if ts is None:
 				ts = datetime (1980, 1, 1)
 			if self.db.update ('INSERT INTO timestamp_tbl (timestamp_id, name, description, cur) VALUES (:tid, :name, :descr, :ts)', {'tid': tid, 'name': self.name, 'descr': self.description, 'ts': ts}) != 1:

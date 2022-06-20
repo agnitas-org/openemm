@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -20,7 +20,7 @@ from	types import TracebackType
 from	typing import Any, Callable, Iterable, Literal, Optional, Union
 from	typing import Dict, IO, Iterator, List, Pattern, Set, TextIO, Tuple, Type
 from	typing import cast, overload
-from	.definitions import base, system
+from	.definitions import base
 from	.exceptions import error
 from	.ignore import Ignore
 from	.parser import Line, Field
@@ -47,6 +47,7 @@ _ReadModes = Union[_ReadText, _ReadBinary]
 _WriteText = Union[Literal['w'], Literal['a'], Literal['x'], Literal['wt'], Literal['at'], Literal['xt']]
 _WriteBinary = Union[Literal['wb'], Literal['ab'], Literal['xb']]
 _modes = Union[_ReadText, _ReadBinary, _WriteText, _WriteBinary]
+_bz2modes = Union[Literal[''], Literal['r'], Literal['rb'], Literal['w'], Literal['wb'], Literal['x'], Literal['xb'], Literal['a'], Literal['ab']]
 #
 def relink (source: str, target: str, pattern: Optional[List[Pattern[str]]] = None) -> None:
 	"""Updateds symbolic links in target from source, optional only these files matching pattern"""
@@ -90,7 +91,11 @@ def relink (source: str, target: str, pattern: Optional[List[Pattern[str]]] = No
 		.each (lambda p: os.unlink (p))
 	)
 
-def which (program: str, *args: str) -> Optional[str]:
+@overload
+def which (program: str, *args: str, default: None = ...) -> Optional[str]: ...
+@overload
+def which (program: str, *args: str, default: str) -> str: ...
+def which (program: str, *args: str, default: Optional[str] = None) -> Optional[str]:
 	"""Finds the path to an executable
 
 ``args'' may contain more directories to search for if the programn
@@ -100,7 +105,7 @@ can be expected in a known directory which is not part of $PATH.
 		.distinct ()
 		.map (lambda p: os.path.join (p if p else os.path.curdir, program))
 		.filter (lambda p: os.access (p, os.X_OK))
-		.first (no = None)
+		.first (no = default)
 	)
 
 def mkpath (*parts: str, **opts: Any) -> str:
@@ -348,8 +353,6 @@ def file_access (path: str) -> Tuple[List[str], List[List[Any]]]:
 returns two lists, the first is a list of process-ids which accessing
 the path, the second is a list of failures (e.g. due to missing
 permissions) while trying to determinate the access to the file."""
-	if system != 'linux':
-		raise error ('lsof only supported on linux')
 	try:
 		st = os.stat (path)
 	except OSError as e:
@@ -402,16 +405,12 @@ permissions) while trying to determinate the access to the file."""
 	return (rc, fail)
 
 def force_text (mode: _modes) -> _modes:
-	if mode == 'r':
-		return 'rt'
-	elif mode == 'w':
-		return 'wt'
-	elif mode == 'a':
-		return 'at'
-	elif mode == 'x':
-		return 'xt'
+	if 'b' not in mode and 't' not in mode:
+		return cast (_modes, f'{mode}t')
 	return mode
-
+def force_bz2 (mode: _modes) -> _bz2modes:
+	return cast (_bz2modes, force_text (mode))
+	
 @overload
 def copen (path: str, mode: _ReadText = ..., errors: Optional[str] = ...) -> IO[str]: ...
 @overload
@@ -427,7 +426,7 @@ match is found."""
 	if path.endswith ('.gz'):
 		return cast (IO[Any], gzip.open (path, force_text (mode), errors = errors))
 	elif path.endswith ('.bz2'):
-		return bz2.open (path, force_text (mode), errors = errors)
+		return bz2.open (path, force_bz2 (mode), errors = None)
 	return open (path, mode, errors = errors)
 
 @overload

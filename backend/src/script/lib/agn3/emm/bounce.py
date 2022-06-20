@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -16,7 +16,7 @@ from	datetime import datetime
 from	types import TracebackType
 from	typing import Any, Final, Optional, Union
 from	typing import DefaultDict, Dict, List, Set, Tuple, Type
-from	.companyconfig import CompanyConfig
+from	.config import EMMCompany
 from	..db import DB, TempDB
 from	..definitions import base
 from	..ignore import Ignore
@@ -298,28 +298,27 @@ class Bounce:
 					config_fallback = True
 					config_migrate = False
 				if config_fallback or config_migrate:
-					with CompanyConfig (db = db) as ccfg:
-						for cvalue in ccfg.scan_all_company_info ():
-							if cvalue.name == self.name_company_info_conversion:
-								self.config[(cvalue.company_id, 0)][self.name_conversion] = obj = (
-									Stream (Parameter (cvalue.value).items ())
-									.map (lambda kv: (kv[0], int (kv[1])))
-									.dict ()
+					with EMMCompany (db = db, keys = [self.name_company_info_conversion]) as emmcompany:
+						for cvalue in emmcompany.scan_all ():
+							self.config[(cvalue.company_id, 0)][self.name_conversion] = obj = (
+								Stream (Parameter (cvalue.value).items ())
+								.map (lambda kv: (kv[0], int (kv[1])))
+								.dict ()
+							)
+							if config_migrate:
+								cursor.update (
+									f'INSERT INTO {self.bounce_config_table} '
+									'        (company_id, rid, name, value, description, creation_date, change_date) '
+									'VALUES '
+									'        (:company_id, :rid, :name, :value, :description, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
+									{
+										'company_id': cvalue.company_id,
+										'rid': 0,
+										'name': self.name_conversion,
+										'value': self.serialize (obj),
+										'description': f'migrated from company_info_tbl.cname = \'{self.name_company_info_conversion}\''
+									}
 								)
-								if config_migrate:
-									cursor.update (
-										f'INSERT INTO {self.bounce_config_table} '
-										'        (company_id, rid, name, value, description, creation_date, change_date) '
-										'VALUES '
-										'        (:company_id, :rid, :name, :value, :description, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
-										{
-											'company_id': cvalue.company_id,
-											'rid': 0,
-											'name': self.name_conversion,
-											'value': self.serialize (obj),
-											'description': f'migrated from company_info_tbl.cname = \'{self.name_company_info_conversion}\''
-										}
-									)
 				self.config_cache.clear ()
 			#
 			cursor.sync ()

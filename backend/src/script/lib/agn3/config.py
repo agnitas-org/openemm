@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -83,7 +83,7 @@ results to
 """
 	__slots__ = [
 		'sections', 'fallback', 'overwrite', 'default_section', 'default_section_stack', 'section_sequence',
-		'ns', 'lang', 'mc', 'unit', 'getter'
+		'ns', 'lang', 'mc', 'unit', 'getter', '_section'
 	]
 	comment_pattern = re.compile ('^[ \t]*(#.*)?$')
 	section_pattern = re.compile ('^\\[([^]]+)\\]')
@@ -109,6 +109,7 @@ parametername has no section part."""
 		self.unit = Unit ()
 		self.clear ()
 		self.getter = self.__get
+		self._section: Optional[str]
 	
 	def setup_namespace (self, **kwargs: Any) -> None:
 		"""Setup the namespace used for tget method. Some
@@ -372,7 +373,7 @@ None to use the default "date"."""
 		modify_default: Any = None,
 		not_null: bool = False,
 		not_empty: bool = False
-	) ->List[Any]:
+	) -> List[Any]:
 		"""Retrieve the value for ``var'' as list, use ``default'' as default if ``var'' is not found
 
 ``listSeparater'' is the regex to separate each element of the list
@@ -556,7 +557,7 @@ instead of using an in memory database. """
 					)
 					convert = [converter.get (_r.split ()[1], lambda a: a) for _r in row]
 					types = [typemap.get (_r.split ()[1], str) for _r in row]
-					db = DBLite (':memory:' if target is None else target)
+					db = DBLite (DBLite.in_memory_db if target is None else target)
 					if not db.isopen ():
 						raise error (f'{table}:{lineno}: failed to open database {target}')
 					db.check_open_cursor ().mode ('fast')

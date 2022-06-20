@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -10,7 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 
-CFLAGS	= '-DEMM_VERSION="OpenEMM 21.10.000.108"' -I. -I../lib -Iinclude
+CFLAGS	= '-DEMM_VERSION="OpenEMM 22.04.000.124"' -I. -I../lib -Iinclude
 LDFLAGS	= -L. -L../lib -Llib
 LIBS	= -lagn -lslang -lopendkim -lbsd -lresolv -llua -lssl -lcrypto -lxml2 -lz -lm
 SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c convert.c append.c \

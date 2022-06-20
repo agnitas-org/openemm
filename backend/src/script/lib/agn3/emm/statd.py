@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -11,7 +11,7 @@
 #
 import	asyncio
 from	typing import Optional, Protocol
-from	typing import List, Tuple
+from	typing import List
 from	typing import cast
 from	..definitions import syscfg
 from	..rpc import XMLRPCProxy, AIO_XMLRPCProxy, AIO_XMLRPCProtocol
@@ -26,8 +26,6 @@ class StatdProxy (Protocol):
 	def list_incoming (self) -> List[str]: ...
 	def list_outgoing (self, licence: int) -> List[str]: ...
 	def stat_file (self, fname: str) -> str: ...
-	# depracted fall back methods
-	def listOutgoing (self, licence: int) -> List[str]: ...
 class AIO_StatdProxy (AIO_XMLRPCProtocol):
 	async def whoami (self) -> str: ...
 	async def get_last_error (self) -> str: ...
@@ -36,8 +34,6 @@ class AIO_StatdProxy (AIO_XMLRPCProtocol):
 	async def list_incoming (self) -> List[str]: ...
 	async def list_outgoing (self, licence: int) -> List[str]: ...
 	async def stat_file (self, fname: str) -> str: ...
-	# depracted fall back methods
-	async def countFree (self) -> Tuple[int, int]: ...
 	
 def _target (hostname: str, user: Optional[str]) -> str:
 	port = syscfg.get (f'statd-port-{user}') if user is not None else None

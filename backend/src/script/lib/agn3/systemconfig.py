@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -9,18 +9,32 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
-import	os, json
+from	__future__ import annotations
+import	os, json, platform, pwd
 from	typing import Callable, Final, Optional, TypeVar, Union
-from	typing import Dict, KeysView, List
+from	typing import Dict, KeysView, List, Set, Tuple
 from	typing import overload
-from	.exceptions import error
+from	.ignore import Ignore
 from	.stream import Stream
 from	.tools import atob, listsplit
 #
 __all__ = ['Systemconfig']
 #
 R = TypeVar ('R')
+T = TypeVar ('T')
 #
+def _determinate_essentials () -> Tuple[str, str, str, str]:
+	fqdn = platform.node ().lower ()
+	host = fqdn.split ('.', 1)[0]
+	try:
+		pw = pwd.getpwuid (os.getuid ())
+		user = pw.pw_name
+		home = pw.pw_dir
+	except KeyError:
+		user = os.environ.get ('USER', '#{uid}'.format (uid = os.getuid ()))
+		home = os.environ.get ('HOME', '.')
+	return (fqdn, host, user, home)
+
 class Systemconfig:
 	"""Handling system specific configuration
 
@@ -33,40 +47,172 @@ by an equal sign. If you need a longer value, you can use the opening
 curly bracket as the start of the value and then add the value in the
 next lines. Close this block by using a closing curly bracket.
 Multiline values are folded to a single line value.
+
+>>> s = Systemconfig ()
+>>> s.cfg = {'test1': 'global', f'test1-{s._user}': 'global-user', f'test2[{s._user}@]': 'local-user', f'test3[{s._fqdn}]': 'local-fqdn'}
+>>> s['test1']
+'global'
+>>> s.user_get ('test1')
+'global-user'
+>>> s['test2']
+'local-user'
+>>> s['test3']
+'local-fqdn'
+>>> 'test1' in s
+True
+>>> 'test2' in s
+True
+>>> 'test3' in s
+True
+>>> 'test4' in s
+False
 """
-	__slots__ = ['path', 'content', 'cfg', 'user']
-	_defaultPath: Final[str] = os.environ.get ('SYSTEM_CONFIG_PATH', '/opt/agnitas.com/etc/system.cfg')
-	_defaultLegacyPath: Final[str] = os.path.join (os.path.dirname (_defaultPath), 'licence.cfg')
+	__slots__ = ['path', 'last_modified', 'content', 'cfg']
+	_default_path: Final[str] = os.environ.get ('SYSTEM_CONFIG_PATH', '/opt/agnitas.com/etc/system.cfg')
+	_default_legacy_path: Final[str] = os.path.join (os.path.dirname (_default_path), 'licence.cfg')
+	(_fqdn, _host, _user, _home) = _determinate_essentials ()
+	class Selection:
+		"""select an option from a hostname expression
+
+the precedence of the hostname expressions are:
+- <user>@<fqdn>
+- <user>@<host>
+- <user>@
+- <fqdn>
+- <host>
+- None
+
+>>> (fqdn, host, user, _) = _determinate_essentials ()
+>>> s = Systemconfig ().selection ()
+>>> cfg = {}
+>>> s.pick (cfg)
+Traceback (most recent call last):
+...
+KeyError
+>>> cfg[None] = 'default'
+>>> s.pick (cfg)
+'default'
+>>> cfg[f'{host}'] = 'host'
+>>> s.pick (cfg)
+'host'
+>>> cfg[f'{fqdn}'] = 'fqdn'
+>>> s.pick (cfg)
+'fqdn'
+>>> cfg[f'{user}@'] = 'user'
+>>> s.pick (cfg)
+'user'
+>>> cfg[f'{user}@{host}'] = 'user@host'
+>>> s.pick (cfg)
+'user@host'
+>>> cfg[f'{user}@{fqdn}'] = 'user@fqdn'
+>>> s.pick (cfg)
+'user@fqdn'
+>>> None in s
+True
+>>> host in s
+True
+>>> fqdn in s
+True
+>>> f'{user}@' in s
+True
+>>> f'{user}@{host}' in s
+True
+>>> f'{user}@{fqdn}' in s
+True
+>>> f'{user}-{fqdn}' in s
+False
+>>> '' in s
+False
+>>> set () in s
+False
+>>> {None} in s
+True
+>>> {f'{user}@'} in s
+True
+>>> {None, host, fqdn, f'{user}@', f'{user}@{host}', f'{user}@{fqdn}'} in s
+True
+>>> {None, host, fqdn, f'{user}@', f'{user}@{host}', f'{user}@{fqdn}', ''} in s
+True
+"""
+		__slots__ = ['selections', 'selections_set', '_user', '_fqdn', '_host']
+		def __init__ (self, user: str, fqdn: str, host: str) -> None:
+			self.selections = [
+				f'{user}@{fqdn}',
+				f'{user}@{host}',
+				f'{user}@',
+				fqdn,
+				host,
+				None
+			]
+			self.selections_set = set (self.selections)
+			self._user = user
+			self._fqdn = fqdn
+			self._host = host
+
+		@property
+		def user (self) -> str:
+			return self._user
+		
+		@property
+		def fqdn (self) -> str:
+			return self._fqdn
+	
+		@property
+		def host (self) -> str:
+			return self._host
+
+		def pick (self, collection: Dict[Optional[str], T]) -> T:
+			for selection in self.selections:
+				with Ignore (KeyError):
+					return collection[selection]
+			raise KeyError ()
+	
+		def pick_pattern (self, collection: Dict[str, T], key: str) -> T:
+			for selection in self.selections:
+				with Ignore (KeyError):
+					return collection[f'{key}[{selection}]' if selection is not None else key]
+			raise KeyError ()
+	
+		def __contains__ (self, hostname: Union[None, str, Set[Optional[str]]]) -> bool:
+			if isinstance (hostname, set):
+				return bool (self.selections_set.intersection (hostname))
+			return hostname in self.selections_set
+	
+	_selection = Selection (_user, _fqdn, _host)
 	__sentinel: Final[object] = object ()
 	def __init__ (self, path: Optional[str] = None) -> None:
 		"""path to configuration file or None to use default
 
 Setup the Systemconfig object and read the content of the system confg
 file, if it is available. """
-		if path is None:
-			path = self._defaultPath
-			if not os.path.isfile (path) and os.path.isfile (self._defaultLegacyPath):
-				path = self._defaultLegacyPath
-		self.path = path
+		self.path = None
+		self.last_modified = 0.0
 		self.content = os.environ.get ('SYSTEM_CONFIG')
 		self.cfg: Dict[str, str] = {}
-		if self.content is None and self.path and os.path.isfile (self.path):
-			with open (self.path) as fd:
-				self.content = fd.read ()
-		self.user: Optional[str] = None
-		self.parse ()
+		if self.content is None:
+			if path is None:
+				path = self._default_path
+				if not os.path.isfile (path) and os.path.isfile (self._default_legacy_path):
+					path = self._default_legacy_path
+			self.path = path
+			self._check ()
+		else:
+			self._parse ()
+			
+	def _check (self) -> None:
+		if self.path is not None:
+			try:
+				st = os.stat (self.path)
+				if st.st_mtime != self.last_modified:
+					self.last_modified = st.st_mtime
+					with open (self.path) as fd:
+						self.content = fd.read ()
+					self._parse ()
+			except (OSError, IOError):
+				pass
 	
-	def __str__ (self) -> str:
-		return '{name}:\n\t{content}'.format (
-			name = self.__class__.__name__,
-			content = Stream (self.cfg.items ())
-				.switch (lambda kv: kv[1] is None, lambda kv: str (kv[0]), lambda kv: '{var}={val!r}'.format (var = kv[0], val = kv[1]))
-				.sorted ()
-				.join ('\n\t')
-		)
-	
-	def parse (self) -> None:
-		self.cfg = {}
+	def _parse (self) -> None:
+		self.cfg.clear ()
 		if self.content is not None:
 			try:
 				self.cfg = json.loads (self.content)
@@ -78,7 +224,7 @@ file, if it is available. """
 				for line in (_l.strip () for _l in self.content.split ('\n')):
 					if cont is not None:
 						if line == '}':
-							self[cont] = '\n'.join (cur)
+							self.cfg[cont] = '\n'.join (cur)
 							cont = None
 						elif line:
 							cur.append (line)
@@ -89,28 +235,39 @@ file, if it is available. """
 								cont = var
 								cur = []
 							else:
-								self[var] = val
+								self.cfg[var] = val
 						except ValueError:
 							pass
 
-	def __setitem__ (self, var: str, val: str) -> None:
-		"""Set configuration value"""
-		self.cfg[var] = val
-
+	def __str__ (self) -> str:
+		self._check ()
+		return '{name}:\n\t{content}'.format (
+			name = self.__class__.__name__,
+			content = Stream (self.cfg.items ())
+				.switch (lambda kv: kv[1] is None, lambda kv: str (kv[0]), lambda kv: '{var}={val!r}'.format (var = kv[0], val = kv[1]))
+				.sorted ()
+				.join ('\n\t')
+		)
+	
 	def __getitem__ (self, var: str) -> str:
 		"""Get configuration value"""
-		return self.cfg[var]
-
-	def __delitem__ (self, var: str) -> None:
-		"""Remove configuration value"""
-		del self.cfg[var]
+		self._check ()
+		return self._selection.pick_pattern (self.cfg, var)
 
 	def __contains__ (self, var: str) -> bool:
 		"""Checks for existance of configuration variable"""
+		self._check ()
+		try:
+			self._selection.pick_pattern (self.cfg, var)
+		except KeyError:
+			return False
+		else:
+			return True
 		return var in self.cfg
 
 	def keys (self) -> KeysView[str]:
 		"""Returns all available configuration variables"""
+		self._check ()
 		return self.cfg.keys ()
 
 	@overload
@@ -173,9 +330,7 @@ file, if it is available. """
 	@overload
 	def __user (self, var: str, default: R, retriever: Callable[..., R]) -> R: ...
 	def __user (self, var: str, default: Optional[R], retriever: Callable[..., R]) -> Optional[R]:
-		if self.user is None:
-			raise error ('"user" not set in Systemconfig instance')
-		rc = retriever (f'{var}-{self.user}', Systemconfig.__sentinel)
+		rc = retriever (f'{var}-{Systemconfig._user}', Systemconfig.__sentinel) if Systemconfig._user is not None else Systemconfig.__sentinel
 		return rc if rc is not Systemconfig.__sentinel else retriever (var, default)
 
 	@overload
@@ -212,6 +367,7 @@ file, if it is available. """
 	
 	def dump (self) -> None:
 		"""Display current configuration content"""
+		self._check ()
 		for (var, val) in self.cfg.items ():
 			print (f'{var}={val}')
 
@@ -226,3 +382,6 @@ file, if it is available. """
 		else:
 			cmd += recipients
 		return cmd
+
+	def selection (self, user: str = _user, fqdn: str = _fqdn, host: str = _host) -> Systemconfig.Selection:
+		return Systemconfig.Selection (user, fqdn, host)

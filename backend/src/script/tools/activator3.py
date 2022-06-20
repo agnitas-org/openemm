@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -12,13 +12,14 @@
 #
 from	__future__ import annotations
 import	logging, argparse
+from	agn3.definitions import syscfg
 from	agn3.emm.activator import Activator
 from	agn3.runtime import CLI
 #
 logger = logging.getLogger (__name__)
 #
 class Main (CLI):
-	__slots__ = ['activator', 'action', 'services']
+	__slots__ = ['activator', 'action', 'system_config', 'services']
 	def setup (self) -> None:
 		self.activator = Activator ()
 
@@ -47,6 +48,11 @@ class Main (CLI):
 			help = 'remove services'
 		)
 		parser.add_argument (
+			'-S', '--syscfg', '--system-config',
+			action = 'store',
+			help = 'additional check if the given key is set (true) in the local system configuration'
+		)
+		parser.add_argument (
 			'services', nargs = '*',
 			help = 'service(s) to manage'
 		)
@@ -61,9 +67,12 @@ class Main (CLI):
 			self.action = self.activator.deactivate
 		elif args.remove:
 			self.action = self.activator.remove
+		self.system_config = args.syscfg
 		self.services = args.services
 
 	def executor (self) -> bool:
+		if self.system_config is not None and not syscfg.bget (self.system_config, default = False):
+			return False
 		with self.activator:
 			return self.action (self.services)
 #

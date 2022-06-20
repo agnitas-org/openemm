@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -314,17 +314,29 @@ iflua_makeuid (lua_State *lua) /*{{{*/
 	int		stack = lua_gettop (il -> lua);
 	long		url_id;
 	const char	*prefix;
+	int		uid_version;
 	char		*uid;
 	
 	url_id = 0;
 	prefix = NULL;
+	uid_version = il -> blockmail -> uid_version;
 	if (stack > 0) {
 		if (lua_isnumber (il -> lua, 1))
 			url_id = (long) lua_tonumber (il -> lua, 1);
 		if ((stack > 1) && lua_isstring (il -> lua, 2))
 			prefix = lua_tostring (il -> lua, 2);
+		if (stack > 2) {
+			if (lua_isstring (il -> lua, 3)) {
+				const char	*version = lua_tostring (il -> lua, 3);
+				
+				if (version && *version)
+					uid_version = atoi (*version == 'V' ? version + 1 : version);
+			} else if (lua_isnumber (il -> lua, 3)) {
+				uid_version = (int) lua_tonumber (il -> lua, 3);
+			}
+		}
 	}
-	if (il -> rec && (uid = create_uid (il -> blockmail, prefix, il -> rec, url_id))) {
+	if (il -> rec && (uid = create_uid (il -> blockmail, uid_version, prefix, il -> rec, url_id))) {
 		lua_pushstring (il -> lua, uid);
 		free (uid);
 	} else
@@ -453,6 +465,7 @@ iflua_setup_context (iflua_t *il) /*{{{*/
 	}
 	setifield (il -> blockmail -> licence_id, "licence_id");
 	setifield (il -> blockmail -> company_id, "company_id");
+	setsfield (il -> blockmail -> company_token, "company_token");
 	setifield (il -> blockmail -> mailinglist_id, "mailinglist_id");
 	setxfield (il -> blockmail -> mailinglist_name, "mailinglist_name");
 	setifield (il -> blockmail -> mailing_id, "mailing_id");

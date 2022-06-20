@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -22,7 +22,7 @@ from	.template import Template
 logger = logging.getLogger (__name__)
 #
 __all__ = [
-	'atoi', 'atob', 'calc_hash', 'sizefmt',
+	'atoi', 'atob', 'btoa', 'calc_hash', 'sizefmt',
 	'call', 'silent_call', 'match', 
 	'listsplit', 'listjoin', 
 	'Escape', 'escape', 'unescape',
@@ -112,6 +112,9 @@ False
 			'disabled': False
 		}.get (s.lower (), s[:1] in {'1', '+'})
 	return False
+
+def btoa (b: bool) -> str:
+	return 'true' if b else 'false'
 
 def calc_hash (s: str) -> int:
 	"""Simple hash value generator
@@ -369,10 +372,10 @@ no single expression matched.
 				self.slices.insert (0, self.Slice (False, low, high))
 
 	def __contains__ (self, val: int) -> bool:
-		if self.only_inverse:
-			rc = (self.low is None or val >= self.low) and (self.high is None or val <= self.high)
-		else:
-			rc = self.default
+		if (self.low is not None and self.low > val) or (self.high is not None and self.high < val):
+			return False
+		#
+		rc = True if self.only_inverse else self.default
 		for slice in self.slices:
 			if val in slice:
 				rc = not slice.inverse
@@ -389,32 +392,6 @@ no single expression matched.
 			.map (lambda s: str (s))
 			.join (', ')
 		)
-	
-	def mkset (self, low: Optional[int] = None, high: Optional[int] = None) -> Set[int]:
-		"""Creates a set out of the parsed expression"""
-		if low is None:
-			low = self.low
-			if low is None:
-				raise error ('no low limit passed or set')
-		if high is None:
-			high = self.high
-			if high is None:
-				raise error ('no high limit passed or set')
-		if self.only_inverse and (self.low is None or self.high is None):
-			extra: List[Range.Slice] = [self.Slice (False, low, high)]
-		else:
-			extra = []
-		rc: Set[int] = set ()
-		if self.default:
-			rc.update (range (low, high + 1))
-		for slice in extra + self.slices:
-			start = slice.start if slice.start is not None else low
-			end = slice.end if slice.end is not None else high
-			if not slice.inverse:
-				rc.update (range (start, end + 1))
-			else:
-				rc = rc.difference (range (start, end + 1))
-		return rc
 
 class Config:
 	"""Simple configuration

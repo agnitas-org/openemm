@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -26,7 +26,7 @@ merger which contains serveral informations."""
 	__slots__ = [
 		'valid', 'error', 'path', 'directory', 'filename', 'extension', 'basename',
 		'licence_id', 'company_id', 'timestamp', 'mailid', 'mailing_id', 'blocknr', 'blockid',
-		'single'
+		'typ', 'single'
 	]
 	temp_directory = os.path.join (base, 'var', 'spool', 'TEMP')
 	sideshow_directory = os.path.join (base, 'var', 'spool', 'SIDESHOW')
@@ -72,7 +72,7 @@ filename."""
 				self.__error (f'Unparseable company ID in "{parts[2]}" found')
 			self.timestamp = self.__parse_timestamp (parts[1])
 			self.mailid = parts[3]
-			mparts = [_m for _m in self.splitter.split (self.mailid) if _m]
+			mparts = self.splitter.split (self.mailid)
 			if len (mparts) == 0:
 				self.__error (f'Unparseable mailing ID in "{parts[3]}" found')
 			else:
@@ -80,14 +80,18 @@ filename."""
 					self.mailing_id = int (mparts[-1])
 				except ValueError:
 					self.__error (f'Unparseable mailing ID in mailid "{self.mailid}" found')
+			m = self.splitter.search (self.mailid)
+			self.typ = m.group ()[:1] if m is not None else 'W'
+			self.single = self.typ in 'ATCEV'
 			try:
 				self.blocknr = int (parts[4])
 				self.blockid = str (self.blocknr)
-				self.single = False
 			except ValueError:
 				self.blocknr = 0
 				self.blockid = parts[4]
 				self.single = True
+			if self.single:
+				self.mailid = self.basename
 
 	def __make_timestamp (self, epoch: Union[int, float]) -> str:
 		tt = datetime.fromtimestamp (epoch)

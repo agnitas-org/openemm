@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -21,7 +21,7 @@ from	.definitions import host, program, syscfg
 from	.exceptions import error
 from	.ignore import Ignore
 from	.lock import Lock
-from	.log import log
+from	.log import log, interactive
 from	.parameter import Parameter
 from	.process import Processtitle, Parallel
 from	.stream import Stream
@@ -143,7 +143,7 @@ def cleanup (self):
 	The final cleanup entry point before termination.
 
 """
-	__slots__ = ['cfg', 'ctx']
+	__slots__ = ['cfg', 'ctx', 'round']
 	program_description: Optional[str] = None
 	program_epilog: Optional[str] = None
 
@@ -182,6 +182,7 @@ def cleanup (self):
 				for (option, value) in Parameter (syscfg[f'option:{program}']).items ():
 					self.cfg[option] = value
 		self.ctx = Runtime.Context ()
+		self.round = 0
 
 	def run (self, *args: Any, **kwargs: Any) -> Any:
 		#
@@ -296,6 +297,14 @@ def cleanup (self):
 	
 	def title (self, title: str) -> Processtitle.ProcesstitleContext:
 		return self.ctx.processtitle.title (title)
+	
+	def is_running (self, delay: int) -> bool:
+		if self.round > 0:
+			while delay > 0 and self.running:
+				delay -= 1
+				time.sleep (1)
+		self.round += 1
+		return self.running
 			
 	def __argument_parsing (self) -> None:
 		Option = namedtuple ('Option', ['option', 'value'])
@@ -330,15 +339,7 @@ def cleanup (self):
 		args = parser.parse_args (args = _expand_inline (sys.argv[1:]))
 		self.use_arguments (args)
 		self.ctx.verbose = args.verbose - args.quiet
-		if self.ctx.verbose < 0:
-			log.loglevel = logging.ERROR
-		elif self.ctx.verbose == 0:
-			log.loglevel = logging.INFO
-		else:
-			log.loglevel = logging.DEBUG
-			log.outlevel = logging.DEBUG
-			log.outstream = sys.stderr
-			log.verbosity = self.ctx.verbose
+		log.set_verbosity (self.ctx.verbose)
 		if args.loglevel:
 			log.set_loglevel (args.loglevel)
 		if args.config:
@@ -385,6 +386,9 @@ class CLI (Daemonic):
 
 	@classmethod
 	def main (cls) -> None:
+		with Ignore ():
+			if os.isatty (sys.stdin.fileno ()):
+				interactive ()
 		rt = cls ()
 		sys.exit (0 if rt.run () else 1)
 

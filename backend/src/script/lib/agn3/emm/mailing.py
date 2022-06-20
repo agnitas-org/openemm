@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -91,6 +91,7 @@ starting a mailing if a failure occurs."""
 			if rq is None:
 				raise error (f'no entry for status_id {status_id} found')
 			mailing_id = rq.mailing_id
+		#
 		if is_on_demand_mailing and mailing_id is None:
 			raise error (f'no mailing_id for status_id {status_id} found (required to start on demand mailing)')
 		#
@@ -187,7 +188,7 @@ starting a mailing if a failure occurs."""
 				if self.timeout > 0:
 					socket.setdefaulttimeout (self.timeout)
 				rc = callback ()
-				(logger.info if rc else logger.warning) ('Call to merger {merger} results in {result} for {name}'.format (
+				(logger.debug if rc else logger.warning) ('Call to merger {merger} results in {result} for {name}'.format (
 					merger = self.merger,
 					result = str (rc).lower (),
 					name = name

@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -18,6 +18,7 @@ from	typing import Any, Callable, Final, Optional
 from	typing import Dict, List, Match, NamedTuple, Set, Tuple
 from	agn3.daemon import Daemonic
 from	agn3.definitions import base, fqdn, syscfg
+from	agn3.email import ParseMessageID
 from	agn3.exceptions import error
 from	agn3.fsdb import FSDB
 from	agn3.ignore import Ignore
@@ -236,7 +237,7 @@ class Scanner:
 	def write_deliveries (self, record: Dict[str, Any], lines: List[Tuple[datetime, str]]) -> bool:
 		with Ignore (KeyError):
 			lines = record.get (self.KEY_LINES, []) + lines
-			if lines:
+			if lines and record['use']:
 				licence_id = record['licence_id']
 				mailing_id = record['mailing_id']
 				customer_id = record['customer_id']
@@ -381,7 +382,7 @@ class ScannerSendmail (Scanner):
 		else:
 			customer = int (info.queue_id[10:], 16)
 		#
-		if customer >= 0xf0000000:
+		if customer == 0 or customer >= 0xf0000000:
 			logger.debug ('Line leads to test customer_id 0x%x: %s' % (customer, line))
 			return True
 		#
@@ -390,6 +391,7 @@ class ScannerSendmail (Scanner):
 		key = Key (self.SEC_MTAID, info.queue_id)
 		record = self.mtrack.get (key)
 		update: Dict[str, Any] = {
+			'use': True,
 			'timestamp': info.timestamp
 		}
 		if 'licence_id' not in record:
@@ -428,6 +430,10 @@ class ScannerPostfix (Scanner):
 	def process_completed (self) -> None:
 		self.__handle_message_ids ()
 		super ().process_completed ()
+
+	def __message_id_usable (self, message_id: str) -> bool:
+		mid = ParseMessageID.match (message_id if message_id.startswith ('<') and message_id.endswith ('>') else f'<{message_id}>')
+		return mid is not None and not mid.is_blind_carbon_copy
 		
 	def __handle_message_ids (self) -> None:
 		if os.path.isfile (self.messageid_log):
@@ -457,7 +463,8 @@ class ScannerPostfix (Scanner):
 									'company_id': int (parts[1]),
 									'mailinglist_id': int (parts[2]),
 									'mailing_id': int (parts[3]),
-									'customer_id': int (parts[4])
+									'customer_id': int (parts[4]),
+									'use': self.__message_id_usable (parts[5])
 								}
 								self.mtrack[Key (self.SEC_MESSAGEID, parts[5])] = rec
 								logger.debug ('Saved licence_id=%s, company_id=%s, mailinglist_id=%s, mailing_id=%s, customer_id=%s for message-id %s' % (parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]))
@@ -545,11 +552,12 @@ class ScannerPostfix (Scanner):
 						rec.update (midinfo)
 					except KeyError:
 						try:
-							uid= self.uid.parse (message_id.split ('@')[0], validate = False)
+							uid = self.uid.parse (message_id.split ('@')[0], validate = False)
 							rec.update ({
 								'licence_id': uid.licence_id,
 								'mailing_id': uid.mailing_id,
-								'customer_id': uid.customer_id
+								'customer_id': uid.customer_id,
+								'use': self.__message_id_usable (message_id)
 							})
 						except error as e:
 							logger.info (f'Failed to parse message_id <{message_id}>: {e}')
@@ -585,7 +593,12 @@ class ScannerPostfix (Scanner):
 				rec.update (update)
 				self.mtrack[key] = rec
 				logger.debug ('Update tracking entry: %s' % str (rec))
-				if 'dsn' in update:
+				if not rec.get ('use'):
+					if 'use' in rec:
+						logger.debug (f'{key}: {rec} marked as not usable')
+					else:
+						logger.debug (f'{key}: {rec} without valid mesasge-id discarded')
+				elif 'dsn' in update:
 					self.__write_bounce (info, rec)
 		else:
 			logger.info ('Not used: %s' % line)

@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -18,7 +18,9 @@ from	typing import Any, Final
 from	typing import DefaultDict, Dict, Deque, NamedTuple, Tuple, Set
 from	agn3.db import DB
 from	agn3.dbm import DBM
+from	agn3.definitions import unique
 from	agn3.emm.bounce import Bounce
+from	agn3.emm.config import Responsibility
 from	agn3.emm.timestamp import Timestamp
 from	agn3.emm.types import UserStatus
 from	agn3.exceptions import error
@@ -90,8 +92,9 @@ class ProgressDB (Progress): #{{{
 		self.db.sync ()
 #}}}
 class Softbounce (Runtime):
-	__slots__ = ['db', 'timestamp', 'bounce', 'companies', 'hardbounces', 'config_cache']
-	timestamp_name: Final[str] = 'bounce-conversion'
+	__slots__ = ['db', 'responsibilities', 'timestamp', 'bounce', 'companies', 'hardbounces', 'config_cache']
+	legacy_timestamp_name: Final[str] = 'bounce-conversion'
+	timestamp_name: Final[str] = f'bounce-conversion-{unique}'
 	class Company (NamedTuple):
 		active: bool = False
 		mailtracking: bool = False
@@ -106,7 +109,9 @@ class Softbounce (Runtime):
 	def executor (self) -> bool:
 		rc = True
 		with DB () as self.db:
-			self.timestamp = Timestamp (self.timestamp_name)
+			self.responsibilities = Responsibility (db = self.db)
+			self.responsibilities.check ()
+			self.timestamp = Timestamp (self.timestamp_name, initial_timestamp = 'now', initial_timestamp_from = self.legacy_timestamp_name)
 			self.bounce = Bounce ()
 			self.companies: DefaultDict[int, Softbounce.Company] = defaultdict (Softbounce.Company)
 			self.hardbounces: Set[Softbounce.Hardbounce] = set ()
@@ -142,7 +147,8 @@ class Softbounce (Runtime):
 		self.bounce.read (read_rules = False, read_config = True)
 		logger.info ('Seupt companies')
 		for row in self.db.query ('SELECT company_id, status, mailtracking FROM company_tbl'):
-			self.companies[row.company_id] = Softbounce.Company (active = row.status == 'active', mailtracking = row.mailtracking == 1)
+			if row.company_id in self.responsibilities:
+				self.companies[row.company_id] = Softbounce.Company (active = row.status == 'active', mailtracking = row.mailtracking == 1)
 	#}}}
 	def config (self, company_id: int, var: str, default: int) -> int: #{{{
 		try:
@@ -154,11 +160,12 @@ class Softbounce (Runtime):
 	def expire_entries (self) -> None: #{{{
 		logger.info ('Expire entries from softbounce_email_tbl')
 		for company_id in (
-			self.db.streamc (
+			self.db.stream (
 				'SELECT distinct company_id '
 				'FROM softbounce_email_tbl'
 			)
 			.map_to (int, lambda r: r.company_id)
+			.filter (lambda c: c in self.responsibilities)
 			.sorted ()
 		):
 			expire = self.config (company_id, 'expire', 1100)
@@ -230,14 +237,17 @@ class Softbounce (Runtime):
 			uniques: int
 			updates: Dict[Tuple[int, int], Update]
 			data: Dict[str, Any] = {}
-			(records, uniques, updates) = cursor.stream (
-				'SELECT customer_id, company_id, mailing_id, detail '
-				'FROM bounce_tbl '
-				'WHERE {timestamp_clause}'.format (
-					timestamp_clause = self.timestamp.make_between_clause ('timestamp', data)
-				),
-				data
-			).collect (Collect ())
+			(records, uniques, updates) = (cursor.stream (
+					'SELECT customer_id, company_id, mailing_id, detail '
+					'FROM bounce_tbl '
+					'WHERE {timestamp_clause}'.format (
+						timestamp_clause = self.timestamp.make_between_clause ('timestamp', data)
+					),
+					data
+				)
+				.filter (lambda row: row.company_id in self.responsibilities)
+				.collect (Collect ())
+			)
 			logger.info ('Read {records:,d} records ({uniques:,d} uniques) and have {updates:,d} for insert'.format (records = records, uniques = uniques, updates = len (updates)))
 			#
 			p = ProgressDB ('collect', self.db)
@@ -273,6 +283,7 @@ class Softbounce (Runtime):
 				)
 				.filter (lambda r: self.companies[r.company_id].active)
 				.map_to (int, lambda r: r.company_id)
+				.filter (lambda c: c in self.responsibilities)
 				.sorted ()
 			):
 				logger.info ('Working on %d' % company_id)
@@ -329,6 +340,7 @@ class Softbounce (Runtime):
 		for company_id in (self.db.streamc ('SELECT distinct company_id FROM softbounce_email_tbl')
 			.filter (lambda r: self.companies[r.company_id].active and self.companies[r.company_id].mailtracking)
 			.map_to (int, lambda r: r.company_id)
+			.filter (lambda c: c in self.responsibilities)
 			.sorted ()
 		):
 			table = f'success_{company_id}_tbl'
@@ -360,7 +372,8 @@ class Softbounce (Runtime):
 		logger.info ('Fade out addresses without mailtracking')
 		for company_id in (self.db.streamc ('SELECT distinct company_id FROM softbounce_email_tbl')
 			.map_to (int, lambda r: r.company_id)
-			.filter (lambda cid: not self.companies[cid].mailtracking)
+			.filter (lambda c: not self.companies[c].mailtracking)
+			.filter (lambda c: c in self.responsibilities)
 			.sorted ()
 		):
 			fade_out = self.config (company_id, 'fade-out', 14)
@@ -388,6 +401,7 @@ class Softbounce (Runtime):
 		for company_id in (self.db.streamc ('SELECT distinct company_id FROM softbounce_email_tbl')
 			.filter (lambda r: self.companies[r.company_id].active)
 			.map_to (int, lambda r: r.company_id)
+			.filter (lambda c: c in self.responsibilities)
 			.sorted ()
 			.list ()
 		):

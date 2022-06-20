@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -20,8 +20,9 @@ from	typing import Deque, Dict, List, NamedTuple, Set, Tuple, Type
 from	.db import DB
 from	.dbconfig import DBConfig
 from	.definitions import licence
-from	.emm.companyconfig import CompanyConfig
+from	.emm.config import EMMConfig
 from	.exceptions import error
+from	.ignore import Ignore
 from	.log import log_limit
 from	.stream import Stream
 #
@@ -154,9 +155,7 @@ class UIDCache:
 					db = DB (dbid = dbid)
 					try:
 						if db.open ():
-							ccfg = CompanyConfig (db = db)
-							ccfg.read ()
-							licence_id = int (ccfg.get_config ('system', 'licence'))
+							licence_id = int (EMMConfig (db = db, class_names = ['system']).get ('system', 'licence'))
 							if licence_id != 0:
 								raise error (f'invalid licence_id {licence_id} found')
 							self.instances[licence_id] = UIDCache.Instance (licence_id, db)
@@ -190,8 +189,8 @@ class UIDCache:
 		return (company, mailing)
 
 class UIDHandler:
-	__slots__ = ['cache', 'credentials']
-	available_versions: Final[Tuple[int, ...]] = (2, 3)
+	__slots__ = ['cache']
+	available_versions: Final[Tuple[int, ...]] = (2, 3, 4)
 	default_version: Final[int] = available_versions[-1]
 	symbols: Final[str] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
 	class Credential (NamedTuple):
@@ -203,7 +202,6 @@ class UIDHandler:
 
 	def __init__ (self, enable_cache: bool = False, handle_only_own_instance: bool = True) -> None:
 		self.cache = UIDCache (handle_only_own_instance) if enable_cache else None
-		self.credentials: Dict[Tuple[int, int, int], UIDHandler.Credential] = {}
 
 	def __del__ (self) -> None:
 		self.done ()
@@ -244,12 +242,16 @@ class UIDHandler:
 			if uid.prefix:
 				sig.append (uid.prefix)
 			sig += [version, uid.licence_id, uid.mailing_id, uid.customer_id, uid.url_id, uid.bit_option, credential.secret]
+		elif version == 4:
+			if uid.prefix:
+				sig.append (uid.prefix)
+			sig += [version, uid.licence_id, uid.company_id, uid.mailing_id, uid.customer_id, uid.url_id, uid.bit_option, credential.secret]
 		dig = hashlib.sha512 ()
 		dig.update (Stream (sig).join ('.').encode ('UTF-8'))
 		return base64.urlsafe_b64encode (dig.digest ()).decode ('us-ascii').replace ('=', '')
 
 	def __select_version (self, version: Optional[int] = None) -> int:
-		if version is None:
+		if version is None or version == 0:
 			return UIDHandler.default_version
 		if version in UIDHandler.available_versions:
 			return version
@@ -258,14 +260,6 @@ class UIDHandler:
 			versions = ', '.join ([str (_v) for _v in UIDHandler.available_versions])
 		))
 	
-	def __find_credential (self, uid: UID) -> UIDHandler.Credential:
-		key = (uid.licence_id, uid.company_id, uid.mailing_id)
-		try:
-			return self.credentials[key]
-		except KeyError:
-			self.credentials[key] = credential = self.retrieve_credential (uid)
-			return credential
-
 	def done (self) -> None:
 		if self.cache is not None:
 			self.cache.done ()
@@ -303,6 +297,19 @@ returns a newly created UID from the set instance variables."""
 					uid.bit_option
 				)]
 			)
+		elif uid_version == 4:
+			parts = (
+				([uid.prefix] if uid.prefix else []) +
+				[self.__iencode (_v) for _v in (
+					uid_version,
+					uid.licence_id,
+					uid.company_id,
+					uid.mailing_id,
+					uid.customer_id,
+					uid.url_id,
+					uid.bit_option
+				)]
+			)
 		parts.append (self.__make_signature (uid_version, uid, credential))
 		return '.'.join (parts)
 
@@ -317,44 +324,65 @@ If validate is True, validation of the signature is performed and an
 exception is thrown, if it is not valid."""
 		uid = UID ()
 		elem = uid_str.split ('.')
-		if not elem:
-			raise error ('Empty UID')
-		if len (elem) == 6:
-			has_prefix = False
-		elif len (elem) == 7:
-			try:
-				has_prefix = self.__select_version (self.__idecode (elem[0])) == 2
-			except error as e:
-				logger.debug (f'{uid_str}: assume having a prefix as: {e}')
-				has_prefix = True
-		elif len (elem) == 8:
+		if len (elem) == 9:
 			has_prefix = True
+		elif len (elem) in (7, 8):
+			has_prefix = False
+			if len (elem) == 7:
+				version_with_prefix = 2
+				version_without_prefix = 3
+			else:
+				version_with_prefix = 3
+				version_without_prefix = 4
+			with Ignore (error):
+				if self.__select_version (self.__idecode (elem[1])) == version_with_prefix:
+					has_prefix = True
+					with Ignore (error):
+						if self.__select_version (self.__idecode (elem[0])) == version_without_prefix:
+							has_prefix = False
+		elif len (elem) == 6:
+			has_prefix = False
 		else:
-			raise error ('Invalid formated UID')
+			raise error (f'invalid uid {uid_str}')
 		if has_prefix:
-			uid.prefix = elem[0]
-			elem = elem[1:]
+			uid.prefix = elem.pop (0)
 		#
-		uid.version = self.__idecode (elem[0])
-		self.__select_version (uid.version)
+		uid.version = self.__select_version (self.__idecode (elem[0]))
+		try:
+			if uid.version == 2:
+				uid.licence_id = self.__idecode (elem[1])
+				uid.mailing_id = self.__idecode (elem[2])
+				uid.customer_id = self.__idecode (elem[3])
+				uid.url_id = self.__idecode (elem[4])
+				uid.bit_option = 0
+			elif uid.version == 3:
+				uid.licence_id = self.__idecode (elem[1])
+				uid.mailing_id = self.__idecode (elem[2])
+				uid.customer_id = self.__idecode (elem[3])
+				uid.url_id = self.__idecode (elem[4])
+				uid.bit_option = self.__idecode (elem[5])
+			elif uid.version == 4:
+				uid.licence_id = self.__idecode (elem[1])
+				uid.company_id = self.__idecode (elem[2])
+				uid.mailing_id = self.__idecode (elem[3])
+				uid.customer_id = self.__idecode (elem[4])
+				uid.url_id = self.__idecode (elem[5])
+				uid.bit_option = self.__idecode (elem[6])
+		except IndexError:
+			raise error (f'invalid uid {uid_str} for version {uid.version}')
 		#
-		uid.licence_id = self.__idecode (elem[1])
-		uid.mailing_id = self.__idecode (elem[2])
 		try:
 			credential: Optional[UIDHandler.Credential] = self.retrieve_credential (uid)
 		except error as e:
 			if validate:
 				raise error (f'{uid}: missing credentials (required for validation): {e}')
 			credential = None
+		#
 		if uid.version == 2:
 			if credential is not None:
-				uid.customer_id = self.__idecode (elem[3]) ^ credential.timestamps[0]
-				uid.url_id = self.__idecode (elem[4]) ^ credential.timestamps[1] ^ uid.company_id
-			uid.bit_option = 0
-		elif uid.version == 3:
-			uid.customer_id = self.__idecode (elem[3])
-			uid.url_id = self.__idecode (elem[4])
-			uid.bit_option = self.__idecode (elem[5])
+				uid.customer_id = uid.customer_id ^ credential.timestamps[0]
+				uid.url_id = uid.url_id  ^ credential.timestamps[1] ^ uid.company_id
+		#
 		if validate:
 			if credential is None:
 				raise error (f'{uid}: missing credentials')
@@ -387,15 +415,3 @@ exception is thrown, if it is not valid."""
 			except error as e:
 				log_limit (logger.warning, f'{uid}: failed to retrieve credentials: {e}')
 		raise error (f'missing credentials for {uid}')
-
-	def add_credential (self,
-		licence_id: int,
-		company_id: int,
-		mailing_id: int,
-		timestamp: Union[int, float],
-		secret: str,
-		enabled_uid_version: int = default_version,
-		minimal_uid_version: Optional[int] = None
-	) -> UIDHandler.Credential:
-		self.credentials[(licence_id, company_id, mailing_id)] = credential = self.new_credential (timestamp, secret, enabled_uid_version, minimal_uid_version)
-		return credential

@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -40,9 +40,10 @@ start)
 		-r1800 \
 		"-bo$logfile" \
 		"-p$HOME/bin/recovery.sh" \
-		"-nmemory=mailout java.memory merger:java-memory -Xms1g -Xmx4g" \
+		"-nmemory=mailout java.memory merger.java-memory -Xms1g -Xmx4g" \
+		"-nhost=mailout host merger.host *" \
 		-- \
-		$java '$memory' $xmlrpc '*'
+		$java '$memory' $xmlrpc '$host'
 	echo "done."
 	slogfile=${HOME}/log/backend.log
 	rm -f $slogfile

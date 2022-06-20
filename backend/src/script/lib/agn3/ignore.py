@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -14,7 +14,6 @@ import	logging
 from	types import TracebackType
 from	typing import Any, Optional, Callable
 from	typing import Type
-from	.definitions import program
 from	.stream import Stream
 #
 __all__ = ['Ignore', 'ignore', 'Experimental']
@@ -98,10 +97,10 @@ failure of the new code harms the result of the program.
 Instead of passing excpetions, use a speaking name as an argument to
 create an instance."""
 	__slots__ = ['name']
-	def __init__ (self, name: Optional[str] = None) -> None:
+	def __init__ (self, name: str) -> None:
 		super ().__init__ (
 			template = '{self.name}: failed in experimental code {exc_value}',
 			loglevel = logging.ERROR,
 			logexception = True
 		)
-		self.name = name if name is not None else program
+		self.name = name

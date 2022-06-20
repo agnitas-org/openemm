@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -35,6 +35,7 @@ list with different methods of persistance.
 	skip_pattern = re.compile (',[ \t]*')
 	decode_pattern = re.compile ('([@$a-z0-9_-]+)[ \t]*=[ \t]*"([^"]*)"', re.IGNORECASE | re.MULTILINE)
 	def __decode (self, ctx: Dict[str, Any], s: str, target: Dict[str, str]) -> None:
+		original = s
 		while s:
 			mtch = self.skip_pattern.match (s)
 			if mtch is not None:
@@ -45,7 +46,7 @@ list with different methods of persistance.
 				target[var] = val
 				s = s[mtch.end ():]
 			else:
-				break
+				raise ValueError (f'{original}: failed to parse at "{s}"')
 
 	def __encode (self, ctx: Dict[str, Any], source: Dict[str, str]) -> str:
 		for value in source.values ():

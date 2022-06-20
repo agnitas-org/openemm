@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -16,7 +16,7 @@
 # define	OPTION_DISABLE_LINK_EXTENSION	(1 << 1)
 
 static char *
-create_ecs_uid (blockmail_t *blockmail, const char *prefix, receiver_t *rec, long url_id) /*{{{*/
+create_ecs_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id) /*{{{*/
 {
 	char	uid[128];
 	
@@ -93,14 +93,15 @@ encode (char *buf, int buflen, const byte_t *data, int datalen) /*{{{*/
 }/*}}}*/
 
 static char *
-create_xuid (blockmail_t *blockmail, const char *prefix, receiver_t *rec, long url_id) /*{{{*/
+create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id) /*{{{*/
 {
 	const char	*rc;
 	enum {
 		V2 = 2,
-		V3 = 3
-	}		uid_version,
-			fallback_version = V3;		/* must always be the most recent one */
+		V3 = 3,
+		V4 = 4
+	}		uid_version_used,
+			fallback_version = V4;		/* must always be the most recent one */
 	int		n;
 	unsigned long	vu = 0;
 	long		vs = 0;
@@ -116,20 +117,21 @@ create_xuid (blockmail_t *blockmail, const char *prefix, receiver_t *rec, long u
 		buffer_stiffch (blockmail -> secret_sig, '.');
 	}
 	
-	switch (blockmail -> uid_version) {
+	switch (uid_version) {
 	default:
-	case 0:		uid_version = fallback_version;	break;
-	case 2:		uid_version = V2;		break;
-	case 3:		uid_version = V3;		break;
+	case 0:		uid_version_used = fallback_version;	break;
+	case 2:		uid_version_used = V2;			break;
+	case 3:		uid_version_used = V3;			break;
+	case 4:		uid_version_used = V4;			break;
 	}
 	
-	switch (uid_version) {
+	switch (uid_version_used) {
 	case V2:
 		for (n = 0; n < 5; ++n) {
 			switch (n) {
 			case 0:	/* version */
-				vu = uid_version;
-				vs = uid_version;
+				vu = uid_version_used;
+				vs = uid_version_used;
 				break;
 			case 1:	/* licenceID */
 				vu = blockmail -> licence_id;
@@ -160,8 +162,8 @@ create_xuid (blockmail_t *blockmail, const char *prefix, receiver_t *rec, long u
 		for (n = 0; n < 6; ++n) {
 			switch (n) {
 			case 0:	/* version */
-				vu = uid_version;
-				vs = uid_version;
+				vu = uid_version_used;
+				vs = uid_version_used;
 				break;
 			case 1:	/* licenceID */
 				vu = blockmail -> licence_id;
@@ -193,11 +195,53 @@ create_xuid (blockmail_t *blockmail, const char *prefix, receiver_t *rec, long u
 			buffer_stiffch (blockmail -> secret_sig, '.');
 		}
 		break;
+	case V4:
+		for (n = 0; n < 7; ++n) {
+			switch (n) {
+			case 0:	/* version */
+				vu = uid_version_used;
+				vs = uid_version_used;
+				break;
+			case 1:	/* licenceID */
+				vu = blockmail -> licence_id;
+				vs = blockmail -> licence_id;
+				break;
+			case 2:	/* companyID */
+				vu = blockmail -> company_id;
+				vs = blockmail -> company_id;
+				break;
+			case 3:	/* mailingID */
+				vu = blockmail -> mailing_id;
+				vs = blockmail -> mailing_id;
+				break;
+			case 4:	/* customerID */
+				vu = rec -> customer_id;
+				vs = rec -> customer_id;
+				break;
+			case 5:	/*  URLID */
+				vu = url_id;
+				vs = url_id;
+				break;
+			case 6:	/* bitOption */
+				vu = OPTION (rec -> tracking_veto, OPTION_TRACKING_VETO) |
+				     OPTION (rec -> disable_link_extension, OPTION_DISABLE_LINK_EXTENSION);
+				vs = (long) vu;
+				break;
+			}
+			len = iencode (scratch, sizeof (scratch), vu);
+			buffer_stiffsn (blockmail -> secret_uid, scratch, len);
+			buffer_stiffch (blockmail -> secret_uid, '.');
+			len = snprintf (scratch, sizeof (scratch), "%ld", vs);
+			buffer_stiffsn (blockmail -> secret_sig, scratch, len);
+			buffer_stiffch (blockmail -> secret_sig, '.');
+		}
+		break;
 	}
 	buffer_stiff (blockmail -> secret_sig, xmlBufferContent (blockmail -> secret_key), xmlBufferLength (blockmail -> secret_key));
-	switch (uid_version) {
+	switch (uid_version_used) {
 	case V2:
 	case V3:
+	case V4:
 		{
 			SHA512_CTX	hash;
 			unsigned char	digest[SHA512_DIGEST_LENGTH];
@@ -214,12 +258,12 @@ create_xuid (blockmail_t *blockmail, const char *prefix, receiver_t *rec, long u
 	return rc ? strdup (rc) : NULL;
 }/*}}}*/
 char *
-create_uid (blockmail_t *blockmail, const char *prefix, receiver_t *rec, long url_id) /*{{{*/
+create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id) /*{{{*/
 {
 	if (blockmail -> force_ecs_uid) {
-		return create_ecs_uid (blockmail, prefix, rec, url_id);
+		return create_ecs_uid (blockmail, uid_version, prefix, rec, url_id);
 	}
-	return create_xuid (blockmail, prefix, rec, url_id);
+	return create_xuid (blockmail, uid_version, prefix, rec, url_id);
 }/*}}}*/
 
 char *

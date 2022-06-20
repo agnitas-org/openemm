@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -24,10 +24,10 @@ from	typing import cast
 from	agn3.cache import Cache
 from	agn3.db import DBIgnore, DB, Row
 from	agn3.dbm import DBM
-from	agn3.definitions import base, licence, syscfg
+from	agn3.definitions import base, licence, syscfg, unique
 from	agn3.email import EMail
 from	agn3.emm.columns import Columns
-from	agn3.emm.companyconfig import CompanyConfig
+from	agn3.emm.config import EMMCompany
 from	agn3.emm.types import MediaType, UserStatus
 from	agn3.exceptions import error
 from	agn3.ignore import Ignore, Experimental
@@ -407,7 +407,7 @@ class UpdateBounce (Update): #{{{
 		'igcount', 'sucount', 'sbcount', 'hbcount', 'dupcount', 'blcount', 'rvcount', 'ccount',
 		'translate', 'delayed_processing', 'cache', 'succeeded',
 		'has_mailtrack', 'has_mailtrack_last_read', 'sys_encrypted_sending_enabled',
-		'ccfg'
+		'bounce_mark_duplicate'
 	]
 	name = 'bounce'
 	path = os.path.join (base, 'log', 'extbounce.log')
@@ -680,7 +680,7 @@ class UpdateBounce (Update): #{{{
 		self.has_mailtrack: Dict[int, bool] = {}
 		self.has_mailtrack_last_read = 0
 		self.sys_encrypted_sending_enabled: Cache[int, bool] = Cache (timeout = '30m')
-		self.ccfg: CompanyConfig = CompanyConfig ()
+		self.bounce_mark_duplicate: Dict[int, bool] = {}
 	
 	def done (self) -> None:
 		self.delayed_processing.done ()
@@ -797,8 +797,10 @@ class UpdateBounce (Update): #{{{
 		self.blcount = 0
 		self.rvcount = 0
 		self.ccount = 0
-		self.ccfg.db = db
-		self.ccfg.read ()
+		self.bounce_mark_duplicate = (Stream (EMMCompany (db = db, keys = ['bounce-mark-duplicate']).scan_all ())
+			.map (lambda v: (v.company_id, atob (v.value)))
+			.dict ()
+		)
 		self.succeeded.clear ()
 		self.translate.clear ()
 		self.translate.setup (db)
@@ -831,7 +833,6 @@ class UpdateBounce (Update): #{{{
 				db.sync ()
 				logger.info (f'Apply {count:,d} delayed processed bounces (where {success:,d} succeeded)')
 		self.sys_encrypted_sending_enabled.fill = None
-		self.ccfg.db = None
 		return True
 
 	def update_line (self, db: DB, line: str) -> bool:
@@ -978,7 +979,7 @@ class UpdateBounce (Update): #{{{
 									and
 									record.media == MediaType.EMAIL.value
 									and
-									self.ccfg.get_company_info ('bounce-mark-duplicate', company_id = company_id, default = True, convert = lambda v: atob (v))
+									self.bounce_mark_duplicate.get (company_id, self.bounce_mark_duplicate.get (0, True))
 								):
 									rq = db.querys (
 										'SELECT email '
@@ -999,6 +1000,8 @@ class UpdateBounce (Update): #{{{
 											#	find duplicate email addresses, ignoring case
 											#	in domain part, but obey case in local part
 											customer_ids: List[int] = []
+											data['mailing'] = 0
+											data['remark'] += f' (by {record.mailing_id})'
 											for row in db.queryc (
 												'SELECT customer_id, email '
 												f'FROM customer_{company_id}_tbl '
@@ -1465,7 +1468,7 @@ class UpdateMailtrack (Update): #{{{
 	__slots__ = ['mailtrack_process_table', 'companies', 'count', 'insert_statement', 'max_count', 'max_count_last_updated']
 	name = 'mailtrack'
 	path = os.path.join (base, 'log', 'mailtrack.log')
-	mailtrack_process_table_default = 'mailtrack_process_tbl'
+	mailtrack_process_table_default = f'mailtrack_process_{unique}_tbl'
 	mailtrack_config_key: Final[str] = 'mailtrack-extended'
 	mailtrack_bulk_update_config_key: Final[str] = f'{mailtrack_config_key}:bulk-update'
 	mailtrack_bulk_update_chunk_config_key: Final[str] = f'{mailtrack_config_key}:bulk-update-chunk'
@@ -1523,7 +1526,7 @@ class UpdateMailtrack (Update): #{{{
 						.format (table = self.mailtrack_process_table)
 					)
 				))
-				mailtrack_index_prefix = syscfg.get ('mailtrack-process-index-prefix', 'mtproc')
+				mailtrack_index_prefix = syscfg.get ('mailtrack-process-index-prefix', f'mtproc{unique}')
 				for (index_id, index_column) in [
 					('cid', 'company_id'),
 					('cuid', 'customer_id'),
@@ -1560,11 +1563,14 @@ class UpdateMailtrack (Update): #{{{
 				self.max_count_last_updated = today
 				logger.info (f'optimizer started for {self.count:,d} entries in {self.mailtrack_process_table}')
 			#
-			ccfg = CompanyConfig (db = db)
-			ccfg.read ()
+			emmcompany = EMMCompany (db = db, keys = [
+				UpdateMailtrack.mailtrack_config_key,
+				UpdateMailtrack.mailtrack_bulk_update_config_key,
+				UpdateMailtrack.mailtrack_bulk_update_chunk_config_key
+			])
 			for (company_id, counter) in sorted (self.companies.items ()):
 				try:
-					active = ccfg.get_company_info (UpdateMailtrack.mailtrack_config_key, company_id = company_id)
+					active = emmcompany.get (UpdateMailtrack.mailtrack_config_key, company_id = company_id)
 				except KeyError:
 					logger.debug ('%s: no value set for company %d, do not process entries' % (UpdateMailtrack.mailtrack_config_key, company_id))
 					continue
@@ -1573,8 +1579,8 @@ class UpdateMailtrack (Update): #{{{
 						logger.debug ('%s: value %s set for company %d results to disable processing' % (UpdateMailtrack.mailtrack_config_key, active, company_id))
 						continue
 				#
-				bulk_update: bool = ccfg.get_company_info (UpdateMailtrack.mailtrack_bulk_update_config_key, company_id = company_id, default = False, convert = atob)
-				bulk_update_chunk: int = ccfg.get_company_info (UpdateMailtrack.mailtrack_bulk_update_chunk_config_key, company_id = company_id, default = 0, convert = atoi)
+				bulk_update: bool = emmcompany.get (UpdateMailtrack.mailtrack_bulk_update_config_key, company_id = company_id, default = False, convert = atob)
+				bulk_update_chunk: int = emmcompany.get (UpdateMailtrack.mailtrack_bulk_update_chunk_config_key, company_id = company_id, default = 0, convert = atoi)
 				logger.info (f'{company_id}: processing {counter} update mailtracking')
 				self.__update_mailtracking (db, company_id, counter)
 				logger.info (f'{company_id}: processing profile updates (bulk is {bulk_update}, chunk is {bulk_update_chunk})')

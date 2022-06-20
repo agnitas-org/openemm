@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -53,7 +53,7 @@ mkautourl (blockmail_t *blockmail, receiver_t *rec, block_t *block, url_t *url, 
 {
 	char	*uid;
 
-	if (blockmail -> auto_url_is_dynamic && (uid = create_uid (blockmail, blockmail -> auto_url_prefix, rec, url -> url_id))) {
+	if (blockmail -> auto_url_is_dynamic && (uid = create_uid (blockmail, blockmail -> uid_version, blockmail -> auto_url_prefix, rec, url -> url_id))) {
 		char	parameter_separator[2];
 
 		parameter_separator[1] = '\0';
@@ -97,7 +97,7 @@ mkonepixellogurl (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 {
 	char	*uid;
 	
-	if (blockmail -> onepixel_url && (uid = create_uid (blockmail, NULL, rec, 0))) {
+	if (blockmail -> onepixel_url && (uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, 0))) {
 		if ((! blockmail -> rdir_content_links) || (! transcode_url_for_content (blockmail, blockmail -> onepixel_url, uid))) {
 			buffer_set (blockmail -> link_maker, xmlBufferContent (blockmail -> onepixel_url), xmlBufferLength (blockmail -> onepixel_url));
 			buffer_appends (blockmail -> link_maker, "uid=");

@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -16,7 +16,7 @@ from	typing import Optional
 from	typing import Dict, Iterator, Type
 from	.db import Row, DBIgnore, DB
 from	.dbconfig import DBConfig
-from	.emm.companyconfig import CompanyConfig
+from	.emm.config import EMMConfig
 from	.exceptions import error
 from	.stream import Stream
 #
@@ -28,11 +28,9 @@ class DBs:
 	"""Access all accessable (and configured in dbcfg) databases available"""
 	__slots__ = ['instances', 'by_licence']
 	class Instance (DB):
-		__slots__ = ['ccfg', 'licence_id']
+		__slots__ = ['licence_id']
 		def setup (self) -> None:
-			self.ccfg = CompanyConfig (db = self)
-			self.ccfg.read ()
-			self.licence_id = int (self.ccfg.get_config ('system', 'licence'))
+			self.licence_id = int (EMMConfig (db = self, class_names = ['system']).get ('system', 'licence'))
 		
 	def __init__ (self) -> None:
 		self.instances: Dict[str, DBs.Instance] = {}

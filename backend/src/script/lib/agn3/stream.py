@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -280,7 +280,7 @@ string, otherwise with a generic 'Peek'"""
 					self.shown = -1
 				def show (self) -> None:
 					if self.count != self.shown:
-						sys.stderr.write (f'{self.name}: Now at {self.count:,d}')
+						sys.stderr.write (f'{self.name}: Now at {self.count:,d}\n')
 						self.shown = self.count
 				def tick (self, elem: Any) -> None:
 					self.count += 1
@@ -596,7 +596,7 @@ each element. """
 			
 	def collect (self,
 		supplier: Any,
-		accumulator: Optional[Callable[[Any, Any], None]] = None,
+		accumulator: Optional[Callable[[Any, T], None]] = None,
 		finisher: Optional[Callable[[Any, int], Any]] = None,
 		progress: Union[None, str, Stream.Progress] = None,
 		checkpoint: Optional[int] = None
@@ -624,7 +624,7 @@ progression. See method ``progress'' for further details."""
 				def supplier (self) -> Any:
 					return supplier () if callable (supplier) else supplier
 		
-				def accumulator (self, supplier: Any, element: Any) -> None:
+				def accumulator (self, supplier: Any, element: T) -> None:
 					if accumulator is not None:
 						accumulator (supplier, element)
 		

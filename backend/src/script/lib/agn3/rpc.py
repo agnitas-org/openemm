@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -15,7 +15,6 @@ import	socketserver, urllib.parse, base64
 import	xmlrpc.server, xmlrpc.client
 import	aiohttp_xmlrpc.client
 from	datetime import datetime
-from	signal import Signals
 from	threading import Thread
 from	types import FrameType, TracebackType
 from	typing import Any, Callable, Iterable, Optional, Protocol, Union
@@ -246,7 +245,7 @@ server.run ()
 				self.timeout = timeout
 			self.action_callback = action_callback
 	
-		def handle_error (self, request: Any, client_address: Tuple[str, int]) -> None:
+		def handle_error (self, request: Any, client_address: Union[Tuple[str, int], str]) -> None:
 			logger.exception ('Request failed for {client}: {request!r}'.format (
 				client = client_address[0],
 				request = request
@@ -316,7 +315,7 @@ server.run ()
 	
 	def run (self) -> None:
 		"""start the server"""
-		def handler (sig: Signals, stack: FrameType) -> None:
+		def handler (sig: int, stack: Optional[FrameType]) -> Any:
 			logger.info (f'signal {sig} recieved, initiating shutdown')
 			self.shutdown ()
 		with Signal (
@@ -325,7 +324,11 @@ server.run ()
 			hup = 'ign',
 			pipe = 'ign'
 		):
-			self.server.serve_forever (poll_interval = 1.0)
+			self.serve ()
+	
+	def serve (self) -> None:
+		"""start the server when signal handling is done somewhere else"""
+		self.server.serve_forever (poll_interval = 1.0)
 
 class XMLRPCClient (xmlrpc.client.ServerProxy):
 	"""XML-RPC Client Framework
@@ -413,7 +416,7 @@ client ().some_remote_method ()
 with XMLRPCCall () as client:
 	client ().some_remote_method ()
 """
-	__slots__ = ['remote', 'timeout', 'otimeout', 'silent', 'callback']
+	__slots__ = ['_remote', '_timeout', '_otimeout', '_silent', '_callback']
 	def __init__ (self,
 		server: str = '127.0.0.1',
 		port: int = 8080,
@@ -439,23 +442,26 @@ with XMLRPCCall () as client:
 			cfg[f'{prefix}.passwd'] = passwd
 		cfg[f'{prefix}.allow_none'] = str (allow_none)
 		cfg[f'{prefix}.use_datetime'] = str (use_datetime)
-		self.remote = XMLRPCClient (cfg, prefix)
-		self.timeout = timeout
-		self.otimeout: Optional[float] = None
-		self.silent = silent
-		self.callback = callback
+		self._remote = XMLRPCClient (cfg, prefix)
+		self._timeout = timeout
+		self._otimeout: Optional[float] = None
+		self._silent = silent
+		self._callback = callback
 	
 	def __enter__ (self) -> XMLRPCCall:
-		self.otimeout = socket.getdefaulttimeout ()
-		socket.setdefaulttimeout (self.timeout)
+		self._otimeout = socket.getdefaulttimeout ()
+		socket.setdefaulttimeout (self._timeout)
 		return self
 	
 	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
-		socket.setdefaulttimeout (self.otimeout)
-		rc = self.silent
-		if self.callback is not None:
-			rc = self.callback (exc_type, exc_value, traceback)
+		socket.setdefaulttimeout (self._otimeout)
+		rc = self._silent
+		if self._callback is not None:
+			rc = self._callback (exc_type, exc_value, traceback)
 		return rc
 	
 	def __call__ (self) -> XMLRPCClient:
-		return self.remote
+		return self._remote
+
+	def __getattr__ (self, attr: str) -> Any:
+		return getattr (self._remote, attr)

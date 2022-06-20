@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -18,7 +18,7 @@ from	collections import deque
 from	dataclasses import dataclass, field
 from	datetime import datetime
 from	enum import Enum
-from	signal import Signals, Handlers
+from	signal import Handlers
 from	types import FrameType, TracebackType
 from	typing import Any, Callable, Generic, NoReturn, Optional, Sequence, TypeVar, Union
 from	typing import Deque, Dict, Generator, List, Set, Tuple, Type
@@ -36,11 +36,11 @@ logger = logging.getLogger (__name__)
 #
 T = TypeVar ('T')
 #
-Handler = Union[Callable[[Signals, FrameType], None], int, Handlers, None]
+Handler = Union[Callable[[int, Optional[FrameType]], Any], int, Handlers, None]
 class Signal:
 	__slots__ = ['saved']
-	known_signals: Dict[str, Signals] = (Stream (signal.__dict__.items ())
-		.filter (lambda kv: isinstance (kv[1], Signals))
+	known_signals: Dict[str, int] = (Stream (signal.__dict__.items ())
+		.filter (lambda kv: isinstance (kv[1], int))
 		.dict ()
 	)
 	known_handlers: Dict[str, Handlers] = (Stream (signal.__dict__.items ())
@@ -48,16 +48,16 @@ class Signal:
 		.dict ()
 	)
 	def __init__ (self,
-		*args: Union[Signals, Handler, str],
+		*args: Union[int, Handler, str],
 		**kwargs: Union[Handler, str]
 	) -> None:
-		self.saved: Dict[Signals, Handler] = {}
+		self.saved: Dict[int, Handler] = {}
 		if len (args) % 2 == 1:
 			raise error ('need pairs of signal and handler as positional arguments')
 		if args:
 			siglist = list (args)
 			while siglist:
-				signr = cast (Union[Signals, str], siglist.pop (0))
+				signr = cast (Union[int, str], siglist.pop (0))
 				handler = siglist.pop (0)
 				self[signr] = handler
 		for (signame, handler_name) in kwargs.items ():
@@ -70,7 +70,7 @@ class Signal:
 		self.restore ()
 		return None
 
-	def __setitem__ (self, sig: Union[Signals, str], handler: Union[Handler, str]) -> None:
+	def __setitem__ (self, sig: Union[int, str], handler: Union[Handler, str]) -> None:
 		signr = self.find_signal (sig)
 		old_handler = signal.signal (
 			signr,
@@ -79,10 +79,10 @@ class Signal:
 		if signr not in self.saved:
 			self.saved[signr] = old_handler
 
-	def __getitem__ (self, sig: Union[Signals, str]) -> Handler:
+	def __getitem__ (self, sig: Union[int, str]) -> Handler:
 		return signal.getsignal (self.find_signal (sig))
 	
-	def __delitem__ (self, sig: Union[Signals, str]) -> None:
+	def __delitem__ (self, sig: Union[int, str]) -> None:
 		signr = self.find_signal (sig)
 		try:
 			old_handler = self.saved.pop (signr)
@@ -97,7 +97,7 @@ class Signal:
 	def clear (self) -> None:
 		self.saved.clear ()
 
-	def find_signal (self, sig: Union[Signals, str]) -> Signals:
+	def find_signal (self, sig: Union[int, str]) -> int:
 		if isinstance (sig, str):
 			signame = sig.upper ()
 			try:
@@ -171,7 +171,7 @@ class Timer:
 
 	@staticmethod
 	def guard (timeout: int, method: Callable[[], T]) -> T:
-		def handler (sig: Signals, stack: FrameType) -> None:
+		def handler (sig: int, stack: Optional[FrameType]) -> Any:
 			raise Timeout ()
 		with Signal (signal.SIGALRM, handler):
 			try:
@@ -223,10 +223,10 @@ should be subclassed and extended for the process to implement."""
 	def done (self) -> None:
 		self.signals.restore ()
 		
-	def setsignal (self, signr: Signals, action: Union[None, Handlers, Callable[[Signals, FrameType], None]]) -> None:
+	def setsignal (self, signr: int, action: Handler) -> None:
 		self.signals[signr] = action
 			
-	def signal_handler (self, sig: Signals, stack: FrameType) -> None:
+	def signal_handler (self, sig: int, stack: Optional[FrameType]) -> Any:
 		"""Standard signal handler for graceful termination"""
 		self.running = False
 	
@@ -332,14 +332,14 @@ process), ``timeout'' is the time in seconds to max. wait. If this is
 			return waitfor ()
 		#
 		rc = waitfor (os.WNOHANG)
-		if timeout > 0.0:
+		if timeout:
 			with Ignore (Timeout), Timer (timeout) as timer:
 				while not rc.pid and rc.error is None:
 					timer (0.1)
 					rc = waitfor (os.WNOHANG)
 		return rc
 
-	def term (self, pid: int, sig: Optional[Signals] = None) -> bool:
+	def term (self, pid: int, sig: Optional[int] = None) -> bool:
 		"""Terminates a child process ``pid'' with signal ``sig'' (if None, SIGTERM is used)"""
 		try:
 			os.kill (pid, sig if sig is not None else signal.SIGTERM)
@@ -532,12 +532,11 @@ is called at the exit of the context manager.
 						self.scheduled.remove (member)
 						if self.log: self.log (member, 'stop schedule')
 			elif member.state in (Daemonic.State.running, Daemonic.State.dying):
-				with Ignore (ValueError):
-					pid = Stream (self.active.items ()).filter (lambda kv:kv[1] is member).map (lambda kv: kv[0]).first ()
-					if pid > 0:
-						member.state = Daemonic.State.dying
-						self.daemon.term (pid, signal.SIGTERM if not hard else signal.SIGKILL)
-						if self.log: self.log (member, 'stop {how}'.format (how = 'hard' if hard else 'soft'))
+				pid = Stream (self.active.items ()).filter (lambda kv: kv[1] is member).map (lambda kv: kv[0]).first (no = 0)
+				if pid > 0:
+					member.state = Daemonic.State.dying
+					self.daemon.term (pid, signal.SIGTERM if not hard else signal.SIGKILL)
+					if self.log: self.log (member, 'stop {how}'.format (how = 'hard' if hard else 'soft'))
 			return member
 
 		def wait (self, timeout: Union[None, int, float] = None) -> int:
@@ -545,7 +544,7 @@ is called at the exit of the context manager.
 			with Ignore (Timeout), Timer (timeout) as timer:
 				while self.is_active ():
 					self.start ()
-					status = self.daemon.join (timeout = timer () if timeout is None or timeout > 0.0 else 0)
+					status = self.daemon.join (timeout = timer () if timeout else timeout)
 					if status is not None:
 						if status.pid:
 							with Ignore (KeyError):

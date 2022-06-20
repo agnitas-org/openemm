@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -110,6 +110,7 @@
 # define	REASON_UNSPEC		0
 # define	REASON_NO_MEDIA		1
 # define	REASON_EMPTY_DOCUMENT	2
+# define	REASON_UNMATCHED_MEDIA	3
 
 typedef enum { /*{{{*/
 	EncNone,
@@ -418,6 +419,7 @@ struct blockmail { /*{{{*/
 	int		owner_id;
 	char		nodename[96];
 	int		company_id;
+	char		*company_token;
 	var_t		*company_info;
 	int		mailinglist_id;
 	xmlBufferPtr	mailinglist_name;
@@ -849,7 +851,7 @@ extern bool_t		xmlSQLlike (const xmlChar *pattern, int plen,
 				    const xmlChar *string, int slen,
 				    const xmlChar *escape, int elen);
 
-extern char		*create_uid (blockmail_t *blockmail, const char *prefix, receiver_t *rec, long url_id);
+extern char		*create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id);
 extern char		*create_pubid (blockmail_t *blockmail, receiver_t *rec, const char *source, const char *parm);
 
 extern encrypt_t	*encrypt_alloc (blockmail_t *blockmail);

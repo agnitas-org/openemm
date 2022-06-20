@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -14,6 +14,16 @@
 # include	<unistd.h>
 # include	<pwd.h>
 
+static int
+equal (const char *e1, const char *e2, int basename)
+{
+	if (basename) {
+		const char	*p1 = strrchr (e1, '/'),
+				*p2 = strrchr (e2, '/');
+		return ! strcmp (p1 ? p1 + 1 : e1, p2 ? p2 + 1 : e2);
+	}
+	return ! strcmp (e1, e2);
+}
 static int
 match_directory_prefix (const char *prefix, int prefix_length, const char *path)
 {
@@ -73,15 +83,19 @@ main (int argc, char **argv)
 	int		n;
 	int		rc;
 	char		*orig, *target;
-	int		classic, newline, sort;
+	int		classic, basename, newline, sort;
 	
 	classic = 0;
+	basename = 0;
 	newline = 0;
 	sort = 0;
-	while ((n = getopt (argc, argv, "cns?h")) != -1)
+	while ((n = getopt (argc, argv, "cbns?h")) != -1)
 		switch (n) {
 		case 'c':
 			classic = 1;
+			break;
+		case 'b':
+			basename = 1;
 			break;
 		case 'n':
 			newline = 1;
@@ -116,7 +130,7 @@ main (int argc, char **argv)
 			if (classic) {
 				for (n = count - 1; n > 0; --n) {
 					for (m = n - 1; m >= 0; --m)
-						if (! strcmp (elements[n], elements[m]))
+						if (equal (elements[n], elements[m], basename))
 							break;
 					if (m >= 0) {
 						for (m = n; m < count - 1; ++m)
@@ -127,7 +141,7 @@ main (int argc, char **argv)
 			} else {
 				for (n = 0; n < count - 1; ) {
 					for (m = n + 1; m < count; ++m)
-						if (! strcmp (elements[n], elements[m]))
+						if (equal (elements[n], elements[m], basename))
 							break;
 					if (m < count) {
 						for (m = n; m < count - 1; ++m)

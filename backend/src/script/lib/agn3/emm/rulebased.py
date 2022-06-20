@@ -1,7 +1,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -12,8 +12,9 @@
 from	__future__ import annotations
 import	logging
 from	datetime import datetime
+from	types import TracebackType
 from	typing import Any, Final, Optional
-from	typing import Dict
+from	typing import Dict, Type
 from	..db import DB, TempDB
 from	..definitions import fqdn
 from	..stream import Stream
@@ -28,20 +29,27 @@ class Rulebased:
 	rulebased_sent_table: Final[str] = 'rulebased_sent_tbl'
 	ancient: Final[datetime] = datetime (1980, 1, 1, 0, 0, 0)
 	class Mailing:
-		__slots__ = ['_mailing_id', '_lastsent', '_clearance', '_lastsent_original', '_clearance_original']
-		def __init__ (self, mailing_id: int, lastsent: Optional[datetime], clearance: bool) -> None:
+		__slots__ = ['_mailing_id', '_lastsent', '_clearance', '_status', '_lastsent_original', '_clearance_original', '_status_original', '_dirty']
+		def __init__ (self, mailing_id: int, lastsent: datetime, clearance: bool, status: Optional[str], dirty: bool) -> None:
 			self._mailing_id = mailing_id
 			self._lastsent = lastsent
 			self._clearance = clearance
-			self._lastsent_original = self._lastsent
-			self._clearance_original = self._clearance
+			self._status = status
+			self.update ()
+			self._dirty = dirty
 
 		def __str__ (self) -> str:
-			return f'Mailing (mailing_id = {self._mailing_id}, lastsent = {self._lastsent!r}, clearance = {self._clearance}'
+			return f'Mailing (mailing_id = {self._mailing_id}, lastsent = {self._lastsent}, clearance = {self._clearance}, status = {self._status!r})'
 		__repr__ = __str__
+	
+		def update (self) -> None:
+			self._lastsent_original = self._lastsent
+			self._clearance_original = self._clearance
+			self._status_original = self._status
+			self._dirty = False
 
 		def changed (self) -> bool:
-			return self.lastsent_changed () or self.clearance_changed ()
+			return self._dirty or self.lastsent_changed () or self.clearance_changed () or self.status_changed ()
 
 		def lastsent_changed (self) -> bool:
 			if self._lastsent is not None and self._lastsent_original is not None:
@@ -50,14 +58,17 @@ class Rulebased:
 
 		def clearance_changed (self) -> bool:
 			return self._clearance != self._clearance_original
+		
+		def status_changed (self) -> bool:
+			return self._status != self._status_original
 	
 		@property
 		def mailing_id (self) -> int:
 			return self._mailing_id
 
-		def _get_lastsent (self) -> Optional[datetime]:
+		def _get_lastsent (self) -> datetime:
 			return self._lastsent
-		def _set_lastsent (self, lastsent: Optional[datetime]) -> None:
+		def _set_lastsent (self, lastsent: datetime) -> None:
 			self._lastsent = lastsent
 		def _del_lastsent (self) -> None:
 			self._lastsent = self._lastsent_original
@@ -71,13 +82,31 @@ class Rulebased:
 			self._clearance = self._clearance_original
 		clearance = property (_get_clearance, _set_clearance, _del_clearance)
 		
+		def _get_status (self) -> Optional[str]:
+			return self._status
+		def _set_status (self, status: Optional[str]) -> None:
+			self._status = status
+			if isinstance (self._status, str):
+				self._status = self._status.strip ()
+				if not self._status:
+					self._status = None
+		def _del_status (self) -> None:
+			self._status = self._status_original
+		status = property (_get_status, _set_status, _del_status)
+		
 	def __init__ (self, db: Optional[DB] = None) -> None:
 		self.temp_db = TempDB (db)
+
+	def __enter__ (self) -> Rulebased:
+		return self
+		
+	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+		return None
 
 	def retrieve (self, mailing_id: int) -> Rulebased.Mailing:
 		with self.temp_db as db:
 			rq = db.querys (
-				'SELECT lastsent, clearance '
+				'SELECT lastsent, clearance, clearance_status '
 				f'FROM {Rulebased.rulebased_sent_table} '
 				'WHERE mailing_id = :mailing_id',
 				{
@@ -88,13 +117,17 @@ class Rulebased:
 				rc = Rulebased.Mailing (
 					mailing_id = mailing_id,
 					lastsent = rq.lastsent if rq.lastsent is not None else self.ancient,
-					clearance = (rq.clearance > 0) if rq.clearance is not None else True
+					clearance = (rq.clearance > 0) if rq.clearance is not None else True,
+					status = rq.clearance_status,
+					dirty = False
 				)
 			else:
 				rc = Rulebased.Mailing (
 					mailing_id = mailing_id,
 					lastsent = self.ancient,
-					clearance = True
+					clearance = True,
+					status = None,
+					dirty = True
 				)
 				self.store (rc)
 			return rc
@@ -118,6 +151,9 @@ class Rulebased:
 					columns.append (('clearance_origin', ':clearance_origin'))
 					data['clearance'] = 1 if mailing.clearance else 0
 					data['clearance_origin'] = fqdn
+				if mailing.status_changed ():
+					columns.append (('clearance_status', ':clearance_status'))
+					data['clearance_status'] = mailing.status
 				query = (
 					f'UPDATE {Rulebased.rulebased_sent_table} '
 					'SET {columns} '
@@ -131,14 +167,15 @@ class Rulebased:
 				elif rows == 0:
 					if (rows := cursor.update (
 						f'INSERT INTO {Rulebased.rulebased_sent_table} '
-						'        (mailing_id, creation_date, change_date, lastsent, clearance, clearance_change, clearance_origin) '
+						'        (mailing_id, creation_date, change_date, lastsent, clearance, clearance_change, clearance_origin, clearance_status) '
 						'VALUES '
-						'        (:mailing_id, current_timestamp, current_timestamp, :lastsent, :clearance, current_timestamp, :clearance_origin)',
+						'        (:mailing_id, current_timestamp, current_timestamp, :lastsent, :clearance, current_timestamp, :clearance_origin, :clearance_status)',
 						{
 							'mailing_id': mailing.mailing_id,
 							'lastsent': mailing.lastsent if mailing.lastsent is not self.ancient else None,
 							'clearance': mailing.clearance,
-							'clearance_origin': fqdn
+							'clearance_origin': fqdn,
+							'clearance_status': mailing.status
 						}
 					)) == 1:
 						logger.debug (f'{mailing.mailing_id}: created mailing for {mailing}')
@@ -150,6 +187,7 @@ class Rulebased:
 					rc = False
 				if rc:
 					cursor.sync ()
+					mailing.update ()
 		return rc
 
 	def remove (self, mailing: Rulebased.Mailing) -> None:

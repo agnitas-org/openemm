@@ -1,7 +1,7 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
@@ -321,6 +321,7 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t postproc, boo
 			blockmail -> licence_id = 1;
 			blockmail -> owner_id = 1;
 			blockmail -> company_id = 2;
+			blockmail -> company_token = strdup ("abc123");
 			blockmail -> mailinglist_id = 3;
 			blockmail -> mailinglist_name = xmlBufferCreate ();
 			xmlBufferCat (blockmail -> mailinglist_name, (const xmlChar *) "Mailinglist");
@@ -338,6 +339,8 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t postproc, boo
 			string_map_addsi (blockmail -> smap, "licence_id", blockmail -> licence_id);
 			string_map_addsi (blockmail -> smap, "owner_id", blockmail -> owner_id);
 			string_map_addsi (blockmail -> smap, "company_id", blockmail -> company_id);
+			if (blockmail -> company_token)
+				string_map_addss (blockmail -> smap, "company_token", blockmail -> company_token);
 			string_map_addsi (blockmail -> smap, "mailinglist_id", blockmail -> mailinglist_id);
 			string_map_addsb (blockmail -> smap, "mailinglist_name", blockmail -> mailinglist_name);
 			string_map_addsi (blockmail -> smap, "mailing_id", blockmail -> mailing_id);

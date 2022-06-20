@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -64,6 +64,7 @@ class BavUpdate (Runtime):
 		self.mtdom: Dict[str, int] = {}
 		self.prefixes = ['aml_', 'reply_']
 		self.prefix_pattern = re.compile ('^({p})[0-9]+@'.format (p = '|'.join ([re.escape (_p) for _p in self.prefixes])), re.IGNORECASE)
+		self.reserved_local_parts = {'fbl'}
 		self.last = ''
 		self.read_mailertable ()
 
@@ -96,6 +97,9 @@ class BavUpdate (Runtime):
 	class RID:
 		rid: int
 		domain: str
+	postfix_database_extension_mapping = {
+		'hash':	'db'
+	}
 	def read_mailertable (self, new_domains: Optional[Dict[str, BavUpdate.RID]] = None) -> None:
 		self.domains.clear ()
 		self.mtdom.clear ()
@@ -118,7 +122,20 @@ class BavUpdate (Runtime):
 								create_path (os.path.dirname (path))
 								open (path, 'w').close ()
 								if hash is not None:
-									self.mta.postfix_make (path)
+									self.mta.postfix_make (hash, path)
+							elif rc.hash is not None:
+								hash_path = '{path}.{extension}'.format (
+									path = rc.path,
+									extension = self.postfix_database_extension_mapping.get (rc.hash, rc.hash)
+								)
+								try:
+									target_stat = os.stat (hash_path)
+									source_stat = os.stat (path)
+									if target_stat.st_mtime <= source_stat.st_mtime:
+										raise error ('outdated hash file')
+								except Exception as e:
+									logger.info (f'force creating of {hash_path} due to {e}')
+									self.mta.postfix_make (hash, path)
 					if rc.path is not None:
 						try:
 							with open (rc.path) as fd:
@@ -154,7 +171,7 @@ class BavUpdate (Runtime):
 							path = ct.path
 						))
 						if ct.hash is not None:
-							self.mta.postfix_make (ct.path)
+							self.mta.postfix_make (ct.hash, ct.path)
 					except OSError as e:
 						logger.error (f'Failed to save {ct.path}: {e}')
 			#
@@ -300,19 +317,22 @@ class BavUpdate (Runtime):
 						if self.prefix_pattern.match (alias) is None:
 							with Ignore (ValueError):
 								(local_part, domain_part) = alias.split ('@', 1)
-								normalized_alias = '{local_part}@{domain_part}'.format (
-									local_part = local_part,
-									domain_part = domain_part.lower ()
-								)
-								if normalized_alias in seen_filter_addresses:
-									logger.warning (f'{row_id}: already seen "{alias}" as "{normalized_alias}" before ({seen_filter_addresses[normalized_alias]})')
+								if local_part.lower () in self.reserved_local_parts:
+									logger.warning (f'{row_id}: local part of "{alias}" is reserved for internal use and therefor rejected')
 								else:
-									seen_filter_addresses[normalized_alias] = row_id
-									if domain_part not in domains:
-										domains.append (domain_part)
-										if domain_part not in self.mtdom and domain_part not in new_domains:
-											new_domains[domain_part] = BavUpdate.RID (rid = row.rid, domain = domain_part)
-									aliases.append (alias)
+									normalized_alias = '{local_part}@{domain_part}'.format (
+										local_part = local_part,
+										domain_part = domain_part.lower ()
+									)
+									if normalized_alias in seen_filter_addresses:
+										logger.warning (f'{row_id}: already seen "{alias}" as "{normalized_alias}" before ({seen_filter_addresses[normalized_alias]})')
+									else:
+										seen_filter_addresses[normalized_alias] = row_id
+										if domain_part not in domains:
+											domains.append (domain_part)
+											if domain_part not in self.mtdom and domain_part not in new_domains:
+												new_domains[domain_part] = BavUpdate.RID (rid = row.rid, domain = domain_part)
+										aliases.append (alias)
 						else:
 							log_limit (logger.info, f'{alias}: clashes with internal prefixes {self.prefixes}')
 				#

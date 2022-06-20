@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -689,7 +689,7 @@ class BAV:
 	
 	def unsubscribe (self, db: DB, customer_id: int, mailing_id: int, user_remark: str) -> None:
 		if self.dryrun:
-			print ('Would unsubscribe %d due to mailing %d' % (customer_id, mailing_id))
+			print (f'Would unsubscribe {customer_id} due to mailing {mailing_id} with {user_remark}')
 			return
 		#
 		if db.isopen ():
@@ -703,7 +703,7 @@ class BAV:
 					'WHERE customer_id = :customer_id AND mailinglist_id = :mailinglist_id'
 					% company_id,
 					{
-						'userStatus': UserStatus.ADMOUT.value,
+						'userStatus': UserStatus.OPTOUT.value,
 						'user_remark': user_remark,
 						'mailing_id': mailing_id,
 						'customer_id': customer_id,
@@ -711,7 +711,7 @@ class BAV:
 					}
 				)
 				if cnt > 0:
-					logger.info ('Unsubscribed customer %d for company %d on mailinglist %d due to mailing %d' % (customer_id, company_id, mailinglist_id, mailing_id))
+					logger.info ('Unsubscribed customer %d for company %d on mailinglist %d due to mailing %d using %s' % (customer_id, company_id, mailinglist_id, mailing_id, user_remark))
 				else:
 					logger.warning ('Failed to unsubscribe customer %d for company %d on mailinglist %d due to mailing %d, matching %d rows (expected one row)' % (customer_id, company_id, mailinglist_id, mailing_id, cnt))
 				db.sync ()

@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -36,9 +36,7 @@ export	SYSTEM_CONFIG='{
 }'
 export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
-verbose=1
-quiet=0
-version="21.10.000.108"
+version="22.04.000.124"
 licence="`$BASE/bin/config-query licence`"
 system="`uname -s`"
 host="`uname -n | cut -d. -f1`"
@@ -177,25 +175,19 @@ export SENDMAIL_DSN SENDMAIL_DSN_OPT
 # B.) Routine collection
 #
 messagen() {
-	if [ $verbose -gt 0 ] ; then
-		case "$system" in
-		SunOS|HP-UX)
-			echo "$*\c"
-			;;
-		*)	echo -n "$*"
-			;;
-		esac
-	fi
+	case "$system" in
+	SunOS|HP-UX)
+		echo "$*\c"
+		;;
+	*)	echo -n "$*"
+		;;
+	esac
 }
 message() {
-	if [ $verbose -gt 0 ] ; then
-		echo "$*"
-	fi
+	echo "$*"
 }
 error() {
-	if [ $quiet -eq 0 ]; then
-		echo "$*" 1>&2
-	fi
+	echo "$*" 1>&2
 }
 epoch() {
 	date '+%s'
@@ -482,60 +474,26 @@ starter() {
 }
 #
 active() {
-	local	__verbose=$verbose
-	local	__quiet=$quiet
-	
-	verbose=0
-	while getopts qv opt; do
-		case "$opt" in
-		q)
-			if [ $verbose -eq 0 ]; then
-				quiet=1
-			else
-				verbose=0
-			fi
+	cmd="$BASE/bin/activator"
+	if [ -x "$cmd" ]; then
+		"$cmd" "$@"
+		rc=$?
+		case "$rc" in
+		0)
 			;;
-		v)
-			if [ $quiet -eq 1 ]; then
-				quiet=0
-			else
-				verbose=1
-			fi
+		1)
+			error "Service $service is marked as inactive."
+			exit 0
+			;;
+		*)
+			error "Service management for $@ failed with $rc, aborting."
+			exit $rc
 			;;
 		esac
-	done
-	shift $((OPTIND-1))
-	while [ $# -gt 0 ]; do
-		service="$1"
-		shift
-		cmd="$BASE/bin/activator"
-		if [ -x "$cmd" ]; then
-			varrun="$BASE/var/run"
-			if [ ! -d "$varrun" ]; then
-				mkdir -p "$varrun"
-			fi
-			"$cmd" "$service"
-			rc=$?
-			case "$rc" in
-			0)
-				message "Service $service is marked as active."
-				;;
-			1)
-				error "Service $service is marked as inactive."
-				exit 0
-				;;
-			*)
-				error "Service management for $service failed with $rc, aborting."
-				exit $rc
-				;;
-			esac
-		else
-			error "No service management installed, $service requires it and will not start without it, aborting."
-			exit 1
-		fi
-	done
-	verbose=$__verbose
-	quiet=$__quiet
+	else
+		error "No service management installed, $service requires it and will not start without it, aborting."
+		exit 1
+	fi
 }
 #
 if [ "$LD_LIBRARY_PATH" ] ; then

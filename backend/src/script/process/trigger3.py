@@ -2,7 +2,7 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
@@ -19,7 +19,7 @@ from	typing import cast
 from	agn3.config import Config
 from	agn3.db import DB
 from	agn3.definitions import licence, user, syscfg
-from	agn3.emm.companyconfig import CompanyConfig
+from	agn3.emm.config import EMMCompany
 from	agn3.ignore import Ignore
 from	agn3.process import Processentry, Processtable
 from	agn3.rpc import XMLRPC, XMLRPCClient
@@ -227,6 +227,8 @@ class Callback (XMLRPC.RObject):
 			not ms.get ('exists', True)
 			or
 			(company is not None and company.get ('status', '') != 'active')
+			or
+			(not ms.get ('clearance', True) and ms.get ('clearance_status') != 'process')
 		)
 	isOnhold = is_onhold
 
@@ -240,7 +242,8 @@ class Callback (XMLRPC.RObject):
 			'mailing_id': mailing_id
 		}
 		with DBAccess () as dba:
-			company_id = None
+			company_id: Optional[int] = None
+			status_field: Optional[str] = None
 			exists = False
 			deleted = False
 			rq = dba.querys ('SELECT company_id, deleted FROM mailing_tbl WHERE mailing_id = :mailing_id', {'mailing_id': mailing_id})
@@ -249,13 +252,30 @@ class Callback (XMLRPC.RObject):
 				exists = True
 				if bool (rq.deleted):
 					deleted = True
-			else:
-				for table in ['maildrop_status_tbl', 'mailing_account_tbl']:
-					for row in dba.query (f'SELECT distinct company_id FROM {table} WHERE mailing_id = :mailing_id', {'mailing_id': mailing_id}):
-						if row.company_id is not None:
-							company_id = row.company_id
-							break
-					if company_id is not None:
+			#
+			for row in dba.queryc (
+				'SELECT company_id, status_field '
+				'FROM maildrop_status_tbl '
+				'WHERE mailing_id = :mailing_id',
+				{
+					'mailing_id': mailing_id
+				}
+			):
+				if company_id is None and row.company_id is not None:
+					company_id = row.company_id
+				if row.status_field in ('D', 'R', 'W'):
+					status_field = row.status_field
+			if company_id is None:
+				for row in dba.queryc (
+					'SELECT distinct company_id '
+					'FROM mailing_account_tbl '
+					'WHERE mailing_id = :mailing_id',
+					{
+						'mailing_id': mailing_id
+					}
+				):
+					if row.company_id is not None:
+						company_id = row.company_id
 						break
 			if company_id is not None:
 				rc['company_id'] = company_id
@@ -274,10 +294,24 @@ class Callback (XMLRPC.RObject):
 					elif rq.mailing_id and rq.mailing_id == mailing_id:
 						onhold = True
 			rc['onhold'] = onhold
+			if status_field == 'R':
+				clearance = True
+				for row in dba.queryc (
+					'SELECT clearance, clearance_status '
+					'FROM rulebased_sent_tbl '
+					'WHERE mailing_id = :mailing_id',
+					{
+						'mailing_id': mailing_id
+					}
+				):
+					if row.clearance is not None and row.clearance == 0:
+						rc['clearance_status'] = row.clearance_status if row.clearance_status is not None else 'process'
+						clearance = False
+					break
+				rc['clearance'] = clearance
 			if use_company_info:
-				ccfg = CompanyConfig (db = dba)
-				ccfg.read ()
-				rc['cinfo'] = (Stream (ccfg.scan_company_info (company_id = company_id))
+				emmcompany = EMMCompany (db = dba)
+				rc['cinfo'] = (Stream (emmcompany.scan (company_id = company_id))
 					.map (lambda cv: (cv.name, cv.value))
 					.dict ()
 				)
